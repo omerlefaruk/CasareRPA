@@ -26,7 +26,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import (
     GoogleSheetsClient,
 )
-from casare_rpa.nodes.google.sheets.sheets_base import SheetsBaseNode
+from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
 class SheetsCreateSpreadsheetNode(SheetsBaseNode):
@@ -44,6 +44,10 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
         - spreadsheet_url: URL to access spreadsheet
         - result: Full spreadsheet properties
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: title, sheets, locale -> spreadsheet_id, spreadsheet_url
 
     NODE_NAME = "Create Spreadsheet"
     CATEGORY = "Google Sheets"
@@ -143,6 +147,10 @@ class SheetsGetSpreadsheetNode(SheetsBaseNode):
         - sheets: List of sheet names
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: include_grid_data -> title, sheets
+
     NODE_NAME = "Get Spreadsheet"
     CATEGORY = "Google Sheets"
 
@@ -226,6 +234,10 @@ class SheetsAddSheetNode(SheetsBaseNode):
         - sheet_name: Name of created sheet
         - result: Full sheet properties
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, row_count, column_count -> sheet_id, sheet_name
 
     NODE_NAME = "Add Sheet"
     CATEGORY = "Google Sheets"
@@ -326,6 +338,10 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
         - result: Deletion confirmation
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: sheet_id -> none
+
     NODE_NAME = "Delete Sheet"
     CATEGORY = "Google Sheets"
 
@@ -402,6 +418,10 @@ class SheetsCopySheetNode(SheetsBaseNode):
         - new_sheet_name: Name of the copied sheet
         - result: Full sheet properties
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: source_spreadsheet_id, source_sheet_id, destination_spreadsheet_id -> new_sheet_id, new_sheet_name
 
     NODE_NAME = "Copy Sheet"
     CATEGORY = "Google Sheets"
@@ -514,6 +534,10 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
         - result: Full sheet properties
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: source_sheet_id, new_sheet_name, insert_index -> new_sheet_id, new_sheet_name
+
     NODE_NAME = "Duplicate Sheet"
     CATEGORY = "Google Sheets"
 
@@ -622,6 +646,10 @@ class SheetsRenameSheetNode(SheetsBaseNode):
         - success: Whether operation succeeded
         - result: Update confirmation
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_id, new_name -> none
 
     NODE_NAME = "Rename Sheet"
     CATEGORY = "Google Sheets"

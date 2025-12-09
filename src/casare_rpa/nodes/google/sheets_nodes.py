@@ -42,6 +42,10 @@ def _parse_range(spreadsheet_id: str, range_notation: str) -> str:
 class SheetsGetCellNode(BaseNode):
     """Get value from a single cell."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, cell, sheet_name -> value, formatted_value, success, error
+
     NODE_NAME = "Sheets: Get Cell"
     CATEGORY = "google/sheets"
 
@@ -108,6 +112,10 @@ class SheetsGetCellNode(BaseNode):
 class SheetsSetCellNode(BaseNode):
     """Set value in a single cell."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, cell, value, sheet_name -> updated_range, success, error
+
     NODE_NAME = "Sheets: Set Cell"
     CATEGORY = "google/sheets"
 
@@ -170,6 +178,10 @@ class SheetsSetCellNode(BaseNode):
 
 class SheetsGetRangeNode(BaseNode):
     """Get values from a range of cells."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, range, sheet_name -> values, row_count, column_count, success, error
 
     NODE_NAME = "Sheets: Get Range"
     CATEGORY = "google/sheets"
@@ -244,6 +256,10 @@ class SheetsGetRangeNode(BaseNode):
 
 class SheetsWriteRangeNode(BaseNode):
     """Write values to a range of cells."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, range, values, sheet_name -> updated_range, updated_rows, updated_columns, success, error
 
     NODE_NAME = "Sheets: Write Range"
     CATEGORY = "google/sheets"
@@ -320,6 +336,10 @@ class SheetsWriteRangeNode(BaseNode):
 class SheetsClearRangeNode(BaseNode):
     """Clear values from a range of cells."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, range, sheet_name -> cleared_range, success, error
+
     NODE_NAME = "Sheets: Clear Range"
     CATEGORY = "google/sheets"
 
@@ -382,6 +402,10 @@ class SheetsClearRangeNode(BaseNode):
 class SheetsCreateSpreadsheetNode(BaseNode):
     """Create a new Google Spreadsheet."""
 
+    # @category: google
+    # @requires: none
+    # @ports: title, sheet_names -> spreadsheet_id, spreadsheet_url, success, error
+
     NODE_NAME = "Sheets: Create Spreadsheet"
     CATEGORY = "google/sheets"
 
@@ -431,6 +455,10 @@ class SheetsCreateSpreadsheetNode(BaseNode):
 
 class SheetsGetSpreadsheetNode(BaseNode):
     """Get spreadsheet metadata."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id -> title, sheets, locale, time_zone, success, error
 
     NODE_NAME = "Sheets: Get Spreadsheet"
     CATEGORY = "google/sheets"
@@ -493,6 +521,10 @@ class SheetsGetSpreadsheetNode(BaseNode):
 class SheetsAddSheetNode(BaseNode):
     """Add a new sheet to a spreadsheet."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_name -> sheet_id, success, error
+
     NODE_NAME = "Sheets: Add Sheet"
     CATEGORY = "google/sheets"
 
@@ -552,6 +584,10 @@ class SheetsAddSheetNode(BaseNode):
 class SheetsDeleteSheetNode(BaseNode):
     """Delete a sheet from a spreadsheet."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id -> success, error
+
     NODE_NAME = "Sheets: Delete Sheet"
     CATEGORY = "google/sheets"
 
@@ -598,6 +634,10 @@ class SheetsDeleteSheetNode(BaseNode):
 
 class SheetsDuplicateSheetNode(BaseNode):
     """Duplicate a sheet within a spreadsheet."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, new_sheet_name -> new_sheet_id, success, error
 
     NODE_NAME = "Sheets: Duplicate Sheet"
     CATEGORY = "google/sheets"
@@ -671,6 +711,10 @@ class SheetsDuplicateSheetNode(BaseNode):
 class SheetsRenameSheetNode(BaseNode):
     """Rename a sheet in a spreadsheet."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, new_name -> success, error
+
     NODE_NAME = "Sheets: Rename Sheet"
     CATEGORY = "google/sheets"
 
@@ -736,6 +780,10 @@ class SheetsRenameSheetNode(BaseNode):
 class SheetsAppendRowNode(BaseNode):
     """Append a row to a sheet."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, values, sheet_name -> updated_range, success, error
+
     NODE_NAME = "Sheets: Append Row"
     CATEGORY = "google/sheets"
 
@@ -799,6 +847,10 @@ class SheetsAppendRowNode(BaseNode):
 
 class SheetsInsertRowNode(BaseNode):
     """Insert a row at a specific position."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, row_index, num_rows -> success, error
 
     NODE_NAME = "Sheets: Insert Row"
     CATEGORY = "google/sheets"
@@ -869,6 +921,10 @@ class SheetsInsertRowNode(BaseNode):
 class SheetsDeleteRowNode(BaseNode):
     """Delete rows from a sheet."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, start_row, num_rows -> success, error
+
     NODE_NAME = "Sheets: Delete Row"
     CATEGORY = "google/sheets"
 
@@ -936,6 +992,10 @@ class SheetsDeleteRowNode(BaseNode):
 
 class SheetsInsertColumnNode(BaseNode):
     """Insert columns at a specific position."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, column_index, num_columns -> success, error
 
     NODE_NAME = "Sheets: Insert Column"
     CATEGORY = "google/sheets"
@@ -1007,6 +1067,10 @@ class SheetsInsertColumnNode(BaseNode):
 
 class SheetsDeleteColumnNode(BaseNode):
     """Delete columns from a sheet."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, start_column, num_columns -> success, error
 
     NODE_NAME = "Sheets: Delete Column"
     CATEGORY = "google/sheets"
@@ -1084,6 +1148,10 @@ class SheetsDeleteColumnNode(BaseNode):
 
 class SheetsFormatCellsNode(BaseNode):
     """Format cells in a range."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, start_row, end_row, start_column, end_column -> success, error
 
     NODE_NAME = "Sheets: Format Cells"
     CATEGORY = "google/sheets"
@@ -1184,6 +1252,10 @@ class SheetsFormatCellsNode(BaseNode):
 class SheetsAutoResizeNode(BaseNode):
     """Auto-resize columns to fit content."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, sheet_id, start_index, end_index -> success, error
+
     NODE_NAME = "Sheets: Auto Resize"
     CATEGORY = "google/sheets"
 
@@ -1253,6 +1325,10 @@ class SheetsAutoResizeNode(BaseNode):
 
 class SheetsBatchUpdateNode(BaseNode):
     """Execute multiple updates in a single batch."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, data -> total_updated_rows, total_updated_columns, total_updated_cells, success, error
 
     NODE_NAME = "Sheets: Batch Update"
     CATEGORY = "google/sheets"
@@ -1331,6 +1407,10 @@ class SheetsBatchUpdateNode(BaseNode):
 class SheetsBatchGetNode(BaseNode):
     """Get values from multiple ranges in a single batch."""
 
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, ranges -> value_ranges, success, error
+
     NODE_NAME = "Sheets: Batch Get"
     CATEGORY = "google/sheets"
 
@@ -1390,6 +1470,10 @@ class SheetsBatchGetNode(BaseNode):
 
 class SheetsBatchClearNode(BaseNode):
     """Clear multiple ranges in a single batch."""
+
+    # @category: google
+    # @requires: none
+    # @ports: spreadsheet_id, ranges -> cleared_ranges, success, error
 
     NODE_NAME = "Sheets: Batch Clear"
     CATEGORY = "google/sheets"

@@ -28,6 +28,10 @@ class LLMCompletionNode(LLMBaseNode):
     Simple prompt-to-response node for single-turn interactions.
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: prompt -> none
+
     NODE_NAME = "LLM Completion"
     NODE_CATEGORY = "AI/ML"
     NODE_DESCRIPTION = "Generate text using an LLM from a prompt"
@@ -110,6 +114,10 @@ class LLMChatNode(LLMBaseNode):
 
     Maintains conversation history across multiple messages.
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: message, conversation_id -> conversation_id
 
     NODE_NAME = "LLM Chat"
     NODE_CATEGORY = "AI/ML"
@@ -203,6 +211,10 @@ class LLMExtractDataNode(LLMBaseNode):
 
     Uses LLM to parse unstructured text into structured JSON.
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: text, schema, model, temperature -> extracted_data, raw_response, tokens_used, success, error
 
     NODE_NAME = "LLM Extract Data"
     NODE_CATEGORY = "AI/ML"
@@ -314,6 +326,10 @@ class LLMSummarizeNode(LLMBaseNode):
 
     Supports different summarization styles (bullet points, paragraph, key points).
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: text, max_length, style, model, temperature -> summary, original_length, summary_length, tokens_used, success, error
 
     NODE_NAME = "LLM Summarize"
     NODE_CATEGORY = "AI/ML"
@@ -429,6 +445,10 @@ class LLMClassifyNode(LLMBaseNode):
 
     Supports single-label and multi-label classification.
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: text, categories, multi_label, model, temperature -> classification, classifications, confidence, tokens_used, success, error
 
     NODE_NAME = "LLM Classify"
     NODE_CATEGORY = "AI/ML"
@@ -585,6 +605,10 @@ class LLMTranslateNode(LLMBaseNode):
 
     Supports automatic source language detection.
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: text, target_language, source_language, model, temperature -> translated_text, detected_language, tokens_used, success, error
 
     NODE_NAME = "LLM Translate"
     NODE_CATEGORY = "AI/ML"

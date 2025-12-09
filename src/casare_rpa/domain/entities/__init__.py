@@ -25,6 +25,10 @@ from casare_rpa.domain.entities.subflow import (
     SUBFLOWS_DIRECTORY,
     generate_subflow_id,
 )
+from casare_rpa.domain.entities.trigger_config import (
+    TriggerConfig,
+    TriggerConfigProtocol,
+)
 
 # WorkflowSchedule removed - use Schedule Trigger node instead
 from casare_rpa.domain.entities.project import (
@@ -90,4 +94,7 @@ __all__ = [
     "Tenant",
     "TenantId",
     "TenantSettings",
+    # Trigger entities
+    "TriggerConfig",
+    "TriggerConfigProtocol",
 ]

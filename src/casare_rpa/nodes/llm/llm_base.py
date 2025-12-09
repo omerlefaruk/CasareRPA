@@ -48,6 +48,10 @@ class LLMBaseNode(CredentialAwareMixin, BaseNode):
     Subclasses implement _execute_llm() for specific operations.
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: none -> none
+
     # Default model settings
     DEFAULT_MODEL: str = "gpt-4o-mini"
     DEFAULT_TEMPERATURE: float = 0.7

@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
+
 
 # =============================================================================
 # Validation Status Types
@@ -68,19 +70,19 @@ ValidatorFunc = Callable[[Any], ValidationResult]
 
 
 # =============================================================================
-# Validation Colors (VSCode Dark Theme)
+# Validation Colors (Using THEME)
 # =============================================================================
 
 VALIDATION_COLORS = {
-    ValidationStatus.VALID: "#505064",  # Normal border
-    ValidationStatus.INVALID: "#F44336",  # Red border
-    ValidationStatus.WARNING: "#FF9800",  # Orange border
+    ValidationStatus.VALID: THEME.border,  # Normal border
+    ValidationStatus.INVALID: THEME.error,  # Red border
+    ValidationStatus.WARNING: THEME.warning,  # Orange border
 }
 
 VALIDATION_BG_COLORS = {
-    ValidationStatus.VALID: "#3c3c50",  # Normal background
-    ValidationStatus.INVALID: "#3c3c50",  # Same background, border shows status
-    ValidationStatus.WARNING: "#3c3c50",  # Same background, border shows status
+    ValidationStatus.VALID: THEME.input_bg,  # Normal background
+    ValidationStatus.INVALID: THEME.input_bg,  # Same background, border shows status
+    ValidationStatus.WARNING: THEME.input_bg,  # Same background, border shows status
 }
 
 
@@ -110,11 +112,11 @@ def get_validated_line_edit_style(status: ValidationStatus) -> str:
             background: {bg_color};
             border: {border_width} solid {border_color};
             border-radius: 3px;
-            color: #e6e6e6;
+            color: {THEME.text_primary};
             padding: 2px 28px 2px 4px;
         }}
         QLineEdit:focus {{
-            border: {border_width} solid {border_color if status != ValidationStatus.VALID else '#6496c8'};
+            border: {border_width} solid {border_color if status != ValidationStatus.VALID else THEME.accent};
         }}
     """
 
@@ -344,11 +346,11 @@ class ValidatedInputWidget(QWidget):
         # Message text
         self._message_label = QLabel()
         self._message_label.setWordWrap(True)
-        self._message_label.setStyleSheet("""
-            QLabel {
-                color: #F44336;
+        self._message_label.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.error};
                 font-size: 10px;
-            }
+            }}
         """)
         message_layout.addWidget(self._message_label, 1)
 
@@ -425,12 +427,20 @@ class ValidatedInputWidget(QWidget):
             # Set icon and color based on status
             if result.status == ValidationStatus.INVALID:
                 self._icon_label.setText("!")
-                self._icon_label.setStyleSheet("color: #F44336; font-weight: bold;")
-                self._message_label.setStyleSheet("color: #F44336; font-size: 10px;")
+                self._icon_label.setStyleSheet(
+                    f"color: {THEME.error}; font-weight: bold;"
+                )
+                self._message_label.setStyleSheet(
+                    f"color: {THEME.error}; font-size: 10px;"
+                )
             else:  # WARNING
                 self._icon_label.setText("!")
-                self._icon_label.setStyleSheet("color: #FF9800; font-weight: bold;")
-                self._message_label.setStyleSheet("color: #FF9800; font-size: 10px;")
+                self._icon_label.setStyleSheet(
+                    f"color: {THEME.warning}; font-weight: bold;"
+                )
+                self._message_label.setStyleSheet(
+                    f"color: {THEME.warning}; font-size: 10px;"
+                )
 
             self._message_label.setText(result.message)
 

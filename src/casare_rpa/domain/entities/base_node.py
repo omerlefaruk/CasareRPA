@@ -1,10 +1,27 @@
 """
 CasareRPA - Base Node Abstract Class
+
 All automation nodes must inherit from this base class.
+Implements the INode protocol defined in domain.interfaces.
+
+Entry Points:
+    - BaseNode: Abstract base class for all nodes
+    - execute(): Core execution method (must be implemented)
+    - validate(): Input/config validation
+    - get_parameter(): Unified dual-source parameter access
+
+Key Patterns:
+    - Dual-source pattern: Values can come from ports OR config
+    - Port-based data flow: Nodes communicate via typed ports
+    - Status lifecycle: IDLE -> RUNNING -> SUCCESS/ERROR -> IDLE
+
+Related:
+    - See domain.interfaces.INode for the protocol definition
+    - See domain.interfaces.IExecutionContext for context services
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 from loguru import logger
 
 from casare_rpa.domain.value_objects import Port
@@ -17,6 +34,9 @@ from casare_rpa.domain.value_objects.types import (
     PortType,
     SerializedNode,
 )
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.interfaces import IExecutionContext
 
 
 class BaseNode(ABC):
@@ -73,18 +93,37 @@ class BaseNode(ABC):
         pass
 
     @abstractmethod
-    async def execute(self, context: Any) -> ExecutionResult:
+    async def execute(self, context: "IExecutionContext") -> ExecutionResult:
         """
         Execute the node's main logic.
 
+        This is the core method that performs the node's automation task.
+        Called by NodeExecutor after validation passes.
+
         Args:
-            context: Execution context containing runtime state
+            context: Execution context providing runtime services:
+                - Variable access: context.get_variable(), context.set_variable()
+                - Page access: context.get_active_page() for browser automation
+                - Resource access: context.resources for shared resources
+                - Flow control: context.stop_execution() to halt workflow
 
         Returns:
-            Dictionary of output port values, or None
+            ExecutionResult dict with structure:
+                Success: {"success": True, "data": {"output_name": value, ...}}
+                Error: {"success": False, "error": "message", "error_code": "CODE"}
 
-        Raises:
-            Exception: If execution fails
+            Special result keys (for flow control):
+                - "route_to": NodeId - Override next node (for conditional nodes)
+                - "loop_back_to": NodeId - Signal loop continuation
+                - "parallel_branches": List[NodeId] - Fork execution
+
+        Note:
+            Should NOT raise exceptions for expected failures.
+            Return error result instead. Exceptions indicate bugs.
+
+        Related:
+            See domain.interfaces.IExecutionContext for context methods
+            See application.use_cases.node_executor for execution lifecycle
         """
         pass
 

@@ -3,60 +3,26 @@ CasareRPA - Base Trigger Classes
 
 Defines the abstract base classes and enums for the trigger system.
 All trigger implementations should inherit from BaseTrigger.
+
+NOTE: TriggerType, TriggerStatus, TriggerPriority are defined in
+domain.value_objects.trigger_types (source of truth) and re-exported here.
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from enum import Enum
 from typing import Any, Callable, Dict, Optional
 import asyncio
 import uuid
 
 from loguru import logger
 
-
-class TriggerType(Enum):
-    """Types of workflow triggers."""
-
-    MANUAL = "manual"
-    SCHEDULED = "scheduled"
-    WEBHOOK = "webhook"
-    FILE_WATCH = "file_watch"
-    EMAIL = "email"
-    APP_EVENT = "app_event"
-    FORM = "form"
-    CHAT = "chat"
-    ERROR = "error"
-    WORKFLOW_CALL = "workflow_call"
-    RSS_FEED = "rss_feed"
-    SSE = "sse"
-    TELEGRAM = "telegram"
-    WHATSAPP = "whatsapp"
-    GMAIL = "gmail"
-    SHEETS = "sheets"
-    DRIVE = "drive"
-    CALENDAR = "calendar"
-
-
-class TriggerStatus(Enum):
-    """Trigger lifecycle states."""
-
-    INACTIVE = "inactive"
-    STARTING = "starting"
-    ACTIVE = "active"
-    PAUSED = "paused"
-    STOPPING = "stopping"
-    ERROR = "error"
-
-
-class TriggerPriority(Enum):
-    """Trigger priority levels (maps to JobPriority)."""
-
-    LOW = 0
-    NORMAL = 1
-    HIGH = 2
-    CRITICAL = 3
+# Import from domain layer (source of truth)
+from casare_rpa.domain.value_objects.trigger_types import (
+    TriggerType,
+    TriggerStatus,
+    TriggerPriority,
+)
 
 
 @dataclass

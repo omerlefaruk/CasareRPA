@@ -1,13 +1,29 @@
 """
-CasareRPA Domain Layer - Pure Business Logic
+CasareRPA - Domain Layer
 
-This layer contains:
-- Entities: Core business objects (Workflow, Node, Connection)
-- Services: Domain services (validation, dependency analysis)
-- Ports: Interfaces for adapters (dependency inversion)
-- Protocols: Protocol interfaces for dependency inversion
-- Decorators: Node class decorators (executable_node)
-- Credentials: Credential resolution for nodes (CredentialAwareMixin)
+Core business logic with zero external dependencies.
+
+Entry Points:
+    - entities.base_node.BaseNode: Base class for all automation nodes
+    - entities.workflow.WorkflowSchema: Workflow definition and validation
+    - protocols.ExecutionContextProtocol: Execution context interface
+    - protocols.CredentialProviderProtocol: Credential resolution interface
+    - decorators.executable_node: Decorator to register node classes
+    - credentials.CredentialAwareMixin: Mixin for credential-aware nodes
+    - value_objects.types: DataType, NodeStatus, PortDefinition
+
+Key Patterns:
+    - DDD Entities: Workflow, Node, Connection with identity and lifecycle
+    - Value Objects: Immutable types for DataType, PortDefinition, NodeStatus
+    - Protocols: Interface contracts for dependency inversion (no concrete implementations)
+    - Domain Services: Validation, dependency analysis, port type system
+    - Pure Functions: All logic is side-effect free and testable in isolation
+
+Related:
+    - Application layer: Orchestrates domain operations via use cases
+    - Infrastructure layer: Implements domain protocols (credential providers, persistence)
+    - Presentation layer: Uses domain entities through application services
+    - Nodes package: Implements BaseNode protocol for automation actions
 
 CRITICAL: This layer must have ZERO dependencies on infrastructure or presentation.
 All domain logic should be framework-agnostic and testable in isolation.

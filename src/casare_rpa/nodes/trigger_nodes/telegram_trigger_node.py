@@ -124,6 +124,10 @@ class TelegramTriggerNode(BaseTriggerNode):
     - raw_update: Full update object from Telegram
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Telegram"
     trigger_description = "Trigger workflow when Telegram message is received"
     trigger_icon = "telegram"

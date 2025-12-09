@@ -118,6 +118,10 @@ class DriveTriggerNode(BaseTriggerNode):
     - raw_change: Full change object from API
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Google Drive"
     trigger_description = "Trigger workflow when Google Drive files change"
     trigger_icon = "drive"

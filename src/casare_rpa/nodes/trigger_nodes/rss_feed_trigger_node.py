@@ -82,6 +82,10 @@ class RSSFeedTriggerNode(BaseTriggerNode):
     - categories: List of categories/tags
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "RSS Feed"
     trigger_description = "Trigger on new RSS feed items"
     trigger_icon = "rss"

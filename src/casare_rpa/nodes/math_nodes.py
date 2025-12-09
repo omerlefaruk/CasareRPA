@@ -97,6 +97,10 @@ def _resolve_numeric_param(
 class MathOperationNode(BaseNode):
     """Node that performs math operations."""
 
+    # @category: data
+    # @requires: none
+    # @ports: a, b -> result
+
     def __init__(self, node_id: str, name: str = "Math Operation", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -212,6 +216,10 @@ class MathOperationNode(BaseNode):
 @executable_node
 class ComparisonNode(BaseNode):
     """Node that compares two values."""
+
+    # @category: data
+    # @requires: none
+    # @ports: a, b -> result
 
     def __init__(self, node_id: str, name: str = "Comparison", **kwargs) -> None:
         config = kwargs.get("config", {})

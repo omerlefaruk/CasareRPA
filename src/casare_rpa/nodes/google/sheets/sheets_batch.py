@@ -23,7 +23,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import (
     GoogleSheetsClient,
 )
-from casare_rpa.nodes.google.sheets.sheets_base import SheetsBaseNode
+from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
 class SheetsBatchUpdateNode(SheetsBaseNode):
@@ -48,6 +48,10 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         - total_updated_cells: Total number of cells updated
         - total_updated_rows: Total number of rows updated
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: updates, value_input_option -> total_updated_cells, total_updated_rows
 
     NODE_NAME = "Batch Update Values"
     CATEGORY = "Google Sheets"
@@ -205,6 +209,10 @@ class SheetsBatchGetNode(SheetsBaseNode):
         - ranges_count: Number of ranges read
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: ranges, value_render_option -> values, ranges_count
+
     NODE_NAME = "Batch Get Values"
     CATEGORY = "Google Sheets"
 
@@ -313,6 +321,10 @@ class SheetsBatchClearNode(SheetsBaseNode):
         - result: Batch clear response
         - cleared_ranges: List of ranges that were cleared
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: ranges -> cleared_ranges
 
     NODE_NAME = "Batch Clear Values"
     CATEGORY = "Google Sheets"

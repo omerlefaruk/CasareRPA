@@ -22,7 +22,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_calendar_client import (
     GoogleCalendarClient,
 )
-from casare_rpa.nodes.google.calendar.calendar_base import CalendarBaseNode
+from casare_rpa.nodes.google.google_base import CalendarBaseNode
 
 
 # ============================================================================
@@ -155,6 +155,10 @@ class CalendarListEventsNode(CalendarBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, time_min, time_max, query, max_results -> events, event_count, next_page_token
+
     NODE_TYPE = "calendar_list_events"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Calendar: List Events"
@@ -262,6 +266,10 @@ class CalendarGetEventNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, event_id -> event, summary, start, end
 
     NODE_TYPE = "calendar_get_event"
     NODE_CATEGORY = "google"
@@ -422,6 +430,10 @@ class CalendarCreateEventNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, summary, start_datetime, end_datetime, timezone, description, location, attendees -> event_id, html_link, event
 
     NODE_TYPE = "calendar_create_event"
     NODE_CATEGORY = "google"
@@ -621,6 +633,10 @@ class CalendarUpdateEventNode(CalendarBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, event_id, summary, start_datetime, end_datetime, description, location -> event_id, event
+
     NODE_TYPE = "calendar_update_event"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Calendar: Update Event"
@@ -761,6 +777,10 @@ class CalendarDeleteEventNode(CalendarBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, event_id -> deleted_id
+
     NODE_TYPE = "calendar_delete_event"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Calendar: Delete Event"
@@ -868,6 +888,10 @@ class CalendarQuickAddNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, text -> event_id, summary, start, end, event
 
     NODE_TYPE = "calendar_quick_add"
     NODE_CATEGORY = "google"
@@ -987,6 +1011,10 @@ class CalendarMoveEventNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, event_id, destination_calendar_id -> event_id, new_calendar_id, event
 
     NODE_TYPE = "calendar_move_event"
     NODE_CATEGORY = "google"
@@ -1120,6 +1148,10 @@ class CalendarGetFreeBusyNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_ids, time_min, time_max -> free_busy, is_busy, busy_count
 
     NODE_TYPE = "calendar_get_free_busy"
     NODE_CATEGORY = "google"

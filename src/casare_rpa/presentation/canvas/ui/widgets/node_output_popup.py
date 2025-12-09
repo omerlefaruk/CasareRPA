@@ -61,6 +61,7 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
     JsonSyntaxHighlighter,
     get_json_highlighter_stylesheet,
@@ -68,35 +69,35 @@ from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
 
 
 # ============================================================================
-# COLOR CONSTANTS (VSCode Dark+ Theme)
+# COLOR CONSTANTS (Using THEME)
 # ============================================================================
 
 
 class PopupColors:
-    """Color constants for the output popup."""
+    """Color constants for the output popup using THEME."""
 
     # Background colors
-    BACKGROUND = QColor("#252526")
-    HEADER_BG = QColor("#2D2D30")
-    BORDER = QColor("#3E3E42")
+    BACKGROUND = QColor(THEME.bg_dark)
+    HEADER_BG = QColor(THEME.bg_medium)
+    BORDER = QColor(THEME.border)
 
     # Text colors
-    TEXT = QColor("#D4D4D4")
-    TEXT_SECONDARY = QColor("#808080")
+    TEXT = QColor(THEME.text_primary)
+    TEXT_SECONDARY = QColor(THEME.text_secondary)
 
     # Accent colors
-    ACCENT = QColor("#007ACC")
-    ACCENT_HOVER = QColor("#1C97EA")
+    ACCENT = QColor(THEME.accent)
+    ACCENT_HOVER = QColor(THEME.accent_hover)
 
     # Status colors
-    SUCCESS = QColor("#4EC9B0")
-    ERROR = QColor("#F48771")
-    ERROR_BG = QColor("#5A1D1D")
+    SUCCESS = QColor(THEME.success)
+    ERROR = QColor(THEME.error)
+    ERROR_BG = QColor(THEME.error_bg)
 
     # Table colors
-    TABLE_ALT_ROW = QColor("#2D2D30")
-    TABLE_HOVER = QColor("#2A2D2E")
-    TABLE_SELECTED = QColor("#264F78")
+    TABLE_ALT_ROW = QColor(THEME.bg_medium)
+    TABLE_HOVER = QColor(THEME.hover)
+    TABLE_SELECTED = QColor(THEME.selected)
 
     # Type badge colors (muted n8n style - subtle, not distracting)
     TYPE_STRING = QColor("#8B7355")  # Muted brown for AB
@@ -310,8 +311,8 @@ class SchemaItemWidget(QWidget):
         """)
 
     def get_variable_reference(self) -> str:
-        """Get the variable reference string for this port."""
-        return f"{{{{{self._node_name}.{self._port_name}}}}}"
+        """Get the variable reference string for this port (uses node_id for resolution)."""
+        return f"{{{{{self._node_id}.{self._port_name}}}}}"
 
     def get_drag_data(self) -> dict:
         """Get the drag data as a dictionary."""

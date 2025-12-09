@@ -89,6 +89,10 @@ class ChatTriggerNode(BaseTriggerNode):
     - reply_to: Message ID this is replying to (if any)
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Chat"
     trigger_description = "Trigger on chat message"
     trigger_icon = "chat"

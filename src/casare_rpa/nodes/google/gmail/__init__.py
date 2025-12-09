@@ -4,7 +4,7 @@ CasareRPA - Gmail Nodes
 Nodes for sending, reading, and managing emails via Gmail API v1.
 """
 
-from casare_rpa.nodes.google.gmail.gmail_base import GmailBaseNode
+from casare_rpa.nodes.google.google_base import GmailBaseNode
 from casare_rpa.nodes.google.gmail.gmail_send import (
     GmailSendEmailNode,
     GmailSendWithAttachmentNode,

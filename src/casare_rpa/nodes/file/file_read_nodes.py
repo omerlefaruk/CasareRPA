@@ -100,6 +100,10 @@ class ReadFileNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> content, size, success
+
     def __init__(self, node_id: str, name: str = "Read File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)

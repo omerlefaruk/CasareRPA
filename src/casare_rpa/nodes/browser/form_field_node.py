@@ -78,6 +78,10 @@ class FormFieldNode(BrowserBaseNode):
             - field: This field's definition only
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: fields_in -> fields_out, field
+
     NODE_NAME = "Form Field"
 
     def __init__(self, node_id: str, name: str = "Form Field", **kwargs: Any) -> None:

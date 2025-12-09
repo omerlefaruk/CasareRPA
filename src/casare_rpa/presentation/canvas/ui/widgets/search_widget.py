@@ -21,6 +21,7 @@ from PySide6.QtGui import QKeyEvent
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 
 
@@ -81,17 +82,17 @@ class SearchWidget(BaseWidget):
         clear_btn.setFixedSize(24, 24)
         clear_btn.setToolTip("Clear search")
         clear_btn.clicked.connect(self.clear_search)
-        clear_btn.setStyleSheet("""
-            QPushButton {
+        clear_btn.setStyleSheet(f"""
+            QPushButton {{
                 font-size: 16px;
                 font-weight: bold;
                 background: transparent;
                 border: none;
-            }
-            QPushButton:hover {
-                background: #3d3d3d;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_light};
                 border-radius: 2px;
-            }
+            }}
         """)
         search_row.addWidget(clear_btn)
 
@@ -100,7 +101,7 @@ class SearchWidget(BaseWidget):
         # Results count label
         self._results_label = QLabel("0 results")
         self._results_label.setStyleSheet(
-            "color: #888888; font-size: 10px; padding: 2px;"
+            f"color: {THEME.text_muted}; font-size: 10px; padding: 2px;"
         )
         layout.addWidget(self._results_label)
 

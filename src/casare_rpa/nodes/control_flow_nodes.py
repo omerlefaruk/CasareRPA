@@ -40,6 +40,10 @@ class IfNode(BaseNode):
     Supports boolean inputs or expression evaluation.
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in, condition -> true, false
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize If node."""
         super().__init__(node_id, config)
@@ -182,6 +186,10 @@ class ForLoopStartNode(BaseNode):
         - current_key: Current key (for dict iteration, None otherwise)
         - completed: Fires when all iterations complete
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in, items, end -> body, completed, current_item, current_index, current_key
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize For Loop Start node."""
@@ -357,6 +365,10 @@ class ForLoopEndNode(BaseNode):
         - exec_out: Fires after loop completes (connected to ForLoopStart.completed internally)
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> none
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize For Loop End node."""
         super().__init__(node_id, config)
@@ -448,6 +460,10 @@ class WhileLoopStartNode(BaseNode):
         - current_iteration: Current iteration number (0-based)
         - completed: Fires when condition becomes false
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in, condition -> body, completed, current_iteration
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize While Loop Start node."""
@@ -574,6 +590,10 @@ class WhileLoopEndNode(BaseNode):
         - exec_out: Fires after loop completes
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> none
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize While Loop End node."""
         super().__init__(node_id, config)
@@ -627,6 +647,10 @@ class BreakNode(BaseNode):
     Signals the parent loop (For/While) to terminate immediately.
     Can only be used inside loop_body execution path.
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> none
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Break node."""
@@ -702,6 +726,10 @@ class ContinueNode(BaseNode):
     Can only be used inside loop_body execution path.
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> none
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Continue node."""
         super().__init__(node_id, config)
@@ -776,6 +804,10 @@ class MergeNode(BaseNode):
              └── FALSE → ... ──┘
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> none
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Merge node."""
         super().__init__(node_id, config)
@@ -840,6 +872,10 @@ class SwitchNode(BaseNode):
     Evaluates an input value and routes to matching case output.
     Falls back to 'default' if no case matches.
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in, value -> default
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Switch node."""
@@ -944,6 +980,10 @@ class TryNode(BaseNode):
         - exec_out: Continues after try body completes (no error)
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> exec_out, try_body
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Try node."""
         super().__init__(node_id, config)
@@ -1015,6 +1055,10 @@ class CatchNode(BaseNode):
         - error_type: The error type/class name
         - stack_trace: Full stack trace (if available)
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> catch_body, error_message, error_type, stack_trace
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Catch node."""
@@ -1110,6 +1154,10 @@ class FinallyNode(BaseNode):
         - finally_body: Execution flow for cleanup code
         - had_error: Boolean indicating if an error occurred in try block
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> finally_body, had_error
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Finally node."""

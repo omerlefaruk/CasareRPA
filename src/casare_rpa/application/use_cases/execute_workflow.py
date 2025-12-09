@@ -8,10 +8,51 @@ This use case orchestrates workflow execution by:
 - Using helper services for node execution, state management, and data transfer
 - Emitting events via EventBus for progress tracking
 
+Entry Points:
+------------
+- execute(run_all=False): Main entry point for workflow execution
+  - F3 (run_all=False): Execute from first StartNode sequentially
+  - Shift+F3 (run_all=True): Execute all StartNodes concurrently
+- execute() with settings.single_node=True: F5 single node execution
+- execute() with settings.target_node_id: Run-To-Node mode
+
+Key Patterns:
+------------
+- STATE MACHINE: Workflow transitions through states (running -> paused -> completed/failed/stopped)
+  via ExecutionStateManager. Related: See execution_state_manager.py for state definitions.
+- ROUTING LOGIC: ExecutionOrchestrator (domain) determines next nodes based on exec result.
+  Supports conditional routing (IfNode), loop-back (ForLoop/WhileLoop), and error routing (TryCatch).
+- LOOP HANDLING: Loop nodes can re-execute. Executed nodes are cleared from the set when
+  loop_back_to is received, allowing the loop body to run again.
+- PARALLEL EXECUTION: ForkNode spawns concurrent branches; ParallelForEachNode processes
+  items in batches. Each branch/item gets an isolated context clone.
+
+Result Pattern:
+--------------
+Methods with *_safe suffix return Result[T, E] instead of raising exceptions.
+This enables explicit error handling at call sites:
+
+    result = await use_case.execute_safe()
+    if result.is_ok():
+        success = result.unwrap()
+    else:
+        error = result.error  # WorkflowExecutionError with context
+
 Architecture:
+------------
 - Domain logic: ExecutionOrchestrator makes routing decisions
 - Infrastructure: ExecutionContext manages Playwright resources
 - Application: This class coordinates them and publishes events
+
+Related:
+-------
+- Domain routing: See domain/services/execution_orchestrator.py for get_next_nodes() logic
+- Infrastructure context: See infrastructure/execution/context.py for resource management
+- State management: See application/use_cases/execution_state_manager.py
+- Node execution: See application/use_cases/node_executor.py
+- Variable transfer: See application/use_cases/variable_resolver.py
+- Event types: See domain/value_objects/types.py for EventType enum
+- Result pattern: See domain/errors/result.py for Result type documentation
 
 Refactored: Extracted helper services for Single Responsibility:
 - ExecutionStateManager: State tracking, progress, pause/resume
@@ -28,6 +69,22 @@ from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.events import EventBus
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.value_objects.types import EventType, NodeId
+
+# Interface for type hints (dependency inversion)
+from casare_rpa.domain.interfaces import IExecutionContext
+
+# Result pattern for explicit error handling
+from casare_rpa.domain.errors import (
+    Result,
+    Ok,
+    Err,
+    WorkflowExecutionError,
+    NodeExecutionError,
+    ErrorContext,
+)
+
+# Concrete implementation for runtime instantiation
+# TODO: Refactor to use dependency injection / factory pattern
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils.performance.performance_metrics import get_metrics
 from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP
@@ -133,7 +190,8 @@ class ExecuteWorkflowUseCase:
         )
 
         # Infrastructure components (created during execution)
-        self.context: Optional[ExecutionContext] = None
+        # Type hint uses interface; concrete type instantiated at runtime
+        self.context: Optional[IExecutionContext] = None
 
         # Node instance cache (for dict-based workflows)
         self._node_instances: Dict[str, Any] = {}
@@ -294,6 +352,8 @@ class ExecuteWorkflowUseCase:
         get_metrics().record_workflow_start(self.workflow.metadata.name)
 
         logger.info(f"Starting workflow execution: {self.workflow.metadata.name}")
+        # Print to terminal for visibility in Terminal tab
+        print(f"[WORKFLOW] Starting: {self.workflow.metadata.name}")
 
         try:
             # Single node mode (F5): Execute only the target node
@@ -381,6 +441,7 @@ class ExecuteWorkflowUseCase:
             logger.error(
                 f"Workflow execution failed: {self.state_manager.execution_error}"
             )
+            print(f"[WORKFLOW] Failed: {self.state_manager.execution_error}")
 
             get_metrics().record_workflow_complete(
                 self.workflow.metadata.name, duration * 1000, success=False
@@ -397,6 +458,7 @@ class ExecuteWorkflowUseCase:
                 },
             )
             logger.info("Workflow execution stopped by user")
+            print("[WORKFLOW] Stopped by user")
 
             get_metrics().record_workflow_complete(
                 self.workflow.metadata.name, duration * 1000, success=False
@@ -424,6 +486,10 @@ class ExecuteWorkflowUseCase:
         logger.info(
             f"Workflow completed successfully in {duration:.2f}s "
             f"({len(self.state_manager.executed_nodes)} nodes)"
+        )
+        print(
+            f"[WORKFLOW] Completed in {duration:.2f}s "
+            f"({len(self.state_manager.executed_nodes)} nodes executed)"
         )
 
         get_metrics().record_workflow_complete(
@@ -476,22 +542,36 @@ class ExecuteWorkflowUseCase:
         """
         Execute workflow starting from a specific node.
 
+        This is the main execution loop that processes nodes sequentially,
+        handling routing decisions, loop iterations, and error recovery.
+
+        Related: See domain/services/execution_orchestrator.py for routing logic
+
         Args:
             start_node_id: Node ID to start execution from
         """
+        # EXECUTION QUEUE: FIFO queue of nodes to execute. Nodes are added at the end
+        # (normal flow) or inserted at the front (loop-back, error routing).
         nodes_to_execute: List[NodeId] = [start_node_id]
 
+        # === MAIN EXECUTION LOOP ===
+        # Continues until queue is empty OR workflow is stopped by user
         while nodes_to_execute and not self.state_manager.is_stopped:
-            # CHECKPOINT: Wait if paused
+            # STATE MACHINE: Pause checkpoint - blocks here if workflow is paused.
+            # User can pause/resume via toolbar. Related: See ExecutionStateManager.pause_checkpoint()
             await self.state_manager.pause_checkpoint()
 
-            # Check stop signal after resuming from pause
+            # STATE MACHINE: Re-check stop signal after resuming from pause.
+            # User may have clicked Stop while paused.
             if self.state_manager.is_stopped:
                 break
 
+            # Pop next node from front of queue (FIFO order)
             current_node_id = nodes_to_execute.pop(0)
 
-            # Skip if already executed (except for loops)
+            # LOOP HANDLING: Control flow nodes (ForLoop, WhileLoop) can execute multiple times.
+            # Regular nodes are skipped if already executed to prevent infinite loops.
+            # Related: See orchestrator.is_control_flow_node() for which nodes are loops.
             is_loop_node = self.orchestrator.is_control_flow_node(current_node_id)
             if (
                 current_node_id in self.state_manager.executed_nodes
@@ -499,7 +579,9 @@ class ExecuteWorkflowUseCase:
             ):
                 continue
 
-            # Skip nodes not in subgraph (Run-To-Node filtering)
+            # ROUTING LOGIC: Run-To-Node mode filters execution to a subgraph.
+            # Only nodes between StartNode and target_node_id are executed.
+            # Related: See ExecutionStateManager.should_execute_node() for subgraph logic.
             if not self.state_manager.should_execute_node(current_node_id):
                 logger.debug(f"Skipping node {current_node_id} (not in subgraph)")
                 self.state_manager.emit_event(
@@ -512,7 +594,7 @@ class ExecuteWorkflowUseCase:
                 )
                 continue
 
-            # Get node instance
+            # Get node instance (handles both object and dict-based nodes)
             try:
                 node = self._get_node_instance(current_node_id)
             except ValueError as e:
@@ -523,35 +605,40 @@ class ExecuteWorkflowUseCase:
                     break
                 continue
 
-            # Transfer data from connected input ports
+            # DATA FLOW: Transfer output values from upstream nodes to this node's input ports.
+            # Related: See VariableResolver.transfer_inputs_to_node() for port mapping.
             self._variable_resolver.transfer_inputs_to_node(current_node_id)
 
-            # Execute the node
+            # NODE EXECUTION: Execute the node with timeout and error handling.
+            # Related: See NodeExecutor.execute() for execution lifecycle events.
             exec_result = await self._node_executor.execute(node)
 
             if not exec_result.success:
-                # Handle failure with try-catch support
+                # ROUTING LOGIC: Handle failure - may route to catch block or stop execution.
+                # Returns True if error was captured and execution should continue.
                 if self._handle_execution_failure(
                     current_node_id, exec_result.result, nodes_to_execute
                 ):
                     continue
                 break
 
-            # Mark node as executed
+            # STATE MACHINE: Mark node as executed for skip-check and progress calculation.
             self.state_manager.mark_node_executed(current_node_id)
 
-            # Store node outputs in context for {{node_id.output}} variable resolution
+            # DATA FLOW: Store node outputs in context.variables for {{node_id.output}} syntax.
+            # This enables UiPath/Power Automate style variable references in downstream nodes.
             self._store_node_outputs_in_context(current_node_id, node)
 
-            # Validate output ports
+            # Validate output ports have expected types
             if exec_result.result:
                 self._variable_resolver.validate_output_ports(node, exec_result.result)
 
-            # Check if target node was reached (Run-To-Node feature)
+            # ROUTING LOGIC: Run-To-Node mode - stop if target node was reached.
             if self.state_manager.mark_target_reached(current_node_id):
                 break
 
-            # Handle special execution results
+            # ROUTING LOGIC: Handle special result keys (loop_back_to, route_to_catch, parallel_branches).
+            # These override normal routing. Returns True if special handling was applied.
             if exec_result.result:
                 next_nodes = self._handle_special_results(
                     current_node_id, exec_result, nodes_to_execute
@@ -559,7 +646,10 @@ class ExecuteWorkflowUseCase:
                 if next_nodes is not None:
                     continue
 
-            # Get next nodes based on execution result
+            # ROUTING LOGIC: Normal flow - get next nodes from ExecutionOrchestrator.
+            # Orchestrator uses exec_result to determine which output port to follow
+            # (e.g., "exec_true" vs "exec_false" for IfNode).
+            # Related: See domain/services/execution_orchestrator.py get_next_nodes()
             next_node_ids = self.orchestrator.get_next_nodes(
                 current_node_id, exec_result.result
             )
@@ -612,27 +702,38 @@ class ExecuteWorkflowUseCase:
         nodes_to_execute: List[NodeId],
     ) -> Optional[bool]:
         """
-        Handle special execution result keys.
+        Handle special execution result keys that override normal routing.
+
+        Certain nodes return special keys in their result dict that require
+        non-standard routing behavior. This method detects and handles them.
+
+        Related: See nodes/control_flow/ for nodes that produce these special keys
 
         Args:
             current_node_id: Current node ID
-            exec_result: Execution result
-            nodes_to_execute: Queue of nodes to execute
+            exec_result: Execution result containing special keys
+            nodes_to_execute: Queue of nodes to execute (mutated by this method)
 
         Returns:
-            True if special handling applied (continue loop), None otherwise
+            True if special handling applied (caller should continue loop),
+            None if no special handling (caller should use normal routing)
         """
         result = exec_result.result
         if not result:
             return None
 
-        # Handle loop_back_to (ForLoop/WhileLoop end nodes)
+        # === LOOP HANDLING: loop_back_to ===
+        # Produced by: ForLoopEndNode, WhileLoopEndNode when loop should continue
+        # Behavior: Jump back to loop start, clear executed_nodes for body to re-run
+        # Related: See nodes/control_flow/for_loop_end.py and while_loop_end.py
         if "loop_back_to" in result:
             loop_start_id = result["loop_back_to"]
             logger.debug(f"Loop back to: {loop_start_id}")
 
-            # Clear loop body nodes from executed_nodes so they can re-execute
-            # current_node_id is the ForLoopEndNode or WhileLoopEndNode
+            # LOOP HANDLING: Clear loop body nodes from executed_nodes so they can re-execute.
+            # Without this, the skip-check at loop top would skip all body nodes.
+            # current_node_id is the ForLoopEndNode or WhileLoopEndNode.
+            # Related: See orchestrator.find_loop_body_nodes() for body detection.
             body_nodes = self.orchestrator.find_loop_body_nodes(
                 loop_start_id, current_node_id
             )
@@ -640,34 +741,53 @@ class ExecuteWorkflowUseCase:
                 self.state_manager.executed_nodes.discard(body_node_id)
             logger.debug(f"Cleared {len(body_nodes)} loop body nodes for re-execution")
 
+            # Insert at front to execute immediately (not at end of queue)
             nodes_to_execute.insert(0, loop_start_id)
             return True
 
-        # Handle route_to_catch (TryEnd node when error occurred)
+        # === ROUTING LOGIC: route_to_catch ===
+        # Produced by: TryEndNode when an error was captured by TryNode
+        # Behavior: Skip normal flow, jump directly to CatchNode for error handling
+        # Related: See nodes/control_flow/try_end.py
         if "route_to_catch" in result:
             catch_id = result["route_to_catch"]
             if catch_id:
                 logger.info(f"Routing to catch node: {catch_id}")
+                # Insert at front - error handling takes priority
                 nodes_to_execute.insert(0, catch_id)
                 return True
 
-        # Handle error_captured (exception caught by try block)
+        # === ROUTING LOGIC: error_captured ===
+        # Produced by: Any node that failed inside a try block
+        # Behavior: Route to catch block instead of stopping workflow
+        # Related: See TryCatchErrorHandler.capture_error() for capture logic
         if result.get("error_captured") or exec_result.error_captured:
             catch_id = self._error_handler.find_catch_node_id()
             if catch_id:
                 logger.info(f"Error captured - routing to catch: {catch_id}")
+                # Insert at front - error handling takes priority
                 nodes_to_execute.insert(0, catch_id)
                 return True
 
-        # Handle parallel execution (ForkNode)
+        # === PARALLEL EXECUTION: parallel_branches ===
+        # Produced by: ForkNode to spawn concurrent execution branches
+        # Behavior: Execute all branches concurrently, then continue to JoinNode
+        # Related: See nodes/control_flow/fork.py and _execute_parallel_branches()
         if "parallel_branches" in result:
+            # PARALLEL EXECUTION: Spawn async task for branch execution.
+            # Main loop continues; branches run concurrently in background.
             asyncio.create_task(
                 self._execute_parallel_branches_async(result, nodes_to_execute)
             )
             return True
 
-        # Handle parallel foreach batch (ParallelForEachNode)
+        # === PARALLEL EXECUTION: parallel_foreach_batch ===
+        # Produced by: ParallelForEachNode to process items in concurrent batches
+        # Behavior: Execute batch items concurrently, then loop back for next batch
+        # Related: See nodes/control_flow/parallel_foreach.py and _execute_parallel_foreach_batch()
         if "parallel_foreach_batch" in result:
+            # PARALLEL EXECUTION: Spawn async task for batch processing.
+            # After batch completes, loops back to ParallelForEachNode for next batch.
             asyncio.create_task(
                 self._execute_parallel_foreach_batch_async(
                     result, current_node_id, nodes_to_execute
@@ -709,16 +829,23 @@ class ExecuteWorkflowUseCase:
         Used for "Run All" (Shift+F3) feature where multiple independent
         workflows on the same canvas execute in parallel.
 
-        Design:
+        PARALLEL EXECUTION: Design Decisions
+        ------------------------------------
         - Variables are SHARED between workflows (same dict reference)
+          This allows workflows to communicate via shared state if needed.
         - Browsers are SEPARATE (each workflow gets its own BrowserResourceManager)
+          This prevents browser state conflicts between concurrent workflows.
         - Failures are isolated (one workflow failing doesn't stop others)
+          Each workflow runs in its own try/except block.
+
+        Related: See context.create_workflow_context() for context cloning
 
         Args:
             start_nodes: List of StartNode IDs to execute concurrently
         """
         logger.info(f"Starting {len(start_nodes)} parallel workflows")
 
+        # PARALLEL EXECUTION: Emit progress event for UI feedback
         self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {"message": f"Starting {len(start_nodes)} parallel workflows"},
@@ -727,16 +854,28 @@ class ExecuteWorkflowUseCase:
         async def execute_single_workflow(
             start_id: NodeId, index: int
         ) -> Tuple[str, bool]:
-            """Execute one workflow from its StartNode."""
+            """
+            Execute one workflow from its StartNode.
+
+            PARALLEL EXECUTION: Each workflow runs independently with:
+            - Its own execution context (cloned from parent)
+            - Isolated browser resources (separate BrowserResourceManager)
+            - Shared variable dict (for cross-workflow communication)
+            """
             workflow_name = f"workflow_{index}"
             try:
-                # Create context with SHARED variables but SEPARATE browser
+                # PARALLEL EXECUTION: Create isolated context for this workflow.
+                # Variables are shared (same dict), but browser resources are separate.
+                # Related: See infrastructure/execution/context.py create_workflow_context()
                 workflow_context = self.context.create_workflow_context(workflow_name)
 
-                # Execute from this start node using the workflow context
+                # Execute from this start node using the isolated context.
+                # Uses _execute_from_node_with_context instead of _execute_from_node
+                # to inject the workflow-specific context.
                 await self._execute_from_node_with_context(start_id, workflow_context)
 
-                # Cleanup this workflow's browser resources
+                # PARALLEL EXECUTION: Cleanup this workflow's browser resources.
+                # Each workflow has its own BrowserResourceManager that must be cleaned up.
                 try:
                     await workflow_context._resources.cleanup()
                 except Exception as cleanup_err:
@@ -745,21 +884,30 @@ class ExecuteWorkflowUseCase:
                 return workflow_name, True
 
             except Exception as e:
+                # PARALLEL EXECUTION: Workflow failures are isolated.
+                # Other workflows continue executing even if this one fails.
                 logger.error(f"{workflow_name} failed: {e}")
                 return workflow_name, False
 
-        # Execute all workflows concurrently (continue on failure)
+        # PARALLEL EXECUTION: Create coroutine for each StartNode.
+        # All workflows start concurrently via asyncio.gather.
         tasks = [
             execute_single_workflow(start_id, i)
             for i, start_id in enumerate(start_nodes)
         ]
+
+        # PARALLEL EXECUTION: Execute all workflows concurrently.
+        # return_exceptions=True ensures all workflows complete even if some fail.
+        # Without this, first exception would cancel remaining workflows.
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Count successes/failures
+        # PARALLEL EXECUTION: Count successes/failures for reporting.
+        # Results are either (workflow_name, success_bool) tuples or Exception objects.
         success_count = 0
         error_count = 0
         for r in results:
             if isinstance(r, Exception):
+                # Exception bubbled up from gather despite return_exceptions
                 error_count += 1
             elif r[1]:  # r is (workflow_name, success)
                 success_count += 1
@@ -770,6 +918,7 @@ class ExecuteWorkflowUseCase:
             f"Parallel workflows completed: {success_count} success, {error_count} errors"
         )
 
+        # Emit completion event with summary for UI
         self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {
@@ -779,14 +928,15 @@ class ExecuteWorkflowUseCase:
             },
         )
 
-        # Mark as failed if ALL workflows failed
+        # STATE MACHINE: Only mark as failed if ALL workflows failed.
+        # Partial success is still considered successful overall.
         if success_count == 0 and error_count > 0:
             self.state_manager.mark_failed(
                 f"All {error_count} parallel workflows failed"
             )
 
     async def _execute_from_node_with_context(
-        self, start_node_id: NodeId, context: ExecutionContext
+        self, start_node_id: NodeId, context: IExecutionContext
     ) -> None:
         """
         Execute workflow from a node using a specified context.
@@ -797,7 +947,7 @@ class ExecuteWorkflowUseCase:
 
         Args:
             start_node_id: Node ID to start execution from
-            context: ExecutionContext to use for this execution
+            context: IExecutionContext to use for this execution
         """
         nodes_to_execute: List[NodeId] = [start_node_id]
         executed_in_workflow: Set[NodeId] = set()
@@ -875,15 +1025,21 @@ class ExecuteWorkflowUseCase:
         """
         Execute parallel branches from a ForkNode concurrently.
 
+        PARALLEL EXECUTION: Fork/Join Pattern
+        -------------------------------------
         Creates isolated contexts for each branch, executes them with
-        asyncio.gather, and stores results for the JoinNode.
+        asyncio.gather, and stores results for the JoinNode to aggregate.
+
+        Flow: ForkNode -> [Branch1, Branch2, ...] (concurrent) -> JoinNode
+
+        Related: See nodes/control_flow/fork.py and nodes/control_flow/join.py
 
         Args:
             fork_result: Result dict from ForkNode containing:
-                - parallel_branches: List of branch port names
-                - fork_id: ForkNode ID for result storage
-                - paired_join_id: Target JoinNode ID
-                - fail_fast: Whether to cancel on first failure
+                - parallel_branches: List of branch port names (e.g., ["branch_1", "branch_2"])
+                - fork_id: ForkNode ID for result storage key
+                - paired_join_id: Target JoinNode ID where branches converge
+                - fail_fast: Whether to cancel remaining branches on first failure
         """
         branches = fork_result.get("parallel_branches", [])
         fork_id = fork_result.get("fork_id", "")
@@ -897,6 +1053,7 @@ class ExecuteWorkflowUseCase:
             f"Executing {len(branches)} parallel branches (fail_fast={fail_fast})"
         )
 
+        # PARALLEL EXECUTION: Emit progress event for UI feedback
         self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {
@@ -907,9 +1064,15 @@ class ExecuteWorkflowUseCase:
         )
 
         async def execute_branch(branch_port: str) -> Tuple[str, Dict[str, Any], bool]:
-            """Execute a single branch and return its results."""
+            """
+            Execute a single branch and return its results.
+
+            PARALLEL EXECUTION: Each branch gets an isolated context clone
+            so variables set in one branch don't affect others.
+            """
             try:
-                # Get target node for this branch
+                # ROUTING LOGIC: Find the first node connected to this branch port.
+                # ForkNode has multiple output exec ports (branch_1, branch_2, etc.)
                 target_node_id = None
                 for connection in self.workflow.connections:
                     if (
@@ -923,34 +1086,42 @@ class ExecuteWorkflowUseCase:
                     logger.warning(f"No target node found for branch {branch_port}")
                     return branch_port, {}, True
 
-                # Create isolated context for this branch
+                # PARALLEL EXECUTION: Create isolated context for this branch.
+                # Variables in branch_context are independent from other branches.
+                # Related: See context.clone_for_branch() for isolation implementation.
                 branch_context = self.context.clone_for_branch(branch_port)
 
-                # Execute branch nodes until we hit JoinNode or terminal
+                # Execute branch nodes until we hit JoinNode or terminal node.
+                # Related: See _execute_branch_to_join() for branch execution loop.
                 await self._execute_branch_to_join(
                     target_node_id, branch_context, fork_result.get("paired_join_id")
                 )
 
-                # Return branch results (variables)
+                # Return branch results (all variables set during branch execution)
                 return branch_port, branch_context.variables, True
 
             except Exception as e:
                 logger.error(f"Branch {branch_port} failed: {e}")
                 return branch_port, {"_error": str(e)}, False
 
-        # Execute all branches concurrently
+        # PARALLEL EXECUTION: Execute all branches concurrently.
+        # fail_fast mode: Cancel remaining branches on first failure (stricter).
+        # Non-fail_fast mode: Let all branches complete regardless of failures.
         if fail_fast:
             try:
                 tasks = [execute_branch(port) for port in branches]
+                # Without return_exceptions, first exception cancels others
                 results = await asyncio.gather(*tasks)
             except Exception as e:
                 logger.error(f"Parallel execution failed (fail_fast): {e}")
                 results = [(branches[0], {"_error": str(e)}, False)]
         else:
             tasks = [execute_branch(port) for port in branches]
+            # return_exceptions=True lets all branches complete
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Process results
+        # PARALLEL EXECUTION: Aggregate results from all branches.
+        # Results are stored in context for JoinNode to access.
         branch_results: Dict[str, Any] = {}
         success_count = 0
         error_count = 0
@@ -967,7 +1138,9 @@ class ExecuteWorkflowUseCase:
                 else:
                     error_count += 1
 
-        # Store results for JoinNode
+        # PARALLEL EXECUTION: Store results for JoinNode to aggregate.
+        # JoinNode retrieves this via context.get_variable("{fork_id}_branch_results")
+        # Related: See nodes/control_flow/join.py for result retrieval.
         results_key = f"{fork_id}_branch_results"
         self.context.set_variable(results_key, branch_results)
 
@@ -988,7 +1161,7 @@ class ExecuteWorkflowUseCase:
     async def _execute_branch_to_join(
         self,
         start_node_id: str,
-        branch_context: ExecutionContext,
+        branch_context: IExecutionContext,
         join_node_id: Optional[str],
     ) -> None:
         """
@@ -1164,7 +1337,7 @@ class ExecuteWorkflowUseCase:
         )
 
     async def _execute_item_body(
-        self, start_node_id: str, item_context: ExecutionContext, foreach_node_id: str
+        self, start_node_id: str, item_context: IExecutionContext, foreach_node_id: str
     ) -> None:
         """
         Execute the body chain for a single item in ParallelForEach.
@@ -1226,6 +1399,165 @@ class ExecuteWorkflowUseCase:
                 current_node_id, exec_result.result
             )
             nodes_to_execute.extend(next_ids)
+
+    # ========================================================================
+    # RESULT PATTERN - Safe variants for explicit error handling
+    # ========================================================================
+
+    async def execute_safe(
+        self, run_all: bool = False
+    ) -> Result[bool, WorkflowExecutionError]:
+        """
+        Execute the workflow with explicit error handling.
+
+        Result pattern variant of execute(). Returns Ok(bool) indicating
+        success/failure status, or Err with WorkflowExecutionError on
+        infrastructure/unexpected failures.
+
+        Args:
+            run_all: If True, execute all StartNodes concurrently
+
+        Returns:
+            Ok(True) if workflow completed successfully
+            Ok(False) if workflow failed logically (node errors, stopped)
+            Err(WorkflowExecutionError) on infrastructure failures
+        """
+        try:
+            result = await self.execute(run_all=run_all)
+            return Ok(result)
+        except Exception as e:
+            return Err(
+                WorkflowExecutionError(
+                    message=f"Workflow execution failed unexpectedly: {e}",
+                    workflow_id=self.workflow.metadata.id,
+                    workflow_name=self.workflow.metadata.name,
+                    context=ErrorContext(
+                        component="ExecuteWorkflowUseCase",
+                        operation="execute_safe",
+                        details={
+                            "run_all": run_all,
+                            "error_type": type(e).__name__,
+                        },
+                    ),
+                    original_error=e,
+                )
+            )
+
+    def get_node_instance_safe(self, node_id: str) -> Result[Any, NodeExecutionError]:
+        """
+        Get or create a node instance with explicit error handling.
+
+        Result pattern variant of _get_node_instance(). Returns Ok with
+        node instance, or Err if node not found.
+
+        Args:
+            node_id: ID of the node to get
+
+        Returns:
+            Ok(node) on success
+            Err(NodeExecutionError) if node not found or creation fails
+        """
+        try:
+            node = self._get_node_instance(node_id)
+            return Ok(node)
+        except ValueError as e:
+            return Err(
+                NodeExecutionError(
+                    message=f"Node not found: {e}",
+                    node_id=node_id,
+                    node_type="Unknown",
+                    context=ErrorContext(
+                        component="ExecuteWorkflowUseCase",
+                        operation="get_node_instance_safe",
+                        details={"workflow": self.workflow.metadata.name},
+                    ),
+                    original_error=e,
+                )
+            )
+        except Exception as e:
+            return Err(
+                NodeExecutionError(
+                    message=f"Failed to create node: {e}",
+                    node_id=node_id,
+                    node_type="Unknown",
+                    context=ErrorContext(
+                        component="ExecuteWorkflowUseCase",
+                        operation="get_node_instance_safe",
+                        details={
+                            "workflow": self.workflow.metadata.name,
+                            "error_type": type(e).__name__,
+                        },
+                    ),
+                    original_error=e,
+                )
+            )
+
+    async def execute_single_node_safe(
+        self, node_id: NodeId
+    ) -> Result[bool, NodeExecutionError]:
+        """
+        Execute a single node in isolation with explicit error handling.
+
+        Result pattern variant for single node execution (F5 mode).
+
+        Args:
+            node_id: Node ID to execute
+
+        Returns:
+            Ok(True) if execution succeeded
+            Ok(False) if execution failed logically
+            Err(NodeExecutionError) on infrastructure failures
+        """
+        # Ensure context and services are initialized
+        if self.context is None:
+            return Err(
+                NodeExecutionError(
+                    message="Execution context not initialized",
+                    node_id=node_id,
+                    node_type="Unknown",
+                    context=ErrorContext(
+                        component="ExecuteWorkflowUseCase",
+                        operation="execute_single_node_safe",
+                        details={},
+                    ),
+                )
+            )
+
+        # Get node instance
+        node_result = self.get_node_instance_safe(node_id)
+        if node_result.is_err():
+            return node_result  # type: ignore
+
+        node = node_result.unwrap()
+
+        # Transfer inputs
+        if self._variable_resolver:
+            self._variable_resolver.transfer_inputs_to_node(node_id)
+
+        # Execute
+        if self._node_executor:
+            exec_result = await self._node_executor.execute_safe(node)
+            if exec_result.is_err():
+                return Err(exec_result.error)
+
+            result = exec_result.unwrap()
+            if result.success:
+                self._store_node_outputs_in_context(node_id, node)
+                return Ok(True)
+            return Ok(False)
+
+        return Err(
+            NodeExecutionError(
+                message="Node executor not initialized",
+                node_id=node_id,
+                node_type=node.__class__.__name__,
+                context=ErrorContext(
+                    component="ExecuteWorkflowUseCase",
+                    operation="execute_single_node_safe",
+                    details={},
+                ),
+            )
+        )
 
     def __repr__(self) -> str:
         """String representation."""

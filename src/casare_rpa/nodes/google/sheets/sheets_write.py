@@ -19,7 +19,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import GoogleSheetsClient
-from casare_rpa.nodes.google.sheets.sheets_base import SheetsBaseNode
+from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
 # ============================================================================
@@ -128,6 +128,10 @@ class SheetsWriteCellNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, cell, value, value_input_option -> updated_cells, updated_range
 
     NODE_TYPE = "sheets_write_cell"
     NODE_CATEGORY = "Google Sheets"
@@ -257,6 +261,10 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: range, values, value_input_option -> updated_cells, updated_rows, updated_columns, updated_range
 
     NODE_TYPE = "sheets_write_range"
     NODE_CATEGORY = "Google Sheets"
@@ -389,6 +397,10 @@ class SheetsAppendRowNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, values, value_input_option -> updated_cells, updated_range, table_range
 
     NODE_TYPE = "sheets_append_row"
     NODE_CATEGORY = "Google Sheets"
@@ -537,6 +549,10 @@ class SheetsUpdateRowNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, row_num, values, start_col, value_input_option -> updated_cells, updated_range
 
     NODE_TYPE = "sheets_update_row"
     NODE_CATEGORY = "Google Sheets"
@@ -689,6 +705,10 @@ class SheetsInsertRowNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, row_num, values, value_input_option -> inserted_row
 
     NODE_TYPE = "sheets_insert_row"
     NODE_CATEGORY = "Google Sheets"
@@ -845,6 +865,10 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, row_num, num_rows -> deleted_rows
+
     NODE_TYPE = "sheets_delete_row"
     NODE_CATEGORY = "Google Sheets"
     NODE_DISPLAY_NAME = "Sheets: Delete Row"
@@ -975,6 +999,10 @@ class SheetsClearRangeNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: range -> cleared_range
 
     NODE_TYPE = "sheets_clear_range"
     NODE_CATEGORY = "Google Sheets"

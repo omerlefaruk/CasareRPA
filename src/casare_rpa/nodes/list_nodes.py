@@ -63,6 +63,10 @@ def _resolve_list_param(
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
 
+    # @category: data
+    # @requires: none
+    # @ports: item_1, item_2, item_3 -> list
+
     def __init__(self, node_id: str, name: str = "Create List", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -107,6 +111,10 @@ class CreateListNode(BaseNode):
 @executable_node
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, index -> item
 
     def __init__(self, node_id: str, name: str = "List Get Item", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -157,6 +165,10 @@ class ListGetItemNode(BaseNode):
 class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
 
+    # @category: data
+    # @requires: none
+    # @ports: list -> length
+
     def __init__(self, node_id: str, name: str = "List Length", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -186,6 +198,10 @@ class ListLengthNode(BaseNode):
 @executable_node
 class ListAppendNode(BaseNode):
     """Node that appends an item to a list."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, item -> result
 
     def __init__(self, node_id: str, name: str = "List Append", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -229,6 +245,10 @@ class ListAppendNode(BaseNode):
 @executable_node
 class ListContainsNode(BaseNode):
     """Node that checks if a list contains an item."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, item -> contains, index
 
     def __init__(self, node_id: str, name: str = "List Contains", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -278,6 +298,10 @@ class ListContainsNode(BaseNode):
 @executable_node
 class ListSliceNode(BaseNode):
     """Node that gets a slice of a list."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, start, end -> result
 
     def __init__(self, node_id: str, name: str = "List Slice", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -345,6 +369,10 @@ class ListSliceNode(BaseNode):
 class ListJoinNode(BaseNode):
     """Node that joins a list into a string."""
 
+    # @category: data
+    # @requires: none
+    # @ports: list, separator -> result
+
     def __init__(self, node_id: str, name: str = "List Join", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -404,6 +432,10 @@ class ListJoinNode(BaseNode):
 @executable_node
 class ListSortNode(BaseNode):
     """Node that sorts a list."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, reverse, key_path -> result
 
     def __init__(self, node_id: str, name: str = "List Sort", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -474,6 +506,10 @@ class ListSortNode(BaseNode):
 class ListReverseNode(BaseNode):
     """Node that reverses a list."""
 
+    # @category: data
+    # @requires: none
+    # @ports: list -> result
+
     def __init__(self, node_id: str, name: str = "List Reverse", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -504,6 +540,10 @@ class ListReverseNode(BaseNode):
 @executable_node
 class ListUniqueNode(BaseNode):
     """Node that removes duplicates from a list."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list -> result
 
     def __init__(self, node_id: str, name: str = "List Unique", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -577,6 +617,10 @@ class ListUniqueNode(BaseNode):
 @executable_node
 class ListFilterNode(BaseNode):
     """Node that filters a list based on a condition."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, condition, value, key_path -> result, removed
 
     def __init__(self, node_id: str, name: str = "List Filter", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -714,6 +758,10 @@ class ListFilterNode(BaseNode):
 class ListMapNode(BaseNode):
     """Node that transforms each item in a list."""
 
+    # @category: data
+    # @requires: none
+    # @ports: list, transform, key_path -> result
+
     def __init__(self, node_id: str, name: str = "List Map", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -823,6 +871,10 @@ class ListMapNode(BaseNode):
 @executable_node
 class ListReduceNode(BaseNode):
     """Node that reduces a list to a single value."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, operation, key_path, initial -> result
 
     def __init__(self, node_id: str, name: str = "List Reduce", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -944,6 +996,10 @@ class ListReduceNode(BaseNode):
 @executable_node
 class ListFlattenNode(BaseNode):
     """Node that flattens a nested list."""
+
+    # @category: data
+    # @requires: none
+    # @ports: list, depth -> result
 
     def __init__(self, node_id: str, name: str = "List Flatten", **kwargs) -> None:
         config = kwargs.get("config", {})

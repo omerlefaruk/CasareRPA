@@ -37,15 +37,17 @@ mock_repo.save.assert_awaited_once()
 - Playwright (Page, Browser, BrowserContext)
 - UIAutomation (Control, Pattern, Element)
 - win32 APIs (win32gui, win32con, ctypes)
-- HTTP clients (aiohttp.ClientSession, httpx)
+- UnifiedHttpClient (infrastructure/http/) - Mock the client, not raw httpx/aiohttp
 - Database connections (asyncpg, aiomysql)
 - File system I/O (aiofiles)
 - PIL/Image operations
 - External processes (subprocess)
+- Qt heavy components (QMainWindow, QApplication)
 
 ### Prefer Real
 - Domain entities (Workflow, Node, ExecutionState)
 - Value objects (NodeId, PortId, DataType)
+- Domain interfaces (INode, IExecutionContext as test doubles)
 - Domain services (pure logic)
 - Simple data structures (dict, list, dataclasses)
 
@@ -56,7 +58,28 @@ mock_repo.save.assert_awaited_once()
 | Global | tests/conftest.py | execution_context, mock_execution_context |
 | Browser | tests/nodes/browser/conftest.py | mock_page, mock_browser |
 | Desktop | tests/nodes/desktop/conftest.py | MockUIControl, mock_win32 |
-| HTTP | tests/nodes/conftest.py | create_mock_response() |
+| HTTP | tests/infrastructure/http/conftest.py | mock_http_client, mock_response |
+| Domain | tests/domain/interfaces/conftest.py | mock_node, mock_context |
+
+### HTTP Client Mocking
+```python
+from unittest.mock import AsyncMock, patch
+
+@pytest.mark.asyncio
+async def test_http_node(execution_context):
+    with patch("casare_rpa.infrastructure.http.UnifiedHttpClient") as MockClient:
+        mock_client = AsyncMock()
+        mock_response = AsyncMock()
+        mock_response.json.return_value = {"data": "test"}
+        mock_client.get.return_value = mock_response
+        MockClient.return_value.__aenter__.return_value = mock_client
+
+        node = MyHttpNode(url="https://api.example.com")
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        mock_client.get.assert_awaited_once()
+```
 
 ## Node Test Template
 ```python
@@ -138,4 +161,18 @@ pytest tests/ --pdb  # Debugger on failure
 @pytest.mark.slow        # Long-running
 @pytest.mark.integration # Integration tests
 @pytest.mark.e2e         # End-to-end
+@pytest.mark.ui          # UI/Qt tests (require display)
+```
+
+## Domain Interface Testing
+
+Test against INode protocol for dependency inversion:
+```python
+from casare_rpa.domain.interfaces import INode, IExecutionContext
+
+def test_node_implements_protocol():
+    node = MyNode()
+    assert isinstance(node, INode)  # Protocol check
+    assert hasattr(node, "execute")
+    assert hasattr(node, "get_parameter")
 ```

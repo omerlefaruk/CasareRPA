@@ -127,6 +127,10 @@ class MoveMouseNode(DesktopNodeBase):
         final_y: Final Y position
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: x, y, duration -> success, final_x, final_y
+
     NODE_NAME = "Move Mouse"
 
     def __init__(
@@ -215,6 +219,10 @@ class MouseClickNode(DesktopNodeBase):
         click_x: X coordinate of click
         click_y: Y coordinate of click
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: x, y -> success, click_x, click_y
 
     NODE_NAME = "Mouse Click"
 
@@ -330,6 +338,10 @@ class SendKeysNode(DesktopNodeBase):
     Special keys use {Key} format: {Enter}, {Tab}, {Ctrl}, etc.
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: keys, interval -> success, keys_sent
+
     NODE_NAME = "Send Keys"
 
     def __init__(
@@ -416,6 +428,10 @@ class SendHotKeyNode(DesktopNodeBase):
         success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: keys, wait_time -> success
+
     NODE_NAME = "Send Hotkey"
 
     def __init__(
@@ -481,6 +497,10 @@ class GetMousePositionNode(DesktopNodeBase):
         y: Current Y coordinate
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: none -> x, y
+
     NODE_NAME = "Get Mouse Position"
 
     def __init__(
@@ -530,6 +550,10 @@ class DragMouseNode(DesktopNodeBase):
     Outputs:
         success: Whether operation succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: start_x, start_y, end_x, end_y, duration -> success
 
     NODE_NAME = "Drag Mouse"
 

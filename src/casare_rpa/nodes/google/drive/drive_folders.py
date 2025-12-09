@@ -21,7 +21,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import (
     GoogleDriveClient,
 )
-from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
+from casare_rpa.nodes.google.google_base import DriveBaseNode
 
 
 # ============================================================================
@@ -108,6 +108,10 @@ class DriveCreateFolderNode(DriveBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: folder_name, parent_id, description -> folder_id, folder_name, web_view_link
 
     NODE_TYPE = "drive_create_folder"
     NODE_CATEGORY = "google_drive"
@@ -251,6 +255,10 @@ class DriveListFilesNode(DriveBaseNode):
         - "mimeType = 'application/pdf'"
         - "modifiedTime > '2024-01-01T00:00:00'"
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: folder_id, query, mime_type, max_results, order_by, include_trashed -> files, file_count, has_more
 
     NODE_TYPE = "drive_list_files"
     NODE_CATEGORY = "google_drive"
@@ -410,6 +418,10 @@ class DriveSearchFilesNode(DriveBaseNode):
         - "starred" (starred files)
         - "name contains 'report' and mimeType = 'application/pdf'"
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: query, mime_type, max_results, include_trashed -> files, file_count
 
     NODE_TYPE = "drive_search_files"
     NODE_CATEGORY = "google_drive"

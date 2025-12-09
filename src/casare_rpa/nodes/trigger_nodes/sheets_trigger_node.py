@@ -126,6 +126,10 @@ class SheetsTriggerNode(BaseTriggerNode):
     - raw_data: Full change data
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Google Sheets"
     trigger_description = "Trigger workflow when Google Sheets data changes"
     trigger_icon = "sheets"

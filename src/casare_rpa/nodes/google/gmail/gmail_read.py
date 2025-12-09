@@ -20,7 +20,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.gmail_client import GmailClient
-from casare_rpa.nodes.google.gmail.gmail_base import GmailBaseNode
+from casare_rpa.nodes.google.google_base import GmailBaseNode
 
 
 # ============================================================================
@@ -104,6 +104,10 @@ class GmailGetEmailNode(GmailBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: message_id, format -> message_id, thread_id, subject, from_address, to_addresses, cc_addresses, date, snippet, body_plain, body_html, label_ids, has_attachments, attachment_count, attachments, raw_message
 
     NODE_TYPE = "gmail_get_email"
     NODE_CATEGORY = "google"
@@ -267,6 +271,10 @@ class GmailSearchEmailsNode(GmailBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: query, max_results, label_ids, include_spam_trash, page_token -> messages, message_count, message_ids, next_page_token
+
     NODE_TYPE = "gmail_search_emails"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Gmail: Search Emails"
@@ -418,6 +426,10 @@ class GmailGetThreadNode(GmailBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: thread_id, format -> thread_id, snippet, messages, message_count, first_message, last_message, participants
 
     NODE_TYPE = "gmail_get_thread"
     NODE_CATEGORY = "google"
@@ -578,6 +590,10 @@ class GmailGetAttachmentNode(GmailBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: message_id, attachment_id, save_path, filename -> attachment_data, save_path, filename, size, saved
 
     NODE_TYPE = "gmail_get_attachment"
     NODE_CATEGORY = "google"

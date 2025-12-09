@@ -13,11 +13,12 @@ Features:
 - Nested expansion for Dict/List types
 """
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal, QEvent, QTimer, QPoint
-from PySide6.QtGui import QBrush, QColor, QKeyEvent, QFont
+from PySide6.QtCore import Qt, Signal, QEvent, QTimer, QPoint, QMimeData, QModelIndex
+from PySide6.QtGui import QBrush, QColor, QKeyEvent, QFont, QDrag
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -30,9 +31,10 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate,
     QStyleOptionViewItem,
 )
-from PySide6.QtCore import QModelIndex
 
 from loguru import logger
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -67,89 +69,89 @@ TYPE_BADGES: Dict[str, str] = {
 
 
 # =============================================================================
-# Styles (VSCode dark theme)
+# Styles (Using THEME constants)
 # =============================================================================
 
-VARIABLE_BUTTON_STYLE = """
-QPushButton {
-    background: #2d2d3a;
-    border: 1px solid #3c3c4a;
+VARIABLE_BUTTON_STYLE = f"""
+QPushButton {{
+    background: {THEME.bg_dark};
+    border: 1px solid {THEME.border};
     border-radius: 3px;
-    color: #ffffff;
+    color: {THEME.text_primary};
     font-size: 10px;
     font-family: Consolas, monospace;
     padding: 1px 3px;
     min-width: 18px;
     min-height: 16px;
-}
-QPushButton:hover {
-    background: #3c3c50;
-    border-color: #0078d4;
-    color: #0078d4;
-}
-QPushButton:pressed {
-    background: #1e1e2a;
-}
+}}
+QPushButton:hover {{
+    background: {THEME.bg_light};
+    border-color: {THEME.accent_primary};
+    color: {THEME.accent_primary};
+}}
+QPushButton:pressed {{
+    background: {THEME.bg_dark};
+}}
 """
 
-VARIABLE_POPUP_STYLE = """
-QWidget#VariablePickerPopup {
-    background: #252526;
-    border: 1px solid #3c3c3c;
+VARIABLE_POPUP_STYLE = f"""
+QWidget#VariablePickerPopup {{
+    background: {THEME.bg_dark};
+    border: 1px solid {THEME.border};
     border-radius: 4px;
-}
-QListWidget {
+}}
+QListWidget {{
     background: transparent;
     border: none;
     outline: none;
-}
-QListWidget::item {
+}}
+QListWidget::item {{
     padding: 6px 10px;
     border-radius: 3px;
-}
-QListWidget::item:hover {
-    background: #2a2d2e;
-}
-QListWidget::item:selected {
-    background: #094771;
+}}
+QListWidget::item:hover {{
+    background: {THEME.bg_hover};
+}}
+QListWidget::item:selected {{
+    background: {THEME.accent_secondary};
     color: white;
-}
-QTreeWidget {
+}}
+QTreeWidget {{
     background: transparent;
     border: none;
     outline: none;
-}
-QTreeWidget::item {
+}}
+QTreeWidget::item {{
     padding: 4px 8px;
     border-radius: 3px;
-}
-QTreeWidget::branch {
+}}
+QTreeWidget::branch {{
     background: transparent;
-}
+}}
 QTreeWidget::branch:has-children:!has-siblings:closed,
-QTreeWidget::branch:closed:has-children:has-siblings {
+QTreeWidget::branch:closed:has-children:has-siblings {{
     image: url(none);
     border-image: none;
-}
+}}
 QTreeWidget::branch:open:has-children:!has-siblings,
-QTreeWidget::branch:open:has-children:has-siblings {
+QTreeWidget::branch:open:has-children:has-siblings {{
     image: url(none);
     border-image: none;
-}
-QLineEdit#SearchBox {
-    background: #3c3c3c;
-    border: 1px solid #505050;
+}}
+QLineEdit#SearchBox {{
+    background: {THEME.bg_light};
+    border: 1px solid {THEME.border_light};
     border-radius: 3px;
-    color: #cccccc;
+    color: {THEME.text_secondary};
     padding: 4px 8px;
-}
-QLabel#SectionHeader {
-    color: #AAAAAA;
+}}
+QLabel#SectionHeader {{
+    color: {THEME.text_muted};
     font-size: 10px;
     font-weight: bold;
     padding: 4px 8px;
     background: transparent;
-}
+}}
 """
 
 
@@ -241,6 +243,9 @@ class VariableInfo:
     value: Optional[Any] = None
     children: List["VariableInfo"] = field(default_factory=list)
     path: Optional[str] = None
+    insertion_path: Optional[str] = (
+        None  # Actual path for {{}} insertion (uses node_id)
+    )
     is_expandable: bool = False
     indent_level: int = 0
 
@@ -252,7 +257,9 @@ class VariableInfo:
     @property
     def insertion_text(self) -> str:
         """Get the text to insert (wrapped in {{ }})."""
-        return f"{{{{{self.display_name}}}}}"
+        # Use insertion_path (node_id based) if set, otherwise fall back to display_name
+        actual_path = self.insertion_path if self.insertion_path else self.display_name
+        return f"{{{{{actual_path}}}}}"
 
     @property
     def type_color(self) -> str:
@@ -508,6 +515,18 @@ class VariableProvider:
                     else "Unknown"
                 )
 
+                # Get node_id for variable resolution (stored outputs use node_id)
+                # Priority: get_property("node_id") first - id() returns Qt object ID which won't work
+                node_id = None
+                if hasattr(upstream_node, "get_property"):
+                    prop_node_id = upstream_node.get_property("node_id")
+                    if prop_node_id:  # Not None and not empty string
+                        node_id = prop_node_id
+                        logger.debug(f"Got node_id from property: {node_id}")
+                if node_id is None and hasattr(upstream_node, "id"):
+                    node_id = upstream_node.id()
+                    logger.debug(f"Fallback to id(): {node_id}")
+
                 for port in upstream_node.output_ports():
                     port_name = port.name()
 
@@ -518,12 +537,18 @@ class VariableProvider:
                     # Get port data type
                     data_type = self._get_port_data_type(port_name, upstream_node)
 
+                    insertion_path = f"{node_id}.{port_name}" if node_id else None
                     var_info = VariableInfo(
                         name=port_name,
                         var_type=data_type,
                         source=f"node:{node_name}",
                         value=None,  # Runtime value not available at design time
-                        path=f"{node_name}.{port_name}",  # Use node.port format
+                        path=f"{node_name}.{port_name}",  # Display path (user-friendly)
+                        insertion_path=insertion_path,  # Resolution path
+                    )
+                    logger.debug(
+                        f"Created variable: display={node_name}.{port_name}, "
+                        f"insertion={insertion_path}, insertion_text={var_info.insertion_text}"
                     )
 
                     variables.append(var_info)
@@ -768,7 +793,7 @@ class HighlightDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._selected_item: Optional[QTreeWidgetItem] = None
-        self._highlight_color = QColor("#264f78")  # Blue highlight
+        self._highlight_color = QColor(THEME.accent_secondary)  # Blue highlight
 
     def set_selected_item(self, item: Optional[QTreeWidgetItem]) -> None:
         """Set the currently selected item."""
@@ -788,6 +813,97 @@ class HighlightDelegate(QStyledItemDelegate):
 
         # Call parent to draw text and other elements
         super().paint(painter, option, index)
+
+
+# =============================================================================
+# Draggable Variable Tree Widget
+# =============================================================================
+
+
+class DraggableVariableTree(QTreeWidget):
+    """
+    Tree widget that supports dragging variables to input fields.
+
+    Enables drag-and-drop from the variable picker popup to VariableAwareLineEdit
+    and other drop-accepting widgets.
+    """
+
+    MIME_TYPE = "application/x-casare-variable"
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._drag_start_pos: Optional[QPoint] = None
+
+        # Enable drag
+        self.setDragEnabled(True)
+        self.setDragDropMode(QTreeWidget.DragDropMode.DragOnly)
+
+    def mousePressEvent(self, event) -> None:
+        """Track drag start position."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start_pos = event.pos()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        """Handle drag initiation."""
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
+            super().mouseMoveEvent(event)
+            return
+
+        if self._drag_start_pos is None:
+            super().mouseMoveEvent(event)
+            return
+
+        # Check if moved enough to start drag
+        distance = (event.pos() - self._drag_start_pos).manhattanLength()
+        if distance < QApplication.startDragDistance():
+            super().mouseMoveEvent(event)
+            return
+
+        # Get selected item
+        item = self.itemAt(self._drag_start_pos)
+        if not item:
+            super().mouseMoveEvent(event)
+            return
+
+        # Get VariableInfo from item
+        var_info = item.data(0, Qt.ItemDataRole.UserRole)
+        if not var_info or not hasattr(var_info, "insertion_text"):
+            super().mouseMoveEvent(event)
+            return
+
+        # Start drag
+        self.setCursor(Qt.CursorShape.ClosedHandCursor)
+
+        drag = QDrag(self)
+        mime_data = QMimeData()
+
+        # Create drag data matching the format expected by VariableAwareLineEdit
+        drag_data = {
+            "variable": var_info.insertion_text,
+            "name": var_info.name,
+            "type": var_info.var_type,
+            "path": var_info.path,
+        }
+        mime_data.setData(self.MIME_TYPE, json.dumps(drag_data).encode("utf-8"))
+
+        # Also set as plain text for widgets that accept text drops
+        mime_data.setText(var_info.insertion_text)
+
+        drag.setMimeData(mime_data)
+
+        logger.debug(f"Starting drag for variable: {var_info.insertion_text}")
+
+        # Execute drag
+        drag.exec(Qt.DropAction.CopyAction)
+
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self._drag_start_pos = None
+
+    def mouseReleaseEvent(self, event) -> None:
+        """Reset drag state."""
+        self._drag_start_pos = None
+        super().mouseReleaseEvent(event)
 
 
 # =============================================================================
@@ -862,8 +978,8 @@ class VariablePickerPopup(QWidget):
         self._search_box.installEventFilter(self)  # Capture arrow/Enter/Escape
         layout.addWidget(self._search_box)
 
-        # Tree widget for hierarchical display
-        self._tree_widget = QTreeWidget()
+        # Tree widget for hierarchical display (draggable for variable insertion)
+        self._tree_widget = DraggableVariableTree()
         self._tree_widget.setMinimumHeight(200)
         self._tree_widget.setMinimumWidth(300)
         self._tree_widget.setHeaderHidden(True)
@@ -1033,7 +1149,7 @@ class VariablePickerPopup(QWidget):
             header_font.setBold(True)
             header_font.setPointSize(9)
             header_item.setFont(0, header_font)
-            header_item.setForeground(0, QColor("#AAAAAA"))
+            header_item.setForeground(0, QColor(THEME.text_muted))
             self._tree_widget.addTopLevelItem(header_item)
 
             # Add variables in this group
@@ -1069,7 +1185,7 @@ class VariablePickerPopup(QWidget):
 
         # Color-code by type
         item.setForeground(0, QColor(var.type_color))
-        item.setForeground(1, QColor("#AAAAAA"))
+        item.setForeground(1, QColor(THEME.text_muted))
 
         parent.addChild(item)
 
@@ -1701,26 +1817,26 @@ class VariableAwareLineEdit(QLineEdit):
         self._validation_status = status
         self._validation_message = message
 
-        # Define border colors
+        # Define border colors using THEME
         border_colors = {
-            "valid": "#505064",  # Normal border
-            "invalid": "#F44336",  # Red border
-            "warning": "#FF9800",  # Orange border
+            "valid": THEME.border,  # Normal border
+            "invalid": THEME.status_error,  # Red border
+            "warning": THEME.status_warning,  # Orange border
         }
-        border_color = border_colors.get(status, "#505064")
+        border_color = border_colors.get(status, THEME.border)
         border_width = "2px" if status != "valid" else "1px"
 
         # Apply validation-aware stylesheet
         self.setStyleSheet(f"""
             QLineEdit {{
-                background: #3c3c50;
+                background: {THEME.bg_light};
                 border: {border_width} solid {border_color};
                 border-radius: 3px;
-                color: #e6e6e6;
+                color: {THEME.text_primary};
                 padding: 2px 28px 2px 4px;
             }}
             QLineEdit:focus {{
-                border: {border_width} solid {border_color if status != 'valid' else '#6496c8'};
+                border: {border_width} solid {border_color if status != 'valid' else THEME.border_focus};
             }}
         """)
 
@@ -1864,18 +1980,18 @@ def create_variable_aware_line_edit(
     line_edit.setMinimumHeight(min_height)
     line_edit.setMinimumWidth(min_width)
 
-    # Apply VSCode dark theme styling
-    line_edit.setStyleSheet("""
-        QLineEdit {
-            background: #3c3c50;
-            border: 1px solid #505064;
+    # Apply dark theme styling using THEME
+    line_edit.setStyleSheet(f"""
+        QLineEdit {{
+            background: {THEME.bg_light};
+            border: 1px solid {THEME.border};
             border-radius: 3px;
-            color: #e6e6e6;
+            color: {THEME.text_primary};
             padding: 2px 28px 2px 4px;
-        }
-        QLineEdit:focus {
-            border: 1px solid #6496c8;
-        }
+        }}
+        QLineEdit:focus {{
+            border: 1px solid {THEME.border_focus};
+        }}
     """)
 
     if provider:

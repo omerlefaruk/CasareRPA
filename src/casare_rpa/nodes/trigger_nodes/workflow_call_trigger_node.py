@@ -69,6 +69,10 @@ class WorkflowCallTriggerNode(BaseTriggerNode):
     - call_id: Unique ID for this call
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Workflow Call"
     trigger_description = "Trigger when called from another workflow"
     trigger_icon = "workflow"

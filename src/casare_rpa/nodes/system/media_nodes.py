@@ -71,6 +71,10 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 class TextToSpeechNode(BaseNode):
     """Read text aloud using text-to-speech."""
 
+    # @category: system
+    # @requires: opencv, pdf
+    # @ports: text -> success
+
     def __init__(self, node_id: str, name: str = "Text to Speech", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -92,7 +96,8 @@ class TextToSpeechNode(BaseNode):
             text = self.get_input_value("text")
             if text is None:
                 text = self.get_parameter("speech_text", "")
-            text = context.resolve_value(str(text))
+            # Resolve variables first, THEN convert to string (resolve preserves types for {{var}} patterns)
+            text = str(context.resolve_value(text) or "")
 
             if not text:
                 self.status = NodeStatus.ERROR
@@ -181,6 +186,10 @@ class TextToSpeechNode(BaseNode):
 @executable_node
 class PDFPreviewDialogNode(BaseNode):
     """Preview a PDF file with page navigation."""
+
+    # @category: system
+    # @requires: opencv, pdf
+    # @ports: none -> confirmed, current_page, page_count
 
     def __init__(self, node_id: str, name: str = "PDF Preview", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -433,6 +442,10 @@ class PDFPreviewDialogNode(BaseNode):
 @executable_node
 class WebcamCaptureNode(BaseNode):
     """Capture an image from a webcam."""
+
+    # @category: system
+    # @requires: opencv, pdf
+    # @ports: none -> image_path, success, width, height
 
     def __init__(self, node_id: str, name: str = "Webcam Capture", **kwargs) -> None:
         config = kwargs.get("config", {})

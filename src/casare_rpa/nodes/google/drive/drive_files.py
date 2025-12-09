@@ -23,7 +23,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import (
     GoogleDriveClient,
 )
-from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
+from casare_rpa.nodes.google.google_base import DriveBaseNode
 
 
 # ============================================================================
@@ -114,6 +114,10 @@ class DriveUploadFileNode(DriveBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_path, folder_id, file_name, mime_type, description -> file_id, name, web_view_link
 
     NODE_TYPE = "drive_upload_file"
     NODE_CATEGORY = "google_drive"
@@ -239,6 +243,10 @@ class DriveDownloadFileNode(DriveBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: file_id, destination_path -> file_path
+
     NODE_TYPE = "drive_download_file"
     NODE_CATEGORY = "google_drive"
     NODE_DISPLAY_NAME = "Drive: Download File"
@@ -339,6 +347,10 @@ class DriveCopyFileNode(DriveBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: file_id, new_name, folder_id -> new_file_id, name
+
     NODE_TYPE = "drive_copy_file"
     NODE_CATEGORY = "google_drive"
     NODE_DISPLAY_NAME = "Drive: Copy File"
@@ -433,6 +445,10 @@ class DriveMoveFileNode(DriveBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_id, folder_id -> file_id, new_parents
 
     NODE_TYPE = "drive_move_file"
     NODE_CATEGORY = "google_drive"
@@ -529,6 +545,10 @@ class DriveDeleteFileNode(DriveBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: file_id, permanent -> file_id
+
     NODE_TYPE = "drive_delete_file"
     NODE_CATEGORY = "google_drive"
     NODE_DISPLAY_NAME = "Drive: Delete File"
@@ -622,6 +642,10 @@ class DriveRenameFileNode(DriveBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: file_id, new_name -> file_id, name
+
     NODE_TYPE = "drive_rename_file"
     NODE_CATEGORY = "google_drive"
     NODE_DISPLAY_NAME = "Drive: Rename File"
@@ -714,6 +738,10 @@ class DriveGetFileNode(DriveBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_id -> file_id, name, mime_type, size, created_time, modified_time, web_view_link, web_content_link, parents, description, starred, trashed, shared
 
     NODE_TYPE = "drive_get_file"
     NODE_CATEGORY = "google_drive"

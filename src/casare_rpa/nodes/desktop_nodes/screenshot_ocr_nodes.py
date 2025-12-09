@@ -34,6 +34,10 @@ class CaptureScreenshotNode(BaseNode):
         - success: Whether capture succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: file_path, region -> image, file_path, success
+
     def __init__(
         self,
         node_id: str = None,
@@ -106,6 +110,10 @@ class CaptureElementImageNode(BaseNode):
         - file_path: Path where image was saved (if specified)
         - success: Whether capture succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element, file_path, padding -> image, file_path, success
 
     def __init__(
         self,
@@ -192,6 +200,10 @@ class OCRExtractTextNode(BaseNode):
         - engine_used: Which OCR engine was used
         - success: Whether extraction succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: image, image_path, region -> text, engine_used, success
 
     def __init__(
         self,
@@ -280,6 +292,10 @@ class CompareImagesNode(BaseNode):
         - is_match: Whether images match based on threshold
         - method: Comparison method used
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: image1, image2, image1_path, image2_path -> similarity, is_match, method
 
     def __init__(
         self,

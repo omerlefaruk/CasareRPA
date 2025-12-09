@@ -679,32 +679,14 @@ class NodeGraphWidget(QWidget):
         viewer.viewport().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
         viewer.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
 
-        # GPU-accelerated rendering (with automatic fallback to CPU)
-        try:
-            from PySide6.QtOpenGLWidgets import QOpenGLWidget
-            from PySide6.QtGui import QSurfaceFormat
-
-            # Configure OpenGL format for high performance
-            gl_format = QSurfaceFormat()
-            gl_format.setVersion(3, 3)  # OpenGL 3.3+ for modern features
-            gl_format.setProfile(QSurfaceFormat.OpenGLContextProfile.CoreProfile)
-            gl_format.setSwapBehavior(QSurfaceFormat.SwapBehavior.DoubleBuffer)
-            gl_format.setSwapInterval(
-                0
-            )  # Disable vsync for maximum FPS (120/144/240 Hz support)
-            gl_format.setSamples(4)  # 4x MSAA antialiasing
-
-            # Create OpenGL viewport
-            gl_widget = QOpenGLWidget()
-            gl_widget.setFormat(gl_format)
-
-            viewer.setViewport(gl_widget)
-
-            # Set as default format for future widgets
-            QSurfaceFormat.setDefaultFormat(gl_format)
-        except Exception as e:
-            logger.warning(f"GPU rendering unavailable, using CPU rendering: {e}")
-            # Continue with default CPU-based QPainter rendering
+        # GPU-accelerated rendering disabled due to dashed line rendering issues.
+        # OpenGL doesn't properly render QPainter's DashLine/DotLine pen styles -
+        # they appear as solid lines. This affects the live connection drag line
+        # which should be dashed. Using software rendering instead.
+        #
+        # TODO: Re-enable OpenGL with custom dashed line rendering if needed.
+        # The performance impact is minimal for typical workflow sizes.
+        logger.debug("Using software rendering (dashed lines render correctly)")
 
     @property
     def graph(self) -> NodeGraph:

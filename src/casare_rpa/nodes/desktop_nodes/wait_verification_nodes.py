@@ -49,6 +49,10 @@ class WaitForElementNode(DesktopNodeBase):
         success: Whether wait succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: selector, timeout -> element, success
+
     NODE_NAME = "Wait For Element"
 
     def __init__(
@@ -127,6 +131,10 @@ class WaitForWindowNode(DesktopNodeBase):
         window: Found window (if visible)
         success: Whether wait succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: title, title_regex, class_name, timeout -> window, success
 
     NODE_NAME = "Wait For Window"
 
@@ -209,6 +217,10 @@ class VerifyElementExistsNode(DesktopNodeBase):
         element: The element if found (None if not)
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: selector, timeout -> exists, element
+
     NODE_NAME = "Verify Element Exists"
 
     def __init__(
@@ -280,6 +292,10 @@ class VerifyElementPropertyNode(DesktopNodeBase):
         result: Whether verification passed
         actual_value: Actual property value
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element, property_name, expected_value -> result, actual_value
 
     NODE_NAME = "Verify Element Property"
 

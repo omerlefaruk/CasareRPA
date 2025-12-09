@@ -25,7 +25,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
-from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
+from casare_rpa.nodes.google.google_base import DriveBaseNode
 
 
 # ============================================================================
@@ -132,6 +132,10 @@ class DriveShareFileNode(DriveBaseNode):
         success: Whether sharing succeeded
         error: Error message if failed
     """
+
+    # @category: google
+    # @requires: requests
+    # @ports: file_id, email, role, permission_type, domain -> permission_id, permission
 
     NODE_TYPE = "drive_share_file"
     NODE_CATEGORY = "google_drive"
@@ -271,6 +275,10 @@ class DriveRemoveShareNode(DriveBaseNode):
         error: Error message if failed
     """
 
+    # @category: google
+    # @requires: requests
+    # @ports: file_id, permission_id -> none
+
     NODE_TYPE = "drive_remove_share"
     NODE_CATEGORY = "google_drive"
     NODE_DISPLAY_NAME = "Drive: Remove Share"
@@ -365,6 +373,10 @@ class DriveGetPermissionsNode(DriveBaseNode):
         success: Whether listing succeeded
         error: Error message if failed
     """
+
+    # @category: google
+    # @requires: requests
+    # @ports: file_id -> permissions, count
 
     NODE_TYPE = "drive_get_permissions"
     NODE_CATEGORY = "google_drive"
@@ -488,6 +500,10 @@ class DriveCreateShareLinkNode(DriveBaseNode):
         success: Whether link creation succeeded
         error: Error message if failed
     """
+
+    # @category: google
+    # @requires: requests
+    # @ports: file_id -> share_link, permission_id
 
     NODE_TYPE = "drive_create_share_link"
     NODE_CATEGORY = "google_drive"

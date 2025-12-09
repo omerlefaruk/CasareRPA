@@ -111,6 +111,10 @@ class WhatsAppTriggerNode(BaseTriggerNode):
     - raw_message: Full message object from webhook
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "WhatsApp"
     trigger_description = "Trigger workflow when WhatsApp message is received"
     trigger_icon = "whatsapp"

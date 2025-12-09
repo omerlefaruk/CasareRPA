@@ -66,6 +66,10 @@ class GetCurrentDateTimeNode(BaseNode):
         day_of_week: Day name (Monday, Tuesday, etc.)
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: none -> datetime, timestamp, year, month, day, hour, minute, second, day_of_week
+
     def __init__(
         self, node_id: str, name: str = "Get Current DateTime", **kwargs
     ) -> None:
@@ -166,6 +170,10 @@ class FormatDateTimeNode(BaseNode):
         result: Formatted datetime string
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: datetime, input_format -> result
+
     def __init__(self, node_id: str, name: str = "Format DateTime", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -257,6 +265,10 @@ class ParseDateTimeNode(BaseNode):
         iso_format: ISO formatted string
         success: Whether parsing succeeded
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: datetime_string -> timestamp, year, month, day, hour, minute, second, iso_format, success
 
     def __init__(self, node_id: str, name: str = "Parse DateTime", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -359,6 +371,10 @@ class DateTimeAddNode(BaseNode):
         timestamp: Resulting Unix timestamp
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: datetime, years, months, weeks, days, hours, minutes, seconds -> result, timestamp
+
     def __init__(self, node_id: str, name: str = "DateTime Add", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -448,6 +464,10 @@ class DateTimeDiffNode(BaseNode):
         minutes: Minutes component (after hours)
         seconds: Seconds component (after minutes)
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: datetime_1, datetime_2 -> total_seconds, total_minutes, total_hours, total_days, days, hours, minutes, seconds
 
     def __init__(self, node_id: str, name: str = "DateTime Diff", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -545,6 +565,10 @@ class DateTimeCompareNode(BaseNode):
         comparison: -1, 0, or 1
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: datetime_1, datetime_2 -> is_before, is_after, is_equal, comparison
+
     def __init__(self, node_id: str, name: str = "DateTime Compare", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -627,6 +651,10 @@ class GetTimestampNode(BaseNode):
     Outputs:
         timestamp: Unix timestamp
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: none -> timestamp
 
     def __init__(self, node_id: str, name: str = "Get Timestamp", **kwargs) -> None:
         config = kwargs.get("config", {})

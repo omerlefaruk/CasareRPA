@@ -1,6 +1,45 @@
 """
 CasareRPA - Nodes Package
-Contains all automation node implementations.
+
+Automation node implementations for workflow execution.
+
+Entry Points:
+    - StartNode, EndNode: Workflow entry/exit points
+    - LaunchBrowserNode, ClickElementNode, TypeTextNode: Browser automation
+    - ReadFileNode, WriteFileNode: File system operations
+    - HttpRequestNode: REST API integration
+    - ForLoopStartNode, IfNode, TryNode: Control flow
+    - get_all_node_classes(): Get all registered node classes
+    - preload_nodes(names): Preload specific nodes for performance
+
+Key Patterns:
+    - Lazy Loading: Nodes imported on first access via _NODE_REGISTRY
+    - Decorator Registration: @executable_node registers node metadata
+    - Base Classes: BrowserBaseNode, GoogleBaseNode for shared functionality
+    - Async Execution: All node execute() methods are async
+    - Property System: Nodes define input/output via typed properties
+    - Category Organization: Nodes grouped by domain (browser, file, database)
+
+Related:
+    - Domain layer: Nodes implement BaseNode protocol
+    - Application layer: NodeExecutor orchestrates node execution
+    - Infrastructure layer: Nodes use adapters (Playwright, database drivers)
+    - visual_nodes package: Visual representation for Canvas UI
+
+Node Categories:
+    - basic: Start, End, Comment
+    - browser: Navigation, interaction, data extraction (Playwright)
+    - file: Read, write, CSV, JSON, ZIP operations
+    - database: SQL connections, queries, transactions
+    - http: REST API requests, authentication, downloads
+    - control_flow: If, loops, switch, try/catch
+    - data_operation: String, list, dict, JSON operations
+    - system: Clipboard, dialogs, commands, services
+    - google: Gmail, Drive, Sheets, Docs, Calendar
+    - messaging: Telegram, WhatsApp
+    - desktop: Windows UI automation, Office integration
+    - llm: AI/LLM integration nodes
+    - trigger: Event-driven workflow triggers
 
 This module uses lazy loading to improve startup performance.
 Node classes are only imported when first accessed.
@@ -761,6 +800,54 @@ _NODE_REGISTRY: Dict[str, str] = {
     "OutlookSendEmailNode": "desktop_nodes.office_nodes",
     "OutlookReadEmailsNode": "desktop_nodes.office_nodes",
     "OutlookGetInboxCountNode": "desktop_nodes.office_nodes",
+    # Desktop Automation Nodes - Application
+    "LaunchApplicationNode": "desktop_nodes",
+    "CloseApplicationNode": "desktop_nodes",
+    "ActivateWindowNode": "desktop_nodes",
+    "GetWindowListNode": "desktop_nodes",
+    # Desktop Automation Nodes - Element
+    "FindElementNode": "desktop_nodes",
+    "DesktopClickElementNode": ("desktop_nodes", "ClickElementNode"),
+    "DesktopTypeTextNode": ("desktop_nodes", "TypeTextNode"),
+    "GetElementTextNode": "desktop_nodes",
+    "GetElementPropertyNode": "desktop_nodes",
+    # Desktop Automation Nodes - Window
+    "ResizeWindowNode": "desktop_nodes",
+    "MoveWindowNode": "desktop_nodes",
+    "MaximizeWindowNode": "desktop_nodes",
+    "MinimizeWindowNode": "desktop_nodes",
+    "RestoreWindowNode": "desktop_nodes",
+    "GetWindowPropertiesNode": "desktop_nodes",
+    "SetWindowStateNode": "desktop_nodes",
+    # Desktop Automation Nodes - Interaction
+    "SelectFromDropdownNode": "desktop_nodes",
+    "CheckCheckboxNode": "desktop_nodes",
+    "SelectRadioButtonNode": "desktop_nodes",
+    "SelectTabNode": "desktop_nodes",
+    "ExpandTreeItemNode": "desktop_nodes",
+    "ScrollElementNode": "desktop_nodes",
+    # Desktop Automation Nodes - Mouse/Keyboard
+    "MoveMouseNode": "desktop_nodes",
+    "MouseClickNode": "desktop_nodes",
+    "SendKeysNode": "desktop_nodes",
+    "SendHotKeyNode": "desktop_nodes",
+    "GetMousePositionNode": "desktop_nodes",
+    "DragMouseNode": "desktop_nodes",
+    # Desktop Automation Nodes - Wait/Verification
+    "DesktopWaitForElementNode": ("desktop_nodes", "WaitForElementNode"),
+    "WaitForWindowNode": "desktop_nodes",
+    "VerifyElementExistsNode": "desktop_nodes",
+    "VerifyElementPropertyNode": "desktop_nodes",
+    # Desktop Automation Nodes - Screenshot/OCR
+    "CaptureScreenshotNode": "desktop_nodes",
+    "CaptureElementImageNode": "desktop_nodes",
+    "OCRExtractTextNode": "desktop_nodes",
+    "CompareImagesNode": "desktop_nodes",
+    # Gmail Label Management Nodes
+    "GmailAddLabelNode": "google.gmail_nodes",
+    "GmailRemoveLabelNode": "google.gmail_nodes",
+    "GmailGetLabelsNode": "google.gmail_nodes",
+    "GmailTrashEmailNode": "google.gmail_nodes",
     # Subflow nodes
     "SubflowNode": "subflow_node",
 }
@@ -782,6 +869,10 @@ def _lazy_import(name: str) -> Type:
 
     Raises:
         AttributeError: If the class doesn't exist
+
+    Registry format:
+        - String: module path, class name matches registry key
+        - Tuple (module_path, class_name): for aliases where key != class name
     """
     # Check cache first
     if name in _loaded_classes:
@@ -791,7 +882,14 @@ def _lazy_import(name: str) -> Type:
     if name not in _NODE_REGISTRY:
         raise AttributeError(f"module 'casare_rpa.nodes' has no attribute '{name}'")
 
-    module_name = _NODE_REGISTRY[name]
+    registry_entry = _NODE_REGISTRY[name]
+
+    # Handle both string and tuple entries
+    if isinstance(registry_entry, tuple):
+        module_name, class_name = registry_entry
+    else:
+        module_name = registry_entry
+        class_name = name
 
     # Load the module if not already loaded
     if module_name not in _loaded_modules:
@@ -802,7 +900,7 @@ def _lazy_import(name: str) -> Type:
 
     # Get the class from the module
     module = _loaded_modules[module_name]
-    cls = getattr(module, name)
+    cls = getattr(module, class_name)
 
     # Cache and return
     _loaded_classes[name] = cls
@@ -1198,7 +1296,81 @@ __all__ = [
     "OutlookSendEmailNode",
     "OutlookReadEmailsNode",
     "OutlookGetInboxCountNode",
+    # Desktop Automation Nodes - Application
+    "LaunchApplicationNode",
+    "CloseApplicationNode",
+    "ActivateWindowNode",
+    "GetWindowListNode",
+    # Desktop Automation Nodes - Element
+    "FindElementNode",
+    "DesktopClickElementNode",
+    "DesktopTypeTextNode",
+    "GetElementTextNode",
+    "GetElementPropertyNode",
+    # Desktop Automation Nodes - Window
+    "ResizeWindowNode",
+    "MoveWindowNode",
+    "MaximizeWindowNode",
+    "MinimizeWindowNode",
+    "RestoreWindowNode",
+    "GetWindowPropertiesNode",
+    "SetWindowStateNode",
+    # Desktop Automation Nodes - Interaction
+    "SelectFromDropdownNode",
+    "CheckCheckboxNode",
+    "SelectRadioButtonNode",
+    "SelectTabNode",
+    "ExpandTreeItemNode",
+    "ScrollElementNode",
+    # Desktop Automation Nodes - Mouse/Keyboard
+    "MoveMouseNode",
+    "MouseClickNode",
+    "SendKeysNode",
+    "SendHotKeyNode",
+    "GetMousePositionNode",
+    "DragMouseNode",
+    # Desktop Automation Nodes - Wait/Verification
+    "DesktopWaitForElementNode",
+    "WaitForWindowNode",
+    "VerifyElementExistsNode",
+    "VerifyElementPropertyNode",
+    # Desktop Automation Nodes - Screenshot/OCR
+    "CaptureScreenshotNode",
+    "CaptureElementImageNode",
+    "OCRExtractTextNode",
+    "CompareImagesNode",
+    # Gmail Label Management Nodes
+    "GmailAddLabelNode",
+    "GmailRemoveLabelNode",
+    "GmailGetLabelsNode",
+    "GmailTrashEmailNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",
+    # Preloader for startup optimization
+    "start_node_preload",
+    "is_preload_complete",
+    "wait_for_preload",
 ]
+
+
+# Re-export preloader functions for convenience
+def start_node_preload() -> None:
+    """Start background node preloading for improved startup performance."""
+    from casare_rpa.nodes.preloader import start_node_preload as _start
+
+    _start()
+
+
+def is_preload_complete() -> bool:
+    """Check if preloading has completed."""
+    from casare_rpa.nodes.preloader import is_preload_complete as _check
+
+    return _check()
+
+
+def wait_for_preload(timeout: float = 5.0) -> bool:
+    """Wait for preloading to complete."""
+    from casare_rpa.nodes.preloader import wait_for_preload as _wait
+
+    return _wait(timeout)

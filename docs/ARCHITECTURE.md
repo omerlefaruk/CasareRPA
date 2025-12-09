@@ -4,8 +4,8 @@
 
 CasareRPA follows **Clean Architecture** principles with clear separation of concerns across multiple layers. This document describes the architectural structure, layer responsibilities, dependency rules, and migration patterns.
 
-**Version**: 3.2
-**Last Updated**: 2025-12-04
+**Version**: 3.3
+**Last Updated**: 2025-12-09
 
 ---
 
@@ -13,11 +13,15 @@ CasareRPA follows **Clean Architecture** principles with clear separation of con
 
 1. [Architecture Principles](#architecture-principles)
 2. [Layer Structure](#layer-structure)
+   - [Domain Layer](#domain-layer-domain)
+   - [Application Layer](#application-layer-application)
+   - [Infrastructure Layer](#infrastructure-layer-infrastructure)
+   - [Presentation Layer](#presentation-layer-presentation)
 3. [Dependency Flow](#dependency-flow)
 4. [Import Guidelines](#import-guidelines)
 5. [Composition Patterns](#composition-patterns)
 6. [Testing Strategy](#testing-strategy)
-7. [Migration Timeline](#migration-timeline)
+7. [Migration Status](#migration-status)
 8. [Examples](#examples)
 
 ---
@@ -102,6 +106,12 @@ CasareRPA architecture follows these core principles:
 - `execution_orchestrator.py` - Workflow execution coordination
 - `project_context.py` - Project-scoped variable resolution
 
+**Domain Interfaces** (`domain/interfaces/`):
+- `execution_context.py` - IExecutionContext protocol (Dependency Inversion)
+- `repositories.py` - IFolderStorage, IEnvironmentStorage, ITemplateStorage protocols
+
+> **Note:** Domain interfaces enable Dependency Inversion between Application and Infrastructure layers. Application layer depends on these abstractions, not concrete implementations.
+
 #### Rules
 - ✅ **DO**: Pure business logic only
 - ✅ **DO**: Use only standard library + typing
@@ -120,6 +130,11 @@ CasareRPA architecture follows these core principles:
 
 **Use Cases** (`application/use_cases/`):
 - `execute_workflow.py` - ExecuteWorkflowUseCase
+
+**Application Services** (`application/services/`):
+- `browser_recording_service.py` - Wraps infrastructure browser recording for Presentation layer consumption
+
+> **Note:** Application Services act as a facade between Presentation and Infrastructure, maintaining clean layer boundaries.
 
 #### Rules
 - ✅ **DO**: Orchestrate domain entities and services
@@ -143,10 +158,72 @@ CasareRPA architecture follows these core principles:
 **Persistence** (`infrastructure/persistence/`):
 - `project_storage.py` - File system I/O for projects
 
+**HTTP Client** (`infrastructure/http/`):
+- `unified_http_client.py` - UnifiedHttpClient with enterprise features:
+  - **Session Pooling**: HttpSessionPool for connection reuse
+  - **Retry Logic**: Exponential backoff with jitter
+  - **Rate Limiting**: SlidingWindowRateLimiter (per-domain)
+  - **Circuit Breaker**: Per-URL failure isolation
+  - **SSRF Protection**: URL validation, blocked hosts/IP ranges
+
+```python
+from casare_rpa.infrastructure.http.unified_http_client import UnifiedHttpClient
+
+async with UnifiedHttpClient() as client:
+    response = await client.get("https://api.example.com/data")
+```
+
 #### Rules
 - ✅ **DO**: Handle all external system interactions
 - ✅ **DO**: Implement repository patterns
 - ✅ **DO**: Proper error handling with retries
+- ❌ **DON'T**: Contain business logic
+
+---
+
+### Presentation Layer (`presentation/`)
+
+**Purpose**: User interface and user interaction handling
+**Dependencies**: Application, Domain
+**Location**: `src/casare_rpa/presentation/`
+
+#### Contents
+
+**Canvas** (`presentation/canvas/`):
+- `canvas_app.py` - MainWindow (reduced from 1691 to 1064 lines via extraction)
+
+**Coordinators** (`presentation/canvas/coordinators/`):
+- `signal_coordinator.py` - SignalCoordinator (816 lines, 79 methods)
+  - Extracted from MainWindow for signal/slot management
+  - Handles inter-component communication
+
+**Managers** (`presentation/canvas/managers/`):
+- `panel_manager.py` - PanelManager (292 lines, 40 methods)
+  - Extracted from MainWindow for panel lifecycle
+  - Manages dock widgets, visibility, state persistence
+
+**Theme System** (`presentation/canvas/ui/`):
+- `theme.py` - Unified theming with:
+  - `Colors`, `Spacing`, `BorderRadius`, `FontSizes`, `ButtonSizes`, `IconSizes`, `Animations`
+  - Light and Dark themes (VSCode Dark+ aligned)
+  - CSS helper functions for consistent styling
+
+**Dialog Styles** (`presentation/dialogs/`):
+- `dialog_styles.py` - Centralized dialog styling constants
+
+```python
+from casare_rpa.presentation.canvas.ui.theme import Theme, Colors
+
+# Apply dark theme
+theme = Theme.dark()
+button_css = theme.button_css(primary=True)
+```
+
+#### Rules
+- ✅ **DO**: Use Application services for business operations
+- ✅ **DO**: Use Theme system for consistent styling
+- ✅ **DO**: Extract large classes into coordinators/managers
+- ❌ **DON'T**: Directly access Infrastructure layer
 - ❌ **DON'T**: Contain business logic
 
 ---
@@ -356,6 +433,18 @@ async def test_browser_resource_manager():
 
 ## Migration Status
 
+### v3.3 - CURRENT
+
+**Architecture Improvements (v3.3)**:
+- ✅ Domain Interfaces for Dependency Inversion (IExecutionContext, IFolderStorage, etc.)
+- ✅ UnifiedHttpClient with session pooling, rate limiting, circuit breaker, SSRF protection
+- ✅ BrowserRecordingService in Application layer
+- ✅ SignalCoordinator extracted from MainWindow (816 lines, 79 methods)
+- ✅ PanelManager extracted from MainWindow (292 lines, 40 methods)
+- ✅ MainWindow reduced from 1691 to 1064 lines (37% reduction)
+- ✅ Unified Theme system (Colors, Spacing, FontSizes, etc.)
+- ✅ 40 new nodes registered (36 desktop + 4 Gmail) - Total: 413 nodes
+
 ### v3.1 - COMPLETE ✅
 
 All phases of the clean architecture migration and enterprise features have been completed:
@@ -460,4 +549,4 @@ For the project roadmap, see [ROADMAP_COMPLETE.md](ROADMAP_COMPLETE.md).
 
 ---
 
-**Last Updated**: 2025-12-04
+**Last Updated**: 2025-12-09

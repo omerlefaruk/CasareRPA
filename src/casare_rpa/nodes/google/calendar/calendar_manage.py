@@ -21,7 +21,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_calendar_client import (
     GoogleCalendarClient,
 )
-from casare_rpa.nodes.google.calendar.calendar_base import CalendarBaseNode
+from casare_rpa.nodes.google.google_base import CalendarBaseNode
 
 
 # ============================================================================
@@ -107,6 +107,10 @@ class CalendarListCalendarsNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: show_hidden, show_deleted, min_access_role -> calendars, calendar_count, primary_calendar
 
     NODE_TYPE = "calendar_list_calendars"
     NODE_CATEGORY = "google"
@@ -208,6 +212,10 @@ class CalendarGetCalendarNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id -> calendar, summary, timezone, access_role
 
     NODE_TYPE = "calendar_get_calendar"
     NODE_CATEGORY = "google"
@@ -332,6 +340,10 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: summary, description, location, timezone -> calendar_id, calendar
+
     NODE_TYPE = "calendar_create_calendar"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Calendar: Create Calendar"
@@ -437,6 +449,10 @@ class CalendarDeleteCalendarNode(CalendarBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: calendar_id, confirm_delete -> deleted_id
 
     NODE_TYPE = "calendar_delete_calendar"
     NODE_CATEGORY = "google"

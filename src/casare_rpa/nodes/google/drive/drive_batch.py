@@ -23,7 +23,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
-from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
+from casare_rpa.nodes.google.google_base import DriveBaseNode
 
 
 MAX_BATCH_SIZE = 100
@@ -91,6 +91,10 @@ class DriveBatchDeleteNode(DriveBaseNode):
         success: Whether all deletes succeeded
         error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_ids -> deleted_count, failed_count, results
 
     NODE_TYPE = "drive_batch_delete"
     NODE_CATEGORY = "google_drive"
@@ -248,6 +252,10 @@ class DriveBatchMoveNode(DriveBaseNode):
         success: Whether all moves succeeded
         error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_ids, folder_id -> moved_count, failed_count, results
 
     NODE_TYPE = "drive_batch_move"
     NODE_CATEGORY = "google_drive"
@@ -422,6 +430,10 @@ class DriveBatchCopyNode(DriveBaseNode):
         success: Whether all copies succeeded
         error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_ids, folder_id -> copied_count, failed_count, new_file_ids, results
 
     NODE_TYPE = "drive_batch_copy"
     NODE_CATEGORY = "google_drive"

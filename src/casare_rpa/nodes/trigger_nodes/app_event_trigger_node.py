@@ -99,6 +99,10 @@ class AppEventTriggerNode(BaseTriggerNode):
     - timestamp: When the event occurred
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "App Event"
     trigger_description = "Trigger on application events"
     trigger_icon = "app"

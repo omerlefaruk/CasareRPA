@@ -110,6 +110,10 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
         headers: Headers with authentication configured
     """
 
+    # @category: http
+    # @requires: requests
+    # @ports: credential_name, auth_type, token, username, password, api_key_name, base_headers -> headers
+
     def __init__(self, node_id: str, name: str = "HTTP Auth", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -279,6 +283,10 @@ class OAuth2AuthorizeNode(BaseNode):
         code_verifier: PKCE code verifier (store for token exchange)
         code_challenge: PKCE code challenge sent to server
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: client_id, auth_url, scope, redirect_uri, extra_params -> auth_url, state, code_verifier, code_challenge
 
     def __init__(
         self, node_id: str, name: str = "OAuth2 Authorize", **kwargs: Any
@@ -464,6 +472,10 @@ class OAuth2TokenExchangeNode(BaseNode):
         id_token: ID token (for OIDC)
         full_response: Complete token response
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: code, code_verifier, refresh_token, username, password, scope -> access_token, refresh_token, token_type, expires_in, scope, id_token, full_response
 
     def __init__(
         self, node_id: str, name: str = "OAuth2 Token Exchange", **kwargs: Any
@@ -657,6 +669,10 @@ class OAuth2CallbackServerNode(BaseNode):
         error: Error from OAuth provider (if any)
         error_description: Error description (if any)
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: expected_state -> code, state, access_token, error, error_description
 
     def __init__(
         self, node_id: str, name: str = "OAuth2 Callback Server", **kwargs: Any
@@ -857,6 +873,10 @@ class OAuth2TokenValidateNode(BaseNode):
         token_type: Token type
         full_response: Complete introspection response
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: token -> active, client_id, username, scope, expires_at, token_type, full_response
 
     def __init__(
         self, node_id: str, name: str = "OAuth2 Token Validate", **kwargs: Any

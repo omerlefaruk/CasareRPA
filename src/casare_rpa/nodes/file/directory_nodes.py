@@ -78,6 +78,10 @@ class CreateDirectoryNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: directory_path -> dir_path, success
+
     def __init__(self, node_id: str, name: str = "Create Directory", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -182,6 +186,10 @@ class ListFilesNode(BaseNode):
         files: List of file paths
         count: Number of files found
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: directory_path -> files, count, success
 
     def __init__(self, node_id: str, name: str = "List Files", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -319,6 +327,10 @@ class ListDirectoryNode(BaseNode):
         count: Number of items found
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: dir_path -> items, count, success
 
     def __init__(self, node_id: str, name: str = "List Directory", **kwargs) -> None:
         config = kwargs.get("config", {})

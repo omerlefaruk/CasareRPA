@@ -20,6 +20,10 @@ class StartNode(BaseNode):
     only an execution output to begin the workflow chain.
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> exec_out
+
     def __init__(self, node_id: str, name: str = "Start", **kwargs) -> None:
         """
         Initialize start node.
@@ -79,6 +83,10 @@ class EndNode(BaseNode):
     Workflows can have multiple EndNodes. This node has only an execution
     input and no outputs. It marks the termination of a workflow branch.
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> none
 
     def __init__(self, node_id: str, name: str = "End", **kwargs) -> None:
         """
@@ -152,6 +160,10 @@ class CommentNode(BaseNode):
     notes, or section headers within a workflow. They don't affect
     execution and are skipped during workflow runs.
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: none -> none
 
     def __init__(
         self, node_id: str, name: str = "Comment", comment: str = "", **kwargs

@@ -3,15 +3,22 @@ Workflow Loader Utility
 Deserializes workflow JSON into executable WorkflowSchema with node instances.
 
 SECURITY: All workflows are validated against a strict schema before execution.
+
+This module delegates to casare_rpa.nodes for node class resolution, which uses
+lazy loading from _NODE_REGISTRY. This eliminates duplicate registration and
+improves startup performance.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Type, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
 from casare_rpa.domain.entities.node_connection import NodeConnection
 from casare_rpa.domain.entities.base_node import BaseNode
+
+# Import the nodes module for lazy loading node classes
+import casare_rpa.nodes as nodes_module
 
 
 class WorkflowValidationError(Exception):
@@ -203,797 +210,86 @@ def validate_workflow_structure(workflow_data: Dict) -> None:
     )
 
 
-# Import all node classes
-# Basic nodes
-from casare_rpa.nodes.basic_nodes import StartNode, EndNode, CommentNode
+def get_node_class(node_type: str) -> Optional[Type[BaseNode]]:
+    """
+    Get a node class by type name using lazy loading from nodes module.
 
-# Variable nodes
-from casare_rpa.nodes.variable_nodes import (
-    SetVariableNode,
-    GetVariableNode,
-    IncrementVariableNode,
-)
+    This delegates to casare_rpa.nodes._NODE_REGISTRY which is the single
+    source of truth for node class registration.
 
-# Control flow nodes
-from casare_rpa.nodes.control_flow_nodes import (
-    IfNode,
-    ForLoopStartNode,
-    ForLoopEndNode,
-    WhileLoopStartNode,
-    WhileLoopEndNode,
-    BreakNode,
-    ContinueNode,
-    MergeNode,
-    SwitchNode,
-)
+    Args:
+        node_type: The node type name (e.g., "ClickElementNode")
 
-# Error handling nodes
-from casare_rpa.nodes.error_handling_nodes import (
-    TryNode,
-    RetryNode,
-    RetrySuccessNode,
-    RetryFailNode,
-    ThrowErrorNode,
-    WebhookNotifyNode,
-    OnErrorNode,
-    ErrorRecoveryNode,
-    LogErrorNode,
-    AssertNode,
-)
+    Returns:
+        The node class, or None if not found
+    """
+    try:
+        return getattr(nodes_module, node_type)
+    except AttributeError:
+        return None
 
-# Wait nodes (browser)
-from casare_rpa.nodes.wait_nodes import (
-    WaitNode,
-    WaitForElementNode,
-    WaitForNavigationNode,
-)
 
-# Browser nodes
-from casare_rpa.nodes.browser_nodes import (
-    LaunchBrowserNode,
-    CloseBrowserNode,
-    NewTabNode,
-    GetAllImagesNode,
-    DownloadFileNode,
-)
+def is_valid_node_type(node_type: str) -> bool:
+    """Check if a node type is registered."""
+    return node_type in nodes_module._NODE_REGISTRY
 
-# Navigation nodes
-from casare_rpa.nodes.navigation_nodes import (
-    GoToURLNode,
-    GoBackNode,
-    GoForwardNode,
-    RefreshPageNode,
-)
 
-# Interaction nodes (browser)
-from casare_rpa.nodes.interaction_nodes import (
-    ClickElementNode,
-    TypeTextNode,
-    SelectDropdownNode,
-    ImageClickNode,
-)
+def get_all_node_types() -> list:
+    """Get all registered node type names."""
+    return list(nodes_module._NODE_REGISTRY.keys())
 
-# Data extraction nodes
-from casare_rpa.nodes.data_nodes import (
-    ExtractTextNode,
-    GetAttributeNode,
-    ScreenshotNode,
-)
 
-# Table scraping nodes
-from casare_rpa.nodes.browser.table_scraper_node import TableScraperNode
+# Legacy compatibility - NODE_TYPE_MAP is now generated from _NODE_REGISTRY
+# This allows existing code that imports NODE_TYPE_MAP to continue working
+def _build_node_type_map() -> Dict[str, Type]:
+    """Build NODE_TYPE_MAP from nodes module (lazy, on first access)."""
+    return nodes_module.get_all_node_classes()
 
-# Form nodes
-from casare_rpa.nodes.browser.form_field_node import FormFieldNode
-from casare_rpa.nodes.browser.form_filler_node import FormFillerNode
-from casare_rpa.nodes.browser.detect_forms_node import DetectFormsNode
 
-# DateTime nodes
-from casare_rpa.nodes.datetime_nodes import (
-    GetCurrentDateTimeNode,
-    FormatDateTimeNode,
-    ParseDateTimeNode,
-    DateTimeAddNode,
-    DateTimeDiffNode,
-    DateTimeCompareNode,
-    GetTimestampNode,
-)
+# Lazy-loaded NODE_TYPE_MAP for backward compatibility
+_node_type_map_cache: Optional[Dict[str, Type]] = None
 
-# Database nodes
-from casare_rpa.nodes.database import (
-    DatabaseConnectNode,
-    ExecuteQueryNode,
-    ExecuteNonQueryNode,
-    BeginTransactionNode,
-    CommitTransactionNode,
-    RollbackTransactionNode,
-    CloseDatabaseNode,
-    TableExistsNode,
-    GetTableColumnsNode,
-    ExecuteBatchNode,
-)
 
-# Data operation nodes
-from casare_rpa.nodes.data_operation_nodes import (
-    ConcatenateNode,
-    FormatStringNode,
-    RegexMatchNode,
-    RegexReplaceNode,
-    MathOperationNode,
-    ComparisonNode,
-    CreateListNode,
-    ListGetItemNode,
-    JsonParseNode,
-    GetPropertyNode,
-    ListLengthNode,
-    ListAppendNode,
-    ListContainsNode,
-    ListSliceNode,
-    ListJoinNode,
-    ListSortNode,
-    ListReverseNode,
-    ListUniqueNode,
-    ListFilterNode,
-    ListMapNode,
-    ListReduceNode,
-    ListFlattenNode,
-    DictGetNode,
-    DictSetNode,
-    DictRemoveNode,
-    DictMergeNode,
-    DictKeysNode,
-    DictValuesNode,
-    DictHasKeyNode,
-    CreateDictNode,
-    DictToJsonNode,
-    DictItemsNode,
-)
+def _get_node_type_map() -> Dict[str, Type]:
+    """Get NODE_TYPE_MAP, building it lazily if needed."""
+    global _node_type_map_cache
+    if _node_type_map_cache is None:
+        _node_type_map_cache = _build_node_type_map()
+    return _node_type_map_cache
 
-# File nodes
-from casare_rpa.nodes.file import (
-    ReadFileNode,
-    WriteFileNode,
-    AppendFileNode,
-    DeleteFileNode,
-    CopyFileNode,
-    MoveFileNode,
-    CreateDirectoryNode,
-    ListDirectoryNode,
-    ListFilesNode,
-    FileExistsNode,
-    GetFileInfoNode,
-    GetFileSizeNode,
-    ReadCSVNode,
-    WriteCSVNode,
-    ReadJSONFileNode,
-    WriteJSONFileNode,
-    ZipFilesNode,
-    UnzipFilesNode,
-)
 
-# Text nodes
-from casare_rpa.nodes.text_nodes import (
-    TextSplitNode,
-    TextReplaceNode,
-    TextTrimNode,
-    TextCaseNode,
-    TextPadNode,
-    TextSubstringNode,
-    TextContainsNode,
-    TextStartsWithNode,
-    TextEndsWithNode,
-    TextLinesNode,
-    TextReverseNode,
-    TextCountNode,
-    TextJoinNode,
-    TextExtractNode,
-)
+# Backward compatibility: NODE_TYPE_MAP is now a lazy property
+# Code that accesses NODE_TYPE_MAP directly will trigger building the full map
+class _NodeTypeMapProxy:
+    """Proxy class that builds NODE_TYPE_MAP on first access."""
 
-# HTTP nodes
-from casare_rpa.nodes.http import (
-    HttpRequestNode,
-    SetHttpHeadersNode,
-    HttpAuthNode,
-    ParseJsonResponseNode,
-    HttpDownloadFileNode,
-    HttpUploadFileNode,
-    BuildUrlNode,
-)
+    def __contains__(self, key):
+        return is_valid_node_type(key)
 
-# Email nodes
-from casare_rpa.nodes.email import (
-    SendEmailNode,
-    ReadEmailsNode,
-    GetEmailContentNode,
-    SaveAttachmentNode,
-    FilterEmailsNode,
-    MarkEmailNode,
-    DeleteEmailNode,
-    MoveEmailNode,
-)
+    def __getitem__(self, key):
+        node_class = get_node_class(key)
+        if node_class is None:
+            raise KeyError(key)
+        return node_class
 
-# FTP nodes
-from casare_rpa.nodes.ftp_nodes import (
-    FTPConnectNode,
-    FTPUploadNode,
-    FTPDownloadNode,
-    FTPListNode,
-    FTPDeleteNode,
-    FTPMakeDirNode,
-    FTPRemoveDirNode,
-    FTPRenameNode,
-    FTPDisconnectNode,
-    FTPGetSizeNode,
-)
+    def get(self, key, default=None):
+        return get_node_class(key) or default
 
-# PDF nodes
-from casare_rpa.nodes.pdf_nodes import (
-    ReadPDFTextNode,
-    GetPDFInfoNode,
-    MergePDFsNode,
-    SplitPDFNode,
-    ExtractPDFPagesNode,
-    PDFToImagesNode,
-)
+    def keys(self):
+        return get_all_node_types()
 
-# XML nodes
-from casare_rpa.nodes.xml_nodes import (
-    ParseXMLNode,
-    ReadXMLFileNode,
-    WriteXMLFileNode,
-    XPathQueryNode,
-    GetXMLElementNode,
-    GetXMLAttributeNode,
-    XMLToJsonNode,
-    JsonToXMLNode,
-)
+    def __len__(self):
+        return len(nodes_module._NODE_REGISTRY)
 
-# Random nodes
-from casare_rpa.nodes.random_nodes import (
-    RandomNumberNode,
-    RandomChoiceNode,
-    RandomStringNode,
-    RandomUUIDNode,
-    ShuffleListNode,
-)
+    def items(self):
+        return _get_node_type_map().items()
 
-# System nodes
-from casare_rpa.nodes.system import (
-    ClipboardCopyNode,
-    ClipboardPasteNode,
-    ClipboardClearNode,
-    MessageBoxNode,
-    InputDialogNode,
-    TooltipNode,
-    SystemNotificationNode,
-    ConfirmDialogNode,
-    ProgressDialogNode,
-    FilePickerDialogNode,
-    FolderPickerDialogNode,
-    ColorPickerDialogNode,
-    DateTimePickerDialogNode,
-    SnackbarNode,
-    BalloonTipNode,
-    RunCommandNode,
-    RunPowerShellNode,
-    GetServiceStatusNode,
-    StartServiceNode,
-    StopServiceNode,
-    RestartServiceNode,
-    ListServicesNode,
-    # New dialog nodes
-    ListPickerDialogNode,
-    MultilineInputDialogNode,
-    CredentialDialogNode,
-    FormDialogNode,
-    ImagePreviewDialogNode,
-    TableDialogNode,
-    WizardDialogNode,
-    SplashScreenNode,
-    AudioAlertNode,
-    # System utilities
-    ScreenRegionPickerNode,
-    VolumeControlNode,
-    ProcessListNode,
-    ProcessKillNode,
-    EnvironmentVariableNode,
-    SystemInfoNode,
-    # Quick nodes
-    HotkeyWaitNode,
-    BeepNode,
-    ClipboardMonitorNode,
-    # Utility system nodes
-    FileWatcherNode,
-    QRCodeNode,
-    Base64Node,
-    UUIDGeneratorNode,
-    AssertSystemNode,
-    LogToFileNode,
-    # Media nodes
-    TextToSpeechNode,
-    PDFPreviewDialogNode,
-    WebcamCaptureNode,
-)
+    def values(self):
+        return _get_node_type_map().values()
 
-# Script nodes
-from casare_rpa.nodes.script_nodes import (
-    RunPythonScriptNode,
-    RunPythonFileNode,
-    EvalExpressionNode,
-    RunBatchScriptNode,
-    RunJavaScriptNode,
-)
 
-# Utility nodes
-from casare_rpa.nodes.utility_nodes import ValidateNode, TransformNode, LogNode
-
-# Desktop nodes (aliased where they conflict with browser nodes)
-from casare_rpa.nodes.desktop_nodes import (
-    # Application nodes
-    LaunchApplicationNode,
-    CloseApplicationNode,
-    ActivateWindowNode,
-    GetWindowListNode,
-    # Element nodes (aliased to avoid conflict with browser interaction_nodes)
-    FindElementNode as DesktopFindElementNode,
-    ClickElementNode as DesktopClickElementNode,
-    TypeTextNode as DesktopTypeTextNode,
-    GetElementTextNode,
-    GetElementPropertyNode,
-    # Window management nodes
-    ResizeWindowNode,
-    MoveWindowNode,
-    MaximizeWindowNode,
-    MinimizeWindowNode,
-    RestoreWindowNode,
-    GetWindowPropertiesNode,
-    SetWindowStateNode,
-    # Interaction nodes
-    SelectFromDropdownNode,
-    CheckCheckboxNode,
-    SelectRadioButtonNode,
-    SelectTabNode,
-    ExpandTreeItemNode,
-    ScrollElementNode,
-    # Mouse and keyboard nodes
-    MoveMouseNode,
-    MouseClickNode,
-    SendKeysNode,
-    SendHotKeyNode,
-    GetMousePositionNode,
-    DragMouseNode,
-    # Wait and verification nodes (aliased for desktop)
-    WaitForElementNode as DesktopWaitForElementNode,
-    WaitForWindowNode,
-    VerifyElementExistsNode,
-    VerifyElementPropertyNode,
-    # Screenshot and OCR nodes
-    CaptureScreenshotNode,
-    CaptureElementImageNode,
-    OCRExtractTextNode,
-    CompareImagesNode,
-    # Office automation nodes
-    ExcelOpenNode,
-    ExcelReadCellNode,
-    ExcelWriteCellNode,
-    ExcelGetRangeNode,
-    ExcelCloseNode,
-    WordOpenNode,
-    WordGetTextNode,
-    WordReplaceTextNode,
-    WordCloseNode,
-    OutlookSendEmailNode,
-    OutlookReadEmailsNode,
-    OutlookGetInboxCountNode,
-)
-
-# Trigger nodes
-from casare_rpa.nodes.trigger_nodes import (
-    WebhookTriggerNode,
-    ScheduleTriggerNode,
-    FileWatchTriggerNode,
-    EmailTriggerNode,
-    AppEventTriggerNode,
-    ErrorTriggerNode,
-    WorkflowCallTriggerNode,
-    FormTriggerNode,
-    ChatTriggerNode,
-    RSSFeedTriggerNode,
-    SSETriggerNode,
-)
-
-# LLM nodes (AI/ML)
-from casare_rpa.nodes.llm import (
-    LLMCompletionNode,
-    LLMChatNode,
-    LLMExtractDataNode,
-    LLMSummarizeNode,
-    LLMClassifyNode,
-    LLMTranslateNode,
-)
-
-# Subflow nodes
-from casare_rpa.nodes.subflow_node import SubflowNode
-
-# Google Workspace nodes
-from casare_rpa.nodes.google.drive_nodes import (
-    DriveUploadFileNode,
-    DriveDownloadFileNode,
-    DriveDeleteFileNode,
-    DriveCopyFileNode,
-    DriveMoveFileNode,
-    DriveRenameFileNode,
-    DriveGetFileNode,
-    DriveCreateFolderNode,
-    DriveListFilesNode,
-    DriveSearchFilesNode,
-    DriveShareFileNode,
-    DriveRemoveShareNode,
-    DriveGetPermissionsNode,
-    DriveCreateShareLinkNode,
-    DriveBatchDeleteNode,
-    DriveBatchMoveNode,
-    DriveBatchCopyNode,
-)
-
-# Map node types to classes
-NODE_TYPE_MAP = {
-    # Basic nodes
-    "StartNode": StartNode,
-    "EndNode": EndNode,
-    "CommentNode": CommentNode,
-    # Variable nodes
-    "SetVariableNode": SetVariableNode,
-    "GetVariableNode": GetVariableNode,
-    "IncrementVariableNode": IncrementVariableNode,
-    # Control flow nodes
-    "IfNode": IfNode,
-    "ForLoopStartNode": ForLoopStartNode,
-    "ForLoopEndNode": ForLoopEndNode,
-    "WhileLoopStartNode": WhileLoopStartNode,
-    "WhileLoopEndNode": WhileLoopEndNode,
-    "BreakNode": BreakNode,
-    "ContinueNode": ContinueNode,
-    "MergeNode": MergeNode,
-    "SwitchNode": SwitchNode,
-    # Error handling nodes
-    "TryNode": TryNode,
-    "RetryNode": RetryNode,
-    "RetrySuccessNode": RetrySuccessNode,
-    "RetryFailNode": RetryFailNode,
-    "ThrowErrorNode": ThrowErrorNode,
-    "WebhookNotifyNode": WebhookNotifyNode,
-    "OnErrorNode": OnErrorNode,
-    "ErrorRecoveryNode": ErrorRecoveryNode,
-    "LogErrorNode": LogErrorNode,
-    "AssertNode": AssertNode,
-    # Wait nodes (browser)
-    "WaitNode": WaitNode,
-    "WaitForElementNode": WaitForElementNode,
-    "WaitForNavigationNode": WaitForNavigationNode,
-    # Browser nodes
-    "LaunchBrowserNode": LaunchBrowserNode,
-    "CloseBrowserNode": CloseBrowserNode,
-    "NewTabNode": NewTabNode,
-    "GetAllImagesNode": GetAllImagesNode,
-    "DownloadFileNode": DownloadFileNode,
-    # Navigation nodes
-    "GoToURLNode": GoToURLNode,
-    "GoBackNode": GoBackNode,
-    "GoForwardNode": GoForwardNode,
-    "RefreshPageNode": RefreshPageNode,
-    # Interaction nodes (browser)
-    "ClickElementNode": ClickElementNode,
-    "TypeTextNode": TypeTextNode,
-    "SelectDropdownNode": SelectDropdownNode,
-    "ImageClickNode": ImageClickNode,
-    # Data extraction nodes
-    "ExtractTextNode": ExtractTextNode,
-    "GetAttributeNode": GetAttributeNode,
-    "ScreenshotNode": ScreenshotNode,
-    # Table scraping nodes
-    "TableScraperNode": TableScraperNode,
-    # Form nodes
-    "FormFieldNode": FormFieldNode,
-    "FormFillerNode": FormFillerNode,
-    "DetectFormsNode": DetectFormsNode,
-    # DateTime nodes
-    "GetCurrentDateTimeNode": GetCurrentDateTimeNode,
-    "FormatDateTimeNode": FormatDateTimeNode,
-    "ParseDateTimeNode": ParseDateTimeNode,
-    "DateTimeAddNode": DateTimeAddNode,
-    "DateTimeDiffNode": DateTimeDiffNode,
-    "DateTimeCompareNode": DateTimeCompareNode,
-    "GetTimestampNode": GetTimestampNode,
-    # Database nodes
-    "DatabaseConnectNode": DatabaseConnectNode,
-    "ExecuteQueryNode": ExecuteQueryNode,
-    "ExecuteNonQueryNode": ExecuteNonQueryNode,
-    "BeginTransactionNode": BeginTransactionNode,
-    "CommitTransactionNode": CommitTransactionNode,
-    "RollbackTransactionNode": RollbackTransactionNode,
-    "CloseDatabaseNode": CloseDatabaseNode,
-    "TableExistsNode": TableExistsNode,
-    "GetTableColumnsNode": GetTableColumnsNode,
-    "ExecuteBatchNode": ExecuteBatchNode,
-    # Data operation nodes
-    "ConcatenateNode": ConcatenateNode,
-    "FormatStringNode": FormatStringNode,
-    "RegexMatchNode": RegexMatchNode,
-    "RegexReplaceNode": RegexReplaceNode,
-    "MathOperationNode": MathOperationNode,
-    "ComparisonNode": ComparisonNode,
-    "CreateListNode": CreateListNode,
-    "ListGetItemNode": ListGetItemNode,
-    "JsonParseNode": JsonParseNode,
-    "GetPropertyNode": GetPropertyNode,
-    "ListLengthNode": ListLengthNode,
-    "ListAppendNode": ListAppendNode,
-    "ListContainsNode": ListContainsNode,
-    "ListSliceNode": ListSliceNode,
-    "ListJoinNode": ListJoinNode,
-    "ListSortNode": ListSortNode,
-    "ListReverseNode": ListReverseNode,
-    "ListUniqueNode": ListUniqueNode,
-    "ListFilterNode": ListFilterNode,
-    "ListMapNode": ListMapNode,
-    "ListReduceNode": ListReduceNode,
-    "ListFlattenNode": ListFlattenNode,
-    "DictGetNode": DictGetNode,
-    "DictSetNode": DictSetNode,
-    "DictRemoveNode": DictRemoveNode,
-    "DictMergeNode": DictMergeNode,
-    "DictKeysNode": DictKeysNode,
-    "DictValuesNode": DictValuesNode,
-    "DictHasKeyNode": DictHasKeyNode,
-    "CreateDictNode": CreateDictNode,
-    "DictToJsonNode": DictToJsonNode,
-    "DictItemsNode": DictItemsNode,
-    # File nodes
-    "ReadFileNode": ReadFileNode,
-    "WriteFileNode": WriteFileNode,
-    "AppendFileNode": AppendFileNode,
-    "DeleteFileNode": DeleteFileNode,
-    "CopyFileNode": CopyFileNode,
-    "MoveFileNode": MoveFileNode,
-    "CreateDirectoryNode": CreateDirectoryNode,
-    "ListDirectoryNode": ListDirectoryNode,
-    "ListFilesNode": ListFilesNode,
-    "FileExistsNode": FileExistsNode,
-    "GetFileInfoNode": GetFileInfoNode,
-    "GetFileSizeNode": GetFileSizeNode,
-    "ReadCSVNode": ReadCSVNode,
-    "WriteCSVNode": WriteCSVNode,
-    "ReadJSONFileNode": ReadJSONFileNode,
-    "WriteJSONFileNode": WriteJSONFileNode,
-    "ZipFilesNode": ZipFilesNode,
-    "UnzipFilesNode": UnzipFilesNode,
-    # Text nodes
-    "TextSplitNode": TextSplitNode,
-    "TextReplaceNode": TextReplaceNode,
-    "TextTrimNode": TextTrimNode,
-    "TextCaseNode": TextCaseNode,
-    "TextPadNode": TextPadNode,
-    "TextSubstringNode": TextSubstringNode,
-    "TextContainsNode": TextContainsNode,
-    "TextStartsWithNode": TextStartsWithNode,
-    "TextEndsWithNode": TextEndsWithNode,
-    "TextLinesNode": TextLinesNode,
-    "TextReverseNode": TextReverseNode,
-    "TextCountNode": TextCountNode,
-    "TextJoinNode": TextJoinNode,
-    "TextExtractNode": TextExtractNode,
-    # HTTP nodes
-    "HttpRequestNode": HttpRequestNode,
-    "SetHttpHeadersNode": SetHttpHeadersNode,
-    "HttpAuthNode": HttpAuthNode,
-    "ParseJsonResponseNode": ParseJsonResponseNode,
-    "HttpDownloadFileNode": HttpDownloadFileNode,
-    "HttpUploadFileNode": HttpUploadFileNode,
-    "BuildUrlNode": BuildUrlNode,
-    # Email nodes
-    "SendEmailNode": SendEmailNode,
-    "ReadEmailsNode": ReadEmailsNode,
-    "GetEmailContentNode": GetEmailContentNode,
-    "SaveAttachmentNode": SaveAttachmentNode,
-    "FilterEmailsNode": FilterEmailsNode,
-    "MarkEmailNode": MarkEmailNode,
-    "DeleteEmailNode": DeleteEmailNode,
-    "MoveEmailNode": MoveEmailNode,
-    # FTP nodes
-    "FTPConnectNode": FTPConnectNode,
-    "FTPUploadNode": FTPUploadNode,
-    "FTPDownloadNode": FTPDownloadNode,
-    "FTPListNode": FTPListNode,
-    "FTPDeleteNode": FTPDeleteNode,
-    "FTPMakeDirNode": FTPMakeDirNode,
-    "FTPRemoveDirNode": FTPRemoveDirNode,
-    "FTPRenameNode": FTPRenameNode,
-    "FTPDisconnectNode": FTPDisconnectNode,
-    "FTPGetSizeNode": FTPGetSizeNode,
-    # PDF nodes
-    "ReadPDFTextNode": ReadPDFTextNode,
-    "GetPDFInfoNode": GetPDFInfoNode,
-    "MergePDFsNode": MergePDFsNode,
-    "SplitPDFNode": SplitPDFNode,
-    "ExtractPDFPagesNode": ExtractPDFPagesNode,
-    "PDFToImagesNode": PDFToImagesNode,
-    # XML nodes
-    "ParseXMLNode": ParseXMLNode,
-    "ReadXMLFileNode": ReadXMLFileNode,
-    "WriteXMLFileNode": WriteXMLFileNode,
-    "XPathQueryNode": XPathQueryNode,
-    "GetXMLElementNode": GetXMLElementNode,
-    "GetXMLAttributeNode": GetXMLAttributeNode,
-    "XMLToJsonNode": XMLToJsonNode,
-    "JsonToXMLNode": JsonToXMLNode,
-    # Random nodes
-    "RandomNumberNode": RandomNumberNode,
-    "RandomChoiceNode": RandomChoiceNode,
-    "RandomStringNode": RandomStringNode,
-    "RandomUUIDNode": RandomUUIDNode,
-    "ShuffleListNode": ShuffleListNode,
-    # System nodes
-    "ClipboardCopyNode": ClipboardCopyNode,
-    "ClipboardPasteNode": ClipboardPasteNode,
-    "ClipboardClearNode": ClipboardClearNode,
-    "MessageBoxNode": MessageBoxNode,
-    "InputDialogNode": InputDialogNode,
-    "TooltipNode": TooltipNode,
-    "SystemNotificationNode": SystemNotificationNode,
-    "ConfirmDialogNode": ConfirmDialogNode,
-    "ProgressDialogNode": ProgressDialogNode,
-    "FilePickerDialogNode": FilePickerDialogNode,
-    "FolderPickerDialogNode": FolderPickerDialogNode,
-    "ColorPickerDialogNode": ColorPickerDialogNode,
-    "DateTimePickerDialogNode": DateTimePickerDialogNode,
-    "SnackbarNode": SnackbarNode,
-    "BalloonTipNode": BalloonTipNode,
-    "RunCommandNode": RunCommandNode,
-    "RunPowerShellNode": RunPowerShellNode,
-    "GetServiceStatusNode": GetServiceStatusNode,
-    "StartServiceNode": StartServiceNode,
-    "StopServiceNode": StopServiceNode,
-    "RestartServiceNode": RestartServiceNode,
-    "ListServicesNode": ListServicesNode,
-    # New dialog nodes
-    "ListPickerDialogNode": ListPickerDialogNode,
-    "MultilineInputDialogNode": MultilineInputDialogNode,
-    "CredentialDialogNode": CredentialDialogNode,
-    "FormDialogNode": FormDialogNode,
-    "ImagePreviewDialogNode": ImagePreviewDialogNode,
-    "TableDialogNode": TableDialogNode,
-    "WizardDialogNode": WizardDialogNode,
-    "SplashScreenNode": SplashScreenNode,
-    "AudioAlertNode": AudioAlertNode,
-    # System utilities
-    "ScreenRegionPickerNode": ScreenRegionPickerNode,
-    "VolumeControlNode": VolumeControlNode,
-    "ProcessListNode": ProcessListNode,
-    "ProcessKillNode": ProcessKillNode,
-    "EnvironmentVariableNode": EnvironmentVariableNode,
-    "SystemInfoNode": SystemInfoNode,
-    # Quick nodes
-    "HotkeyWaitNode": HotkeyWaitNode,
-    "BeepNode": BeepNode,
-    "ClipboardMonitorNode": ClipboardMonitorNode,
-    # Utility system nodes
-    "FileWatcherNode": FileWatcherNode,
-    "QRCodeNode": QRCodeNode,
-    "Base64Node": Base64Node,
-    "UUIDGeneratorNode": UUIDGeneratorNode,
-    "AssertSystemNode": AssertSystemNode,
-    "LogToFileNode": LogToFileNode,
-    # Media nodes
-    "TextToSpeechNode": TextToSpeechNode,
-    "PDFPreviewDialogNode": PDFPreviewDialogNode,
-    "WebcamCaptureNode": WebcamCaptureNode,
-    # Script nodes
-    "RunPythonScriptNode": RunPythonScriptNode,
-    "RunPythonFileNode": RunPythonFileNode,
-    "EvalExpressionNode": EvalExpressionNode,
-    "RunBatchScriptNode": RunBatchScriptNode,
-    "RunJavaScriptNode": RunJavaScriptNode,
-    # Utility nodes
-    "ValidateNode": ValidateNode,
-    "TransformNode": TransformNode,
-    "LogNode": LogNode,
-    # Desktop nodes - Application
-    "LaunchApplicationNode": LaunchApplicationNode,
-    "CloseApplicationNode": CloseApplicationNode,
-    "ActivateWindowNode": ActivateWindowNode,
-    "GetWindowListNode": GetWindowListNode,
-    # Desktop nodes - Element (prefixed to distinguish from browser nodes)
-    "DesktopFindElementNode": DesktopFindElementNode,
-    "DesktopClickElementNode": DesktopClickElementNode,
-    "DesktopTypeTextNode": DesktopTypeTextNode,
-    "GetElementTextNode": GetElementTextNode,
-    "GetElementPropertyNode": GetElementPropertyNode,
-    # Desktop nodes - Window management
-    "ResizeWindowNode": ResizeWindowNode,
-    "MoveWindowNode": MoveWindowNode,
-    "MaximizeWindowNode": MaximizeWindowNode,
-    "MinimizeWindowNode": MinimizeWindowNode,
-    "RestoreWindowNode": RestoreWindowNode,
-    "GetWindowPropertiesNode": GetWindowPropertiesNode,
-    "SetWindowStateNode": SetWindowStateNode,
-    # Desktop nodes - Interaction
-    "SelectFromDropdownNode": SelectFromDropdownNode,
-    "CheckCheckboxNode": CheckCheckboxNode,
-    "SelectRadioButtonNode": SelectRadioButtonNode,
-    "SelectTabNode": SelectTabNode,
-    "ExpandTreeItemNode": ExpandTreeItemNode,
-    "ScrollElementNode": ScrollElementNode,
-    # Desktop nodes - Mouse and keyboard
-    "MoveMouseNode": MoveMouseNode,
-    "MouseClickNode": MouseClickNode,
-    "SendKeysNode": SendKeysNode,
-    "SendHotKeyNode": SendHotKeyNode,
-    "GetMousePositionNode": GetMousePositionNode,
-    "DragMouseNode": DragMouseNode,
-    # Desktop nodes - Wait and verification (prefixed to distinguish from browser)
-    "DesktopWaitForElementNode": DesktopWaitForElementNode,
-    "WaitForWindowNode": WaitForWindowNode,
-    "VerifyElementExistsNode": VerifyElementExistsNode,
-    "VerifyElementPropertyNode": VerifyElementPropertyNode,
-    # Desktop nodes - Screenshot and OCR
-    "CaptureScreenshotNode": CaptureScreenshotNode,
-    "CaptureElementImageNode": CaptureElementImageNode,
-    "OCRExtractTextNode": OCRExtractTextNode,
-    "CompareImagesNode": CompareImagesNode,
-    # Desktop nodes - Office automation
-    "ExcelOpenNode": ExcelOpenNode,
-    "ExcelReadCellNode": ExcelReadCellNode,
-    "ExcelWriteCellNode": ExcelWriteCellNode,
-    "ExcelGetRangeNode": ExcelGetRangeNode,
-    "ExcelCloseNode": ExcelCloseNode,
-    "WordOpenNode": WordOpenNode,
-    "WordGetTextNode": WordGetTextNode,
-    "WordReplaceTextNode": WordReplaceTextNode,
-    "WordCloseNode": WordCloseNode,
-    "OutlookSendEmailNode": OutlookSendEmailNode,
-    "OutlookReadEmailsNode": OutlookReadEmailsNode,
-    "OutlookGetInboxCountNode": OutlookGetInboxCountNode,
-    # Trigger nodes
-    "WebhookTriggerNode": WebhookTriggerNode,
-    "ScheduleTriggerNode": ScheduleTriggerNode,
-    "FileWatchTriggerNode": FileWatchTriggerNode,
-    "EmailTriggerNode": EmailTriggerNode,
-    "AppEventTriggerNode": AppEventTriggerNode,
-    "ErrorTriggerNode": ErrorTriggerNode,
-    "WorkflowCallTriggerNode": WorkflowCallTriggerNode,
-    "FormTriggerNode": FormTriggerNode,
-    "ChatTriggerNode": ChatTriggerNode,
-    "RSSFeedTriggerNode": RSSFeedTriggerNode,
-    "SSETriggerNode": SSETriggerNode,
-    # LLM nodes (AI/ML)
-    "LLMCompletionNode": LLMCompletionNode,
-    "LLMChatNode": LLMChatNode,
-    "LLMExtractDataNode": LLMExtractDataNode,
-    "LLMSummarizeNode": LLMSummarizeNode,
-    "LLMClassifyNode": LLMClassifyNode,
-    "LLMTranslateNode": LLMTranslateNode,
-    # Subflow nodes
-    "SubflowNode": SubflowNode,
-    # Google Drive nodes
-    "DriveUploadFileNode": DriveUploadFileNode,
-    "DriveDownloadFileNode": DriveDownloadFileNode,
-    "DriveDeleteFileNode": DriveDeleteFileNode,
-    "DriveCopyFileNode": DriveCopyFileNode,
-    "DriveMoveFileNode": DriveMoveFileNode,
-    "DriveRenameFileNode": DriveRenameFileNode,
-    "DriveGetFileNode": DriveGetFileNode,
-    "DriveCreateFolderNode": DriveCreateFolderNode,
-    "DriveListFilesNode": DriveListFilesNode,
-    "DriveSearchFilesNode": DriveSearchFilesNode,
-    "DriveShareFileNode": DriveShareFileNode,
-    "DriveRemoveShareNode": DriveRemoveShareNode,
-    "DriveGetPermissionsNode": DriveGetPermissionsNode,
-    "DriveCreateShareLinkNode": DriveCreateShareLinkNode,
-    "DriveBatchDeleteNode": DriveBatchDeleteNode,
-    "DriveBatchMoveNode": DriveBatchMoveNode,
-    "DriveBatchCopyNode": DriveBatchCopyNode,
-}
+# Export NODE_TYPE_MAP as the proxy for backward compatibility
+NODE_TYPE_MAP = _NodeTypeMapProxy()
 
 
 def load_workflow_from_dict(
@@ -1034,8 +330,9 @@ def load_workflow_from_dict(
         node_type = node_data.get("node_type")
         config = node_data.get("config", {})
 
-        if node_type in NODE_TYPE_MAP:
-            node_class = NODE_TYPE_MAP[node_type]
+        # Use lazy loading from nodes module
+        node_class = get_node_class(node_type)
+        if node_class is not None:
             # Pass config as keyword argument
             node_instance = node_class(node_id, config=config)
             nodes_dict[node_id] = node_instance
@@ -1048,9 +345,11 @@ def load_workflow_from_dict(
 
     # Auto-create hidden Start node ONLY if workflow doesn't have one (like Canvas does)
     if not has_start_node:
-        start_node = StartNode("__auto_start__")
-        nodes_dict["__auto_start__"] = start_node
-        logger.info("Added auto-start node (no StartNode found in workflow)")
+        StartNode = get_node_class("StartNode")
+        if StartNode:
+            start_node = StartNode("__auto_start__")
+            nodes_dict["__auto_start__"] = start_node
+            logger.info("Added auto-start node (no StartNode found in workflow)")
     else:
         logger.info("Workflow already has a StartNode, skipping auto-start creation")
 

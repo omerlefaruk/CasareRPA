@@ -117,6 +117,10 @@ class WriteFileNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path, content -> file_path, attachment_file, bytes_written, success
+
     def __init__(self, node_id: str, name: str = "Write File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -260,6 +264,10 @@ class AppendFileNode(BaseNode):
         bytes_written: Number of bytes appended
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: file_path, content -> file_path, bytes_written, success
 
     def __init__(self, node_id: str, name: str = "Append File", **kwargs) -> None:
         config = kwargs.get("config", {})

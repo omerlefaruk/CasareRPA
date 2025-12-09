@@ -91,6 +91,10 @@ class FormFillerNode(BrowserBaseNode):
     Variable substitution is supported using ${variable_name} syntax.
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: field_mapping, fields_in -> fields_filled, form_data
+
     NODE_NAME = "Form Filler"
 
     def __init__(self, node_id: str, name: str = "Form Filler", **kwargs: Any) -> None:

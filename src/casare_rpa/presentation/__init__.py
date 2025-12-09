@@ -1,13 +1,32 @@
 """
-CasareRPA Presentation Layer - UI & User Interaction
+CasareRPA - Presentation Layer
 
-This layer contains:
-- Canvas: Qt-based visual workflow editor
-- Views: Pure UI components
-- Controllers: UI logic and coordination
-- Setup: First-run configuration wizard
+User interface, visual components, and user interaction handling.
+
+Entry Points:
+    - canvas.main_window.MainWindow: Main application window (workflow editor)
+    - canvas.graph.custom_pipe.CustomPipe: Node connection visualization
+    - canvas.ui.dialogs: Modal dialogs (preferences, credentials, properties)
+    - canvas.coordinators: UI coordination logic (execution, selection)
+    - setup.SetupWizard: First-run configuration wizard
+    - get_setup_wizard(): Lazy accessor for SetupWizard class
+
+Key Patterns:
+    - MVC/MVP: Views (Qt widgets) separated from Controllers (coordinators)
+    - Event-Driven: Qt signals/slots for UI events, EventBus for cross-component
+    - Lazy Loading: Heavy UI components loaded on demand
+    - qasync: Qt event loop integration with asyncio for async operations
+    - Theme System: Centralized styling via theme.py
+    - Dialog Factory: Consistent dialog creation and styling
+
+Related:
+    - Application layer: Invokes use cases for workflow execution
+    - Infrastructure layer: Shares event bus, uses HTTP client for API calls
+    - Domain layer: Displays domain entities (Workflow, Node) in visual form
+    - visual_nodes package: Visual representation of domain nodes
 
 Depends on: Application layer (via use cases)
+Independent of: Infrastructure implementation details
 """
 
 

@@ -50,6 +50,10 @@ class RandomNumberNode(BaseNode):
         result: The random number
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: min_value, max_value -> result
+
     def __init__(self, node_id: str, name: str = "Random Number", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -131,6 +135,10 @@ class RandomChoiceNode(BaseNode):
         result: Selected item(s) - single item if count=1, list otherwise
         index: Index of selected item (only for count=1)
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: items -> result, index
 
     def __init__(self, node_id: str, name: str = "Random Choice", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -245,6 +253,10 @@ class RandomStringNode(BaseNode):
         result: The random string
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: length -> result
+
     def __init__(self, node_id: str, name: str = "Random String", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -329,6 +341,10 @@ class RandomUUIDNode(BaseNode):
         result: The UUID string
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: none -> result
+
     def __init__(self, node_id: str, name: str = "Random UUID", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -385,6 +401,10 @@ class ShuffleListNode(BaseNode):
     Outputs:
         result: Shuffled list
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: items -> result
 
     def __init__(self, node_id: str, name: str = "Shuffle List", **kwargs) -> None:
         config = kwargs.get("config", {})

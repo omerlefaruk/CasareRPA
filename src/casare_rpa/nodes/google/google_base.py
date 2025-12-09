@@ -157,6 +157,10 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
                 # ... use Gmail API ...
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
+
     # Subclasses must define required OAuth2 scopes
     REQUIRED_SCOPES: List[str] = []
 
@@ -584,6 +588,10 @@ class GmailBaseNode(GoogleBaseNode):
     Subclasses implement _execute_gmail() instead of _execute_google().
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
+
     # Gmail requires modify scope for most operations
     REQUIRED_SCOPES: List[str] = SCOPES.get("gmail", [])
     SERVICE_NAME = "gmail"
@@ -630,6 +638,10 @@ class DocsBaseNode(GoogleBaseNode):
 
     Subclasses implement _execute_docs() instead of _execute_google().
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
 
     REQUIRED_SCOPES: List[str] = SCOPES.get("docs", [])
     SERVICE_NAME = "docs"
@@ -692,6 +704,10 @@ class SheetsBaseNode(GoogleBaseNode):
 
     Subclasses implement _execute_sheets() instead of _execute_google().
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
 
     REQUIRED_SCOPES: List[str] = SCOPES.get("sheets", [])
     SERVICE_NAME = "sheets"
@@ -842,6 +858,10 @@ class DriveBaseNode(GoogleBaseNode):
     Subclasses implement _execute_drive() instead of _execute_google().
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
+
     REQUIRED_SCOPES: List[str] = SCOPES.get("drive", [])
     SERVICE_NAME = "drive"
     SERVICE_VERSION = "v3"
@@ -933,6 +953,10 @@ class CalendarBaseNode(GoogleBaseNode):
 
     Subclasses implement _execute_calendar() instead of _execute_google().
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
 
     REQUIRED_SCOPES: List[str] = SCOPES.get("calendar", [])
     SERVICE_NAME = "calendar"

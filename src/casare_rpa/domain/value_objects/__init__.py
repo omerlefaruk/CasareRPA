@@ -39,6 +39,11 @@ from casare_rpa.domain.value_objects.types import (
     SerializedNode,
     SerializedWorkflow,
 )
+from casare_rpa.domain.value_objects.trigger_types import (
+    TriggerType,
+    TriggerStatus,
+    TriggerPriority,
+)
 
 __all__ = [
     # Enums
@@ -49,6 +54,9 @@ __all__ = [
     "LogLevel",
     "NodeStatus",
     "PortType",
+    "TriggerType",
+    "TriggerStatus",
+    "TriggerPriority",
     # Type aliases
     "Connection",
     "EventData",

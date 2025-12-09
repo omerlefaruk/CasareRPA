@@ -48,6 +48,10 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
     Subclasses implement _execute_telegram() for specific operations.
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: none -> none
+
     def __init__(
         self, node_id: str, name: str = "Telegram Node", **kwargs: Any
     ) -> None:

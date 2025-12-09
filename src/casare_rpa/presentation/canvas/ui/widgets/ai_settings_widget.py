@@ -21,6 +21,8 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 
 # Available models organized by provider
 LLM_MODELS: Dict[str, List[str]] = {
@@ -470,43 +472,43 @@ class AISettingsWidget(QWidget):
         self._load_credentials()
 
     def apply_dark_style(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QGroupBox {
-                background: #2d2d2d;
-                border: 1px solid #4a4a4a;
+        """Apply dark theme styling using THEME constants."""
+        self.setStyleSheet(f"""
+            QGroupBox {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
                 border-radius: 4px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 8px;
                 padding: 0 4px;
-                color: #e0e0e0;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-            QComboBox {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
+                color: {THEME.text_primary};
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+            QComboBox {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
                 padding: 4px 8px;
                 border-radius: 3px;
                 min-height: 20px;
-            }
-            QComboBox:hover {
-                border-color: #5a8a9a;
-            }
-            QComboBox::drop-down {
+            }}
+            QComboBox:hover {{
+                border-color: {THEME.border_focus};
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 20px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #2d2d2d;
-                color: #e0e0e0;
-                selection-background-color: #5a8a9a;
-                border: 1px solid #4a4a4a;
-            }
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_primary};
+                selection-background-color: {THEME.border_focus};
+                border: 1px solid {THEME.border};
+            }}
         """)

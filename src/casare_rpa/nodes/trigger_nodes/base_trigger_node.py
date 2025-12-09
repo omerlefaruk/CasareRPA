@@ -38,6 +38,10 @@ class BaseTriggerNode(BaseNode):
     - _define_payload_ports(): Define output ports for trigger data
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> exec_out
+
     # Class attribute to identify trigger nodes
     is_trigger_node: bool = True
 

@@ -25,6 +25,13 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    DialogStyles,
+    DialogSize,
+    apply_dialog_style,
+    COLORS,
+)
+
 
 class NodePropertiesDialog(QDialog):
     """
@@ -66,13 +73,13 @@ class NodePropertiesDialog(QDialog):
         self._property_widgets: Dict[str, QWidget] = {}
 
         self.setWindowTitle(f"Node Properties - {node_type}")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(400)
         self.setModal(True)
+
+        # Apply standardized dialog styling
+        apply_dialog_style(self, DialogSize.MD)
 
         self._setup_ui()
         self._load_properties()
-        self._apply_styles()
 
         logger.debug(f"NodePropertiesDialog opened for {node_id}")
 
@@ -81,12 +88,12 @@ class NodePropertiesDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # Header
-        header = QLabel(f"<b>{self.node_type}</b>")
-        header.setStyleSheet("font-size: 14px; padding: 5px;")
+        header = QLabel(self.node_type)
+        header.setStyleSheet(DialogStyles.header(font_size=16))
         layout.addWidget(header)
 
         id_label = QLabel(f"ID: {self.node_id}")
-        id_label.setStyleSheet("color: #888888; font-size: 10px; padding: 0 5px;")
+        id_label.setStyleSheet(f"color: {COLORS.text_muted}; font-size: 10px;")
         layout.addWidget(id_label)
 
         # Tabs for different property categories
@@ -208,40 +215,6 @@ class NodePropertiesDialog(QDialog):
         layout.addStretch()
 
         return widget
-
-    def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QGroupBox {
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                margin-top: 10px;
-                padding-top: 10px;
-                font-weight: bold;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px;
-            }
-            QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus {
-                border: 1px solid #5a8a9a;
-            }
-            QCheckBox {
-                color: #e0e0e0;
-            }
-        """)
 
     def _load_properties(self) -> None:
         """Load current properties into widgets."""

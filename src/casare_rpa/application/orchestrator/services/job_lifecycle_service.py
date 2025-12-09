@@ -7,7 +7,7 @@ import os
 import asyncio
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, TYPE_CHECKING
 from pathlib import Path
 
 from loguru import logger
@@ -20,7 +20,7 @@ load_dotenv()
 
 
 # Forward reference for type hints - avoid circular import
-if False:  # TYPE_CHECKING equivalent that works at runtime
+if TYPE_CHECKING:
     from casare_rpa.application.orchestrator.services.robot_management_service import (
         RobotManagementService,
     )

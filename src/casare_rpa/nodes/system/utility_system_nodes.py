@@ -78,6 +78,10 @@ class FileWatcherNode(BaseNode):
     Uses watchdog library to observe file system events.
     """
 
+    # @category: system
+    # @requires: pillow
+    # @ports: none -> event_type, file_path, triggered, timed_out
+
     def __init__(self, node_id: str, name: str = "File Watcher", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -276,6 +280,10 @@ class FileWatcherNode(BaseNode):
 class QRCodeNode(BaseNode):
     """Generate or read QR codes."""
 
+    # @category: system
+    # @requires: pillow
+    # @ports: data -> result, success
+
     def __init__(self, node_id: str, name: str = "QR Code", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -424,6 +432,10 @@ class QRCodeNode(BaseNode):
 class Base64Node(BaseNode):
     """Encode or decode base64 strings."""
 
+    # @category: system
+    # @requires: pillow
+    # @ports: input_text -> output, success
+
     def __init__(self, node_id: str, name: str = "Base64", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -513,6 +525,10 @@ class Base64Node(BaseNode):
 class UUIDGeneratorNode(BaseNode):
     """Generate UUIDs."""
 
+    # @category: system
+    # @requires: pillow
+    # @ports: none -> uuid, uuids, success
+
     def __init__(self, node_id: str, name: str = "UUID Generator", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -592,6 +608,10 @@ class UUIDGeneratorNode(BaseNode):
 @executable_node
 class AssertSystemNode(BaseNode):
     """Validate conditions and optionally fail the workflow."""
+
+    # @category: system
+    # @requires: pillow
+    # @ports: condition, value -> passed, message
 
     def __init__(self, node_id: str, name: str = "Assert", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -760,6 +780,10 @@ class AssertSystemNode(BaseNode):
 class LogToFileNode(BaseNode):
     """Write messages to a custom log file."""
 
+    # @category: system
+    # @requires: pillow
+    # @ports: log_message -> success, lines_written
+
     def __init__(self, node_id: str, name: str = "Log to File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -783,8 +807,9 @@ class LogToFileNode(BaseNode):
             message = self.get_input_value("log_message")
             if message is None:
                 message = self.get_parameter("log_message", "")
-            message = context.resolve_value(str(message))
-            file_path = context.resolve_value(str(file_path))
+            # Resolve variables first, THEN convert to string (resolve preserves types for {{var}} patterns)
+            message = str(context.resolve_value(message) or "")
+            file_path = str(context.resolve_value(file_path) or "")
 
             if not file_path:
                 self.status = NodeStatus.ERROR

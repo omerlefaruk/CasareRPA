@@ -54,6 +54,10 @@ class ScreenRegionPickerNode(BaseNode):
         confirmed: True if selection was completed
     """
 
+    # @category: system
+    # @requires: uiautomation
+    # @ports: none -> x, y, width, height, confirmed
+
     def __init__(
         self, node_id: str, name: str = "Screen Region Picker", **kwargs
     ) -> None:
@@ -271,6 +275,10 @@ class VolumeControlNode(BaseNode):
         success: True if operation succeeded
     """
 
+    # @category: system
+    # @requires: uiautomation
+    # @ports: level -> volume, muted, success
+
     def __init__(self, node_id: str, name: str = "Volume Control", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -387,6 +395,10 @@ class ProcessListNode(BaseNode):
         processes: List of process dictionaries
         count: Number of processes found
     """
+
+    # @category: system
+    # @requires: uiautomation
+    # @ports: filter_name -> processes, count
 
     def __init__(self, node_id: str, name: str = "Process List", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -518,6 +530,10 @@ class ProcessKillNode(BaseNode):
         killed_count: Number of processes killed
         success: True if at least one process was killed
     """
+
+    # @category: system
+    # @requires: uiautomation
+    # @ports: pid_or_name -> killed_count, success
 
     def __init__(self, node_id: str, name: str = "Process Kill", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -670,6 +686,10 @@ class EnvironmentVariableNode(BaseNode):
         success: True if operation succeeded
     """
 
+    # @category: system
+    # @requires: uiautomation
+    # @ports: var_name, value -> result_value, exists, success
+
     def __init__(
         self, node_id: str, name: str = "Environment Variable", **kwargs
     ) -> None:
@@ -814,6 +834,10 @@ class SystemInfoNode(BaseNode):
         ram_percent: Current RAM usage
         disk_percent: Current disk usage
     """
+
+    # @category: system
+    # @requires: uiautomation
+    # @ports: none -> info, os_name, cpu_percent, ram_percent, disk_percent
 
     def __init__(self, node_id: str, name: str = "System Info", **kwargs) -> None:
         config = kwargs.get("config", {})

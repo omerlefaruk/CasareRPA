@@ -77,6 +77,10 @@ class SSETriggerNode(BaseTriggerNode):
     - timestamp: When the event was received
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "SSE"
     trigger_description = "Trigger on Server-Sent Events"
     trigger_icon = "stream"

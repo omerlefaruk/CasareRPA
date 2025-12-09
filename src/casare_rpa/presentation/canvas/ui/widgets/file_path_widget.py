@@ -20,6 +20,8 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 
 class PathType(Enum):
     """Types of paths that can be selected."""
@@ -140,38 +142,38 @@ class FilePathWidget(QWidget):
         self._apply_styles()
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self._path_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
+        """Apply dark theme styling using THEME constants."""
+        self._path_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
                 padding: 4px 8px;
-            }
-            QLineEdit:focus {
-                border-color: #5a8a9a;
-            }
-            QLineEdit:hover {
-                border-color: #5a5a5a;
-            }
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME.border_focus};
+            }}
+            QLineEdit:hover {{
+                border-color: {THEME.border_light};
+            }}
         """)
 
-        self._browse_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
+        self._browse_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
                 padding: 4px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-                border-color: #5a8a9a;
-            }
-            QPushButton:pressed {
-                background-color: #5a8a9a;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+                border-color: {THEME.border_focus};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.accent_primary};
+            }}
         """)
 
     def _get_default_placeholder(self) -> str:

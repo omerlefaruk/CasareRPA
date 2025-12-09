@@ -4,7 +4,7 @@ CasareRPA - Google Drive Nodes
 Nodes for file and folder operations with Google Drive API v3.
 """
 
-from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
+from casare_rpa.nodes.google.google_base import DriveBaseNode
 from casare_rpa.nodes.google.drive.drive_files import (
     DriveUploadFileNode,
     DriveDownloadFileNode,

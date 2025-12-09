@@ -1,0 +1,1 @@
+"""Canvas managers tests."""

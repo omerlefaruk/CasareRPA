@@ -122,6 +122,10 @@ class TableExistsNode(BaseNode):
         - error: Error message if failed
     """
 
+    # @category: database
+    # @requires: database
+    # @ports: connection, table_name -> exists, success, error
+
     def __init__(self, node_id: str, name: str = "Table Exists", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         config.setdefault("table_name", "")
@@ -243,6 +247,10 @@ class GetTableColumnsNode(BaseNode):
         - success: True if query succeeded
         - error: Error message if failed
     """
+
+    # @category: database
+    # @requires: database
+    # @ports: connection, table_name -> columns, column_names, success, error
 
     def __init__(
         self, node_id: str, name: str = "Get Table Columns", **kwargs: Any

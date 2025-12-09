@@ -1,12 +1,417 @@
 # Active Context
 
-**Last Updated**: 2025-12-08 | **Updated By**: Claude
+**Last Updated**: 2025-12-09 | **Updated By**: Claude (Opus 4.5)
 
 ## Current Session
-- **Date**: 2025-12-08
-- **Focus**: Project Manager Overhaul
-- **Status**: IN PROGRESS (Sprints 1-2 Complete)
+- **Date**: 2025-12-09
+- **Focus**: Variable Resolution Fix (MMB Variable Picker)
+- **Status**: COMPLETE
 - **Branch**: main
+
+---
+
+## Variable Resolution Fix (2025-12-09) - COMPLETE
+
+Fixed issue where variables dragged from MMB menu (e.g., `{{Send Hotkey.success}}`) displayed literally instead of resolving to actual values at runtime.
+
+### Root Cause
+- **Storage**: `execute_workflow.py` stored outputs using `node_id` (UUID-like)
+- **Reference**: Variable picker inserted `{{node_name.port}}` (display name with spaces)
+- **Resolution**: Regex pattern didn't support spaces and lookup failed anyway
+
+### Solution
+Added `insertion_path` field to `VariableInfo` to separate display from resolution:
+- **Display**: Shows user-friendly `Send Hotkey.success` in dropdown
+- **Insertion**: Uses `{{node_id.port}}` for actual variable resolution
+
+### File Modified
+| File | Change |
+|------|--------|
+| `presentation/canvas/ui/widgets/variable_picker.py` | Added `insertion_path` field, updated `insertion_text` property, modified `_get_upstream_node_variables()` |
+
+### Tests
+- All 77 variable-related tests pass
+- Module imports successfully
+- Behavior verified: `insertion_path` takes precedence when set
+
+---
+
+## AI-Friendliness Refactoring (2025-12-09) - COMPLETE
+
+Enhanced codebase for better AI/LLM navigation and understanding through explicit error handling patterns, node metadata tagging, and comprehensive docstrings.
+
+### Major Accomplishments
+
+| Area | Status | Details |
+|------|--------|---------|
+| **Result[T,E] Pattern** | Created | Monadic error handling without exceptions |
+| **Error Hierarchy** | Created | Structured DomainError tree with error codes |
+| **INode Protocol** | Created | Formal interface for node implementations |
+| **Node Metadata Tags** | Added | 105 node files tagged with @category, @requires, @ports |
+| **Infrastructure *_safe()** | Added | 15 methods returning Result instead of raising |
+| **Node Preloader** | Created | Background loading for faster startup |
+| **Enhanced Docstrings** | Updated | All layer __init__.py with Entry Points, Key Patterns |
+| **Inline Comments** | Added | Core use cases documented with explanatory comments |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `domain/errors/result.py` | `Result[T,E]`, `Ok`, `Err` types for explicit error handling |
+| `domain/errors/exceptions.py` | `DomainError`, `NodeExecutionError`, `ValidationError`, `FileSystemError`, `NetworkError`, `ConfigurationError` |
+| `domain/interfaces/node.py` | `INode` protocol with execute/validate methods, `IExecutionContext` extension |
+| `scripts/add_node_tags.py` | Automated script to add metadata tags to node files |
+| `nodes/preloader.py` | `NodePreloader` class for background node loading during startup |
+| `tests/nodes/test_preloader.py` | Unit tests for NodePreloader (13 tests) |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `domain/interfaces/__init__.py` | Exports INode, IExecutionContext protocols |
+| `domain/errors/__init__.py` | Exports Result, Ok, Err, all exception types |
+| `domain/entities/base_node.py` | Added execute_safe() returning Result, register_error_code() method |
+| `application/use_cases/node_executor.py` | Added inline comments explaining control flow |
+| `application/use_cases/variable_resolver.py` | Added inline comments explaining variable resolution |
+| `application/use_cases/execute_workflow.py` | Added inline comments explaining workflow execution |
+| `infrastructure/persistence/folder_storage.py` | Added load_safe(), save_safe(), list_safe(), delete_safe() |
+| `infrastructure/persistence/template_storage.py` | Added load_safe(), save_safe(), list_safe(), delete_safe() |
+| `infrastructure/persistence/environment_storage.py` | Added load_safe(), save_safe(), list_safe(), delete_safe() |
+| `presentation/canvas/initializers/ui_component_initializer.py` | Integrated NodePreloader for background loading |
+| **105 node files** | Added @category, @requires, @ports metadata tags |
+
+### Key Design Decisions
+
+1. **Result Pattern vs Exceptions**
+   - Chose `Result[T,E]` for operations where failure is expected (file I/O, network)
+   - Keep exceptions for programmer errors and truly exceptional cases
+   - *_safe() methods allow gradual adoption without breaking existing code
+
+2. **Node Metadata Format**
+   - Used docstring tags (@category, @requires, @ports) for LLM parseability
+   - Tags placed at end of module docstring to avoid disrupting existing structure
+   - Consistent format enables automated tooling and AI navigation
+
+3. **Error Hierarchy Design**
+   - All domain errors inherit from `DomainError` base class
+   - Each error type has unique error_code (e.g., "ERR_NODE_EXECUTION")
+   - Structured for both human readability and programmatic handling
+
+4. **Preloader Architecture**
+   - Singleton pattern for thread-safe access
+   - Background thread to avoid blocking UI startup
+   - Progress callbacks for status reporting
+   - Graceful degradation if preloading fails
+
+### Node Metadata Tag Format
+
+```python
+"""
+Module docstring here.
+
+@category: browser
+@requires: playwright, async
+@ports:
+    Input:
+        - url (str): Target URL
+    Output:
+        - result (str): Page content
+"""
+```
+
+### Usage Examples
+
+**Result Pattern:**
+```python
+from casare_rpa.domain.errors import Result, Ok, Err
+
+def load_config(path: str) -> Result[dict, str]:
+    if not path.exists():
+        return Err(f"File not found: {path}")
+    return Ok(json.load(open(path)))
+
+# Usage
+match load_config("config.json"):
+    case Ok(config):
+        print(f"Loaded: {config}")
+    case Err(error):
+        print(f"Failed: {error}")
+```
+
+**Node with Error Code:**
+```python
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.errors import NodeExecutionError
+
+class MyNode(BaseNode):
+    ERROR_CODE = "ERR_MY_NODE_FAILED"
+
+    async def execute(self, context):
+        try:
+            # ... node logic
+            pass
+        except Exception as e:
+            raise NodeExecutionError(
+                message=str(e),
+                node_id=self.id,
+                node_type=self.node_type
+            )
+```
+
+### Pending Items / Follow-up Tasks
+
+1. **Migrate Remaining Code to Result Pattern**
+   - Application layer use cases could return Result instead of raising
+   - Consider for node execute() methods (breaking change)
+
+2. **Add More Node Metadata**
+   - @example tag with usage snippets
+   - @errors tag listing possible error codes
+   - @see tag for related nodes
+
+3. **Preloader Optimization**
+   - Consider lazy loading for rarely-used node categories
+   - Add caching for node metadata
+
+4. **Test Coverage**
+   - Add tests for Result pattern edge cases
+   - Add tests for error hierarchy serialization
+
+---
+
+## Comprehensive Audit Summary (2025-12-09) - COMPLETE
+
+### Audit Scope
+- **Agents Deployed**: 35 sub-agents across 7 phases
+- **Tests Created**: 401 new tests
+- **Node Registry**: 413 nodes registered (was 318)
+- **Files Deleted**: 7 unused UI files
+
+### Major Accomplishments
+
+| Area | Status | Details |
+|------|--------|---------|
+| **Technical Debt** | Resolved | All domain layer violations fixed |
+| **Theme System** | Unified | THEME constants for all colors |
+| **MainWindow Split** | Complete | SignalCoordinator + PanelManager extracted |
+| **UnifiedHttpClient** | Created | Composable resilience patterns |
+| **SSRF Protection** | Added | URL validation in HTTP client |
+| **Node Registration** | Fixed | Single source of truth in workflow_loader.py |
+
+### Files Created
+- `src/casare_rpa/infrastructure/http/unified_http_client.py` - Composable HTTP client
+- `src/casare_rpa/domain/interfaces/execution_context.py` - IExecutionContext protocol
+- `src/casare_rpa/domain/interfaces/repositories.py` - Storage protocols
+- `src/casare_rpa/presentation/canvas/coordinators/signal_coordinator.py` - Action callbacks
+- `src/casare_rpa/presentation/canvas/managers/panel_manager.py` - Panel visibility
+- `src/casare_rpa/domain/value_objects/trigger_types.py` - Domain trigger enums
+- `src/casare_rpa/domain/entities/trigger_config.py` - Trigger entity
+
+### Files Deleted (7 unused UI)
+- `presentation/canvas/desktop/desktop_recording_panel.py`
+- `presentation/canvas/desktop/rich_comment_node.py`
+- `presentation/canvas/graph/quick_actions_toolbar.py`
+- `presentation/canvas/search/node_search_dialog.py`
+- `presentation/canvas/search/searchable_menu.py`
+- `presentation/canvas/ui/action_factory.py`
+- `presentation/canvas/ui/signal_bridge.py`
+
+### Test Coverage Added
+
+| Test File | Tests | Coverage Area |
+|-----------|-------|---------------|
+| `test_unified_http_client.py` | 39 | HTTP client resilience |
+| `test_execution_context.py` | 41 | Protocol compliance |
+| `test_signal_coordinator.py` | 69 | Action callbacks |
+| `test_panel_manager.py` | 63 | Panel management |
+| Domain + Infrastructure | 189 | Various new code |
+
+---
+
+## Mandatory 5-Phase Workflow (2025-12-09) - COMPLETE
+
+Implemented mandatory workflow enforcement in CLAUDE.md requiring ALL agents to follow:
+
+```
+RESEARCH → PLAN (user approval) → EXECUTE → VALIDATE → DOCS
+```
+
+### Key Features
+1. **User approval required** - PLAN → EXECUTE requires explicit user approval
+2. **Abbreviated research** - Trivial tasks get quick file read only
+3. **DOCS mandatory** - 5th phase after APPROVED
+4. **Diagnostic loop** - On ISSUES: structured analysis until APPROVED
+5. **Phase announcements** - "Entering [PHASE] phase..." for visibility
+
+---
+
+## Unit Tests for Phase D New Code (2025-12-09) - COMPLETE
+
+Created comprehensive unit tests for new infrastructure and presentation layer code.
+
+### Test Files Created
+
+| File | Tests | Coverage Target |
+|------|-------|-----------------|
+| `tests/infrastructure/http/test_unified_http_client.py` | 39 tests | Session pooling, rate limiting, circuit breaker, retry logic, all HTTP methods |
+| `tests/domain/interfaces/test_execution_context.py` | 41 tests | Protocol definition, concrete implementation compliance, async methods |
+| `tests/presentation/canvas/coordinators/test_signal_coordinator.py` | 69 tests | Action callbacks, controller delegation, error handling |
+| `tests/presentation/canvas/managers/test_panel_manager.py` | 63 tests | Panel show/hide, tab switching, panel access methods |
+
+### Test Summary
+
+| Module | Tests Written | Assertions | Key Test Categories |
+|--------|---------------|------------|---------------------|
+| UnifiedHttpClient | 39 | 100+ | RequestStats, Config, Session pooling, HTTP methods, Retry logic, Rate limiting, Circuit breaker, Statistics, URL parsing |
+| IExecutionContext | 41 | 80+ | Protocol definition, Variable management, Execution flow, Browser management, Parallel execution, Lifecycle |
+| SignalCoordinator | 69 | 150+ | Workflow actions, Execution actions, Debug actions, Node actions, View actions, Mode toggles, Menu actions, Selector actions, Project management, Validation |
+| PanelManager | 63 | 120+ | Bottom panel, Side panel, Tab switching, Panel access, Debug panel, Status bar buttons |
+
+**Total Tests**: 212 tests passing
+
+### Test Patterns Used
+
+- **Three-scenario pattern**: Happy path, sad path, edge cases
+- **Mock strategy**: All Qt dependencies mocked to avoid initialization issues
+- **Async testing**: `@pytest.mark.asyncio` for async method tests
+- **Protocol compliance**: Tests verify concrete implements interface
+
+### Supporting Files Created
+
+| File | Purpose |
+|------|---------|
+| `tests/infrastructure/http/__init__.py` | Package marker |
+| `tests/domain/interfaces/__init__.py` | Package marker |
+| `tests/presentation/canvas/coordinators/__init__.py` | Package marker |
+| `tests/presentation/canvas/coordinators/conftest.py` | Pytest config for Qt mocking |
+| `tests/presentation/canvas/managers/__init__.py` | Package marker |
+| `tests/presentation/canvas/managers/conftest.py` | Pytest config for Qt mocking |
+
+### Running Tests
+
+```bash
+# Run all new tests
+pytest tests/infrastructure/http/test_unified_http_client.py tests/domain/interfaces/test_execution_context.py -v --no-cov
+
+# Run presentation tests (disable Qt plugin)
+pytest tests/presentation/canvas/coordinators/test_signal_coordinator.py tests/presentation/canvas/managers/test_panel_manager.py -v -p no:qt --no-cov
+```
+
+---
+
+## Architecture Layer Violations Fix (2025-12-09) - COMPLETE (POC)
+
+### Problem
+Application layer was importing directly from Infrastructure layer (ExecutionContext), violating Clean DDD principles.
+
+### Solution
+Created Domain layer interfaces (Protocols) that Application layer depends on, while Infrastructure implements.
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/casare_rpa/domain/interfaces/__init__.py` | Package exports for all interfaces |
+| `src/casare_rpa/domain/interfaces/execution_context.py` | IExecutionContext protocol |
+| `src/casare_rpa/domain/interfaces/repositories.py` | IFolderStorage, IEnvironmentStorage, ITemplateStorage protocols |
+
+### Files Updated (Top 3 Use Cases - POC)
+
+| File | Old Import | New Import |
+|------|------------|------------|
+| `application/use_cases/execute_workflow.py` | `from infrastructure.execution import ExecutionContext` | `from domain.interfaces import IExecutionContext` + concrete for instantiation |
+| `application/use_cases/node_executor.py` | `from infrastructure.execution import ExecutionContext` | `from domain.interfaces import IExecutionContext` |
+| `application/use_cases/variable_resolver.py` | `from infrastructure.execution import ExecutionContext` | `from domain.interfaces import IExecutionContext` |
+
+### Architecture Pattern Applied
+
+```
+Application Layer
+       |
+       v (depends on abstraction)
+Domain Interfaces (IExecutionContext, IFolderStorage, etc.)
+       ^
+       | (implements)
+Infrastructure Layer (ExecutionContext, FolderStorage, etc.)
+```
+
+### Remaining Work (Other Violations)
+
+| File | Violation | Status |
+|------|-----------|--------|
+| `nodes/data_nodes.py` | Imports ExecutionContext from infrastructure | TODO |
+| `nodes/database/sql_nodes.py` | Imports ExecutionContext from infrastructure | TODO |
+| `nodes/browser_nodes.py` | Imports ExecutionContext + PlaywrightManager | TODO |
+| `nodes/control_flow_nodes.py` | Imports ExecutionContext | TODO |
+| `nodes/variable_nodes.py` | Imports ExecutionContext | TODO |
+| 15+ more node files | Similar violations | TODO |
+| `application/use_cases/subflow_executor.py` | Imports ExecutionContext | TODO |
+| `application/use_cases/error_recovery.py` | Imports ExecutionContext | TODO |
+
+### Next Steps (Full Refactor)
+1. Update all remaining node files to use IExecutionContext
+2. Consider dependency injection instead of direct instantiation
+3. Create factory for ExecutionContext creation
+4. Update tests to mock IExecutionContext
+
+---
+
+## Codebase Audit (2025-12-09) - COMPLETE
+
+### Completed Tasks
+1. ✅ Fixed node registration gaps (318→373 nodes)
+2. ✅ Merged NODE_REGISTRY + NODE_TYPE_MAP into single source of truth
+3. ✅ Fixed 3 domain layer violations
+4. ✅ Deleted 7 unused UI files
+5. ✅ Fixed broken imports after domain layer fix
+6. ✅ Verified circular imports (already handled via local imports)
+7. ✅ Verified security (exec/eval intentional with proper restrictions)
+8. ✅ Verified performance (icon atlas bounded, LOD manager proper)
+9. ✅ Verified error handling (workflow_loader has comprehensive validation)
+10. ✅ All 7132 tests passing
+11. ✅ Registered 36 missing Desktop nodes (373→413 nodes)
+12. ✅ Registered 4 missing Gmail label nodes
+
+### Files Created
+- `src/casare_rpa/domain/value_objects/trigger_types.py` - TriggerType, TriggerStatus, TriggerPriority enums
+- `src/casare_rpa/domain/entities/trigger_config.py` - TriggerConfig entity + protocol
+
+### Files Modified
+- `src/casare_rpa/domain/errors/registry.py` - Pure Python threading singleton
+- `src/casare_rpa/domain/port_type_system.py` - Domain abstractions only
+- `src/casare_rpa/domain/orchestrator/repositories/trigger_repository.py` - Uses domain types
+- `src/casare_rpa/triggers/base.py` - Imports from domain layer
+- `src/casare_rpa/utils/workflow/workflow_loader.py` - Single source of truth for nodes
+- `src/casare_rpa/presentation/canvas/graph/port_shapes.py` - Fixed import path
+- `src/casare_rpa/presentation/canvas/connections/connection_validator.py` - Fixed import path
+- `src/casare_rpa/presentation/canvas/graph/custom_pipe.py` - Fixed import path
+
+### Files Deleted (7 unused UI)
+- `presentation/canvas/desktop/desktop_recording_panel.py`
+- `presentation/canvas/desktop/rich_comment_node.py`
+- `presentation/canvas/graph/quick_actions_toolbar.py`
+- `presentation/canvas/search/node_search_dialog.py`
+- `presentation/canvas/search/searchable_menu.py`
+- `presentation/canvas/ui/action_factory.py`
+- `presentation/canvas/ui/signal_bridge.py`
+
+### Review Later (Orchestrator - Keep for Future)
+```
+application/orchestrator/orchestrator_engine.py
+application/orchestrator/services/distribution_service.py
+application/orchestrator/services/result_collector_service.py
+infrastructure/orchestrator/api/database.py
+infrastructure/orchestrator/communication/cloud_service.py
+infrastructure/orchestrator/communication/delegates.py
+infrastructure/orchestrator/communication/realtime_service.py
+infrastructure/orchestrator/communication/websocket_client.py
+infrastructure/orchestrator/resilience/error_recovery.py
+```
+
+### Keep (Intentionally Unused)
+- `infrastructure/config/cloudflare_config.py`
+- `triggers/webhook_auth.py`
+- `utils/workflow/subgraph_calculator.py`
 
 ---
 

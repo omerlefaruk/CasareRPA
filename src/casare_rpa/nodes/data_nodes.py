@@ -113,6 +113,10 @@ class ExtractTextNode(BrowserBaseNode):
         text: Extracted text content
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: none -> text
+
     def __init__(
         self,
         node_id: str,
@@ -291,6 +295,10 @@ class GetAttributeNode(BrowserBaseNode):
     Outputs:
         value: Attribute value
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: attribute -> value
 
     def __init__(
         self,
@@ -530,6 +538,10 @@ class ScreenshotNode(BrowserBaseNode):
         file_path: Path where screenshot was saved
         attachment_file: List containing file path (for attachments)
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: file_path -> file_path, attachment_file
 
     def __init__(
         self,

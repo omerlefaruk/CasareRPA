@@ -112,6 +112,10 @@ class ReadCSVNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> data, headers, row_count, success
+
     def __init__(self, node_id: str, name: str = "Read CSV", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -252,6 +256,10 @@ class WriteCSVNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path, data, headers -> file_path, attachment_file, row_count, success
+
     def __init__(self, node_id: str, name: str = "Write CSV", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -356,6 +364,10 @@ class ReadJSONFileNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> data, success
+
     def __init__(self, node_id: str, name: str = "Read JSON File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -438,6 +450,10 @@ class WriteJSONFileNode(BaseNode):
         file_path: Written file path
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: file_path, data -> file_path, attachment_file, success
 
     def __init__(self, node_id: str, name: str = "Write JSON File", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -557,6 +573,10 @@ class ZipFilesNode(BaseNode):
         file_count: Number of files added
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: zip_path, source_path, files, base_dir -> zip_path, attachment_file, file_count, success
 
     def __init__(self, node_id: str, name: str = "Zip Files", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -727,6 +747,10 @@ class UnzipFilesNode(BaseNode):
         file_count: Number of files extracted
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: zip_path, extract_to -> extract_to, files, file_count, success
 
     def __init__(self, node_id: str, name: str = "Unzip Files", **kwargs) -> None:
         config = kwargs.get("config", {})

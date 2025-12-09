@@ -31,6 +31,16 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    DialogStyles,
+    DialogSize,
+    apply_dialog_style,
+    show_styled_warning,
+    show_styled_error,
+    show_styled_question,
+    COLORS,
+)
+
 
 class ApiKeyTestWorker(QObject):
     """Worker for testing API keys in a background thread."""
@@ -223,13 +233,13 @@ class CredentialManagerDialog(QDialog):
         self._current_credential_id: Optional[str] = None
 
         self.setWindowTitle("Credential Manager")
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
         self.setModal(True)
+
+        # Apply standardized dialog styling
+        apply_dialog_style(self, DialogSize.LG)
 
         self._setup_ui()
         self._load_credentials()
-        self._apply_styles()
 
         logger.debug("CredentialManagerDialog opened")
 
@@ -282,7 +292,7 @@ class CredentialManagerDialog(QDialog):
         left_panel = QVBoxLayout()
 
         provider_label = QLabel("LLM Providers")
-        provider_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        provider_label.setStyleSheet(DialogStyles.header(font_size=14))
         left_panel.addWidget(provider_label)
 
         self._api_provider_list = QListWidget()
@@ -380,7 +390,7 @@ class CredentialManagerDialog(QDialog):
         left_panel = QVBoxLayout()
 
         list_label = QLabel("Saved Logins")
-        list_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        list_label.setStyleSheet(DialogStyles.header(font_size=14))
         left_panel.addWidget(list_label)
 
         self._userpass_list = QListWidget()
@@ -469,11 +479,11 @@ class CredentialManagerDialog(QDialog):
         # Header
         header_layout = QHBoxLayout()
         header_label = QLabel("Connected Google Accounts")
-        header_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+        header_label.setStyleSheet(DialogStyles.header(font_size=16))
         header_layout.addWidget(header_label)
         header_layout.addStretch()
 
-        # Add account button
+        # Add account button (Google blue)
         self._google_add_btn = QPushButton("+ Add Google Account")
         self._google_add_btn.clicked.connect(self._add_google_account)
         self._google_add_btn.setStyleSheet("""
@@ -481,9 +491,10 @@ class CredentialManagerDialog(QDialog):
                 background-color: #4285F4;
                 color: white;
                 border: none;
-                padding: 8px 16px;
+                padding: 0 16px;
                 border-radius: 4px;
-                font-weight: bold;
+                font-weight: 600;
+                min-height: 32px;
             }
             QPushButton:hover {
                 background-color: #5a95f5;
@@ -496,7 +507,7 @@ class CredentialManagerDialog(QDialog):
         desc_label = QLabel(
             "Manage your Google accounts for Sheets, Drive, Gmail, Calendar, and Docs integration."
         )
-        desc_label.setStyleSheet("color: #888888; margin-bottom: 12px;")
+        desc_label.setStyleSheet(DialogStyles.subheader())
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label)
 
@@ -542,17 +553,7 @@ class CredentialManagerDialog(QDialog):
         self._google_delete_btn = QPushButton("Remove Account")
         self._google_delete_btn.clicked.connect(self._delete_google_account)
         self._google_delete_btn.setEnabled(False)
-        self._google_delete_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #d32f2f;
-            }
-            QPushButton:hover {
-                background-color: #e53935;
-            }
-            QPushButton:disabled {
-                background-color: #5c5c5c;
-            }
-        """)
+        self._google_delete_btn.setStyleSheet(DialogStyles.button_danger())
         btn_layout.addWidget(self._google_delete_btn)
 
         btn_layout.addStretch()
@@ -799,7 +800,7 @@ class CredentialManagerDialog(QDialog):
         self._credential_info = QLabel("Select a credential to view details")
         self._credential_info.setWordWrap(True)
         self._credential_info.setStyleSheet(
-            "background: #2d2d30; padding: 10px; border-radius: 4px;"
+            f"background: {COLORS.bg_button}; padding: 10px; border-radius: 4px;"
         )
         layout.addWidget(self._credential_info)
 
@@ -1137,85 +1138,3 @@ class CredentialManagerDialog(QDialog):
                 f"Created: {info.get('created_at', 'N/A')}<br>"
                 f"Last Used: {info.get('last_used', 'Never')}"
             )
-
-    def _apply_styles(self) -> None:
-        """Apply dark theme styles."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-            }
-            QTabWidget::pane {
-                border: 1px solid #3c3c3c;
-                background-color: #252526;
-            }
-            QTabBar::tab {
-                background-color: #2d2d30;
-                color: #d4d4d4;
-                padding: 8px 16px;
-                border: 1px solid #3c3c3c;
-            }
-            QTabBar::tab:selected {
-                background-color: #1e1e1e;
-                border-bottom: 2px solid #007acc;
-            }
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 16px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QLineEdit {
-                background-color: #3c3c3c;
-                border: 1px solid #5c5c5c;
-                border-radius: 4px;
-                padding: 6px;
-                color: #d4d4d4;
-            }
-            QLineEdit:focus {
-                border: 1px solid #007acc;
-            }
-            QPushButton {
-                background-color: #0e639c;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #1177bb;
-            }
-            QPushButton:pressed {
-                background-color: #094771;
-            }
-            QListWidget {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-            }
-            QListWidget::item {
-                padding: 8px;
-            }
-            QListWidget::item:selected {
-                background-color: #094771;
-            }
-            QListWidget::item:hover {
-                background-color: #2a2d2e;
-            }
-            QComboBox {
-                background-color: #3c3c3c;
-                border: 1px solid #5c5c5c;
-                border-radius: 4px;
-                padding: 6px;
-                color: #d4d4d4;
-            }
-            QLabel {
-                color: #d4d4d4;
-            }
-        """)

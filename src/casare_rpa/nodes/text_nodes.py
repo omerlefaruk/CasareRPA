@@ -90,6 +90,10 @@ class TextSplitNode(BaseNode):
         count: Number of parts
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: text, separator -> result, count
+
     def __init__(self, node_id: str, name: str = "Text Split", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -204,6 +208,10 @@ class TextReplaceNode(BaseNode):
         replacements: Number of replacements made
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: text, old_value, new_value -> result, replacements
+
     def __init__(self, node_id: str, name: str = "Text Replace", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -310,6 +318,10 @@ class TextTrimNode(BaseNode):
         result: Trimmed text
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: text -> result
+
     def __init__(self, node_id: str, name: str = "Text Trim", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -384,6 +396,10 @@ class TextCaseNode(BaseNode):
     Outputs:
         result: Transformed text
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text -> result
 
     def __init__(self, node_id: str, name: str = "Text Case", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -466,6 +482,10 @@ class TextPadNode(BaseNode):
         result: Padded text
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: text, length -> result
+
     def __init__(self, node_id: str, name: str = "Text Pad", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -531,6 +551,10 @@ class TextSubstringNode(BaseNode):
         result: Extracted substring
         length: Length of substring
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text, start, end -> result, length
 
     def __init__(self, node_id: str, name: str = "Text Substring", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -604,6 +628,10 @@ class TextContainsNode(BaseNode):
         position: Position of first occurrence (-1 if not found)
         count: Number of occurrences
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text, search -> contains, position, count
 
     def __init__(self, node_id: str, name: str = "Text Contains", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -686,6 +714,10 @@ class TextStartsWithNode(BaseNode):
         result: Whether text starts with prefix
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: text, prefix -> result
+
     def __init__(self, node_id: str, name: str = "Text Starts With", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -756,6 +788,10 @@ class TextEndsWithNode(BaseNode):
     Outputs:
         result: Whether text ends with suffix
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text, suffix -> result
 
     def __init__(self, node_id: str, name: str = "Text Ends With", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -845,6 +881,10 @@ class TextLinesNode(BaseNode):
         count: Number of lines
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: input -> result, count
+
     def __init__(self, node_id: str, name: str = "Text Lines", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -913,6 +953,10 @@ class TextReverseNode(BaseNode):
     Outputs:
         result: Reversed text
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text -> result
 
     def __init__(self, node_id: str, name: str = "Text Reverse", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -983,6 +1027,10 @@ class TextCountNode(BaseNode):
         words: Word count
         lines: Line count
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text -> count, characters, words, lines
 
     def __init__(self, node_id: str, name: str = "Text Count", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -1072,6 +1120,10 @@ class TextJoinNode(BaseNode):
     Outputs:
         result: Joined string
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: items, separator -> result
 
     def __init__(self, node_id: str, name: str = "Text Join", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -1171,6 +1223,10 @@ class TextExtractNode(BaseNode):
         found: Whether any match was found
         match_count: Number of matches found
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: text, pattern -> match, groups, found, match_count
 
     def __init__(self, node_id: str, name: str = "Text Extract", **kwargs) -> None:
         config = kwargs.get("config", {})

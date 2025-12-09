@@ -2,6 +2,19 @@
 
 > MANDATORY: Every new node MUST include ALL items below.
 
+## Key Imports
+
+```python
+# Domain layer
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType, NodeSchema
+from casare_rpa.domain.interfaces import INode, IExecutionContext
+from casare_rpa.domain.entities.base_node import BaseNode
+
+# For HTTP nodes - NEVER use raw httpx/aiohttp
+from casare_rpa.infrastructure.http import UnifiedHttpClient, get_unified_http_client
+```
+
 ## Checklist
 
 ### 1. @executable_node decorator
@@ -18,7 +31,7 @@ from casare_rpa.domain.decorators import node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 ```
 
-**PropertyTypes:** STRING, TEXT, INTEGER, FLOAT, BOOLEAN, CHOICE, JSON, FILE_PATH, DIRECTORY_PATH
+**PropertyTypes:** STRING, TEXT, INTEGER, FLOAT, BOOLEAN, CHOICE, JSON, FILE_PATH, DIRECTORY_PATH, CODE, SELECTOR
 
 **Tabs:** "connection" (credentials), "properties" (main), "advanced" (optional)
 
@@ -36,6 +49,16 @@ class MyNode(BaseNode): ...
 2. Auto-generated widgets created from `__node_schema__` attribute
 3. Manual widget code in `__init__()` runs AFTER auto-generation
 4. Use `_replace_widget()` to override auto-generated widgets
+
+### Dual-Source Pattern (Port vs Config)
+Values come from either port connections (runtime) OR config (design-time):
+```python
+# RECOMMENDED: Use get_parameter() - checks port first, then config
+value = self.get_parameter("url", default="")
+
+# DON'T: Access config directly (misses port connections)
+value = self.config.get("url", "")  # BAD
+```
 
 ### 3. Reusable PropertyDef constants
 Create UPPERCASE constants for shared properties. Export from package `__init__.py`.
@@ -105,13 +128,31 @@ File: `src/casare_rpa/presentation/canvas/visual_nodes/__init__.py`
 
 Without MAIN export, node WON'T appear in menu!
 
-### 7. Register in _NODE_REGISTRY
+### 7. Register in _NODE_REGISTRY (Lazy Loading)
 File: `src/casare_rpa/nodes/__init__.py`
+
+The registry uses **lazy loading** - nodes are only imported when first accessed.
+
 ```python
 _NODE_REGISTRY = {
     ...
+    # Simple: class name matches key
     "MyNode": "mycat.mycat_nodes",
+
+    # Tuple: when class name differs or for aliases
+    "DesktopClickNode": ("desktop_nodes", "ClickElementNode"),
 }
+```
+
+**Utility Functions:**
+```python
+from casare_rpa.nodes import get_all_node_classes, preload_nodes
+
+# Preload specific nodes for faster first access
+preload_nodes(["ClickElementNode", "TypeTextNode"])
+
+# Get all node classes (forces full load)
+all_classes = get_all_node_classes()
 ```
 
 ### 8. Register in workflow_loader.py NODE_TYPE_MAP
@@ -157,3 +198,24 @@ tests/nodes/mycat/
 ├── conftest.py          # Category fixtures
 └── test_mycat_nodes.py
 ```
+
+## HTTP Nodes: Use UnifiedHttpClient
+
+**NEVER use raw httpx or aiohttp.** Always use infrastructure HTTP client:
+
+```python
+from casare_rpa.infrastructure.http import UnifiedHttpClient
+
+async def execute(self, context: IExecutionContext) -> ExecutionResult:
+    async with UnifiedHttpClient() as client:
+        response = await client.get(url, timeout=timeout)
+        data = await response.json()
+    return {"success": True, "data": data}
+```
+
+Features included automatically:
+- Connection pooling (max 10 sessions)
+- Retry with exponential backoff (3 retries)
+- Rate limiting (10 req/sec per domain)
+- Circuit breaker (5 failures triggers break)
+- SSRF protection (blocks localhost/private IPs)

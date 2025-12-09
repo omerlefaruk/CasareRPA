@@ -117,6 +117,10 @@ class MessageBoxNode(BaseNode):
         accepted: True if OK/Yes was clicked
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: message -> result, accepted
+
     def __init__(self, node_id: str, name: str = "Message Box", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -145,8 +149,10 @@ class MessageBoxNode(BaseNode):
             if message is None:
                 message = self.get_parameter("message", "")
 
-            title = context.resolve_value(title)
-            message = context.resolve_value(str(message))
+            title = str(context.resolve_value(title) or "")
+            # Resolve variable first, THEN convert to string (resolve preserves types for {{var}} patterns)
+            resolved_message = context.resolve_value(message)
+            message = str(resolved_message) if resolved_message is not None else ""
             if detailed_text:
                 detailed_text = context.resolve_value(detailed_text)
 
@@ -449,6 +455,10 @@ class InputDialogNode(BaseNode):
         confirmed: Whether OK was clicked
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: title, prompt, default_value -> value, confirmed
+
     def __init__(self, node_id: str, name: str = "Input Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -466,14 +476,15 @@ class InputDialogNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            title = str(self.get_input_value("title", context) or "Input")
-            prompt = str(self.get_input_value("prompt", context) or "Enter value:")
-            default_value = str(self.get_input_value("default_value", context) or "")
+            title_raw = self.get_input_value("title", context) or "Input"
+            prompt_raw = self.get_input_value("prompt", context) or "Enter value:"
+            default_raw = self.get_input_value("default_value", context) or ""
             password_mode = self.get_parameter("password_mode", False)
 
-            title = context.resolve_value(title)
-            prompt = context.resolve_value(prompt)
-            default_value = context.resolve_value(default_value)
+            # Resolve variables first, THEN convert to string (resolve preserves types for {{var}} patterns)
+            title = str(context.resolve_value(title_raw) or "Input")
+            prompt = str(context.resolve_value(prompt_raw) or "Enter value:")
+            default_value = str(context.resolve_value(default_raw) or "")
 
             value = ""
             confirmed = False
@@ -635,6 +646,10 @@ class TooltipNode(BaseNode):
     Outputs:
         success: Whether tooltip was shown
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: message -> success
 
     def __init__(self, node_id: str, name: str = "Show Tooltip", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -966,6 +981,10 @@ class SystemNotificationNode(BaseNode):
         click_action: True if user clicked the notification
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: title, message -> success, click_action
+
     def __init__(
         self, node_id: str, name: str = "System Notification", **kwargs
     ) -> None:
@@ -1167,6 +1186,10 @@ class ConfirmDialogNode(BaseNode):
         button_clicked: 'yes', 'no', or 'cancel'
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: message -> confirmed, button_clicked
+
     def __init__(self, node_id: str, name: str = "Confirm Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -1319,6 +1342,10 @@ class ProgressDialogNode(BaseNode):
         canceled: True if user canceled
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: value -> canceled
+
     def __init__(self, node_id: str, name: str = "Progress Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -1458,6 +1485,10 @@ class FilePickerDialogNode(BaseNode):
         selected: True if file was selected
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: none -> file_path, selected
+
     def __init__(self, node_id: str, name: str = "File Picker", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -1574,6 +1605,10 @@ class FolderPickerDialogNode(BaseNode):
         selected: True if folder was selected
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: none -> folder_path, selected
+
     def __init__(self, node_id: str, name: str = "Folder Picker", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -1689,6 +1724,10 @@ class ColorPickerDialogNode(BaseNode):
         selected: True if color was selected
         rgb: RGB dict with r, g, b, a keys
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: none -> color, selected, rgb
 
     def __init__(self, node_id: str, name: str = "Color Picker", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -1836,6 +1875,10 @@ class DateTimePickerDialogNode(BaseNode):
         timestamp: Unix timestamp (seconds)
         selected: True if value was selected
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: none -> value, timestamp, selected
 
     def __init__(self, node_id: str, name: str = "DateTime Picker", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -2022,6 +2065,10 @@ class SnackbarNode(BaseNode):
         action_clicked: True if action button was clicked
         success: True if snackbar was shown
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: message -> action_clicked, success
 
     def __init__(self, node_id: str, name: str = "Snackbar", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -2268,6 +2315,10 @@ class BalloonTipNode(BaseNode):
     Outputs:
         success: True if balloon was shown
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: message -> success
 
     def __init__(self, node_id: str, name: str = "Balloon Tip", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -2516,6 +2567,10 @@ class ListPickerDialogNode(BaseNode):
         confirmed: True if OK was clicked
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: items -> selected, confirmed
+
     def __init__(self, node_id: str, name: str = "List Picker", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -2730,6 +2785,10 @@ class MultilineInputDialogNode(BaseNode):
         char_count: Number of characters entered
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: none -> text, confirmed, char_count
+
     def __init__(self, node_id: str, name: str = "Multiline Input", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -2904,6 +2963,10 @@ class CredentialDialogNode(BaseNode):
         confirmed: True if OK was clicked
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: none -> username, password, remember, confirmed
+
     def __init__(self, node_id: str, name: str = "Credential Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -3058,6 +3121,10 @@ class FormDialogNode(BaseNode):
         data: Dictionary of field values
         confirmed: True if OK was clicked
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: fields -> data, confirmed
 
     def __init__(self, node_id: str, name: str = "Form Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -3276,6 +3343,10 @@ class ImagePreviewDialogNode(BaseNode):
         canceled: True if Cancel was clicked
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: image_path -> confirmed, canceled
+
     def __init__(self, node_id: str, name: str = "Image Preview", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -3470,6 +3541,10 @@ class TableDialogNode(BaseNode):
         selected_index: Selected row index (if selectable)
         confirmed: True if OK was clicked
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: data -> selected_row, selected_index, confirmed
 
     def __init__(self, node_id: str, name: str = "Table Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -3676,6 +3751,10 @@ class WizardDialogNode(BaseNode):
         canceled: True if canceled
         last_step: Index of last completed step
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: steps -> data, completed, canceled, last_step
 
     def __init__(self, node_id: str, name: str = "Wizard Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -3966,6 +4045,10 @@ class SplashScreenNode(BaseNode):
         success: True if splash was shown
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: message -> success
+
     def __init__(self, node_id: str, name: str = "Splash Screen", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -3985,7 +4068,8 @@ class SplashScreenNode(BaseNode):
             message = self.get_input_value("message")
             if message is None:
                 message = self.get_parameter("message", "Loading...")
-            message = context.resolve_value(str(message))
+            # Resolve variables first, THEN convert to string (resolve preserves types for {{var}} patterns)
+            message = str(context.resolve_value(message) or "Loading...")
 
             image_path = self.get_parameter("image_path", "")
             duration = int(self.get_parameter("duration", 3000) or 3000)
@@ -4128,6 +4212,10 @@ class AudioAlertNode(BaseNode):
     Outputs:
         success: True if audio played
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: file_path -> success
 
     def __init__(self, node_id: str, name: str = "Audio Alert", **kwargs) -> None:
         config = kwargs.get("config", {})

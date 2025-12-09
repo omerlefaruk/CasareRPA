@@ -10,7 +10,7 @@ from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, Por
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 # Import implemented nodes from drive/ subpackage
-from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
+from casare_rpa.nodes.google.google_base import DriveBaseNode
 from casare_rpa.nodes.google.drive.drive_files import (
     DriveCopyFileNode,
     DriveDeleteFileNode,
@@ -49,6 +49,10 @@ DriveRemovePermissionNode = DriveRemoveShareNode
 class _NotImplementedDriveNode(BaseNode):
     """Base class for not-yet-implemented Drive nodes."""
 
+    # @category: google
+    # @requires: none
+    # @ports: none -> success, error
+
     NODE_CATEGORY = "google_drive"
 
     def __init__(self, node_id: str, **kwargs):
@@ -68,6 +72,10 @@ class _NotImplementedDriveNode(BaseNode):
 
 class DriveExportFileNode(_NotImplementedDriveNode):
     """Placeholder: Export a Google Workspace file to a standard format."""
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> none
 
     NODE_TYPE = "drive_export_file"
     NODE_DISPLAY_NAME = "Drive: Export File"

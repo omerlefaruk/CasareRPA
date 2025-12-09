@@ -109,6 +109,10 @@ class CalendarTriggerNode(BaseTriggerNode):
     - updated: When event was last updated
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Google Calendar"
     trigger_description = "Trigger workflow on calendar events"
     trigger_icon = "calendar"

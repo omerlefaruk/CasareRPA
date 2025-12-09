@@ -61,6 +61,10 @@ class HotkeyWaitNode(BaseNode):
         timed_out: True if timeout occurred
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: hotkey -> triggered, timed_out
+
     def __init__(self, node_id: str, name: str = "Hotkey Wait", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -192,6 +196,10 @@ class BeepNode(BaseNode):
         success: True if beep was played
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: frequency, duration -> success
+
     def __init__(self, node_id: str, name: str = "Beep", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -302,6 +310,10 @@ class ClipboardMonitorNode(BaseNode):
         changed: True if content changed
         timed_out: True if timeout occurred
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: none -> content, changed, timed_out
 
     def __init__(self, node_id: str, name: str = "Clipboard Monitor", **kwargs) -> None:
         config = kwargs.get("config", {})

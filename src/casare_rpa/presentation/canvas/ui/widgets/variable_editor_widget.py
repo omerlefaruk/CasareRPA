@@ -17,6 +17,7 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 
 
@@ -101,17 +102,17 @@ class VariableEditorWidget(BaseWidget):
         self._remove_btn = QPushButton("×")
         self._remove_btn.setFixedSize(24, 24)
         self._remove_btn.setToolTip("Remove variable")
-        self._remove_btn.setStyleSheet("""
-            QPushButton {
-                background: #d32f2f;
+        self._remove_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {THEME.accent_error};
                 color: white;
                 font-weight: bold;
                 font-size: 16px;
                 border-radius: 2px;
-            }
-            QPushButton:hover {
-                background: #f44336;
-            }
+            }}
+            QPushButton:hover {{
+                background: #FF6B6B;
+            }}
         """)
         layout.addWidget(self._remove_btn)
 

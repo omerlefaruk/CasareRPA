@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 from loguru import logger
 
 from casare_rpa.nodes.browser.anchor_config import NodeAnchorConfig
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 
 class AnchorSelectorWidget(QWidget):
@@ -84,18 +85,18 @@ class AnchorSelectorWidget(QWidget):
         self._selector_edit.setText(initial_selector)
         self._selector_edit.setPlaceholderText("Enter selector or click picker...")
         self._selector_edit.textChanged.connect(self._on_selector_changed)
-        self._selector_edit.setStyleSheet("""
-            QLineEdit {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+        self._selector_edit.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
-                color: #60a5fa;
+                color: {THEME.selector_text};
                 padding: 4px;
                 font-family: Consolas, monospace;
-            }
-            QLineEdit:focus {
-                border: 1px solid #3b82f6;
-            }
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {THEME.accent};
+            }}
         """)
         selector_row.addWidget(self._selector_edit, 1)
 
@@ -106,20 +107,20 @@ class AnchorSelectorWidget(QWidget):
         self._picker_btn.setFixedSize(24, 24)
         self._picker_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._picker_btn.clicked.connect(self._on_picker_clicked)
-        self._picker_btn.setStyleSheet("""
-            QToolButton {
-                background: #3b82f6;
-                border: 1px solid #2563eb;
+        self._picker_btn.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.accent};
+                border: 1px solid {THEME.accent_dark};
                 border-radius: 3px;
                 color: white;
                 font-weight: bold;
-            }
-            QToolButton:hover {
-                background: #2563eb;
-            }
-            QToolButton:pressed {
-                background: #1d4ed8;
-            }
+            }}
+            QToolButton:hover {{
+                background: {THEME.accent_dark};
+            }}
+            QToolButton:pressed {{
+                background: {THEME.accent_darker};
+            }}
         """)
         selector_row.addWidget(self._picker_btn)
 
@@ -130,13 +131,13 @@ class AnchorSelectorWidget(QWidget):
         # -----------------------------------------------------------------
         self._anchor_frame = QFrame()
         self._anchor_frame.setFrameStyle(QFrame.Shape.StyledPanel)
-        self._anchor_frame.setStyleSheet("""
-            QFrame {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
+        self._anchor_frame.setStyleSheet(f"""
+            QFrame {{
+                background: {THEME.bg_darker};
+                border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 4px;
-            }
+            }}
         """)
 
         anchor_layout = QVBoxLayout(self._anchor_frame)
@@ -149,14 +150,14 @@ class AnchorSelectorWidget(QWidget):
         self._anchor_checkbox = QCheckBox("Use anchor for reliability")
         self._anchor_checkbox.setChecked(self._anchor_config.enabled)
         self._anchor_checkbox.toggled.connect(self._on_anchor_toggled)
-        self._anchor_checkbox.setStyleSheet("""
-            QCheckBox {
-                color: #a0a0a0;
+        self._anchor_checkbox.setStyleSheet(f"""
+            QCheckBox {{
+                color: {THEME.text_secondary};
                 font-size: 11px;
-            }
-            QCheckBox:checked {
-                color: #60a5fa;
-            }
+            }}
+            QCheckBox:checked {{
+                color: {THEME.selector_text};
+            }}
         """)
         anchor_header.addWidget(self._anchor_checkbox)
         anchor_header.addStretch()
@@ -167,18 +168,18 @@ class AnchorSelectorWidget(QWidget):
         self._pick_anchor_btn.setToolTip("Pick anchor element")
         self._pick_anchor_btn.setFixedHeight(20)
         self._pick_anchor_btn.clicked.connect(self._on_pick_anchor_clicked)
-        self._pick_anchor_btn.setStyleSheet("""
-            QToolButton {
-                background: #4a4a4a;
-                border: 1px solid #5a5a5a;
+        self._pick_anchor_btn.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.button_bg};
+                border: 1px solid {THEME.border_light};
                 border-radius: 2px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 2px 8px;
                 font-size: 10px;
-            }
-            QToolButton:hover {
-                background: #5a5a5a;
-            }
+            }}
+            QToolButton:hover {{
+                background: {THEME.button_hover};
+            }}
         """)
         anchor_header.addWidget(self._pick_anchor_btn)
 
@@ -188,18 +189,18 @@ class AnchorSelectorWidget(QWidget):
         self._clear_anchor_btn.setToolTip("Clear anchor")
         self._clear_anchor_btn.setFixedHeight(20)
         self._clear_anchor_btn.clicked.connect(self._on_clear_anchor)
-        self._clear_anchor_btn.setStyleSheet("""
-            QToolButton {
-                background: #4a4a4a;
-                border: 1px solid #5a5a5a;
+        self._clear_anchor_btn.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.button_bg};
+                border: 1px solid {THEME.border_light};
                 border-radius: 2px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 2px 8px;
                 font-size: 10px;
-            }
-            QToolButton:hover {
-                background: #5a5a5a;
-            }
+            }}
+            QToolButton:hover {{
+                background: {THEME.button_hover};
+            }}
         """)
         anchor_header.addWidget(self._clear_anchor_btn)
 
@@ -213,7 +214,7 @@ class AnchorSelectorWidget(QWidget):
 
         # Position dropdown
         pos_label = QLabel("Position:")
-        pos_label.setStyleSheet("color: #808080; font-size: 10px;")
+        pos_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 10px;")
         details_layout.addWidget(pos_label)
 
         self._position_combo = QComboBox()
@@ -221,22 +222,22 @@ class AnchorSelectorWidget(QWidget):
         self._position_combo.setCurrentText(self._anchor_config.position)
         self._position_combo.currentTextChanged.connect(self._on_position_changed)
         self._position_combo.setFixedHeight(20)
-        self._position_combo.setStyleSheet("""
-            QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+        self._position_combo.setStyleSheet(f"""
+            QComboBox {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
                 border-radius: 2px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 2px;
                 font-size: 10px;
-            }
+            }}
         """)
         details_layout.addWidget(self._position_combo)
 
         # Anchor preview label
         self._anchor_preview = QLabel()
-        self._anchor_preview.setStyleSheet("""
-            color: #60a5fa;
+        self._anchor_preview.setStyleSheet(f"""
+            color: {THEME.selector_text};
             font-size: 10px;
             font-family: Consolas, monospace;
         """)

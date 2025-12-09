@@ -35,6 +35,7 @@ from PySide6.QtGui import QColor
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.utils.performance.performance_metrics import get_metrics
 
 
@@ -59,7 +60,9 @@ class MetricCard(QFrame):
 
         # Title
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("color: #888; font-size: 11px;")
+        self.title_label.setStyleSheet(
+            f"color: {THEME.text_secondary}; font-size: 11px;"
+        )
         layout.addWidget(self.title_label)
 
         # Value
@@ -69,7 +72,9 @@ class MetricCard(QFrame):
 
         # Subtitle
         self.subtitle_label = QLabel(subtitle)
-        self.subtitle_label.setStyleSheet("color: #666; font-size: 10px;")
+        self.subtitle_label.setStyleSheet(
+            f"color: {THEME.text_disabled}; font-size: 10px;"
+        )
         layout.addWidget(self.subtitle_label)
 
     def set_value(self, value: str, subtitle: str = "") -> None:
@@ -194,11 +199,11 @@ class SystemMetricsPanel(QGroupBox):
         self.cpu_card.set_value(f"{cpu_percent:.1f}%")
         self.cpu_bar.setValue(int(cpu_percent))
         if cpu_percent > 80:
-            self.cpu_card.set_color("#e74c3c")
+            self.cpu_card.set_color(THEME.error)
         elif cpu_percent > 50:
-            self.cpu_card.set_color("#f39c12")
+            self.cpu_card.set_color(THEME.warning)
         else:
-            self.cpu_card.set_color("#27ae60")
+            self.cpu_card.set_color(THEME.success)
 
         # Memory
         memory_mb = current.get("memory_rss_mb", 0)
@@ -268,9 +273,9 @@ class NodeMetricsPanel(QGroupBox):
         self.success_card.set_value(str(total_count - total_errors))
         self.error_card.set_value(str(total_errors))
         if total_errors > 0:
-            self.error_card.set_color("#e74c3c")
+            self.error_card.set_color(THEME.error)
         else:
-            self.error_card.set_color("#27ae60")
+            self.error_card.set_color(THEME.success)
 
         # Calculate average time
         total_time = 0
@@ -294,7 +299,7 @@ class NodeMetricsPanel(QGroupBox):
 
             error_item = QTableWidgetItem(str(data.get("errors", 0)))
             if data.get("errors", 0) > 0:
-                error_item.setForeground(QColor("#e74c3c"))
+                error_item.setForeground(QColor(THEME.error))
             self.node_table.setItem(i, 2, error_item)
 
             self.node_table.setItem(
@@ -349,7 +354,7 @@ class WorkflowMetricsPanel(QGroupBox):
         self.count_label = QLabel("Samples: 0")
 
         for lbl in [self.min_label, self.max_label, self.mean_label, self.count_label]:
-            lbl.setStyleSheet("font-size: 11px; color: #666;")
+            lbl.setStyleSheet(f"font-size: 11px; color: {THEME.text_disabled};")
             stats_layout.addWidget(lbl)
 
         timing_layout.addLayout(stats_layout)
@@ -372,20 +377,20 @@ class WorkflowMetricsPanel(QGroupBox):
         self.failed_card.set_value(str(failed))
 
         if failed > 0:
-            self.failed_card.set_color("#e74c3c")
+            self.failed_card.set_color(THEME.error)
         else:
-            self.failed_card.set_color("#27ae60")
+            self.failed_card.set_color(THEME.success)
 
         # Success rate
         if started > 0:
             rate = (completed / started) * 100
             self.success_rate_card.set_value(f"{rate:.1f}%")
             if rate >= 90:
-                self.success_rate_card.set_color("#27ae60")
+                self.success_rate_card.set_color(THEME.success)
             elif rate >= 70:
-                self.success_rate_card.set_color("#f39c12")
+                self.success_rate_card.set_color(THEME.warning)
             else:
-                self.success_rate_card.set_color("#e74c3c")
+                self.success_rate_card.set_color(THEME.error)
 
         # Update histogram
         if timings:
@@ -553,14 +558,16 @@ class PerformanceDashboardDialog(QDialog):
 
         # Reset button
         self.reset_btn = QPushButton("Reset Metrics")
-        self.reset_btn.setStyleSheet("color: #e74c3c;")
+        self.reset_btn.setStyleSheet(f"color: {THEME.error};")
         header_layout.addWidget(self.reset_btn)
 
         layout.addLayout(header_layout)
 
         # Last updated label
         self.last_updated_label = QLabel("Last updated: Never")
-        self.last_updated_label.setStyleSheet("color: #888; font-size: 11px;")
+        self.last_updated_label.setStyleSheet(
+            f"color: {THEME.text_secondary}; font-size: 11px;"
+        )
         layout.addWidget(self.last_updated_label)
 
         # Tab widget for different metric views
@@ -606,7 +613,7 @@ class PerformanceDashboardDialog(QDialog):
         # Status bar
         status_layout = QHBoxLayout()
         self.status_label = QLabel("Ready")
-        self.status_label.setStyleSheet("color: #888;")
+        self.status_label.setStyleSheet(f"color: {THEME.text_secondary};")
         status_layout.addWidget(self.status_label)
 
         status_layout.addStretch()

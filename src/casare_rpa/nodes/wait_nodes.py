@@ -64,6 +64,10 @@ class WaitNode(BaseNode):
     Does NOT extend BrowserBaseNode as it doesn't require a page.
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: duration -> none
+
     def __init__(
         self, node_id: str, name: str = "Wait", duration: float = 1.0, **kwargs
     ) -> None:
@@ -175,6 +179,10 @@ class WaitForElementNode(BrowserBaseNode):
         page: Browser page instance (passthrough)
         found: Whether element was found (BOOLEAN)
     """
+
+    # @category: browser
+    # @requires: none
+    # @ports: none -> found
 
     def __init__(
         self,
@@ -313,6 +321,10 @@ class WaitForNavigationNode(BrowserBaseNode):
     Outputs:
         page: Browser page instance (passthrough)
     """
+
+    # @category: browser
+    # @requires: none
+    # @ports: via base class helpers
 
     def __init__(
         self,

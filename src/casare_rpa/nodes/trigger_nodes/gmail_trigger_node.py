@@ -119,6 +119,10 @@ class GmailTriggerNode(BaseTriggerNode):
     - raw_message: Full message object
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Gmail"
     trigger_description = "Trigger workflow when new Gmail email arrives"
     trigger_icon = "gmail"

@@ -308,6 +308,10 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         connection, success, error
     """
 
+    # @category: database
+    # @requires: database
+    # @ports: db_type, host, port, database, username, password, connection_string -> connection, success, error
+
     def __init__(
         self, node_id: str, name: str = "Database Connect", **kwargs: Any
     ) -> None:
@@ -588,6 +592,10 @@ class ExecuteQueryNode(BaseNode):
         results, row_count, columns, success, error
     """
 
+    # @category: database
+    # @requires: database
+    # @ports: connection, query, parameters -> results, row_count, columns, success, error
+
     def __init__(
         self, node_id: str, name: str = "Execute Query", **kwargs: Any
     ) -> None:
@@ -822,6 +830,10 @@ class ExecuteNonQueryNode(BaseNode):
         rows_affected, last_insert_id, success, error
     """
 
+    # @category: database
+    # @requires: database
+    # @ports: connection, query, parameters -> rows_affected, last_insert_id, success, error
+
     def __init__(
         self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any
     ) -> None:
@@ -1018,6 +1030,10 @@ class BeginTransactionNode(BaseNode):
         error: Error message if failed
     """
 
+    # @category: database
+    # @requires: database
+    # @ports: connection -> connection, success, error
+
     def __init__(
         self, node_id: str, name: str = "Begin Transaction", **kwargs: Any
     ) -> None:
@@ -1097,6 +1113,10 @@ class CommitTransactionNode(BaseNode):
         success: True if commit succeeded
         error: Error message if failed
     """
+
+    # @category: database
+    # @requires: database
+    # @ports: connection -> connection, success, error
 
     def __init__(
         self, node_id: str, name: str = "Commit Transaction", **kwargs: Any
@@ -1179,6 +1199,10 @@ class RollbackTransactionNode(BaseNode):
         error: Error message if failed
     """
 
+    # @category: database
+    # @requires: database
+    # @ports: connection -> connection, success, error
+
     def __init__(
         self, node_id: str, name: str = "Rollback Transaction", **kwargs: Any
     ) -> None:
@@ -1258,6 +1282,10 @@ class CloseDatabaseNode(BaseNode):
         success: True if connection closed
         error: Error message if failed
     """
+
+    # @category: database
+    # @requires: database
+    # @ports: connection -> success, error
 
     def __init__(
         self, node_id: str, name: str = "Close Database", **kwargs: Any
@@ -1356,6 +1384,10 @@ class ExecuteBatchNode(BaseNode):
     Outputs:
         results, total_rows_affected, success, error
     """
+
+    # @category: database
+    # @requires: database
+    # @ports: connection, statements -> results, total_rows_affected, success, error
 
     def __init__(
         self, node_id: str, name: str = "Execute Batch", **kwargs: Any

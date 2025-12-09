@@ -167,6 +167,10 @@ class HttpRequestNode(HttpBaseNode):
         response_body, response_json, status_code, response_headers, success, error
     """
 
+    # @category: http
+    # @requires: none
+    # @ports: url, method, headers, body, params, timeout -> none
+
     def __init__(self, node_id: str, name: str = "HTTP Request", **kwargs: Any) -> None:
         super().__init__(node_id, name, **kwargs)
         self.node_type = "HttpRequestNode"

@@ -68,6 +68,10 @@ class FileExistsNode(BaseNode):
         is_dir: Whether it's a directory
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: path -> exists, is_file, is_dir
+
     def __init__(self, node_id: str, name: str = "File Exists", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -165,6 +169,10 @@ class GetFileSizeNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> size, success
+
     def __init__(self, node_id: str, name: str = "Get File Size", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -249,6 +257,10 @@ class GetFileInfoNode(BaseNode):
         parent: Parent directory
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> size, created, modified, extension, name, parent, success
 
     def __init__(self, node_id: str, name: str = "Get File Info", **kwargs) -> None:
         config = kwargs.get("config", {})
