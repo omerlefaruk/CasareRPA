@@ -187,11 +187,27 @@ class IconSizes:
 
 @dataclass(frozen=True)
 class Animations:
-    """Animation durations in milliseconds."""
+    """Animation durations in milliseconds.
 
-    fast: int = 150
-    normal: int = 300
-    slow: int = 500
+    Guidelines:
+    - instant: Button press feedback, immediate response
+    - fast: Hover effects, quick micro-interactions
+    - normal: Standard fade/slide transitions
+    - medium: Panel transitions, tab switching
+    - slow: Modal dialogs, emphasis effects
+    - emphasis: Attention-grabbing animations (shake, pulse)
+
+    Usage:
+        from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS
+        duration = ANIMATIONS.normal  # 150ms
+    """
+
+    instant: int = 50  # Button press, immediate feedback
+    fast: int = 100  # Hover effects
+    normal: int = 150  # Standard fade/slide (was 300, reduced for snappier feel)
+    medium: int = 200  # Panel transitions
+    slow: int = 300  # Modal dialogs (was 500)
+    emphasis: int = 400  # Attention effects (shake, pulse)
 
 
 # =============================================================================
