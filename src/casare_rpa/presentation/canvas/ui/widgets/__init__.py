@@ -117,6 +117,9 @@ from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
     ProfilingEntry,
     PercentageBarDelegate,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animation_profiler import (
+    AnimationProfiler,
+)
 
 __all__ = [
     "VariableEditorWidget",
@@ -212,4 +215,6 @@ __all__ = [
     "ProfilingTreeWidget",
     "ProfilingEntry",
     "PercentageBarDelegate",
+    # Animation Profiler
+    "AnimationProfiler",
 ]
