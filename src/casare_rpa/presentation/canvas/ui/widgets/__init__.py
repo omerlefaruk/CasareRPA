@@ -134,6 +134,33 @@ from casare_rpa.presentation.canvas.ui.widgets.animated_tab_widget import (
     AnimatedTabBar,
     create_animated_tab_widget,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animated_spin_box import (
+    AnimatedSpinBox,
+    AnimatedDoubleSpinBox,
+    create_animated_spin_box,
+    create_animated_double_spin_box,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_combo_box import (
+    AnimatedComboBox,
+    create_animated_combo_box,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_checkbox import (
+    AnimatedCheckBox,
+    create_animated_checkbox,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_progress_bar import (
+    AnimatedProgressBar,
+    create_animated_progress_bar,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_line_edit import (
+    AnimatedLineEdit,
+    create_animated_line_edit,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_button import (
+    AnimatedButton,
+    AnimatedIconButton,
+    create_animated_button,
+)
 
 __all__ = [
     "VariableEditorWidget",
@@ -241,4 +268,25 @@ __all__ = [
     "AnimatedTabWidget",
     "AnimatedTabBar",
     "create_animated_tab_widget",
+    # Animated Spin Box
+    "AnimatedSpinBox",
+    "AnimatedDoubleSpinBox",
+    "create_animated_spin_box",
+    "create_animated_double_spin_box",
+    # Animated Combo Box
+    "AnimatedComboBox",
+    "create_animated_combo_box",
+    # Animated Checkbox
+    "AnimatedCheckBox",
+    "create_animated_checkbox",
+    # Animated Progress Bar
+    "AnimatedProgressBar",
+    "create_animated_progress_bar",
+    # Animated Line Edit
+    "AnimatedLineEdit",
+    "create_animated_line_edit",
+    # Animated Button
+    "AnimatedButton",
+    "AnimatedIconButton",
+    "create_animated_button",
 ]
