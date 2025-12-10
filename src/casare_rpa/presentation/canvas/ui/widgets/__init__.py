@@ -120,6 +120,20 @@ from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
 from casare_rpa.presentation.canvas.ui.widgets.animation_profiler import (
     AnimationProfiler,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import (
+    AnimatedDialog,
+)
+from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
+    CollapsibleSection,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_dock import (
+    AnimatedDockWidget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_tab_widget import (
+    AnimatedTabWidget,
+    AnimatedTabBar,
+    create_animated_tab_widget,
+)
 
 __all__ = [
     "VariableEditorWidget",
@@ -217,4 +231,14 @@ __all__ = [
     "PercentageBarDelegate",
     # Animation Profiler
     "AnimationProfiler",
+    # Animated Dialog
+    "AnimatedDialog",
+    # Collapsible Section
+    "CollapsibleSection",
+    # Animated Dock Widget
+    "AnimatedDockWidget",
+    # Animated Tab Widget
+    "AnimatedTabWidget",
+    "AnimatedTabBar",
+    "create_animated_tab_widget",
 ]

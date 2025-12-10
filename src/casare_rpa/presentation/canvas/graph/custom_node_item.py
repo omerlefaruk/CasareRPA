@@ -13,8 +13,9 @@ References:
 - "Designing Data-Intensive Applications" - Resource pooling
 """
 
-from typing import Set, Optional
-from PySide6.QtCore import Qt, QRectF, QRect, QTimer, QPointF
+import math
+from typing import Callable, Set, Optional
+from PySide6.QtCore import Qt, QRectF, QTimer, QPointF, QVariantAnimation, QEasingCurve
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QPixmap, QFont
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsOpacityEffect
 from NodeGraphQt.qgraphics.node_base import NodeItem
@@ -24,6 +25,23 @@ from NodeGraphQt.qgraphics.node_base import NodeItem
 from casare_rpa.presentation.canvas.graph.lod_manager import get_lod_manager, LODLevel
 from casare_rpa.presentation.canvas.graph.background_cache import get_background_cache
 from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
+
+# Import animation infrastructure for lifecycle animations
+from casare_rpa.presentation.canvas.ui.animation_lod import AnimationLOD
+
+# ============================================================================
+# PERFORMANCE: Module-level enum caching
+# Avoids per-paint attribute lookup overhead for frequently used enums
+# ============================================================================
+_ANTIALIASING = QPainter.RenderHint.Antialiasing
+_PEN_STYLE_NONE = Qt.PenStyle.NoPen
+_PEN_STYLE_SOLID = Qt.PenStyle.SolidLine
+_PEN_STYLE_DASH = Qt.PenStyle.DashLine
+_BRUSH_STYLE_NONE = Qt.BrushStyle.NoBrush
+_ALIGN_CENTER = Qt.AlignmentFlag.AlignCenter
+_PEN_CAP_ROUND = Qt.PenCapStyle.RoundCap
+_PEN_JOIN_ROUND = Qt.PenJoinStyle.RoundJoin
+_WHITE = Qt.GlobalColor.white
 
 
 # ============================================================================
@@ -188,10 +206,16 @@ class AnimationCoordinator:
     single timer to drive all animated nodes. This significantly reduces
     CPU usage when many nodes are running simultaneously.
 
+    Supports multiple animation types:
+    - "running": Animated border for executing nodes
+    - "selection": Pulsing glow for selected nodes
+
     Usage:
         coordinator = AnimationCoordinator.get_instance()
-        coordinator.register(node_item)  # Start animating
-        coordinator.unregister(node_item)  # Stop animating
+        coordinator.register(node_item, "running")  # Start running animation
+        coordinator.register(node_item, "selection")  # Start selection glow
+        coordinator.unregister(node_item, "running")  # Stop specific animation
+        coordinator.unregister_all(node_item)  # Stop all animations
     """
 
     _instance: Optional["AnimationCoordinator"] = None
@@ -205,47 +229,102 @@ class AnimationCoordinator:
 
     def __init__(self):
         """Initialize the animation coordinator."""
-        self._animated_nodes: Set["CasareNodeItem"] = set()
+        # Separate sets for different animation types
+        self._running_nodes: Set["CasareNodeItem"] = set()
+        self._selected_nodes: Set["CasareNodeItem"] = set()
         self._timer = QTimer()
         self._timer.timeout.connect(self._tick)
         self._offset = 0
-        self._interval = 50  # 20 FPS
+        self._selection_phase = 0.0  # 0.0 to 1.0 for pulsing
+        self._interval = 16  # 60 FPS for smooth animations
 
-    def register(self, node: "CasareNodeItem") -> None:
+    def register(self, node: "CasareNodeItem", animation_type: str = "running") -> None:
         """
         Start animating a node.
 
         Args:
             node: The CasareNodeItem to animate
+            animation_type: Type of animation ("running" or "selection")
         """
-        self._animated_nodes.add(node)
+        if animation_type == "running":
+            self._running_nodes.add(node)
+        elif animation_type == "selection":
+            self._selected_nodes.add(node)
+
         if not self._timer.isActive():
             self._timer.start(self._interval)
 
-    def unregister(self, node: "CasareNodeItem") -> None:
+    def unregister(
+        self, node: "CasareNodeItem", animation_type: str = "running"
+    ) -> None:
         """
-        Stop animating a node.
+        Stop a specific animation for a node.
+
+        Args:
+            node: The CasareNodeItem to stop animating
+            animation_type: Type of animation to stop
+        """
+        if animation_type == "running":
+            self._running_nodes.discard(node)
+        elif animation_type == "selection":
+            self._selected_nodes.discard(node)
+
+        self._check_stop_timer()
+
+    def unregister_all(self, node: "CasareNodeItem") -> None:
+        """
+        Stop all animations for a node.
 
         Args:
             node: The CasareNodeItem to stop animating
         """
-        self._animated_nodes.discard(node)
-        if not self._animated_nodes and self._timer.isActive():
+        self._running_nodes.discard(node)
+        self._selected_nodes.discard(node)
+        self._check_stop_timer()
+
+    def _check_stop_timer(self) -> None:
+        """Stop timer if no nodes are being animated."""
+        if (
+            not self._running_nodes
+            and not self._selected_nodes
+            and self._timer.isActive()
+        ):
             self._timer.stop()
             self._offset = 0
+            self._selection_phase = 0.0
 
     def _tick(self) -> None:
         """Update all animated nodes."""
+        # Update running animation offset (dash pattern)
         self._offset = (self._offset + 1) % 8
 
-        for node in self._animated_nodes:
+        # Update selection pulse phase (sine wave, ~1.5 second cycle)
+        self._selection_phase = (self._selection_phase + 0.04) % 1.0
+
+        # Update running nodes
+        for node in self._running_nodes:
             node._animation_offset = self._offset
+            node.update()
+
+        # Update selected nodes with pulse
+        for node in self._selected_nodes:
+            node._selection_glow_phase = self._selection_phase
             node.update()
 
     @property
     def animated_count(self) -> int:
-        """Get the number of currently animated nodes."""
-        return len(self._animated_nodes)
+        """Get the total number of currently animated nodes."""
+        return len(self._running_nodes) + len(self._selected_nodes)
+
+    @property
+    def running_count(self) -> int:
+        """Get the number of nodes with running animation."""
+        return len(self._running_nodes)
+
+    @property
+    def selected_count(self) -> int:
+        """Get the number of nodes with selection animation."""
+        return len(self._selected_nodes)
 
     @property
     def is_running(self) -> bool:
@@ -306,6 +385,14 @@ class CasareNodeItem(NodeItem):
         # This significantly improves performance when many nodes are running
         self._animation_coordinator = AnimationCoordinator.get_instance()
 
+        # Selection glow animation state (updated by AnimationCoordinator)
+        self._selection_glow_phase: float = 0.0
+        self._selection_glow_enabled: bool = False
+
+        # Active lifecycle animations (to allow cancellation)
+        self._creation_anim: Optional[QVariantAnimation] = None
+        self._deletion_anim: Optional[QVariantAnimation] = None
+
         # Custom icon pixmap (separate from parent's _icon_item)
         self._custom_icon_pixmap = None
 
@@ -335,6 +422,10 @@ class CasareNodeItem(NodeItem):
         if hasattr(self, "_text_item") and self._text_item:
             self._text_item.setVisible(False)
 
+        # Hide parent's icon item - we don't show icons
+        if hasattr(self, "_icon_item") and self._icon_item:
+            self._icon_item.setVisible(False)
+
     def boundingRect(self) -> QRectF:
         """
         Override bounding rect to include space above for execution time badge.
@@ -356,6 +447,37 @@ class CasareNodeItem(NodeItem):
     def _get_node_rect(self) -> QRectF:
         """Get the actual node rectangle (without badge area)."""
         return super().boundingRect()
+
+    def _align_widgets_horizontal(self, v_offset):
+        """
+        Override to use actual node rect instead of extended boundingRect.
+
+        FIX: Parent class uses boundingRect() which includes badge area (24px above).
+        This caused widgets to be positioned 24px too high when execution time shown.
+        Using _get_node_rect() ensures widgets align to actual node bounds.
+        """
+        if not self._widgets:
+            return
+        # Use actual node rect, not extended boundingRect
+        rect = self._get_node_rect()
+        y = rect.y() + v_offset
+        inputs = [p for p in self.inputs if p.isVisible()]
+        outputs = [p for p in self.outputs if p.isVisible()]
+        for widget in self._widgets.values():
+            if not widget.isVisible():
+                continue
+            widget_rect = widget.boundingRect()
+            if not inputs:
+                x = rect.left() + 10
+                widget.widget().setTitleAlign("left")
+            elif not outputs:
+                x = rect.right() - widget_rect.width() - 10
+                widget.widget().setTitleAlign("right")
+            else:
+                x = rect.center().x() - (widget_rect.width() / 2)
+                widget.widget().setTitleAlign("center")
+            widget.setPos(x, y)
+            y += widget_rect.height()
 
     def _paint_lod(self, painter: QPainter, lod_level: LODLevel = LODLevel.LOW) -> None:
         """
@@ -400,7 +522,7 @@ class CasareNodeItem(NodeItem):
         else:
             # LOW: Simple rounded rect
             painter.setBrush(QBrush(fill_color))
-            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setPen(_PEN_STYLE_NONE)
             painter.drawRoundedRect(rect, 4, 4)
 
         # Simple border based on status
@@ -413,7 +535,7 @@ class CasareNodeItem(NodeItem):
         else:
             painter.setPen(QPen(self._normal_border_color, 1))
 
-        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setBrush(_BRUSH_STYLE_NONE)
         if lod_level == LODLevel.ULTRA_LOW:
             painter.drawRect(rect)
         else:
@@ -432,6 +554,13 @@ class CasareNodeItem(NodeItem):
         HIGH PERFORMANCE MODE: When enabled (manually or auto-enabled at 50+ nodes),
         forces LOD rendering at all zoom levels for maximum performance.
         """
+        # PERFORMANCE: Lazy widget initialization on first paint
+        # This defers the expensive QGraphicsProxyWidget embedding from
+        # node construction to first render, making node creation instant
+        node = getattr(self, "_node", None)
+        if node and hasattr(node, "_ensure_widgets_initialized"):
+            node._ensure_widgets_initialized()
+
         # Get LOD level from centralized manager (computed once per frame)
         lod_manager = get_lod_manager()
         lod_level = lod_manager.current_lod
@@ -447,7 +576,7 @@ class CasareNodeItem(NodeItem):
             return
 
         painter.save()
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(_ANTIALIASING, True)
 
         # Get node rectangle (actual node area, not including badge space)
         rect = self._get_node_rect()
@@ -483,6 +612,10 @@ class CasareNodeItem(NodeItem):
         else:
             painter.fillPath(path, QBrush(self._node_bg_color))
 
+        # Draw selection glow effect (pulsing outer glow when selected)
+        if self._selection_glow_enabled and self.selected:
+            self._draw_selection_glow(painter, rect, radius)
+
         # Draw border
         pen = QPen(border_color, border_width)
         pen.setStyle(border_style)
@@ -499,22 +632,6 @@ class CasareNodeItem(NodeItem):
 
         # Draw collapse button in header
         self._draw_collapse_button(painter, rect)
-
-        # Draw custom icon if available
-        # PERFORMANCE: Try icon atlas first, fall back to individual pixmap
-        if lod_manager.should_render_icons():
-            icon_size = 24
-            icon_x = rect.left() + 12
-            icon_y = rect.top() + 12
-            icon_rect = QRect(int(icon_x), int(icon_y), icon_size, icon_size)
-
-            # Try atlas first (GPU-efficient single texture)
-            icon_atlas = get_icon_atlas()
-            if self._node_type_name and icon_atlas.has_icon(self._node_type_name):
-                icon_atlas.draw_icon(painter, self._node_type_name, icon_rect)
-            elif self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
-                # Fallback to individual pixmap
-                painter.drawPixmap(icon_rect, self._custom_icon_pixmap)
 
         # Draw execution time badge at bottom
         self._draw_execution_time(painter, rect)
@@ -696,6 +813,44 @@ class CasareNodeItem(NodeItem):
             start_x += line_spacing
 
         painter.restore()
+
+    def _draw_selection_glow(
+        self, painter: QPainter, rect: QRectF, radius: float
+    ) -> None:
+        """
+        Draw pulsing selection glow effect around the node.
+
+        Uses sine wave modulation for smooth pulse effect.
+        Draws multiple semi-transparent borders for glow illusion.
+
+        Args:
+            painter: QPainter instance
+            rect: Node bounding rectangle
+            radius: Corner radius
+        """
+        # Calculate pulse intensity using sine wave (0.3 to 1.0 range)
+        pulse = 0.3 + 0.7 * (
+            0.5 + 0.5 * math.sin(self._selection_glow_phase * 2 * math.pi)
+        )
+
+        # Glow color (yellow with pulsing alpha)
+        glow_color = QColor(255, 215, 0)  # Bright yellow
+
+        # Draw multiple glow layers for soft effect
+        glow_layers = [
+            (6.0, int(40 * pulse)),  # Outer glow
+            (4.0, int(60 * pulse)),  # Middle glow
+            (2.0, int(100 * pulse)),  # Inner glow
+        ]
+
+        for offset, alpha in glow_layers:
+            glow_rect = rect.adjusted(-offset, -offset, offset, offset)
+            glow_path = QPainterPath()
+            glow_path.addRoundedRect(glow_rect, radius + offset, radius + offset)
+
+            glow_color.setAlpha(alpha)
+            pen = QPen(glow_color, 2.0)
+            painter.strokePath(glow_path, pen)
 
     def _draw_execution_time(self, painter, rect):
         """Draw execution time badge above the node."""
@@ -967,8 +1122,9 @@ class CasareNodeItem(NodeItem):
                         else node.id
                     )
                     node_name = node.name() if callable(node.name) else str(node.name)
+                    # Pass self (the node item) for position tracking
                     parent.show_output_inspector(
-                        node_id, node_name, output_data, global_pos
+                        node_id, node_name, output_data, global_pos, self
                     )
                     logger.debug(f"Showing output inspector for {node_name}")
                     return
@@ -1012,9 +1168,9 @@ class CasareNodeItem(NodeItem):
         """
         self._is_running = running
         if running:
-            self._animation_coordinator.register(self)
+            self._animation_coordinator.register(self, "running")
         else:
-            self._animation_coordinator.unregister(self)
+            self._animation_coordinator.unregister(self, "running")
             self._animation_offset = 0
         self.update()
 
@@ -1158,7 +1314,8 @@ class CasareNodeItem(NodeItem):
         # Note: _is_disabled is NOT cleared - it's configuration
         self._execution_time_ms = None
         self._animation_offset = 0
-        self._animation_coordinator.unregister(self)
+        # Stop running animation but preserve selection glow
+        self._animation_coordinator.unregister(self, "running")
         self.update()
 
     def clear_robot_override(self):
@@ -1334,3 +1491,185 @@ class CasareNodeItem(NodeItem):
         self._normal_border_color = QColor(r, g, b, a)
         if not self.selected and not self._is_running:
             self.update()
+
+    # =========================================================================
+    # LIFECYCLE ANIMATIONS
+    # =========================================================================
+
+    def _get_zoom(self) -> float:
+        """
+        Get current viewport zoom level.
+
+        Returns:
+            Zoom level (1.0 = 100%)
+        """
+        if self.scene() and self.scene().views():
+            view = self.scene().views()[0]
+            return view.transform().m11()
+        return 1.0
+
+    def animate_creation(self) -> None:
+        """
+        Animate node appearing with fade + scale.
+
+        Respects LOD settings - skips animation at low zoom levels.
+        """
+        zoom = self._get_zoom()
+        if not AnimationLOD.should_animate(zoom, "creation"):
+            return
+
+        # Cancel any existing creation animation
+        if self._creation_anim is not None:
+            try:
+                self._creation_anim.stop()
+            except RuntimeError:
+                pass
+            self._creation_anim = None
+
+        # Set initial state
+        self.setOpacity(0.0)
+        self.setScale(0.8)
+
+        # Get duration multiplier for LOD
+        duration_mult = AnimationLOD.get_duration_multiplier(zoom)
+        duration = int(200 * duration_mult)
+
+        if duration == 0:
+            # Instant - no animation
+            self.setOpacity(1.0)
+            self.setScale(1.0)
+            return
+
+        # Create combined animation (opacity + scale animated together)
+        anim = QVariantAnimation()
+        anim.setDuration(duration)
+        anim.setStartValue(0.0)
+        anim.setEndValue(1.0)
+        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        def _update_creation(value: float) -> None:
+            try:
+                self.setOpacity(value)
+                # Scale: 0.8 + (0.2 * progress) = 0.8 -> 1.0
+                self.setScale(0.8 + 0.2 * value)
+            except RuntimeError:
+                pass  # Item may be destroyed
+
+        def _cleanup() -> None:
+            self._creation_anim = None
+            try:
+                self.setOpacity(1.0)
+                self.setScale(1.0)
+            except RuntimeError:
+                pass
+
+        anim.valueChanged.connect(_update_creation)
+        anim.finished.connect(_cleanup)
+        self._creation_anim = anim
+        anim.start()
+
+    def animate_deletion(self, on_complete: Optional[Callable] = None) -> None:
+        """
+        Animate node disappearing before removal.
+
+        Respects LOD settings - executes callback immediately at low zoom.
+
+        Args:
+            on_complete: Callback to invoke when animation finishes
+        """
+        zoom = self._get_zoom()
+        if not AnimationLOD.should_animate(zoom, "deletion"):
+            if on_complete:
+                on_complete()
+            return
+
+        # Cancel any existing deletion animation
+        if self._deletion_anim is not None:
+            try:
+                self._deletion_anim.stop()
+            except RuntimeError:
+                pass
+            self._deletion_anim = None
+
+        # Stop selection glow if active
+        self._stop_selection_glow()
+
+        # Get duration multiplier for LOD
+        duration_mult = AnimationLOD.get_duration_multiplier(zoom)
+        duration = int(150 * duration_mult)
+
+        if duration == 0:
+            if on_complete:
+                on_complete()
+            return
+
+        # Create combined animation (opacity + scale animated together)
+        anim = QVariantAnimation()
+        anim.setDuration(duration)
+        anim.setStartValue(1.0)
+        anim.setEndValue(0.0)
+        anim.setEasingCurve(QEasingCurve.Type.InCubic)
+
+        def _update_deletion(value: float) -> None:
+            try:
+                self.setOpacity(value)
+                # Scale: 1.0 -> 0.8 (1.0 - 0.2 * (1.0 - progress))
+                self.setScale(0.8 + 0.2 * value)
+            except RuntimeError:
+                pass  # Item may be destroyed
+
+        def _cleanup() -> None:
+            self._deletion_anim = None
+            if on_complete:
+                on_complete()
+
+        anim.valueChanged.connect(_update_deletion)
+        anim.finished.connect(_cleanup)
+        self._deletion_anim = anim
+        anim.start()
+
+    def animate_selection(self, selected: bool) -> None:
+        """
+        Animate selection state change.
+
+        Starts or stops the pulsing selection glow.
+
+        Args:
+            selected: True to start selection glow, False to stop
+        """
+        if selected:
+            self._start_selection_glow()
+        else:
+            self._stop_selection_glow()
+
+    def _start_selection_glow(self) -> None:
+        """Start pulsing selection border animation."""
+        zoom = self._get_zoom()
+        # Selection is CRITICAL category - check if animations enabled at all
+        if not AnimationLOD.should_animate(zoom, "selection"):
+            self._selection_glow_enabled = False
+            return
+
+        self._selection_glow_enabled = True
+        self._animation_coordinator.register(self, "selection")
+
+    def _stop_selection_glow(self) -> None:
+        """Stop selection border animation."""
+        self._selection_glow_enabled = False
+        self._selection_glow_phase = 0.0
+        self._animation_coordinator.unregister(self, "selection")
+        self.update()
+
+    def setSelected(self, selected: bool) -> None:
+        """
+        Override to trigger selection animation.
+
+        Args:
+            selected: New selection state
+        """
+        was_selected = self.isSelected()
+        super().setSelected(selected)
+
+        # Only animate if state actually changed
+        if selected != was_selected:
+            self.animate_selection(selected)

@@ -8,12 +8,13 @@ Handles all viewport-related operations:
 - Viewport state management
 """
 
-from typing import TYPE_CHECKING
-from PySide6.QtCore import Signal
+from typing import TYPE_CHECKING, Optional
+from PySide6.QtCore import QPointF, QVariantAnimation, Signal, QEasingCurve
 from PySide6.QtWidgets import QMessageBox
 from loguru import logger
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
+from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -38,6 +39,10 @@ class ViewportController(BaseController):
     minimap_toggled = Signal(bool)  # visible
     viewport_reset = Signal()
 
+    # Zoom limits
+    MIN_ZOOM: float = 0.1
+    MAX_ZOOM: float = 2.0
+
     def __init__(self, main_window: "MainWindow"):
         """
         Initialize viewport controller.
@@ -48,6 +53,8 @@ class ViewportController(BaseController):
         super().__init__(main_window)
         self._current_zoom: float = 100.0
         self._minimap_visible: bool = False
+        self._zoom_animation: Optional[QVariantAnimation] = None
+        self._zoom_center: Optional[QPointF] = None
 
     def initialize(self) -> None:
         """Initialize controller resources and connections."""
@@ -55,6 +62,14 @@ class ViewportController(BaseController):
 
     def cleanup(self) -> None:
         """Clean up controller resources."""
+        # Stop any running zoom animation
+        if (
+            self._zoom_animation
+            and self._zoom_animation.state() == QVariantAnimation.Running
+        ):
+            self._zoom_animation.stop()
+        self._zoom_animation = None
+        self._zoom_center = None
         super().cleanup()
         logger.info("ViewportController cleanup")
 
@@ -205,6 +220,113 @@ class ViewportController(BaseController):
         """
         return self._current_zoom
 
+    def smooth_zoom(self, factor: float, center: Optional[QPointF] = None) -> None:
+        """
+        Animate zoom with InOutSine easing curve.
+
+        Smoothly interpolates from current zoom to target zoom while
+        preserving the point under the cursor (or viewport center).
+
+        Args:
+            factor: Zoom multiplier (>1 for zoom in, <1 for zoom out)
+            center: Point to zoom toward in scene coordinates.
+                   If None, uses viewport center.
+        """
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        viewer = graph.viewer()
+        if not viewer:
+            return
+
+        # Stop any running zoom animation
+        if (
+            self._zoom_animation
+            and self._zoom_animation.state() == QVariantAnimation.Running
+        ):
+            self._zoom_animation.stop()
+
+        # Get current scale from transform matrix
+        current_scale = viewer.transform().m11()
+        target_scale = current_scale * factor
+
+        # Clamp to min/max zoom
+        target_scale = max(self.MIN_ZOOM, min(target_scale, self.MAX_ZOOM))
+
+        # Skip if already at limit
+        if abs(target_scale - current_scale) < 0.001:
+            return
+
+        # Use viewport center if no center provided
+        if center is None:
+            viewport_center = viewer.viewport().rect().center()
+            center = viewer.mapToScene(viewport_center)
+
+        self._zoom_center = center
+
+        # Create and configure animation
+        self._zoom_animation = QVariantAnimation()
+        self._zoom_animation.setDuration(ANIMATIONS.medium)
+        self._zoom_animation.setStartValue(float(current_scale))
+        self._zoom_animation.setEndValue(float(target_scale))
+        self._zoom_animation.setEasingCurve(QEasingCurve.Type.InOutSine)
+        self._zoom_animation.valueChanged.connect(self._apply_zoom_step)
+        self._zoom_animation.start()
+
+    def _apply_zoom_step(self, scale: float) -> None:
+        """
+        Apply intermediate zoom step during animation.
+
+        Maintains the zoom center point at the same screen position
+        throughout the animation.
+
+        Args:
+            scale: Current interpolated scale value
+        """
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        viewer = graph.viewer()
+        if not viewer or self._zoom_center is None:
+            return
+
+        try:
+            # Get the scene position of the zoom center before transform
+            old_pos = viewer.mapFromScene(self._zoom_center)
+
+            # Reset transform and apply new scale
+            viewer.resetTransform()
+            viewer.scale(scale, scale)
+
+            # Get the new screen position of the zoom center after transform
+            new_pos = viewer.mapFromScene(self._zoom_center)
+
+            # Translate to keep the zoom center at the same screen position
+            delta = old_pos - new_pos
+            viewer.translate(delta.x(), delta.y())
+
+            # Update zoom display
+            zoom_percent = scale * 100.0
+            self.update_zoom_display(zoom_percent)
+        except Exception as e:
+            logger.error(f"Failed to apply zoom step: {e}")
+
+    def handle_wheel_zoom(self, delta_y: int, scene_pos: QPointF) -> None:
+        """
+        Handle mouse wheel zoom with smooth animation.
+
+        Called from event handlers when user scrolls the mouse wheel.
+        Zooms in/out centered on the cursor position.
+
+        Args:
+            delta_y: Vertical scroll delta (positive = zoom in)
+            scene_pos: Cursor position in scene coordinates
+        """
+        factor = 1.15 if delta_y > 0 else 1 / 1.15
+        self.smooth_zoom(factor, scene_pos)
+
     def is_minimap_visible(self) -> bool:
         """
         Check if minimap is currently visible.
@@ -257,7 +379,7 @@ class ViewportController(BaseController):
                 return
 
             # Calculate bounding rect of all selected nodes
-            from PySide6.QtCore import QRectF, Qt
+            from PySide6.QtCore import QRectF
 
             combined_rect = QRectF()
             for node in selected_nodes:
@@ -271,18 +393,15 @@ class ViewportController(BaseController):
             if combined_rect.isNull():
                 return
 
-            # Fit view to the combined rect with generous padding (less zoom)
-            # Use symmetric padding to keep node perfectly centered
+            # Add padding around the node(s) for comfortable viewing
             padding = 200
             padded_rect = combined_rect.adjusted(-padding, -padding, padding, padding)
 
-            # fitInView centers on the rect - use the padded rect for zoom level
-            # but center on the actual node center for perfect centering
-            viewer.fitInView(padded_rect, Qt.AspectRatioMode.KeepAspectRatio)
-
-            # Re-center explicitly on the node center (not the padded rect center)
-            node_center = combined_rect.center()
-            viewer.centerOn(node_center.x(), node_center.y())
+            # CRITICAL: Update NodeGraphQt's internal _scene_range to match the new view
+            # Without this, panning would restore the old zoom level because
+            # viewer.translate() adjusts based on _scene_range
+            viewer._scene_range = padded_rect
+            viewer._update_scene()
 
             logger.debug(f"Framed {len(selected_nodes)} node(s) at center")
 
@@ -293,7 +412,7 @@ class ViewportController(BaseController):
         """
         Home all: fit all nodes in view regardless of selection.
 
-        Temporarily selects all nodes, fits view, then restores original selection.
+        Frames all nodes in the viewport without changing selection.
         """
         graph = self._get_graph()
         if not graph:
@@ -305,17 +424,34 @@ class ViewportController(BaseController):
                 logger.debug("No nodes to home")
                 return
 
-            # Save current selection
-            originally_selected = graph.selected_nodes()
+            viewer = graph.viewer()
+            if not viewer:
+                return
 
-            # Select all, fit, then restore selection
-            graph.select_all()
-            graph.fit_to_selection()
-            graph.clear_selection()
+            # Calculate bounding rect of all nodes
+            from PySide6.QtCore import QRectF
 
-            # Restore original selection
-            for node in originally_selected:
-                node.set_selected(True)
+            combined_rect = QRectF()
+            for node in all_nodes:
+                if hasattr(node, "view") and node.view:
+                    node_rect = node.view.sceneBoundingRect()
+                    if combined_rect.isNull():
+                        combined_rect = node_rect
+                    else:
+                        combined_rect = combined_rect.united(node_rect)
+
+            if combined_rect.isNull():
+                return
+
+            # Add padding around all nodes for comfortable viewing
+            padding = 100
+            padded_rect = combined_rect.adjusted(-padding, -padding, padding, padding)
+
+            # CRITICAL: Update NodeGraphQt's internal _scene_range to match the new view
+            # Without this, panning would restore the old zoom level because
+            # viewer.translate() adjusts based on _scene_range
+            viewer._scene_range = padded_rect
+            viewer._update_scene()
 
             logger.debug(f"Home all: fitted {len(all_nodes)} nodes")
         except Exception as e:

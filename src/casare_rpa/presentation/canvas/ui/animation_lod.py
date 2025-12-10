@@ -61,6 +61,8 @@ _ANIMATION_CATEGORIES: Dict[str, AnimationCategory] = {
     "pulse": AnimationCategory.STANDARD,
     "fade": AnimationCategory.STANDARD,
     "slide": AnimationCategory.STANDARD,
+    "creation": AnimationCategory.STANDARD,  # Node creation fade+scale
+    "deletion": AnimationCategory.STANDARD,  # Node deletion fade+scale
     # Detail - only at full zoom
     "running_border": AnimationCategory.DETAIL,
     "selection_highlight": AnimationCategory.DETAIL,
