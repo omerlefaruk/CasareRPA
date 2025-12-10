@@ -488,36 +488,42 @@ class OrchestratorClient:
                     ws_url = f"{ws_url}{separator}token={self.config.api_key}"
                 logger.info(f"Connecting to WebSocket: {ws_url.split('?')[0]}")
 
-                async with aiohttp.ClientSession() as session:
-                    async with session.ws_connect(ws_url) as ws:
-                        self._ws = ws
-                        logger.info("WebSocket connected")
+                # Ensure session exists (reuse parent HTTP session for connection pooling)
+                if not self._session:
+                    await self.connect()
+                if not self._session:
+                    logger.error("Failed to create HTTP session for WebSocket")
+                    await asyncio.sleep(5)
+                    continue
 
-                        async for msg in ws:
-                            if msg.type == aiohttp.WSMsgType.TEXT:
-                                try:
-                                    data = json.loads(msg.data)
-                                    event_type = data.get("type", "unknown")
+                # Reuse parent session instead of creating new one per reconnect
+                async with self._session.ws_connect(ws_url) as ws:
+                    self._ws = ws
+                    logger.info("WebSocket connected")
 
-                                    if event_type == "robot_status":
-                                        await self._notify("robot_status", data)
-                                    elif event_type == "job_update":
-                                        await self._notify("job_update", data)
-                                    elif event_type == "queue_metrics":
-                                        await self._notify("queue_metrics", data)
+                    async for msg in ws:
+                        if msg.type == aiohttp.WSMsgType.TEXT:
+                            try:
+                                data = json.loads(msg.data)
+                                event_type = data.get("type", "unknown")
 
-                                except json.JSONDecodeError:
-                                    logger.warning(
-                                        f"Invalid WebSocket message: {msg.data}"
-                                    )
+                                if event_type == "robot_status":
+                                    await self._notify("robot_status", data)
+                                elif event_type == "job_update":
+                                    await self._notify("job_update", data)
+                                elif event_type == "queue_metrics":
+                                    await self._notify("queue_metrics", data)
 
-                            elif msg.type == aiohttp.WSMsgType.ERROR:
-                                logger.error(f"WebSocket error: {ws.exception()}")
-                                break
+                            except json.JSONDecodeError:
+                                logger.warning(f"Invalid WebSocket message: {msg.data}")
 
-                            elif msg.type == aiohttp.WSMsgType.CLOSED:
-                                logger.info("WebSocket closed")
-                                break
+                        elif msg.type == aiohttp.WSMsgType.ERROR:
+                            logger.error(f"WebSocket error: {ws.exception()}")
+                            break
+
+                        elif msg.type == aiohttp.WSMsgType.CLOSED:
+                            logger.info("WebSocket closed")
+                            break
 
             except asyncio.CancelledError:
                 break

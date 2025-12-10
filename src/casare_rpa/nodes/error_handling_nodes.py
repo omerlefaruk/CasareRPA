@@ -23,6 +23,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
+@node_schema()  # No config - paired with catch/finally
 @executable_node
 class TryNode(BaseNode):
     """
@@ -255,6 +256,7 @@ class RetryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # No config - signal node
 @executable_node
 class RetrySuccessNode(BaseNode):
     """
@@ -306,6 +308,7 @@ class RetrySuccessNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class RetryFailNode(BaseNode):
     """
@@ -666,6 +669,7 @@ class WebhookNotifyNode(BaseNode):
             }
 
 
+@node_schema()  # No config - routing node
 @executable_node
 class OnErrorNode(BaseNode):
     """

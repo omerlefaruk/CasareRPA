@@ -2,8 +2,7 @@
 Subflow Node Item - Custom graphics item for subflow nodes.
 
 Provides visual representation of a collapsed subflow:
-- Dashed border to distinguish from regular nodes
-- Subflow icon in header
+- Stack visual effect to indicate nested nodes
 - Node count badge showing internal node count
 - Expand button to open subflow editor
 - Blue-gray header tint for visual distinction
@@ -44,9 +43,6 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
 _SUBFLOW_HEADER_COLOR = QColor(0x4A, 0x55, 0x68)  # #4A5568 - Blue-gray
 _SUBFLOW_HEADER_ALPHA = 153  # 60% opacity
 
-# Subflow icon (Unicode lozenge/diamond shape)
-_SUBFLOW_ICON = "\u2b14"  # Square with four corners filled
-
 # Badge colors
 _BADGE_BG_COLOR = QColor(0x2D, 0x37, 0x48)  # Dark blue-gray
 _BADGE_TEXT_COLOR = QColor(0xFF, 0xFF, 0xFF)  # White
@@ -60,9 +56,16 @@ _EXPAND_BTN_HOVER = QColor(80, 85, 95, 200)
 _CONFIG_BTN_BG = QColor(55, 80, 55, 180)  # Green tint
 _CONFIG_BTN_HOVER = QColor(75, 110, 75, 200)
 
-# Dashed border
-_DASH_PEN_WIDTH = 2.0
-_DASH_PATTERN = [4, 3]  # 4px dash, 3px gap
+# Border width
+_BORDER_WIDTH = 2.0
+
+# Stack visual effect (layers behind main node)
+_STACK_LAYER_COUNT = 2
+_STACK_OFFSET = 4  # pixels per layer
+_STACK_COLORS = [
+    QColor(0x2A, 0x35, 0x46),  # Furthest back (darkest)
+    QColor(0x3A, 0x45, 0x56),  # Middle layer
+]
 
 
 class SubflowNodeItem(CasareNodeItem):
@@ -70,15 +73,13 @@ class SubflowNodeItem(CasareNodeItem):
     Custom graphics item for subflow nodes.
 
     Extends CasareNodeItem with:
-    - Dashed border to distinguish from regular nodes
-    - Subflow icon in header
+    - Stack visual effect to indicate nested nodes
     - Node count badge
     - Expand button
     """
 
     # Font for badge text (cached at class level)
     _badge_font: Optional[QFont] = None
-    _icon_font: Optional[QFont] = None
 
     @classmethod
     def get_badge_font(cls) -> QFont:
@@ -87,13 +88,6 @@ class SubflowNodeItem(CasareNodeItem):
             cls._badge_font = QFont("Segoe UI", 8)
             cls._badge_font.setWeight(QFont.Weight.Medium)
         return cls._badge_font
-
-    @classmethod
-    def get_icon_font(cls) -> QFont:
-        """Get cached font for subflow icon."""
-        if cls._icon_font is None:
-            cls._icon_font = QFont("Segoe UI", 11)
-        return cls._icon_font
 
     def __init__(self, name: str = "subflow", parent: Optional[QGraphicsItem] = None):
         """
@@ -133,11 +127,89 @@ class SubflowNodeItem(CasareNodeItem):
         """Get the number of nodes in this subflow."""
         return self._node_count
 
+    def boundingRect(self) -> QRectF:
+        """
+        Override bounding rect to include space for stack layers.
+
+        Stack layers extend to the right and bottom of the main node.
+        """
+        rect = super().boundingRect()
+        # Add space for stack layers (extend right and bottom)
+        stack_extension = _STACK_OFFSET * _STACK_LAYER_COUNT
+        return QRectF(
+            rect.x(),
+            rect.y(),
+            rect.width() + stack_extension,
+            rect.height() + stack_extension,
+        )
+
+    def _draw_stack_layers(
+        self, painter: QPainter, rect: QRectF, radius: float = 8.0
+    ) -> None:
+        """
+        Draw stack layers behind the main node.
+
+        Creates a visual "stacked papers" effect to indicate
+        this node contains multiple internal nodes (a subflow).
+
+        Args:
+            painter: QPainter to draw with
+            rect: The main node rectangle
+            radius: Corner radius for rounded rects
+        """
+        # Draw layers from back (furthest) to front (closest to main node)
+        for i in range(_STACK_LAYER_COUNT):
+            # Calculate offset - furthest layer has largest offset
+            layer_offset = _STACK_OFFSET * (_STACK_LAYER_COUNT - i)
+
+            # Create offset rect for this layer
+            layer_rect = QRectF(
+                rect.x() + layer_offset,
+                rect.y() + layer_offset,
+                rect.width(),
+                rect.height(),
+            )
+
+            # Get color for this layer
+            layer_color = QColor(_STACK_COLORS[i])
+            if self._is_disabled:
+                layer_color.setAlpha(64)
+
+            # Draw the layer (no border, just filled)
+            layer_path = QPainterPath()
+            layer_path.addRoundedRect(layer_rect, radius, radius)
+            painter.fillPath(layer_path, QBrush(layer_color))
+
+    def _draw_stack_layers_lod(self, painter: QPainter, rect: QRectF) -> None:
+        """
+        Draw simplified stack layers for LOD rendering.
+
+        Args:
+            painter: QPainter to draw with
+            rect: The main node rectangle
+        """
+        # Simplified: just draw 2 offset rectangles without rounded corners
+        for i in range(_STACK_LAYER_COUNT):
+            layer_offset = _STACK_OFFSET * (_STACK_LAYER_COUNT - i)
+            layer_rect = QRectF(
+                rect.x() + layer_offset,
+                rect.y() + layer_offset,
+                rect.width(),
+                rect.height(),
+            )
+
+            layer_color = QColor(_STACK_COLORS[i])
+            if self._is_disabled:
+                layer_color.setAlpha(64)
+
+            painter.fillRect(layer_rect, layer_color)
+
     def _paint_lod(self, painter: QPainter, lod_level: LODLevel = LODLevel.LOW) -> None:
         """
         Paint simplified LOD version for low zoom levels.
 
-        Subflow nodes use dashed border even at LOD levels.
+        Subflow nodes use stack visual and solid border at LOD levels.
+        Includes simplified stack layers for visual distinction.
 
         Args:
             lod_level: The LOD level to render at
@@ -150,6 +222,9 @@ class SubflowNodeItem(CasareNodeItem):
         )
 
         rect = self._get_node_rect()
+
+        # Draw stack layers BEFORE main node (simplified version)
+        self._draw_stack_layers_lod(painter, rect)
 
         # Subflow-specific blue-gray fill
         fill_color = QColor(0x3A, 0x45, 0x56)  # Slightly lighter than header
@@ -165,10 +240,8 @@ class SubflowNodeItem(CasareNodeItem):
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(rect, 4, 4)
 
-        # Dashed border - always for subflow nodes
-        pen = QPen(_SUBFLOW_HEADER_COLOR, _DASH_PEN_WIDTH)
-        pen.setStyle(Qt.PenStyle.DashLine)
-        pen.setDashPattern(_DASH_PATTERN)
+        # Solid border for subflow nodes
+        pen = QPen(_SUBFLOW_HEADER_COLOR, _BORDER_WIDTH)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
@@ -187,7 +260,7 @@ class SubflowNodeItem(CasareNodeItem):
         """
         Custom paint method for subflow node.
 
-        Draws with dashed border and subflow-specific elements.
+        Draws with stack visual effect and subflow-specific elements.
         """
         # Get LOD level from centralized manager
         lod_manager = get_lod_manager()
@@ -207,8 +280,11 @@ class SubflowNodeItem(CasareNodeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
         rect = self._get_node_rect()
-        border_width = _DASH_PEN_WIDTH
+        border_width = _BORDER_WIDTH
         radius = 8.0
+
+        # Draw stack layers BEFORE main node body
+        self._draw_stack_layers(painter, rect, radius)
 
         # Create rounded rectangle path
         path = QPainterPath()
@@ -220,10 +296,8 @@ class SubflowNodeItem(CasareNodeItem):
             bg_color.setAlpha(64)  # 25% opacity for disabled (more grayed out)
         painter.fillPath(path, QBrush(bg_color))
 
-        # Dashed border - signature of subflow nodes
+        # Solid border for subflow nodes
         pen = QPen(_SUBFLOW_HEADER_COLOR.lighter(120), border_width)
-        pen.setStyle(Qt.PenStyle.DashLine)
-        pen.setDashPattern(_DASH_PATTERN)
 
         # Selection state modifies border color
         if self.isSelected() or self._is_running:
@@ -327,13 +401,7 @@ class SubflowNodeItem(CasareNodeItem):
             QPointF(header_rect.right(), header_rect.bottom()),
         )
 
-        # Draw subflow icon
-        painter.setPen(QColor(220, 220, 220))
-        painter.setFont(self.get_icon_font())
-        icon_rect = QRectF(header_rect.left() + 8, header_rect.top(), 20, header_height)
-        painter.drawText(icon_rect, Qt.AlignmentFlag.AlignVCenter, _SUBFLOW_ICON)
-
-        # Draw node name (offset to make room for icon and badge/expand button)
+        # Draw node name
         from casare_rpa.presentation.canvas.graph.custom_node_item import (
             _get_title_font,
             _HEADER_TEXT_COLOR,
@@ -343,11 +411,11 @@ class SubflowNodeItem(CasareNodeItem):
         painter.setFont(_get_title_font())
 
         node_name = self.name if hasattr(self, "name") else "Subflow"
-        # Offset text to leave room for icon on left and badge+buttons on right
+        # Room for badge, config btn, expand btn on right
         text_rect = QRectF(
-            header_rect.left() + 28,  # After icon
+            header_rect.left() + 10,
             header_rect.top(),
-            header_rect.width() - 100,  # Room for badge, config btn, expand btn
+            header_rect.width() - 80,
             header_height,
         )
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter, node_name)

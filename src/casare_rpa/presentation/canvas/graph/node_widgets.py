@@ -128,15 +128,39 @@ class CasareCheckBox:
         if not checkbox:
             return
 
+        # Fix NodeGraphQt's large font (11pt) - use 8pt to match other widgets
+        from PySide6.QtGui import QFont, QFontMetrics
+
+        font = checkbox.font()
+        font.setPointSize(8)
+        checkbox.setFont(font)
+
+        # Fix NodeGraphQt's hardcoded max width (140px) that truncates labels
+        # Remove the constraint and set proper minimum width based on text
+        group_box = node_widget.widget()
+        if group_box:
+            group_box.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
+            # Calculate required width: checkbox indicator (14px) + spacing (6px) + text
+            fm = QFontMetrics(font)
+            text_width = fm.horizontalAdvance(checkbox.text())
+            min_width = 14 + 6 + text_width + 8  # indicator + spacing + text + padding
+            checkbox.setMinimumWidth(min_width)
+            group_box.setMinimumWidth(min_width)
+            group_box.adjustSize()
+
         checkmark_path = cls._get_checkmark_path()
 
-        # Dark blue checkbox styling with white checkmark
+        # Dark blue checkbox styling with white checkmark - smaller indicator for 8pt font
         checkbox_style = f"""
+            QCheckBox {{
+                color: #a1a1aa;
+                spacing: 6px;
+            }}
             QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
+                width: 14px;
+                height: 14px;
                 border: 1px solid #52525b;
-                border-radius: 4px;
+                border-radius: 3px;
                 background-color: #18181b;
             }}
 

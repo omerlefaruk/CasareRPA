@@ -5,9 +5,27 @@ This module provides nodes for reading file content:
 - ReadFileNode: Read text or binary content from files
 
 SECURITY: All file operations are subject to path sandboxing.
+NOTE: File I/O is wrapped in asyncio.to_thread() to avoid blocking the event loop.
 """
 
+import asyncio
+from pathlib import Path
+from typing import Union
+
 from loguru import logger
+
+
+def _read_file_sync(
+    path: Path, binary_mode: bool, encoding: str, errors: str
+) -> Union[bytes, str]:
+    """Synchronous file read - called via asyncio.to_thread()."""
+    if binary_mode:
+        with open(path, "rb") as f:
+            return f.read()
+    else:
+        with open(path, "r", encoding=encoding, errors=errors) as f:
+            return f.read()
+
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
@@ -150,12 +168,10 @@ class ReadFileNode(BaseNode):
                 f"Reading file: {path} (binary={binary_mode}, encoding={encoding})"
             )
 
-            if binary_mode:
-                with open(path, "rb") as f:
-                    content = f.read()
-            else:
-                with open(path, "r", encoding=encoding, errors=errors) as f:
-                    content = f.read()
+            # Run blocking file I/O in thread pool to avoid blocking event loop
+            content = await asyncio.to_thread(
+                _read_file_sync, path, binary_mode, encoding, errors
+            )
 
             self.set_output_value("content", content)
             self.set_output_value("size", size)

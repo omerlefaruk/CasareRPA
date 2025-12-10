@@ -17,6 +17,9 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
+# Maximum recursion depth for flatten operation to prevent stack overflow
+MAX_FLATTEN_DEPTH = 100
+
 
 def _strip_var_wrapper(value: str) -> str:
     """Strip {{}} wrapper from variable reference if present."""
@@ -59,6 +62,7 @@ def _resolve_list_param(
     return param
 
 
+@node_schema()  # Input port driven
 @executable_node
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
@@ -108,6 +112,7 @@ class CreateListNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
@@ -161,6 +166,7 @@ class ListGetItemNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
@@ -195,6 +201,7 @@ class ListLengthNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListAppendNode(BaseNode):
     """Node that appends an item to a list."""
@@ -242,6 +249,7 @@ class ListAppendNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListContainsNode(BaseNode):
     """Node that checks if a list contains an item."""
@@ -295,6 +303,7 @@ class ListContainsNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListSliceNode(BaseNode):
     """Node that gets a slice of a list."""
@@ -502,6 +511,7 @@ class ListSortNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListReverseNode(BaseNode):
     """Node that reverses a list."""
@@ -537,6 +547,7 @@ class ListReverseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ListUniqueNode(BaseNode):
     """Node that removes duplicates from a list."""
@@ -1031,16 +1042,23 @@ class ListFlattenNode(BaseNode):
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
 
-            def flatten(items: Any, current_depth: int) -> list:
+            def flatten(
+                items: Any, current_depth: int, max_depth: int = MAX_FLATTEN_DEPTH
+            ) -> list:
+                if current_depth > max_depth:
+                    raise ValueError(
+                        f"Flatten depth {current_depth} exceeds maximum {max_depth}. "
+                        "Possible circular reference."
+                    )
                 result = []
                 for item in items:
                     if isinstance(item, (list, tuple)) and current_depth > 0:
-                        result.extend(flatten(item, current_depth - 1))
+                        result.extend(flatten(item, current_depth - 1, max_depth))
                     else:
                         result.append(item)
                 return result
 
-            result = flatten(lst, depth)
+            result = flatten(lst, depth, MAX_FLATTEN_DEPTH)
 
             self.set_output_value("result", result)
             return {"success": True, "data": {"result": result}, "next_nodes": []}

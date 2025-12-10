@@ -18,7 +18,6 @@ from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.ui.accessibility import AccessibilitySettings
 from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS, Theme
 
 
@@ -135,7 +134,7 @@ class CollapsibleSection(QWidget):
 
         self._expanded = expanded
 
-        if animate and not AccessibilitySettings.prefers_reduced_motion():
+        if animate:
             self._animate_toggle()
         else:
             self._instant_toggle()

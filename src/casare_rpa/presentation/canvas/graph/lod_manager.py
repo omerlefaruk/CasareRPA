@@ -48,10 +48,11 @@ class ViewportLODManager:
     _instance: Optional["ViewportLODManager"] = None
 
     # LOD thresholds - zoom level where each LOD kicks in
+    # More aggressive thresholds for better performance at common zoom levels (40-60%)
     LOD_THRESHOLDS = {
-        0.15: LODLevel.ULTRA_LOW,
-        0.30: LODLevel.LOW,
-        0.50: LODLevel.MEDIUM,
+        0.25: LODLevel.ULTRA_LOW,  # < 25% zoom (was 15%)
+        0.40: LODLevel.LOW,  # < 40% zoom (was 30%)
+        0.60: LODLevel.MEDIUM,  # < 60% zoom (was 50%)
     }
 
     def __new__(cls) -> "ViewportLODManager":

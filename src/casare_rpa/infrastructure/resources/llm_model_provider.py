@@ -274,8 +274,8 @@ class LLMModelProvider:
                 "skip": True,
             },
             "google": {
-                "url": f"https://generativelanguage.googleapis.com/v1/models?key={api_key}",
-                "headers": {},
+                "url": "https://generativelanguage.googleapis.com/v1/models",
+                "headers": {"X-Goog-Api-Key": api_key},
                 "parser": self._parse_google_models,
             },
             "mistral": {

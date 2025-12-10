@@ -33,8 +33,7 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QColor
 
 from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 
 if TYPE_CHECKING:
@@ -50,7 +49,7 @@ STATUS_COLORS = {
 }
 
 
-class RemoteRobotDialog(AnimatedDialog):
+class RemoteRobotDialog(QDialog):
     """
     Dialog for remote robot management.
 

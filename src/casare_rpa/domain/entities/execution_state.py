@@ -6,7 +6,9 @@ Manages runtime state and variables during workflow execution (pure domain logic
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
 

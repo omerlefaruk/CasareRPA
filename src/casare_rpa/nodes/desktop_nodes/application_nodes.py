@@ -182,6 +182,7 @@ class LaunchApplicationNode(DesktopNodeBase):
             raise RuntimeError(error_msg)
         except Exception as e:
             self.handle_error(e, f"launch application '{app_path}'")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -265,6 +266,7 @@ class CloseApplicationNode(DesktopNodeBase):
 
         except Exception as e:
             self.handle_error(e, "close application")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -357,6 +359,7 @@ class ActivateWindowNode(DesktopNodeBase):
 
         except Exception as e:
             self.handle_error(e, "activate window")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -441,3 +444,4 @@ class GetWindowListNode(DesktopNodeBase):
 
         except Exception as e:
             self.handle_error(e, "get window list")
+            return {"success": False, "data": {}, "next_nodes": []}

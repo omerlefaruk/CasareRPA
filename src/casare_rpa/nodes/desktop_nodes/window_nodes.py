@@ -502,6 +502,7 @@ class GetWindowPropertiesNode(WindowNodeBase):
 
         except Exception as e:
             self.handle_error(e, "get window properties")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(

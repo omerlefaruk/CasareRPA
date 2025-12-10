@@ -19,7 +19,9 @@ from typing import Any, Dict, List, Optional, Set
 import uuid
 
 import orjson
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.entities.node_connection import NodeConnection
 from casare_rpa.domain.value_objects.types import (

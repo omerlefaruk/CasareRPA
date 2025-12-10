@@ -21,7 +21,7 @@ from PySide6.QtGui import QFont
 
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     RobotsTabWidget,
     JobsTabWidget,
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     )
 
 
-class FleetDashboardDialog(AnimatedDialog):
+class FleetDashboardDialog(QDialog):
     """
     Full admin dashboard for robot fleet management.
 

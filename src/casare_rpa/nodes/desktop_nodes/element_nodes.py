@@ -132,6 +132,7 @@ class FindElementNode(DesktopNodeBase):
 
         except Exception as e:
             self.handle_error(e, "find element")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -218,6 +219,7 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, "click element")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -309,6 +311,7 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, "type text")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -395,6 +398,7 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
             return self.success_result(text=text, element=element)
         except Exception as e:
             self.handle_error(e, "get element text")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(
@@ -473,3 +477,4 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
             return self.success_result(value=value, element=element)
         except Exception as e:
             self.handle_error(e, f"get element property '{property_name}'")
+            return {"success": False, "data": {}, "next_nodes": []}

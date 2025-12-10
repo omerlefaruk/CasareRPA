@@ -18,7 +18,9 @@ Handles:
 from collections import deque
 from typing import Any, Dict, List, Optional, Set
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.value_objects.types import NodeId

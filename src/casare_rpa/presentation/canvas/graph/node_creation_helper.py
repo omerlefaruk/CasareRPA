@@ -249,6 +249,25 @@ class NodeCreationHelper(QObject):
 
             # Set the variable name to the output port's name
             set_var_node.set_property("variable_name", port_name)
+
+            # Set default_value from source port's last output (if available)
+            # source_node may be NodeItem (graphics) or VisualNode - handle both
+            visual_node = source_node
+            if not hasattr(visual_node, "get_last_output") and hasattr(
+                source_node, "node"
+            ):
+                visual_node = source_node.node
+
+            if hasattr(visual_node, "get_last_output"):
+                last_output = visual_node.get_last_output()
+                if last_output and port_name in last_output:
+                    port_value = last_output[port_name]
+                    value_str = str(port_value) if port_value is not None else ""
+                    set_var_node.set_property("default_value", value_str)
+                    logger.debug(
+                        f"Set default_value from port output: {value_str[:100]}"
+                    )
+
             logger.debug(
                 f"SetVariable node created at ({initial_x}, {initial_y}) "
                 f"with name '{port_name}'"

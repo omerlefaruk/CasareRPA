@@ -7,7 +7,9 @@ once and auto-generating config, widgets, and validation.
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Type, Tuple
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.schemas.property_types import PropertyType
 

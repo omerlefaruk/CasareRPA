@@ -213,22 +213,35 @@ class GoogleSheetsClient:
                 raise
             raise GoogleAuthError(f"Service account authentication failed: {e}")
 
-    def _get_headers(self) -> Dict[str, str]:
-        """Get request headers with authentication."""
+    def _get_headers(self, use_api_key: bool = False) -> Dict[str, str]:
+        """Get request headers with authentication.
+
+        Args:
+            use_api_key: If True, use API key header instead of OAuth token
+
+        Returns:
+            Dict with appropriate authentication headers
+        """
         headers = {"Content-Type": "application/json"}
 
-        if self._access_token:
+        if use_api_key and self.config.api_key:
+            # Use header-based API key auth (more secure than URL query param)
+            headers["X-Goog-Api-Key"] = self.config.api_key
+        elif self._access_token:
             headers["Authorization"] = f"Bearer {self._access_token}"
 
         return headers
 
-    def _get_url(self, endpoint: str, use_api_key: bool = False) -> str:
-        """Build API URL with optional API key."""
-        url = f"{self.BASE_URL}{endpoint}"
-        if use_api_key and self.config.api_key:
-            separator = "&" if "?" in url else "?"
-            url = f"{url}{separator}key={self.config.api_key}"
-        return url
+    def _get_url(self, endpoint: str) -> str:
+        """Build API URL.
+
+        Args:
+            endpoint: API endpoint path
+
+        Returns:
+            Full API URL
+        """
+        return f"{self.BASE_URL}{endpoint}"
 
     async def _request(
         self,
@@ -244,8 +257,8 @@ class GoogleSheetsClient:
             )
 
         use_api_key = self.config.get_auth_method() == "api_key"
-        url = self._get_url(endpoint, use_api_key)
-        headers = self._get_headers()
+        url = self._get_url(endpoint)
+        headers = self._get_headers(use_api_key=use_api_key)
 
         last_error: Optional[Exception] = None
 

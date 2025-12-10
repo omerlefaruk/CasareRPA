@@ -18,6 +18,17 @@ from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, Por
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@node_schema(
+    PropertyDef(
+        "json_string",
+        PropertyType.TEXT,
+        default="",
+        label="JSON String",
+        placeholder='{"key": "value"}',
+        tooltip="JSON string to parse",
+        essential=True,
+    ),
+)
 @executable_node
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
@@ -53,6 +64,17 @@ class JsonParseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "property_path",
+        PropertyType.STRING,
+        default="",
+        label="Property Path",
+        placeholder="key.nested.value",
+        tooltip="Dot-separated path to property (e.g., user.name)",
+        essential=True,
+    ),
+)
 @executable_node
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
@@ -101,6 +123,17 @@ class GetPropertyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "key",
+        PropertyType.STRING,
+        default="",
+        label="Key",
+        placeholder="key_name",
+        tooltip="Dictionary key to get",
+        essential=True,
+    ),
+)
 @executable_node
 class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
@@ -151,6 +184,17 @@ class DictGetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "key",
+        PropertyType.STRING,
+        default="",
+        label="Key",
+        placeholder="key_name",
+        tooltip="Dictionary key to set",
+        essential=True,
+    ),
+)
 @executable_node
 class DictSetNode(BaseNode):
     """Node that sets a value in a dictionary."""
@@ -198,6 +242,17 @@ class DictSetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "key",
+        PropertyType.STRING,
+        default="",
+        label="Key",
+        placeholder="key_name",
+        tooltip="Dictionary key to remove",
+        essential=True,
+    ),
+)
 @executable_node
 class DictRemoveNode(BaseNode):
     """Node that removes a key from a dictionary."""
@@ -245,6 +300,7 @@ class DictRemoveNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DictMergeNode(BaseNode):
     """Node that merges two dictionaries."""
@@ -287,6 +343,7 @@ class DictMergeNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DictKeysNode(BaseNode):
     """Node that gets all keys from a dictionary."""
@@ -331,6 +388,7 @@ class DictKeysNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DictValuesNode(BaseNode):
     """Node that gets all values from a dictionary."""
@@ -375,6 +433,7 @@ class DictValuesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DictHasKeyNode(BaseNode):
     """Node that checks if a dictionary has a key."""
@@ -415,6 +474,7 @@ class DictHasKeyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class CreateDictNode(BaseNode):
     """Node that creates a dictionary from key-value pairs."""
@@ -536,6 +596,7 @@ class DictToJsonNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DictItemsNode(BaseNode):
     """Node that gets key-value pairs from a dictionary as a list of dicts."""

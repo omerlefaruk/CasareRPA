@@ -8,6 +8,7 @@ Extracted from canvas/dialogs/preferences_dialog.py for reusability.
 from typing import Optional, Dict, Any
 
 from PySide6.QtWidgets import (
+    QDialog,
     QVBoxLayout,
     QFormLayout,
     QLabel,
@@ -28,10 +29,9 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogSize,
     apply_dialog_style,
 )
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
-class PreferencesDialog(AnimatedDialog):
+class PreferencesDialog(QDialog):
     """
     Application preferences dialog.
 

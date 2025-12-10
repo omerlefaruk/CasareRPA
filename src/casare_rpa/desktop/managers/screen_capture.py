@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.desktop.element import DesktopElement
+from casare_rpa.utils.gpu import configure_onnx_gpu
 
 
 class ScreenCapture:
@@ -194,13 +195,21 @@ class ScreenCapture:
                     try:
                         from rapidocr_onnxruntime import RapidOCR
 
-                        ocr = RapidOCR()
+                        # Configure GPU providers for OCR
+                        providers = configure_onnx_gpu()
+                        ocr = RapidOCR(providers=providers)
                         img_array = np.array(img.convert("RGB"))
                         result, _ = ocr(img_array)
                         if result:
                             text_parts = [item[1] for item in result]
                             text = "\n".join(text_parts)
-                            logger.info(f"RapidOCR extracted {len(text)} characters")
+                            gpu_used = (
+                                "CUDA" in str(providers[0]) if providers else False
+                            )
+                            backend = "GPU" if gpu_used else "CPU"
+                            logger.info(
+                                f"RapidOCR ({backend}) extracted {len(text)} characters"
+                            )
                             return text.strip()
                         return ""
                     except ImportError:
@@ -473,14 +482,17 @@ class ScreenCapture:
 
                 try:
                     import cv2
+                    from casare_rpa.utils.gpu import gpu_accelerated_template_match
 
                     screen_gray = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2GRAY)
                     tmpl_gray = cv2.cvtColor(np.array(tmpl), cv2.COLOR_RGB2GRAY)
 
-                    result = cv2.matchTemplate(
+                    # Use GPU-accelerated template matching if available
+                    result, backend = gpu_accelerated_template_match(
                         screen_gray, tmpl_gray, cv2.TM_CCOEFF_NORMED
                     )
                     _, max_val, _, max_loc = cv2.minMaxLoc(result)
+                    logger.debug(f"Template matching used: {backend}")
 
                     if max_val >= threshold:
                         tmpl_height, tmpl_width = tmpl_gray.shape

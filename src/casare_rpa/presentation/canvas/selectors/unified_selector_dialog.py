@@ -52,7 +52,7 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -493,7 +493,7 @@ class SelectorTypeRow(QWidget):
 # =============================================================================
 
 
-class UnifiedSelectorDialog(AnimatedDialog):
+class UnifiedSelectorDialog(QDialog):
     """
     Unified Element Selector Dialog - UiPath-inspired design.
 

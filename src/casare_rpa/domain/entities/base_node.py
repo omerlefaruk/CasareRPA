@@ -22,7 +22,9 @@ Related:
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, TYPE_CHECKING
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.value_objects import Port
 from casare_rpa.domain.value_objects.types import (

@@ -352,6 +352,7 @@ class ForLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # No config - paired with ForLoopStart
 @executable_node
 class ForLoopEndNode(BaseNode):
     """
@@ -578,6 +579,7 @@ class WhileLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # No config - paired with WhileLoopStart
 @executable_node
 class WhileLoopEndNode(BaseNode):
     """
@@ -639,6 +641,7 @@ class WhileLoopEndNode(BaseNode):
         }
 
 
+@node_schema()  # No config - paired with loop
 @executable_node
 class BreakNode(BaseNode):
     """
@@ -716,6 +719,7 @@ class BreakNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # No config - paired with loop
 @executable_node
 class ContinueNode(BaseNode):
     """
@@ -790,6 +794,7 @@ class ContinueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Pass-through node
 @executable_node
 class MergeNode(BaseNode):
     """
@@ -964,6 +969,7 @@ class SwitchNode(BaseNode):
 # =============================================================================
 
 
+@node_schema()  # No config - paired with Catch/Finally
 @executable_node
 class TryNode(BaseNode):
     """
@@ -1142,6 +1148,7 @@ class CatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # No config - paired with Try
 @executable_node
 class FinallyNode(BaseNode):
     """

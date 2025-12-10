@@ -7,7 +7,9 @@ across global, project, and scenario levels.
 """
 
 from typing import Any, Dict, Optional
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.entities.project import (
     CredentialBindingsFile,

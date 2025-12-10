@@ -137,7 +137,9 @@ class VariableResolver:
                 self._incoming_connections[conn.target_node] = []
             self._incoming_connections[conn.target_node].append(conn)
 
-    def transfer_data(self, connection: Any) -> None:
+    def transfer_data(
+        self, connection: Any, context_override: Optional[Any] = None
+    ) -> None:
         """
         Transfer data from source port to target port.
 
@@ -149,7 +151,7 @@ class VariableResolver:
 
         Args:
             connection: The connection defining source and target
-                       (has source_node, source_port, target_node, target_port)
+            context_override: Optional execution context to use instead of self.context
         """
         try:
             source_node = self._get_node(connection.source_node)
@@ -179,7 +181,9 @@ class VariableResolver:
                     f"({type(source_node).__name__}) port '{connection.source_port}' has no value"
                 )
 
-    def transfer_inputs_to_node(self, node_id: str) -> None:
+    def transfer_inputs_to_node(
+        self, node_id: str, context_override: Optional[Any] = None
+    ) -> None:
         """
         Transfer all input data to a node from its connected sources.
 
@@ -196,7 +200,7 @@ class VariableResolver:
         """
         # PERFORMANCE: O(1) lookup using pre-built index
         for connection in self._incoming_connections.get(node_id, []):
-            self.transfer_data(connection)
+            self.transfer_data(connection, context_override=context_override)
 
     def validate_output_ports(self, node: INode, result: Dict[str, Any]) -> bool:
         """

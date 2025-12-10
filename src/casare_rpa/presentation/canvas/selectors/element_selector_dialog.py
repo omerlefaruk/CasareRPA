@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
 )
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
@@ -581,7 +581,7 @@ class SelectorRow(QWidget):
 # =============================================================================
 
 
-class ElementSelectorDialog(AnimatedDialog):
+class ElementSelectorDialog(QDialog):
     """
     Element Selector with UiPath/Power Automate inspired design.
 

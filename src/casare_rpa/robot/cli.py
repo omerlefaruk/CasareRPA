@@ -373,7 +373,7 @@ async def _run_agent(
         await agent.start()
 
         # Update status file
-        _write_status_file(config.robot_id, agent.get_status())
+        _write_status_file(config.robot_id, await agent.get_status())
 
         # Wait for shutdown signal
         shutdown_event = _cli_state.shutdown_event

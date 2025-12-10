@@ -24,9 +24,11 @@ from PySide6.QtCore import (
     QEasingCurve,
     QMimeData,
     QPoint,
+    QPointF,
     QPropertyAnimation,
     QSize,
     Qt,
+    QTimer,
     Signal,
 )
 from PySide6.QtGui import (
@@ -43,6 +45,8 @@ from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
+    QGraphicsItem,
+    QGraphicsView,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -959,15 +963,17 @@ class NodeOutputPopup(QFrame):
         self._resize_start_pos: Optional[QPoint] = None
         self._resize_start_geometry = None
 
+        # Position tracking - to follow node on pan/zoom
+        self._tracked_node_item: Optional[QGraphicsItem] = None
+        self._tracked_view: Optional[QGraphicsView] = None
+        self._position_timer: Optional[QTimer] = None
+
         # Enable mouse tracking for cursor changes
         self.setMouseTracking(True)
 
-        # Window setup - Tool window (doesn't grab mouse like Popup does)
-        self.setWindowFlags(
-            Qt.WindowType.Tool
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-        )
+        # Window setup - Tool window without WindowStaysOnTopHint
+        # so popup goes behind other apps when switching windows
+        self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         self.resize(self.DEFAULT_WIDTH, self.DEFAULT_HEIGHT)
@@ -1371,6 +1377,73 @@ class NodeOutputPopup(QFrame):
         self.show()
         self._animate_fade_in()
 
+    def start_tracking_node(
+        self, node_item: QGraphicsItem, view: QGraphicsView
+    ) -> None:
+        """
+        Start tracking a node item to follow it on pan/zoom.
+
+        Args:
+            node_item: The node's graphics item to track
+            view: The graphics view containing the node
+        """
+        self._tracked_node_item = node_item
+        self._tracked_view = view
+
+        # Create and start position update timer
+        if self._position_timer is None:
+            self._position_timer = QTimer(self)
+            self._position_timer.timeout.connect(self._update_tracked_position)
+
+        # Update at 60fps for smooth tracking
+        self._position_timer.start(16)
+
+    def stop_tracking_node(self) -> None:
+        """Stop tracking the node position."""
+        if self._position_timer is not None:
+            self._position_timer.stop()
+        self._tracked_node_item = None
+        self._tracked_view = None
+
+    def _update_tracked_position(self) -> None:
+        """Update popup position based on tracked node's current screen position."""
+        if (
+            self._tracked_node_item is None
+            or self._tracked_view is None
+            or not self.isVisible()
+        ):
+            return
+
+        try:
+            # Get node's bottom-left in scene coordinates
+            node_rect = self._tracked_node_item.sceneBoundingRect()
+            scene_pos = node_rect.bottomLeft()
+
+            # Map to view coordinates, then to global screen coordinates
+            view_pos = self._tracked_view.mapFromScene(scene_pos)
+            global_pos = self._tracked_view.mapToGlobal(view_pos)
+
+            # Add small vertical offset
+            x = global_pos.x()
+            y = global_pos.y() + 5
+
+            # Apply screen bounds checking
+            screen = QApplication.primaryScreen().availableGeometry()
+
+            if x + self.width() > screen.right():
+                x = screen.right() - self.width() - 10
+            if y + self.height() > screen.bottom():
+                y = screen.bottom() - self.height() - 10
+            if x < screen.left():
+                x = screen.left() + 10
+            if y < screen.top():
+                y = screen.top() + 10
+
+            self.move(x, y)
+        except RuntimeError:
+            # Node or view was deleted
+            self.stop_tracking_node()
+
     def _animate_fade_in(self) -> None:
         """Animate popup fade-in."""
         self.setWindowOpacity(0.0)
@@ -1391,19 +1464,13 @@ class NodeOutputPopup(QFrame):
         current_pos = self.pos()
 
         if self._is_pinned:
-            # Convert to regular window when pinned
+            # Convert to regular window when pinned (no StaysOnTop)
             self.setWindowFlags(
-                Qt.WindowType.Window
-                | Qt.WindowType.FramelessWindowHint
-                | Qt.WindowType.WindowStaysOnTopHint
+                Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint
             )
         else:
             # Back to Tool window (closing handled by eventFilter)
-            self.setWindowFlags(
-                Qt.WindowType.Tool
-                | Qt.WindowType.FramelessWindowHint
-                | Qt.WindowType.WindowStaysOnTopHint
-            )
+            self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
             self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
             self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
 
@@ -1423,6 +1490,8 @@ class NodeOutputPopup(QFrame):
 
     def closeEvent(self, event) -> None:
         """Handle close event."""
+        # Stop position tracking
+        self.stop_tracking_node()
         # Reset resize state on close
         self._reset_resize_state()
         self.closed.emit()

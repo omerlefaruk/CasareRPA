@@ -539,7 +539,8 @@ class VisualSubflowNode(VisualNode):
                 if prop_type == PropertyType.BOOLEAN:
                     self.add_checkbox(
                         param.name,
-                        label,
+                        label="",  # No group box title
+                        text=label,  # Text next to checkbox
                         state=bool(value) if value else False,
                     )
                 elif prop_type == PropertyType.CHOICE and param.choices:

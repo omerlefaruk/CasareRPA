@@ -66,6 +66,15 @@ from casare_rpa.infrastructure.browser.playwright_manager import (
         essential=True,  # Show when collapsed
     ),
     PropertyDef(
+        "window_state",
+        PropertyType.CHOICE,
+        default="normal",
+        choices=["normal", "maximized", "minimized"],
+        label="Window State",
+        tooltip="Initial window state (normal, maximized, or minimized)",
+        essential=True,  # Show when collapsed
+    ),
+    PropertyDef(
         "do_not_close",
         PropertyType.BOOLEAN,
         default=True,
@@ -412,6 +421,28 @@ class LaunchBrowserNode(BaseNode):
                                     logger.info(
                                         f"Found browser window: {window.Name} (class={class_name})"
                                     )
+
+                                    # Apply window state
+                                    window_state = self.get_parameter(
+                                        "window_state", "normal"
+                                    )
+                                    if window_state == "maximized":
+                                        try:
+                                            window.Maximize()
+                                            logger.info("Browser window maximized")
+                                        except Exception as max_err:
+                                            logger.warning(
+                                                f"Failed to maximize window: {max_err}"
+                                            )
+                                    elif window_state == "minimized":
+                                        try:
+                                            window.Minimize()
+                                            logger.info("Browser window minimized")
+                                        except Exception as min_err:
+                                            logger.warning(
+                                                f"Failed to minimize window: {min_err}"
+                                            )
+                                    # "normal" state - no action needed (default)
                                 else:
                                     logger.debug(
                                         "Browser window not found within timeout"
@@ -753,10 +784,22 @@ class NewTabNode(BaseNode):
                             f"Retry attempt {attempts - 1}/{retry_count} for new tab"
                         )
 
-                    # Create new context and page
-                    browser_context = await browser.new_context()
-                    context.add_browser_context(browser_context)  # Track for cleanup
-                    page = await browser_context.new_page()
+                    # Reuse existing browser context if available (much faster)
+                    # Creating a new page in existing context shares cookies/session
+                    current_page = context.get_active_page()
+                    if current_page:
+                        # Reuse the existing context from current page
+                        browser_context = current_page.context
+                        page = await browser_context.new_page()
+                        logger.debug("Created new page in existing browser context")
+                    else:
+                        # No existing context - create a new one
+                        browser_context = await browser.new_context()
+                        context.add_browser_context(
+                            browser_context
+                        )  # Track for cleanup
+                        page = await browser_context.new_page()
+                        logger.debug("Created new browser context for first page")
 
                     # Navigate to URL if specified
                     if url and url.strip():

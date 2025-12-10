@@ -21,6 +21,7 @@ from typing import Optional, Dict, Any, List
 
 from PySide6.QtCore import Qt, Signal, QThread, QObject
 from PySide6.QtWidgets import (
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QFormLayout,
@@ -41,8 +42,6 @@ from PySide6.QtWidgets import (
 )
 
 from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 # Import scopes from google_client
 from casare_rpa.infrastructure.resources.google_client import SCOPES, GoogleScope
@@ -204,7 +203,7 @@ class OAuthThread(QThread):
         self._worker.run()
 
 
-class GoogleOAuthDialog(AnimatedDialog):
+class GoogleOAuthDialog(QDialog):
     """
     Google OAuth 2.0 authorization dialog.
 

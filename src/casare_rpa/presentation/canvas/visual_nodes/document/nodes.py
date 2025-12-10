@@ -204,7 +204,7 @@ class VisualExtractFormNode(VisualNode):
             "Field Schema",
             placeholder_text='{"name": "string", "email": "string", "date": "date"}',
         )
-        self.add_checkbox("fuzzy_match", "Fuzzy Match", state=True)
+        self.add_checkbox("fuzzy_match", label="", text="Fuzzy Match", state=True)
         self.add_combo_menu("model", "Model", items=VISION_MODELS)
         self.set_property("model", "gpt-4o")
 

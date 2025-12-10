@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QStyledItemDelegate,
     QStyleOptionViewItem,
+    QFrame,
 )
 
 from loguru import logger
@@ -74,31 +75,34 @@ TYPE_BADGES: Dict[str, str] = {
 
 VARIABLE_BUTTON_STYLE = f"""
 QPushButton {{
-    background: {THEME.bg_dark};
+    background: {THEME.bg_medium};
     border: 1px solid {THEME.border};
     border-radius: 3px;
-    color: {THEME.text_primary};
-    font-size: 10px;
+    color: {THEME.text_secondary};
+    font-size: 9px;
     font-family: Consolas, monospace;
-    padding: 1px 3px;
-    min-width: 18px;
+    padding: 0px;
+    min-width: 16px;
+    max-width: 16px;
     min-height: 16px;
+    max-height: 16px;
 }}
 QPushButton:hover {{
-    background: {THEME.bg_light};
+    background: {THEME.accent_primary};
     border-color: {THEME.accent_primary};
-    color: {THEME.accent_primary};
+    color: {THEME.text_primary};
 }}
 QPushButton:pressed {{
-    background: {THEME.bg_dark};
+    background: {THEME.accent_hover};
+    border-color: {THEME.accent_hover};
 }}
 """
 
 VARIABLE_POPUP_STYLE = f"""
 QWidget#VariablePickerPopup {{
-    background: {THEME.bg_dark};
-    border: 1px solid {THEME.border};
-    border-radius: 4px;
+    background: {THEME.bg_medium};
+    border: 1px solid {THEME.border_light};
+    border-radius: 8px;
 }}
 QListWidget {{
     background: transparent;
@@ -106,24 +110,35 @@ QListWidget {{
     outline: none;
 }}
 QListWidget::item {{
-    padding: 6px 10px;
-    border-radius: 3px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 1px 4px;
 }}
 QListWidget::item:hover {{
-    background: {THEME.bg_hover};
+    background: {THEME.bg_light};
 }}
 QListWidget::item:selected {{
-    background: {THEME.accent_secondary};
-    color: white;
+    background: {THEME.bg_selected};
+    color: {THEME.text_primary};
 }}
 QTreeWidget {{
-    background: transparent;
+    background: {THEME.bg_dark};
     border: none;
     outline: none;
+    font-size: 12px;
 }}
 QTreeWidget::item {{
-    padding: 4px 8px;
-    border-radius: 3px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin: 1px 0px;
+    border-bottom: 1px solid {THEME.border};
+}}
+QTreeWidget::item:hover {{
+    background: {THEME.bg_light};
+}}
+QTreeWidget::item:selected {{
+    background: {THEME.bg_selected};
+    color: {THEME.text_primary};
 }}
 QTreeWidget::branch {{
     background: transparent;
@@ -139,18 +154,29 @@ QTreeWidget::branch:open:has-children:has-siblings {{
     border-image: none;
 }}
 QLineEdit#SearchBox {{
-    background: {THEME.bg_light};
-    border: 1px solid {THEME.border_light};
-    border-radius: 3px;
-    color: {THEME.text_secondary};
-    padding: 4px 8px;
+    background: {THEME.bg_dark};
+    border: 1px solid {THEME.border};
+    border-radius: 6px;
+    color: {THEME.text_primary};
+    padding: 8px 12px;
+    font-size: 12px;
+    selection-background-color: {THEME.accent_primary};
+}}
+QLineEdit#SearchBox:focus {{
+    border: 1px solid {THEME.accent_primary};
 }}
 QLabel#SectionHeader {{
     color: {THEME.text_muted};
     font-size: 10px;
-    font-weight: bold;
-    padding: 4px 8px;
+    font-weight: 600;
+    padding: 8px 12px 4px 12px;
     background: transparent;
+    letter-spacing: 0.5px;
+}}
+QFrame#SearchDivider {{
+    background: {THEME.border};
+    max-height: 1px;
+    min-height: 1px;
 }}
 """
 
@@ -788,12 +814,13 @@ class VariableProvider:
 
 
 class HighlightDelegate(QStyledItemDelegate):
-    """Custom delegate that paints background for selected items."""
+    """Custom delegate that paints background for selected items with rounded corners."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._selected_item: Optional[QTreeWidgetItem] = None
-        self._highlight_color = QColor(THEME.accent_secondary)  # Blue highlight
+        self._highlight_color = QColor(THEME.bg_selected)  # Selection blue
+        self._hover_color = QColor(THEME.bg_hover)  # Subtle hover
 
     def set_selected_item(self, item: Optional[QTreeWidgetItem]) -> None:
         """Set the currently selected item."""
@@ -801,14 +828,21 @@ class HighlightDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         """Paint the item with custom background if selected."""
+        from PySide6.QtGui import QPainterPath
+
         # Get the tree widget item from index
         tree_widget = option.widget
         if tree_widget:
             item = tree_widget.itemFromIndex(index)
             if item and item == self._selected_item:
-                # Paint highlight background
+                # Paint highlight background with rounded corners
                 painter.save()
-                painter.fillRect(option.rect, self._highlight_color)
+                painter.setRenderHint(painter.RenderHint.Antialiasing, True)
+                path = QPainterPath()
+                # Create rounded rect with 4px radius
+                rect = option.rect.adjusted(2, 1, -2, -1)
+                path.addRoundedRect(rect, 4, 4)
+                painter.fillPath(path, self._highlight_color)
                 painter.restore()
 
         # Call parent to draw text and other elements
@@ -955,20 +989,29 @@ class VariablePickerPopup(QWidget):
             None  # Track selection ourselves
         )
         self._delegate: Optional[HighlightDelegate] = None
+        self._app_filter_installed: bool = False
 
         self._setup_ui()
         self._apply_styles()
+
+        # Debounce timer for search filtering (150ms delay)
+        self._filter_timer = QTimer(self)
+        self._filter_timer.setSingleShot(True)
+        self._filter_timer.setInterval(150)  # 150ms debounce
+        self._filter_timer.timeout.connect(self._do_filter)
+        self._pending_filter_text = ""
 
         # Install app-level event filter for click-outside-to-close
         app = QApplication.instance()
         if app:
             app.installEventFilter(self)
+            self._app_filter_installed = True
 
     def _setup_ui(self) -> None:
         """Set up the popup UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(0)  # Control spacing manually for better depth control
 
         # Search box - handles typing, forwards navigation keys
         self._search_box = QLineEdit()
@@ -978,15 +1021,26 @@ class VariablePickerPopup(QWidget):
         self._search_box.installEventFilter(self)  # Capture arrow/Enter/Escape
         layout.addWidget(self._search_box)
 
+        # Divider between search and tree (creates visual depth)
+        search_divider = QFrame()
+        search_divider.setObjectName("SearchDivider")
+        search_divider.setFrameShape(QFrame.Shape.HLine)
+        search_divider.setFixedHeight(1)
+        layout.addSpacing(8)
+        layout.addWidget(search_divider)
+        layout.addSpacing(4)
+
         # Tree widget for hierarchical display (draggable for variable insertion)
         self._tree_widget = DraggableVariableTree()
-        self._tree_widget.setMinimumHeight(200)
-        self._tree_widget.setMinimumWidth(300)
+        self._tree_widget.setMinimumHeight(220)
+        self._tree_widget.setMinimumWidth(320)
         self._tree_widget.setHeaderHidden(True)
         self._tree_widget.setColumnCount(2)
         self._tree_widget.setIndentation(16)
         self._tree_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # Keep focus on search
         self._tree_widget.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
+        self._tree_widget.setRootIsDecorated(True)
+        self._tree_widget.setAnimated(True)
         self._tree_widget.itemDoubleClicked.connect(self._on_item_double_clicked)
         self._tree_widget.itemClicked.connect(self._on_item_clicked)
 
@@ -1003,8 +1057,8 @@ class VariablePickerPopup(QWidget):
         layout.addWidget(self._tree_widget)
 
         # Set fixed size
-        self.setMinimumWidth(320)
-        self.setMaximumHeight(400)
+        self.setMinimumWidth(340)
+        self.setMaximumHeight(420)
 
     def _apply_styles(self) -> None:
         """Apply VSCode dark theme styling."""
@@ -1142,14 +1196,18 @@ class VariablePickerPopup(QWidget):
             if source not in grouped:
                 continue
 
-            # Add section header
-            header_item = QTreeWidgetItem([source, ""])
+            # Add section header with modern uppercase styling and visual depth
+            header_item = QTreeWidgetItem([source.upper(), ""])
             header_item.setFlags(Qt.ItemFlag.NoItemFlags)
             header_font = QFont()
             header_font.setBold(True)
             header_font.setPointSize(9)
+            header_font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 0.8)
             header_item.setFont(0, header_font)
-            header_item.setForeground(0, QColor(THEME.text_muted))
+            header_item.setForeground(0, QColor(THEME.text_secondary))
+            # Section header background for visual depth
+            header_item.setBackground(0, QBrush(QColor(THEME.bg_light)))
+            header_item.setBackground(1, QBrush(QColor(THEME.bg_light)))
             self._tree_widget.addTopLevelItem(header_item)
 
             # Add variables in this group
@@ -1169,10 +1227,14 @@ class VariablePickerPopup(QWidget):
     ) -> QTreeWidgetItem:
         """Add a variable item to the tree."""
         # Format: [badge] name     Type
+        # Use unicode brackets for a cleaner pill-like badge appearance
         badge = var.type_badge
-        display_text = f"{badge}  {var.name}"
+        display_text = f"[{badge}]  {var.name}"
 
-        item = QTreeWidgetItem([display_text, var.var_type])
+        # Show type in second column with cleaner formatting
+        type_display = var.var_type.lower()
+
+        item = QTreeWidgetItem([display_text, type_display])
         item.setData(0, Qt.ItemDataRole.UserRole, var)
 
         # Set tooltip with value preview
@@ -1183,8 +1245,17 @@ class VariablePickerPopup(QWidget):
         item.setToolTip(0, tooltip)
         item.setToolTip(1, tooltip)
 
-        # Color-code by type
+        # Color-code name by type color
         item.setForeground(0, QColor(var.type_color))
+
+        # Subtle background on type column for visual depth (badge area)
+        item.setBackground(1, QBrush(QColor(THEME.bg_lighter)))
+
+        # Muted type label on the right with subtle styling
+        type_font = QFont()
+        type_font.setPointSize(10)
+        type_font.setItalic(True)
+        item.setFont(1, type_font)
         item.setForeground(1, QColor(THEME.text_muted))
 
         parent.addChild(item)
@@ -1276,8 +1347,13 @@ class VariablePickerPopup(QWidget):
                 self._select_item(prev_item)
 
     def _on_search_changed(self, text: str) -> None:
-        """Handle search text change."""
-        self._filter_and_display(text)
+        """Handle search text change with debounce."""
+        self._pending_filter_text = text
+        self._filter_timer.start()  # Restart timer on each keystroke
+
+    def _do_filter(self) -> None:
+        """Execute the actual filter after debounce delay."""
+        self._filter_and_display(self._pending_filter_text)
 
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle single click - select variable immediately."""
@@ -1388,7 +1464,13 @@ class VariablePickerPopup(QWidget):
         self._select_first_selectable()
 
     def closeEvent(self, event) -> None:
-        """Handle close event."""
+        """Handle close event and clean up resources."""
+        # Remove app-level event filter to prevent memory leak
+        if self._app_filter_installed:
+            app = QApplication.instance()
+            if app:
+                app.removeEventFilter(self)
+            self._app_filter_installed = False
         self.closed.emit()
         super().closeEvent(event)
 

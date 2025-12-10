@@ -85,7 +85,7 @@ def validate_sql_identifier(
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -105,6 +105,7 @@ if AIOMYSQL_AVAILABLE:
     import aiomysql
 
 
+@node_schema()  # Input port driven
 @executable_node
 class TableExistsNode(BaseNode):
     """
@@ -230,6 +231,7 @@ class TableExistsNode(BaseNode):
         return row is not None
 
 
+@node_schema()  # Input port driven
 @executable_node
 class GetTableColumnsNode(BaseNode):
     """

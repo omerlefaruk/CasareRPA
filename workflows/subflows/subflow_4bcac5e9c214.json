@@ -1,0 +1,70 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_4bcac5e9c214",
+  "name": "Subflow 29",
+  "version": "1.0.0",
+  "description": "Subflow created from 2 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-09T13:42:16.849704",
+  "updated_at": "2025-12-09T13:42:44.963163",
+  "inputs": [],
+  "outputs": [],
+  "parameters": [],
+  "nodes": {
+    "MessageBoxNode_cb62e2fd": {
+      "node_id": "MessageBoxNode_cb62e2fd",
+      "type": "MessageBoxNode",
+      "position": {
+        "x": 738.7954985272845,
+        "y": 187.44257416824064
+      },
+      "properties": {
+        "title": "Message",
+        "message": "",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0",
+        "status": "idle"
+      },
+      "name": "Message Box 1"
+    },
+    "MessageBoxNode_158765af": {
+      "node_id": "MessageBoxNode_158765af",
+      "type": "MessageBoxNode",
+      "position": {
+        "x": 337.4156714182492,
+        "y": 200.6191846541433
+      },
+      "properties": {
+        "title": "Message",
+        "message": "hey",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0",
+        "status": "idle"
+      },
+      "name": "Message Box"
+    }
+  },
+  "connections": [],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": 337.4156714182492,
+    "y": 187.44257416824064,
+    "width": 601.3798271090353,
+    "height": 113.17661048590264
+  }
+}

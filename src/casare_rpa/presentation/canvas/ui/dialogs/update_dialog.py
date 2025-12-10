@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 from PySide6.QtCore import Signal, Slot, Qt, QTimer
 from PySide6.QtGui import QFont
 
@@ -33,7 +33,7 @@ from casare_rpa.infrastructure.updater.tuf_updater import (
 )
 
 
-class UpdateDialog(AnimatedDialog):
+class UpdateDialog(QDialog):
     """
     Application update notification and download dialog.
 

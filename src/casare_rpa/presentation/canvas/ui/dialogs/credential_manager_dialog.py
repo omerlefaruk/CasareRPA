@@ -12,25 +12,24 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, QThread, QObject
 from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QHBoxLayout,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QListWidget,
     QListWidgetItem,
-    QGroupBox,
-    QDialogButtonBox,
-    QTabWidget,
-    QWidget,
-    QComboBox,
     QMessageBox,
+    QPushButton,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogStyles,
@@ -209,7 +208,42 @@ class ApiKeyTestThread(QThread):
         super().start()
 
 
-class CredentialManagerDialog(AnimatedDialog):
+class TokenRefreshThread(QThread):
+    """Thread for refreshing Google OAuth tokens without blocking Qt."""
+
+    finished = Signal(str)  # Emits new token or empty string on failure
+    error = Signal(str)  # Emits error message on failure
+
+    def __init__(self, credential_id: str, parent=None):
+        super().__init__(parent)
+        self._credential_id = credential_id
+
+    def run(self):
+        """Run the token refresh in a separate thread."""
+        import asyncio
+
+        try:
+            from casare_rpa.infrastructure.security.google_oauth import (
+                GoogleOAuthManager,
+            )
+
+            async def do_refresh():
+                manager = GoogleOAuthManager()
+                return await manager.get_access_token(self._credential_id)
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                token = loop.run_until_complete(do_refresh())
+                self.finished.emit(token or "")
+            finally:
+                loop.close()
+        except Exception as e:
+            logger.error(f"Token refresh failed: {e}")
+            self.error.emit(str(e))
+
+
+class CredentialManagerDialog(QDialog):
     """
     Credential management dialog.
 
@@ -232,6 +266,8 @@ class CredentialManagerDialog(AnimatedDialog):
 
         self._store = None
         self._current_credential_id: Optional[str] = None
+        self._test_thread: Optional[ApiKeyTestThread] = None
+        self._token_refresh_thread: Optional[TokenRefreshThread] = None
 
         self.setWindowTitle("Credential Manager")
         self.setModal(True)
@@ -243,6 +279,36 @@ class CredentialManagerDialog(AnimatedDialog):
         self._load_credentials()
 
         logger.debug("CredentialManagerDialog opened")
+
+    def closeEvent(self, event) -> None:
+        """Clean up resources when dialog closes."""
+        # Stop any running test thread
+        if self._test_thread is not None:
+            if self._test_thread.isRunning():
+                logger.debug("Stopping API test thread on dialog close")
+                self._test_thread.quit()
+                if not self._test_thread.wait(1000):  # Wait up to 1 second
+                    logger.warning(
+                        "API test thread did not stop gracefully, terminating"
+                    )
+                    self._test_thread.terminate()
+                    self._test_thread.wait(500)
+            self._test_thread = None
+
+        # Stop any running token refresh thread
+        if self._token_refresh_thread is not None:
+            if self._token_refresh_thread.isRunning():
+                logger.debug("Stopping token refresh thread on dialog close")
+                self._token_refresh_thread.quit()
+                if not self._token_refresh_thread.wait(1000):  # Wait up to 1 second
+                    logger.warning(
+                        "Token refresh thread did not stop gracefully, terminating"
+                    )
+                    self._token_refresh_thread.terminate()
+                    self._token_refresh_thread.wait(500)
+            self._token_refresh_thread = None
+
+        super().closeEvent(event)
 
     def _get_store(self):
         """Lazy-load the credential store."""
@@ -689,46 +755,62 @@ class CredentialManagerDialog(AnimatedDialog):
         )
 
     def _refresh_google_token(self) -> None:
-        """Refresh the selected Google account's token."""
+        """Refresh the selected Google account's token.
+
+        Uses a background thread to avoid blocking the Qt event loop.
+        """
         cred_id = getattr(self, "_current_google_id", None)
         if not cred_id:
             return
 
-        try:
-            from casare_rpa.infrastructure.security.google_oauth import (
-                GoogleOAuthManager,
+        # Don't start another refresh if one is already running
+        if (
+            self._token_refresh_thread is not None
+            and self._token_refresh_thread.isRunning()
+        ):
+            logger.debug("Token refresh already in progress")
+            return
+
+        # Disable button and show refreshing state
+        self._google_refresh_btn.setEnabled(False)
+        self._google_refresh_btn.setText("Refreshing...")
+        self._google_status_label.setText("Refreshing...")
+        self._google_status_label.setStyleSheet("color: #2196F3;")
+
+        # Run refresh in background thread
+        self._token_refresh_thread = TokenRefreshThread(cred_id, self)
+        self._token_refresh_thread.finished.connect(self._on_token_refresh_complete)
+        self._token_refresh_thread.error.connect(self._on_token_refresh_error)
+        self._token_refresh_thread.start()
+
+    def _on_token_refresh_complete(self, token: str) -> None:
+        """Handle token refresh completion."""
+        # Re-enable button
+        self._google_refresh_btn.setEnabled(True)
+        self._google_refresh_btn.setText("Refresh Token")
+
+        if token:
+            self._google_status_label.setText("Valid")
+            self._google_status_label.setStyleSheet("color: #4CAF50;")
+            QMessageBox.information(self, "Success", "Token refreshed successfully!")
+        else:
+            self._google_status_label.setText("Expired - Needs re-auth")
+            self._google_status_label.setStyleSheet("color: #f44336;")
+            QMessageBox.warning(
+                self,
+                "Warning",
+                "Could not refresh token. You may need to re-authenticate.",
             )
 
-            # Try to refresh
-            import asyncio
+    def _on_token_refresh_error(self, error_message: str) -> None:
+        """Handle token refresh error."""
+        # Re-enable button
+        self._google_refresh_btn.setEnabled(True)
+        self._google_refresh_btn.setText("Refresh Token")
 
-            async def do_refresh():
-                manager = GoogleOAuthManager()
-                return await manager.get_access_token(cred_id)
-
-            # Run in event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                token = loop.run_until_complete(do_refresh())
-                if token:
-                    self._google_status_label.setText("Valid")
-                    self._google_status_label.setStyleSheet("color: #4CAF50;")
-                    QMessageBox.information(
-                        self, "Success", "Token refreshed successfully!"
-                    )
-                else:
-                    QMessageBox.warning(
-                        self,
-                        "Warning",
-                        "Could not refresh token. You may need to re-authenticate.",
-                    )
-            finally:
-                loop.close()
-
-        except Exception as e:
-            logger.error(f"Failed to refresh token: {e}")
-            QMessageBox.critical(self, "Error", f"Failed to refresh token: {e}")
+        self._google_status_label.setText("Error")
+        self._google_status_label.setStyleSheet("color: #f44336;")
+        QMessageBox.critical(self, "Error", f"Failed to refresh token: {error_message}")
 
     def _set_google_default(self) -> None:
         """Set the selected Google account as default."""

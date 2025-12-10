@@ -50,7 +50,7 @@ class SessionStatistics:
         return (self.requests_succeeded / self.requests_made) * 100
 
 
-@dataclass
+@dataclass(slots=True)
 class PooledSession:
     """An HTTP session managed by the pool."""
 
@@ -153,6 +153,10 @@ class HttpSessionPool:
         self._host_sessions: Dict[str, Deque[PooledSession]] = {}
         self._lock = asyncio.Lock()
         self._closed = False
+
+        # Event for signaling session availability (replaces busy-wait)
+        self._available_event = asyncio.Event()
+        self._available_event.set()  # Initially available (pool not exhausted)
 
         # Statistics
         self._stats = SessionStatistics()
@@ -278,14 +282,26 @@ class HttpSessionPool:
                     except Exception as e:
                         logger.error(f"Failed to create session: {e}")
 
-            # Check timeout
-            if time.time() >= deadline:
+            # Pool exhausted - wait for a session to become available
+            # Use Event-based wait instead of busy-wait polling
+            self._available_event.clear()
+
+            # Check timeout before waiting
+            remaining = deadline - time.time()
+            if remaining <= 0:
                 raise TimeoutError(
                     f"Timeout waiting for HTTP session "
                     f"(waited {timeout}s, pool size: {self.total_count})"
                 )
 
-            await asyncio.sleep(0.1)
+            try:
+                await asyncio.wait_for(
+                    self._available_event.wait(),
+                    timeout=min(remaining, 0.5),  # Cap individual wait to 0.5s
+                )
+            except asyncio.TimeoutError:
+                # Continue loop to recheck pool state
+                pass
 
     async def release(self, session: Any, url: Optional[str] = None) -> None:
         """
@@ -327,6 +343,9 @@ class HttpSessionPool:
                     self._host_sessions[base_url].append(pooled)
                 else:
                     self._available.append(pooled)
+
+            # Signal that a session is available for waiting acquirers
+            self._available_event.set()
 
     async def request(
         self,
@@ -503,7 +522,14 @@ class HttpSessionManager:
     """
 
     _instance: Optional["HttpSessionManager"] = None
-    _lock = asyncio.Lock()
+    _instance_lock: Optional[asyncio.Lock] = None
+
+    @classmethod
+    def _get_instance_lock(cls) -> asyncio.Lock:
+        """Get or create the instance lock for the current event loop."""
+        if cls._instance_lock is None:
+            cls._instance_lock = asyncio.Lock()
+        return cls._instance_lock
 
     def __init__(self) -> None:
         self._default_pool: Optional[HttpSessionPool] = None
@@ -514,7 +540,7 @@ class HttpSessionManager:
     async def get_instance(cls) -> "HttpSessionManager":
         """Get the singleton instance."""
         if cls._instance is None:
-            async with cls._lock:
+            async with cls._get_instance_lock():
                 if cls._instance is None:
                     cls._instance = cls()
         return cls._instance
@@ -581,6 +607,7 @@ class HttpSessionManager:
         if cls._instance is not None:
             await cls._instance.close_all()
             cls._instance = None
+        cls._instance_lock = None
 
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get statistics for all pools."""
