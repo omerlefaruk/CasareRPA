@@ -161,6 +161,26 @@ from casare_rpa.presentation.canvas.ui.widgets.animated_button import (
     AnimatedIconButton,
     create_animated_button,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animated_scroll_area import (
+    AnimatedScrollArea,
+    create_animated_scroll_area,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_tooltip import (
+    AnimatedToolTip,
+    show_animated_tooltip,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_status_bar import (
+    AnimatedStatusBar,
+    create_animated_status_bar,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_list_widget import (
+    AnimatedListWidget,
+    create_animated_list_widget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_tree_widget import (
+    AnimatedTreeWidget,
+    create_animated_tree_widget,
+)
 
 __all__ = [
     "VariableEditorWidget",
@@ -289,4 +309,19 @@ __all__ = [
     "AnimatedButton",
     "AnimatedIconButton",
     "create_animated_button",
+    # Animated Scroll Area
+    "AnimatedScrollArea",
+    "create_animated_scroll_area",
+    # Animated Tooltip
+    "AnimatedToolTip",
+    "show_animated_tooltip",
+    # Animated Status Bar
+    "AnimatedStatusBar",
+    "create_animated_status_bar",
+    # Animated List Widget
+    "AnimatedListWidget",
+    "create_animated_list_widget",
+    # Animated Tree Widget
+    "AnimatedTreeWidget",
+    "create_animated_tree_widget",
 ]
