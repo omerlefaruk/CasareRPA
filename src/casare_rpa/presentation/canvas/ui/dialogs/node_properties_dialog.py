@@ -7,7 +7,6 @@ Modal dialog for editing comprehensive node properties.
 from typing import Optional, Any, Dict
 
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QFormLayout,
     QLabel,
@@ -31,9 +30,10 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     apply_dialog_style,
     COLORS,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
-class NodePropertiesDialog(QDialog):
+class NodePropertiesDialog(AnimatedDialog):
     """
     Dialog for editing node properties.
 

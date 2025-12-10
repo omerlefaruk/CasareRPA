@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
     QComboBox,
-    QDialog,
     QDialogButtonBox,
     QFormLayout,
     QGroupBox,
@@ -38,6 +37,8 @@ from PySide6.QtWidgets import (
 )
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+
 from casare_rpa.domain.entities.project import (
     Environment,
     EnvironmentType,
@@ -48,7 +49,7 @@ from casare_rpa.domain.entities.project.environment import (
 )
 
 
-class EnvironmentEditorDialog(QDialog):
+class EnvironmentEditorDialog(AnimatedDialog):
     """
     Environment management dialog.
 

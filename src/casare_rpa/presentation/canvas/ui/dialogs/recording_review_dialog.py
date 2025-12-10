@@ -10,7 +10,6 @@ from typing import List, Dict, Any, Optional
 from PySide6.QtCore import Qt, Signal, QMimeData
 from PySide6.QtGui import QDrag, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -25,6 +24,8 @@ from PySide6.QtWidgets import (
 )
 
 from loguru import logger
+
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
 # Node type display configuration
@@ -292,7 +293,7 @@ class ActionRowWidget(QFrame):
         drag.exec(Qt.DropAction.MoveAction)
 
 
-class RecordingReviewDialog(QDialog):
+class RecordingReviewDialog(AnimatedDialog):
     """
     Dialog for reviewing recorded browser actions before adding to canvas.
 

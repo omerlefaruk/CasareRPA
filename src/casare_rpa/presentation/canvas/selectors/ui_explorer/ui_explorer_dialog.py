@@ -21,7 +21,6 @@ from typing import Any, Dict, Optional, TYPE_CHECKING
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QSplitter,
@@ -35,6 +34,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction, QKeySequence, QShortcut
 
 from loguru import logger
+
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
     UIExplorerToolbar,
@@ -69,7 +70,7 @@ if TYPE_CHECKING:
     from playwright.async_api import Page
 
 
-class UIExplorerDialog(QDialog):
+class UIExplorerDialog(AnimatedDialog):
     """
     UI Explorer Dialog - UiPath-style element inspector.
 

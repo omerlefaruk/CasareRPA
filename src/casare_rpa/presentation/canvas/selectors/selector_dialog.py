@@ -5,7 +5,6 @@ Beautiful, modern dialog for managing and testing selectors
 
 from typing import Optional, Callable
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -22,6 +21,7 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
@@ -29,7 +29,7 @@ from casare_rpa.utils.selectors.selector_generator import (
 )
 
 
-class SelectorDialog(QDialog):
+class SelectorDialog(AnimatedDialog):
     """
     Modern dialog for selecting and testing element selectors
     Shows all generated strategies with validation and preview

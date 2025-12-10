@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QTabWidget,
@@ -35,6 +34,8 @@ from PySide6.QtGui import QFont, QColor
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -49,7 +50,7 @@ STATUS_COLORS = {
 }
 
 
-class RemoteRobotDialog(QDialog):
+class RemoteRobotDialog(AnimatedDialog):
     """
     Dialog for remote robot management.
 

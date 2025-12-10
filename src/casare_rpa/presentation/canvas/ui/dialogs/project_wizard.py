@@ -13,7 +13,6 @@ from typing import List, Optional
 from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QFont, QIcon, QPixmap, QPainter, QColor
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -42,6 +41,7 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     show_styled_warning,
     show_styled_error,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
 class TemplateCard(QFrame):
@@ -332,7 +332,7 @@ class TemplatePreviewPanel(QFrame):
         self._meta_label.setText("\n".join(meta_parts))
 
 
-class ProjectWizard(QDialog):
+class ProjectWizard(AnimatedDialog):
     """
     3-step project creation wizard.
 
@@ -1227,6 +1227,6 @@ def show_project_wizard(parent: Optional[QWidget] = None) -> Optional[str]:
 
     wizard.project_created.connect(on_created)
 
-    if wizard.exec() == QDialog.DialogCode.Accepted:
+    if wizard.exec() == AnimatedDialog.DialogCode.Accepted:
         return result_path
     return None

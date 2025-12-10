@@ -8,7 +8,6 @@ Integrates with TUF UpdateManager for secure software updates.
 from typing import Optional
 
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -18,6 +17,8 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QWidget,
 )
+
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 from PySide6.QtCore import Signal, Slot, Qt, QTimer
 from PySide6.QtGui import QFont
 
@@ -32,7 +33,7 @@ from casare_rpa.infrastructure.updater.tuf_updater import (
 )
 
 
-class UpdateDialog(QDialog):
+class UpdateDialog(AnimatedDialog):
     """
     Application update notification and download dialog.
 

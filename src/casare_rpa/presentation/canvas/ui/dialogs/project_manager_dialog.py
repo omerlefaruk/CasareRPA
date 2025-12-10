@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional, List, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -29,11 +28,13 @@ from PySide6.QtGui import QFont
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import ProjectIndexEntry
 
 
-class ProjectManagerDialog(QDialog):
+class ProjectManagerDialog(AnimatedDialog):
     """
     Dialog for managing CasareRPA projects.
 

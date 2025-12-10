@@ -12,7 +12,6 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, QThread, QObject
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QFormLayout,
@@ -30,6 +29,8 @@ from PySide6.QtWidgets import (
 )
 
 from loguru import logger
+
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogStyles,
@@ -208,7 +209,7 @@ class ApiKeyTestThread(QThread):
         super().start()
 
 
-class CredentialManagerDialog(QDialog):
+class CredentialManagerDialog(AnimatedDialog):
     """
     Credential management dialog.
 
