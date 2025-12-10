@@ -9,9 +9,6 @@ from typing import Optional, Any, Dict
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
-    QLineEdit,
-    QComboBox,
-    QPushButton,
 )
 from PySide6.QtCore import Signal
 
@@ -19,6 +16,13 @@ from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
+from casare_rpa.presentation.canvas.ui.widgets.animated_button import AnimatedButton
+from casare_rpa.presentation.canvas.ui.widgets.animated_line_edit import (
+    AnimatedLineEdit,
+)
+from casare_rpa.presentation.canvas.ui.widgets.animated_combo_box import (
+    AnimatedComboBox,
+)
 
 
 class VariableEditorWidget(BaseWidget):
@@ -66,7 +70,7 @@ class VariableEditorWidget(BaseWidget):
         layout.setSpacing(8)
 
         # Name input
-        self._name_edit = QLineEdit()
+        self._name_edit = AnimatedLineEdit()
         self._name_edit.setPlaceholderText("Variable name")
         self._name_edit.setText(self._var_name)
         self._name_edit.setMinimumWidth(150)
@@ -74,7 +78,7 @@ class VariableEditorWidget(BaseWidget):
         layout.addWidget(self._name_edit)
 
         # Type selector
-        self._type_combo = QComboBox()
+        self._type_combo = AnimatedComboBox()
         self._type_combo.addItems(
             [
                 "String",
@@ -92,14 +96,14 @@ class VariableEditorWidget(BaseWidget):
         layout.addWidget(self._type_combo)
 
         # Value input
-        self._value_edit = QLineEdit()
+        self._value_edit = AnimatedLineEdit()
         self._value_edit.setPlaceholderText("Value")
         self._value_edit.setText(str(self._var_value))
         self._value_edit.textChanged.connect(self._on_value_changed)
         layout.addWidget(self._value_edit)
 
         # Remove button
-        self._remove_btn = QPushButton("×")
+        self._remove_btn = AnimatedButton("×")
         self._remove_btn.setFixedSize(24, 24)
         self._remove_btn.setToolTip("Remove variable")
         self._remove_btn.setStyleSheet(f"""
@@ -192,7 +196,7 @@ class VariableEditorWidget(BaseWidget):
         self._type_combo.setCurrentText(var_type)
         self._value_edit.setText(str(value))
 
-    def get_remove_button(self) -> QPushButton:
+    def get_remove_button(self) -> AnimatedButton:
         """
         Get the remove button for connecting signals.
 
