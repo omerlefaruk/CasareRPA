@@ -6,7 +6,9 @@ Centralizes status bar creation, updates, and tab toggles.
 
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtWidgets import QStatusBar, QLabel, QPushButton
+from PySide6.QtWidgets import QStatusBar, QLabel
+
+from casare_rpa.presentation.canvas.ui.widgets import AnimatedButton
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -76,10 +78,10 @@ class StatusBarManager:
         self._zoom_label: Optional[QLabel] = None
         self._node_count_label: Optional[QLabel] = None
         self._exec_status_label: Optional[QLabel] = None
-        self._btn_variables: Optional[QPushButton] = None
-        self._btn_output: Optional[QPushButton] = None
-        self._btn_log: Optional[QPushButton] = None
-        self._btn_validation: Optional[QPushButton] = None
+        self._btn_variables: Optional[AnimatedButton] = None
+        self._btn_output: Optional[AnimatedButton] = None
+        self._btn_log: Optional[AnimatedButton] = None
+        self._btn_validation: Optional[AnimatedButton] = None
 
     def create_status_bar(self) -> QStatusBar:
         """
@@ -155,7 +157,7 @@ class StatusBarManager:
 
     def _create_toggle_button(
         self, text: str, tooltip: str, tab_name: str
-    ) -> QPushButton:
+    ) -> AnimatedButton:
         """
         Create a toggle button for panel tabs.
 
@@ -165,9 +167,9 @@ class StatusBarManager:
             tab_name: Tab name to toggle
 
         Returns:
-            Created QPushButton
+            Created AnimatedButton
         """
-        btn = QPushButton(text)
+        btn = AnimatedButton(text)
         btn.setCheckable(True)
         btn.setToolTip(tooltip)
         btn.clicked.connect(lambda: self._toggle_panel_tab(tab_name))
