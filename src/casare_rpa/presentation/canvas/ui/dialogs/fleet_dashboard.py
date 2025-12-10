@@ -9,7 +9,6 @@ and real-time updates via WebSocketBridge.
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QTabWidget,
@@ -22,6 +21,7 @@ from PySide6.QtGui import QFont
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     RobotsTabWidget,
     JobsTabWidget,
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     )
 
 
-class FleetDashboardDialog(QDialog):
+class FleetDashboardDialog(AnimatedDialog):
     """
     Full admin dashboard for robot fleet management.
 

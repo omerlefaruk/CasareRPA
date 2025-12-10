@@ -6,7 +6,6 @@ Allows users to assign/remove hotkeys for any node in the system.
 
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QTableWidget,
@@ -25,11 +24,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+
 if TYPE_CHECKING:
     from ...components.quick_node_manager import QuickNodeManager
 
 
-class QuickNodeConfigDialog(QDialog):
+class QuickNodeConfigDialog(AnimatedDialog):
     """
     Dialog for configuring quick node hotkeys.
 

@@ -7,7 +7,6 @@ Modal dialog for editing workflow-level settings and metadata.
 from typing import Optional, Any, Dict
 
 from PySide6.QtWidgets import (
-    QDialog,
     QVBoxLayout,
     QFormLayout,
     QLabel,
@@ -30,9 +29,10 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogSize,
     apply_dialog_style,
 )
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
-class WorkflowSettingsDialog(QDialog):
+class WorkflowSettingsDialog(AnimatedDialog):
     """
     Dialog for editing workflow settings.
 

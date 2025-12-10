@@ -8,30 +8,31 @@ at the subflow level for external configuration.
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
+    QFormLayout,
+    QFrame,
+    QGroupBox,
     QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSplitter,
+    QTextEdit,
     QTreeWidget,
     QTreeWidgetItem,
-    QPushButton,
-    QLineEdit,
-    QLabel,
-    QCheckBox,
-    QFormLayout,
-    QDialogButtonBox,
-    QGroupBox,
-    QSplitter,
-    QFrame,
-    QTextEdit,
+    QVBoxLayout,
 )
 from PySide6.QtCore import Qt
 from loguru import logger
 
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
-class ParameterPromotionDialog(QDialog):
+class ParameterPromotionDialog(AnimatedDialog):
     """
     Dialog for promoting internal node parameters to subflow level.
 

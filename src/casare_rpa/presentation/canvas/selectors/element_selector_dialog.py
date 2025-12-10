@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
-    QDialog,
     QFileDialog,
     QFrame,
     QGraphicsDropShadowEffect,
@@ -42,6 +41,7 @@ from PySide6.QtWidgets import (
 )
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
@@ -581,7 +581,7 @@ class SelectorRow(QWidget):
 # =============================================================================
 
 
-class ElementSelectorDialog(QDialog):
+class ElementSelectorDialog(AnimatedDialog):
     """
     Element Selector with UiPath/Power Automate inspired design.
 
