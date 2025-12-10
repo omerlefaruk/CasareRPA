@@ -12,8 +12,9 @@ This module provides nodes for XML parsing and manipulation:
 - JsonToXMLNode: Convert JSON to XML
 """
 
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+import defusedxml.ElementTree as DefusedET
+from defusedxml.minidom import parseString as safe_parseString
+import xml.etree.ElementTree as ET  # For XML creation (defusedxml only for parsing)
 import json
 from pathlib import Path
 
@@ -31,6 +32,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ParseXMLNode(BaseNode):
     """
@@ -73,7 +75,7 @@ class ParseXMLNode(BaseNode):
             if not xml_string:
                 raise ValueError("xml_string is required")
 
-            root = ET.fromstring(xml_string)
+            root = DefusedET.fromstring(xml_string)
             self._xml_root = root
 
             # Store parsed XML in context for other nodes
@@ -91,7 +93,7 @@ class ParseXMLNode(BaseNode):
                 "next_nodes": ["exec_out"],
             }
 
-        except ET.ParseError as e:
+        except DefusedET.ParseError as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             return {
@@ -168,7 +170,7 @@ class ReadXMLFileNode(BaseNode):
             with open(path, "r", encoding=encoding) as f:
                 xml_string = f.read()
 
-            tree = ET.parse(path)
+            tree = DefusedET.parse(path)
             root = tree.getroot()
 
             context.set_variable("_xml_root", root)
@@ -274,7 +276,7 @@ class WriteXMLFileNode(BaseNode):
             # Parse and optionally pretty print
             if pretty_print:
                 try:
-                    parsed = minidom.parseString(xml_string)
+                    parsed = safe_parseString(xml_string)
                     xml_string = parsed.toprettyxml(indent="  ", encoding=None)
                     if isinstance(xml_string, bytes):
                         xml_string = xml_string.decode(encoding)
@@ -309,6 +311,7 @@ class WriteXMLFileNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class XPathQueryNode(BaseNode):
     """
@@ -355,7 +358,7 @@ class XPathQueryNode(BaseNode):
 
             # Get root element
             if xml_string:
-                root = ET.fromstring(xml_string)
+                root = DefusedET.fromstring(xml_string)
             else:
                 root = context.get_variable("_xml_root")
                 if root is None:
@@ -404,6 +407,7 @@ class XPathQueryNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class GetXMLElementNode(BaseNode):
     """
@@ -454,7 +458,7 @@ class GetXMLElementNode(BaseNode):
                 raise ValueError("tag_name is required")
 
             if xml_string:
-                root = ET.fromstring(xml_string)
+                root = DefusedET.fromstring(xml_string)
             else:
                 root = context.get_variable("_xml_root")
                 if root is None:
@@ -494,6 +498,7 @@ class GetXMLElementNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class GetXMLAttributeNode(BaseNode):
     """
@@ -538,7 +543,7 @@ class GetXMLAttributeNode(BaseNode):
                 raise ValueError("attribute_name is required")
 
             if xml_string:
-                root = ET.fromstring(xml_string)
+                root = DefusedET.fromstring(xml_string)
             else:
                 root = context.get_variable("_xml_root")
                 if root is None:
@@ -631,7 +636,7 @@ class XMLToJsonNode(BaseNode):
             if not xml_string:
                 raise ValueError("xml_string is required")
 
-            root = ET.fromstring(xml_string)
+            root = DefusedET.fromstring(xml_string)
 
             def element_to_dict(elem):
                 result = {}
@@ -771,7 +776,7 @@ class JsonToXMLNode(BaseNode):
 
             if pretty_print:
                 try:
-                    parsed = minidom.parseString(xml_string)
+                    parsed = safe_parseString(xml_string)
                     xml_string = parsed.toprettyxml(indent="  ")
                     # Remove extra newlines
                     lines = [line for line in xml_string.split("\n") if line.strip()]

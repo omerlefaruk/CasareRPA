@@ -32,6 +32,6 @@
   },
   "canvas": {
     "quick_node_mode": true,
-    "auto_connect": true
+    "auto_connect": false
   }
 }

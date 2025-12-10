@@ -12,7 +12,14 @@ load time by calling apply_all_node_widget_fixes().
 from typing import Optional
 
 from PySide6.QtCore import QEvent, Qt, Signal
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsScene,
+    QLineEdit,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from loguru import logger
 from NodeGraphQt import NodeGraph
@@ -68,28 +75,12 @@ from casare_rpa.presentation.canvas.ui.widgets.breadcrumb_nav import (
 )
 
 # ============================================================================
-# CRITICAL: Disable NodeGraphQt item caching to prevent zoom/pan glitches
+# PERFORMANCE: Use default Qt caching with transform-aware invalidation
 # ============================================================================
-# NodeGraphQt uses DeviceCoordinateCache which causes rendering artifacts
-# when zooming/panning because cached images become stale. We patch the
-# constant to NoCache (value 0) before any items are created.
-from PySide6.QtWidgets import QGraphicsItem
-
-_NO_CACHE = QGraphicsItem.CacheMode.NoCache
-
-# Patch all NodeGraphQt modules that use ITEM_CACHE_MODE
-try:
-    import NodeGraphQt.qgraphics.node_abstract as _node_abstract
-    import NodeGraphQt.qgraphics.node_base as _node_base
-    import NodeGraphQt.qgraphics.pipe as _pipe
-    import NodeGraphQt.qgraphics.port as _port
-
-    _node_abstract.ITEM_CACHE_MODE = _NO_CACHE
-    _node_base.ITEM_CACHE_MODE = _NO_CACHE
-    _pipe.ITEM_CACHE_MODE = _NO_CACHE
-    _port.ITEM_CACHE_MODE = _NO_CACHE
-except Exception as e:
-    logger.warning(f"Failed to patch NodeGraphQt cache mode: {e}")
+# NodeGraphQt uses DeviceCoordinateCache by default. We keep this enabled
+# for performance (items don't repaint unless changed). Cache invalidation
+# on zoom/pan is handled by TransformWatcher which invalidates all visible
+# item caches when the view transform changes.
 
 # Import connection validator for strict type checking
 try:
@@ -197,6 +188,11 @@ class NodeGraphWidget(QWidget):
 
         # Track mouse press for popup close (click vs drag detection)
         self._popup_close_press_pos = None
+
+        # PERFORMANCE: O(1) node ID tracking instead of O(n) scans
+        # These are updated incrementally on node create/delete
+        self._node_ids_in_use: set[str] = set()
+        self._node_count: int = 0
 
         # Connect create subflow action
         self._quick_actions.create_subflow_requested.connect(
@@ -399,18 +395,27 @@ class NodeGraphWidget(QWidget):
                 self._graph.session_changed.connect(self._on_session_changed)
 
             # Install viewport update timer for smooth culling during pan/zoom
-            # Use 33ms (~30 FPS) instead of 16ms (~60 FPS) to reduce CPU overhead
-            # while still providing smooth visual updates
+            # Use 8ms (~120 FPS) for butter-smooth panning and zooming
             from PySide6.QtCore import QTimer, QRectF
 
             self._viewport_update_timer = QTimer(self)
-            self._viewport_update_timer.setInterval(33)  # ~30 FPS (reduced from 60 FPS)
+            self._viewport_update_timer.setInterval(
+                8
+            )  # ~120 FPS for butter-smooth panning
             self._viewport_update_timer.timeout.connect(self._update_viewport_culling)
             self._viewport_update_timer.start()
 
             # PERFORMANCE: Track last viewport rect for idle detection
             # Skip updates when viewport hasn't changed (saves CPU when graph is static)
             self._last_viewport_rect: QRectF = QRectF()
+
+            # PERFORMANCE: Track transform for hysteresis-based change detection
+            # Prevents unnecessary updates when zoom/pan hasn't changed significantly
+            self._last_transform_m11: float = (
+                0.01  # Scale factor (start non-zero to avoid div by zero)
+            )
+            self._last_transform_dx: float = 0.0  # Pan X
+            self._last_transform_dy: float = 0.0  # Pan Y
 
             logger.debug("Viewport culling signals connected")
         except Exception as e:
@@ -428,12 +433,19 @@ class NodeGraphWidget(QWidget):
                 view = node.view
                 if hasattr(view, "set_position_callback"):
                     node_id = node.id
+                    widget_ref = self  # Capture reference for closure
 
                     def on_position_changed(item, nid=node_id):
                         try:
-                            self._culler.update_node_position(
+                            widget_ref._culler.update_node_position(
                                 nid, item.sceneBoundingRect()
                             )
+                            # Also update smart routing obstacles when nodes move
+                            if (
+                                hasattr(widget_ref, "_smart_routing")
+                                and widget_ref._smart_routing.is_enabled()
+                            ):
+                                widget_ref._smart_routing.update_obstacles()
                         except Exception:
                             pass
 
@@ -441,11 +453,15 @@ class NodeGraphWidget(QWidget):
         except Exception as e:
             logger.debug(f"Could not register node for culling: {e}")
 
+        # PERFORMANCE: Increment node count for O(1) performance mode check
+        self._node_count += 1
+
         # Update variable picker context for all widgets in the node
         self._update_variable_picker_context(node)
 
         # PERFORMANCE: Auto-enable high performance mode for large workflows
-        self._check_performance_mode()
+        # Only check at threshold crossings, not every node
+        self._check_performance_mode_incremental()
 
     def _update_variable_picker_context(self, node) -> None:
         """
@@ -463,17 +479,137 @@ class NodeGraphWidget(QWidget):
             logger.debug(f"Could not update variable picker context: {e}")
 
     def _on_culling_nodes_deleted(self, node_ids) -> None:
-        """Unregister deleted nodes from culler."""
+        """Unregister deleted nodes from culler and update tracking."""
         try:
             for node_id in node_ids:
                 self._culler.unregister_node(node_id)
+                # PERFORMANCE: Remove from ID tracking set
+                self._node_ids_in_use.discard(node_id)
+            # PERFORMANCE: Decrement node count
+            self._node_count = max(0, self._node_count - len(node_ids))
         except Exception as e:
             logger.debug(f"Could not unregister nodes from culling: {e}")
+
+        # Clean up orphaned pipes after node deletion
+        # When two connected nodes are deleted simultaneously, the pipe between
+        # them may be left behind if both its endpoints become invalid
+        self._cleanup_orphaned_pipes(node_ids)
+
+    def _cleanup_orphaned_pipes(self, deleted_node_ids: list) -> None:
+        """
+        Clean up orphaned pipes after node deletion.
+
+        When two connected nodes are deleted simultaneously, the pipe between them
+        may be left behind because:
+        1. Node A clears its connections (removes pipe from one port)
+        2. Node B clears its connections (pipe already removed from data model)
+        3. The pipe's input_port or output_port becomes None/invalid
+        4. pipe.delete() fails to remove the pipe from the scene
+
+        This method finds and removes any pipes that reference deleted nodes.
+        """
+        try:
+            viewer = self._graph.viewer()
+            if not viewer:
+                return
+
+            scene = viewer.scene()
+            if not scene:
+                return
+
+            # Convert to set for O(1) lookup
+            deleted_ids = set(deleted_node_ids)
+
+            # Find all pipe items in the scene
+            from NodeGraphQt.qgraphics.pipe import PipeItem
+
+            orphaned_pipes = []
+            for item in scene.items():
+                # Check if item is a pipe (PipeItem or subclass like CasarePipe)
+                if not isinstance(item, PipeItem):
+                    continue
+
+                # Skip live connection pipe (it's always in the scene)
+                if not hasattr(item, "input_port") or not hasattr(item, "output_port"):
+                    continue
+
+                # Check if pipe is orphaned (either endpoint is missing or invalid)
+                is_orphaned = False
+
+                # Get input port's node
+                input_port = item.input_port
+                if input_port is None:
+                    is_orphaned = True
+                elif hasattr(input_port, "node") and input_port.node:
+                    node = input_port.node
+                    # Check if node ID was in deleted list
+                    if hasattr(node, "id") and node.id in deleted_ids:
+                        is_orphaned = True
+                    # Also check if node is no longer in scene
+                    elif not node.scene():
+                        is_orphaned = True
+
+                # Get output port's node
+                if not is_orphaned:
+                    output_port = item.output_port
+                    if output_port is None:
+                        is_orphaned = True
+                    elif hasattr(output_port, "node") and output_port.node:
+                        node = output_port.node
+                        # Check if node ID was in deleted list
+                        if hasattr(node, "id") and node.id in deleted_ids:
+                            is_orphaned = True
+                        # Also check if node is no longer in scene
+                        elif not node.scene():
+                            is_orphaned = True
+
+                if is_orphaned:
+                    orphaned_pipes.append(item)
+
+            # Remove orphaned pipes from the scene
+            for pipe in orphaned_pipes:
+                try:
+                    # Clean up port references
+                    if pipe.input_port and hasattr(pipe.input_port, "connected_pipes"):
+                        try:
+                            if pipe in pipe.input_port.connected_pipes:
+                                pipe.input_port.remove_pipe(pipe)
+                        except (ValueError, AttributeError):
+                            pass
+
+                    if pipe.output_port and hasattr(
+                        pipe.output_port, "connected_pipes"
+                    ):
+                        try:
+                            if pipe in pipe.output_port.connected_pipes:
+                                pipe.output_port.remove_pipe(pipe)
+                        except (ValueError, AttributeError):
+                            pass
+
+                    # Remove from scene
+                    if pipe.scene():
+                        scene.removeItem(pipe)
+
+                    # Unregister from culler
+                    self._culler.unregister_pipe(id(pipe))
+
+                    logger.debug(f"Cleaned up orphaned pipe: {pipe}")
+                except Exception as e:
+                    logger.debug(f"Error cleaning up orphaned pipe: {e}")
+
+            if orphaned_pipes:
+                logger.debug(f"Cleaned up {len(orphaned_pipes)} orphaned pipe(s)")
+
+        except Exception as e:
+            logger.debug(f"Error during orphaned pipe cleanup: {e}")
 
     def _on_session_changed(self, *args) -> None:
         """Clear culler when graph session is reset (clear_session called)."""
         try:
             self._culler.clear()
+            # PERFORMANCE: Clear node ID tracking
+            self._node_ids_in_use.clear()
+            self._node_count = 0
             logger.debug("Viewport culler cleared on session change")
         except Exception as e:
             logger.debug(f"Could not clear culler on session change: {e}")
@@ -584,6 +720,30 @@ class NodeGraphWidget(QWidget):
                 self._last_viewport_rect = viewport_rect
                 self._culler.update_viewport(viewport_rect)
 
+                # PERFORMANCE: Check if transform changed (zoom/pan)
+                # If so, invalidate item caches to prevent stale rendering
+                transform = viewer.transform()
+                m11 = transform.m11()  # Zoom level
+                dx = transform.dx()  # Pan X
+                dy = transform.dy()  # Pan Y
+
+                # Percentage-based hysteresis for smoother zoom/pan detection
+                zoom_pct_change = abs(m11 - self._last_transform_m11) / max(
+                    self._last_transform_m11, 0.01
+                )
+                transform_changed = (
+                    zoom_pct_change > 0.02  # 2% zoom change threshold
+                    or abs(dx - self._last_transform_dx) > 0.5  # Tighter pan threshold
+                    or abs(dy - self._last_transform_dy) > 0.5
+                )
+
+                if transform_changed:
+                    self._last_transform_m11 = m11
+                    self._last_transform_dx = dx
+                    self._last_transform_dy = dy
+                    # Invalidate background cache on transform change
+                    viewer.resetCachedContent()
+
                 # PERFORMANCE: Update LOD manager once per frame
                 # All nodes/pipes will query this cached LOD level instead of
                 # calculating zoom individually in their paint() methods
@@ -594,10 +754,10 @@ class NodeGraphWidget(QWidget):
                 if get_high_performance_mode():
                     lod_manager.force_lod(LODLevel.LOW)
 
-                # SMART ROUTING: Update obstacles once per frame
-                # This collects node bounding boxes for wire routing
-                if hasattr(self, "_smart_routing") and self._smart_routing.is_enabled():
-                    self._smart_routing.update_obstacles()
+                # SMART ROUTING: Only update obstacles when nodes move, not every frame
+                # This is triggered by node position changes instead
+                # if hasattr(self, "_smart_routing") and self._smart_routing.is_enabled():
+                #     self._smart_routing.update_obstacles()
 
         except Exception:
             # Suppress errors during startup
@@ -649,12 +809,12 @@ class NodeGraphWidget(QWidget):
             viewer._port_border_color = (66, 165, 245, 255)  # Darker blue border
 
         # ==================== PERFORMANCE OPTIMIZATIONS ====================
+        # These settings enable 60+ FPS rendering with GPU acceleration.
 
-        # Qt rendering optimizations for high FPS (60/120/144 Hz support)
         from PySide6.QtWidgets import QGraphicsView
         from PySide6.QtCore import Qt
 
-        # Enable optimization flags
+        # Enable optimization flags for reduced painter overhead
         viewer.setOptimizationFlag(
             QGraphicsView.OptimizationFlag.DontSavePainterState, True
         )
@@ -665,28 +825,44 @@ class NodeGraphWidget(QWidget):
             QGraphicsView.OptimizationFlag.IndirectPainting, True
         )
 
-        # Full viewport updates - prevents glitches during zoom/pan
-        # Note: SmartViewportUpdate/MinimalViewportUpdate + CacheBackground causes
-        # rendering artifacts because cached content doesn't invalidate on transforms
+        # Minimal viewport updates - only repaint changed regions for performance
+        # This significantly reduces CPU overhead by avoiding full 2M+ pixel repaints
         viewer.setViewportUpdateMode(
-            QGraphicsView.ViewportUpdateMode.FullViewportUpdate
+            QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
         )
 
-        # Disable background caching - incompatible with zoom/pan transforms
+        # Keep caching disabled - we use our own LOD-based caching system
         viewer.setCacheMode(QGraphicsView.CacheModeFlag(0))
 
         # High refresh rate optimizations
         viewer.viewport().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
         viewer.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
 
-        # GPU-accelerated rendering disabled due to dashed line rendering issues.
-        # OpenGL doesn't properly render QPainter's DashLine/DotLine pen styles -
-        # they appear as solid lines. This affects the live connection drag line
-        # which should be dashed. Using software rendering instead.
-        #
-        # TODO: Re-enable OpenGL with custom dashed line rendering if needed.
-        # The performance impact is minimal for typical workflow sizes.
-        logger.debug("Using software rendering (dashed lines render correctly)")
+        # GPU-accelerated rendering via OpenGL
+        # Note: Dashed lines are drawn manually in CasarePipe to ensure
+        # correct rendering with OpenGL (Qt's DashLine doesn't work with GL)
+        try:
+            from PySide6.QtOpenGLWidgets import QOpenGLWidget
+            from PySide6.QtGui import QSurfaceFormat
+
+            # Configure OpenGL format for high performance
+            gl_format = QSurfaceFormat()
+            gl_format.setVersion(3, 3)  # OpenGL 3.3+ for modern features
+            gl_format.setProfile(QSurfaceFormat.OpenGLContextProfile.CoreProfile)
+            gl_format.setSwapBehavior(QSurfaceFormat.SwapBehavior.DoubleBuffer)
+            gl_format.setSwapInterval(0)  # Disable vsync for max FPS
+            gl_format.setSamples(4)  # 4x MSAA antialiasing
+
+            # Create OpenGL viewport
+            gl_widget = QOpenGLWidget()
+            gl_widget.setFormat(gl_format)
+            viewer.setViewport(gl_widget)
+
+            # Set as default format for future widgets
+            QSurfaceFormat.setDefaultFormat(gl_format)
+            logger.debug("GPU rendering enabled (OpenGL 3.3)")
+        except Exception as e:
+            logger.warning(f"GPU rendering unavailable, using CPU: {e}")
 
     @property
     def graph(self) -> NodeGraph:
@@ -848,6 +1024,9 @@ class NodeGraphWidget(QWidget):
 
         PERFORMANCE: Auto-enables when node count >= 50 to maintain smooth
         interaction with large workflows.
+
+        NOTE: This version scans all nodes - use _check_performance_mode_incremental()
+        for O(1) check during node creation.
         """
         node_count = len(self._graph.all_nodes())
         threshold = get_high_perf_node_threshold()
@@ -858,6 +1037,22 @@ class NodeGraphWidget(QWidget):
             set_high_performance_mode(True)
             logger.info(
                 f"Auto-enabled High Performance Mode ({node_count} nodes >= {threshold})"
+            )
+
+    def _check_performance_mode_incremental(self) -> None:
+        """
+        O(1) performance mode check using tracked node count.
+
+        Called during node creation. Only triggers at the exact threshold
+        to avoid repeated checks.
+        """
+        threshold = get_high_perf_node_threshold()
+
+        # Only trigger at exact threshold crossing
+        if self._node_count == threshold and not get_high_performance_mode():
+            set_high_performance_mode(True)
+            logger.info(
+                f"Auto-enabled High Performance Mode ({self._node_count} nodes >= {threshold})"
             )
 
     def set_high_performance_mode(self, enabled: bool) -> None:
@@ -876,6 +1071,41 @@ class NodeGraphWidget(QWidget):
         # Force viewport repaint
         self._graph.viewer().viewport().update()
         logger.info(f"High Performance Mode {'enabled' if enabled else 'disabled'}")
+
+    # =========================================================================
+    # DYNAMIC SCENE INDEXING (Performance Optimization)
+    # =========================================================================
+
+    def enable_animation_mode(self) -> None:
+        """
+        Disable BSP tree indexing during workflow execution for faster updates.
+
+        Call this when starting workflow execution. The BSP tree is optimized
+        for static scenes; during animation with many moving/updating nodes,
+        NoIndex is faster because it avoids BSP tree rebalancing overhead.
+        """
+        try:
+            scene = self._graph.viewer().scene()
+            if scene:
+                scene.setItemIndexMethod(QGraphicsScene.ItemIndexMethod.NoIndex)
+                logger.debug("Scene indexing disabled for animation mode")
+        except Exception as e:
+            logger.debug(f"Could not enable animation mode: {e}")
+
+    def enable_editing_mode(self) -> None:
+        """
+        Re-enable BSP tree indexing after workflow execution for efficient queries.
+
+        Call this when workflow execution completes. BSP tree provides O(log n)
+        item lookups which is important for interactive editing operations.
+        """
+        try:
+            scene = self._graph.viewer().scene()
+            if scene:
+                scene.setItemIndexMethod(QGraphicsScene.ItemIndexMethod.BspTreeIndex)
+                logger.debug("Scene indexing re-enabled for editing mode")
+        except Exception as e:
+            logger.debug(f"Could not enable editing mode: {e}")
 
     def is_high_performance_mode(self) -> bool:
         """
@@ -1137,10 +1367,13 @@ class NodeGraphWidget(QWidget):
                 if self._delete_selected_nodes():
                     return True
 
-            # Handle X key for frame deletion only (nodes use Delete)
+            # Handle X key to delete selected nodes and frames
             if key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x":
-                logger.debug(f"X key pressed: {key_event.key()}")
+                # First try deleting frames
                 if self._delete_selected_frames():
+                    return True
+                # Then try deleting nodes
+                if self._delete_selected_nodes():
                     return True
 
             # Handle Ctrl+D to duplicate selected nodes
@@ -1706,6 +1939,8 @@ class NodeGraphWidget(QWidget):
         if not current_id:
             # Sync casare_node's ID to the visual property
             node.set_property("node_id", casare_node.node_id)
+            # PERFORMANCE: Register in O(1) tracking set
+            self._register_node_id(casare_node.node_id)
             logger.debug(f"Set node_id for new node: {casare_node.node_id}")
         else:
             # Check if this ID is a duplicate (from paste/duplicate operation)
@@ -1722,6 +1957,8 @@ class NodeGraphWidget(QWidget):
                 # Update both locations synchronously
                 casare_node.node_id = new_id
                 node.set_property("node_id", new_id)
+                # PERFORMANCE: Register new ID in O(1) tracking set
+                self._register_node_id(new_id)
 
                 logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
             else:
@@ -1731,6 +1968,8 @@ class NodeGraphWidget(QWidget):
                     logger.debug(
                         f"Synced casare_node ID to visual property: {current_id}"
                     )
+                # PERFORMANCE: Register existing ID in O(1) tracking set
+                self._register_node_id(current_id)
 
         # CRITICAL: Always sync visual node properties to casare_node.config
         # This ensures pasted nodes retain their configured values for:
@@ -1793,22 +2032,21 @@ class NodeGraphWidget(QWidget):
         """
         Check if another node already has the same node_id.
 
+        PERFORMANCE: O(1) set lookup instead of O(n) iteration.
+
         Args:
-            node: The node to check
+            node: The node to check (unused, kept for API compatibility)
             node_id: The node_id to check for duplicates
 
         Returns:
             True if another node has the same ID, False otherwise
         """
-        for other_node in self._graph.all_nodes():
-            if other_node is node:
-                continue
+        return node_id in self._node_ids_in_use
 
-            other_id = other_node.get_property("node_id")
-            if other_id == node_id:
-                return True
-
-        return False
+    def _register_node_id(self, node_id: str) -> None:
+        """Register a node ID in the tracking set."""
+        if node_id:
+            self._node_ids_in_use.add(node_id)
 
     def _sync_visual_properties_to_casare_node(self, visual_node, casare_node) -> None:
         """
@@ -2331,6 +2569,7 @@ class NodeGraphWidget(QWidget):
         node_name: str,
         output_data,
         global_pos,
+        node_item=None,
     ) -> None:
         """
         Show the Node Output Inspector popup for a node.
@@ -2342,6 +2581,7 @@ class NodeGraphWidget(QWidget):
             node_name: The node display name
             output_data: Dictionary of output port name -> value, or None
             global_pos: Global screen position (QPoint) for popup placement
+            node_item: The node's QGraphicsItem for position tracking
         """
         from casare_rpa.presentation.canvas.ui.widgets.node_output_popup import (
             NodeOutputPopup,
@@ -2373,6 +2613,13 @@ class NodeGraphWidget(QWidget):
             adjusted_pos = QPoint(int(global_pos.x()), int(global_pos.y()) + 5)
 
         popup.show_at_position(adjusted_pos)
+
+        # Start tracking node position for pan/zoom following
+        if node_item is not None:
+            view = self._graph.viewer()
+            if view:
+                popup.start_tracking_node(node_item, view)
+
         logger.debug(f"Showing output inspector for node: {node_name}")
 
     def _on_output_popup_closed(self) -> None:
@@ -2407,3 +2654,32 @@ class NodeGraphWidget(QWidget):
                 self._output_popup.set_data(output_data)
             else:
                 self._output_popup.set_data({})
+
+    def cleanup(self) -> None:
+        """
+        Clean up resources to prevent memory leaks.
+
+        Stops all timers and releases references to prevent Qt objects
+        from being kept alive after the widget is closed.
+        """
+        # Stop viewport update timer to prevent memory leak
+        if hasattr(self, "_viewport_update_timer") and self._viewport_update_timer:
+            self._viewport_update_timer.stop()
+            self._viewport_update_timer.deleteLater()
+            self._viewport_update_timer = None
+
+        # Close output popup if open
+        if hasattr(self, "_output_popup") and self._output_popup:
+            self._output_popup.close()
+            self._output_popup = None
+
+        # Clear culler references
+        if hasattr(self, "_culler") and self._culler:
+            self._culler.clear()
+
+        logger.debug("NodeGraphWidget cleanup completed")
+
+    def closeEvent(self, event) -> None:
+        """Handle widget close event."""
+        self.cleanup()
+        super().closeEvent(event)

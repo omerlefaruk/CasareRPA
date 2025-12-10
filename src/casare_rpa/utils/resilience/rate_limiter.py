@@ -6,6 +6,7 @@ such as API calls, browser actions, or any resource-intensive tasks.
 """
 
 import asyncio
+import threading
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -100,6 +101,7 @@ class RateLimiter:
         self._tokens = float(self.config.burst_size)
         self._last_update = time.monotonic()
         self._lock = asyncio.Lock()
+        self._sync_lock = threading.Lock()
         self._stats = RateLimitStats()
 
         logger.debug(
@@ -185,14 +187,15 @@ class RateLimiter:
         Returns:
             True if tokens were acquired, False if rate limited
         """
-        self._refill_tokens()
+        with self._sync_lock:
+            self._refill_tokens()
 
-        if self._tokens >= tokens:
-            self._tokens -= tokens
-            self._stats.total_requests += 1
-            return True
+            if self._tokens >= tokens:
+                self._tokens -= tokens
+                self._stats.total_requests += 1
+                return True
 
-        return False
+            return False
 
     def reset(self) -> None:
         """Reset the rate limiter to initial state."""
@@ -242,6 +245,7 @@ class SlidingWindowRateLimiter:
         # Use maxlen to prevent unbounded growth under extreme load
         self._requests: deque = deque(maxlen=max_requests * 2)
         self._lock = asyncio.Lock()
+        self._sync_lock = threading.Lock()
         self._stats = RateLimitStats()
 
         logger.debug(
@@ -314,14 +318,15 @@ class SlidingWindowRateLimiter:
         Returns:
             True if request is allowed, False if rate limited
         """
-        self._clean_old_requests()
+        with self._sync_lock:
+            self._clean_old_requests()
 
-        if len(self._requests) < self.max_requests:
-            self._requests.append(time.monotonic())
-            self._stats.total_requests += 1
-            return True
+            if len(self._requests) < self.max_requests:
+                self._requests.append(time.monotonic())
+                self._stats.total_requests += 1
+                return True
 
-        return False
+            return False
 
     def reset(self) -> None:
         """Reset the rate limiter."""

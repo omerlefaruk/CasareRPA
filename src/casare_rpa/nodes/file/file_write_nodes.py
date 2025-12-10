@@ -6,9 +6,27 @@ This module provides nodes for writing file content:
 - AppendFileNode: Append content to existing files
 
 SECURITY: All file operations are subject to path sandboxing.
+NOTE: File I/O is wrapped in asyncio.to_thread() to avoid blocking the event loop.
 """
 
+import asyncio
+from pathlib import Path
+from typing import Union
+
 from loguru import logger
+
+
+def _write_file_sync(
+    path: Path, content: Union[bytes, str], mode: str, encoding: str, errors: str
+) -> int:
+    """Synchronous file write - called via asyncio.to_thread()."""
+    if "b" in mode:  # Binary mode
+        with open(path, mode) as f:
+            return f.write(content)
+    else:
+        with open(path, mode, encoding=encoding, errors=errors) as f:
+            return f.write(str(content) if content else "")
+
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
@@ -169,14 +187,14 @@ class WriteFileNode(BaseNode):
 
             logger.info(f"Writing file: {path} (mode={mode}, encoding={encoding})")
 
-            if binary_mode:
-                if isinstance(content, str):
-                    content = content.encode(encoding)
-                with open(path, mode) as f:
-                    bytes_written = f.write(content)
-            else:
-                with open(path, mode, encoding=encoding, errors=errors) as f:
-                    bytes_written = f.write(str(content) if content else "")
+            # Prepare content for writing
+            if binary_mode and isinstance(content, str):
+                content = content.encode(encoding)
+
+            # Run blocking file I/O in thread pool to avoid blocking event loop
+            bytes_written = await asyncio.to_thread(
+                _write_file_sync, path, content, mode, encoding, errors
+            )
 
             self.set_output_value("file_path", str(path))
             self.set_output_value("attachment_file", [str(path)])
@@ -308,8 +326,10 @@ class AppendFileNode(BaseNode):
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(path, "a", encoding=encoding) as f:
-                bytes_written = f.write(str(content) if content else "")
+            # Run blocking file I/O in thread pool to avoid blocking event loop
+            bytes_written = await asyncio.to_thread(
+                _write_file_sync, path, content, "a", encoding, "replace"
+            )
 
             self.set_output_value("file_path", str(path))
             self.set_output_value("bytes_written", bytes_written)

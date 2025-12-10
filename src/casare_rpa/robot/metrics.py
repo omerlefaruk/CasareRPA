@@ -9,7 +9,7 @@ Collects and tracks:
 """
 
 import asyncio
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
@@ -111,8 +111,8 @@ class MetricsCollector:
         self.history_limit = history_limit
         self.resource_sample_interval = resource_sample_interval
 
-        # Job metrics history
-        self._job_metrics: List[JobMetrics] = []
+        # Job metrics history (deque for O(1) append/pop)
+        self._job_metrics: deque[JobMetrics] = deque(maxlen=history_limit)
         self._current_job: Optional[JobMetrics] = None
 
         # Aggregated statistics
@@ -132,8 +132,11 @@ class MetricsCollector:
             }
         )
 
-        # Resource monitoring
-        self._resource_history: List[ResourceSnapshot] = []
+        # Resource monitoring (deque for O(1) operations)
+        max_resource_samples = int(3600 / resource_sample_interval)  # 1 hour of samples
+        self._resource_history: deque[ResourceSnapshot] = deque(
+            maxlen=max_resource_samples
+        )
         self._resource_task: Optional[asyncio.Task] = None
         self._monitoring = False
 
@@ -204,10 +207,8 @@ class MetricsCollector:
             if error_message:
                 self._error_counts[error_message[:100]] += 1
 
-        # Store in history
+        # Store in history (deque handles size limit automatically)
         self._job_metrics.append(self._current_job)
-        if len(self._job_metrics) > self.history_limit:
-            self._job_metrics.pop(0)
 
         logger.debug(
             f"Job {self._current_job.job_id} completed: "
@@ -306,11 +307,8 @@ class MetricsCollector:
             try:
                 snapshot = self._sample_resources()
                 if snapshot:
+                    # deque handles size limit automatically
                     self._resource_history.append(snapshot)
-                    # Keep last hour of samples
-                    max_samples = int(3600 / self.resource_sample_interval)
-                    if len(self._resource_history) > max_samples:
-                        self._resource_history.pop(0)
             except Exception as e:
                 logger.error(f"Resource sampling error: {e}")
 

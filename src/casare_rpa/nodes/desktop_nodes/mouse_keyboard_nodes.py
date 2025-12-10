@@ -182,7 +182,7 @@ class MoveMouseNode(DesktopNodeBase):
         self.set_output_value("success", success)
         self.set_output_value("final_x", int(x))
         self.set_output_value("final_y", int(y))
-        self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
+        self.status = NodeStatus.SUCCESS if success else NodeStatus.ERROR
 
         return self.success_result(x=x, y=y, duration=duration, ease=ease)
 
@@ -297,7 +297,7 @@ class MouseClickNode(DesktopNodeBase):
         self.set_output_value("success", success)
         self.set_output_value("click_x", int(x) if x is not None else 0)
         self.set_output_value("click_y", int(y) if y is not None else 0)
-        self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
+        self.status = NodeStatus.SUCCESS if success else NodeStatus.ERROR
 
         return self.success_result(
             x=x, y=y, button=button, click_type=click_type, modifiers=modifiers
@@ -403,7 +403,7 @@ class SendKeysNode(DesktopNodeBase):
 
         self.set_output_value("success", success)
         self.set_output_value("keys_sent", len(str(keys)))
-        self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
+        self.status = NodeStatus.SUCCESS if success else NodeStatus.ERROR
 
         return self.success_result(keys=keys, interval=interval, modifiers=modifiers)
 
@@ -482,7 +482,7 @@ class SendHotKeyNode(DesktopNodeBase):
             await asyncio.sleep(float(wait_time))
 
         self.set_output_value("success", success)
-        self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
+        self.status = NodeStatus.SUCCESS if success else NodeStatus.ERROR
 
         return self.success_result(keys=keys)
 
@@ -605,7 +605,7 @@ class DragMouseNode(DesktopNodeBase):
         )
 
         self.set_output_value("success", success)
-        self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
+        self.status = NodeStatus.SUCCESS if success else NodeStatus.ERROR
 
         return self.success_result(
             start_x=start_x,

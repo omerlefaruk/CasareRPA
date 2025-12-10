@@ -16,7 +16,9 @@ from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Set, Tuple
 import re
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class VersionStatus(Enum):

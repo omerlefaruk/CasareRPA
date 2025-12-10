@@ -23,6 +23,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@node_schema()  # Input port driven
 @executable_node
 class GetServiceStatusNode(BaseNode):
     """
@@ -126,6 +127,7 @@ class GetServiceStatusNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class StartServiceNode(BaseNode):
     """
@@ -195,6 +197,7 @@ class StartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class StopServiceNode(BaseNode):
     """

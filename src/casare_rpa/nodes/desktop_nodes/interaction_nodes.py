@@ -180,6 +180,7 @@ class SelectFromDropdownNode(InteractionNodeBase):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, "select from dropdown")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(CHECK_PROP)
@@ -240,6 +241,7 @@ class CheckCheckboxNode(InteractionNodeBase):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, f"{action} checkbox")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @executable_node
@@ -293,6 +295,7 @@ class SelectRadioButtonNode(InteractionNodeBase):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, "select radio button")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(TAB_NAME_PROP, TAB_INDEX_PROP)
@@ -367,6 +370,7 @@ class SelectTabNode(InteractionNodeBase):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, "select tab")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(EXPAND_PROP)
@@ -427,6 +431,7 @@ class ExpandTreeItemNode(InteractionNodeBase):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, f"{'expand' if expand else 'collapse'} tree item")
+            return {"success": False, "data": {}, "next_nodes": []}
 
 
 @node_schema(SCROLL_DIRECTION_PROP, SCROLL_AMOUNT_PROP)
@@ -484,3 +489,4 @@ class ScrollElementNode(InteractionNodeBase):
             return self.success_result()
         except Exception as e:
             self.handle_error(e, "scroll element")
+            return {"success": False, "data": {}, "next_nodes": []}

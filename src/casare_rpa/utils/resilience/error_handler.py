@@ -12,11 +12,17 @@ from typing import Any, Dict, List, Optional, Callable, Awaitable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from collections import defaultdict
+from collections import defaultdict, deque
 import asyncio
 import traceback
 
 from loguru import logger
+
+# Memory management constants
+MAX_ERROR_PATTERNS = 500
+MAX_ERROR_COUNTS = 1000
+MAX_HOURLY_BUCKETS = 168  # 1 week of hours
+MAX_AFFECTED_ITEMS = 100  # Per pattern
 
 
 class RecoveryStrategy(Enum):
@@ -118,7 +124,7 @@ class ErrorAnalytics:
         Args:
             max_history: Maximum number of error records to keep
         """
-        self._history: List[ErrorRecord] = []
+        self._history: deque[ErrorRecord] = deque(maxlen=max_history)
         self._patterns: Dict[str, ErrorPattern] = {}
         self._max_history = max_history
         self._error_counts: Dict[str, int] = defaultdict(int)
@@ -131,14 +137,16 @@ class ErrorAnalytics:
         Args:
             error: The error record to track
         """
-        # Add to history (with size limit)
+        # Add to history (deque handles size limit automatically)
         self._history.append(error)
-        if len(self._history) > self._max_history:
-            self._history.pop(0)
 
-        # Update patterns
+        # Update patterns with eviction
         error_type = error.error_type
         if error_type not in self._patterns:
+            # Evict oldest pattern if at capacity
+            if len(self._patterns) >= MAX_ERROR_PATTERNS:
+                oldest = next(iter(self._patterns))
+                del self._patterns[oldest]
             self._patterns[error_type] = ErrorPattern(
                 error_type=error_type,
                 first_seen=error.timestamp,
@@ -148,12 +156,26 @@ class ErrorAnalytics:
         pattern = self._patterns[error_type]
         pattern.count += 1
         pattern.last_seen = error.timestamp
-        pattern.affected_nodes.add(error.node_id)
-        pattern.affected_workflows.add(error.workflow_name)
 
-        # Update counts
+        # Limit affected_nodes and affected_workflows sets
+        if len(pattern.affected_nodes) < MAX_AFFECTED_ITEMS:
+            pattern.affected_nodes.add(error.node_id)
+        if len(pattern.affected_workflows) < MAX_AFFECTED_ITEMS:
+            pattern.affected_workflows.add(error.workflow_name)
+
+        # Update error counts with eviction
+        if error_type not in self._error_counts:
+            if len(self._error_counts) >= MAX_ERROR_COUNTS:
+                oldest = next(iter(self._error_counts))
+                del self._error_counts[oldest]
         self._error_counts[error_type] += 1
+
+        # Update hourly counts with eviction
         hour_key = error.timestamp.strftime("%Y-%m-%d-%H")
+        if hour_key not in self._hourly_counts:
+            if len(self._hourly_counts) >= MAX_HOURLY_BUCKETS:
+                oldest = next(iter(self._hourly_counts))
+                del self._hourly_counts[oldest]
         self._hourly_counts[hour_key] += 1
 
         logger.debug(f"Error recorded: {error_type} (total: {pattern.count})")
@@ -245,6 +267,32 @@ class ErrorAnalytics:
         self._patterns.clear()
         self._error_counts.clear()
         self._hourly_counts.clear()
+
+    def clear_old_data(self, max_age_hours: int = 168) -> None:
+        """
+        Clear data older than max_age_hours.
+
+        Args:
+            max_age_hours: Maximum age in hours (default 168 = 1 week)
+        """
+        cutoff = datetime.now() - timedelta(hours=max_age_hours)
+        cutoff_hour = cutoff.replace(minute=0, second=0, microsecond=0)
+
+        # Clear old patterns (keep only those seen after cutoff)
+        self._patterns = {
+            k: v for k, v in self._patterns.items() if v.last_seen >= cutoff
+        }
+
+        # Clear old hourly counts
+        cutoff_hour_key = cutoff_hour.strftime("%Y-%m-%d-%H")
+        self._hourly_counts = {
+            k: v for k, v in self._hourly_counts.items() if k >= cutoff_hour_key
+        }
+
+        logger.debug(
+            f"Cleared old error data (cutoff: {cutoff}). "
+            f"Patterns: {len(self._patterns)}, Hourly buckets: {len(self._hourly_counts)}"
+        )
 
 
 class GlobalErrorHandler:

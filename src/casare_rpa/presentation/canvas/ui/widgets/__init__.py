@@ -117,69 +117,8 @@ from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
     ProfilingEntry,
     PercentageBarDelegate,
 )
-from casare_rpa.presentation.canvas.ui.widgets.animation_profiler import (
-    AnimationProfiler,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import (
-    AnimatedDialog,
-)
 from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
     CollapsibleSection,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_dock import (
-    AnimatedDockWidget,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_tab_widget import (
-    AnimatedTabWidget,
-    AnimatedTabBar,
-    create_animated_tab_widget,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_spin_box import (
-    AnimatedSpinBox,
-    AnimatedDoubleSpinBox,
-    create_animated_spin_box,
-    create_animated_double_spin_box,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_combo_box import (
-    AnimatedComboBox,
-    create_animated_combo_box,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_checkbox import (
-    AnimatedCheckBox,
-    create_animated_checkbox,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_progress_bar import (
-    AnimatedProgressBar,
-    create_animated_progress_bar,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_line_edit import (
-    AnimatedLineEdit,
-    create_animated_line_edit,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_button import (
-    AnimatedButton,
-    AnimatedIconButton,
-    create_animated_button,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_scroll_area import (
-    AnimatedScrollArea,
-    create_animated_scroll_area,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_tooltip import (
-    AnimatedToolTip,
-    show_animated_tooltip,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_status_bar import (
-    AnimatedStatusBar,
-    create_animated_status_bar,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_list_widget import (
-    AnimatedListWidget,
-    create_animated_list_widget,
-)
-from casare_rpa.presentation.canvas.ui.widgets.animated_tree_widget import (
-    AnimatedTreeWidget,
-    create_animated_tree_widget,
 )
 
 __all__ = [
@@ -276,52 +215,6 @@ __all__ = [
     "ProfilingTreeWidget",
     "ProfilingEntry",
     "PercentageBarDelegate",
-    # Animation Profiler
-    "AnimationProfiler",
-    # Animated Dialog
-    "AnimatedDialog",
     # Collapsible Section
     "CollapsibleSection",
-    # Animated Dock Widget
-    "AnimatedDockWidget",
-    # Animated Tab Widget
-    "AnimatedTabWidget",
-    "AnimatedTabBar",
-    "create_animated_tab_widget",
-    # Animated Spin Box
-    "AnimatedSpinBox",
-    "AnimatedDoubleSpinBox",
-    "create_animated_spin_box",
-    "create_animated_double_spin_box",
-    # Animated Combo Box
-    "AnimatedComboBox",
-    "create_animated_combo_box",
-    # Animated Checkbox
-    "AnimatedCheckBox",
-    "create_animated_checkbox",
-    # Animated Progress Bar
-    "AnimatedProgressBar",
-    "create_animated_progress_bar",
-    # Animated Line Edit
-    "AnimatedLineEdit",
-    "create_animated_line_edit",
-    # Animated Button
-    "AnimatedButton",
-    "AnimatedIconButton",
-    "create_animated_button",
-    # Animated Scroll Area
-    "AnimatedScrollArea",
-    "create_animated_scroll_area",
-    # Animated Tooltip
-    "AnimatedToolTip",
-    "show_animated_tooltip",
-    # Animated Status Bar
-    "AnimatedStatusBar",
-    "create_animated_status_bar",
-    # Animated List Widget
-    "AnimatedListWidget",
-    "create_animated_list_widget",
-    # Animated Tree Widget
-    "AnimatedTreeWidget",
-    "create_animated_tree_widget",
 ]

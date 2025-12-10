@@ -40,7 +40,7 @@ class MetricType(Enum):
     TIMER = "timer"
 
 
-@dataclass
+@dataclass(slots=True)
 class MetricValue:
     """A single metric measurement."""
 
@@ -375,9 +375,8 @@ class PerformanceMetrics:
             except Exception as e:
                 logger.debug(f"Failed to sample system metrics: {e}")
 
-        # Python-specific
+        # Python-specific (gc_objects removed - too expensive, iterates ALL objects)
         metrics["gc_collections"] = sum(gc.get_count())
-        metrics["gc_objects"] = len(gc.get_objects())
 
         return metrics
 

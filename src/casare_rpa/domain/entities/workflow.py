@@ -5,7 +5,9 @@ Workflow aggregate root - manages nodes, connections, and workflow metadata.
 
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult

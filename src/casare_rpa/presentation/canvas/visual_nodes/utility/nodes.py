@@ -256,7 +256,9 @@ class VisualGetTimestampNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("milliseconds", "Milliseconds", state=False, tab="properties")
+        self.add_checkbox(
+            "milliseconds", label="", text="Milliseconds", state=False, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -298,7 +300,9 @@ class VisualTextReplaceNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("use_regex", "Use Regex", state=False, tab="properties")
+        self.add_checkbox(
+            "use_regex", label="", text="Use Regex", state=False, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -540,7 +544,9 @@ class VisualTextExtractNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("all_matches", "All Matches", state=False, tab="properties")
+        self.add_checkbox(
+            "all_matches", label="", text="All Matches", state=False, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

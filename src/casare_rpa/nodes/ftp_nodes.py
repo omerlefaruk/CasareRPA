@@ -178,6 +178,12 @@ class FTPConnectNode(BaseNode):
 
                 except Exception as e:
                     last_error = e
+                    # Clean up failed connection before retry
+                    try:
+                        if ftp:
+                            ftp.close()
+                    except Exception:
+                        pass
                     if attempts < max_attempts:
                         logger.warning(f"FTP connect failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
@@ -295,8 +301,11 @@ class FTPUploadNode(BaseNode):
                 if remote_dir and remote_dir != ".":
                     try:
                         ftp.mkd(remote_dir)
-                    except ftplib.error_perm:
-                        pass  # Directory may already exist
+                    except ftplib.error_perm as e:
+                        # Only ignore "directory exists" errors, log others
+                        error_msg = str(e).lower()
+                        if "exists" not in error_msg and "550" not in str(e):
+                            logger.warning(f"FTP mkdir warning: {e}")
 
             file_size = local.stat().st_size
             logger.info(f"Uploading {local_path} to {remote_path} ({file_size} bytes)")
@@ -600,6 +609,7 @@ class FTPListNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class FTPDeleteNode(BaseNode):
     """
@@ -720,8 +730,11 @@ class FTPMakeDirNode(BaseNode):
                         current = f"{current}/{part}" if current else part
                         try:
                             ftp.mkd(current)
-                        except ftplib.error_perm:
-                            pass  # Directory may already exist
+                        except ftplib.error_perm as e:
+                            # Only ignore "directory exists" errors, log others
+                            error_msg = str(e).lower()
+                            if "exists" not in error_msg and "550" not in str(e):
+                                logger.warning(f"FTP mkdir warning: {e}")
             else:
                 ftp.mkd(remote_path)
 
@@ -743,6 +756,7 @@ class FTPMakeDirNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class FTPRemoveDirNode(BaseNode):
     """
@@ -802,6 +816,7 @@ class FTPRemoveDirNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class FTPRenameNode(BaseNode):
     """
@@ -864,6 +879,7 @@ class FTPRenameNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # No config
 @executable_node
 class FTPDisconnectNode(BaseNode):
     """
@@ -916,6 +932,7 @@ class FTPDisconnectNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class FTPGetSizeNode(BaseNode):
     """

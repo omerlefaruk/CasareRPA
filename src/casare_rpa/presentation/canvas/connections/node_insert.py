@@ -77,8 +77,8 @@ class NodeInsertManager(QObject):
                     if viewport:
                         viewport.installEventFilter(self)
 
-            # Start the drag monitoring timer
-            self._drag_timer.start()
+            # Timer is NOT started here - only started on demand when dragging begins
+            # This saves CPU cycles when idle (was running at 20 FPS continuously)
         except Exception as e:
             logger.warning(f"Could not setup node insert event filters: {e}")
 
@@ -87,10 +87,21 @@ class NodeInsertManager(QObject):
         self._active = active
         if not active:
             self._clear_highlight()
+            self._stop_drag_timer()
 
     def is_active(self) -> bool:
         """Check if node insert is active."""
         return self._active
+
+    def _start_drag_timer(self):
+        """Start the drag monitoring timer (only when needed)."""
+        if not self._drag_timer.isActive():
+            self._drag_timer.start()
+
+    def _stop_drag_timer(self):
+        """Stop the drag monitoring timer to save CPU."""
+        if self._drag_timer.isActive():
+            self._drag_timer.stop()
 
     def _check_drag_state(self):
         """Timer callback to check if a node is being dragged over a pipe."""
@@ -152,6 +163,8 @@ class NodeInsertManager(QObject):
                 self._dragging_node = None
                 self._was_dragging = False
                 self._drag_start_pos = None
+                # Stop timer when not dragging (saves CPU)
+                self._stop_drag_timer()
 
         except Exception as e:
             logger.error(f"Error in drag state check: {e}")
@@ -161,8 +174,17 @@ class NodeInsertManager(QObject):
         pass
 
     def eventFilter(self, watched, event):
-        """Filter events - mostly handled by timer now, but keep for cleanup."""
-        # Timer handles most of the logic now
+        """Filter events - start timer on mouse press, stop on release."""
+        from PySide6.QtCore import QEvent
+
+        if event.type() == QEvent.Type.MouseButtonPress:
+            # Start timer when mouse is pressed (potential drag start)
+            if self._active:
+                self._start_drag_timer()
+        elif event.type() == QEvent.Type.MouseButtonRelease:
+            # Let timer handle the release logic, it will stop itself
+            pass
+
         return super().eventFilter(watched, event)
 
     def _update_highlight(self):

@@ -14,8 +14,8 @@ References:
 """
 
 import math
-from typing import Callable, Set, Optional
-from PySide6.QtCore import Qt, QRectF, QTimer, QPointF, QVariantAnimation, QEasingCurve
+from typing import Callable, Dict, Set, Optional
+from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QPixmap, QFont
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsOpacityEffect
 from NodeGraphQt.qgraphics.node_base import NodeItem
@@ -25,9 +25,6 @@ from NodeGraphQt.qgraphics.node_base import NodeItem
 from casare_rpa.presentation.canvas.graph.lod_manager import get_lod_manager, LODLevel
 from casare_rpa.presentation.canvas.graph.background_cache import get_background_cache
 from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
-
-# Import animation infrastructure for lifecycle animations
-from casare_rpa.presentation.canvas.ui.animation_lod import AnimationLOD
 
 # ============================================================================
 # PERFORMANCE: Module-level enum caching
@@ -331,6 +328,21 @@ class AnimationCoordinator:
         """Check if the animation timer is running."""
         return self._timer.isActive()
 
+    @classmethod
+    def cleanup(cls) -> None:
+        """
+        Clean up the singleton instance and release all resources.
+
+        Call this when shutting down the application or clearing all nodes
+        to prevent memory leaks from accumulated node references.
+        """
+        if cls._instance is not None:
+            if cls._instance._timer.isActive():
+                cls._instance._timer.stop()
+            cls._instance._running_nodes.clear()
+            cls._instance._selected_nodes.clear()
+            cls._instance = None
+
 
 class CasareNodeItem(NodeItem):
     """
@@ -389,10 +401,6 @@ class CasareNodeItem(NodeItem):
         self._selection_glow_phase: float = 0.0
         self._selection_glow_enabled: bool = False
 
-        # Active lifecycle animations (to allow cancellation)
-        self._creation_anim: Optional[QVariantAnimation] = None
-        self._deletion_anim: Optional[QVariantAnimation] = None
-
         # Custom icon pixmap (separate from parent's _icon_item)
         self._custom_icon_pixmap = None
 
@@ -410,6 +418,9 @@ class CasareNodeItem(NodeItem):
         # Category for header coloring (set via set_category method)
         self._category: str = ""
         self._cached_header_color: Optional[QColor] = None
+
+        # Cached opacity effects for disabled state (prevents leak from creating new effects)
+        self._opacity_effects: Dict[str, QGraphicsOpacityEffect] = {}
 
         # Collapse state
         self._is_collapsed = False
@@ -1209,22 +1220,25 @@ class CasareNodeItem(NodeItem):
         Apply or remove disabled styling from widget parameters.
 
         Disabled widgets get reduced opacity (40%) to match the node background.
+        Opacity effects are cached to prevent memory leaks from repeated creation.
 
         Args:
             disabled: True to apply disabled styling, False to restore normal
         """
         try:
-            for widget in self.widgets.values():
+            for widget_name, widget in self.widgets.items():
                 if widget is None:
                     continue
 
                 if disabled:
-                    # Apply opacity effect for dimmed appearance
-                    opacity_effect = QGraphicsOpacityEffect()
-                    opacity_effect.setOpacity(0.4)  # 40% opacity (very dimmed)
-                    widget.setGraphicsEffect(opacity_effect)
+                    # Get or create cached opacity effect for this widget
+                    if widget_name not in self._opacity_effects:
+                        opacity_effect = QGraphicsOpacityEffect()
+                        opacity_effect.setOpacity(0.4)  # 40% opacity (very dimmed)
+                        self._opacity_effects[widget_name] = opacity_effect
+                    widget.setGraphicsEffect(self._opacity_effects[widget_name])
                 else:
-                    # Remove opacity effect
+                    # Remove opacity effect (but keep cached for reuse)
                     widget.setGraphicsEffect(None)
         except Exception:
             # Silently handle any widget access errors
@@ -1493,183 +1507,31 @@ class CasareNodeItem(NodeItem):
             self.update()
 
     # =========================================================================
-    # LIFECYCLE ANIMATIONS
+    # LIFECYCLE ANIMATIONS (no-ops - animations removed)
     # =========================================================================
 
-    def _get_zoom(self) -> float:
-        """
-        Get current viewport zoom level.
-
-        Returns:
-            Zoom level (1.0 = 100%)
-        """
-        if self.scene() and self.scene().views():
-            view = self.scene().views()[0]
-            return view.transform().m11()
-        return 1.0
-
     def animate_creation(self) -> None:
-        """
-        Animate node appearing with fade + scale.
-
-        Respects LOD settings - skips animation at low zoom levels.
-        """
-        zoom = self._get_zoom()
-        if not AnimationLOD.should_animate(zoom, "creation"):
-            return
-
-        # Cancel any existing creation animation
-        if self._creation_anim is not None:
-            try:
-                self._creation_anim.stop()
-            except RuntimeError:
-                pass
-            self._creation_anim = None
-
-        # Set initial state
-        self.setOpacity(0.0)
-        self.setScale(0.8)
-
-        # Get duration multiplier for LOD
-        duration_mult = AnimationLOD.get_duration_multiplier(zoom)
-        duration = int(200 * duration_mult)
-
-        if duration == 0:
-            # Instant - no animation
-            self.setOpacity(1.0)
-            self.setScale(1.0)
-            return
-
-        # Create combined animation (opacity + scale animated together)
-        anim = QVariantAnimation()
-        anim.setDuration(duration)
-        anim.setStartValue(0.0)
-        anim.setEndValue(1.0)
-        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-
-        def _update_creation(value: float) -> None:
-            try:
-                self.setOpacity(value)
-                # Scale: 0.8 + (0.2 * progress) = 0.8 -> 1.0
-                self.setScale(0.8 + 0.2 * value)
-            except RuntimeError:
-                pass  # Item may be destroyed
-
-        def _cleanup() -> None:
-            self._creation_anim = None
-            try:
-                self.setOpacity(1.0)
-                self.setScale(1.0)
-            except RuntimeError:
-                pass
-
-        anim.valueChanged.connect(_update_creation)
-        anim.finished.connect(_cleanup)
-        self._creation_anim = anim
-        anim.start()
+        """No-op - animations removed."""
+        pass
 
     def animate_deletion(self, on_complete: Optional[Callable] = None) -> None:
-        """
-        Animate node disappearing before removal.
-
-        Respects LOD settings - executes callback immediately at low zoom.
-
-        Args:
-            on_complete: Callback to invoke when animation finishes
-        """
-        zoom = self._get_zoom()
-        if not AnimationLOD.should_animate(zoom, "deletion"):
-            if on_complete:
-                on_complete()
-            return
-
-        # Cancel any existing deletion animation
-        if self._deletion_anim is not None:
-            try:
-                self._deletion_anim.stop()
-            except RuntimeError:
-                pass
-            self._deletion_anim = None
-
-        # Stop selection glow if active
-        self._stop_selection_glow()
-
-        # Get duration multiplier for LOD
-        duration_mult = AnimationLOD.get_duration_multiplier(zoom)
-        duration = int(150 * duration_mult)
-
-        if duration == 0:
-            if on_complete:
-                on_complete()
-            return
-
-        # Create combined animation (opacity + scale animated together)
-        anim = QVariantAnimation()
-        anim.setDuration(duration)
-        anim.setStartValue(1.0)
-        anim.setEndValue(0.0)
-        anim.setEasingCurve(QEasingCurve.Type.InCubic)
-
-        def _update_deletion(value: float) -> None:
-            try:
-                self.setOpacity(value)
-                # Scale: 1.0 -> 0.8 (1.0 - 0.2 * (1.0 - progress))
-                self.setScale(0.8 + 0.2 * value)
-            except RuntimeError:
-                pass  # Item may be destroyed
-
-        def _cleanup() -> None:
-            self._deletion_anim = None
-            if on_complete:
-                on_complete()
-
-        anim.valueChanged.connect(_update_deletion)
-        anim.finished.connect(_cleanup)
-        self._deletion_anim = anim
-        anim.start()
+        """No-op - animations removed. Calls callback immediately."""
+        if on_complete:
+            on_complete()
 
     def animate_selection(self, selected: bool) -> None:
-        """
-        Animate selection state change.
-
-        Starts or stops the pulsing selection glow.
-
-        Args:
-            selected: True to start selection glow, False to stop
-        """
-        if selected:
-            self._start_selection_glow()
-        else:
-            self._stop_selection_glow()
+        """No-op - animations removed."""
+        pass
 
     def _start_selection_glow(self) -> None:
-        """Start pulsing selection border animation."""
-        zoom = self._get_zoom()
-        # Selection is CRITICAL category - check if animations enabled at all
-        if not AnimationLOD.should_animate(zoom, "selection"):
-            self._selection_glow_enabled = False
-            return
-
-        self._selection_glow_enabled = True
-        self._animation_coordinator.register(self, "selection")
+        """No-op - animations removed."""
+        self._selection_glow_enabled = False
 
     def _stop_selection_glow(self) -> None:
-        """Stop selection border animation."""
+        """No-op - animations removed."""
         self._selection_glow_enabled = False
         self._selection_glow_phase = 0.0
-        self._animation_coordinator.unregister(self, "selection")
-        self.update()
 
     def setSelected(self, selected: bool) -> None:
-        """
-        Override to trigger selection animation.
-
-        Args:
-            selected: New selection state
-        """
-        was_selected = self.isSelected()
+        """Override selection without animation."""
         super().setSelected(selected)
-
-        # Only animate if state actually changed
-        if selected != was_selected:
-            self.animate_selection(selected)

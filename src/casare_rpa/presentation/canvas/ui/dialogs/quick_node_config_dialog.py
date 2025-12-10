@@ -24,13 +24,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 if TYPE_CHECKING:
     from ...components.quick_node_manager import QuickNodeManager
 
 
-class QuickNodeConfigDialog(AnimatedDialog):
+class QuickNodeConfigDialog(QDialog):
     """
     Dialog for configuring quick node hotkeys.
 

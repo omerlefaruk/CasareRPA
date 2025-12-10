@@ -9,7 +9,9 @@ This is the canonical location for event system components (v3.0).
 
 from typing import Any, Callable, Dict, List, Optional
 from datetime import datetime
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.value_objects.types import EventData, EventType, NodeId
 

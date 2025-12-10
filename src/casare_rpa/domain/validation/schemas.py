@@ -6,7 +6,9 @@ Contains schema definitions, constants, and type mappings for validation.
 
 from typing import Dict, Optional, Set
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Required fields for node data

@@ -351,6 +351,7 @@ class ParseDateTimeNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DateTimeAddNode(BaseNode):
     """
@@ -445,6 +446,7 @@ class DateTimeAddNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DateTimeDiffNode(BaseNode):
     """
@@ -549,6 +551,7 @@ class DateTimeDiffNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # Input port driven
 @executable_node
 class DateTimeCompareNode(BaseNode):
     """

@@ -387,6 +387,9 @@ class RobotAgent:
         self._current_jobs: Dict[str, Any] = {}
         self._job_progress: Dict[str, Dict[str, Any]] = {}
         self._cancelled_jobs: Set[str] = set()
+        self._jobs_lock = (
+            asyncio.Lock()
+        )  # Protects _current_jobs, _job_progress, _cancelled_jobs
 
         # Callbacks
         self._on_job_complete = on_job_complete
@@ -586,9 +589,12 @@ class RobotAgent:
             self._audit.robot_stopped(reason="graceful_shutdown")
 
         # Wait for current jobs to complete
-        if self._current_jobs:
+        async with self._jobs_lock:
+            job_count = len(self._current_jobs)
+            has_jobs = bool(self._current_jobs)
+        if has_jobs:
             logger.info(
-                f"Waiting for {len(self._current_jobs)} job(s) to complete "
+                f"Waiting for {job_count} job(s) to complete "
                 f"(max {self.config.graceful_shutdown_seconds}s)"
             )
             try:
@@ -597,9 +603,11 @@ class RobotAgent:
                     timeout=self.config.graceful_shutdown_seconds,
                 )
             except asyncio.TimeoutError:
+                async with self._jobs_lock:
+                    remaining = len(self._current_jobs)
                 logger.warning(
                     f"Graceful shutdown timed out, "
-                    f"{len(self._current_jobs)} job(s) may be orphaned"
+                    f"{remaining} job(s) may be orphaned"
                 )
 
         # Save checkpoint before stopping
@@ -903,12 +911,13 @@ class RobotAgent:
     async def _execute_job(self, job: Any) -> None:
         """Execute a claimed job."""
         job_id = job.job_id
-        self._current_jobs[job_id] = job
-        self._job_progress[job_id] = {
-            "progress_percent": 0,
-            "current_node": None,
-            "started_at": datetime.now(timezone.utc).isoformat(),
-        }
+        async with self._jobs_lock:
+            self._current_jobs[job_id] = job
+            self._job_progress[job_id] = {
+                "progress_percent": 0,
+                "current_node": None,
+                "started_at": datetime.now(timezone.utc).isoformat(),
+            }
 
         logger.info(
             f"Executing job {job_id[:8]}: {job.workflow_name} "
@@ -925,7 +934,9 @@ class RobotAgent:
 
         try:
             # Check cancellation
-            if job_id in self._cancelled_jobs:
+            async with self._jobs_lock:
+                is_cancelled = job_id in self._cancelled_jobs
+            if is_cancelled:
                 raise asyncio.CancelledError("Job cancelled by user")
 
             # Acquire resources
@@ -1020,20 +1031,23 @@ class RobotAgent:
                     logger.error(f"Job complete callback error: {callback_error}")
 
         finally:
-            self._current_jobs.pop(job_id, None)
-            self._job_progress.pop(job_id, None)
-            self._cancelled_jobs.discard(job_id)
+            async with self._jobs_lock:
+                self._current_jobs.pop(job_id, None)
+                self._job_progress.pop(job_id, None)
+                self._cancelled_jobs.discard(job_id)
+                has_jobs = bool(self._current_jobs)
 
-            if not self._current_jobs:
+            if not has_jobs:
                 await self._update_registration_status("idle")
 
     async def _on_job_progress(self, job_id: str, progress: int, node_id: str) -> None:
         """Handle job progress update."""
-        self._job_progress[job_id] = {
-            "progress_percent": progress,
-            "current_node": node_id,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
+        async with self._jobs_lock:
+            self._job_progress[job_id] = {
+                "progress_percent": progress,
+                "current_node": node_id,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
 
         try:
             if self._consumer:
@@ -1043,8 +1057,12 @@ class RobotAgent:
 
     async def _wait_for_jobs_complete(self) -> None:
         """Wait for all current jobs to complete."""
-        while self._current_jobs:
+        async with self._jobs_lock:
+            has_jobs = bool(self._current_jobs)
+        while has_jobs:
             await asyncio.sleep(1)
+            async with self._jobs_lock:
+                has_jobs = bool(self._current_jobs)
 
     # ==================== BACKGROUND LOOPS ====================
 
@@ -1054,7 +1072,9 @@ class RobotAgent:
 
         while self._running:
             try:
-                for job_id in list(self._current_jobs.keys()):
+                async with self._jobs_lock:
+                    job_ids = list(self._current_jobs.keys())
+                for job_id in job_ids:
                     try:
                         if self._consumer:
                             success = await self._consumer.extend_lease(
@@ -1084,10 +1104,13 @@ class RobotAgent:
 
         while self._running:
             try:
+                async with self._jobs_lock:
+                    job_count = len(self._current_jobs)
+                    status = "busy" if self._current_jobs else "idle"
                 presence_data = {
                     "robot_id": self.robot_id,
-                    "status": "busy" if self._current_jobs else "idle",
-                    "current_job_count": len(self._current_jobs),
+                    "status": status,
+                    "current_job_count": job_count,
                     "max_concurrent_jobs": self.config.max_concurrent_jobs,
                     "environment": self.config.environment,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -1173,11 +1196,14 @@ class RobotAgent:
         try:
             self.config.checkpoint_path.mkdir(parents=True, exist_ok=True)
 
+            async with self._jobs_lock:
+                current_job_keys = list(self._current_jobs.keys())
+
             checkpoint = AgentCheckpoint(
                 checkpoint_id=uuid.uuid4().hex[:8],
                 robot_id=self.robot_id,
                 state=self._state.value,
-                current_jobs=list(self._current_jobs.keys()),
+                current_jobs=current_job_keys,
                 created_at=datetime.now(timezone.utc).isoformat(),
                 last_heartbeat=datetime.now(timezone.utc).isoformat(),
                 stats=self._stats.copy(),
@@ -1261,8 +1287,18 @@ class RobotAgent:
 
     # ==================== STATUS ====================
 
-    def get_status(self) -> Dict[str, Any]:
+    async def get_status(self) -> Dict[str, Any]:
         """Get comprehensive agent status."""
+        async with self._jobs_lock:
+            current_jobs_snapshot = [
+                {
+                    "job_id": job_id,
+                    "progress": self._job_progress.get(job_id, {}),
+                }
+                for job_id in self._current_jobs.keys()
+            ]
+            job_count = len(self._current_jobs)
+
         status = {
             "robot_id": self.robot_id,
             "robot_name": self.name,
@@ -1270,16 +1306,10 @@ class RobotAgent:
             "is_running": self.is_running,
             "is_paused": self.is_paused,
             "environment": self.config.environment,
-            "current_job_count": self.current_job_count,
+            "current_job_count": job_count,
             "max_concurrent_jobs": self.config.max_concurrent_jobs,
             "capabilities": self._capabilities.to_dict(),
-            "current_jobs": [
-                {
-                    "job_id": job_id,
-                    "progress": self._job_progress.get(job_id, {}),
-                }
-                for job_id in self._current_jobs.keys()
-            ],
+            "current_jobs": current_jobs_snapshot,
             "stats": self._stats,
         }
 
@@ -1297,12 +1327,13 @@ class RobotAgent:
 
         return status
 
-    def cancel_job(self, job_id: str) -> bool:
+    async def cancel_job(self, job_id: str) -> bool:
         """Request cancellation of a job."""
-        if job_id in self._current_jobs:
-            self._cancelled_jobs.add(job_id)
-            logger.info(f"Cancellation requested for job {job_id[:8]}")
-            return True
+        async with self._jobs_lock:
+            if job_id in self._current_jobs:
+                self._cancelled_jobs.add(job_id)
+                logger.info(f"Cancellation requested for job {job_id[:8]}")
+                return True
         return False
 
 

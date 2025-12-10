@@ -10,7 +10,7 @@ This module provides nodes for clipboard operations:
 import sys
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -20,6 +20,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@node_schema()  # Input port driven
 @executable_node
 class ClipboardCopyNode(BaseNode):
     """
@@ -103,6 +104,7 @@ class ClipboardCopyNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # No config - output only
 @executable_node
 class ClipboardPasteNode(BaseNode):
     """
@@ -182,6 +184,7 @@ class ClipboardPasteNode(BaseNode):
         return True, ""
 
 
+@node_schema()  # No config
 @executable_node
 class ClipboardClearNode(BaseNode):
     """

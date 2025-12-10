@@ -432,7 +432,7 @@ class VisualLLMClassifyNode(VisualNode, LLMVisualNodeMixin):
         self.add_text_input(
             "categories", "Categories", placeholder_text="positive, negative, neutral"
         )
-        self.add_checkbox("multi_label", "Multi-label", state=False)
+        self.add_checkbox("multi_label", label="", text="Multi-label", state=False)
         self.add_combo_menu("model", "Model", items=ALL_MODELS)
         self.set_property("model", "gpt-4o-mini")
         self.add_text_input("temperature", "Temperature", text="0.0")

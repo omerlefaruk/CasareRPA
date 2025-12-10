@@ -6,7 +6,7 @@ we pay the startup cost only once per process, avoid memory churn, and enable
 faster browser launches on subsequent calls.
 """
 
-import asyncio
+import threading
 from typing import Optional
 
 from loguru import logger
@@ -31,7 +31,7 @@ class PlaywrightManager:
 
     _instance: Optional["PlaywrightManager"] = None
     _playwright = None
-    _lock: asyncio.Lock = asyncio.Lock()
+    _lock: threading.Lock = threading.Lock()  # threading.Lock is safe at module level
 
     def __new__(cls) -> "PlaywrightManager":
         """Enforce singleton pattern."""
@@ -54,7 +54,7 @@ class PlaywrightManager:
         if cls._playwright is not None:
             return cls._playwright
 
-        async with cls._lock:
+        with cls._lock:
             # Double-check after acquiring lock
             if cls._playwright is not None:
                 return cls._playwright
@@ -73,7 +73,7 @@ class PlaywrightManager:
         Called during application shutdown to clean up resources.
         Safe to call multiple times.
         """
-        async with cls._lock:
+        with cls._lock:
             if cls._playwright is not None:
                 try:
                     await cls._playwright.stop()

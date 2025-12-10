@@ -29,10 +29,10 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogSize,
     apply_dialog_style,
 )
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 
-class WorkflowSettingsDialog(AnimatedDialog):
+class WorkflowSettingsDialog(QDialog):
     """
     Dialog for editing workflow settings.
 

@@ -8,13 +8,15 @@ with actual variable values from the execution context.
 import re
 from typing import Any, Dict
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Pattern to match {{variable_name}} or {{node.output}} with optional whitespace
-# Supports: {{variable}}, {{node.output}}, {{data.nested.path}}, {{list[0]}}, {{dict.key[0].nested}}
+# Supports: {{variable}}, {{$systemVar}}, {{node.output}}, {{data.nested.path}}, {{list[0]}}
 VARIABLE_PATTERN = re.compile(
-    r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\[\d+\])*)\s*\}\}"
+    r"\{\{\s*(\$?[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\[\d+\])*)\s*\}\}"
 )
 
 # Pattern to parse path segments (handles both .key and [index])
@@ -23,8 +25,34 @@ PATH_SEGMENT_PATTERN = re.compile(r"\.([a-zA-Z_][a-zA-Z0-9_]*)|\[(\d+)\]")
 # PERFORMANCE: Pre-compiled pattern for single variable detection
 # Previously compiled on every call in resolve_variables()
 SINGLE_VAR_PATTERN = re.compile(
-    r"^\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\[\d+\])*)\s*\}\}$"
+    r"^\{\{\s*(\$?[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\[\d+\])*)\s*\}\}$"
 )
+
+
+def _resolve_system_variable(name: str) -> Any:
+    """
+    Resolve built-in system variables that start with $.
+
+    These are computed dynamically at resolution time.
+
+    Args:
+        name: Variable name (e.g., "$currentDate")
+
+    Returns:
+        The resolved value, or None if not a recognized system variable
+    """
+    from datetime import datetime
+
+    now = datetime.now()
+
+    system_vars = {
+        "$currentDate": now.strftime("%Y-%m-%d"),
+        "$currentTime": now.strftime("%H:%M:%S"),
+        "$currentDateTime": now.isoformat(),
+        "$timestamp": int(now.timestamp()),
+    }
+
+    return system_vars.get(name)
 
 
 def _resolve_nested_path(path: str, variables: Dict[str, Any]) -> Any:
@@ -144,6 +172,15 @@ def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
     if single_var_match:
         var_path = single_var_match.group(1)
 
+        # Check system variables first (e.g., $currentDate)
+        if var_path.startswith("$"):
+            resolved = _resolve_system_variable(var_path)
+            if resolved is not None:
+                logger.debug(
+                    f"Resolved system variable {{{{{var_path}}}}} -> {resolved}"
+                )
+                return resolved
+
         # Try direct lookup first
         if var_path in variables:
             resolved = variables[var_path]
@@ -167,6 +204,15 @@ def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
     # Multiple variables or text around variable - do string replacement
     def replace_match(match: re.Match) -> str:
         var_path = match.group(1)
+
+        # Check system variables first (e.g., $currentDate)
+        if var_path.startswith("$"):
+            resolved = _resolve_system_variable(var_path)
+            if resolved is not None:
+                logger.debug(
+                    f"Resolved system variable {{{{{var_path}}}}} -> {resolved}"
+                )
+                return str(resolved)
 
         # Try direct lookup first (for simple variables like "count")
         if var_path in variables:

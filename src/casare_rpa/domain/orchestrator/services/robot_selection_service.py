@@ -10,7 +10,9 @@ All robot data and assignments must be passed in as parameters.
 """
 
 from typing import List, Optional, Set, Dict
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability
 from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (

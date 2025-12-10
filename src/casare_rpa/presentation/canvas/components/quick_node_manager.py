@@ -35,7 +35,6 @@ DEFAULT_BINDINGS: List[QuickNodeBinding] = [
     QuickNodeBinding("u", "GoToURLNode", "Go To URL", "browser"),
     QuickNodeBinding("c", "ClickElementNode", "Click Element", "browser"),
     QuickNodeBinding("t", "TypeTextNode", "Type Text", "browser"),
-    QuickNodeBinding("x", "CloseBrowserNode", "Close Browser", "browser"),
     # Navigation
     QuickNodeBinding("n", "NewTabNode", "New Tab", "browser"),
     QuickNodeBinding("r", "RefreshPageNode", "Refresh Page", "browser"),

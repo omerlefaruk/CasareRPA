@@ -21,7 +21,7 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
@@ -29,7 +29,7 @@ from casare_rpa.utils.selectors.selector_generator import (
 )
 
 
-class SelectorDialog(AnimatedDialog):
+class SelectorDialog(QDialog):
     """
     Modern dialog for selecting and testing element selectors
     Shows all generated strategies with validation and preview

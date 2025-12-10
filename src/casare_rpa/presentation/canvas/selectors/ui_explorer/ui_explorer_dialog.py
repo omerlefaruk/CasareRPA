@@ -34,8 +34,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction, QKeySequence, QShortcut
 
 from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
     UIExplorerToolbar,
@@ -70,7 +69,7 @@ if TYPE_CHECKING:
     from playwright.async_api import Page
 
 
-class UIExplorerDialog(AnimatedDialog):
+class UIExplorerDialog(QDialog):
     """
     UI Explorer Dialog - UiPath-style element inspector.
 

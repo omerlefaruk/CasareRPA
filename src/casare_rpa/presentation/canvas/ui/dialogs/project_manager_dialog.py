@@ -27,14 +27,13 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import ProjectIndexEntry
 
 
-class ProjectManagerDialog(AnimatedDialog):
+class ProjectManagerDialog(QDialog):
     """
     Dialog for managing CasareRPA projects.
 

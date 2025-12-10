@@ -8,6 +8,7 @@ Users can check compatibility, preview changes, and execute migrations.
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Qt, Signal, QThread
 from PySide6.QtWidgets import (
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -26,7 +27,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QFont, QColor
 
 from loguru import logger
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 if TYPE_CHECKING:
     from casare_rpa.application.use_cases.workflow_migration import (
@@ -77,7 +77,7 @@ class MigrationWorker(QThread):
             loop.close()
 
 
-class MigrationDialog(AnimatedDialog):
+class MigrationDialog(QDialog):
     """
     Dialog for migrating workflows between versions.
 

@@ -151,7 +151,10 @@ class ReadCSVNode(BaseNode):
             # Resolve {{variable}} patterns in file_path
             file_path = context.resolve_value(file_path)
 
-            path = Path(file_path)
+            # SECURITY: Validate path before access
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            path = validate_path_security(file_path, "read", allow_dangerous)
+
             if not path.exists():
                 raise FileNotFoundError(f"CSV file not found: {file_path}")
 
@@ -295,7 +298,10 @@ class WriteCSVNode(BaseNode):
             data = context.resolve_value(data) or []
             headers = context.resolve_value(headers) if headers else None
 
-            path = Path(file_path)
+            # SECURITY: Validate path before access
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            path = validate_path_security(file_path, "write", allow_dangerous)
+
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -393,7 +399,10 @@ class ReadJSONFileNode(BaseNode):
             # Resolve {{variable}} patterns in file_path
             file_path = context.resolve_value(file_path)
 
-            path = Path(file_path)
+            # SECURITY: Validate path before access
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            path = validate_path_security(file_path, "read", allow_dangerous)
+
             if not path.exists():
                 raise FileNotFoundError(f"JSON file not found: {file_path}")
 
@@ -486,7 +495,10 @@ class WriteJSONFileNode(BaseNode):
             file_path = context.resolve_value(file_path)
             data = context.resolve_value(data)
 
-            path = Path(file_path)
+            # SECURITY: Validate path before access
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            path = validate_path_security(file_path, "write", allow_dangerous)
+
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -616,6 +628,12 @@ class ZipFilesNode(BaseNode):
             if base_dir:
                 base_dir = context.resolve_value(base_dir)
 
+            # SECURITY: Validate output zip path before access
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            zip_validated_path = validate_path_security(
+                zip_path, "write", allow_dangerous
+            )
+
             # Auto-discover files from source_path if files list is empty
             if not files and source_path:
                 source = Path(source_path)
@@ -669,14 +687,16 @@ class ZipFilesNode(BaseNode):
                 else zipfile.ZIP_STORED
             )
 
-            path = Path(zip_path)
-            if path.parent:
-                path.parent.mkdir(parents=True, exist_ok=True)
+            # Use the security-validated path
+            if zip_validated_path.parent:
+                zip_validated_path.parent.mkdir(parents=True, exist_ok=True)
 
             file_count = 0
             base = Path(base_dir) if base_dir else None
 
-            with zipfile.ZipFile(path, "w", compression=zip_compression) as zf:
+            with zipfile.ZipFile(
+                zip_validated_path, "w", compression=zip_compression
+            ) as zf:
                 for file_path in files:
                     fp = Path(file_path)
                     if not fp.exists():
@@ -690,17 +710,19 @@ class ZipFilesNode(BaseNode):
                     zf.write(fp, arcname)
                     file_count += 1
 
-            self.set_output_value("zip_path", str(path))
-            self.set_output_value("attachment_file", [str(path)])
+            self.set_output_value("zip_path", str(zip_validated_path))
+            self.set_output_value("attachment_file", [str(zip_validated_path)])
             self.set_output_value("file_count", file_count)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(f"Created ZIP archive: {path} with {file_count} files")
+            logger.info(
+                f"Created ZIP archive: {zip_validated_path} with {file_count} files"
+            )
 
             return {
                 "success": True,
-                "data": {"zip_path": str(path), "file_count": file_count},
+                "data": {"zip_path": str(zip_validated_path), "file_count": file_count},
                 "next_nodes": ["exec_out"],
             }
 

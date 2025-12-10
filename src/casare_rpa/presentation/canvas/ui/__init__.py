@@ -79,39 +79,6 @@ from casare_rpa.presentation.canvas.ui.widgets import (
     SearchWidget,
 )
 
-# Animation Utilities
-from casare_rpa.presentation.canvas.ui.animation_utils import (
-    EASING_PRESETS,
-    get_easing,
-    AnimationThrottler,
-    BatchUpdater,
-    get_throttler,
-    get_batch_updater,
-)
-
-# Animation Pool
-from casare_rpa.presentation.canvas.ui.animation_pool import (
-    AnimationPool,
-    POOL_SIZES,
-    DEFAULT_DURATIONS,
-    DEFAULT_EASINGS,
-    create_fade_animation,
-    create_slide_animation,
-    create_scale_animation,
-    create_color_animation,
-)
-
-# Animation LOD (Level of Detail)
-from casare_rpa.presentation.canvas.ui.animation_lod import (
-    AnimationLOD,
-    AnimationLevel,
-    AnimationCategory,
-    should_animate,
-    get_duration_multiplier,
-)
-
-# Accessibility
-from casare_rpa.presentation.canvas.ui.accessibility import AccessibilitySettings
 
 __all__ = [
     # Base Classes
@@ -157,30 +124,6 @@ __all__ = [
     # Constants
     "VARIABLE_TYPES",
     "TYPE_DEFAULTS",
-    # Animation Utilities
-    "EASING_PRESETS",
-    "get_easing",
-    "AnimationThrottler",
-    "BatchUpdater",
-    "get_throttler",
-    "get_batch_updater",
-    # Animation Pool
-    "AnimationPool",
-    "POOL_SIZES",
-    "DEFAULT_DURATIONS",
-    "DEFAULT_EASINGS",
-    "create_fade_animation",
-    "create_slide_animation",
-    "create_scale_animation",
-    "create_color_animation",
-    # Animation LOD
-    "AnimationLOD",
-    "AnimationLevel",
-    "AnimationCategory",
-    "should_animate",
-    "get_duration_multiplier",
-    # Accessibility
-    "AccessibilitySettings",
 ]
 
 __version__ = "1.0.0"

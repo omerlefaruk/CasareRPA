@@ -31,6 +31,10 @@ from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
 )
+from casare_rpa.nodes.http.http_base import (
+    get_shared_http_session,
+    validate_url_for_ssrf,
+)
 
 
 @node_schema(
@@ -390,6 +394,7 @@ class HttpDownloadFileNode(BaseNode):
         self.add_input_port("save_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
         self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("allow_internal_urls", DataType.BOOLEAN, required=False)
 
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("file_size", PortType.OUTPUT, DataType.INTEGER)
@@ -419,6 +424,10 @@ class HttpDownloadFileNode(BaseNode):
             if not save_path:
                 raise ValueError("Save path is required")
 
+            # Validate URL for SSRF
+            allow_internal = self.get_parameter("allow_internal_urls", False)
+            validate_url_for_ssrf(url, allow_internal=allow_internal)
+
             save_path = Path(save_path)
 
             if save_path.exists() and not overwrite:
@@ -437,45 +446,48 @@ class HttpDownloadFileNode(BaseNode):
 
             logger.info(f"Downloading file from {url}")
 
+            # Get shared session for connection pooling
+            session = await get_shared_http_session()
+
             for attempt in range(max(1, retry_count + 1)):
                 try:
-                    async with aiohttp.ClientSession(timeout=timeout) as session:
-                        request_kwargs = {
-                            "headers": headers,
-                            "ssl": ssl_context,
+                    request_kwargs = {
+                        "headers": headers,
+                        "ssl": ssl_context,
+                        "timeout": timeout,
+                    }
+                    if proxy:
+                        request_kwargs["proxy"] = proxy
+
+                    async with session.get(url, **request_kwargs) as response:
+                        if response.status != 200:
+                            raise aiohttp.ClientError(f"HTTP {response.status}")
+
+                        with open(save_path, "wb") as f:
+                            async for chunk in response.content.iter_chunked(
+                                chunk_size
+                            ):
+                                f.write(chunk)
+
+                        file_size = save_path.stat().st_size
+
+                        self.set_output_value("file_path", str(save_path))
+                        self.set_output_value("file_size", file_size)
+                        self.set_output_value("success", True)
+                        self.set_output_value("error", "")
+
+                        logger.info(f"Downloaded {file_size} bytes to {save_path}")
+
+                        self.status = NodeStatus.SUCCESS
+                        return {
+                            "success": True,
+                            "data": {
+                                "file_path": str(save_path),
+                                "file_size": file_size,
+                                "attempts": attempt + 1,
+                            },
+                            "next_nodes": ["exec_out"],
                         }
-                        if proxy:
-                            request_kwargs["proxy"] = proxy
-
-                        async with session.get(url, **request_kwargs) as response:
-                            if response.status != 200:
-                                raise aiohttp.ClientError(f"HTTP {response.status}")
-
-                            with open(save_path, "wb") as f:
-                                async for chunk in response.content.iter_chunked(
-                                    chunk_size
-                                ):
-                                    f.write(chunk)
-
-                            file_size = save_path.stat().st_size
-
-                            self.set_output_value("file_path", str(save_path))
-                            self.set_output_value("file_size", file_size)
-                            self.set_output_value("success", True)
-                            self.set_output_value("error", "")
-
-                            logger.info(f"Downloaded {file_size} bytes to {save_path}")
-
-                            self.status = NodeStatus.SUCCESS
-                            return {
-                                "success": True,
-                                "data": {
-                                    "file_path": str(save_path),
-                                    "file_size": file_size,
-                                    "attempts": attempt + 1,
-                                },
-                                "next_nodes": ["exec_out"],
-                            }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
@@ -607,6 +619,7 @@ class HttpUploadFileNode(BaseNode):
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
         self.add_input_port("extra_fields", PortType.INPUT, DataType.DICT)
         self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("allow_internal_urls", DataType.BOOLEAN, required=False)
 
         self.add_output_port("response_body", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("response_json", PortType.OUTPUT, DataType.ANY)
@@ -636,6 +649,10 @@ class HttpUploadFileNode(BaseNode):
             if not file_path:
                 raise ValueError("File path is required")
 
+            # Validate URL for SSRF
+            allow_internal = self.get_parameter("allow_internal_urls", False)
+            validate_url_for_ssrf(url, allow_internal=allow_internal)
+
             file_path = Path(file_path)
             if not file_path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
@@ -657,6 +674,9 @@ class HttpUploadFileNode(BaseNode):
 
             logger.info(f"Uploading file {file_path} to {url}")
 
+            # Get shared session for connection pooling
+            session = await get_shared_http_session()
+
             for attempt in range(max(1, retry_count + 1)):
                 file_handle = None
                 try:
@@ -667,43 +687,46 @@ class HttpUploadFileNode(BaseNode):
                     for key, value in extra_fields.items():
                         data.add_field(key, str(value))
 
-                    async with aiohttp.ClientSession(timeout=timeout) as session:
-                        async with session.post(
-                            url, data=data, headers=headers, ssl=ssl_context
-                        ) as response:
-                            response_body = await response.text()
-                            status_code = response.status
+                    async with session.post(
+                        url,
+                        data=data,
+                        headers=headers,
+                        ssl=ssl_context,
+                        timeout=timeout,
+                    ) as response:
+                        response_body = await response.text()
+                        status_code = response.status
 
-                            response_json = None
-                            try:
-                                response_json = json.loads(response_body)
-                            except (json.JSONDecodeError, ValueError):
-                                pass
+                        response_json = None
+                        try:
+                            response_json = json.loads(response_body)
+                        except (json.JSONDecodeError, ValueError):
+                            pass
 
-                            success = 200 <= status_code < 300
+                        success = 200 <= status_code < 300
 
-                            self.set_output_value("response_body", response_body)
-                            self.set_output_value("response_json", response_json)
-                            self.set_output_value("status_code", status_code)
-                            self.set_output_value("success", success)
-                            self.set_output_value(
-                                "error", "" if success else f"HTTP {status_code}"
-                            )
+                        self.set_output_value("response_body", response_body)
+                        self.set_output_value("response_json", response_json)
+                        self.set_output_value("status_code", status_code)
+                        self.set_output_value("success", success)
+                        self.set_output_value(
+                            "error", "" if success else f"HTTP {status_code}"
+                        )
 
-                            logger.info(
-                                f"Upload completed: HTTP {status_code} (attempt {attempt + 1})"
-                            )
+                        logger.info(
+                            f"Upload completed: HTTP {status_code} (attempt {attempt + 1})"
+                        )
 
-                            self.status = NodeStatus.SUCCESS
-                            return {
-                                "success": True,
-                                "data": {
-                                    "status_code": status_code,
-                                    "file": str(file_path),
-                                    "attempts": attempt + 1,
-                                },
-                                "next_nodes": ["exec_out"],
-                            }
+                        self.status = NodeStatus.SUCCESS
+                        return {
+                            "success": True,
+                            "data": {
+                                "status_code": status_code,
+                                "file": str(file_path),
+                                "attempts": attempt + 1,
+                            },
+                            "next_nodes": ["exec_out"],
+                        }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:

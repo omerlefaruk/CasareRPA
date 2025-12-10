@@ -62,6 +62,95 @@ except ImportError:
     logger.debug("aiomysql not available, MySQL support disabled")
 
 
+# SQL injection detection patterns (case-insensitive)
+_SQL_INJECTION_PATTERNS = [
+    "'",  # String delimiter escape
+    '"',  # Alternative string delimiter
+    ";",  # Statement terminator
+    "--",  # Single-line comment
+    "/*",  # Multi-line comment start
+    "*/",  # Multi-line comment end
+    "drop ",  # DROP statement
+    "delete ",  # DELETE statement
+    "insert ",  # INSERT statement
+    "update ",  # UPDATE statement
+    "union ",  # UNION injection
+    "exec ",  # EXEC statement
+    "execute ",  # EXECUTE statement
+    "xp_",  # SQL Server extended procedures
+]
+
+
+def _parse_postgresql_result(result: str) -> int:
+    """Safely parse PostgreSQL command result to get rows affected.
+
+    PostgreSQL returns strings like 'UPDATE 5' or 'DELETE 10'.
+    Returns 0 if parsing fails.
+
+    Args:
+        result: The result string from PostgreSQL execute command
+
+    Returns:
+        Number of rows affected, or 0 if parsing fails
+    """
+    if not result or not result.strip():
+        return 0
+    try:
+        parts = result.strip().split()
+        if len(parts) >= 2:
+            return int(parts[-1])
+        return 0
+    except (ValueError, IndexError):
+        logger.debug(f"Failed to parse PostgreSQL result: {result!r}")
+        return 0
+
+
+def _check_sql_injection_risk(
+    original_query: str, resolved_query: str, node_name: str
+) -> None:
+    """
+    Check for potential SQL injection in resolved query variables.
+
+    Logs security warnings when resolved variables contain patterns that could
+    indicate SQL injection attempts. This does NOT block execution - it only
+    provides visibility for security monitoring.
+
+    Args:
+        original_query: The query before variable resolution
+        resolved_query: The query after variable resolution
+        node_name: Name of the node for logging context
+    """
+    if resolved_query == original_query:
+        # No variables were resolved, no risk from variable injection
+        return
+
+    # Extract what was injected (difference between original and resolved)
+    # Check if the resolved content contains dangerous patterns not in original
+    original_lower = original_query.lower()
+    resolved_lower = resolved_query.lower()
+
+    detected_patterns = []
+    for pattern in _SQL_INJECTION_PATTERNS:
+        # Pattern appears in resolved but not in original (came from variable)
+        if pattern in resolved_lower and pattern not in original_lower:
+            detected_patterns.append(pattern.strip())
+
+    if detected_patterns:
+        logger.warning(
+            f"[SECURITY] Potential SQL injection in {node_name}: "
+            f"Resolved variables contain dangerous patterns: {detected_patterns}. "
+            f"Use parameterized queries with the 'parameters' input port instead of "
+            f"embedding values in the query string."
+        )
+    else:
+        # Variables were resolved but no dangerous patterns detected
+        # Still log an info message for security awareness
+        logger.debug(
+            f"{node_name}: Query variables resolved. For enhanced security, "
+            f"prefer parameterized queries over variable interpolation."
+        )
+
+
 class DatabaseConnection:
     """
     Wrapper class for database connections.
@@ -634,7 +723,11 @@ class ExecuteQueryNode(BaseNode):
                 raise ValueError("Query is required")
 
             # Resolve {{variable}} patterns in query
+            original_query = query
             query = context.resolve_value(query)
+
+            # Security: Check for potential SQL injection from resolved variables
+            _check_sql_injection_risk(original_query, query, "ExecuteQueryNode")
 
             logger.debug(f"Executing query: {query[:100]}...")
 
@@ -871,7 +964,11 @@ class ExecuteNonQueryNode(BaseNode):
                 raise ValueError("Query is required")
 
             # Resolve {{variable}} patterns in query
+            original_query = query
             query = context.resolve_value(query)
+
+            # Security: Check for potential SQL injection from resolved variables
+            _check_sql_injection_risk(original_query, query, "ExecuteNonQueryNode")
 
             logger.debug(f"Executing statement: {query[:100]}...")
 
@@ -982,14 +1079,7 @@ class ExecuteNonQueryNode(BaseNode):
             )
 
             # Parse rows affected from result
-            rows_affected = 0
-            if result:
-                parts = result.split()
-                if len(parts) >= 2:
-                    try:
-                        rows_affected = int(parts[-1])
-                    except ValueError:
-                        pass
+            rows_affected = _parse_postgresql_result(result)
 
             return rows_affected, None
         finally:
@@ -1016,6 +1106,7 @@ class ExecuteNonQueryNode(BaseNode):
                 await connection.release()
 
 
+@node_schema()  # Input port driven
 @executable_node
 class BeginTransactionNode(BaseNode):
     """
@@ -1100,6 +1191,7 @@ class BeginTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class CommitTransactionNode(BaseNode):
     """
@@ -1185,6 +1277,7 @@ class CommitTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class RollbackTransactionNode(BaseNode):
     """
@@ -1270,6 +1363,7 @@ class RollbackTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class CloseDatabaseNode(BaseNode):
     """
@@ -1460,7 +1554,7 @@ class ExecuteBatchNode(BaseNode):
                                     rows = cursor.rowcount
                             elif connection.db_type == "postgresql":
                                 result = await pool_conn.execute(stmt)
-                                rows = int(result.split()[-1]) if result else 0
+                                rows = _parse_postgresql_result(result)
                             elif connection.db_type == "mysql":
                                 async with pool_conn.cursor() as cursor:
                                     await cursor.execute(stmt)

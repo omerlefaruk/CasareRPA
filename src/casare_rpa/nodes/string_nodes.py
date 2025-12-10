@@ -12,10 +12,37 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
+
+# ReDoS protection limits
+MAX_TEXT_LENGTH = 100000  # 100KB - prevents catastrophic backtracking on large inputs
+MAX_PATTERN_LENGTH = 1000  # Reasonable limit for regex patterns
+
+
+def _validate_regex_inputs(text: str, pattern: str) -> None:
+    """Validate regex inputs to prevent ReDoS attacks.
+
+    Args:
+        text: The text to search/replace in
+        pattern: The regex pattern
+
+    Raises:
+        ValueError: If inputs exceed safe limits
+    """
+    if len(text) > MAX_TEXT_LENGTH:
+        raise ValueError(
+            f"Text length ({len(text):,} chars) exceeds maximum allowed "
+            f"({MAX_TEXT_LENGTH:,} chars) for regex operations"
+        )
+    if len(pattern) > MAX_PATTERN_LENGTH:
+        raise ValueError(
+            f"Pattern length ({len(pattern):,} chars) exceeds maximum allowed "
+            f"({MAX_PATTERN_LENGTH:,} chars) for regex operations"
+        )
 
 
 def _strip_var_wrapper(value: str) -> str:
@@ -123,6 +150,7 @@ class ConcatenateNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema()  # Input port driven
 @executable_node
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
@@ -207,6 +235,9 @@ class RegexMatchNode(BaseNode):
         try:
             text = _resolve_string_param(self, context, "text", "")
             pattern = _resolve_string_param(self, context, "pattern", "")
+
+            # ReDoS protection - validate inputs before regex execution
+            _validate_regex_inputs(text, pattern)
 
             flags = 0
             if self.get_parameter("ignore_case", False):
@@ -303,6 +334,9 @@ class RegexReplaceNode(BaseNode):
             text = _resolve_string_param(self, context, "text", "")
             pattern = _resolve_string_param(self, context, "pattern", "")
             replacement = _resolve_string_param(self, context, "replacement", "")
+
+            # ReDoS protection - validate inputs before regex execution
+            _validate_regex_inputs(text, pattern)
 
             flags = 0
             if self.get_parameter("ignore_case", False):

@@ -3,6 +3,8 @@ Base HTTP node providing common functionality for all HTTP nodes.
 
 This module provides the HttpBaseNode abstract class with shared HTTP request logic.
 HttpRequestNode extends this to support all HTTP methods via a dropdown selector.
+
+Uses a shared aiohttp.ClientSession for connection pooling across requests.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from typing import Any, Dict, Optional, Set
 from urllib.parse import urlparse
 
 import aiohttp
-from aiohttp import ClientTimeout
+from aiohttp import ClientTimeout, TCPConnector
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -122,6 +124,49 @@ def validate_url_for_ssrf(
             pass
 
     return url
+
+
+# =============================================================================
+# Shared HTTP Session for Connection Pooling
+# =============================================================================
+
+_shared_session: Optional[aiohttp.ClientSession] = None
+_session_lock = asyncio.Lock()
+
+
+async def get_shared_http_session() -> aiohttp.ClientSession:
+    """
+    Get a shared HTTP session for connection pooling.
+
+    This session is reused across all HTTP requests to avoid creating
+    new TCP connections and SSL handshakes for each request.
+    Per-request configuration (timeout, ssl, proxy) is passed to each request.
+    """
+    global _shared_session
+
+    if _shared_session is None or _shared_session.closed:
+        async with _session_lock:
+            if _shared_session is None or _shared_session.closed:
+                # Create connector with connection pooling
+                connector = TCPConnector(
+                    limit=100,  # Total concurrent connections
+                    limit_per_host=10,  # Connections per host
+                    keepalive_timeout=30,  # Keep connections alive
+                    enable_cleanup_closed=True,
+                )
+                _shared_session = aiohttp.ClientSession(connector=connector)
+                logger.debug("Created shared HTTP session for connection pooling")
+
+    return _shared_session
+
+
+async def close_shared_http_session() -> None:
+    """Close the shared HTTP session (call on application shutdown)."""
+    global _shared_session
+    if _shared_session and not _shared_session.closed:
+        await _shared_session.close()
+        _shared_session = None
+        logger.debug("Closed shared HTTP session")
 
 
 class HttpBaseNode(BaseNode):
@@ -244,6 +289,7 @@ class HttpBaseNode(BaseNode):
         max_redirects: int = 10,
         proxy: Optional[str] = None,
         response_encoding: Optional[str] = None,
+        timeout: Optional[ClientTimeout] = None,
     ) -> tuple[str, int, Dict[str, str]]:
         """Execute HTTP request and return response tuple."""
         request_kwargs: Dict[str, Any] = {
@@ -261,6 +307,8 @@ class HttpBaseNode(BaseNode):
             request_kwargs["data"] = data
         if proxy:
             request_kwargs["proxy"] = proxy
+        if timeout:
+            request_kwargs["timeout"] = timeout
 
         async with session.request(**request_kwargs) as response:
             if response_encoding:
@@ -336,50 +384,53 @@ class HttpBaseNode(BaseNode):
 
             logger.debug(f"HTTP {method} request to {url}")
 
+            # Get shared session for connection pooling
+            session = await get_shared_http_session()
+
             # Retry loop
             last_error: Optional[Exception] = None
             for attempt in range(max(1, retry_count + 1)):
                 try:
-                    async with aiohttp.ClientSession(timeout=timeout) as session:
-                        (
-                            response_body,
-                            status_code,
-                            response_headers,
-                        ) = await self._make_request(
-                            session=session,
-                            url=url,
-                            method=method,
-                            headers=headers,
-                            params=params,
-                            data=request_body,
-                            ssl_context=ssl_context,
-                            follow_redirects=follow_redirects,
-                            max_redirects=max_redirects,
-                            proxy=proxy if proxy else None,
-                            response_encoding=response_encoding
-                            if response_encoding
-                            else None,
-                        )
+                    (
+                        response_body,
+                        status_code,
+                        response_headers,
+                    ) = await self._make_request(
+                        session=session,
+                        url=url,
+                        method=method,
+                        headers=headers,
+                        params=params,
+                        data=request_body,
+                        ssl_context=ssl_context,
+                        follow_redirects=follow_redirects,
+                        max_redirects=max_redirects,
+                        proxy=proxy if proxy else None,
+                        response_encoding=response_encoding
+                        if response_encoding
+                        else None,
+                        timeout=timeout,
+                    )
 
-                        self._set_success_outputs(
-                            response_body, status_code, response_headers
-                        )
+                    self._set_success_outputs(
+                        response_body, status_code, response_headers
+                    )
 
-                        logger.info(
-                            f"HTTP {method} {url} -> {status_code} (attempt {attempt + 1})"
-                        )
+                    logger.info(
+                        f"HTTP {method} {url} -> {status_code} (attempt {attempt + 1})"
+                    )
 
-                        self.status = NodeStatus.SUCCESS
-                        return {
-                            "success": True,
-                            "data": {
-                                "status_code": status_code,
-                                "url": url,
-                                "method": method,
-                                "attempts": attempt + 1,
-                            },
-                            "next_nodes": ["exec_out"],
-                        }
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {
+                            "status_code": status_code,
+                            "url": url,
+                            "method": method,
+                            "attempts": attempt + 1,
+                        },
+                        "next_nodes": ["exec_out"],
+                    }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     last_error = e
@@ -427,4 +478,9 @@ class HttpBaseNode(BaseNode):
         return {"success": False, "error": "Unknown error", "next_nodes": []}
 
 
-__all__ = ["HttpBaseNode", "validate_url_for_ssrf"]
+__all__ = [
+    "HttpBaseNode",
+    "validate_url_for_ssrf",
+    "get_shared_http_session",
+    "close_shared_http_session",
+]

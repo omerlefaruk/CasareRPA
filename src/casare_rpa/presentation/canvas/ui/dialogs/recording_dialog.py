@@ -16,12 +16,11 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDialog
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
-
-class RecordingPreviewDialog(AnimatedDialog):
+class RecordingPreviewDialog(QDialog):
     """Dialog for previewing and editing recorded actions."""
 
     def __init__(self, actions: list, parent=None):

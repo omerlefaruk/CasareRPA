@@ -680,9 +680,15 @@ class VisualWriteXMLFileNode(VisualNode):
                 placeholder="Select XML file...",
             ),
         )
-        self.add_checkbox("pretty_print", "Pretty Print", state=True, tab="properties")
         self.add_checkbox(
-            "xml_declaration", "XML Declaration", state=True, tab="properties"
+            "pretty_print", label="", text="Pretty Print", state=True, tab="properties"
+        )
+        self.add_checkbox(
+            "xml_declaration",
+            label="",
+            text="XML Declaration",
+            state=True,
+            tab="properties",
         )
 
     def setup_ports(self) -> None:
@@ -1019,8 +1025,12 @@ class VisualFTPConnectNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("passive", "Passive Mode", state=True, tab="properties")
-        self.add_checkbox("use_tls", "Use TLS", state=False, tab="properties")
+        self.add_checkbox(
+            "passive", label="", text="Passive Mode", state=True, tab="properties"
+        )
+        self.add_checkbox(
+            "use_tls", label="", text="Use TLS", state=False, tab="properties"
+        )
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
         self.add_text_input(
             "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
@@ -1052,8 +1062,12 @@ class VisualFTPUploadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("binary_mode", "Binary Mode", state=True, tab="properties")
-        self.add_checkbox("create_dirs", "Create Dirs", state=False, tab="properties")
+        self.add_checkbox(
+            "binary_mode", label="", text="Binary Mode", state=True, tab="properties"
+        )
+        self.add_checkbox(
+            "create_dirs", label="", text="Create Dirs", state=False, tab="properties"
+        )
         self.add_text_input(
             "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
         )
@@ -1082,8 +1096,12 @@ class VisualFTPDownloadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("binary_mode", "Binary Mode", state=True, tab="properties")
-        self.add_checkbox("overwrite", "Overwrite", state=False, tab="properties")
+        self.add_checkbox(
+            "binary_mode", label="", text="Binary Mode", state=True, tab="properties"
+        )
+        self.add_checkbox(
+            "overwrite", label="", text="Overwrite", state=False, tab="properties"
+        )
         self.add_text_input(
             "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
         )
@@ -1112,7 +1130,9 @@ class VisualFTPListNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("detailed", "Detailed", state=False, tab="properties")
+        self.add_checkbox(
+            "detailed", label="", text="Detailed", state=False, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1145,7 +1165,9 @@ class VisualFTPMakeDirNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("parents", "Create Parents", state=False, tab="properties")
+        self.add_checkbox(
+            "parents", label="", text="Create Parents", state=False, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

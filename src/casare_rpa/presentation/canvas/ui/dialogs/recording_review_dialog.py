@@ -24,8 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
+from PySide6.QtWidgets import QDialog
 
 
 # Node type display configuration
@@ -293,7 +292,7 @@ class ActionRowWidget(QFrame):
         drag.exec(Qt.DropAction.MoveAction)
 
 
-class RecordingReviewDialog(AnimatedDialog):
+class RecordingReviewDialog(QDialog):
     """
     Dialog for reviewing recorded browser actions before adding to canvas.
 

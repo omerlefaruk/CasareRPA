@@ -135,6 +135,11 @@ class SelectorHealingChain:
         stats = chain.get_stats()
     """
 
+    # Maximum cache sizes for LRU-style eviction
+    MAX_FINGERPRINTS = 500
+    MAX_SPATIAL_CONTEXTS = 200
+    MAX_CV_CONTEXTS = 100  # Smaller limit due to image data
+
     def __init__(
         self,
         heuristic_healer: Optional[SelectorHealer] = None,
@@ -183,6 +188,36 @@ class SelectorHealingChain:
             f"cv={enable_cv_fallback}, cv_budget={cv_budget_ms}ms)"
         )
 
+    def _store_fingerprint(
+        self, selector: str, fingerprint: ElementFingerprint
+    ) -> None:
+        """Store fingerprint with LRU-style eviction when at capacity."""
+        if len(self._fingerprints) >= self.MAX_FINGERPRINTS:
+            oldest = next(iter(self._fingerprints))
+            del self._fingerprints[oldest]
+        self._fingerprints[selector] = fingerprint
+
+    def _store_spatial_context(self, selector: str, context: SpatialContext) -> None:
+        """Store spatial context with LRU-style eviction when at capacity."""
+        if len(self._spatial_contexts) >= self.MAX_SPATIAL_CONTEXTS:
+            oldest = next(iter(self._spatial_contexts))
+            del self._spatial_contexts[oldest]
+        self._spatial_contexts[selector] = context
+
+    def _store_cv_context(self, selector: str, context: CVContext) -> None:
+        """Store CV context with LRU-style eviction when at capacity."""
+        if len(self._cv_contexts) >= self.MAX_CV_CONTEXTS:
+            oldest = next(iter(self._cv_contexts))
+            del self._cv_contexts[oldest]
+        self._cv_contexts[selector] = context
+
+    def clear_contexts(self) -> None:
+        """Clear all cached contexts to free memory."""
+        self._fingerprints.clear()
+        self._spatial_contexts.clear()
+        self._cv_contexts.clear()
+        logger.debug("Cleared all healing chain contexts")
+
     async def capture_element_context(
         self,
         page: Page,
@@ -207,7 +242,7 @@ class SelectorHealingChain:
                 page, selector
             )
             if fingerprint:
-                self._fingerprints[selector] = fingerprint
+                self._store_fingerprint(selector, fingerprint)
                 self._heuristic_healer.store_fingerprint(selector, fingerprint)
 
             # Capture spatial context for anchor healing
@@ -215,7 +250,7 @@ class SelectorHealingChain:
                 page, selector
             )
             if spatial_context:
-                self._spatial_contexts[selector] = spatial_context
+                self._store_spatial_context(selector, spatial_context)
                 self._anchor_healer.store_context(selector, spatial_context)
 
             # Capture CV context if CV fallback is enabled
@@ -223,7 +258,7 @@ class SelectorHealingChain:
             if self._enable_cv_fallback and self._cv_healer:
                 cv_context = await self._cv_healer.capture_cv_context(page, selector)
                 if cv_context:
-                    self._cv_contexts[selector] = cv_context
+                    self._store_cv_context(selector, cv_context)
                     self._cv_healer.store_context(selector, cv_context)
 
             success = (

@@ -29,6 +29,7 @@ _cv2: Any = None
 _np: Any = None
 _pytesseract: Any = None
 _Image: Any = None
+_gpu_template_match: Any = None
 
 
 def _ensure_cv_imports() -> bool:
@@ -38,7 +39,7 @@ def _ensure_cv_imports() -> bool:
     Returns:
         True if all dependencies available, False otherwise.
     """
-    global _cv2, _np, _pytesseract, _Image
+    global _cv2, _np, _pytesseract, _Image, _gpu_template_match
 
     if _cv2 is not None:
         return True
@@ -53,6 +54,16 @@ def _ensure_cv_imports() -> bool:
         _np = np
         _pytesseract = pytesseract
         _Image = Image
+
+        # Import GPU acceleration (optional, falls back to CPU)
+        try:
+            from casare_rpa.utils.gpu import gpu_accelerated_template_match
+
+            _gpu_template_match = gpu_accelerated_template_match
+            logger.debug("GPU template matching available for CV healer")
+        except ImportError:
+            _gpu_template_match = None
+
         return True
 
     except ImportError as e:
@@ -299,6 +310,9 @@ class CVHealer:
             await page.mouse.click(result.click_x, result.click_y)
     """
 
+    MAX_CONTEXTS: int = 100
+    """Maximum number of CV contexts to store before eviction."""
+
     def __init__(
         self,
         ocr_confidence_threshold: float = 0.7,
@@ -341,10 +355,19 @@ class CVHealer:
         """
         Store CV context for a selector.
 
+        Evicts oldest entries when MAX_CONTEXTS is reached to prevent
+        unbounded memory growth from template_image bytes.
+
         Args:
             selector: The original selector string.
             context: Captured CV context.
         """
+        # Evict oldest if at capacity (FIFO eviction)
+        if len(self._contexts) >= self.MAX_CONTEXTS:
+            oldest_key = next(iter(self._contexts))
+            del self._contexts[oldest_key]
+            logger.debug(f"Evicted oldest CV context: {oldest_key}")
+
         self._contexts[selector] = context
         logger.debug(f"Stored CV context for: {selector}")
 
@@ -565,10 +588,9 @@ class CVHealer:
             CVHealingResult with match or failure.
         """
         try:
-            # Run OCR in executor to avoid blocking
-            loop = asyncio.get_event_loop()
-            matches = await loop.run_in_executor(
-                None, self._perform_ocr, screenshot, search_text
+            # Run OCR in thread pool to avoid blocking
+            matches = await asyncio.to_thread(
+                self._perform_ocr, screenshot, search_text
             )
 
             if matches:
@@ -790,9 +812,8 @@ class CVHealer:
         try:
             template = self._bytes_to_cv_image(template_bytes)
 
-            loop = asyncio.get_event_loop()
-            matches = await loop.run_in_executor(
-                None, self._perform_template_matching, screenshot, template
+            matches = await asyncio.to_thread(
+                self._perform_template_matching, screenshot, template
             )
 
             if matches:
@@ -879,7 +900,13 @@ class CVHealer:
         matches: List[TemplateMatch] = []
 
         for method in methods:
-            result = _cv2.matchTemplate(gray_screenshot, gray_template, method)
+            # Use GPU-accelerated template matching if available
+            if _gpu_template_match is not None:
+                result, backend = _gpu_template_match(
+                    gray_screenshot, gray_template, method
+                )
+            else:
+                result = _cv2.matchTemplate(gray_screenshot, gray_template, method)
 
             # Find all matches above a lower threshold
             threshold = 0.6
@@ -971,9 +998,7 @@ class CVHealer:
                     healing_time_ms=(time.perf_counter() - start_time) * 1000,
                 )
 
-            loop = asyncio.get_event_loop()
-            candidates = await loop.run_in_executor(
-                None,
+            candidates = await asyncio.to_thread(
                 self._detect_visual_elements,
                 screenshot,
                 expected_size,
@@ -1201,10 +1226,7 @@ class CVHealer:
             screenshot_bytes = await page.screenshot(type="png")
             screenshot = self._bytes_to_cv_image(screenshot_bytes)
 
-            loop = asyncio.get_event_loop()
-            matches = await loop.run_in_executor(
-                None, self._perform_ocr, screenshot, text
-            )
+            matches = await asyncio.to_thread(self._perform_ocr, screenshot, text)
 
             if exact_match:
                 matches = [m for m in matches if m.text.lower() == text.lower()]
@@ -1247,9 +1269,8 @@ class CVHealer:
                 logger.error(f"Could not load template: {template_path}")
                 return []
 
-            loop = asyncio.get_event_loop()
-            matches = await loop.run_in_executor(
-                None, self._perform_template_matching, screenshot, template
+            matches = await asyncio.to_thread(
+                self._perform_template_matching, screenshot, template
             )
 
             return [m for m in matches if m.similarity >= self._template_threshold]

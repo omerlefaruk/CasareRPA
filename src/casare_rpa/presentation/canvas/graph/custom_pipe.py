@@ -194,6 +194,65 @@ def check_type_compatibility(
         return True
 
 
+# ============================================================================
+# OPENGL-COMPATIBLE DASHED LINE DRAWING
+# ============================================================================
+# Qt's DashLine pen style doesn't render correctly with OpenGL viewport.
+# This helper draws dashed lines manually using line segments.
+
+_DASH_LENGTH = 8.0  # Length of each dash segment
+_GAP_LENGTH = 6.0  # Length of gap between dashes
+
+
+def _draw_dashed_path(painter: QPainter, path: QPainterPath, pen: QPen) -> None:
+    """
+    Draw a path with dashed line style (OpenGL compatible).
+
+    Instead of using QPen.DashLine (which doesn't work with OpenGL),
+    this draws the path as a series of short line segments.
+
+    Args:
+        painter: QPainter to draw with
+        path: The path to draw
+        pen: Pen to use (solid style will be used)
+    """
+    if path.isEmpty():
+        return
+
+    # Use solid pen for manual dash drawing
+    solid_pen = QPen(pen)
+    solid_pen.setStyle(Qt.PenStyle.SolidLine)
+    painter.setPen(solid_pen)
+
+    # Get path length
+    path_length = path.length()
+    if path_length < 1:
+        return
+
+    # Draw dashes along the path
+    segment_length = _DASH_LENGTH + _GAP_LENGTH
+    current_pos = 0.0
+
+    while current_pos < path_length:
+        # Calculate dash start and end positions
+        dash_start = current_pos
+        dash_end = min(current_pos + _DASH_LENGTH, path_length)
+
+        # Get points along the path
+        start_percent = dash_start / path_length
+        end_percent = dash_end / path_length
+
+        try:
+            start_point = path.pointAtPercent(start_percent)
+            end_point = path.pointAtPercent(end_percent)
+            painter.drawLine(start_point, end_point)
+        except Exception:
+            pass
+
+        # Move to next segment (dash + gap)
+        current_pos += segment_length
+
+
 class CasarePipe(PipeItem):
     """
     Custom pipe with:
@@ -799,22 +858,23 @@ class CasarePipe(PipeItem):
             # LOW: Keep type-based thickness but simplified
             pen = QPen(wire_color, max(1.0, self._get_wire_thickness() * 0.75))
 
-        # Use dotted line for live connections (being dragged)
-        if not self.input_port or not self.output_port:
-            pen.setStyle(Qt.PenStyle.DashLine)
-            pen.setDashPattern([4, 4])
-        else:
-            pen.setStyle(Qt.PenStyle.SolidLine)
-        painter.setPen(pen)
+        # Draw dashed for live connections, solid for complete
+        is_live = not self.input_port or not self.output_port
 
-        # Draw straight line from start to end instead of bezier path
-        try:
-            start = path.pointAtPercent(0)
-            end = path.pointAtPercent(1)
-            painter.drawLine(start, end)
-        except Exception:
-            # Path may be invalid, draw the full path instead
-            painter.drawPath(path)
+        if is_live:
+            # Use OpenGL-compatible manual dashed line drawing
+            _draw_dashed_path(painter, path, pen)
+        else:
+            # Solid line for complete connections
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            # Draw straight line from start to end instead of bezier path
+            try:
+                start = path.pointAtPercent(0)
+                end = path.pointAtPercent(1)
+                painter.drawLine(start, end)
+            except Exception:
+                painter.drawPath(path)
 
     def paint(self, painter, option, widget):
         """
@@ -853,43 +913,34 @@ class CasarePipe(PipeItem):
         wire_color = self._get_wire_color()
         wire_thickness = self._get_wire_thickness()
 
-        # Use dotted line when pipe is being drawn (live mode)
-        if not self.input_port or not self.output_port:
-            # Connection is being dragged
-            if self._is_incompatible:
-                # Incompatible connection - red dashed line
-                pen = QPen(_INCOMPATIBLE_WIRE_COLOR, wire_thickness)
-                pen.setStyle(Qt.PenStyle.DashLine)
-                pen.setDashPattern([4, 4])
-            else:
-                # Normal dragging - use wire color with dashed line
-                pen = QPen(wire_color, wire_thickness)
-                pen.setStyle(Qt.PenStyle.DashLine)
-                pen.setDashPattern([4, 4])
-            painter.setPen(pen)
-        else:
-            # Connection is complete - use solid line with type color
-            # Priority: insert highlight > hover > type-colored
-            if self._insert_highlight:
-                # Orange highlight when node is being dragged over
-                pen = QPen(_INSERT_HIGHLIGHT_COLOR, wire_thickness + 2)
-            elif self._hovered:
-                # Hover highlight - brighter version of wire color
-                hover_color = QColor(wire_color)
-                hover_color = hover_color.lighter(130)
-                pen = QPen(hover_color, wire_thickness + 0.5)
-            else:
-                # Normal state - type-colored wire
-                pen = QPen(wire_color, wire_thickness)
-            pen.setStyle(Qt.PenStyle.SolidLine)
-            painter.setPen(pen)
+        # Check if this is a live connection (being dragged)
+        is_live = not self.input_port or not self.output_port
 
         # Draw completion glow first (behind the wire)
         if self._show_completion_glow:
             self._draw_completion_glow(painter)
 
-        # Draw the path
-        painter.drawPath(self.path())
+        if is_live:
+            # Connection is being dragged - use OpenGL-compatible dashed line
+            if self._is_incompatible:
+                pen = QPen(_INCOMPATIBLE_WIRE_COLOR, wire_thickness)
+            else:
+                pen = QPen(wire_color, wire_thickness)
+            _draw_dashed_path(painter, self.path(), pen)
+        else:
+            # Connection is complete - use solid line with type color
+            # Priority: insert highlight > hover > type-colored
+            if self._insert_highlight:
+                pen = QPen(_INSERT_HIGHLIGHT_COLOR, wire_thickness + 2)
+            elif self._hovered:
+                hover_color = QColor(wire_color)
+                hover_color = hover_color.lighter(130)
+                pen = QPen(hover_color, wire_thickness + 0.5)
+            else:
+                pen = QPen(wire_color, wire_thickness)
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            painter.drawPath(self.path())
 
         # Draw flow animation dot (during execution)
         if self._is_animating:

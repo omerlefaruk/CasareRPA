@@ -7,13 +7,18 @@ Modal dialog for editing comprehensive node properties.
 from typing import Optional, Any, Dict
 
 from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QFormLayout,
-    QLabel,
-    QTextEdit,
+    QCheckBox,
+    QComboBox,
+    QDialog,
     QDialogButtonBox,
+    QFormLayout,
     QGroupBox,
+    QLabel,
+    QLineEdit,
+    QSpinBox,
     QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
 from PySide6.QtCore import Signal
@@ -26,16 +31,9 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     apply_dialog_style,
     COLORS,
 )
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
-from casare_rpa.presentation.canvas.ui.widgets import (
-    AnimatedLineEdit,
-    AnimatedCheckBox,
-    AnimatedComboBox,
-    AnimatedSpinBox,
-)
 
 
-class NodePropertiesDialog(AnimatedDialog):
+class NodePropertiesDialog(QDialog):
     """
     Dialog for editing node properties.
 
@@ -133,7 +131,7 @@ class NodePropertiesDialog(AnimatedDialog):
         info_group = QGroupBox("Information")
         info_layout = QFormLayout()
 
-        self._name_edit = AnimatedLineEdit()
+        self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("Node name")
         info_layout.addRow("Name:", self._name_edit)
         self._property_widgets["name"] = self._name_edit
@@ -175,7 +173,7 @@ class NodePropertiesDialog(AnimatedDialog):
         exec_group = QGroupBox("Execution Settings")
         exec_layout = QFormLayout()
 
-        self._timeout_spin = AnimatedSpinBox()
+        self._timeout_spin = QSpinBox()
         self._timeout_spin.setRange(0, 3600)
         self._timeout_spin.setSuffix(" seconds")
         self._timeout_spin.setSpecialValueText("No timeout")
@@ -183,13 +181,13 @@ class NodePropertiesDialog(AnimatedDialog):
         exec_layout.addRow("Timeout:", self._timeout_spin)
         self._property_widgets["timeout"] = self._timeout_spin
 
-        self._retry_spin = AnimatedSpinBox()
+        self._retry_spin = QSpinBox()
         self._retry_spin.setRange(0, 10)
         self._retry_spin.setToolTip("Number of retry attempts on failure")
         exec_layout.addRow("Retry Count:", self._retry_spin)
         self._property_widgets["retry_count"] = self._retry_spin
 
-        self._continue_on_error = AnimatedCheckBox("Continue workflow on error")
+        self._continue_on_error = QCheckBox("Continue workflow on error")
         exec_layout.addRow("Error Handling:", self._continue_on_error)
         self._property_widgets["continue_on_error"] = self._continue_on_error
 
@@ -200,13 +198,13 @@ class NodePropertiesDialog(AnimatedDialog):
         log_group = QGroupBox("Logging Settings")
         log_layout = QFormLayout()
 
-        self._log_level_combo = AnimatedComboBox()
+        self._log_level_combo = QComboBox()
         self._log_level_combo.addItems(["Debug", "Info", "Warning", "Error"])
         self._log_level_combo.setCurrentText("Info")
         log_layout.addRow("Log Level:", self._log_level_combo)
         self._property_widgets["log_level"] = self._log_level_combo
 
-        self._log_output = AnimatedCheckBox("Log execution output")
+        self._log_output = QCheckBox("Log execution output")
         self._log_output.setChecked(True)
         log_layout.addRow("Output:", self._log_output)
         self._property_widgets["log_output"] = self._log_output

@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 
-@dataclass
+@dataclass(slots=True)
 class CachedSelectorResult:
     """Cached result of a selector validation."""
 

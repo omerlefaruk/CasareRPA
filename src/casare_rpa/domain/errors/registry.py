@@ -6,7 +6,9 @@ Registry for error handlers with global singleton access.
 
 from typing import Any, Callable, Dict, List, Optional
 
-from loguru import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.value_objects.types import NodeId
 

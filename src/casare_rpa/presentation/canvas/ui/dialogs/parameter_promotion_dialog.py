@@ -29,10 +29,9 @@ from loguru import logger
 
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
-from casare_rpa.presentation.canvas.ui.widgets.animated_dialog import AnimatedDialog
 
 
-class ParameterPromotionDialog(AnimatedDialog):
+class ParameterPromotionDialog(QDialog):
     """
     Dialog for promoting internal node parameters to subflow level.
 
