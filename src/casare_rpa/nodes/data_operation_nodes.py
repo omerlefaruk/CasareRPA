@@ -56,6 +56,11 @@ from casare_rpa.nodes.dict_nodes import (
     DictItemsNode,
 )
 
+# Dataset comparison nodes
+from casare_rpa.nodes.data_operation import (
+    DataCompareNode,
+)
+
 __all__ = [
     # String operations
     "ConcatenateNode",
@@ -93,4 +98,6 @@ __all__ = [
     "CreateDictNode",
     "DictToJsonNode",
     "DictItemsNode",
+    # Dataset comparison
+    "DataCompareNode",
 ]

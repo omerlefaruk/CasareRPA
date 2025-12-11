@@ -384,8 +384,10 @@ class LLMResourceManager:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Get API key for this specific model (may differ from configured provider)
-        api_key = self._get_api_key_for_model(model_str)
+        # Priority: 1) Configured API key, 2) Auto-detected from model
+        api_key = (
+            self._config.api_key if self._config else None
+        ) or self._get_api_key_for_model(model_str)
 
         try:
             # Pass API key directly if we have one for this model
@@ -479,8 +481,10 @@ class LLMResourceManager:
         # Add user message
         conv.add_message("user", message)
 
-        # Get API key for this specific model
-        api_key = self._get_api_key_for_model(model_str)
+        # Priority: 1) Configured API key, 2) Auto-detected from model
+        api_key = (
+            self._config.api_key if self._config else None
+        ) or self._get_api_key_for_model(model_str)
 
         try:
             call_kwargs = {
@@ -579,8 +583,10 @@ class LLMResourceManager:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_content})
 
-        # Get API key for this specific model
-        api_key = self._get_api_key_for_model(model_str)
+        # Priority: 1) Configured API key, 2) Auto-detected from model
+        api_key = (
+            self._config.api_key if self._config else None
+        ) or self._get_api_key_for_model(model_str)
 
         try:
             call_kwargs: Dict[str, Any] = {

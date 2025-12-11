@@ -19,7 +19,12 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils.resilience import retry_operation
-from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
+from ..utils.config import (
+    DEFAULT_BROWSER,
+    HEADLESS_MODE,
+    BROWSER_ARGS,
+    PLAYWRIGHT_IGNORE_ARGS,
+)
 from loguru import logger
 
 
@@ -37,6 +42,58 @@ from casare_rpa.infrastructure.browser.playwright_manager import (
     get_playwright_singleton,
     shutdown_playwright_singleton,
 )
+
+
+def _get_browser_profile_path(
+    profile_mode: str, custom_path: str = ""
+) -> tuple[str, str]:
+    """
+    Resolve browser profile path and profile directory based on profile mode.
+
+    Args:
+        profile_mode: One of 'none', 'custom', 'chrome_default', 'chrome_profile_1',
+                      'chrome_profile_2', 'edge_default'
+        custom_path: Custom path to use when profile_mode is 'custom'
+
+    Returns:
+        Tuple of (user_data_dir, profile_directory)
+        - Empty strings for 'none' mode
+        - For system profiles, returns the User Data path and profile subdirectory name
+    """
+    if profile_mode == "none":
+        return "", ""
+    elif profile_mode == "custom":
+        return custom_path, ""
+
+    import os
+
+    local_appdata = os.environ.get("LOCALAPPDATA", "")
+    if not local_appdata:
+        logger.warning("LOCALAPPDATA environment variable not found")
+        return "", ""
+
+    # Map profile modes to (user_data_dir, profile_directory)
+    # Chrome/Edge store profiles as subdirectories within "User Data"
+    profile_config = {
+        "chrome_default": (
+            os.path.join(local_appdata, "Google", "Chrome", "User Data"),
+            "Default",
+        ),
+        "chrome_profile_1": (
+            os.path.join(local_appdata, "Google", "Chrome", "User Data"),
+            "Profile 1",
+        ),
+        "chrome_profile_2": (
+            os.path.join(local_appdata, "Google", "Chrome", "User Data"),
+            "Profile 2",
+        ),
+        "edge_default": (
+            os.path.join(local_appdata, "Microsoft", "Edge", "User Data"),
+            "Default",
+        ),
+    }
+
+    return profile_config.get(profile_mode, ("", ""))
 
 
 @node_schema(
@@ -81,6 +138,22 @@ from casare_rpa.infrastructure.browser.playwright_manager import (
         label="Do Not Close After Launch",
         tooltip="Keep browser open after workflow execution completes",
         essential=True,  # Show when collapsed
+    ),
+    PropertyDef(
+        "profile_mode",
+        PropertyType.CHOICE,
+        default="none",
+        choices=[
+            "none",
+            "custom",
+            "chrome_default",
+            "chrome_profile_1",
+            "chrome_profile_2",
+            "edge_default",
+        ],
+        label="Profile Mode",
+        tooltip="Browser profile for persistent sessions. 'none'=fresh browser, 'custom'=use User Data Directory path, others=use system browser profiles (close browser first!)",
+        essential=True,
     ),
     PropertyDef(
         "slow_mo",
@@ -160,6 +233,14 @@ from casare_rpa.infrastructure.browser.playwright_manager import (
         label="Proxy Server",
         tooltip="Proxy server URL",
         placeholder="http://proxy.example.com:8080",
+    ),
+    PropertyDef(
+        "user_data_dir",
+        PropertyType.STRING,
+        default="",
+        label="User Data Directory",
+        tooltip="Path to custom browser profile directory (only used when Profile Mode is 'custom')",
+        placeholder="C:/BrowserProfiles/instagram",
     ),
     PropertyDef(
         "retry_count",
@@ -256,7 +337,16 @@ class LaunchBrowserNode(BaseNode):
                 browser_type = self.get_parameter("browser_type", DEFAULT_BROWSER)
                 headless = self.get_parameter("headless", HEADLESS_MODE)
 
-                logger.info(f"Launching {browser_type} browser (headless={headless})")
+                # Resolve profile path based on profile_mode setting
+                profile_mode = self.get_parameter("profile_mode", "none")
+                custom_user_data_dir = self.get_parameter("user_data_dir", "")
+                user_data_dir, profile_directory = _get_browser_profile_path(
+                    profile_mode, custom_user_data_dir
+                )
+
+                logger.info(
+                    f"Launching {browser_type} browser (headless={headless}, profile_mode={profile_mode})"
+                )
 
                 # Build launch options
                 launch_options = {"headless": headless}
@@ -275,20 +365,7 @@ class LaunchBrowserNode(BaseNode):
                 # This avoids ~200-500ms startup overhead on subsequent browser launches
                 playwright = await get_playwright_singleton()
 
-                # Get browser type and launch with options
-                if browser_type == "firefox":
-                    browser = await playwright.firefox.launch(**launch_options)
-                elif browser_type == "webkit":
-                    browser = await playwright.webkit.launch(**launch_options)
-                else:  # chromium (default)
-                    # Add chromium-specific args
-                    launch_options["args"] = BROWSER_ARGS
-                    browser = await playwright.chromium.launch(**launch_options)
-
-                # Store browser in context
-                context.browser = browser
-
-                # Build browser context options
+                # Build browser context options (used for both persistent and non-persistent)
                 context_options = {}
 
                 # Viewport settings
@@ -330,10 +407,159 @@ class LaunchBrowserNode(BaseNode):
 
                 logger.debug(f"Browser context options: {context_options}")
 
-                # Create initial tab automatically with context options
-                browser_context = await browser.new_context(**context_options)
-                context.add_browser_context(browser_context)  # Track for cleanup
-                page = await browser_context.new_page()
+                # Check if using persistent context (user_data_dir specified)
+                if user_data_dir:
+                    # Use persistent context - this preserves login state, cookies, etc.
+                    import os
+
+                    # Only create directory for custom profiles, not for system browser profiles
+                    if profile_mode == "custom":
+                        os.makedirs(user_data_dir, exist_ok=True)
+
+                    if profile_directory:
+                        logger.info(
+                            f"Using system browser profile: {user_data_dir} (profile: {profile_directory})"
+                        )
+                    else:
+                        logger.info(
+                            f"Using persistent browser profile: {user_data_dir}"
+                        )
+
+                    # Merge launch options into context options for persistent context
+                    persistent_options = {**context_options, **launch_options}
+                    if browser_type == "chromium":
+                        # Start with base browser args
+                        args = list(BROWSER_ARGS)
+
+                        # When using system browser profiles, remove --disable-web-security
+                        # Chrome rejects this flag with default user-data-dir
+                        if profile_directory:
+                            args = [
+                                arg
+                                for arg in args
+                                if not arg.startswith("--disable-web-security")
+                            ]
+                            args.append(f"--profile-directory={profile_directory}")
+
+                        persistent_options["args"] = args
+                    # Remove Playwright's default automation-revealing args
+                    persistent_options["ignore_default_args"] = PLAYWRIGHT_IGNORE_ARGS
+
+                    # Get browser type object
+                    if browser_type == "firefox":
+                        browser_type_obj = playwright.firefox
+                    elif browser_type == "webkit":
+                        browser_type_obj = playwright.webkit
+                    else:
+                        browser_type_obj = playwright.chromium
+
+                    # Launch persistent context (combines browser + context)
+                    try:
+                        browser_context = (
+                            await browser_type_obj.launch_persistent_context(
+                                user_data_dir, **persistent_options
+                            )
+                        )
+                    except Exception as launch_err:
+                        # Check for profile lock error (exitCode=21)
+                        err_str = str(launch_err)
+                        if (
+                            "exitCode=21" in err_str
+                            or "Target page, context or browser has been closed"
+                            in err_str
+                        ):
+                            if profile_directory:
+                                raise RuntimeError(
+                                    f"Cannot launch browser: Chrome profile '{profile_directory}' is locked. "
+                                    f"Please close Chrome completely before using system profiles. "
+                                    f"Alternatively, use 'custom' or 'none' profile mode."
+                                ) from launch_err
+                            else:
+                                raise RuntimeError(
+                                    f"Cannot launch browser: Profile directory '{user_data_dir}' is locked. "
+                                    f"Close any browser using this profile, or choose a different directory."
+                                ) from launch_err
+                        raise
+                    context.add_browser_context(browser_context)  # Track for cleanup
+
+                    # Persistent context is itself the "browser" (no separate browser object)
+                    browser = None
+                    context.browser = browser_context  # Store context as browser
+
+                    # Get existing page or create new one
+                    if browser_context.pages:
+                        page = browser_context.pages[0]
+                    else:
+                        page = await browser_context.new_page()
+                else:
+                    # Regular browser launch (non-persistent)
+                    # Get browser type and launch with options
+                    if browser_type == "firefox":
+                        browser = await playwright.firefox.launch(**launch_options)
+                    elif browser_type == "webkit":
+                        browser = await playwright.webkit.launch(**launch_options)
+                    else:  # chromium (default)
+                        # Add chromium-specific args and anti-detection settings
+                        launch_options["args"] = BROWSER_ARGS
+                        launch_options["ignore_default_args"] = PLAYWRIGHT_IGNORE_ARGS
+                        browser = await playwright.chromium.launch(**launch_options)
+
+                    # Store browser in context
+                    context.browser = browser
+
+                    # Create initial tab automatically with context options
+                    browser_context = await browser.new_context(**context_options)
+                    context.add_browser_context(browser_context)  # Track for cleanup
+                    page = await browser_context.new_page()
+
+                # Inject anti-detection JavaScript
+                # This runs before any page script to hide automation markers
+                anti_detect_script = """
+                // Override navigator.webdriver to hide automation
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined,
+                    configurable: true
+                });
+
+                // Override navigator.plugins to look like a real browser
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [
+                        {name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer'},
+                        {name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai'},
+                        {name: 'Native Client', filename: 'internal-nacl-plugin'}
+                    ],
+                    configurable: true
+                });
+
+                // Override navigator.languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['en-US', 'en'],
+                    configurable: true
+                });
+
+                // Remove automation-related properties from window
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+                delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+
+                // Override permissions query to hide automation
+                const originalQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters) => (
+                    parameters.name === 'notifications' ?
+                        Promise.resolve({state: Notification.permission}) :
+                        originalQuery(parameters)
+                );
+                """
+
+                try:
+                    # For persistent context, browser_context is the context
+                    # For regular browser, browser_context is also available
+                    await browser_context.add_init_script(anti_detect_script)
+                    logger.debug("Anti-detection script injected")
+                except Exception as script_err:
+                    logger.warning(
+                        f"Failed to inject anti-detection script: {script_err}"
+                    )
 
                 # Navigate to URL if provided
                 url = self.get_parameter("url", "")
@@ -369,7 +595,10 @@ class LaunchBrowserNode(BaseNode):
                     logger.info("Browser marked as 'do not close' after execution")
 
                 # Set outputs
-                self.set_output_value("browser", browser)
+                # Set outputs - for persistent context, browser_context acts as the browser
+                self.set_output_value(
+                    "browser", browser if browser else browser_context
+                )
                 self.set_output_value("page", page)
 
                 # Get browser window for desktop window operations (maximize/minimize)

@@ -35,7 +35,14 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
-from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.theme import (
+    Theme,
+    TYPE_COLORS,
+    TYPE_BADGES,
+)
+
+# Legacy alias for THEME - provides attribute-style access to theme colors
+THEME = Theme.get_colors()
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -43,42 +50,19 @@ if TYPE_CHECKING:
 
 
 # =============================================================================
-# Type Badge Colors (VSCode-inspired)
-# =============================================================================
-
-TYPE_COLORS: Dict[str, str] = {
-    "String": "#4ec9b0",  # Teal
-    "Integer": "#569cd6",  # Blue
-    "Float": "#9cdcfe",  # Light Blue
-    "Boolean": "#c586c0",  # Purple
-    "List": "#ce9178",  # Orange
-    "Dict": "#dcdcaa",  # Yellow
-    "DataTable": "#d16d9e",  # Pink
-    "Any": "#AAAAAA",  # Light gray (WCAG 4.5:1 compliant)
-}
-
-TYPE_BADGES: Dict[str, str] = {
-    "String": "T",
-    "Integer": "#",
-    "Float": ".",
-    "Boolean": "?",
-    "List": "[]",
-    "Dict": "{}",
-    "DataTable": "tbl",
-    "Any": "*",
-}
-
-
-# =============================================================================
 # Styles (Using THEME constants)
 # =============================================================================
 
-VARIABLE_BUTTON_STYLE = f"""
+
+def _get_variable_button_style() -> str:
+    """Generate variable button stylesheet using current theme."""
+    c = Theme.get_colors()
+    return f"""
 QPushButton {{
-    background: {THEME.bg_medium};
-    border: 1px solid {THEME.border};
+    background: {c.surface};
+    border: 1px solid {c.border};
     border-radius: 3px;
-    color: {THEME.text_secondary};
+    color: {c.text_secondary};
     font-size: 9px;
     font-family: Consolas, monospace;
     padding: 0px;
@@ -88,20 +72,24 @@ QPushButton {{
     max-height: 16px;
 }}
 QPushButton:hover {{
-    background: {THEME.accent_primary};
-    border-color: {THEME.accent_primary};
-    color: {THEME.text_primary};
+    background: {c.accent};
+    border-color: {c.accent};
+    color: {c.text_primary};
 }}
 QPushButton:pressed {{
-    background: {THEME.accent_hover};
-    border-color: {THEME.accent_hover};
+    background: {c.accent_hover};
+    border-color: {c.accent_hover};
 }}
 """
 
-VARIABLE_POPUP_STYLE = f"""
+
+def _get_variable_popup_style() -> str:
+    """Generate variable popup stylesheet using current theme."""
+    c = Theme.get_colors()
+    return f"""
 QWidget#VariablePickerPopup {{
-    background: {THEME.bg_medium};
-    border: 1px solid {THEME.border_light};
+    background: {c.surface};
+    border: 1px solid {c.border_light};
     border-radius: 8px;
 }}
 QListWidget {{
@@ -115,14 +103,14 @@ QListWidget::item {{
     margin: 1px 4px;
 }}
 QListWidget::item:hover {{
-    background: {THEME.bg_light};
+    background: {c.surface_hover};
 }}
 QListWidget::item:selected {{
-    background: {THEME.bg_selected};
-    color: {THEME.text_primary};
+    background: {c.selection};
+    color: {c.text_primary};
 }}
 QTreeWidget {{
-    background: {THEME.bg_dark};
+    background: {c.background_alt};
     border: none;
     outline: none;
     font-size: 12px;
@@ -131,14 +119,14 @@ QTreeWidget::item {{
     padding: 6px 10px;
     border-radius: 4px;
     margin: 1px 0px;
-    border-bottom: 1px solid {THEME.border};
+    border-bottom: 1px solid {c.border};
 }}
 QTreeWidget::item:hover {{
-    background: {THEME.bg_light};
+    background: {c.surface_hover};
 }}
 QTreeWidget::item:selected {{
-    background: {THEME.bg_selected};
-    color: {THEME.text_primary};
+    background: {c.selection};
+    color: {c.text_primary};
 }}
 QTreeWidget::branch {{
     background: transparent;
@@ -154,19 +142,19 @@ QTreeWidget::branch:open:has-children:has-siblings {{
     border-image: none;
 }}
 QLineEdit#SearchBox {{
-    background: {THEME.bg_dark};
-    border: 1px solid {THEME.border};
+    background: {c.background_alt};
+    border: 1px solid {c.border};
     border-radius: 6px;
-    color: {THEME.text_primary};
+    color: {c.text_primary};
     padding: 8px 12px;
     font-size: 12px;
-    selection-background-color: {THEME.accent_primary};
+    selection-background-color: {c.accent};
 }}
 QLineEdit#SearchBox:focus {{
-    border: 1px solid {THEME.accent_primary};
+    border: 1px solid {c.accent};
 }}
 QLabel#SectionHeader {{
-    color: {THEME.text_muted};
+    color: {c.text_muted};
     font-size: 10px;
     font-weight: 600;
     padding: 8px 12px 4px 12px;
@@ -174,11 +162,16 @@ QLabel#SectionHeader {{
     letter-spacing: 0.5px;
 }}
 QFrame#SearchDivider {{
-    background: {THEME.border};
+    background: {c.border};
     max-height: 1px;
     min-height: 1px;
 }}
 """
+
+
+# Legacy module-level style constants for backward compatibility
+VARIABLE_BUTTON_STYLE = _get_variable_button_style()
+VARIABLE_POPUP_STYLE = _get_variable_popup_style()
 
 
 # =============================================================================

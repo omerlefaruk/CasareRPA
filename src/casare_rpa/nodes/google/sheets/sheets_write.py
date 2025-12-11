@@ -280,7 +280,7 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         self._define_spreadsheet_input_port()
 
         self.add_input_port("range", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("values", PortType.INPUT, DataType.ARRAY, required=True)
+        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=True)
         self.add_input_port(
             "value_input_option", PortType.INPUT, DataType.STRING, required=False
         )
@@ -418,7 +418,7 @@ class SheetsAppendRowNode(SheetsBaseNode):
         self.add_input_port(
             "sheet_name", PortType.INPUT, DataType.STRING, required=False
         )
-        self.add_input_port("values", PortType.INPUT, DataType.ARRAY, required=True)
+        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=True)
         self.add_input_port(
             "value_input_option", PortType.INPUT, DataType.STRING, required=False
         )
@@ -571,7 +571,7 @@ class SheetsUpdateRowNode(SheetsBaseNode):
             "sheet_name", PortType.INPUT, DataType.STRING, required=False
         )
         self.add_input_port("row_num", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("values", PortType.INPUT, DataType.ARRAY, required=True)
+        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=True)
         self.add_input_port(
             "start_col", PortType.INPUT, DataType.STRING, required=False
         )
@@ -727,7 +727,7 @@ class SheetsInsertRowNode(SheetsBaseNode):
             "sheet_name", PortType.INPUT, DataType.STRING, required=False
         )
         self.add_input_port("row_num", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("values", PortType.INPUT, DataType.ARRAY, required=False)
+        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=False)
         self.add_input_port(
             "value_input_option", PortType.INPUT, DataType.STRING, required=False
         )

@@ -22,20 +22,20 @@ class VisualDatabaseConnectNode(VisualNode):
             tab="config",
         )
         self.add_text_input("host", "Host", text="localhost", tab="inputs")
-        self.create_property("port", 5432, widget_type=2, tab="inputs")
+        self._safe_create_property("port", 5432, widget_type=2, tab="inputs")
         self.add_text_input("database", "Database", text="", tab="inputs")
         self.add_text_input("username", "Username", text="", tab="inputs")
         self.add_text_input("password", "Password", text="", tab="inputs")
-        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self._safe_create_property("timeout", 30.0, widget_type=2, tab="config")
         # Advanced options
-        self.create_property("ssl", False, widget_type=1, tab="advanced")
+        self._safe_create_property("ssl", False, widget_type=1, tab="advanced")
         self.add_text_input(
             "ssl_ca", "SSL CA Path", placeholder_text="Optional", tab="advanced"
         )
         self.add_text_input(
             "pool_size", "Pool Size", placeholder_text="5", tab="advanced"
         )
-        self.create_property("auto_commit", True, widget_type=1, tab="advanced")
+        self._safe_create_property("auto_commit", True, widget_type=1, tab="advanced")
         self.add_text_input("charset", "Charset", text="utf8mb4", tab="advanced")
         # Retry options
         self.add_text_input(
@@ -282,7 +282,7 @@ class VisualExecuteBatchNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Execute Batch node."""
         super().__init__()
-        self.create_property("stop_on_error", True, widget_type=1, tab="config")
+        self._safe_create_property("stop_on_error", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""

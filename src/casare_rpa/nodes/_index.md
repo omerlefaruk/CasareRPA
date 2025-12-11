@@ -10,6 +10,7 @@ Quick reference for node implementations. Use for fast discovery.
 | desktop | `nodes/desktop_nodes/` | Windows UI automation |
 | control_flow | `nodes/control_flow_nodes.py` | If/Switch/Loop/Wait |
 | data | `nodes/data_nodes.py`, `nodes/data_operation_nodes.py` | Variables, transforms |
+| data_operation | `nodes/data_operation/` | Dataset comparison, reconciliation |
 | file | `nodes/file/` | File I/O, paths, structured data |
 | email | `nodes/email/` | SMTP, IMAP |
 | google | `nodes/google/` | Drive, Sheets, Docs, Gmail, Calendar |
@@ -50,3 +51,13 @@ async def execute(self, context: ExecutionContext) -> dict:
     # ... implementation
     return {"success": True, "result": value}
 ```
+
+## Sample Workflows
+
+Pre-built workflows in `/workflows/`:
+
+| Workflow | Description | Nodes |
+|----------|-------------|-------|
+| `invoice_processing.json` | Monitor PDF inbox, OCR text, extract date/total, write CSV | FileWatch, ReadPDF, Regex, WriteCSV |
+| `web_scraping_leads.json` | Login to CRM, scrape leads table, save JSON | Browser, Navigation, TableScraper, WriteJSON |
+| `data_reconciliation.json` | Compare Excel datasets, report differences | ExcelOpen/GetRange, DataCompare, WriteJSON |

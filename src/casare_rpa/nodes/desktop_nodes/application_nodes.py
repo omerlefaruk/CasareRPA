@@ -19,6 +19,7 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     TIMEOUT_LONG_PROP,
     WINDOW_TITLE_HINT_PROP,
     WINDOW_STATE_PROP,
+    KEEP_OPEN_PROP,
     FORCE_CLOSE_PROP,
     TIMEOUT_PROP,
     MATCH_PARTIAL_PROP,
@@ -34,6 +35,7 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     TIMEOUT_LONG_PROP,
     WINDOW_TITLE_HINT_PROP,
     WINDOW_STATE_PROP,
+    KEEP_OPEN_PROP,
 )
 @executable_node
 class LaunchApplicationNode(DesktopNodeBase):
@@ -49,6 +51,7 @@ class LaunchApplicationNode(DesktopNodeBase):
         timeout: Maximum time to wait for window (default: 10.0 seconds)
         window_title_hint: Expected window title (default: "")
         window_state: Initial window state - normal/maximized/minimized (default: "normal")
+        keep_open: Keep application open when workflow ends (default: True)
 
     Outputs:
         window: Desktop window object for automation
@@ -93,6 +96,7 @@ class LaunchApplicationNode(DesktopNodeBase):
         timeout = self.get_parameter("timeout", context)
         window_title_hint = self.get_parameter("window_title_hint", context)
         window_state = self.get_parameter("window_state", context)
+        keep_open = self.get_parameter("keep_open", context)
 
         if not app_path:
             error_msg = "Application path is required. Please enter the full path to the executable."
@@ -133,6 +137,7 @@ class LaunchApplicationNode(DesktopNodeBase):
                 working_dir=working_dir,
                 timeout=timeout,
                 window_title=window_title_hint,
+                keep_open=keep_open,
             )
 
             process_id = window._control.ProcessId

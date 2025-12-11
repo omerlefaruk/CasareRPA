@@ -62,7 +62,7 @@ class VisualTelegramSendMessageNode(VisualNode):
             items=["", "Markdown", "MarkdownV2", "HTML"],
             tab="properties",
         )
-        self.create_property(
+        self._safe_create_property(
             "disable_notification", False, widget_type=1, tab="advanced"
         )
         self.add_text_input(
@@ -143,7 +143,7 @@ class VisualTelegramSendPhotoNode(VisualNode):
             items=["", "Markdown", "MarkdownV2", "HTML"],
             tab="properties",
         )
-        self.create_property(
+        self._safe_create_property(
             "disable_notification", False, widget_type=1, tab="advanced"
         )
 
@@ -224,7 +224,7 @@ class VisualTelegramSendDocumentNode(VisualNode):
             items=["", "Markdown", "MarkdownV2", "HTML"],
             tab="properties",
         )
-        self.create_property(
+        self._safe_create_property(
             "disable_notification", False, widget_type=1, tab="advanced"
         )
 
@@ -293,7 +293,7 @@ class VisualTelegramSendLocationNode(VisualNode):
             tab="properties",
             placeholder_text="-180 to 180",
         )
-        self.create_property(
+        self._safe_create_property(
             "disable_notification", False, widget_type=1, tab="advanced"
         )
 

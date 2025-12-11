@@ -182,7 +182,7 @@ class CalendarListEventsNode(CalendarBaseNode):
             "max_results", PortType.INPUT, DataType.INTEGER, required=False
         )
 
-        self.add_output_port("events", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("events", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("event_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("next_page_token", PortType.OUTPUT, DataType.STRING)
 

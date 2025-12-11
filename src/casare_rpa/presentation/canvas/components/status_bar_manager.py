@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtWidgets import QLabel, QPushButton, QStatusBar
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 if TYPE_CHECKING:
     from ..main_window import MainWindow
 
@@ -22,46 +24,52 @@ class StatusBarManager:
     - Update execution status indicator
     """
 
-    # Status bar stylesheet
-    STATUS_BAR_STYLE = """
-        QStatusBar {
-            background: #2b2b2b;
-            color: #e0e0e0;
-            border-top: 1px solid #3d3d3d;
-        }
-        QStatusBar::item {
-            border: none;
-        }
-        QLabel {
-            color: #a0a0a0;
-            padding: 0 8px;
-        }
-        QPushButton {
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 3px;
-            padding: 2px 6px;
-            color: #a0a0a0;
-            font-size: 11px;
-        }
-        QPushButton:hover {
-            background: #3d3d3d;
-            color: #e0e0e0;
-        }
-        QPushButton:checked {
-            background: #4a6a8a;
-            color: #ffffff;
-        }
-    """
+    @staticmethod
+    def _get_status_bar_style() -> str:
+        """Generate theme-aware status bar stylesheet."""
+        c = Theme.get_colors()
+        return f"""
+            QStatusBar {{
+                background: {c.background_alt};
+                color: {c.text_primary};
+                border-top: 1px solid {c.border};
+            }}
+            QStatusBar::item {{
+                border: none;
+            }}
+            QLabel {{
+                color: {c.text_muted};
+                padding: 0 8px;
+            }}
+            QPushButton {{
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px 6px;
+                color: {c.text_muted};
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background: {c.surface};
+                color: {c.text_primary};
+            }}
+            QPushButton:checked {{
+                background: {c.selection};
+                color: #ffffff;
+            }}
+        """
 
-    # Status indicator colors
-    STATUS_COLORS = {
-        "ready": ("Ready", "#4CAF50"),  # Green
-        "running": ("Running", "#FFA500"),  # Orange
-        "paused": ("Paused", "#2196F3"),  # Blue
-        "error": ("Error", "#f44336"),  # Red
-        "success": ("Complete", "#4CAF50"),  # Green
-    }
+    @staticmethod
+    def _get_status_colors() -> dict:
+        """Get theme-aware status indicator colors."""
+        c = Theme.get_colors()
+        return {
+            "ready": ("Ready", c.success),
+            "running": ("Running", c.warning),
+            "paused": ("Paused", c.info),
+            "error": ("Error", c.error),
+            "success": ("Complete", c.success),
+        }
 
     def __init__(self, main_window: "MainWindow") -> None:
         """
@@ -91,7 +99,7 @@ class StatusBarManager:
         mw = self._main_window
         status_bar = QStatusBar()
         mw.setStatusBar(status_bar)
-        status_bar.setStyleSheet(self.STATUS_BAR_STYLE)
+        status_bar.setStyleSheet(self._get_status_bar_style())
 
         # Zoom indicator
         self._zoom_label = QLabel("100%")
@@ -129,8 +137,9 @@ class StatusBarManager:
         self._add_separator(status_bar)
 
         # Execution status indicator
+        c = Theme.get_colors()
         self._exec_status_label = QLabel("Ready")
-        self._exec_status_label.setStyleSheet("color: #4CAF50;")
+        self._exec_status_label.setStyleSheet(f"color: {c.success};")
         self._exec_status_label.setToolTip("Workflow execution status")
         status_bar.addPermanentWidget(self._exec_status_label)
 
@@ -149,8 +158,9 @@ class StatusBarManager:
 
     def _add_separator(self, status_bar: QStatusBar) -> None:
         """Add a vertical separator to the status bar."""
+        c = Theme.get_colors()
         sep = QLabel("|")
-        sep.setStyleSheet("color: #4a4a4a;")
+        sep.setStyleSheet(f"color: {c.border_light};")
         status_bar.addPermanentWidget(sep)
 
     def _create_toggle_button(
@@ -210,7 +220,9 @@ class StatusBarManager:
         if not self._exec_status_label:
             return
 
-        text, color = self.STATUS_COLORS.get(status, ("Ready", "#4CAF50"))
+        c = Theme.get_colors()
+        status_colors = self._get_status_colors()
+        text, color = status_colors.get(status, ("Ready", c.success))
         self._exec_status_label.setText(text)
         self._exec_status_label.setStyleSheet(f"color: {color};")
 

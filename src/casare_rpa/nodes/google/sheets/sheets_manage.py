@@ -62,7 +62,7 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
 
         # Specific inputs
         self.add_input_port("title", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("sheets", PortType.INPUT, DataType.ARRAY, required=False)
+        self.add_input_port("sheets", PortType.INPUT, DataType.LIST, required=False)
         self.add_input_port("locale", PortType.INPUT, DataType.STRING, required=False)
 
         # Outputs
@@ -168,7 +168,7 @@ class SheetsGetSpreadsheetNode(SheetsBaseNode):
 
         self._define_common_output_ports()
         self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("sheets", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("sheets", PortType.OUTPUT, DataType.LIST)
 
     async def _execute_sheets(
         self,

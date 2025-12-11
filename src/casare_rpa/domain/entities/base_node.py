@@ -197,6 +197,16 @@ class BaseNode(ABC):
         port = Port(name, PortType.OUTPUT, data_type, label, required)
         self.output_ports[name] = port
 
+    def add_exec_input(self, name: str = "exec_in") -> None:
+        """Add an execution input port for flow control."""
+        port = Port(name, PortType.EXEC_INPUT, DataType.EXEC, "Execute", required=False)
+        self.input_ports[name] = port
+
+    def add_exec_output(self, name: str = "exec_out") -> None:
+        """Add an execution output port for flow control."""
+        port = Port(name, PortType.EXEC_OUTPUT, DataType.EXEC, "Next", required=False)
+        self.output_ports[name] = port
+
     def set_input_value(self, port_name: str, value: Any) -> None:
         """Set the value of an input port."""
         if port_name not in self.input_ports:

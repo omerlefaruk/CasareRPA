@@ -27,6 +27,8 @@ from NodeGraphQt import NodeGraph
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.theme import Theme
+
 
 # ============================================================================
 # BUNDLE VISUAL CONSTANTS
@@ -35,23 +37,41 @@ from loguru import logger
 # Minimum wires needed to form a bundle
 MIN_BUNDLE_SIZE = 3
 
-# Bundle rendering colors
-_BUNDLE_WIRE_COLOR = QColor(0x88, 0x88, 0x88)  # #888888 - Gray
-_BUNDLE_WIRE_HOVER_COLOR = QColor(0xAA, 0xAA, 0xAA)  # #AAAAAA - Lighter gray
-
 # Bundle wire thickness
 _BUNDLE_WIRE_THICKNESS = 4.0
 _BUNDLE_WIRE_HOVER_THICKNESS = 5.0
 _INDIVIDUAL_WIRE_OFFSET = 3.0  # Spacing between expanded wires
 
 # Badge styling
-_BADGE_BG_COLOR = QColor(0x25, 0x25, 0x26)  # #252526 - Dark background
-_BADGE_TEXT_COLOR = QColor(0xFF, 0xFF, 0xFF)  # White text
-_BADGE_BORDER_COLOR = QColor(0x50, 0x50, 0x54)  # #505054 - Subtle border
 _BADGE_FONT_SIZE = 10
 _BADGE_PADDING_H = 4  # Horizontal padding
 _BADGE_PADDING_V = 2  # Vertical padding
 _BADGE_RADIUS = 4  # Corner radius
+
+
+def _get_bundle_wire_color() -> QColor:
+    """Get bundle wire color from theme."""
+    return QColor(Theme.get_colors().text_muted)
+
+
+def _get_bundle_wire_hover_color() -> QColor:
+    """Get bundle wire hover color from theme."""
+    return QColor(Theme.get_colors().text_secondary)
+
+
+def _get_badge_bg_color() -> QColor:
+    """Get badge background color from theme."""
+    return QColor(Theme.get_colors().surface)
+
+
+def _get_badge_text_color() -> QColor:
+    """Get badge text color from theme."""
+    return QColor(Theme.get_colors().text_primary)
+
+
+def _get_badge_border_color() -> QColor:
+    """Get badge border color from theme."""
+    return QColor(Theme.get_colors().border_light)
 
 
 class WireBundler(QObject):
@@ -460,7 +480,11 @@ class BundledPipeItem(QGraphicsObject):
     def _paint_collapsed(self, painter: QPainter) -> None:
         """Paint the collapsed bundle (thick wire + badge)."""
         # Draw thick bundled wire
-        wire_color = _BUNDLE_WIRE_HOVER_COLOR if self._hovered else _BUNDLE_WIRE_COLOR
+        wire_color = (
+            _get_bundle_wire_hover_color()
+            if self._hovered
+            else _get_bundle_wire_color()
+        )
         thickness = (
             _BUNDLE_WIRE_HOVER_THICKNESS if self._hovered else _BUNDLE_WIRE_THICKNESS
         )
@@ -509,7 +533,7 @@ class BundledPipeItem(QGraphicsObject):
                 if hasattr(pipe, "_get_wire_color") and callable(pipe._get_wire_color):
                     wire_color = pipe._get_wire_color()
                 else:
-                    wire_color = _BUNDLE_WIRE_COLOR
+                    wire_color = _get_bundle_wire_color()
 
                 # Get thickness
                 if hasattr(pipe, "_get_wire_thickness") and callable(
@@ -565,12 +589,12 @@ class BundledPipeItem(QGraphicsObject):
         )
 
         # Draw badge background
-        painter.setBrush(QBrush(_BADGE_BG_COLOR))
-        painter.setPen(QPen(_BADGE_BORDER_COLOR, 1))
+        painter.setBrush(QBrush(_get_badge_bg_color()))
+        painter.setPen(QPen(_get_badge_border_color(), 1))
         painter.drawRoundedRect(badge_rect, _BADGE_RADIUS, _BADGE_RADIUS)
 
         # Draw badge text
-        painter.setPen(QPen(_BADGE_TEXT_COLOR))
+        painter.setPen(QPen(_get_badge_text_color()))
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, badge_text)
 
     def hoverEnterEvent(self, event) -> None:

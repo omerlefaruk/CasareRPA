@@ -133,16 +133,16 @@ class GmailGetEmailNode(GmailBaseNode):
         self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("subject", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("from_address", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("to_addresses", PortType.OUTPUT, DataType.ARRAY)
-        self.add_output_port("cc_addresses", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("to_addresses", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("cc_addresses", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("date", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("snippet", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("body_plain", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("body_html", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("label_ids", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("label_ids", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("has_attachments", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("attachment_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("attachments", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("attachments", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("raw_message", PortType.OUTPUT, DataType.OBJECT)
 
     async def _execute_gmail(
@@ -304,9 +304,9 @@ class GmailSearchEmailsNode(GmailBaseNode):
         )
 
         # Outputs
-        self.add_output_port("messages", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("messages", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("message_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("message_ids", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("message_ids", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("next_page_token", PortType.OUTPUT, DataType.STRING)
 
     async def _execute_gmail(
@@ -451,11 +451,11 @@ class GmailGetThreadNode(GmailBaseNode):
         # Outputs
         self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("snippet", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("messages", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("messages", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("message_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("first_message", PortType.OUTPUT, DataType.OBJECT)
         self.add_output_port("last_message", PortType.OUTPUT, DataType.OBJECT)
-        self.add_output_port("participants", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("participants", PortType.OUTPUT, DataType.LIST)
 
     async def _execute_gmail(
         self,

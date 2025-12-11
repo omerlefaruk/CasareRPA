@@ -135,7 +135,7 @@ class CalendarListCalendarsNode(CalendarBaseNode):
             "min_access_role", PortType.INPUT, DataType.STRING, required=False
         )
 
-        self.add_output_port("calendars", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("calendars", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("calendar_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("primary_calendar", PortType.OUTPUT, DataType.DICT)
 

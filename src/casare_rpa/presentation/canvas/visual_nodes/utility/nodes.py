@@ -272,15 +272,15 @@ class VisualGetTimestampNode(VisualNode):
 
 
 class VisualTextSplitNode(VisualNode):
-    """Visual representation of TextSplitNode."""
+    """Visual representation of TextSplitNode.
+
+    Widgets are auto-generated from TextSplitNode's @node_schema decorator.
+    max_split property is defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Split"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("max_split", "Max Splits", text="-1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -292,17 +292,15 @@ class VisualTextSplitNode(VisualNode):
 
 
 class VisualTextReplaceNode(VisualNode):
-    """Visual representation of TextReplaceNode."""
+    """Visual representation of TextReplaceNode.
+
+    Widgets are auto-generated from TextReplaceNode's @node_schema decorator.
+    use_regex, ignore_case, multiline, dotall properties are defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Replace"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_checkbox(
-            "use_regex", label="", text="Use Regex", state=False, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -315,17 +313,15 @@ class VisualTextReplaceNode(VisualNode):
 
 
 class VisualTextTrimNode(VisualNode):
-    """Visual representation of TextTrimNode."""
+    """Visual representation of TextTrimNode.
+
+    Widgets are auto-generated from TextTrimNode's @node_schema decorator.
+    mode and characters properties are defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Trim"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_combo_menu(
-            "mode", "Mode", items=["both", "left", "right"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -335,20 +331,15 @@ class VisualTextTrimNode(VisualNode):
 
 
 class VisualTextCaseNode(VisualNode):
-    """Visual representation of TextCaseNode."""
+    """Visual representation of TextCaseNode.
+
+    Widgets are auto-generated from TextCaseNode's @node_schema decorator.
+    case property is defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Case"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_combo_menu(
-            "case",
-            "Case",
-            items=["lower", "upper", "title", "capitalize", "swapcase"],
-            tab="properties",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -358,18 +349,15 @@ class VisualTextCaseNode(VisualNode):
 
 
 class VisualTextPadNode(VisualNode):
-    """Visual representation of TextPadNode."""
+    """Visual representation of TextPadNode.
+
+    Widgets are auto-generated from TextPadNode's @node_schema decorator.
+    mode and fill_char properties are defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Pad"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_combo_menu(
-            "mode", "Mode", items=["left", "right", "center"], tab="properties"
-        )
-        self.add_text_input("fill_char", "Fill Char", text=" ", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -397,17 +385,15 @@ class VisualTextSubstringNode(VisualNode):
 
 
 class VisualTextContainsNode(VisualNode):
-    """Visual representation of TextContainsNode."""
+    """Visual representation of TextContainsNode.
+
+    Widgets are auto-generated from TextContainsNode's @node_schema decorator.
+    case_sensitive property is defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Contains"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_checkbox(
-            "case_sensitive", "Case Sensitive", state=True, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -420,17 +406,15 @@ class VisualTextContainsNode(VisualNode):
 
 
 class VisualTextStartsWithNode(VisualNode):
-    """Visual representation of TextStartsWithNode."""
+    """Visual representation of TextStartsWithNode.
+
+    Widgets are auto-generated from TextStartsWithNode's @node_schema decorator.
+    case_sensitive property is defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Starts With"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_checkbox(
-            "case_sensitive", "Case Sensitive", state=True, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -441,17 +425,15 @@ class VisualTextStartsWithNode(VisualNode):
 
 
 class VisualTextEndsWithNode(VisualNode):
-    """Visual representation of TextEndsWithNode."""
+    """Visual representation of TextEndsWithNode.
+
+    Widgets are auto-generated from TextEndsWithNode's @node_schema decorator.
+    case_sensitive property is defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Ends With"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_checkbox(
-            "case_sensitive", "Case Sensitive", state=True, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -462,18 +444,15 @@ class VisualTextEndsWithNode(VisualNode):
 
 
 class VisualTextLinesNode(VisualNode):
-    """Visual representation of TextLinesNode."""
+    """Visual representation of TextLinesNode.
+
+    Widgets are auto-generated from TextLinesNode's @node_schema decorator.
+    mode, line_separator, and keep_ends properties are defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Lines"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_combo_menu("mode", "Mode", items=["split", "join"], tab="properties")
-        self.add_checkbox(
-            "keep_ends", "Keep Line Endings", state=False, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -498,17 +477,15 @@ class VisualTextReverseNode(VisualNode):
 
 
 class VisualTextCountNode(VisualNode):
-    """Visual representation of TextCountNode."""
+    """Visual representation of TextCountNode.
+
+    Widgets are auto-generated from TextCountNode's @node_schema decorator.
+    mode and exclude_whitespace properties are defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Count"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_combo_menu(
-            "mode", "Mode", items=["characters", "words", "lines"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -536,17 +513,15 @@ class VisualTextJoinNode(VisualNode):
 
 
 class VisualTextExtractNode(VisualNode):
-    """Visual representation of TextExtractNode."""
+    """Visual representation of TextExtractNode.
+
+    Widgets are auto-generated from TextExtractNode's @node_schema decorator.
+    all_matches, ignore_case, multiline properties are defined in schema.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Extract"
     NODE_CATEGORY = "utility/text"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_checkbox(
-            "all_matches", label="", text="All Matches", state=False, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

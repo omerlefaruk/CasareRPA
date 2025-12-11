@@ -64,7 +64,10 @@ class VisualRunPythonFileNode(VisualNode):
 
 
 class VisualEvalExpressionNode(VisualNode):
-    """Visual representation of EvalExpressionNode."""
+    """Visual representation of EvalExpressionNode.
+
+    Widgets auto-generated from EvalExpressionNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.scripts"
     NODE_NAME = "Eval Expression"
@@ -75,8 +78,7 @@ class VisualEvalExpressionNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("expression", DataType.STRING)
-        self.add_typed_input("variables", DataType.DICT)
+        # expression is now a PropertyDef (auto-generated widget)
         self.add_exec_output("exec_out")
         self.add_typed_output("result", DataType.ANY)
         self.add_typed_output("type", DataType.STRING)

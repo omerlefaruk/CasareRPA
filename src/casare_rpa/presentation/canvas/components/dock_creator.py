@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from ..ui.debug_panel import DebugPanel
     from ..debugger.debug_controller import DebugController
     from ..controllers.robot_controller import RobotController
+    from ..ui.widgets.ai_assistant import AIAssistantDock
 
 
 class DockCreator:
@@ -478,3 +479,47 @@ class DockCreator:
         credentials_panel.hide()
 
         return credentials_panel
+
+    def create_ai_assistant_panel(self) -> "AIAssistantDock":
+        """
+        Create the AI Assistant Panel for AI-powered workflow generation.
+
+        Features:
+        - Natural language to workflow JSON conversion
+        - Structural validation before preview
+        - Append/Replace workflow modes
+        - Multi-provider support (Anthropic/OpenAI)
+
+        Returns:
+            Created AIAssistantDock instance
+        """
+        from ..ui.widgets.ai_assistant import AIAssistantDock
+
+        mw = self._main_window
+        ai_assistant = AIAssistantDock(mw)
+
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, ai_assistant)
+
+        # Connect dock state changes to auto-save
+        if hasattr(mw, "_schedule_ui_state_save"):
+            ai_assistant.dockLocationChanged.connect(mw._schedule_ui_state_save)
+            ai_assistant.visibilityChanged.connect(mw._schedule_ui_state_save)
+            ai_assistant.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu with shortcut
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = ai_assistant.toggleViewAction()
+                toggle_action.setText("AI &Assistant")
+                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+G"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_ai_assistant = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add AI Assistant to View menu: {e}")
+
+        # Initially hidden
+        ai_assistant.hide()
+
+        return ai_assistant

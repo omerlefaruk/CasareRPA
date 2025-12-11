@@ -140,6 +140,11 @@ class MenuBuilder:
         view_menu.addAction(mw.action_fleet_dashboard)
         view_menu.addAction(mw.action_performance_dashboard)
 
+        view_menu.addSeparator()
+
+        # --- Credentials Management ---
+        view_menu.addAction(mw.action_credential_manager)
+
         # Store reference on MainWindow for DockCreator access
         mw._view_menu = view_menu
         return view_menu

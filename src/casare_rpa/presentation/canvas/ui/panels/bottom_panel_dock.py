@@ -494,7 +494,8 @@ class BottomPanelDock(QDockWidget):
         """
         Set validation results.
 
-        Auto-switches to validation tab if errors are found.
+        Updates the validation tab badge but does NOT auto-open the panel.
+        User can manually check validation via View menu or the tab badge.
 
         Args:
             result: ValidationResult to display
@@ -502,9 +503,8 @@ class BottomPanelDock(QDockWidget):
         self._validation_tab.set_result(result)
         self._update_tab_badges()
 
-        # Auto-switch to validation tab if there are errors
-        if not result.is_valid:
-            self.show_validation_tab()
+        # Validation runs silently - panel does NOT auto-open
+        # The tab badge will indicate errors if any
 
     def clear_validation(self) -> None:
         """Clear validation results."""

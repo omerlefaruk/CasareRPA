@@ -39,6 +39,8 @@ from casare_rpa.nodes.data_operation_nodes import (
     CreateDictNode,
     DictToJsonNode,
     DictItemsNode,
+    # Dataset comparison
+    DataCompareNode,
 )
 
 
@@ -714,3 +716,36 @@ class VisualDictItemsNode(VisualNode):
 
     def get_node_class(self):
         return DictItemsNode
+
+
+# =============================================================================
+# Dataset Comparison Nodes
+# =============================================================================
+
+
+class VisualDataCompareNode(VisualNode):
+    """Visual representation of DataCompareNode.
+
+    Compares two datasets (lists of dicts) and reports differences.
+    Widgets are auto-generated from DataCompareNode's @node_schema decorator.
+    """
+
+    __identifier__ = "casare_rpa.data_operations"
+    NODE_NAME = "Data Compare"
+    NODE_CATEGORY = "data_operations/comparison"
+
+    def setup_ports(self):
+        """Setup ports."""
+        self.add_exec_input("exec_in")
+        self.add_typed_input("data_a", DataType.LIST)
+        self.add_typed_input("data_b", DataType.LIST)
+        self.add_typed_input("key_columns", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("only_in_a", DataType.LIST)
+        self.add_typed_output("only_in_b", DataType.LIST)
+        self.add_typed_output("matched", DataType.LIST)
+        self.add_typed_output("diff_summary", DataType.DICT)
+        self.add_typed_output("has_differences", DataType.BOOLEAN)
+
+    def get_node_class(self):
+        return DataCompareNode

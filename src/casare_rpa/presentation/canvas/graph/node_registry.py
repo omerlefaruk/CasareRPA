@@ -12,8 +12,15 @@ When adding new nodes, you only need to:
 
 The CASARE_NODE_CLASS attribute on visual nodes specifies the CasareRPA node class name.
 For desktop nodes, set CASARE_NODE_MODULE = "desktop" to look up from desktop_nodes module.
+
+PERFORMANCE OPTIMIZATION:
+Node mapping is cached to disk at ~/.casare_rpa/cache/node_mapping_cache.json.
+Cache is invalidated when the visual node registry changes (hash-based).
 """
 
+import json
+import hashlib
+from pathlib import Path
 from typing import Dict, Type, Optional, List, Tuple, Any, TYPE_CHECKING
 from functools import lru_cache
 from NodeGraphQt import NodeGraph
@@ -21,6 +28,201 @@ from loguru import logger
 
 if TYPE_CHECKING:
     pass
+
+
+# =============================================================================
+# DISK CACHING CONSTANTS
+# =============================================================================
+_CACHE_DIR = Path.home() / ".casare_rpa" / "cache"
+_MAPPING_CACHE_FILE = _CACHE_DIR / "node_mapping_cache.json"
+_CACHE_VERSION = "1.0"  # Increment when node structure changes
+
+
+# =============================================================================
+# ESSENTIAL NODES FOR FAST STARTUP
+# =============================================================================
+# Only these nodes are registered at startup. Others are deferred.
+# PERFORMANCE: Loads ~8 nodes instead of 300+ for faster boot time.
+
+ESSENTIAL_NODE_NAMES = [
+    "VisualStartNode",
+    "VisualEndNode",
+    "VisualCommentNode",
+    "VisualIfNode",
+    "VisualForLoopNode",
+    "VisualMessageBoxNode",
+    "VisualSetVariableNode",
+    "VisualGetVariableNode",
+]
+
+
+# =============================================================================
+# DISK CACHING FUNCTIONS
+# =============================================================================
+
+
+def _get_registry_hash() -> str:
+    """
+    Get hash of the visual node registry to detect changes.
+
+    Returns:
+        MD5 hash of sorted registry keys (first 12 chars)
+    """
+    from casare_rpa.presentation.canvas.visual_nodes import _VISUAL_NODE_REGISTRY
+
+    registry_str = json.dumps(sorted(_VISUAL_NODE_REGISTRY.keys()))
+    return hashlib.md5(registry_str.encode()).hexdigest()[:12]
+
+
+def _load_mapping_from_cache() -> Optional[Dict[str, str]]:
+    """
+    Load node mapping from disk cache.
+
+    Returns:
+        Dict mapping visual class name to casare class name, or None if cache invalid
+    """
+    try:
+        if not _MAPPING_CACHE_FILE.exists():
+            return None
+
+        with open(_MAPPING_CACHE_FILE, "r") as f:
+            cache_data = json.load(f)
+
+        # Validate cache version and hash
+        if cache_data.get("version") != _CACHE_VERSION:
+            logger.debug("Cache version mismatch, rebuilding")
+            return None
+
+        if cache_data.get("registry_hash") != _get_registry_hash():
+            logger.debug("Registry hash mismatch, rebuilding")
+            return None
+
+        logger.debug(
+            f"Loaded node mapping from cache ({len(cache_data.get('mapping', {}))} entries)"
+        )
+        return cache_data.get("mapping", {})
+
+    except Exception as e:
+        logger.debug(f"Failed to load mapping cache: {e}")
+        return None
+
+
+def _save_mapping_to_cache(mapping: Dict[Type, Type]) -> None:
+    """
+    Save node mapping to disk cache.
+
+    Args:
+        mapping: Dict mapping visual class to casare class
+    """
+    try:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+        # Convert to serializable format (class names only)
+        serializable_mapping = {
+            visual_cls.__name__: casare_cls.__name__
+            for visual_cls, casare_cls in mapping.items()
+        }
+
+        cache_data = {
+            "version": _CACHE_VERSION,
+            "registry_hash": _get_registry_hash(),
+            "mapping": serializable_mapping,
+        }
+
+        with open(_MAPPING_CACHE_FILE, "w") as f:
+            json.dump(cache_data, f, indent=2)
+
+        logger.debug(f"Saved node mapping cache ({len(serializable_mapping)} entries)")
+
+    except Exception as e:
+        logger.warning(f"Failed to save mapping cache: {e}")
+
+
+def _build_casare_node_mapping_with_cache() -> Dict[Type, Type]:
+    """
+    Build the casare node mapping with disk caching.
+
+    PERFORMANCE: Uses disk cache to avoid expensive imports on subsequent starts.
+    Cache is invalidated when the visual node registry changes.
+
+    Returns:
+        Dictionary mapping visual node classes to CasareRPA node classes
+    """
+    # Try loading from cache first
+    cached_mapping = _load_mapping_from_cache()
+
+    if cached_mapping is not None:
+        # Reconstruct the full mapping from cached class names
+        from casare_rpa.presentation.canvas.visual_nodes import (
+            _lazy_import as visual_lazy_import,
+            _VISUAL_NODE_REGISTRY,
+        )
+
+        mapping = {}
+        success_count = 0
+
+        for visual_name, casare_name in cached_mapping.items():
+            try:
+                # Get visual class
+                if visual_name not in _VISUAL_NODE_REGISTRY:
+                    continue
+
+                visual_cls = visual_lazy_import(visual_name)
+
+                # Get casare class module info from visual class
+                casare_module = getattr(visual_cls, "CASARE_NODE_MODULE", None)
+
+                # Look up the CasareRPA node class based on module
+                casare_class = None
+                if casare_module == "desktop":
+                    from casare_rpa.nodes import desktop_nodes
+
+                    casare_class = getattr(desktop_nodes, casare_name, None)
+                elif casare_module == "file":
+                    from casare_rpa.nodes import file_nodes
+
+                    casare_class = getattr(file_nodes, casare_name, None)
+                elif casare_module == "utility":
+                    from casare_rpa.nodes import utility_nodes
+
+                    casare_class = getattr(utility_nodes, casare_name, None)
+                elif casare_module == "office":
+                    from casare_rpa.nodes.desktop_nodes import office_nodes
+
+                    casare_class = getattr(office_nodes, casare_name, None)
+                else:
+                    # Import from main nodes module (uses lazy loading)
+                    from casare_rpa.nodes import (
+                        _lazy_import as nodes_lazy_import,
+                        _NODE_REGISTRY,
+                    )
+
+                    if casare_name in _NODE_REGISTRY:
+                        casare_class = nodes_lazy_import(casare_name)
+
+                if casare_class is not None:
+                    mapping[visual_cls] = casare_class
+                    success_count += 1
+
+            except Exception:
+                pass  # Skip failed lookups, will be rebuilt
+
+        # At least 80% success rate to use cache
+        if success_count > len(cached_mapping) * 0.8:
+            logger.debug(
+                f"Reconstructed mapping from cache ({success_count}/{len(cached_mapping)} entries)"
+            )
+            return mapping
+
+        logger.debug("Cache reconstruction had too many failures, rebuilding")
+
+    # Build from scratch
+    mapping = _build_casare_node_mapping()
+
+    # Save to cache for next time
+    _save_mapping_to_cache(mapping)
+
+    return mapping
 
 
 def _build_casare_node_mapping() -> Dict[Type, Type]:
@@ -137,13 +339,14 @@ def get_casare_node_mapping() -> Dict[Type, Type]:
     Get the mapping from visual node classes to CasareRPA node classes.
 
     The mapping is built lazily on first access using auto-discovery.
+    PERFORMANCE: Uses disk caching to avoid rebuilding on subsequent starts.
 
     Returns:
         Dictionary mapping visual node classes to CasareRPA node classes
     """
     global _casare_node_mapping
     if _casare_node_mapping is None:
-        _casare_node_mapping = _build_casare_node_mapping()
+        _casare_node_mapping = _build_casare_node_mapping_with_cache()
     return _casare_node_mapping
 
 
@@ -979,6 +1182,445 @@ class NodeRegistry:
         """
         return list(self._registered_nodes.values())
 
+    def register_essential_nodes(self, graph: NodeGraph) -> None:
+        """
+        Register only essential nodes for fast startup.
+
+        PERFORMANCE: Only loads ~8 essential nodes instead of 300+.
+        Other nodes are registered lazily when complete_node_registration() is called.
+
+        Args:
+            graph: NodeGraph instance to register nodes with
+        """
+        from casare_rpa.presentation.canvas.visual_nodes import _lazy_import
+
+        registered_count = 0
+        for name in ESSENTIAL_NODE_NAMES:
+            try:
+                node_class = _lazy_import(name)
+                self.register_node(node_class, graph)
+                registered_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to load essential node {name}: {e}")
+
+        logger.debug(f"Registered {registered_count} essential nodes for fast startup")
+
+    def register_remaining_nodes(self, graph: NodeGraph) -> None:
+        """
+        Register all remaining nodes (called after startup).
+
+        PERFORMANCE: Called via QTimer.singleShot after window is shown.
+        Also rebuilds the context menu with all nodes.
+
+        Args:
+            graph: NodeGraph instance to register nodes with
+        """
+        from casare_rpa.presentation.canvas.visual_nodes import ALL_VISUAL_NODE_CLASSES
+
+        # Get already registered names to avoid duplicates
+        already_registered = set(self._registered_nodes.keys())
+        new_count = 0
+
+        for node_class in ALL_VISUAL_NODE_CLASSES:
+            if node_class.NODE_NAME not in already_registered:
+                self.register_node(node_class, graph)
+                new_count += 1
+
+        logger.debug(
+            f"Registered {new_count} additional nodes "
+            f"(total: {len(self._registered_nodes)})"
+        )
+
+        # Rebuild the context menu with all nodes
+        self._rebuild_context_menu(graph)
+
+    def _rebuild_context_menu(self, graph: NodeGraph) -> None:
+        """
+        Rebuild the context menu with all registered nodes.
+
+        This is called after deferred node registration to ensure
+        the right-click menu shows all available nodes.
+
+        Args:
+            graph: NodeGraph instance
+        """
+        # Get the graph's context menu
+        graph_menu = graph.get_context_menu("graph")
+        qmenu = graph_menu.qmenu
+
+        # Store essential menu attributes before clearing
+        initial_scene_pos = getattr(qmenu, "_initial_scene_pos", None)
+        last_created_node_id = getattr(qmenu, "_last_created_node_id", None)
+
+        # Clear all existing menu items
+        qmenu.clear()
+
+        # Re-add search functionality and all nodes
+        from PySide6.QtWidgets import QWidgetAction, QLineEdit
+        from PySide6.QtCore import Qt
+
+        # Restore stored attributes
+        qmenu._last_created_node_id = last_created_node_id
+        qmenu._initial_scene_pos = initial_scene_pos
+
+        # Create search input widget with Enter key handler
+        class SearchLineEdit(QLineEdit):
+            def _find_node_by_id(self, node_id):
+                """Find a node in the graph by its ID."""
+                for n in graph.all_nodes():
+                    n_id = n.id() if callable(n.id) else n.id
+                    if n_id == node_id:
+                        return n
+                return None
+
+            def keyPressEvent(self, event):
+                if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                    auto_connect = bool(event.modifiers() & Qt.ShiftModifier)
+                    if hasattr(qmenu, "_first_match") and qmenu._first_match:
+                        source_node = None
+                        if auto_connect:
+                            if qmenu._last_created_node_id:
+                                source_node = self._find_node_by_id(
+                                    qmenu._last_created_node_id
+                                )
+                            if not source_node:
+                                selected_nodes = graph.selected_nodes()
+                                if selected_nodes:
+                                    source_node = selected_nodes[-1]
+
+                        if auto_connect and source_node:
+                            source_pos = source_node.pos()
+                            node_width = 220
+                            spacing = 80
+                            pos_x = source_pos[0] + node_width + spacing
+                            pos_y = source_pos[1]
+                        else:
+                            pos = qmenu._initial_scene_pos
+                            if pos is None:
+                                viewer = graph.viewer()
+                                pos = viewer.mapToScene(
+                                    viewer.mapFromGlobal(viewer.cursor().pos())
+                                )
+                            pos_x = pos.x() - 100
+                            pos_y = pos.y() - 30
+
+                        node = graph.create_node(
+                            f"{qmenu._first_match.__identifier__}.{qmenu._first_match.__name__}",
+                            name=qmenu._first_match.NODE_NAME,
+                            pos=[pos_x, pos_y],
+                        )
+                        if not getattr(qmenu._first_match, "COMPOSITE_NODE", False):
+                            factory = get_node_factory()
+                            casare_node = factory.create_casare_node(node)
+                            if casare_node:
+                                node.set_casare_node(casare_node)
+
+                        if auto_connect and source_node:
+                            self._auto_connect_nodes(graph, source_node, node)
+
+                        node_id = node.id() if callable(node.id) else node.id
+                        qmenu._last_created_node_id = node_id
+
+                        graph.clear_selection()
+                        node.set_selected(True)
+                        qmenu.close()
+                    event.accept()
+                else:
+                    super().keyPressEvent(event)
+
+            def _auto_connect_nodes(self, graph, source_node, target_node):
+                """Auto-connect exec output of source to exec input of target."""
+                try:
+                    source_output = None
+                    output_ports = source_node.output_ports()
+                    for port in output_ports:
+                        port_name = port.name().lower()
+                        if "exec" in port_name or port_name in (
+                            "exec_out",
+                            "output",
+                            "out",
+                        ):
+                            source_output = port
+                            break
+                    if not source_output and output_ports:
+                        source_output = output_ports[0]
+
+                    target_input = None
+                    input_ports = target_node.input_ports()
+                    for port in input_ports:
+                        port_name = port.name().lower()
+                        if "exec" in port_name or port_name in (
+                            "exec_in",
+                            "input",
+                            "in",
+                        ):
+                            target_input = port
+                            break
+                    if not target_input and input_ports:
+                        target_input = input_ports[0]
+
+                    if source_output and target_input:
+                        source_output.connect_to(target_input)
+                        logger.info(
+                            f"Auto-connected {source_node.name()} -> {target_node.name()}"
+                        )
+                except Exception as e:
+                    logger.warning(f"Auto-connect failed: {e}")
+
+        search_input = SearchLineEdit()
+        search_input.setPlaceholderText("Search... Enter=add, Shift+Enter=add+connect")
+        search_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #2b2b2b;
+                color: #ffffff;
+                border: 2px solid #FFA500;
+                border-radius: 4px;
+                padding: 6px;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #FFD700;
+            }
+        """)
+
+        search_action = QWidgetAction(qmenu)
+        search_action.setDefaultWidget(search_input)
+        qmenu.addAction(search_action)
+        qmenu.addSeparator()
+
+        # Initialize menu data structures
+        qmenu._node_items = []
+        qmenu._all_actions = []
+        qmenu._category_menus = {}
+        qmenu._first_match = None
+        qmenu._search_input = search_input
+        qmenu._graph = graph
+        qmenu._category_data = {}
+
+        # Import category utilities
+        try:
+            from casare_rpa.presentation.canvas.graph.category_utils import (
+                get_display_name,
+                get_category_sort_key,
+            )
+
+            use_hierarchy = True
+        except ImportError:
+            use_hierarchy = False
+
+        def get_or_create_submenu(parent_menu, category_path: str):
+            """Get or create nested submenu for category path."""
+            if category_path in qmenu._category_menus:
+                return qmenu._category_menus[category_path]
+
+            parts = category_path.split("/")
+            if len(parts) == 1:
+                if use_hierarchy:
+                    label = get_display_name(category_path)
+                else:
+                    label = category_path.replace("_", " ").title()
+                menu = parent_menu.addMenu(label)
+                qmenu._category_menus[category_path] = menu
+                return menu
+            else:
+                parent_path = "/".join(parts[:-1])
+                parent_submenu = get_or_create_submenu(parent_menu, parent_path)
+                if use_hierarchy:
+                    label = get_display_name(category_path)
+                else:
+                    label = parts[-1].replace("_", " ").title()
+                menu = parent_submenu.addMenu(label)
+                qmenu._category_menus[category_path] = menu
+                return menu
+
+        # Sort categories
+        if use_hierarchy:
+            sorted_categories = sorted(
+                self._categories.items(), key=lambda x: get_category_sort_key(x[0])
+            )
+        else:
+            sorted_categories = sorted(
+                self._categories.items(), key=lambda x: x[0].lower()
+            )
+
+        # Build menu structure
+        for category, nodes in sorted_categories:
+            if use_hierarchy:
+                category_label = get_display_name(category)
+            else:
+                category_label = category.replace("_", " ").title()
+
+            category_menu = get_or_create_submenu(qmenu, category)
+
+            for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
+                if getattr(node_class, "INTERNAL_NODE", False):
+                    continue
+
+                description = ""
+                if node_class.__doc__:
+                    description = node_class.__doc__.strip().split("\n")[0]
+
+                qmenu._node_items.append(
+                    (category_label, node_class.NODE_NAME, description)
+                )
+
+                def make_creator(cls):
+                    def create_node():
+                        pos = qmenu._initial_scene_pos
+                        if pos is None:
+                            viewer = graph.viewer()
+                            pos = viewer.mapToScene(
+                                viewer.mapFromGlobal(viewer.cursor().pos())
+                            )
+                        node = graph.create_node(
+                            f"{cls.__identifier__}.{cls.__name__}",
+                            name=cls.NODE_NAME,
+                            pos=[pos.x() - 100, pos.y() - 30],
+                        )
+                        if not getattr(cls, "COMPOSITE_NODE", False):
+                            factory = get_node_factory()
+                            casare_node = factory.create_casare_node(node)
+                            if casare_node:
+                                node.set_casare_node(casare_node)
+                        return node
+
+                    return create_node
+
+                action = category_menu.addAction(node_class.NODE_NAME)
+                action.triggered.connect(make_creator(node_class))
+                action.setData(
+                    {"category": category_label, "name": node_class.NODE_NAME}
+                )
+                qmenu._all_actions.append(action)
+
+                # Build category data for search
+                qmenu._category_data[node_class.NODE_NAME] = (
+                    category_label,
+                    node_class,
+                )
+
+        # Build search index
+        from casare_rpa.utils.fuzzy_search import SearchIndex
+
+        qmenu._search_index = SearchIndex(qmenu._node_items)
+
+        def on_search_changed(text):
+            """Handle search text changes."""
+            actions_to_remove = []
+            for action in qmenu.actions():
+                if action != search_action and not action.isSeparator():
+                    actions_to_remove.append(action)
+            for action in actions_to_remove:
+                qmenu.removeAction(action)
+
+            if not text.strip():
+                qmenu._category_menus.clear()
+                if use_hierarchy:
+                    sorted_cats = sorted(
+                        self._categories.items(),
+                        key=lambda x: get_category_sort_key(x[0]),
+                    )
+                else:
+                    sorted_cats = sorted(
+                        self._categories.items(), key=lambda x: x[0].lower()
+                    )
+
+                for cat, cat_nodes in sorted_cats:
+                    cat_menu = get_or_create_submenu(qmenu, cat)
+                    for nc in sorted(cat_nodes, key=lambda x: x.NODE_NAME):
+                        if getattr(nc, "INTERNAL_NODE", False):
+                            continue
+
+                        def make_creator(cls):
+                            def create_node():
+                                pos = qmenu._initial_scene_pos
+                                if pos is None:
+                                    viewer = graph.viewer()
+                                    pos = viewer.mapToScene(
+                                        viewer.mapFromGlobal(viewer.cursor().pos())
+                                    )
+                                node = graph.create_node(
+                                    f"{cls.__identifier__}.{cls.__name__}",
+                                    name=cls.NODE_NAME,
+                                    pos=[pos.x() - 100, pos.y() - 30],
+                                )
+                                if not getattr(cls, "COMPOSITE_NODE", False):
+                                    factory = get_node_factory()
+                                    casare_node = factory.create_casare_node(node)
+                                    if casare_node:
+                                        node.set_casare_node(casare_node)
+                                return node
+
+                            return create_node
+
+                        act = cat_menu.addAction(nc.NODE_NAME)
+                        act.triggered.connect(make_creator(nc))
+
+                qmenu._first_match = None
+                return
+
+            results = qmenu._search_index.search(text)
+            if not results:
+                no_results_action = qmenu.addAction("No matching nodes found")
+                no_results_action.setEnabled(False)
+                qmenu._first_match = None
+                return
+
+            for i, (cat, name, desc, score, positions) in enumerate(results):
+                if name in qmenu._category_data:
+                    _, node_class = qmenu._category_data[name]
+
+                    def make_creator(cls):
+                        def create_node():
+                            pos = qmenu._initial_scene_pos
+                            if pos is None:
+                                viewer = graph.viewer()
+                                pos = viewer.mapToScene(
+                                    viewer.mapFromGlobal(viewer.cursor().pos())
+                                )
+                            node = graph.create_node(
+                                f"{cls.__identifier__}.{cls.__name__}",
+                                name=cls.NODE_NAME,
+                                pos=[pos.x() - 100, pos.y() - 30],
+                            )
+                            if not getattr(cls, "COMPOSITE_NODE", False):
+                                factory = get_node_factory()
+                                casare_node = factory.create_casare_node(node)
+                                if casare_node:
+                                    node.set_casare_node(casare_node)
+                            qmenu.close()
+                            return node
+
+                        return create_node
+
+                    action_text = f"{name} ({cat})"
+                    act = qmenu.addAction(action_text)
+                    act.triggered.connect(make_creator(node_class))
+                    act.setData({"node_class": node_class, "name": name})
+
+                    if i == 0:
+                        font = act.font()
+                        font.setBold(True)
+                        act.setFont(font)
+                        qmenu._first_match = node_class
+
+        search_input.textChanged.connect(on_search_changed)
+
+        def on_menu_shown():
+            if qmenu._initial_scene_pos is None:
+                viewer = graph.viewer()
+                qmenu._initial_scene_pos = viewer.mapToScene(
+                    viewer.mapFromGlobal(viewer.cursor().pos())
+                )
+            search_input.setFocus()
+            search_input.clear()
+
+        qmenu.aboutToShow.connect(on_menu_shown)
+
+        logger.debug(
+            f"Rebuilt context menu with {len(self._registered_nodes)} node types"
+        )
+
 
 class NodeFactory:
     """
@@ -1105,15 +1747,27 @@ def get_node_factory() -> NodeFactory:
     return _node_factory
 
 
-def clear_node_type_caches() -> None:
+def clear_node_type_caches(clear_disk_cache: bool = False) -> None:
     """
     Clear all LRU caches for node type lookups.
 
     Use this when the node registry is modified or during testing.
+
+    Args:
+        clear_disk_cache: If True, also delete the disk cache file
     """
     get_visual_class_for_type.cache_clear()
     get_identifier_for_type.cache_clear()
     get_casare_class_for_type.cache_clear()
+
+    if clear_disk_cache:
+        try:
+            if _MAPPING_CACHE_FILE.exists():
+                _MAPPING_CACHE_FILE.unlink()
+                logger.debug("Disk cache file deleted")
+        except Exception as e:
+            logger.warning(f"Failed to delete disk cache: {e}")
+
     logger.debug("Node type lookup caches cleared")
 
 

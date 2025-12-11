@@ -48,6 +48,11 @@ from casare_rpa.application.use_cases.subflow_executor import (
     SubflowExecutionResult,
     SubflowExecutor,
 )
+from casare_rpa.application.use_cases.generate_workflow import (
+    GenerateWorkflowUseCase,
+    WorkflowGenerationError,
+    generate_workflow_from_text,
+)
 
 __all__ = [
     # Workflow use cases
@@ -84,4 +89,8 @@ __all__ = [
     "SaveScenarioUseCase",
     "DeleteScenarioUseCase",
     "ListScenariosUseCase",
+    # AI workflow generation
+    "GenerateWorkflowUseCase",
+    "WorkflowGenerationError",
+    "generate_workflow_from_text",
 ]

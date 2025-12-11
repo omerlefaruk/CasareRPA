@@ -11,6 +11,8 @@ Provides:
 - High Performance Mode support (simplified rendering)
 - Execution flow animation (continuous dot animation during execution)
 - Smart wire routing with bezier obstacle avoidance
+
+All colors are sourced from the unified theme system (theme.py).
 """
 
 from typing import Optional
@@ -41,6 +43,9 @@ from casare_rpa.presentation.canvas.graph.lod_manager import (
 # Import DataType for type-based coloring
 from casare_rpa.domain.value_objects.types import DataType
 
+# Import unified theme system
+from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
+
 
 # ============================================================================
 # SMART WIRE ROUTING
@@ -63,18 +68,45 @@ def is_smart_routing_enabled() -> bool:
     return _smart_routing_enabled
 
 
-# PERFORMANCE: Pre-cached paint objects to avoid allocation in paint()
-# These are created once at module load instead of 60+ times per frame
-_INSERT_HIGHLIGHT_COLOR = QColor(255, 140, 0)
-_HOVER_COLOR = QColor(100, 200, 255)
-_LABEL_BG_COLOR = QColor(40, 40, 40, 200)
-_LABEL_BORDER_COLOR = QColor(80, 80, 80)
-_LABEL_TEXT_COLOR = QColor(180, 180, 180)
-_PREVIEW_BG_COLOR = QColor(50, 50, 40, 230)
-_PREVIEW_BORDER_COLOR = QColor(100, 100, 80)
-_PREVIEW_TEXT_COLOR = QColor(220, 220, 180)
+# ============================================================================
+# PAINT OBJECT INITIALIZATION - Colors from unified theme
+# ============================================================================
+# These are lazily initialized on first access to ensure theme is loaded.
+# Using theme provides consistency across all canvas components.
+
+_INSERT_HIGHLIGHT_COLOR = None
+_HOVER_COLOR = None
+_LABEL_BG_COLOR = None
+_LABEL_BORDER_COLOR = None
+_LABEL_TEXT_COLOR = None
+_PREVIEW_BG_COLOR = None
+_PREVIEW_BORDER_COLOR = None
+_PREVIEW_TEXT_COLOR = None
 _LABEL_FONT = QFont("Segoe UI", 8)
 _PREVIEW_FONT = QFont("Consolas", 9)
+
+
+def _init_pipe_colors():
+    """Initialize pipe colors from theme (lazy initialization)."""
+    global _INSERT_HIGHLIGHT_COLOR, _HOVER_COLOR
+    global _LABEL_BG_COLOR, _LABEL_BORDER_COLOR, _LABEL_TEXT_COLOR
+    global _PREVIEW_BG_COLOR, _PREVIEW_BORDER_COLOR, _PREVIEW_TEXT_COLOR
+
+    if _INSERT_HIGHLIGHT_COLOR is not None:
+        return  # Already initialized
+
+    cc = Theme.get_canvas_colors()
+    _INSERT_HIGHLIGHT_COLOR = _hex_to_qcolor(cc.wire_insert_highlight)
+    _HOVER_COLOR = _hex_to_qcolor(cc.wire_hover)
+    _LABEL_BG_COLOR = _hex_to_qcolor(cc.label_bg)
+    _LABEL_BG_COLOR.setAlpha(200)
+    _LABEL_BORDER_COLOR = _hex_to_qcolor(cc.label_border)
+    _LABEL_TEXT_COLOR = _hex_to_qcolor(cc.label_text)
+    _PREVIEW_BG_COLOR = _hex_to_qcolor(cc.preview_bg)
+    _PREVIEW_BG_COLOR.setAlpha(230)
+    _PREVIEW_BORDER_COLOR = _hex_to_qcolor(cc.preview_border)
+    _PREVIEW_TEXT_COLOR = _hex_to_qcolor(cc.preview_text)
+
 
 # ============================================================================
 # EXECUTION FLOW ANIMATION CONSTANTS
@@ -93,49 +125,82 @@ _COMPLETION_GLOW_MS = 300  # Brief glow effect when execution completes
 # Flow dot visual settings
 _FLOW_DOT_RADIUS = 4.0  # Base radius of the flowing dot
 _FLOW_DOT_GLOW_RADIUS = 8.0  # Glow radius around the dot
-_FLOW_DOT_COLOR = QColor(255, 255, 255, 220)  # White flowing dot
-_FLOW_DOT_GLOW_COLOR = QColor(255, 255, 255, 80)  # Subtle glow around dot
 
-# Completion glow colors
-_COMPLETION_GLOW_COLOR = QColor(76, 175, 80, 150)  # Green glow on completion
+# Flow colors - lazily initialized from theme
+_FLOW_DOT_COLOR = None
+_FLOW_DOT_GLOW_COLOR = None
+_COMPLETION_GLOW_COLOR = None
+
+
+def _init_flow_colors():
+    """Initialize flow animation colors from theme."""
+    global _FLOW_DOT_COLOR, _FLOW_DOT_GLOW_COLOR, _COMPLETION_GLOW_COLOR
+
+    if _FLOW_DOT_COLOR is not None:
+        return  # Already initialized
+
+    cc = Theme.get_canvas_colors()
+    _FLOW_DOT_COLOR = _hex_to_qcolor(cc.wire_flow_dot)
+    _FLOW_DOT_COLOR.setAlpha(220)
+    _FLOW_DOT_GLOW_COLOR = _hex_to_qcolor(cc.wire_flow_glow)
+    _COMPLETION_GLOW_COLOR = _hex_to_qcolor(cc.wire_completion_glow)
+
 
 # ============================================================================
-# TYPE-COLORED WIRE SYSTEM
+# TYPE-COLORED WIRE SYSTEM - Now from unified theme
 # ============================================================================
 # Wire colors match data types for visual identification (like Unreal Blueprints).
-# Execution wires are white and thicker for prominence.
+# Colors are sourced from Theme.get_wire_qcolor() for consistency.
 
-# Type-based wire colors (matches Unreal Blueprints style)
-TYPE_WIRE_COLORS: dict[DataType, QColor] = {
-    DataType.STRING: QColor(0x56, 0x9C, 0xD6),  # #569CD6 - Light Blue
-    DataType.INTEGER: QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
-    DataType.FLOAT: QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal (same as int)
-    DataType.BOOLEAN: QColor(0xF4, 0x87, 0x71),  # #F48771 - Red
-    DataType.LIST: QColor(0x89, 0xD1, 0x85),  # #89D185 - Green
-    DataType.DICT: QColor(0xCE, 0x91, 0x78),  # #CE9178 - Orange
-    DataType.PAGE: QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    DataType.ELEMENT: QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    DataType.BROWSER: QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    DataType.WINDOW: QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
-    DataType.DESKTOP_ELEMENT: QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
-    DataType.DB_CONNECTION: QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
-    DataType.WORKBOOK: QColor(0x21, 0x7B, 0x4B),  # #217B4B - Office green
-    DataType.WORKSHEET: QColor(0x21, 0x7B, 0x4B),  # #217B4B - Office green
-    DataType.DOCUMENT: QColor(0xFF, 0x98, 0x00),  # #FF9800 - Orange
-    DataType.OBJECT: QColor(0x80, 0x80, 0x80),  # #808080 - Gray
-    DataType.ANY: QColor(0x80, 0x80, 0x80),  # #808080 - Gray
-}
+# TYPE_WIRE_COLORS is built lazily from theme to avoid circular imports
+TYPE_WIRE_COLORS: dict[DataType, QColor] = {}
+_EXEC_WIRE_COLOR = None
+_DEFAULT_WIRE_COLOR = None
+_INCOMPATIBLE_WIRE_COLOR = None
 
-# Execution wire color (white for prominence)
-_EXEC_WIRE_COLOR = QColor(0xFF, 0xFF, 0xFF)  # #FFFFFF - White
 
-# Default wire color for unknown types
-_DEFAULT_WIRE_COLOR = QColor(0x80, 0x80, 0x80)  # #808080 - Gray
+def _init_wire_colors():
+    """Initialize wire colors from unified theme."""
+    global \
+        TYPE_WIRE_COLORS, \
+        _EXEC_WIRE_COLOR, \
+        _DEFAULT_WIRE_COLOR, \
+        _INCOMPATIBLE_WIRE_COLOR
 
-# Incompatible connection color (red)
-_INCOMPATIBLE_WIRE_COLOR = QColor(0xF4, 0x43, 0x36)  # #F44336 - Red
+    if _EXEC_WIRE_COLOR is not None:
+        return  # Already initialized
 
-# Wire thickness constants
+    cc = Theme.get_canvas_colors()
+
+    # Build TYPE_WIRE_COLORS from theme
+    TYPE_WIRE_COLORS.update(
+        {
+            DataType.STRING: _hex_to_qcolor(cc.wire_string),
+            DataType.INTEGER: _hex_to_qcolor(cc.wire_integer),
+            DataType.FLOAT: _hex_to_qcolor(cc.wire_float),
+            DataType.BOOLEAN: _hex_to_qcolor(cc.wire_boolean),
+            DataType.LIST: _hex_to_qcolor(cc.wire_list),
+            DataType.DICT: _hex_to_qcolor(cc.wire_dict),
+            DataType.PAGE: _hex_to_qcolor(cc.wire_page),
+            DataType.ELEMENT: _hex_to_qcolor(cc.wire_element),
+            DataType.BROWSER: _hex_to_qcolor(cc.wire_page),
+            DataType.WINDOW: _hex_to_qcolor(cc.wire_window),
+            DataType.DESKTOP_ELEMENT: _hex_to_qcolor(cc.wire_desktop_element),
+            DataType.DB_CONNECTION: _hex_to_qcolor(cc.wire_db_connection),
+            DataType.WORKBOOK: _hex_to_qcolor(cc.wire_workbook),
+            DataType.WORKSHEET: _hex_to_qcolor(cc.wire_worksheet),
+            DataType.DOCUMENT: _hex_to_qcolor(cc.wire_document),
+            DataType.OBJECT: _hex_to_qcolor(cc.wire_any),
+            DataType.ANY: _hex_to_qcolor(cc.wire_any),
+        }
+    )
+
+    _EXEC_WIRE_COLOR = _hex_to_qcolor(cc.wire_exec)
+    _DEFAULT_WIRE_COLOR = _hex_to_qcolor(cc.wire_default)
+    _INCOMPATIBLE_WIRE_COLOR = _hex_to_qcolor(cc.wire_incompatible)
+
+
+# Wire thickness constants (dimensions, not colors - keep as-is)
 WIRE_THICKNESS = {
     "exec": 3.0,  # Execution - most prominent
     "data_active": 2.0,  # Data that was used during execution
@@ -146,14 +211,16 @@ WIRE_THICKNESS = {
 
 def get_type_wire_color(data_type: Optional[DataType]) -> QColor:
     """
-    Get wire color for a data type.
+    Get wire color for a data type from unified theme.
 
     Args:
         data_type: The DataType enum value, or None for execution ports
 
     Returns:
-        QColor for the wire
+        QColor for the wire (cached from theme)
     """
+    _init_wire_colors()  # Ensure colors are initialized
+
     if data_type is None:
         # Execution port
         return _EXEC_WIRE_COLOR

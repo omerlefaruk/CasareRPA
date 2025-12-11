@@ -161,9 +161,38 @@ STOP_ON_ERROR: Final[bool] = True  # Default behavior
 # Browser settings
 DEFAULT_BROWSER: Final[str] = "chromium"  # chromium, firefox, webkit
 HEADLESS_MODE: Final[bool] = False  # Show browser by default
+
+# Anti-detection browser arguments
+# These flags help make automated Chrome look like a regular user's browser
 BROWSER_ARGS: Final[list[str]] = [
     "--start-maximized",
-    "--disable-blink-features=AutomationControlled",
+    # Core anti-detection flags
+    "--disable-blink-features=AutomationControlled",  # Hides automation markers
+    "--disable-infobars",  # Removes "Chrome is being controlled" infobar
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-web-security",
+    "--disable-features=IsolateOrigins,site-per-process",
+    # Additional anti-detection flags
+    "--disable-extensions",  # Websites can detect extensions
+    "--disable-popup-blocking",
+    "--disable-translate",
+    "--disable-sync",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--password-store=basic",  # Avoid keyring prompts
+    "--use-mock-keychain",
+    # Disable automation-related features
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+]
+
+# Playwright default args to ignore (these reveal automation)
+PLAYWRIGHT_IGNORE_ARGS: Final[list[str]] = [
+    "--enable-automation",  # This causes "Chrome is being controlled" message
+    "--enable-blink-features=IdleDetection",
 ]
 
 # ============================================================================

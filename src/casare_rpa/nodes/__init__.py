@@ -88,6 +88,7 @@ if TYPE_CHECKING:
         TypeTextNode,
         SelectDropdownNode,
         ImageClickNode,
+        PressKeyNode,
     )
     from .data_nodes import (
         ExtractTextNode,
@@ -173,6 +174,9 @@ if TYPE_CHECKING:
         CreateDictNode,
         DictToJsonNode,
         DictItemsNode,
+    )
+    from .data_operation import (
+        DataCompareNode,
     )
     from .utility_nodes import (
         HttpRequestNode,
@@ -386,6 +390,7 @@ _NODE_REGISTRY: Dict[str, str] = {
     "TypeTextNode": "interaction_nodes",
     "SelectDropdownNode": "interaction_nodes",
     "ImageClickNode": "interaction_nodes",
+    "PressKeyNode": "interaction_nodes",
     # Data extraction nodes
     "ExtractTextNode": "data_nodes",
     "GetAttributeNode": "data_nodes",
@@ -467,6 +472,8 @@ _NODE_REGISTRY: Dict[str, str] = {
     "CreateDictNode": "data_operation_nodes",
     "DictToJsonNode": "data_operation_nodes",
     "DictItemsNode": "data_operation_nodes",
+    # Data operation nodes (new package)
+    "DataCompareNode": "data_operation.compare_node",
     # Utility nodes
     "ValidateNode": "utility_nodes",
     "TransformNode": "utility_nodes",
@@ -985,6 +992,7 @@ __all__ = [
     "TypeTextNode",
     "SelectDropdownNode",
     "ImageClickNode",
+    "PressKeyNode",
     # Data extraction
     "ExtractTextNode",
     "GetAttributeNode",
@@ -1063,6 +1071,8 @@ __all__ = [
     "CreateDictNode",
     "DictToJsonNode",
     "DictItemsNode",
+    # Data operation nodes (new package)
+    "DataCompareNode",
     # Utility nodes
     "HttpRequestNode",
     "ValidateNode",

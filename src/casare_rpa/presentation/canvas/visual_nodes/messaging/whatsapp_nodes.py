@@ -61,7 +61,9 @@ class VisualWhatsAppSendMessageNode(VisualNode):
             tab="properties",
             placeholder_text="Hello, World!",
         )
-        self.create_property("preview_url", False, widget_type=1, tab="properties")
+        self._safe_create_property(
+            "preview_url", False, widget_type=1, tab="properties"
+        )
 
     def get_node_class(self) -> type:
         return WhatsAppSendMessageNode
@@ -438,7 +440,7 @@ class VisualWhatsAppSendLocationNode(VisualNode):
             placeholder_text="-180 to 180",
         )
         self.add_text_input(
-            "name",
+            "location_name",
             "Location Name",
             text="",
             tab="properties",

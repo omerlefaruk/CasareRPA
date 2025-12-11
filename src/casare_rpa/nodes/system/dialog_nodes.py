@@ -27,6 +27,104 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+# =============================================================================
+# Styled Widget Factories for Runtime Dialogs
+# =============================================================================
+# These factory functions create themed widgets for runtime dialogs,
+# ensuring visual consistency with the CasareRPA theme.
+
+
+def _create_styled_line_edit(
+    placeholder: str = "",
+    text: str = "",
+    echo_mode: Optional[int] = None,
+) -> "QLineEdit":
+    """
+    Create a themed QLineEdit for runtime dialogs.
+
+    Args:
+        placeholder: Placeholder text
+        text: Initial text value
+        echo_mode: Optional echo mode (e.g., QLineEdit.Password)
+
+    Returns:
+        Styled QLineEdit widget
+    """
+    from PySide6.QtWidgets import QLineEdit
+
+    line_edit = QLineEdit()
+    line_edit.setPlaceholderText(placeholder)
+    line_edit.setText(text)
+    if echo_mode is not None:
+        line_edit.setEchoMode(echo_mode)
+
+    # Apply CasareRPA dark theme styling
+    line_edit.setStyleSheet("""
+        QLineEdit {
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            border-radius: 4px;
+            color: #f4f4f5;
+            padding: 6px 10px;
+            font-size: 13px;
+            selection-background-color: #4338ca;
+        }
+        QLineEdit:focus {
+            border: 1px solid #6366f1;
+            background: #27272a;
+        }
+        QLineEdit:hover {
+            border: 1px solid #52525b;
+        }
+        QLineEdit::placeholder {
+            color: #71717a;
+        }
+    """)
+    return line_edit
+
+
+def _create_styled_text_edit(
+    placeholder: str = "",
+    text: str = "",
+) -> "QTextEdit":
+    """
+    Create a themed QTextEdit for runtime dialogs.
+
+    Args:
+        placeholder: Placeholder text
+        text: Initial text value
+
+    Returns:
+        Styled QTextEdit widget
+    """
+    from PySide6.QtWidgets import QTextEdit
+
+    text_edit = QTextEdit()
+    text_edit.setPlaceholderText(placeholder)
+    text_edit.setPlainText(text)
+
+    # Apply CasareRPA dark theme styling
+    text_edit.setStyleSheet("""
+        QTextEdit {
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            border-radius: 4px;
+            color: #f4f4f5;
+            padding: 8px;
+            font-size: 13px;
+            selection-background-color: #4338ca;
+        }
+        QTextEdit:focus {
+            border: 1px solid #6366f1;
+            background: #27272a;
+        }
+        QTextEdit:hover {
+            border: 1px solid #52525b;
+        }
+    """)
+    return text_edit
+
+
 @node_schema(
     PropertyDef(
         "title",
@@ -430,6 +528,27 @@ class MessageBoxNode(BaseNode):
 
 @node_schema(
     PropertyDef(
+        "title",
+        PropertyType.STRING,
+        default="Input",
+        label="Title",
+        tooltip="Dialog window title",
+    ),
+    PropertyDef(
+        "prompt",
+        PropertyType.STRING,
+        default="Enter value:",
+        label="Prompt",
+        tooltip="Message displayed to the user",
+    ),
+    PropertyDef(
+        "default_value",
+        PropertyType.STRING,
+        default="",
+        label="Default Value",
+        tooltip="Pre-filled value in the input field",
+    ),
+    PropertyDef(
         "password_mode",
         PropertyType.BOOLEAN,
         default=False,
@@ -443,12 +562,10 @@ class InputDialogNode(BaseNode):
     Display an input dialog to get user input.
 
     Config (via @node_schema):
+        title: Dialog window title (default: "Input")
+        prompt: Message displayed to user (default: "Enter value:")
+        default_value: Pre-filled value (default: "")
         password_mode: Hide input (default: False)
-
-    Inputs:
-        title: Dialog title
-        prompt: Prompt message
-        default_value: Default input value
 
     Outputs:
         value: User input value
@@ -457,7 +574,7 @@ class InputDialogNode(BaseNode):
 
     # @category: system
     # @requires: none
-    # @ports: title, prompt, default_value -> value, confirmed
+    # @ports: -> value, confirmed
 
     def __init__(self, node_id: str, name: str = "Input Dialog", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -466,9 +583,6 @@ class InputDialogNode(BaseNode):
         self.node_type = "InputDialogNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("title", PortType.INPUT, DataType.STRING)
-        self.add_input_port("prompt", PortType.INPUT, DataType.STRING)
-        self.add_input_port("default_value", PortType.INPUT, DataType.STRING)
         self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("confirmed", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -476,12 +590,13 @@ class InputDialogNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            title_raw = self.get_input_value("title", context) or "Input"
-            prompt_raw = self.get_input_value("prompt", context) or "Enter value:"
-            default_raw = self.get_input_value("default_value", context) or ""
+            # Get config properties (now PropertyDefs, not input ports)
+            title_raw = self.get_parameter("title", "Input")
+            prompt_raw = self.get_parameter("prompt", "Enter value:")
+            default_raw = self.get_parameter("default_value", "")
             password_mode = self.get_parameter("password_mode", False)
 
-            # Resolve variables first, THEN convert to string (resolve preserves types for {{var}} patterns)
+            # Resolve variables (supports {{variable}} syntax)
             title = str(context.resolve_value(title_raw) or "Input")
             prompt = str(context.resolve_value(prompt_raw) or "Enter value:")
             default_value = str(context.resolve_value(default_raw) or "")
@@ -571,7 +686,7 @@ class InputDialogNode(BaseNode):
         tooltip="Background color (hex)",
     ),
     PropertyDef(
-        "text_color",
+        "tooltip_text_color",
         PropertyType.STRING,
         default="#000000",
         label="Text Color",
@@ -609,7 +724,7 @@ class InputDialogNode(BaseNode):
         tooltip="Maximum width in pixels",
     ),
     PropertyDef(
-        "icon",
+        "tooltip_icon",
         PropertyType.CHOICE,
         default="none",
         choices=["none", "info", "warning", "error", "success"],
@@ -633,11 +748,11 @@ class TooltipNode(BaseNode):
         message: Message to display (essential - shows widget)
         duration: Duration in milliseconds (default: 3000)
         bg_color: Background color hex (default: #ffffff)
-        text_color: Text color hex (default: #000000)
+        tooltip_text_color: Text color hex (default: #000000)
         position: Position: cursor, top_left, top_right, bottom_left, bottom_right, center
         click_to_dismiss: Allow clicking to close (default: False)
         max_width: Maximum width in pixels (default: 400)
-        icon: Icon type: none, info, warning, error, success (default: none)
+        tooltip_icon: Icon type: none, info, warning, error, success (default: none)
         fade_animation: Enable fade animation (default: True)
 
     Inputs:
@@ -650,6 +765,10 @@ class TooltipNode(BaseNode):
     # @category: system
     # @requires: none
     # @ports: message -> success
+
+    # Class-level tracking for tooltip stacking
+    _active_tooltips: list = []  # Track active tooltip widgets for stacking
+    _tooltip_height: int = 50  # Approximate height of a tooltip for stacking
 
     def __init__(self, node_id: str, name: str = "Show Tooltip", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -672,11 +791,11 @@ class TooltipNode(BaseNode):
 
             duration = int(self.get_parameter("duration", 3000) or 3000)
             bg_color = self.get_parameter("bg_color", "#ffffff")
-            text_color = self.get_parameter("text_color", "#000000")
+            text_color = self.get_parameter("tooltip_text_color", "#000000")
             position = self.get_parameter("position", "cursor")
             click_to_dismiss = self.get_parameter("click_to_dismiss", False)
             max_width = int(self.get_parameter("max_width", 400) or 400)
-            icon = self.get_parameter("icon", "none")
+            icon = self.get_parameter("tooltip_icon", "none")
             fade_animation = self.get_parameter("fade_animation", True)
 
             formatted_message = self._format_message_with_variables(message, context)
@@ -822,29 +941,32 @@ class TooltipNode(BaseNode):
         screen = app.primaryScreen()
         screen_geo = screen.availableGeometry()
 
+        # Calculate stacking offset based on active tooltips
+        stack_offset = len(TooltipNode._active_tooltips) * (container.height() + 5)
+
         if position == "cursor":
             cursor_pos = QCursor.pos()
             x = cursor_pos.x() + 10
-            y = cursor_pos.y() + 20
+            y = cursor_pos.y() + 20 + stack_offset
         elif position == "top_left":
             x = screen_geo.x() + 20
-            y = screen_geo.y() + 20
+            y = screen_geo.y() + 20 + stack_offset
         elif position == "top_right":
             x = screen_geo.right() - container.width() - 20
-            y = screen_geo.y() + 20
+            y = screen_geo.y() + 20 + stack_offset
         elif position == "bottom_left":
             x = screen_geo.x() + 20
-            y = screen_geo.bottom() - container.height() - 20
+            y = screen_geo.bottom() - container.height() - 20 - stack_offset
         elif position == "bottom_right":
             x = screen_geo.right() - container.width() - 20
-            y = screen_geo.bottom() - container.height() - 20
+            y = screen_geo.bottom() - container.height() - 20 - stack_offset
         elif position == "center":
             x = screen_geo.center().x() - container.width() // 2
-            y = screen_geo.center().y() - container.height() // 2
+            y = screen_geo.center().y() - container.height() // 2 + stack_offset
         else:
             cursor_pos = QCursor.pos()
             x = cursor_pos.x() + 10
-            y = cursor_pos.y() + 20
+            y = cursor_pos.y() + 20 + stack_offset
 
         if x + container.width() > screen_geo.right():
             x = screen_geo.right() - container.width()
@@ -852,6 +974,9 @@ class TooltipNode(BaseNode):
             y = screen_geo.bottom() - container.height()
 
         container.move(x, y)
+
+        # Track this tooltip for stacking
+        TooltipNode._active_tooltips.append(container)
 
         if fade_animation:
             container.setWindowOpacity(0.0)
@@ -880,6 +1005,10 @@ class TooltipNode(BaseNode):
         def hide_tooltip():
             if follow_timer:
                 follow_timer.stop()
+
+            # Remove from active tooltips list
+            if container in TooltipNode._active_tooltips:
+                TooltipNode._active_tooltips.remove(container)
 
             if fade_animation:
                 fade_out = QPropertyAnimation(container, b"windowOpacity")
@@ -2651,8 +2780,7 @@ class ListPickerDialogNode(BaseNode):
                 # Search box
                 search_box = None
                 if search_enabled:
-                    search_box = QLineEdit()
-                    search_box.setPlaceholderText("Search...")
+                    search_box = _create_styled_line_edit(placeholder="Search...")
                     layout.addWidget(search_box)
 
                 # List widget
@@ -2834,10 +2962,10 @@ class MultilineInputDialogNode(BaseNode):
 
                 layout = QVBoxLayout(dialog)
 
-                text_edit = QTextEdit()
-                text_edit.setPlainText(default_text)
-                if placeholder:
-                    text_edit.setPlaceholderText(placeholder)
+                text_edit = _create_styled_text_edit(
+                    placeholder=placeholder or "",
+                    text=default_text,
+                )
                 layout.addWidget(text_edit)
 
                 # Character counter
@@ -3015,12 +3143,12 @@ class CredentialDialogNode(BaseNode):
                 layout = QVBoxLayout(dialog)
                 form = QFormLayout()
 
-                username_input = QLineEdit()
+                username_input = _create_styled_line_edit()
                 form.addRow(username_label, username_input)
 
-                password_input = QLineEdit()
-                if mask_password:
-                    password_input.setEchoMode(QLineEdit.Password)
+                password_input = _create_styled_line_edit(
+                    echo_mode=QLineEdit.Password if mask_password else None,
+                )
                 form.addRow(password_label, password_input)
 
                 layout.addLayout(form)
@@ -3203,8 +3331,7 @@ class FormDialogNode(BaseNode):
                     field_options = field.get("options", [])
 
                     if field_type == "text":
-                        widget = QLineEdit()
-                        widget.setText(str(field_default))
+                        widget = _create_styled_line_edit(text=str(field_default))
                         widgets[field_name] = ("text", widget)
                     elif field_type == "number":
                         if isinstance(field_default, float):
@@ -3229,8 +3356,7 @@ class FormDialogNode(BaseNode):
                             widget.setCurrentText(str(field_default))
                         widgets[field_name] = ("select", widget)
                     else:
-                        widget = QLineEdit()
-                        widget.setText(str(field_default))
+                        widget = _create_styled_line_edit(text=str(field_default))
                         widgets[field_name] = ("text", widget)
 
                     form.addRow(field_label, widget)
@@ -3868,8 +3994,7 @@ class WizardDialogNode(BaseNode):
                         full_name = f"step{step_idx}_{field_name}"
 
                         if field_type == "text":
-                            widget = QLineEdit()
-                            widget.setText(str(field_default))
+                            widget = _create_styled_line_edit(text=str(field_default))
                             all_widgets[full_name] = ("text", widget)
                         elif field_type == "number":
                             widget = QSpinBox()
@@ -3885,8 +4010,7 @@ class WizardDialogNode(BaseNode):
                             widget.addItems([str(opt) for opt in field_options])
                             all_widgets[full_name] = ("select", widget)
                         else:
-                            widget = QLineEdit()
-                            widget.setText(str(field_default))
+                            widget = _create_styled_line_edit(text=str(field_default))
                             all_widgets[full_name] = ("text", widget)
 
                         form.addRow(field_label, widget)

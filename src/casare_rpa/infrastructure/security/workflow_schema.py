@@ -32,11 +32,24 @@ class WorkflowNodeSchema(BaseModel):
     @classmethod
     def validate_node_type(cls, v: str) -> str:
         """Validate node type doesn't contain dangerous patterns."""
+        # Allowlisted node types that contain otherwise-dangerous substrings
+        # These are legitimate CasareRPA nodes that are safe to use
+        allowlisted_node_types = {
+            "EvalExpressionNode",  # Safe expression evaluator with sandboxed builtins
+            "ExecuteQueryNode",  # Database query execution (exec in name)
+            "ExecuteNonQueryNode",  # Database non-query execution
+            "ExecuteBatchNode",  # Batch execution node
+        }
+
+        # Skip validation for allowlisted nodes
+        if v in allowlisted_node_types:
+            return v
+
         dangerous_patterns = [
             "__import__",
-            "eval",
-            "exec",
-            "compile",
+            "eval(",  # Block eval( function calls, not node names
+            "exec(",  # Block exec( function calls, not node names
+            "compile(",
             "os.system",
             "subprocess",
             "open(",

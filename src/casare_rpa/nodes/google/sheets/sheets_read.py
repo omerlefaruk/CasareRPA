@@ -266,7 +266,7 @@ class SheetsGetRangeNode(SheetsBaseNode):
         )
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("column_count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -396,7 +396,7 @@ class SheetsGetRowNode(SheetsBaseNode):
         )
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("cell_count", PortType.OUTPUT, DataType.INTEGER)
 
     async def _execute_sheets(
@@ -538,7 +538,7 @@ class SheetsGetColumnNode(SheetsBaseNode):
         )
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("cell_count", PortType.OUTPUT, DataType.INTEGER)
 
     async def _execute_sheets(
@@ -691,7 +691,7 @@ class SheetsSearchNode(SheetsBaseNode):
         )
 
         self._define_common_output_ports()
-        self.add_output_port("results", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("match_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("first_match", PortType.OUTPUT, DataType.OBJECT)
 
@@ -843,7 +843,7 @@ class SheetsGetSheetInfoNode(SheetsBaseNode):
 
         self._define_common_output_ports()
         self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("sheets", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("sheets", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("sheet_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("locale", PortType.OUTPUT, DataType.STRING)
 

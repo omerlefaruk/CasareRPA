@@ -118,10 +118,15 @@ class DesktopContext:
         working_dir: Optional[str] = None,
         timeout: float = 10.0,
         window_title: Optional[str] = None,
+        keep_open: bool = True,
     ) -> DesktopElement:
-        """Launch an application and return its main window (async version)."""
+        """Launch an application and return its main window (async version).
+
+        Args:
+            keep_open: If True, the app won't be closed when workflow ends (default: True)
+        """
         return await self._window_manager.launch_application(
-            path, args, working_dir, timeout, window_title
+            path, args, working_dir, timeout, window_title, keep_open=keep_open
         )
 
     def close_application(

@@ -215,6 +215,15 @@ FORCE_CLOSE_PROP = PropertyDef(
     tab="advanced",
 )
 
+KEEP_OPEN_PROP = PropertyDef(
+    "keep_open",
+    PropertyType.BOOLEAN,
+    default=True,
+    label="Keep Open After Workflow",
+    tooltip="Keep the application open when the workflow ends (default: True)",
+    tab="properties",
+)
+
 
 # =============================================================================
 # Window Properties
