@@ -26,9 +26,48 @@ def _safe_setPointSize(self, size: int) -> None:
 QFont.setPointSize = _safe_setPointSize
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, qInstallMessageHandler, QtMsgType
 from qasync import QEventLoop
 from loguru import logger
+
+
+# =============================================================================
+# QT MESSAGE HANDLER - Filter unsupported CSS warnings
+# =============================================================================
+
+# Store the original handler to chain calls
+_original_qt_handler = None
+
+# Patterns to suppress (Qt CSS properties not supported)
+_SUPPRESSED_PATTERNS = (
+    "Unknown property box-shadow",
+    "Unknown property text-shadow",
+)
+
+
+def _qt_message_handler(msg_type: QtMsgType, context, message: str) -> None:
+    """
+    Custom Qt message handler to suppress known harmless warnings.
+
+    Suppresses:
+    - "Unknown property box-shadow" - Qt CSS doesn't support box-shadow
+    """
+    # Suppress known harmless warnings
+    if any(pattern in message for pattern in _SUPPRESSED_PATTERNS):
+        return  # Silently ignore
+
+    # For all other messages, log appropriately
+    if msg_type == QtMsgType.QtDebugMsg:
+        logger.debug(f"[Qt] {message}")
+    elif msg_type == QtMsgType.QtInfoMsg:
+        logger.info(f"[Qt] {message}")
+    elif msg_type == QtMsgType.QtWarningMsg:
+        logger.warning(f"[Qt] {message}")
+    elif msg_type == QtMsgType.QtCriticalMsg:
+        logger.error(f"[Qt] {message}")
+    elif msg_type == QtMsgType.QtFatalMsg:
+        logger.critical(f"[Qt] {message}")
+
 
 from casare_rpa.config import setup_logging, APP_NAME
 from casare_rpa.nodes.file.file_security import (
@@ -45,7 +84,50 @@ from casare_rpa.presentation.canvas.controllers import (
     PreferencesController,
     AutosaveController,
 )
-from casare_rpa.utils.playwright_setup import ensure_playwright_ready
+
+# NOTE: ensure_playwright_ready is imported lazily in ensure_playwright_on_demand()
+# to defer the import cost until a browser node is actually used
+
+# =============================================================================
+# MODULE-LEVEL APP INSTANCE TRACKING
+# =============================================================================
+# Used by browser nodes to access the app for deferred Playwright check
+
+_app_instance: "CasareRPAApp | None" = None
+
+
+def get_app_instance() -> "CasareRPAApp | None":
+    """
+    Get the running app instance.
+
+    Returns:
+        CasareRPAApp instance or None if not initialized
+    """
+    return _app_instance
+
+
+def ensure_playwright_on_demand() -> None:
+    """
+    Module-level function to check Playwright installation on demand.
+
+    PERFORMANCE: Deferred from startup to first browser node use.
+    Call this from browser nodes before execution to ensure Playwright is ready.
+
+    Example:
+        from casare_rpa.presentation.canvas.app import ensure_playwright_on_demand
+        ensure_playwright_on_demand()  # Called before browser operations
+    """
+    app = get_app_instance()
+    if app is not None:
+        app.ensure_playwright_on_demand()
+    else:
+        # Fallback: direct check if app not initialized (e.g., Robot runner)
+        try:
+            from casare_rpa.utils.playwright_setup import ensure_playwright_ready
+
+            ensure_playwright_ready(show_gui=False, parent=None)
+        except Exception as e:
+            logger.warning(f"Playwright check failed (no app context): {e}")
 
 
 class CasareRPAApp:
@@ -78,14 +160,18 @@ class CasareRPAApp:
 
     def __init__(self) -> None:
         """Initialize the application."""
+        global _app_instance
+        _app_instance = self
+
         # Setup logging
         setup_logging()
 
         # Setup Qt application
         self._setup_qt_application()
 
-        # Check for Playwright browsers
-        ensure_playwright_ready(show_gui=True, parent=None)
+        # PERFORMANCE: Defer Playwright check to first browser node use
+        # This is now handled lazily by ensure_playwright_on_demand()
+        self._playwright_checked = False
 
         # Create main window and node graph
         self._create_ui()
@@ -112,6 +198,9 @@ class CasareRPAApp:
 
     def _setup_qt_application(self) -> None:
         """Setup Qt application and event loop."""
+        # Install custom message handler FIRST to suppress CSS warnings
+        qInstallMessageHandler(_qt_message_handler)
+
         # Enable high-DPI scaling
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
@@ -169,6 +258,11 @@ class CasareRPAApp:
         """
         Initialize all application controllers in dependency order.
 
+        PERFORMANCE OPTIMIZATION:
+        - Phase 1 (sync): Essential nodes only for fast startup
+        - Phase 2 (deferred): Full registration after window shows
+        - Icon preloading moved to background thread
+
         Initialization Order (Critical):
         1. NodeController - MUST be first
            - Registers all node types with NodeGraphQt
@@ -181,23 +275,16 @@ class CasareRPAApp:
         Raises:
             RuntimeError: If controller initialization fails
         """
-        # Phase 1: Node registry (foundation - no dependencies)
+        from PySide6.QtCore import QTimer
+
+        # Phase 1: Node registry (essential nodes only for fast startup)
         self._node_controller = NodeController(self._main_window)
         self._node_controller.initialize()
-        logger.debug("Node registry initialized - all node types registered")
+        logger.debug("Essential nodes registered")
 
-        # GPU OPTIMIZATION: Preload node icons into texture atlas
-        # This must happen after node registration but before first paint
-        try:
-            from casare_rpa.presentation.canvas.graph.icon_atlas import (
-                get_icon_atlas,
-                preload_node_icons,
-            )
-
-            get_icon_atlas().initialize()
-            preload_node_icons()
-        except Exception as e:
-            logger.warning(f"Failed to preload icon atlas: {e}")
+        # PERFORMANCE: Defer icon preloading to background
+        # Don't block startup - icons will load as needed
+        QTimer.singleShot(500, self._preload_icons_background)
 
         # Phase 2: All other controllers (depend on node registry)
         logger.debug("Phase 2: Initializing application controllers...")
@@ -248,6 +335,63 @@ class CasareRPAApp:
             node_controller=self._node_controller,
             selector_controller=self._selector_controller,
         )
+
+        # PERFORMANCE: Defer full node registration until after window is responsive
+        QTimer.singleShot(100, self._complete_deferred_initialization)
+
+    def _preload_icons_background(self) -> None:
+        """
+        Preload node icons in background (non-blocking).
+
+        PERFORMANCE: Moved from synchronous startup to deferred background task.
+        Icons are loaded lazily anyway, this just warms the cache.
+        """
+        try:
+            from casare_rpa.presentation.canvas.graph.icon_atlas import (
+                get_icon_atlas,
+                preload_node_icons,
+            )
+
+            get_icon_atlas().initialize()
+            preload_node_icons()
+            logger.debug("Icon atlas preloaded in background")
+        except Exception as e:
+            logger.warning(f"Failed to preload icon atlas: {e}")
+
+    def _complete_deferred_initialization(self) -> None:
+        """
+        Complete deferred initialization after window is shown.
+
+        PERFORMANCE: This runs after the main window is visible and responsive,
+        completing the full node registration that was deferred at startup.
+        """
+        try:
+            # Complete full node registration if deferred
+            if hasattr(self._node_controller, "complete_node_registration"):
+                self._node_controller.complete_node_registration()
+                logger.info("Deferred node registration completed")
+        except Exception as e:
+            logger.error(f"Failed to complete deferred initialization: {e}")
+
+    def ensure_playwright_on_demand(self) -> None:
+        """
+        Check Playwright installation on first browser node use.
+
+        PERFORMANCE: Deferred from startup to first actual use.
+        Called by browser nodes before execution.
+        """
+        if self._playwright_checked:
+            return
+
+        self._playwright_checked = True
+
+        try:
+            from casare_rpa.utils.playwright_setup import ensure_playwright_ready
+
+            ensure_playwright_ready(show_gui=True, parent=self._main_window)
+            logger.debug("Playwright check completed on demand")
+        except Exception as e:
+            logger.warning(f"Playwright check failed: {e}")
 
     def _connect_components(self) -> None:
         """Connect controller signals for inter-controller communication."""
@@ -340,7 +484,38 @@ class CasareRPAApp:
 
     def _on_paste_nodes(self) -> None:
         """Paste nodes and regenerate IDs to avoid duplicates."""
+        import json
+        from PySide6.QtWidgets import QApplication
+
         graph = self._node_graph.graph
+
+        # Validate clipboard data before pasting
+        clipboard = QApplication.clipboard()
+        cb_text = clipboard.text()
+        if not cb_text:
+            return
+
+        try:
+            data = json.loads(cb_text)
+        except json.JSONDecodeError:
+            logger.warning("Clipboard does not contain valid JSON data")
+            return
+
+        # NodeGraphQt expects a dict with 'nodes' key containing a dict
+        if not isinstance(data, dict):
+            logger.warning(
+                "Clipboard data is not in NodeGraphQt format (expected dict)"
+            )
+            return
+
+        nodes_data = data.get("nodes")
+        if nodes_data is not None and not isinstance(nodes_data, dict):
+            logger.warning(
+                "Clipboard 'nodes' data is not in NodeGraphQt format "
+                f"(expected dict, got {type(nodes_data).__name__})"
+            )
+            return
+
         graph.paste_nodes()
 
         # Regenerate IDs for all pasted nodes (selected after paste)

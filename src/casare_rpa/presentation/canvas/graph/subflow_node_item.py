@@ -11,6 +11,8 @@ Key features:
 - Collapsed view: Single node representing entire subflow
 - Dynamic ports based on subflow inputs/outputs
 - Double-click to expand/edit subflow
+
+All colors are sourced from the unified theme system (theme.py).
 """
 
 from typing import Optional
@@ -34,38 +36,137 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
     _high_performance_mode,
 )
 
+# Import unified theme system for all colors
+from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
+
 
 # ============================================================================
-# SUBFLOW NODE VISUAL CONSTANTS
+# SUBFLOW NODE VISUAL CONSTANTS - Delegated to unified theme
 # ============================================================================
+# Colors are lazily initialized from theme to ensure consistency and
+# avoid import-time QApplication dependency issues.
 
-# Subflow header color (blue-gray)
-_SUBFLOW_HEADER_COLOR = QColor(0x4A, 0x55, 0x68)  # #4A5568 - Blue-gray
-_SUBFLOW_HEADER_ALPHA = 153  # 60% opacity
-
-# Badge colors
-_BADGE_BG_COLOR = QColor(0x2D, 0x37, 0x48)  # Dark blue-gray
-_BADGE_TEXT_COLOR = QColor(0xFF, 0xFF, 0xFF)  # White
-
-# Expand button colors
-_EXPAND_BTN_BG = QColor(60, 65, 75, 180)
-_EXPAND_BTN_SYMBOL = QColor(200, 200, 200)
-_EXPAND_BTN_HOVER = QColor(80, 85, 95, 200)
-
-# Configure button colors (for parameter promotion)
-_CONFIG_BTN_BG = QColor(55, 80, 55, 180)  # Green tint
-_CONFIG_BTN_HOVER = QColor(75, 110, 75, 200)
-
-# Border width
+# Border width (geometry, not a color)
 _BORDER_WIDTH = 2.0
 
 # Stack visual effect (layers behind main node)
 _STACK_LAYER_COUNT = 2
 _STACK_OFFSET = 4  # pixels per layer
-_STACK_COLORS = [
-    QColor(0x2A, 0x35, 0x46),  # Furthest back (darkest)
-    QColor(0x3A, 0x45, 0x56),  # Middle layer
-]
+
+# Color caches - initialized lazily
+_SUBFLOW_HEADER_COLOR: Optional[QColor] = None
+_SUBFLOW_HEADER_ALPHA = 153  # 60% opacity
+_BADGE_BG_COLOR: Optional[QColor] = None
+_BADGE_TEXT_COLOR: Optional[QColor] = None
+_EXPAND_BTN_BG: Optional[QColor] = None
+_EXPAND_BTN_SYMBOL: Optional[QColor] = None
+_EXPAND_BTN_HOVER: Optional[QColor] = None
+_CONFIG_BTN_BG: Optional[QColor] = None
+_CONFIG_BTN_HOVER: Optional[QColor] = None
+_STACK_COLORS: Optional[list] = None
+
+
+def _get_subflow_header_color() -> QColor:
+    """Get subflow header color from theme."""
+    cc = Theme.get_canvas_colors()
+    # Use a custom blue-gray color for subflows
+    return _hex_to_qcolor("#4A5568")
+
+
+def _get_badge_bg_color() -> QColor:
+    """Get badge background color from theme."""
+    bg, _, _ = Theme.get_badge_colors()
+    return QColor(bg)
+
+
+def _get_badge_text_color() -> QColor:
+    """Get badge text color from theme."""
+    _, text, _ = Theme.get_badge_colors()
+    return QColor(text)
+
+
+def _get_expand_btn_bg() -> QColor:
+    """Get expand button background from theme."""
+    cc = Theme.get_canvas_colors()
+    color = _hex_to_qcolor(cc.collapse_btn_bg)
+    result = QColor(color)
+    result.setAlpha(180)
+    return result
+
+
+def _get_expand_btn_symbol() -> QColor:
+    """Get expand button symbol color from theme."""
+    cc = Theme.get_canvas_colors()
+    return _hex_to_qcolor(cc.collapse_btn_symbol)
+
+
+def _get_expand_btn_hover() -> QColor:
+    """Get expand button hover color from theme."""
+    cc = Theme.get_canvas_colors()
+    color = _hex_to_qcolor(cc.collapse_btn_bg_hover)
+    result = QColor(color)
+    result.setAlpha(200)
+    return result
+
+
+def _get_config_btn_bg() -> QColor:
+    """Get config button background (green tint) from theme."""
+    # Green tint for configuration button
+    cc = Theme.get_canvas_colors()
+    color = _hex_to_qcolor(cc.status_success)
+    result = QColor(color)
+    result.setRed(max(0, result.red() - 60))
+    result.setGreen(max(0, result.green() - 20))
+    result.setBlue(max(0, result.blue() - 60))
+    result.setAlpha(180)
+    return result
+
+
+def _get_config_btn_hover() -> QColor:
+    """Get config button hover color from theme."""
+    cc = Theme.get_canvas_colors()
+    color = _hex_to_qcolor(cc.status_success)
+    result = QColor(color)
+    result.setRed(max(0, result.red() - 40))
+    result.setBlue(max(0, result.blue() - 40))
+    result.setAlpha(200)
+    return result
+
+
+def _get_stack_colors() -> list:
+    """Get stack layer colors from theme."""
+    cc = Theme.get_canvas_colors()
+    # Derive stack colors from node background, making them darker
+    base_color = _hex_to_qcolor(cc.node_bg)
+    # Furthest back (darkest)
+    dark = QColor(base_color)
+    dark.setRed(max(0, dark.red() - 20))
+    dark.setGreen(max(0, dark.green() - 20))
+    dark.setBlue(max(0, dark.blue() - 20))
+    # Middle layer
+    mid = QColor(base_color)
+    mid.setRed(max(0, mid.red() - 10))
+    mid.setGreen(max(0, mid.green() - 10))
+    mid.setBlue(max(0, mid.blue() - 10))
+    return [dark, mid]
+
+
+def _init_subflow_colors():
+    """Initialize all subflow color variables from theme."""
+    global _SUBFLOW_HEADER_COLOR, _BADGE_BG_COLOR, _BADGE_TEXT_COLOR
+    global _EXPAND_BTN_BG, _EXPAND_BTN_SYMBOL, _EXPAND_BTN_HOVER
+    global _CONFIG_BTN_BG, _CONFIG_BTN_HOVER, _STACK_COLORS
+
+    if _SUBFLOW_HEADER_COLOR is None:
+        _SUBFLOW_HEADER_COLOR = _get_subflow_header_color()
+        _BADGE_BG_COLOR = _get_badge_bg_color()
+        _BADGE_TEXT_COLOR = _get_badge_text_color()
+        _EXPAND_BTN_BG = _get_expand_btn_bg()
+        _EXPAND_BTN_SYMBOL = _get_expand_btn_symbol()
+        _EXPAND_BTN_HOVER = _get_expand_btn_hover()
+        _CONFIG_BTN_BG = _get_config_btn_bg()
+        _CONFIG_BTN_HOVER = _get_config_btn_hover()
+        _STACK_COLORS = _get_stack_colors()
 
 
 class SubflowNodeItem(CasareNodeItem):
@@ -99,6 +200,9 @@ class SubflowNodeItem(CasareNodeItem):
         """
         super().__init__(name, parent)
 
+        # Initialize colors from unified theme (lazy initialization)
+        _init_subflow_colors()
+
         # Subflow-specific state
         self._node_count: int = 0
         self._expand_button_rect: Optional[QRectF] = None
@@ -106,7 +210,7 @@ class SubflowNodeItem(CasareNodeItem):
         self._config_button_rect: Optional[QRectF] = None
         self._config_btn_hovered: bool = False
 
-        # Override cached header color to blue-gray
+        # Override cached header color to blue-gray (from theme)
         self._cached_header_color = QColor(_SUBFLOW_HEADER_COLOR)
         self._cached_header_color.setAlpha(_SUBFLOW_HEADER_ALPHA)
 

@@ -55,10 +55,12 @@ class NodeController(BaseController):
 
     def _initialize_node_registry(self) -> None:
         """
-        Initialize node registry and register all node types.
+        Initialize node registry with essential nodes only.
+
+        PERFORMANCE: Only registers ~8 essential nodes at startup.
+        Full registration is deferred via complete_node_registration().
 
         Extracted from: canvas/components/node_registry_component.py
-        Registers all visual node types with the graph and pre-builds node mapping cache.
         """
         try:
             from ..graph.node_registry import get_node_registry, get_casare_node_mapping
@@ -69,17 +71,42 @@ class NodeController(BaseController):
                 logger.warning("Graph not available for node registry initialization")
                 return
 
-            # Register all node types with the graph
+            # Register essential nodes only for fast startup
             node_registry = get_node_registry()
-            node_registry.register_all_nodes(graph)
+            node_registry.register_essential_nodes(graph)
 
-            # Pre-build node mapping to avoid delay on first node creation
+            # Pre-build node mapping (still needed for node creation)
             get_casare_node_mapping()
+
+            logger.debug("Essential nodes registered - full registration deferred")
 
         except ImportError as e:
             logger.error(f"Failed to import node registry: {e}")
         except Exception as e:
             logger.error(f"Failed to initialize node registry: {e}")
+
+    def complete_node_registration(self) -> None:
+        """
+        Complete node registration (called after window is shown).
+
+        PERFORMANCE: This is called via QTimer.singleShot to defer
+        the expensive full node registration until after the UI is responsive.
+        """
+        try:
+            from ..graph.node_registry import get_node_registry
+
+            graph = self._get_graph()
+            if not graph:
+                logger.warning("Graph not available for completing node registration")
+                return
+
+            node_registry = get_node_registry()
+            node_registry.register_remaining_nodes(graph)
+
+            logger.info("Full node registration completed")
+
+        except Exception as e:
+            logger.error(f"Failed to complete node registration: {e}")
 
     def cleanup(self) -> None:
         """Clean up resources."""

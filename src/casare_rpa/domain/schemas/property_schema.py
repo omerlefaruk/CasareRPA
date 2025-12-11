@@ -26,6 +26,7 @@ TYPE_VALIDATORS: Dict[PropertyType, Callable[[Any], bool]] = {
     PropertyType.ANY: lambda v: True,
     PropertyType.CHOICE: lambda v: isinstance(v, str),
     PropertyType.MULTI_CHOICE: lambda v: isinstance(v, list),
+    PropertyType.LIST: lambda v: isinstance(v, list),
     PropertyType.FILE_PATH: lambda v: isinstance(v, str),
     PropertyType.DIRECTORY_PATH: lambda v: isinstance(v, str),
     PropertyType.FILE_PATTERN: lambda v: isinstance(v, str),

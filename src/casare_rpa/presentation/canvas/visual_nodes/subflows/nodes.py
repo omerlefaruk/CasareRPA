@@ -177,16 +177,16 @@ class VisualSubflowNode(VisualNode):
             if name not in self.model.custom_properties:
                 if hidden:
                     # Create property without widget (widget_type=0 means HIDDEN)
-                    self.create_property(name, default_value, widget_type=0)
+                    self._safe_create_property(name, default_value, widget_type=0)
                 else:
-                    self.create_property(name, default_value)
+                    self._safe_create_property(name, default_value)
         except Exception:
             # Fallback: try to create and ignore if exists
             try:
                 if hidden:
-                    self.create_property(name, default_value, widget_type=0)
+                    self._safe_create_property(name, default_value, widget_type=0)
                 else:
-                    self.create_property(name, default_value)
+                    self._safe_create_property(name, default_value)
             except Exception:
                 pass  # Property already exists
 

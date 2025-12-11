@@ -104,6 +104,9 @@ class UIComponentInitializer:
         mw._robot_picker_panel = mw._side_panel.get_robot_picker_tab()
         mw._analytics_panel = mw._side_panel.get_analytics_tab()
 
+        # Create credentials panel (for View menu toggle)
+        mw._credentials_panel = dock_creator.create_credentials_panel()
+
         # Setup validation timer
         self._setup_validation_timer()
 

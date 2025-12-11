@@ -178,7 +178,7 @@ class VisualTelegramSendMediaGroupNode(VisualNode):
             tab="properties",
             placeholder_text='[{"type":"photo","media":"url"}]',
         )
-        self.create_property(
+        self._safe_create_property(
             "disable_notification", False, widget_type=1, tab="advanced"
         )
 
@@ -238,7 +238,7 @@ class VisualTelegramAnswerCallbackNode(VisualNode):
             tab="properties",
             placeholder_text="Optional notification text",
         )
-        self.create_property("show_alert", False, widget_type=1, tab="properties")
+        self._safe_create_property("show_alert", False, widget_type=1, tab="properties")
         self.add_text_input(
             "url",
             "URL",

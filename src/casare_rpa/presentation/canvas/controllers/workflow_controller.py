@@ -438,16 +438,10 @@ class WorkflowController(BaseController):
         return True
 
     def _validate_after_open(self) -> None:
-        """Validate workflow after opening and show panel if issues found."""
-        bottom_panel = self.main_window.get_bottom_panel()
-        if bottom_panel:
-            # Emit signal to trigger validation via main_window handler
-            bottom_panel.validation_requested.emit()
-
-            # Show validation tab if there are errors
-            validation_errors = bottom_panel.get_validation_errors_blocking()
-            if validation_errors:
-                bottom_panel.show_validation_tab()
+        """Validate workflow after opening silently (no panel auto-open)."""
+        # Directly call validation with show_panel=False to prevent auto-opening
+        # Do NOT use validation_requested signal as it triggers show_panel=True
+        self.main_window.validate_current_workflow(show_panel=False)
 
     def _update_window_title(self) -> None:
         """Update main window title with current file and modified state."""

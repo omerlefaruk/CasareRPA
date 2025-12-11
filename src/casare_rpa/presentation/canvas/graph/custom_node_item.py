@@ -8,6 +8,7 @@ Provides custom styling including:
 - Icon display
 
 Now uses centralized AnimationCoordinator for performance with many nodes.
+All colors are sourced from the unified theme system (theme.py).
 
 References:
 - "Designing Data-Intensive Applications" - Resource pooling
@@ -26,6 +27,15 @@ from casare_rpa.presentation.canvas.graph.lod_manager import get_lod_manager, LO
 from casare_rpa.presentation.canvas.graph.background_cache import get_background_cache
 from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 
+# Import unified theme system for all colors
+from casare_rpa.presentation.canvas.ui.theme import (
+    Theme,
+    NODE_DISABLED_OPACITY,
+    NODE_DISABLED_BG_ALPHA,
+    NODE_DISABLED_WASH_ALPHA,
+    NODE_DISABLED_BORDER_WIDTH,
+)
+
 # ============================================================================
 # PERFORMANCE: Module-level enum caching
 # Avoids per-paint attribute lookup overhead for frequently used enums
@@ -34,6 +44,7 @@ _ANTIALIASING = QPainter.RenderHint.Antialiasing
 _PEN_STYLE_NONE = Qt.PenStyle.NoPen
 _PEN_STYLE_SOLID = Qt.PenStyle.SolidLine
 _PEN_STYLE_DASH = Qt.PenStyle.DashLine
+_PEN_STYLE_DOT = Qt.PenStyle.DotLine  # For disabled state
 _BRUSH_STYLE_NONE = Qt.BrushStyle.NoBrush
 _ALIGN_CENTER = Qt.AlignmentFlag.AlignCenter
 _PEN_CAP_ROUND = Qt.PenCapStyle.RoundCap
@@ -43,19 +54,117 @@ _WHITE = Qt.GlobalColor.white
 
 # ============================================================================
 # PERFORMANCE: Pre-cached paint objects to avoid allocation in paint()
-# These are created once at module load instead of per-frame allocations
+# Colors are now sourced from Theme.get_status_qcolor() with caching.
+# These module-level references are for backward compatibility only.
 # ============================================================================
 
-# Status indicator colors
-_SUCCESS_GREEN = QColor(76, 175, 80)
-_ERROR_RED = QColor(244, 67, 54)
-_WARNING_ORANGE = QColor(255, 152, 0)  # #FF9800 for warning state
-_DISABLED_GRAY = QColor(68, 68, 68)  # #444444 for disabled border
-_SKIPPED_GRAY = QColor(128, 128, 128)  # Gray for skipped indicator
 
-# Contrast-compliant text colors (WCAG 4.5:1 ratio on dark background)
-_SECONDARY_TEXT_COLOR = QColor(170, 170, 170)  # #AAAAAA - 5.5:1 ratio
-_PORT_LABEL_COLOR = QColor(212, 212, 212)  # #D4D4D4 - 10:1 ratio
+# Status indicator colors - now delegating to theme (cached internally)
+def _get_success_green() -> QColor:
+    return Theme.get_status_qcolor("success")
+
+
+def _get_error_red() -> QColor:
+    return Theme.get_status_qcolor("error")
+
+
+def _get_warning_orange() -> QColor:
+    return Theme.get_status_qcolor("warning")
+
+
+def _get_disabled_gray() -> QColor:
+    return Theme.get_status_qcolor("disabled")
+
+
+def _get_skipped_gray() -> QColor:
+    return Theme.get_status_qcolor("skipped")
+
+
+# Legacy aliases for backward compatibility (lazy evaluation)
+_SUCCESS_GREEN = None  # Will be initialized on first use
+_ERROR_RED = None
+_WARNING_ORANGE = None
+_DISABLED_GRAY = None
+_SKIPPED_GRAY = None
+
+
+def _init_legacy_colors():
+    """Initialize legacy color variables on first access."""
+    global _SUCCESS_GREEN, _ERROR_RED, _WARNING_ORANGE, _DISABLED_GRAY, _SKIPPED_GRAY
+    if _SUCCESS_GREEN is None:
+        _SUCCESS_GREEN = _get_success_green()
+        _ERROR_RED = _get_error_red()
+        _WARNING_ORANGE = _get_warning_orange()
+        _DISABLED_GRAY = _get_disabled_gray()
+        _SKIPPED_GRAY = _get_skipped_gray()
+
+
+# Text colors from theme
+def _get_secondary_text_color() -> QColor:
+    cc = Theme.get_canvas_colors()
+    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
+
+    return _hex_to_qcolor(cc.node_text_secondary)
+
+
+def _get_port_label_color() -> QColor:
+    cc = Theme.get_canvas_colors()
+    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
+
+    return _hex_to_qcolor(cc.node_text_port)
+
+
+# Legacy text color aliases
+_SECONDARY_TEXT_COLOR = None
+_PORT_LABEL_COLOR = None
+
+
+def _init_legacy_text_colors():
+    """Initialize legacy text color variables."""
+    global _SECONDARY_TEXT_COLOR, _PORT_LABEL_COLOR
+    if _SECONDARY_TEXT_COLOR is None:
+        _SECONDARY_TEXT_COLOR = _get_secondary_text_color()
+        _PORT_LABEL_COLOR = _get_port_label_color()
+
+
+# Initialize colors at module load time to avoid None during paint()
+_init_legacy_colors()
+_init_legacy_text_colors()
+
+
+# ============================================================================
+# PERFORMANCE: Module-level cached theme colors for CasareNodeItem
+# Avoids Theme method calls on every node instantiation
+# ============================================================================
+_CACHED_NORMAL_BORDER: Optional[QColor] = None
+_CACHED_SELECTED_BORDER: Optional[QColor] = None
+_CACHED_RUNNING_BORDER: Optional[QColor] = None
+_CACHED_NODE_BG: Optional[QColor] = None
+_CACHED_ROBOT_OVERRIDE: Optional[QColor] = None
+_CACHED_CAPABILITY_OVERRIDE: Optional[QColor] = None
+
+
+def _init_node_item_theme_colors() -> None:
+    """
+    Initialize cached theme colors for CasareNodeItem.
+
+    PERFORMANCE: These colors are used by every node instance.
+    Caching at module level avoids Theme method calls during node construction.
+    """
+    global _CACHED_NORMAL_BORDER, _CACHED_SELECTED_BORDER, _CACHED_RUNNING_BORDER
+    global _CACHED_NODE_BG, _CACHED_ROBOT_OVERRIDE, _CACHED_CAPABILITY_OVERRIDE
+    if _CACHED_NORMAL_BORDER is None:
+        _CACHED_NORMAL_BORDER = Theme.get_node_border_qcolor("normal")
+        _CACHED_SELECTED_BORDER = Theme.get_node_border_qcolor("selected")
+        _CACHED_RUNNING_BORDER = Theme.get_node_border_qcolor("running")
+        _CACHED_NODE_BG = Theme.get_node_bg_qcolor()
+        # Robot/capability override colors
+        cc = Theme.get_canvas_colors()
+        from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
+
+        _CACHED_ROBOT_OVERRIDE = _hex_to_qcolor(cc.category_database)  # Teal
+        _CACHED_CAPABILITY_OVERRIDE = _hex_to_qcolor(cc.category_triggers)  # Purple
+
 
 # ============================================================================
 # HIGH PERFORMANCE MODE
@@ -103,54 +212,51 @@ def get_high_perf_node_threshold() -> int:
     return _HIGH_PERF_NODE_THRESHOLD
 
 
-# Execution time badge colors
-_BADGE_BG_COLOR = QColor(30, 30, 30, 100)
-_BADGE_TEXT_COLOR = QColor(220, 220, 220, 200)
+# ============================================================================
+# BADGE AND HEADER COLORS - Now from unified theme
+# ============================================================================
 
-# Header colors (default maroon, will be overridden by category color)
-_HEADER_COLOR = QColor(85, 45, 50)
-_SEPARATOR_COLOR = QColor(100, 55, 60)
-_HEADER_TEXT_COLOR = QColor(240, 235, 235)
+
+def _get_badge_bg_color() -> QColor:
+    """Get badge background color from theme."""
+    bg, _, _ = Theme.get_badge_colors()
+    # Add alpha for semi-transparency
+    color = QColor(bg)
+    color.setAlpha(100)
+    return color
+
+
+def _get_badge_text_color() -> QColor:
+    """Get badge text color from theme."""
+    _, text, _ = Theme.get_badge_colors()
+    color = QColor(text)
+    color.setAlpha(200)
+    return color
+
+
+# Legacy badge color references
+_BADGE_BG_COLOR = None
+_BADGE_TEXT_COLOR = None
+
+
+def _init_badge_colors():
+    """Initialize badge color variables."""
+    global _BADGE_BG_COLOR, _BADGE_TEXT_COLOR
+    if _BADGE_BG_COLOR is None:
+        _BADGE_BG_COLOR = _get_badge_bg_color()
+        _BADGE_TEXT_COLOR = _get_badge_text_color()
+
+
+# Header text color - always white for maximum contrast on colored headers
+# No longer uses cached global; QColor(255, 255, 255) is used directly in _draw_text()
+
 
 # ============================================================================
-# CATEGORY HEADER COLORS
+# CATEGORY HEADER COLORS - Now from unified theme
 # ============================================================================
-# Category-aware header coloring for visual node type identification.
-# Uses SOLID, DISTINCT colors for each category - no gradient, no transparency.
-# Colors are designed for maximum visual distinction between categories.
-
-_CATEGORY_HEADER_COLORS: dict[str, QColor] = {
-    "browser": QColor(156, 39, 176),  # Purple - #9C27B0
-    "navigation": QColor(103, 58, 183),  # Deep Purple - #673AB7
-    "interaction": QColor(63, 81, 181),  # Indigo - #3F51B5
-    "data": QColor(76, 175, 80),  # Green - #4CAF50
-    "data_operations": QColor(76, 175, 80),  # Green - #4CAF50 (same as data)
-    "variable": QColor(0, 150, 136),  # Teal - #009688
-    "control_flow": QColor(244, 67, 54),  # Red - #F44336
-    "error_handling": QColor(255, 87, 34),  # Deep Orange - #FF5722
-    "wait": QColor(255, 152, 0),  # Orange - #FF9800
-    "debug": QColor(158, 158, 158),  # Gray - #9E9E9E
-    "utility": QColor(96, 125, 139),  # Blue Gray - #607D8B
-    "file": QColor(121, 85, 72),  # Brown - #795548
-    "file_operations": QColor(121, 85, 72),  # Brown - #795548 (same as file)
-    "database": QColor(33, 150, 243),  # Blue - #2196F3
-    "rest_api": QColor(3, 169, 244),  # Light Blue - #03A9F4
-    "email": QColor(233, 30, 99),  # Pink - #E91E63
-    "office_automation": QColor(33, 123, 75),  # Office Green
-    "desktop": QColor(0, 188, 212),  # Cyan - #00BCD4
-    "desktop_automation": QColor(0, 188, 212),  # Cyan - #00BCD4 (same as desktop)
-    "triggers": QColor(255, 193, 7),  # Amber - #FFC107
-    "messaging": QColor(139, 195, 74),  # Light Green - #8BC34A
-    "ai_ml": QColor(171, 71, 188),  # Purple accent
-    "document": QColor(255, 152, 0),  # Orange - #FF9800
-    "google": QColor(66, 133, 244),  # Google Blue
-    "scripts": QColor(205, 220, 57),  # Lime - #CDDC39
-    "system": QColor(63, 81, 181),  # Indigo - same as interaction
-    "basic": QColor(97, 97, 97),  # Dark Gray - #616161
-}
-
-# Default header color for unknown categories
-_DEFAULT_CATEGORY_COLOR = QColor(85, 45, 50)  # Original maroon
+# Category colors are now centralized in theme.py (CATEGORY_COLOR_MAP).
+# This function delegates to Theme.get_category_qcolor() for consistency
+# across nodes, icons, and wires.
 
 
 def get_category_header_color(category: str) -> QColor:
@@ -158,24 +264,53 @@ def get_category_header_color(category: str) -> QColor:
     Get the header color for a node category.
 
     For hierarchical categories (e.g., "google/gmail/send"), uses the root category color.
+    Colors are sourced from the unified theme system.
 
     Args:
         category: Category string (may be hierarchical with '/')
 
     Returns:
-        QColor for the category header
+        QColor for the category header (cached for performance)
     """
-    if not category:
-        return _DEFAULT_CATEGORY_COLOR
-
-    # Extract root category from hierarchical path
-    root_category = category.split("/")[0].lower()
-    return _CATEGORY_HEADER_COLORS.get(root_category, _DEFAULT_CATEGORY_COLOR)
+    return Theme.get_category_qcolor(category)
 
 
-# Collapse button colors
-_COLLAPSE_BTN_BG = QColor(60, 60, 65, 180)
-_COLLAPSE_BTN_SYMBOL = QColor(200, 200, 200)
+# ============================================================================
+# COLLAPSE BUTTON COLORS - Now from unified theme
+# ============================================================================
+
+
+def _get_collapse_btn_bg() -> QColor:
+    """Get collapse button background from theme."""
+    cc = Theme.get_canvas_colors()
+    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
+
+    color = _hex_to_qcolor(cc.collapse_btn_bg)
+    result = QColor(color)
+    result.setAlpha(180)
+    return result
+
+
+def _get_collapse_btn_symbol() -> QColor:
+    """Get collapse button symbol color from theme."""
+    cc = Theme.get_canvas_colors()
+    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
+
+    return _hex_to_qcolor(cc.collapse_btn_symbol)
+
+
+# Legacy collapse button colors
+_COLLAPSE_BTN_BG = None
+_COLLAPSE_BTN_SYMBOL = None
+
+
+def _init_collapse_btn_colors():
+    """Initialize collapse button colors."""
+    global _COLLAPSE_BTN_BG, _COLLAPSE_BTN_SYMBOL
+    if _COLLAPSE_BTN_BG is None:
+        _COLLAPSE_BTN_BG = _get_collapse_btn_bg()
+        _COLLAPSE_BTN_SYMBOL = _get_collapse_btn_symbol()
+
 
 # Pre-cached fonts
 _TITLE_FONT: Optional[QFont] = None
@@ -407,13 +542,16 @@ class CasareNodeItem(NodeItem):
         # Node type identifier for icon atlas lookups
         self._node_type_name: str = ""
 
-        # Colors matching the reference image
-        self._normal_border_color = QColor(68, 68, 68)  # Dark gray border
-        self._selected_border_color = QColor(255, 215, 0)  # Bright yellow
-        self._running_border_color = QColor(255, 215, 0)  # Bright yellow animated
-        self._node_bg_color = QColor(45, 45, 45)  # Dark background
-        self._robot_override_color = QColor(0, 150, 136)  # Teal for robot icon
-        self._capability_override_color = QColor(156, 39, 176)  # Purple for capability
+        # PERFORMANCE: Use module-level cached theme colors
+        # Ensures colors are initialized on first node creation
+        if _CACHED_NORMAL_BORDER is None:
+            _init_node_item_theme_colors()
+        self._normal_border_color = _CACHED_NORMAL_BORDER
+        self._selected_border_color = _CACHED_SELECTED_BORDER
+        self._running_border_color = _CACHED_RUNNING_BORDER
+        self._node_bg_color = _CACHED_NODE_BG
+        self._robot_override_color = _CACHED_ROBOT_OVERRIDE
+        self._capability_override_color = _CACHED_CAPABILITY_OVERRIDE
 
         # Category for header coloring (set via set_category method)
         self._category: str = ""
@@ -461,17 +599,20 @@ class CasareNodeItem(NodeItem):
 
     def _align_widgets_horizontal(self, v_offset):
         """
-        Override to use actual node rect instead of extended boundingRect.
+        Override to use actual node rect and custom header height.
 
-        FIX: Parent class uses boundingRect() which includes badge area (24px above).
-        This caused widgets to be positioned 24px too high when execution time shown.
-        Using _get_node_rect() ensures widgets align to actual node bounds.
+        FIX: Parent class calculates v_offset from _text_item which we hide.
+        Instead, use our custom header height (26px) for consistent widget positioning.
+        Also use _get_node_rect() to avoid badge area offset issues.
         """
         if not self._widgets:
             return
         # Use actual node rect, not extended boundingRect
         rect = self._get_node_rect()
-        y = rect.y() + v_offset
+        # Use our custom header height (26px) instead of parent's v_offset
+        # which may be wrong since we hide _text_item
+        custom_header_height = 26
+        y = rect.y() + custom_header_height
         inputs = [p for p in self.inputs if p.isVisible()]
         outputs = [p for p in self.outputs if p.isVisible()]
         for widget in self._widgets.values():
@@ -521,9 +662,9 @@ class CasareNodeItem(NodeItem):
         elif self._is_running:
             fill_color = self._running_border_color
         elif self._is_disabled:
-            # Use very transparent background for disabled (more grayed out)
+            # Use theme-defined alpha for disabled (grayed out)
             fill_color = QColor(self._node_bg_color)
-            fill_color.setAlpha(64)
+            fill_color.setAlpha(NODE_DISABLED_BG_ALPHA)
         else:
             fill_color = self._node_bg_color
 
@@ -542,7 +683,8 @@ class CasareNodeItem(NodeItem):
         elif self._has_warning:
             painter.setPen(QPen(_WARNING_ORANGE, 2))
         elif self._is_disabled:
-            painter.setPen(QPen(_DISABLED_GRAY, 1))
+            # LOD: Use solid bright border (dots too small at low zoom)
+            painter.setPen(QPen(QColor("#A1A1AA"), 2.5))  # Zinc 400 - bright
         else:
             painter.setPen(QPen(self._normal_border_color, 1))
 
@@ -551,6 +693,15 @@ class CasareNodeItem(NodeItem):
             painter.drawRect(rect)
         else:
             painter.drawRoundedRect(rect, 4, 4)
+
+        # LOD disabled: Draw X pattern overlay for clear indication
+        if self._is_disabled:
+            overlay_color = QColor("#71717A")  # Zinc 500
+            overlay_color.setAlpha(200)
+            painter.setPen(QPen(overlay_color, 1.5))
+            # Draw X across the node
+            painter.drawLine(rect.topLeft(), rect.bottomRight())
+            painter.drawLine(rect.topRight(), rect.bottomLeft())
 
         painter.restore()
 
@@ -594,21 +745,23 @@ class CasareNodeItem(NodeItem):
         border_width = 2.0
 
         # Determine border color and style based on status states
+        # Disabled state uses dotted border for clear visual feedback
         if self._is_running:
             border_color = self._running_border_color
-            border_style = Qt.PenStyle.DashLine
+            border_style = _PEN_STYLE_DASH
         elif self._has_warning:
             border_color = _WARNING_ORANGE
-            border_style = Qt.PenStyle.SolidLine
+            border_style = _PEN_STYLE_SOLID
         elif self._is_disabled:
-            border_color = _DISABLED_GRAY
-            border_style = Qt.PenStyle.SolidLine
+            # Use brighter gray for dotted border to stand out against dark bg
+            border_color = QColor("#71717A")  # Zinc 500 - more visible
+            border_style = _PEN_STYLE_DOT
         elif self.selected:
             border_color = self._selected_border_color
-            border_style = Qt.PenStyle.SolidLine
+            border_style = _PEN_STYLE_SOLID
         else:
             border_color = self._normal_border_color
-            border_style = Qt.PenStyle.SolidLine
+            border_style = _PEN_STYLE_SOLID
 
         # Create rounded rectangle path
         radius = 8.0
@@ -618,7 +771,7 @@ class CasareNodeItem(NodeItem):
         # Fill background - with opacity reduction for disabled state
         if self._is_disabled:
             bg_color = QColor(self._node_bg_color)
-            bg_color.setAlpha(64)  # 25% opacity (more grayed out)
+            bg_color.setAlpha(NODE_DISABLED_BG_ALPHA)  # Theme-defined opacity
             painter.fillPath(path, QBrush(bg_color))
         else:
             painter.fillPath(path, QBrush(self._node_bg_color))
@@ -627,14 +780,18 @@ class CasareNodeItem(NodeItem):
         if self._selection_glow_enabled and self.selected:
             self._draw_selection_glow(painter, rect, radius)
 
-        # Draw border
-        pen = QPen(border_color, border_width)
-        pen.setStyle(border_style)
-
-        if self._is_running:
-            # Animated dash pattern for running state
-            pen.setDashOffset(self._animation_offset)
-            pen.setDashPattern([4, 4])
+        # Draw border - disabled state gets thicker dotted border for visibility
+        if self._is_disabled:
+            pen = QPen(border_color, NODE_DISABLED_BORDER_WIDTH)
+            pen.setStyle(_PEN_STYLE_DOT)
+            pen.setDashPattern([2, 3])  # Shorter dots, more visible pattern
+        else:
+            pen = QPen(border_color, border_width)
+            pen.setStyle(border_style)
+            if self._is_running:
+                # Animated dash pattern for running state
+                pen.setDashOffset(self._animation_offset)
+                pen.setDashPattern([4, 4])
 
         painter.strokePath(path, pen)
 
@@ -796,8 +953,21 @@ class CasareNodeItem(NodeItem):
         painter.drawPath(tri2_path)
 
     def _draw_disabled_overlay(self, painter: QPainter, rect: QRectF) -> None:
-        """Draw gray wash and diagonal lines overlay for disabled state."""
+        """
+        Draw gray wash and diagonal lines overlay for disabled state.
+
+        Visual feedback consists of:
+        - Semi-transparent gray wash for desaturation effect
+        - Diagonal hatching lines for clear "disabled" indication
+        - Combined with dotted border from paint() method
+
+        Uses theme constants NODE_DISABLED_WASH_ALPHA and NODE_DISABLED_OPACITY
+        for consistent styling across the application.
+        """
         painter.save()
+
+        # Apply overall opacity reduction for grayscale effect
+        painter.setOpacity(NODE_DISABLED_OPACITY)
 
         # Clip to node bounds
         radius = 8.0
@@ -805,14 +975,18 @@ class CasareNodeItem(NodeItem):
         clip_path.addRoundedRect(rect, radius, radius)
         painter.setClipPath(clip_path)
 
-        # Draw gray wash overlay first (makes content more grayed out)
-        wash_color = QColor(40, 40, 40, 140)  # Dark gray wash
+        # Draw gray wash overlay first (desaturation effect)
+        # Using theme-derived disabled colors with centralized alpha
+        cc = Theme.get_canvas_colors()
+        wash_color = QColor(cc.status_disabled)
+        wash_color.setAlpha(NODE_DISABLED_WASH_ALPHA)
         painter.fillRect(rect, wash_color)
 
-        # Draw diagonal lines (darker and more prominent)
-        line_spacing = 6  # Closer spacing for more coverage
-        line_color = QColor(60, 60, 60, 180)  # Darker, more opaque lines
-        painter.setPen(QPen(line_color, 2.0, Qt.PenStyle.SolidLine))
+        # Draw diagonal lines (hatching pattern for clear disabled indication)
+        line_spacing = 8  # Balanced spacing for visibility without clutter
+        line_color = QColor(cc.node_border_normal)
+        line_color.setAlpha(160)
+        painter.setPen(QPen(line_color, 1.5, _PEN_STYLE_SOLID))
 
         # Draw lines from top-left to bottom-right direction
         start_x = rect.left() - rect.height()
@@ -844,8 +1018,8 @@ class CasareNodeItem(NodeItem):
             0.5 + 0.5 * math.sin(self._selection_glow_phase * 2 * math.pi)
         )
 
-        # Glow color (yellow with pulsing alpha)
-        glow_color = QColor(255, 215, 0)  # Bright yellow
+        # Glow color (selection color with pulsing alpha)
+        glow_color = QColor(self._selected_border_color)  # From theme
 
         # Draw multiple glow layers for soft effect
         glow_layers = [
@@ -897,13 +1071,21 @@ class CasareNodeItem(NodeItem):
 
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
 
-        # Draw badge background (using cached color)
+        # Draw badge background (using cached color, with fallback)
         badge_path = QPainterPath()
         badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
-        painter.fillPath(badge_path, QBrush(_BADGE_BG_COLOR))
+        bg_color = (
+            _BADGE_BG_COLOR if _BADGE_BG_COLOR is not None else _get_badge_bg_color()
+        )
+        painter.fillPath(badge_path, QBrush(bg_color))
 
-        # Draw text (using cached color)
-        painter.setPen(_BADGE_TEXT_COLOR)
+        # Draw text (using cached color, with fallback)
+        text_color = (
+            _BADGE_TEXT_COLOR
+            if _BADGE_TEXT_COLOR is not None
+            else _get_badge_text_color()
+        )
+        painter.setPen(text_color)
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, time_text)
 
     def _draw_text(self, painter, rect):
@@ -955,7 +1137,8 @@ class CasareNodeItem(NodeItem):
         )
 
         # Draw node name (centered, using cached font and color)
-        painter.setPen(_HEADER_TEXT_COLOR)
+        # Use bright white for maximum contrast on colored headers
+        painter.setPen(QColor(255, 255, 255))
         painter.setFont(_get_title_font())
 
         # Get node name
@@ -964,6 +1147,12 @@ class CasareNodeItem(NodeItem):
 
     def _draw_collapse_button(self, painter, rect):
         """Draw collapse/expand button in the header."""
+        global _COLLAPSE_BTN_BG, _COLLAPSE_BTN_SYMBOL
+
+        # Ensure collapse button colors are initialized
+        if _COLLAPSE_BTN_BG is None:
+            _init_collapse_btn_colors()
+
         # Button dimensions
         btn_size = 16
         margin = 6

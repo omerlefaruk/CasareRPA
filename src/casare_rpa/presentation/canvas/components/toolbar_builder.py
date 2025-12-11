@@ -10,6 +10,7 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -25,44 +26,47 @@ class ToolbarBuilder:
     - Organize execution and automation controls
     """
 
-    # Compact toolbar stylesheet - text beside icon
-    TOOLBAR_STYLE = """
-        QToolBar {
-            background: #2b2b2b;
-            border: none;
-            spacing: 1px;
-            padding: 2px 4px;
-        }
-        QToolButton {
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 3px;
-            padding: 3px 6px;
-            color: #b0b0b0;
-            font-size: 11px;
-        }
-        QToolButton:hover {
-            background: #3d3d3d;
-            border: 1px solid #4a4a4a;
-            color: #e0e0e0;
-        }
-        QToolButton:pressed {
-            background: #4a4a4a;
-        }
-        QToolButton:checked {
-            background: #4a6a8a;
-            border: 1px solid #5a7a9a;
-            color: #ffffff;
-        }
-        QToolButton:disabled {
-            color: #555555;
-        }
-        QToolBar::separator {
-            background: #4a4a4a;
-            width: 1px;
-            margin: 3px 5px;
-        }
-    """
+    @staticmethod
+    def _get_toolbar_style() -> str:
+        """Generate theme-aware toolbar stylesheet."""
+        c = Theme.get_colors()
+        return f"""
+            QToolBar {{
+                background: {c.background_alt};
+                border: none;
+                spacing: 1px;
+                padding: 2px 4px;
+            }}
+            QToolButton {{
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 3px 6px;
+                color: {c.text_secondary};
+                font-size: 11px;
+            }}
+            QToolButton:hover {{
+                background: {c.surface};
+                border: 1px solid {c.border_light};
+                color: {c.text_primary};
+            }}
+            QToolButton:pressed {{
+                background: {c.secondary_hover};
+            }}
+            QToolButton:checked {{
+                background: {c.selection};
+                border: 1px solid {c.border_focus};
+                color: #ffffff;
+            }}
+            QToolButton:disabled {{
+                color: {c.text_disabled};
+            }}
+            QToolBar::separator {{
+                background: {c.border_light};
+                width: 1px;
+                margin: 3px 5px;
+            }}
+        """
 
     def __init__(self, main_window: "MainWindow") -> None:
         """
@@ -97,7 +101,7 @@ class ToolbarBuilder:
         toolbar.setFloatable(False)
         toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         toolbar.setIconSize(QSize(16, 16))
-        toolbar.setStyleSheet(self.TOOLBAR_STYLE)
+        toolbar.setStyleSheet(self._get_toolbar_style())
 
         # Set icons with short labels (text beside icon)
         self._setup_toolbar_action(mw.action_run, "run", "Run", "Run Workflow (F5)")
@@ -125,6 +129,18 @@ class ToolbarBuilder:
             "Perf",
             "Performance Dashboard",
         )
+        self._setup_toolbar_action(
+            mw.action_ai_assistant,
+            "ai_assistant",
+            "AI",
+            "AI Workflow Assistant (Ctrl+Shift+G)",
+        )
+        self._setup_toolbar_action(
+            mw.action_credential_manager,
+            "credentials",
+            "Keys",
+            "Manage Credentials (Ctrl+Alt+C)",
+        )
 
         # === Execution Controls ===
         toolbar.addAction(mw.action_run)
@@ -142,9 +158,11 @@ class ToolbarBuilder:
 
         # === Project & Management ===
         toolbar.addAction(mw.action_project_manager)
+        toolbar.addAction(mw.action_credential_manager)
         toolbar.addAction(mw.action_fleet_dashboard)
         toolbar.addAction(mw.action_save_layout)
         toolbar.addAction(mw.action_performance_dashboard)
+        toolbar.addAction(mw.action_ai_assistant)
 
         mw.addToolBar(toolbar)
         mw._main_toolbar = toolbar

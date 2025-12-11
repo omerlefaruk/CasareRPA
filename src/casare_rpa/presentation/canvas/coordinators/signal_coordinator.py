@@ -760,9 +760,346 @@ class SignalCoordinator:
                 if hasattr(node, "refresh_credential"):
                     node.refresh_credential(credential_id)
 
+    def on_open_credential_manager(self) -> None:
+        """Open the Credential Manager dialog."""
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs.credential_manager_dialog import (
+                CredentialManagerDialog,
+            )
+
+            dialog = CredentialManagerDialog(self._mw)
+            dialog.exec()
+        except Exception as e:
+            logger.error(f"Failed to open Credential Manager: {e}")
+
     def on_fleet_dashboard(self) -> None:
         """Open the fleet management dashboard dialog."""
         self._mw._fleet_dashboard_manager.open_dashboard()
+
+    # ==================== AI Assistant ====================
+
+    def on_ai_workflow_ready(self, workflow_data: dict) -> None:
+        """
+        Handle AI-generated workflow ready for canvas.
+
+        Args:
+            workflow_data: Validated workflow JSON from AI Assistant
+                          Can be either:
+                          - New nodes: {"nodes": {...}, "connections": [...]}
+                          - Edits: {"action": "edit", "modifications": [...]}
+        """
+        logger.info("=" * 60)
+        logger.info("AI workflow ready - processing response")
+        logger.info(
+            f"Workflow data keys: {list(workflow_data.keys()) if workflow_data else 'None'}"
+        )
+
+        if not workflow_data:
+            logger.warning("Empty workflow data from AI Assistant")
+            return
+
+        # Check if this is an edit response
+        if workflow_data.get("action") == "edit":
+            logger.info("Processing EDIT response - modifying existing nodes")
+            self._apply_ai_edits(workflow_data.get("modifications", []))
+            return
+
+        # Otherwise, add new nodes to canvas
+        logger.info("Processing ADD response - creating new nodes")
+
+        graph = self._mw.get_graph()
+        logger.info(f"Graph obtained: {graph is not None}")
+        if not graph:
+            logger.warning("No graph available for AI workflow")
+            return
+
+        nodes_data = workflow_data.get("nodes", {})
+        connections_data = workflow_data.get("connections", [])
+        logger.info(
+            f"Nodes data type: {type(nodes_data).__name__}, count: {len(nodes_data) if nodes_data else 0}"
+        )
+        logger.info(f"Connections count: {len(connections_data)}")
+
+        if not nodes_data:
+            logger.warning("No nodes in AI workflow")
+            return
+
+        # Normalize nodes_data to handle both list and dict formats
+        # List format: [{"node_id": "node_1", "node_type": "StartNode", ...}, ...]
+        # Alt list format: [{"id": "node_1", "type": "StartNode", ...}, ...]
+        # Dict format: {"node_1": {"node_type": "StartNode", ...}, ...}
+        if isinstance(nodes_data, list):
+            nodes_items = [
+                (n.get("node_id") or n.get("id") or f"node_{i}", n)
+                for i, n in enumerate(nodes_data)
+            ]
+        elif isinstance(nodes_data, dict):
+            nodes_items = list(nodes_data.items())
+        else:
+            logger.warning(f"Invalid nodes_data format: {type(nodes_data)}")
+            return
+
+        # Build node type map from registered nodes
+        node_type_map = self._build_ai_node_type_map(graph)
+        logger.info(f"Node type map has {len(node_type_map)} entries")
+        logger.info(f"Sample node types: {list(node_type_map.keys())[:10]}")
+
+        # Find position to place new nodes (avoid overlap)
+        start_x, start_y = self._find_ai_workflow_position(graph)
+        logger.info(f"Start position: ({start_x}, {start_y})")
+
+        # Create nodes
+        created_nodes = {}
+        skipped_nodes = []  # Track skipped nodes for user feedback
+        for node_id, node_data in nodes_items:
+            # Support both "node_type" and "type" keys
+            node_type = node_data.get("node_type") or node_data.get("type")
+            logger.info(f"Processing node: {node_id} -> {node_type}")
+            if not node_type:
+                logger.warning(
+                    f"Node {node_id} has no node_type (keys: {list(node_data.keys())})"
+                )
+                skipped_nodes.append((node_id, "no node_type", None))
+                continue
+
+            # Find the NodeGraphQt identifier
+            identifier = node_type_map.get(node_type)
+            logger.info(f"  Identifier for {node_type}: {identifier}")
+            if not identifier:
+                logger.warning(f"Unknown node type: {node_type} (not in map)")
+                logger.warning(f"  Available types: {list(node_type_map.keys())}")
+                skipped_nodes.append((node_id, node_type, "not registered"))
+                continue
+
+            # Calculate position with offset from workflow data
+            pos = node_data.get("position", [0, 0])
+            if isinstance(pos, (list, tuple)) and len(pos) >= 2:
+                node_x = start_x + float(pos[0])
+                node_y = start_y + float(pos[1])
+            else:
+                node_x = start_x
+                node_y = start_y
+
+            try:
+                logger.info(f"  Creating node at ({node_x}, {node_y})")
+                visual_node = graph.create_node(identifier, pos=[node_x, node_y])
+                logger.info(f"  Created node: {visual_node}")
+                if visual_node:
+                    created_nodes[node_id] = visual_node
+                    logger.info(f"  SUCCESS: Node {node_id} created")
+
+                    # Set node_id property
+                    try:
+                        visual_node.set_property("node_id", node_id)
+                    except Exception:
+                        pass
+
+                    # Apply config
+                    config = node_data.get("config", {})
+                    for key, value in config.items():
+                        try:
+                            visual_node.set_property(key, value)
+                        except Exception:
+                            pass
+                else:
+                    logger.warning(
+                        f"  FAILED: create_node returned None for {node_type}"
+                    )
+
+            except Exception as e:
+                logger.error(f"Failed to create node {node_type}: {e}", exc_info=True)
+
+        # Create connections
+        for conn in connections_data:
+            source_id = conn.get("source_node") or conn.get("from_node")
+            target_id = conn.get("target_node") or conn.get("to_node")
+            source_port = conn.get("source_port") or conn.get("from_port", "exec_out")
+            target_port = conn.get("target_port") or conn.get("to_port", "exec_in")
+
+            source_node = created_nodes.get(source_id)
+            target_node = created_nodes.get(target_id)
+
+            if source_node and target_node:
+                try:
+                    out_port = source_node.get_output(source_port)
+                    in_port = target_node.get_input(target_port)
+                    if out_port and in_port:
+                        out_port.connect_to(in_port)
+                except Exception as e:
+                    logger.debug(f"Failed to connect {source_id}->{target_id}: {e}")
+
+        # Select new nodes and center view
+        if created_nodes:
+            graph.clear_selection()
+            for node in created_nodes.values():
+                node.set_selected(True)
+            if hasattr(graph, "fit_to_selection"):
+                graph.fit_to_selection()
+
+            logger.info(f"Added {len(created_nodes)} AI-generated nodes to canvas")
+
+        # Show summary to user via status bar
+        total_requested = len(nodes_items)
+        total_created = len(created_nodes)
+
+        if skipped_nodes:
+            skipped_types = [f"{nid}:{ntype}" for nid, ntype, reason in skipped_nodes]
+            logger.warning(f"Skipped {len(skipped_nodes)} nodes: {skipped_types}")
+
+            # Show warning in status bar
+            if hasattr(self._mw, "show_status_message"):
+                self._mw.show_status_message(
+                    f"Added {total_created}/{total_requested} nodes. "
+                    f"Skipped: {', '.join(skipped_types[:3])}{'...' if len(skipped_types) > 3 else ''}",
+                    timeout=8000,
+                )
+        else:
+            if hasattr(self._mw, "show_status_message"):
+                self._mw.show_status_message(
+                    f"Added {total_created} nodes from AI workflow", timeout=5000
+                )
+
+        # Mark workflow as modified
+        self._mw.set_modified(True)
+
+    def _build_ai_node_type_map(self, graph) -> dict:
+        """Build mapping from node types to NodeGraphQt identifiers."""
+        type_map = {}
+        try:
+            for identifier in graph.registered_nodes():
+                parts = identifier.split(".")
+                if parts:
+                    visual_name = parts[-1]
+
+                    # Map 1: VisualXxxNode -> XxxNode
+                    if visual_name.startswith("Visual"):
+                        node_type = visual_name[6:]  # Remove "Visual" prefix
+                        type_map[node_type] = identifier
+                        # Also map the full visual name
+                        type_map[visual_name] = identifier
+                    else:
+                        # Map 2: Non-visual nodes directly
+                        type_map[visual_name] = identifier
+
+                    # Map 3: Also map full identifier for flexibility
+                    type_map[identifier] = identifier
+
+            # Add common aliases that AI might generate
+            # These are fallbacks for when the AI doesn't use exact node names
+            aliases = {
+                "Start": "StartNode",
+                "End": "EndNode",
+                "Wait": "WaitNode",
+                "Click": "ClickElementNode",
+                "Type": "TypeTextNode",
+                "GoTo": "GoToURLNode",
+                "GoToURL": "GoToURLNode",
+                "Navigate": "GoToURLNode",
+                "NavigateNode": "GoToURLNode",
+                "SetVariable": "SetVariableNode",
+                "GetVariable": "GetVariableNode",
+                "Debug": "DebugNode",
+                "Log": "DebugNode",
+                "If": "IfNode",
+                "ForLoop": "ForLoopStartNode",
+                "ForEach": "ForLoopStartNode",
+                "LaunchBrowser": "LaunchBrowserNode",
+                "CloseBrowser": "CloseBrowserNode",
+            }
+            for alias, target in aliases.items():
+                if target in type_map and alias not in type_map:
+                    type_map[alias] = type_map[target]
+
+        except Exception as e:
+            logger.warning(f"Could not build node type map: {e}")
+        return type_map
+
+    def _find_ai_workflow_position(self, graph) -> tuple:
+        """Find a good position to place AI workflow nodes."""
+        max_x = 100
+        max_y = 100
+        try:
+            for node in graph.all_nodes():
+                pos = node.pos()
+                if pos[0] > max_x:
+                    max_x = pos[0]
+                if pos[1] > max_y:
+                    max_y = pos[1]
+        except Exception:
+            pass
+        # Place new nodes to the right of existing nodes
+        return max_x + 200, max_y - 100
+
+    def _apply_ai_edits(self, modifications: list) -> None:
+        """
+        Apply AI-generated edits to existing nodes on canvas.
+
+        Args:
+            modifications: List of modification dicts:
+                [{"node_id": "...", "changes": {"property": "value"}}]
+        """
+        if not modifications:
+            logger.warning("No modifications to apply")
+            return
+
+        graph = self._mw.get_graph()
+        if not graph:
+            logger.warning("No graph available for edits")
+            return
+
+        modified_count = 0
+        failed_count = 0
+
+        for mod in modifications:
+            node_id = mod.get("node_id")
+            changes = mod.get("changes", {})
+
+            if not node_id or not changes:
+                logger.warning(f"Invalid modification: {mod}")
+                continue
+
+            # Find the node on canvas
+            target_node = None
+            for node in graph.all_nodes():
+                # Check both the visual node ID and the custom node_id property
+                try:
+                    custom_node_id = node.get_property("node_id")
+                    if custom_node_id == node_id or node.id == node_id:
+                        target_node = node
+                        break
+                except Exception:
+                    pass
+
+            if not target_node:
+                logger.warning(f"Node not found for edit: {node_id}")
+                failed_count += 1
+                continue
+
+            # Apply changes
+            for prop_name, new_value in changes.items():
+                try:
+                    target_node.set_property(prop_name, new_value)
+                    logger.info(f"Set {node_id}.{prop_name} = {new_value}")
+                    modified_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to set {prop_name} on {node_id}: {e}")
+                    failed_count += 1
+
+        # Show status
+        if hasattr(self._mw, "show_status_message"):
+            if failed_count == 0:
+                self._mw.show_status_message(
+                    f"Modified {modified_count} properties", timeout=5000
+                )
+            else:
+                self._mw.show_status_message(
+                    f"Modified {modified_count} properties, {failed_count} failed",
+                    timeout=8000,
+                )
+
+        # Mark as modified
+        self._mw.set_modified(True)
+        logger.info(f"Applied {modified_count} edits, {failed_count} failed")
 
     # ==================== Validation/Navigation ====================
 

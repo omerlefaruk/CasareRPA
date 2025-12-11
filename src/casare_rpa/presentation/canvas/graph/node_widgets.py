@@ -187,21 +187,85 @@ class CasareCheckBox:
 
 class CasareLivePipe:
     """
-    Wrapper that fixes the draw_index_pointer text_pos bug in LivePipeItem.
+    Wrapper that fixes issues in LivePipeItem:
+    1. draw_index_pointer text_pos bug (undefined when layout_direction is None)
+    2. OpenGL-incompatible dashed line rendering (Qt DashLine doesn't work with OpenGL)
 
-    The original NodeGraphQt code has a bug where text_pos is undefined
-    when viewer_layout_direction() returns None. This wrapper provides
-    a fixed version that always initializes text_pos with a default value.
+    The original NodeGraphQt code has bugs:
+    - text_pos undefined when viewer_layout_direction() returns None
+    - Uses Qt's DashLine style which doesn't render with OpenGL viewport
+
+    This wrapper provides fixed versions that work correctly with OpenGL.
 
     Usage:
         # Apply fix at module load time
         CasareLivePipe.apply_fix()
     """
 
+    # Dash pattern constants for OpenGL-compatible rendering
+    _DASH_LENGTH = 8.0
+    _GAP_LENGTH = 6.0
+
+    @staticmethod
+    def _draw_dashed_path(painter, path, pen):
+        """
+        Draw a path with dashed line style (OpenGL compatible).
+
+        Instead of using QPen.DashLine (which doesn't work with OpenGL),
+        this draws the path as a series of short line segments.
+
+        Args:
+            painter: QPainter to draw with
+            path: The QPainterPath to draw
+            pen: QPen to use (solid style will be used)
+        """
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QPen
+
+        if path.isEmpty():
+            return
+
+        # Use solid pen for manual dash drawing
+        solid_pen = QPen(pen)
+        solid_pen.setStyle(Qt.PenStyle.SolidLine)
+        painter.setPen(solid_pen)
+
+        # Get path length
+        path_length = path.length()
+        if path_length < 1:
+            return
+
+        # Draw dashes along the path
+        dash_length = CasareLivePipe._DASH_LENGTH
+        gap_length = CasareLivePipe._GAP_LENGTH
+        segment_length = dash_length + gap_length
+        current_pos = 0.0
+
+        while current_pos < path_length:
+            # Calculate dash start and end positions
+            dash_start = current_pos
+            dash_end = min(current_pos + dash_length, path_length)
+
+            # Get points along the path
+            start_percent = dash_start / path_length
+            end_percent = dash_end / path_length
+
+            try:
+                start_point = path.pointAtPercent(start_percent)
+                end_point = path.pointAtPercent(end_percent)
+                painter.drawLine(start_point, end_point)
+            except Exception:
+                pass
+
+            # Move to next segment (dash + gap)
+            current_pos += segment_length
+
     @staticmethod
     def apply_fix() -> None:
-        """Apply the draw_index_pointer fix to LivePipeItem."""
+        """Apply fixes to LivePipeItem (draw_index_pointer and paint)."""
         try:
+            from PySide6.QtGui import QPainter
+
             from NodeGraphQt.qgraphics.pipe import (
                 LayoutDirectionEnum,
                 LivePipeItem,
@@ -210,6 +274,7 @@ class CasareLivePipe:
             )
 
             _original_draw_index_pointer = LivePipeItem.draw_index_pointer  # noqa: F841
+            _original_paint = LivePipeItem.paint  # noqa: F841
 
             def fixed_draw_index_pointer(self, start_port, cursor_pos, color=None):
                 """Fixed version that always initializes text_pos."""
@@ -259,7 +324,27 @@ class CasareLivePipe:
                 self._idx_pointer.setBrush(pen_color.darker(300))
                 self._idx_pointer.setPen(pen)
 
+            def fixed_paint(self, painter, option, widget):
+                """
+                Fixed paint method with OpenGL-compatible dashed line drawing.
+
+                Qt's DashLine pen style doesn't render correctly with OpenGL viewport.
+                This override draws dashed lines manually using line segments.
+                """
+                painter.save()
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+                # Use OpenGL-compatible manual dashed line drawing
+                pen = self.pen()
+                path = self.path()
+
+                if not path.isEmpty():
+                    CasareLivePipe._draw_dashed_path(painter, path, pen)
+
+                painter.restore()
+
             LivePipeItem.draw_index_pointer = fixed_draw_index_pointer
+            LivePipeItem.paint = fixed_paint
 
         except ImportError as e:
             logger.warning(f"CasareLivePipe: Could not import LivePipeItem: {e}")

@@ -193,7 +193,7 @@ class GmailSendWithAttachmentNode(BaseNode):
         self.add_input_port("to", DataType.STRING, "Recipient email")
         self.add_input_port("subject", DataType.STRING, "Email subject")
         self.add_input_port("body", DataType.STRING, "Email body")
-        self.add_input_port("attachments", DataType.ARRAY, "File paths to attach")
+        self.add_input_port("attachments", DataType.LIST, "File paths to attach")
         self.add_input_port("cc", DataType.STRING, "CC recipients")
         self.add_input_port("bcc", DataType.STRING, "BCC recipients")
         self.add_output_port("message_id", DataType.STRING, "Sent message ID")
@@ -381,8 +381,8 @@ class GmailGetEmailNode(BaseNode):
         self.add_output_port("date", DataType.STRING, "Date received")
         self.add_output_port("body", DataType.STRING, "Email body")
         self.add_output_port("snippet", DataType.STRING, "Email snippet")
-        self.add_output_port("labels", DataType.ARRAY, "Label IDs")
-        self.add_output_port("attachments", DataType.ARRAY, "Attachment info")
+        self.add_output_port("labels", DataType.LIST, "Label IDs")
+        self.add_output_port("attachments", DataType.LIST, "Attachment info")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -479,8 +479,8 @@ class GmailListEmailsNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("max_results", DataType.INTEGER, "Maximum results")
-        self.add_input_port("label_ids", DataType.ARRAY, "Label IDs to filter")
-        self.add_output_port("messages", DataType.ARRAY, "List of message objects")
+        self.add_input_port("label_ids", DataType.LIST, "Label IDs to filter")
+        self.add_output_port("messages", DataType.LIST, "List of message objects")
         self.add_output_port("count", DataType.INTEGER, "Number of messages")
         self.add_output_port("next_page_token", DataType.STRING, "Next page token")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -539,7 +539,7 @@ class GmailSearchEmailsNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_input_port("query", DataType.STRING, "Search query")
         self.add_input_port("max_results", DataType.INTEGER, "Maximum results")
-        self.add_output_port("messages", DataType.ARRAY, "List of message objects")
+        self.add_output_port("messages", DataType.LIST, "List of message objects")
         self.add_output_port("count", DataType.INTEGER, "Number of messages")
         self.add_output_port("next_page_token", DataType.STRING, "Next page token")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -598,7 +598,7 @@ class GmailGetThreadNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("thread_id", DataType.STRING, "Thread ID")
-        self.add_output_port("messages", DataType.ARRAY, "Thread messages")
+        self.add_output_port("messages", DataType.LIST, "Thread messages")
         self.add_output_port("count", DataType.INTEGER, "Number of messages in thread")
         self.add_output_port("snippet", DataType.STRING, "Thread snippet")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -661,9 +661,9 @@ class GmailModifyLabelsNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_input_port("add_labels", DataType.ARRAY, "Labels to add")
-        self.add_input_port("remove_labels", DataType.ARRAY, "Labels to remove")
-        self.add_output_port("labels", DataType.ARRAY, "Updated labels")
+        self.add_input_port("add_labels", DataType.LIST, "Labels to add")
+        self.add_input_port("remove_labels", DataType.LIST, "Labels to remove")
+        self.add_output_port("labels", DataType.LIST, "Updated labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -994,8 +994,8 @@ class GmailBatchSendNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_input_port("emails", DataType.ARRAY, "Array of email objects")
-        self.add_output_port("results", DataType.ARRAY, "Send results")
+        self.add_input_port("emails", DataType.LIST, "Array of email objects")
+        self.add_output_port("results", DataType.LIST, "Send results")
         self.add_output_port("sent_count", DataType.INTEGER, "Number sent")
         self.add_output_port("failed_count", DataType.INTEGER, "Number failed")
         self.add_output_port("success", DataType.BOOLEAN, "Overall success")
@@ -1087,9 +1087,9 @@ class GmailBatchModifyNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_input_port("message_ids", DataType.ARRAY, "Array of message IDs")
-        self.add_input_port("add_labels", DataType.ARRAY, "Labels to add")
-        self.add_input_port("remove_labels", DataType.ARRAY, "Labels to remove")
+        self.add_input_port("message_ids", DataType.LIST, "Array of message IDs")
+        self.add_input_port("add_labels", DataType.LIST, "Labels to add")
+        self.add_input_port("remove_labels", DataType.LIST, "Labels to remove")
         self.add_output_port("modified_count", DataType.INTEGER, "Number modified")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1140,7 +1140,7 @@ class GmailBatchDeleteNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_input_port("message_ids", DataType.ARRAY, "Array of message IDs")
+        self.add_input_port("message_ids", DataType.LIST, "Array of message IDs")
         self.add_output_port("deleted_count", DataType.INTEGER, "Number deleted")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1191,8 +1191,8 @@ class GmailAddLabelNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_input_port("label_ids", DataType.ARRAY, "Label IDs to add")
-        self.add_output_port("labels", DataType.ARRAY, "Updated labels")
+        self.add_input_port("label_ids", DataType.LIST, "Label IDs to add")
+        self.add_output_port("labels", DataType.LIST, "Updated labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -1256,8 +1256,8 @@ class GmailRemoveLabelNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_input_port("label_ids", DataType.ARRAY, "Label IDs to remove")
-        self.add_output_port("labels", DataType.ARRAY, "Updated labels")
+        self.add_input_port("label_ids", DataType.LIST, "Label IDs to remove")
+        self.add_output_port("labels", DataType.LIST, "Updated labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -1320,7 +1320,7 @@ class GmailGetLabelsNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_output_port("labels", DataType.ARRAY, "List of label objects")
+        self.add_output_port("labels", DataType.LIST, "List of label objects")
         self.add_output_port("count", DataType.INTEGER, "Number of labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")

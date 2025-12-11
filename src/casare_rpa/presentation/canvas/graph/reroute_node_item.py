@@ -9,6 +9,8 @@ Key features:
 - Ports invisible but functional at center
 - Wire color inheritance from connected type
 - Selection glow matching other nodes
+
+All colors are sourced from the unified theme system (theme.py).
 """
 
 from typing import Optional
@@ -27,13 +29,18 @@ from NodeGraphQt.qgraphics.node_base import NodeItem
 
 from loguru import logger
 
+# Import unified theme system for all colors
+from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
+
 
 # ============================================================================
-# REROUTE NODE VISUAL CONSTANTS
+# REROUTE NODE VISUAL CONSTANTS - Delegated to unified theme
 # ============================================================================
+# Colors are lazily initialized from theme to ensure consistency and
+# avoid import-time QApplication dependency issues.
 
 # =========================
-# CONTROLLERS - Adjust these
+# CONTROLLERS - Adjust these (geometry, not colors)
 # =========================
 
 # Diamond size controller (total width/height in pixels)
@@ -76,14 +83,56 @@ _NODE_HEIGHT = 22.0
 _NODE_CENTER_X = (_INPUT_CIRCLE_X + _OUTPUT_CIRCLE_X) / 2.0
 _NODE_CENTER_Y = _NODE_HEIGHT / 2.0
 
-# Colors
-_REROUTE_FILL_COLOR = QColor(80, 80, 80)  # Dark gray fill
-_REROUTE_BORDER_COLOR = QColor(120, 120, 120)  # Lighter gray border
-_REROUTE_SELECTED_COLOR = QColor(255, 215, 0)  # Yellow when selected
-_REROUTE_HOVER_COLOR = QColor(150, 150, 150)  # Lighter on hover
 
-# Default type color (gray for ANY)
-_DEFAULT_TYPE_COLOR = QColor(128, 128, 128)
+# ============================================================================
+# COLOR CACHES - Initialized lazily from theme
+# ============================================================================
+
+_REROUTE_FILL_COLOR: Optional[QColor] = None
+_REROUTE_BORDER_COLOR: Optional[QColor] = None
+_REROUTE_SELECTED_COLOR: Optional[QColor] = None
+_REROUTE_HOVER_COLOR: Optional[QColor] = None
+_DEFAULT_TYPE_COLOR: Optional[QColor] = None
+
+
+def _get_reroute_fill_color() -> QColor:
+    """Get reroute fill color from theme."""
+    cc = Theme.get_canvas_colors()
+    return _hex_to_qcolor(cc.node_bg)
+
+
+def _get_reroute_border_color() -> QColor:
+    """Get reroute border color from theme."""
+    return Theme.get_node_border_qcolor("normal")
+
+
+def _get_reroute_selected_color() -> QColor:
+    """Get reroute selection color from theme."""
+    return Theme.get_node_border_qcolor("selected")
+
+
+def _get_reroute_hover_color() -> QColor:
+    """Get reroute hover color from theme."""
+    return Theme.get_node_border_qcolor("hover")
+
+
+def _get_default_type_color() -> QColor:
+    """Get default type color (ANY) from theme."""
+    cc = Theme.get_canvas_colors()
+    return _hex_to_qcolor(cc.wire_any)
+
+
+def _init_reroute_colors():
+    """Initialize all reroute color variables from theme."""
+    global _REROUTE_FILL_COLOR, _REROUTE_BORDER_COLOR, _REROUTE_SELECTED_COLOR
+    global _REROUTE_HOVER_COLOR, _DEFAULT_TYPE_COLOR
+
+    if _REROUTE_FILL_COLOR is None:
+        _REROUTE_FILL_COLOR = _get_reroute_fill_color()
+        _REROUTE_BORDER_COLOR = _get_reroute_border_color()
+        _REROUTE_SELECTED_COLOR = _get_reroute_selected_color()
+        _REROUTE_HOVER_COLOR = _get_reroute_hover_color()
+        _DEFAULT_TYPE_COLOR = _get_default_type_color()
 
 
 class RerouteNodeItem(NodeItem):
@@ -104,8 +153,11 @@ class RerouteNodeItem(NodeItem):
         """
         super().__init__(name, parent)
 
+        # Initialize colors from unified theme (lazy initialization)
+        _init_reroute_colors()
+
         # Reroute-specific state
-        self._type_color: QColor = _DEFAULT_TYPE_COLOR
+        self._type_color: QColor = QColor(_DEFAULT_TYPE_COLOR)
         self._is_hovered: bool = False
 
         # Override size to fit diamond with ports on sides

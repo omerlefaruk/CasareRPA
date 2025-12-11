@@ -433,14 +433,22 @@ class RunPythonFileNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "expression",
+        PropertyType.STRING,
+        default="",
+        label="Expression",
+        tooltip="Python expression to evaluate (e.g., '{{num1}} + {{num2}}')",
+    ),
+)
 @executable_node
 class EvalExpressionNode(BaseNode):
     """
     Evaluate a Python expression and return the result.
 
-    Inputs:
-        expression: Python expression to evaluate
-        variables: Dict of variables available in expression
+    Config (via @node_schema):
+        expression: Python expression to evaluate (supports {{variable}} syntax)
 
     Outputs:
         result: Expression result
@@ -451,7 +459,7 @@ class EvalExpressionNode(BaseNode):
 
     # @category: system
     # @requires: none
-    # @ports: expression, variables -> result, type, success, error
+    # @ports: -> result, type, success, error
 
     def __init__(self, node_id: str, name: str = "Eval Expression", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -460,8 +468,7 @@ class EvalExpressionNode(BaseNode):
         self.node_type = "EvalExpressionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("expression", PortType.INPUT, DataType.STRING)
-        self.add_input_port("variables", PortType.INPUT, DataType.DICT)
+        # expression is now a PropertyDef, not an input port
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("type", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)

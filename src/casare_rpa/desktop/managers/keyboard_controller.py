@@ -53,8 +53,21 @@ class KeyboardController:
         """
         logger.debug(f"Sending keys: '{keys[:50]}...' (interval={interval}s)")
 
+        # Use clipboard for multi-line or long text to avoid SendKeys parsing issues
+        use_clipboard = "\n" in keys or len(keys) > 100
+
         def _send() -> bool:
-            auto.SendKeys(keys, interval=interval, waitTime=0)
+            if use_clipboard:
+                import pyperclip
+
+                original = pyperclip.paste()
+                try:
+                    pyperclip.copy(keys)
+                    auto.SendKeys("{Ctrl}v", waitTime=0)
+                finally:
+                    pyperclip.copy(original if original else "")
+            else:
+                auto.SendKeys(keys, interval=interval, waitTime=0)
             return True
 
         try:

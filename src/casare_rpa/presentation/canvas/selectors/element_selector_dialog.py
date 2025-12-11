@@ -47,61 +47,145 @@ from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     SelectorResult,
     SelectorStrategy,
 )
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
 
 
 # =============================================================================
-# Dark Theme (VSCode Dark+ inspired, matching CasareRPA)
+# Theme Adapter (Maps unified Theme to legacy attribute access pattern)
 # =============================================================================
 
 
-class DarkTheme:
-    """Dark theme matching CasareRPA canvas - VSCode Dark+ style."""
+class _ThemeAdapter:
+    """
+    Adapter class that provides attribute-style access to unified theme colors.
 
-    # Base backgrounds
-    bg_primary = "#252526"  # Card/panel background
-    bg_secondary = "#2D2D30"  # Section headers
-    bg_tertiary = "#1E1E1E"  # Main dialog background
-    bg_hover = "#2A2D2E"  # Hover state
-    bg_active = "#3E3E42"  # Active/pressed state
-    bg_input = "#3C3C3C"  # Input fields
+    This bridges the gap between the old DarkTheme class API and the new
+    Theme.get_colors() dataclass API for backward compatibility.
+    """
 
-    # Text colors
-    text_primary = "#D4D4D4"  # Main text
-    text_secondary = "#CCCCCC"  # Secondary text
-    text_muted = "#A6A6A6"  # Muted/placeholder
-    text_disabled = "#6B6B6B"  # Disabled text
+    @property
+    def bg_primary(self) -> str:
+        return Theme.get_colors().surface
 
-    # Accent colors
-    accent_primary = "#007ACC"  # VSCode blue
-    accent_hover = "#1177BB"  # Lighter blue hover
-    accent_pressed = "#005A9E"  # Darker blue pressed
-    accent_light = "#264F78"  # Selection/highlight
+    @property
+    def bg_secondary(self) -> str:
+        return Theme.get_colors().background_alt
 
-    # Secondary accent (orange)
-    accent_orange = "#D7BA7D"  # Warning/anchor color
-    accent_orange_light = "#3d3520"
+    @property
+    def bg_tertiary(self) -> str:
+        return Theme.get_colors().background
 
-    # Status colors
-    success = "#89D185"
-    success_light = "#1e3d2e"
-    warning = "#D7BA7D"
-    warning_light = "#3d3520"
-    error = "#F48771"
-    error_light = "#3d1e1e"
-    info = "#75BEFF"
-    info_light = "#1e2d3d"
+    @property
+    def bg_hover(self) -> str:
+        return Theme.get_colors().surface_hover
 
-    # Border colors
-    border = "#3E3E42"
-    border_light = "#454545"
-    border_dark = "#252526"
-    border_focus = "#007ACC"
+    @property
+    def bg_active(self) -> str:
+        return Theme.get_colors().secondary_hover
+
+    @property
+    def bg_input(self) -> str:
+        return Theme.get_colors().background
+
+    @property
+    def text_primary(self) -> str:
+        return Theme.get_colors().text_primary
+
+    @property
+    def text_secondary(self) -> str:
+        return Theme.get_colors().text_secondary
+
+    @property
+    def text_muted(self) -> str:
+        return Theme.get_colors().text_muted
+
+    @property
+    def text_disabled(self) -> str:
+        return Theme.get_colors().text_disabled
+
+    @property
+    def accent_primary(self) -> str:
+        return Theme.get_colors().accent
+
+    @property
+    def accent_hover(self) -> str:
+        return Theme.get_colors().accent_hover
+
+    @property
+    def accent_pressed(self) -> str:
+        return Theme.get_colors().primary_pressed
+
+    @property
+    def accent_light(self) -> str:
+        return Theme.get_colors().selection
+
+    @property
+    def accent_orange(self) -> str:
+        return Theme.get_colors().warning
+
+    @property
+    def accent_orange_light(self) -> str:
+        # Derive lighter warning color
+        return "#FFE4B5"  # Moccasin - light orange
+
+    @property
+    def success(self) -> str:
+        return Theme.get_colors().success
+
+    @property
+    def success_light(self) -> str:
+        # Derive lighter success color
+        return "#90EE90"  # Light green
+
+    @property
+    def warning(self) -> str:
+        return Theme.get_colors().warning
+
+    @property
+    def warning_light(self) -> str:
+        # Derive lighter warning color
+        return "#FFE4B5"  # Moccasin - light orange
+
+    @property
+    def error(self) -> str:
+        return Theme.get_colors().error
+
+    @property
+    def error_light(self) -> str:
+        # Derive lighter error color
+        return "#FFB6C1"  # Light pink
+
+    @property
+    def info(self) -> str:
+        return Theme.get_colors().info
+
+    @property
+    def info_light(self) -> str:
+        # Derive lighter info color
+        return "#ADD8E6"  # Light blue
+
+    @property
+    def border(self) -> str:
+        return Theme.get_colors().border
+
+    @property
+    def border_light(self) -> str:
+        return Theme.get_colors().border_light
+
+    @property
+    def border_dark(self) -> str:
+        return Theme.get_colors().border_dark
+
+    @property
+    def border_focus(self) -> str:
+        return Theme.get_colors().accent
 
 
-THEME = DarkTheme()
+# Module-level theme instance using unified theme
+THEME = _ThemeAdapter()
 
 
 # =============================================================================

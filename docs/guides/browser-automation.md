@@ -64,6 +64,92 @@ Common interaction nodes:
 Start → LaunchBrowser → Navigate → WaitForElement → Click → ExtractText → End
 ```
 
+## Example: Instagram Profile Scraper
+
+A complete workflow for scraping post metadata from an Instagram profile.
+
+### Workflow File
+Location: `workflows/instagram_profile_scraper.json`
+
+### Flow Overview
+```
+Start
+  │
+  ▼
+LaunchBrowserNode (chromium, maximized)
+  │  └─page─┐
+  ▼         │
+GoToURLNode (https://www.instagram.com/username/)
+  │  └─page─┐
+  ▼         │
+WaitForElementNode (selector: article a[href*='/p/'])
+  │  └─page─┐
+  ▼         │
+WaitNode (3 seconds for images to load)
+  │         │
+  ▼         │
+ExtractTextNode (get all post links) ◄─page─┘
+  │  └─page─┐
+  ▼         │
+GetAttributeNode (get image src attributes) ◄─page─┘
+  │
+  ▼
+CloseBrowserNode
+  │
+  ▼
+End
+```
+
+### Key Configuration
+
+| Node | Property | Value | Purpose |
+|------|----------|-------|---------|
+| LaunchBrowserNode | browser_type | chromium | Modern rendering |
+| LaunchBrowserNode | do_not_close | true | Keep browser for debugging |
+| GoToURLNode | wait_until | networkidle | Wait for all content |
+| WaitForElementNode | selector | `article a[href*='/p/']` | Instagram post links |
+| ExtractTextNode | selector | `article a[href*='/p/']` | Get all post link hrefs |
+| GetAttributeNode | selector | `article img` | Get image src URLs |
+| GetAttributeNode | attribute | `src` | Extract the src attribute |
+
+### Extracted Data
+
+The workflow outputs:
+- **Post URLs**: Links to individual Instagram posts
+- **Image URLs**: Direct links to post images
+- **Alt Text**: Image descriptions/captions
+
+### Important Notes
+
+1. **Login Required**: Instagram limits content for logged-out users. Log in manually before running, or add login nodes.
+2. **Rate Limiting**: Instagram may block automated access. Use reasonable delays.
+3. **Selector Changes**: Instagram updates its HTML structure frequently. Selectors may need updates.
+4. **Legal Compliance**: Ensure your use complies with Instagram's Terms of Service.
+
+### Extending the Workflow
+
+To save extracted data:
+```
+... → GetAttributeNode → WriteJSONFileNode (save to file) → CloseBrowserNode → ...
+```
+
+To scroll for more posts:
+```
+... → WaitNode → [For Loop: RunPythonScriptNode(scroll) + Wait] → ExtractTextNode → ...
+```
+
+### Testing the Workflow
+
+The workflow can be validated using the headless runner:
+```python
+from tests.integration.runners.test_headless_ui import QtHeadlessRunner
+from pathlib import Path
+
+runner = QtHeadlessRunner()
+workflow = runner.load_workflow(Path("workflows/instagram_profile_scraper.json"))
+# Workflow loaded successfully - all node types and connections are valid
+```
+
 ## Related Nodes
 
 - [Browser Nodes](../nodes/browser/index.md)

@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from PySide6.QtGui import QAction, QKeySequence
 
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+
 if TYPE_CHECKING:
     from ..main_window import MainWindow
 
@@ -447,6 +449,16 @@ class ActionManager:
             mw._on_project_manager,
         )
 
+        # === CREDENTIALS ACTIONS ===
+        mw.action_credential_manager = self._create_action(
+            "credential_manager",
+            "&Credentials...",
+            QKeySequence("Ctrl+Alt+C"),
+            "Manage API keys and credentials",
+            mw._on_open_credential_manager,
+        )
+        mw.action_credential_manager.setIcon(get_toolbar_icon("credentials"))
+
         # === PERFORMANCE ACTIONS ===
         mw.action_performance_dashboard = self._create_action(
             "performance_dashboard",
@@ -462,6 +474,16 @@ class ActionManager:
             None,
             "Force simplified rendering for large workflows (auto-enabled at 50+ nodes)",
             mw._on_toggle_high_performance_mode,
+            checkable=True,
+        )
+
+        # === AI ASSISTANT ACTION ===
+        mw.action_ai_assistant = self._create_action(
+            "ai_assistant",
+            "AI &Assistant",
+            QKeySequence("Ctrl+Shift+G"),  # G for Genius
+            "Open AI-powered workflow generation assistant",
+            mw._on_toggle_ai_assistant,
             checkable=True,
         )
 

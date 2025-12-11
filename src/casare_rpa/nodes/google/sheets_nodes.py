@@ -192,7 +192,7 @@ class SheetsGetRangeNode(BaseNode):
         self.add_input_port("range", DataType.STRING, "Range (e.g., A1:C10)")
         self.add_input_port("sheet_name", DataType.STRING, "Sheet name")
         self.add_exec_output()
-        self.add_output_port("values", DataType.ARRAY, "2D array of values")
+        self.add_output_port("values", DataType.LIST, "2D array of values")
         self.add_output_port("row_count", DataType.INTEGER, "Number of rows")
         self.add_output_port("column_count", DataType.INTEGER, "Number of columns")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -268,7 +268,7 @@ class SheetsWriteRangeNode(BaseNode):
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("range", DataType.STRING, "Starting cell (e.g., A1)")
-        self.add_input_port("values", DataType.ARRAY, "2D array of values")
+        self.add_input_port("values", DataType.LIST, "2D array of values")
         self.add_input_port("sheet_name", DataType.STRING, "Sheet name")
         self.add_exec_output()
         self.add_output_port("updated_range", DataType.STRING, "Updated range")
@@ -412,7 +412,7 @@ class SheetsCreateSpreadsheetNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_exec_input()
         self.add_input_port("title", DataType.STRING, "Spreadsheet title")
-        self.add_input_port("sheet_names", DataType.ARRAY, "Initial sheet names")
+        self.add_input_port("sheet_names", DataType.LIST, "Initial sheet names")
         self.add_exec_output()
         self.add_output_port("spreadsheet_id", DataType.STRING, "New spreadsheet ID")
         self.add_output_port("spreadsheet_url", DataType.STRING, "Spreadsheet URL")
@@ -468,7 +468,7 @@ class SheetsGetSpreadsheetNode(BaseNode):
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_exec_output()
         self.add_output_port("title", DataType.STRING, "Spreadsheet title")
-        self.add_output_port("sheets", DataType.ARRAY, "List of sheets")
+        self.add_output_port("sheets", DataType.LIST, "List of sheets")
         self.add_output_port("locale", DataType.STRING, "Locale")
         self.add_output_port("time_zone", DataType.STRING, "Time zone")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -790,7 +790,7 @@ class SheetsAppendRowNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
-        self.add_input_port("values", DataType.ARRAY, "Row values")
+        self.add_input_port("values", DataType.LIST, "Row values")
         self.add_input_port("sheet_name", DataType.STRING, "Sheet name")
         self.add_exec_output()
         self.add_output_port("updated_range", DataType.STRING, "Updated range")
@@ -1336,7 +1336,7 @@ class SheetsBatchUpdateNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
-        self.add_input_port("data", DataType.ARRAY, "Array of {range, values} objects")
+        self.add_input_port("data", DataType.LIST, "Array of {range, values} objects")
         self.add_exec_output()
         self.add_output_port(
             "total_updated_rows", DataType.INTEGER, "Total rows updated"
@@ -1417,9 +1417,9 @@ class SheetsBatchGetNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
-        self.add_input_port("ranges", DataType.ARRAY, "Array of range strings")
+        self.add_input_port("ranges", DataType.LIST, "Array of range strings")
         self.add_exec_output()
-        self.add_output_port("value_ranges", DataType.ARRAY, "Array of value ranges")
+        self.add_output_port("value_ranges", DataType.LIST, "Array of value ranges")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -1481,9 +1481,9 @@ class SheetsBatchClearNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
-        self.add_input_port("ranges", DataType.ARRAY, "Array of range strings")
+        self.add_input_port("ranges", DataType.LIST, "Array of range strings")
         self.add_exec_output()
-        self.add_output_port("cleared_ranges", DataType.ARRAY, "Cleared ranges")
+        self.add_output_port("cleared_ranges", DataType.LIST, "Cleared ranges")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 

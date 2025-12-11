@@ -165,10 +165,10 @@ class VisualInputDialogNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("prompt", DataType.STRING)
+        # title, prompt, default_value are now PropertyDefs (auto-generated widgets)
         self.add_exec_output("exec_out")
         self.add_typed_output("value", DataType.STRING)
-        self.add_typed_output("accepted", DataType.BOOLEAN)
+        self.add_typed_output("confirmed", DataType.BOOLEAN)
 
 
 class VisualTooltipNode(VisualNode):

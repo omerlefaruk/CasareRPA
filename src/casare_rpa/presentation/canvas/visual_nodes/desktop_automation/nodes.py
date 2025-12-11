@@ -20,15 +20,29 @@ def _replace_widget(node: VisualNode, widget) -> None:
         widget: The custom widget to add (NodeFilePathWidget or NodeDirectoryPathWidget)
     """
     prop_name = widget._name  # NodeBaseWidget stores name as _name
-    # Remove existing property if it was auto-generated from schema
+    _remove_existing_property(node, prop_name)
+    # Now safely add our custom widget
+    node.add_custom_widget(widget)
+    widget.setParentItem(node.view)
+
+
+def _remove_existing_property(node: VisualNode, prop_name: str) -> None:
+    """
+    Remove an existing property if it was auto-generated from schema.
+
+    Prevents NodePropertyError conflicts when adding custom widgets
+    or text inputs that may already exist from @node_schema decoration.
+
+    Args:
+        node: The visual node
+        prop_name: Name of property to remove if exists
+    """
+    # Remove from model's custom_properties if it exists
     if hasattr(node, "model") and prop_name in node.model.custom_properties:
         del node.model.custom_properties[prop_name]
         # Also remove from widgets dict if present
         if hasattr(node, "_widgets") and prop_name in node._widgets:
             del node._widgets[prop_name]
-    # Now safely add our custom widget
-    node.add_custom_widget(widget)
-    widget.setParentItem(node.view)
 
 
 class VisualLaunchApplicationNode(VisualNode):
@@ -52,7 +66,15 @@ class VisualLaunchApplicationNode(VisualNode):
                 text="calc.exe",
             ),
         )
-        self.add_text_input("arguments", "Arguments", text="", tab="inputs")
+        # Remove auto-generated property before adding custom widget
+        _remove_existing_property(self, "arguments")
+        self._add_variable_aware_text_input(
+            "arguments",
+            "Arguments",
+            text="",
+            placeholder_text='e.g., --verbose -f "file.txt"',
+            tab="inputs",
+        )
         _replace_widget(
             self,
             NodeDirectoryPathWidget(
@@ -61,11 +83,18 @@ class VisualLaunchApplicationNode(VisualNode):
                 placeholder="Select working directory...",
             ),
         )
-        self.add_text_input(
-            "window_title_hint", "Window Title Hint", text="", tab="config"
+        # Remove auto-generated properties before adding custom widgets
+        _remove_existing_property(self, "window_title_hint")
+        self._add_variable_aware_text_input(
+            "window_title_hint",
+            "Window Title Hint",
+            text="",
+            placeholder_text="e.g., Untitled - Notepad",
+            tab="config",
         )
-        self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property(
+        _remove_existing_property(self, "timeout")
+        self._safe_create_property("timeout", 10.0, widget_type=2, tab="config")
+        self._safe_create_property(
             "window_state",
             "normal",
             items=["normal", "maximized", "minimized"],
@@ -86,7 +115,11 @@ class VisualLaunchApplicationNode(VisualNode):
 
 
 class VisualCloseApplicationNode(VisualNode):
-    """Visual representation of CloseApplicationNode."""
+    """Visual representation of CloseApplicationNode.
+
+    Widgets are auto-generated from the @node_schema on CloseApplicationNode.
+    Schema provides: force_close, timeout properties.
+    """
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Close Application"
@@ -96,9 +129,15 @@ class VisualCloseApplicationNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Close Application node."""
         super().__init__()
-        self.add_text_input("window_title", "Window Title", text="", tab="inputs")
-        self.create_property("force_close", False, widget_type=1, tab="config")
-        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+        # window_title is not in schema, add manually
+        self._add_variable_aware_text_input(
+            "window_title",
+            "Window Title",
+            text="",
+            placeholder_text="e.g., Untitled - Notepad",
+            tab="inputs",
+        )
+        # force_close and timeout are auto-generated from @node_schema
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -121,9 +160,15 @@ class VisualActivateWindowNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Activate Window node."""
         super().__init__()
-        self.add_text_input("window_title", "Window Title", text="", tab="inputs")
-        self.create_property("match_partial", True, widget_type=1, tab="config")
-        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+        self._add_variable_aware_text_input(
+            "window_title",
+            "Window Title",
+            text="",
+            placeholder_text="e.g., Chrome, Excel",
+            tab="inputs",
+        )
+        self._safe_create_property("match_partial", True, widget_type=1, tab="config")
+        self._safe_create_property("timeout", 5.0, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -287,8 +332,8 @@ class VisualResizeWindowNode(VisualNode):
         """Initialize Resize Window node."""
         super().__init__()
         # Use window_width/window_height to avoid conflict with reserved "width"/"height" properties
-        self.create_property("window_width", 800, widget_type=2, tab="config")
-        self.create_property("window_height", 600, widget_type=2, tab="config")
+        self._safe_create_property("window_width", 800, widget_type=2, tab="config")
+        self._safe_create_property("window_height", 600, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -312,8 +357,8 @@ class VisualMoveWindowNode(VisualNode):
         """Initialize Move Window node."""
         super().__init__()
         # Use pos_x/pos_y to avoid conflict with reserved "x"/"y" properties
-        self.create_property("pos_x", 100, widget_type=2, tab="config")
-        self.create_property("pos_y", 100, widget_type=2, tab="config")
+        self._safe_create_property("pos_x", 100, widget_type=2, tab="config")
+        self._safe_create_property("pos_y", 100, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -408,7 +453,7 @@ class VisualSetWindowStateNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Set Window State node."""
         super().__init__()
-        self.create_property(
+        self._safe_create_property(
             "state",
             "normal",
             items=["normal", "maximized", "minimized"],
@@ -439,8 +484,14 @@ class VisualSelectFromDropdownNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Select From Dropdown node."""
         super().__init__()
-        self.add_text_input("value", "Value to Select", text="", tab="inputs")
-        self.create_property("by_text", True, widget_type=1, tab="config")
+        self._add_variable_aware_text_input(
+            "value",
+            "Value to Select",
+            text="",
+            placeholder_text="e.g., Option 1, USA",
+            tab="inputs",
+        )
+        self._safe_create_property("by_text", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -462,7 +513,7 @@ class VisualCheckCheckboxNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Check Checkbox node."""
         super().__init__()
-        self.create_property("check", True, widget_type=1, tab="config")
+        self._safe_create_property("check", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -499,8 +550,14 @@ class VisualSelectTabNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Select Tab node."""
         super().__init__()
-        self.add_text_input("tab_name", "Tab Name", text="", tab="inputs")
-        self.create_property("tab_index", -1, widget_type=2, tab="config")
+        self._add_variable_aware_text_input(
+            "tab_name",
+            "Tab Name",
+            text="",
+            placeholder_text="e.g., General, Settings",
+            tab="inputs",
+        )
+        self._safe_create_property("tab_index", -1, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -523,7 +580,7 @@ class VisualExpandTreeItemNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Expand Tree Item node."""
         super().__init__()
-        self.create_property("expand", True, widget_type=1, tab="config")
+        self._safe_create_property("expand", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -544,14 +601,14 @@ class VisualScrollElementNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Scroll Element node."""
         super().__init__()
-        self.create_property(
+        self._safe_create_property(
             "direction",
             "down",
             items=["up", "down", "left", "right"],
             widget_type=3,
             tab="config",
         )
-        self.create_property("amount", 0.5, widget_type=2, tab="config")
+        self._safe_create_property("amount", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -575,9 +632,9 @@ class VisualMoveMouseNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Move Mouse node."""
         super().__init__()
-        self.create_property("mouse_x", 0, widget_type=2, tab="config")
-        self.create_property("mouse_y", 0, widget_type=2, tab="config")
-        self.create_property("duration", 0.0, widget_type=2, tab="config")
+        self._safe_create_property("mouse_x", 0, widget_type=2, tab="config")
+        self._safe_create_property("mouse_y", 0, widget_type=2, tab="config")
+        self._safe_create_property("duration", 0.0, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -600,16 +657,16 @@ class VisualMouseClickNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Mouse Click node."""
         super().__init__()
-        self.create_property("click_x", 0, widget_type=2, tab="config")
-        self.create_property("click_y", 0, widget_type=2, tab="config")
-        self.create_property(
+        self._safe_create_property("click_x", 0, widget_type=2, tab="config")
+        self._safe_create_property("click_y", 0, widget_type=2, tab="config")
+        self._safe_create_property(
             "button",
             "left",
             items=["left", "right", "middle"],
             widget_type=3,
             tab="config",
         )
-        self.create_property(
+        self._safe_create_property(
             "click_type",
             "single",
             items=["single", "double", "triple"],
@@ -627,18 +684,18 @@ class VisualMouseClickNode(VisualNode):
 
 
 class VisualSendKeysNode(VisualNode):
-    """Visual representation of SendKeysNode."""
+    """Visual representation of SendKeysNode.
+
+    Widgets are auto-generated from the @node_schema on SendKeysNode.
+    No __init__ override needed - schema provides: keys, interval, with_shift, etc.
+    """
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Send Keys"
     NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
-    def __init__(self) -> None:
-        """Initialize Send Keys node."""
-        super().__init__()
-        self.add_text_input("keys", "Keys to Send", text="", tab="inputs")
-        self.create_property("interval", 0.0, widget_type=2, tab="config")
+    # No __init__ needed - widgets auto-created from domain schema
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -702,18 +759,18 @@ class VisualDragMouseNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Drag Mouse node."""
         super().__init__()
-        self.create_property("start_x", 0, widget_type=2, tab="config")
-        self.create_property("start_y", 0, widget_type=2, tab="config")
-        self.create_property("end_x", 100, widget_type=2, tab="config")
-        self.create_property("end_y", 100, widget_type=2, tab="config")
-        self.create_property(
+        self._safe_create_property("start_x", 0, widget_type=2, tab="config")
+        self._safe_create_property("start_y", 0, widget_type=2, tab="config")
+        self._safe_create_property("end_x", 100, widget_type=2, tab="config")
+        self._safe_create_property("end_y", 100, widget_type=2, tab="config")
+        self._safe_create_property(
             "button",
             "left",
             items=["left", "right", "middle"],
             widget_type=3,
             tab="config",
         )
-        self.create_property("duration", 0.5, widget_type=2, tab="config")
+        self._safe_create_property("duration", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -742,15 +799,15 @@ class VisualDesktopWaitForElementNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Wait For Desktop Element node."""
         super().__init__()
-        self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property(
+        self._safe_create_property("timeout", 10.0, widget_type=2, tab="config")
+        self._safe_create_property(
             "state",
             "visible",
             items=["visible", "hidden", "enabled", "disabled"],
             widget_type=3,
             tab="config",
         )
-        self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
+        self._safe_create_property("poll_interval", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -773,14 +830,32 @@ class VisualWaitForWindowNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Wait For Window node."""
         super().__init__()
-        self.add_text_input("title", "Window Title", text="", tab="inputs")
-        self.add_text_input("title_regex", "Title Regex", text="", tab="inputs")
-        self.add_text_input("class_name", "Class Name", text="", tab="inputs")
-        self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property(
+        self._add_variable_aware_text_input(
+            "title",
+            "Window Title",
+            text="",
+            placeholder_text="e.g., Untitled - Notepad",
+            tab="inputs",
+        )
+        self._add_variable_aware_text_input(
+            "title_regex",
+            "Title Regex",
+            text="",
+            placeholder_text="e.g., .*Notepad.*",
+            tab="inputs",
+        )
+        self._add_variable_aware_text_input(
+            "class_name",
+            "Class Name",
+            text="",
+            placeholder_text="e.g., Notepad, Chrome_WidgetWin_1",
+            tab="inputs",
+        )
+        self._safe_create_property("timeout", 10.0, widget_type=2, tab="config")
+        self._safe_create_property(
             "state", "visible", items=["visible", "hidden"], widget_type=3, tab="config"
         )
-        self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
+        self._safe_create_property("poll_interval", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -805,7 +880,7 @@ class VisualVerifyElementExistsNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Verify Element Exists node."""
         super().__init__()
-        self.create_property("timeout", 0.0, widget_type=2, tab="config")
+        self._safe_create_property("timeout", 0.0, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -828,9 +903,21 @@ class VisualVerifyElementPropertyNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Verify Element Property node."""
         super().__init__()
-        self.add_text_input("property_name", "Property Name", text="Name", tab="inputs")
-        self.add_text_input("expected_value", "Expected Value", text="", tab="inputs")
-        self.create_property(
+        self._add_variable_aware_text_input(
+            "property_name",
+            "Property Name",
+            text="Name",
+            placeholder_text="e.g., Name, Value, IsEnabled",
+            tab="inputs",
+        )
+        self._add_variable_aware_text_input(
+            "expected_value",
+            "Expected Value",
+            text="",
+            placeholder_text="e.g., Submit, true, 123",
+            tab="inputs",
+        )
+        self._safe_create_property(
             "comparison",
             "equals",
             items=[
@@ -883,7 +970,7 @@ class VisualCaptureScreenshotNode(VisualNode):
                 placeholder="Select save location...",
             ),
         )
-        self.create_property(
+        self._safe_create_property(
             "format", "PNG", items=["PNG", "JPEG", "BMP"], widget_type=3, tab="config"
         )
 
@@ -917,8 +1004,8 @@ class VisualCaptureElementImageNode(VisualNode):
                 placeholder="Select save location...",
             ),
         )
-        self.create_property("padding", 0, widget_type=2, tab="config")
-        self.create_property(
+        self._safe_create_property("padding", 0, widget_type=2, tab="config")
+        self._safe_create_property(
             "format", "PNG", items=["PNG", "JPEG", "BMP"], widget_type=3, tab="config"
         )
 
@@ -959,8 +1046,20 @@ class VisualOCRExtractTextNode(VisualNode):
             items=["auto", "rapidocr", "tesseract", "winocr"],
             tab="config",
         )
-        self.add_text_input("language", "Language", text="eng", tab="config")
-        self.add_text_input("config", "Tesseract Config", text="", tab="config")
+        self._add_variable_aware_text_input(
+            "language",
+            "Language",
+            text="eng",
+            placeholder_text="e.g., eng, spa, fra, deu",
+            tab="config",
+        )
+        self._add_variable_aware_text_input(
+            "config",
+            "Tesseract Config",
+            text="",
+            placeholder_text="e.g., --psm 6 --oem 3",
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1003,14 +1102,14 @@ class VisualCompareImagesNode(VisualNode):
                 placeholder="Select second image...",
             ),
         )
-        self.create_property(
+        self._safe_create_property(
             "method",
             "histogram",
             items=["histogram", "ssim", "pixel"],
             widget_type=3,
             tab="config",
         )
-        self.create_property("threshold", 0.9, widget_type=2, tab="config")
+        self._safe_create_property("threshold", 0.9, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""

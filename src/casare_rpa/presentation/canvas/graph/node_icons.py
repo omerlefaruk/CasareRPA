@@ -3,6 +3,8 @@ Node Icon System
 
 Professional icon generation for all CasareRPA node types using
 Unicode symbols and custom drawing.
+
+All colors are sourced from the unified theme system (theme.py).
 """
 
 from typing import Dict, Tuple, Optional
@@ -11,37 +13,106 @@ from PySide6.QtCore import Qt, QRectF
 import tempfile
 import os
 
+# Import unified theme system for all colors
+from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
 
-# Category color scheme - VSCode Dark+ syntax colors for semantic consistency
-CATEGORY_COLORS = {
-    "basic": QColor(0x56, 0x9C, 0xD6),  # #569CD6 - Keyword blue
-    "browser": QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Control flow purple
-    "navigation": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
-    "interaction": QColor(0xCE, 0x91, 0x78),  # #CE9178 - String orange
-    "data": QColor(0x89, 0xD1, 0x85),  # #89D185 - Success green
-    "data_operations": QColor(0x89, 0xD1, 0x85),  # #89D185 - Success green
-    "wait": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Warning yellow
-    "variable": QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Variable light blue
-    "control_flow": QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
-    "error_handling": QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
-    "desktop_automation": QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    "debug": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
-    "file": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
-    "file_operations": QColor(0xDC, 0xDC, 0xAA),  # #DCDCAA - Warm yellow
-    "rest_api": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
-    "database": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
-    "email": QColor(0xCE, 0x91, 0x78),  # #CE9178 - Orange
-    "office_automation": QColor(0x21, 0x7B, 0x4B),  # #217B4B - Office green
-    "scripts": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
-    "system": QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
-    "utility": QColor(0x80, 0x80, 0x80),  # #808080 - Gray
-    # New categories
-    "triggers": QColor(0x9C, 0x27, 0xB0),  # #9C27B0 - Purple (Material Purple 500)
-    "messaging": QColor(0x25, 0xD3, 0x66),  # #25D366 - WhatsApp green
-    "ai_ml": QColor(0x00, 0xBC, 0xD4),  # #00BCD4 - Cyan (Material Cyan 500)
-    "document": QColor(0xFF, 0x98, 0x00),  # #FF9800 - Orange (Material Orange 500)
-    "google": QColor(0x42, 0x85, 0xF4),  # #4285F4 - Google Blue
-}
+
+# ============================================================================
+# CATEGORY COLORS - Delegated to unified theme system
+# ============================================================================
+# Legacy CATEGORY_COLORS dict is replaced with lazy initialization that
+# delegates to Theme.get_category_qcolor() for consistency across
+# nodes, icons, and wires.
+
+# Cache for QColor objects (populated on first access)
+_CATEGORY_COLORS_CACHE: Optional[Dict[str, QColor]] = None
+
+
+def _init_category_colors() -> Dict[str, QColor]:
+    """
+    Initialize category colors from unified theme system.
+
+    Returns:
+        Dictionary mapping category names to QColor objects
+    """
+    global _CATEGORY_COLORS_CACHE
+    if _CATEGORY_COLORS_CACHE is None:
+        _CATEGORY_COLORS_CACHE = {
+            "basic": Theme.get_category_qcolor("basic"),
+            "browser": Theme.get_category_qcolor("browser"),
+            "navigation": Theme.get_category_qcolor("navigation"),
+            "interaction": Theme.get_category_qcolor("interaction"),
+            "data": Theme.get_category_qcolor("data"),
+            "data_operations": Theme.get_category_qcolor("data_operations"),
+            "wait": Theme.get_category_qcolor("wait"),
+            "variable": Theme.get_category_qcolor("variable"),
+            "control_flow": Theme.get_category_qcolor("control_flow"),
+            "error_handling": Theme.get_category_qcolor("error_handling"),
+            "desktop_automation": Theme.get_category_qcolor("desktop_automation"),
+            "debug": Theme.get_category_qcolor("debug"),
+            "file": Theme.get_category_qcolor("file"),
+            "file_operations": Theme.get_category_qcolor("file_operations"),
+            "rest_api": Theme.get_category_qcolor("rest_api"),
+            "database": Theme.get_category_qcolor("database"),
+            "email": Theme.get_category_qcolor("email"),
+            "office_automation": Theme.get_category_qcolor("office_automation"),
+            "scripts": Theme.get_category_qcolor("scripts"),
+            "system": Theme.get_category_qcolor("system"),
+            "utility": Theme.get_category_qcolor("utility"),
+            "triggers": Theme.get_category_qcolor("triggers"),
+            "messaging": Theme.get_category_qcolor("messaging"),
+            "ai_ml": Theme.get_category_qcolor("ai_ml"),
+            "document": Theme.get_category_qcolor("document"),
+            "google": Theme.get_category_qcolor("google"),
+        }
+    return _CATEGORY_COLORS_CACHE
+
+
+def get_category_color_qcolor(category: str) -> QColor:
+    """
+    Get QColor for a category from unified theme.
+
+    Args:
+        category: Category name
+
+    Returns:
+        QColor for the category (cached for performance)
+    """
+    colors = _init_category_colors()
+    return colors.get(category, Theme.get_category_qcolor("utility"))
+
+
+# Legacy CATEGORY_COLORS dict - kept for backward compatibility
+# This is a lazy proxy that initializes on first attribute access
+class _CategoryColorsProxy:
+    """Lazy proxy for CATEGORY_COLORS that delegates to theme."""
+
+    def get(self, key: str, default: Optional[QColor] = None) -> QColor:
+        colors = _init_category_colors()
+        return colors.get(key, default or Theme.get_category_qcolor("utility"))
+
+    def __getitem__(self, key: str) -> QColor:
+        colors = _init_category_colors()
+        return colors[key]
+
+    def __contains__(self, key: str) -> bool:
+        colors = _init_category_colors()
+        return key in colors
+
+    def keys(self):
+        colors = _init_category_colors()
+        return colors.keys()
+
+    def values(self):
+        colors = _init_category_colors()
+        return colors.values()
+
+    def items(self):
+        colors = _init_category_colors()
+        return colors.items()
+
+
+CATEGORY_COLORS = _CategoryColorsProxy()
 
 
 # Node type to icon mapping using Unicode symbols and custom shapes
@@ -244,6 +315,9 @@ def get_node_color(node_name: str) -> QColor:
     """
     Get the category color for a node type.
 
+    Delegates to unified theme system for consistency across
+    nodes, icons, and wires.
+
     Args:
         node_name: Name of the node
 
@@ -253,9 +327,10 @@ def get_node_color(node_name: str) -> QColor:
     icon_data = NODE_ICONS.get(node_name)
     if icon_data:
         _, category = icon_data
-        return CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+        return Theme.get_category_qcolor(category)
 
-    return QColor(158, 158, 158)
+    # Default fallback from theme
+    return Theme.get_category_qcolor("utility")
 
 
 def register_custom_icon(node_name: str, symbol: str, category: str):

@@ -1092,3 +1092,127 @@ class ImageClickNode(BrowserBaseNode):
         except Exception as e:
             logger.error(f"Template matching failed: {e}")
             return None
+
+
+# =============================================================================
+# PressKeyNode
+# =============================================================================
+
+
+@node_schema(
+    PropertyDef(
+        "key",
+        PropertyType.STRING,
+        default="Enter",
+        required=True,
+        label="Key",
+        tooltip="Key to press (e.g., Enter, Escape, Tab, F1, ArrowDown, etc.)",
+        placeholder="Escape",
+        essential=True,
+    ),
+    PropertyDef(
+        "delay",
+        PropertyType.INTEGER,
+        default=0,
+        label="Delay (ms)",
+        tooltip="Optional delay between keydown and keyup in milliseconds",
+        min_value=0,
+    ),
+    BROWSER_TIMEOUT,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+)
+@executable_node
+class PressKeyNode(BrowserBaseNode):
+    """
+    Press key node - presses a keyboard key on the browser page.
+
+    Uses Playwright's page.keyboard.press() to simulate keyboard input.
+    Useful for pressing keys like Escape to dismiss modals, Enter to submit,
+    Tab to navigate, or any special keys.
+
+    Config (via @node_schema):
+        key: Key to press (Enter, Escape, Tab, F1-F12, ArrowUp/Down/Left/Right, etc.)
+        delay: Delay between keydown and keyup in ms
+        timeout: Operation timeout in milliseconds
+        retry_count: Number of retries on failure
+        retry_interval: Delay between retries in ms
+
+    Inputs:
+        page: Browser page instance
+
+    Outputs:
+        page: Browser page instance (passthrough)
+
+    Example keys:
+        - Enter, Escape, Tab, Backspace, Delete
+        - ArrowUp, ArrowDown, ArrowLeft, ArrowRight
+        - Home, End, PageUp, PageDown
+        - F1-F12
+        - Control+A, Shift+Tab (key combinations)
+    """
+
+    # @category: browser
+    # @requires: none
+    # @ports: via base class helpers
+
+    def __init__(
+        self,
+        node_id: str,
+        name: str = "Press Key",
+        **kwargs,
+    ) -> None:
+        """Initialize press key node."""
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config, name=name)
+        self.node_type = "PressKeyNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_page_passthrough_ports()
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """Execute keyboard key press."""
+        self.status = NodeStatus.RUNNING
+
+        try:
+            page = self.get_page(context)
+
+            # Get parameters
+            key = self.get_parameter("key", "Enter")
+            key = context.resolve_value(key)
+            if not key:
+                raise ValueError("Key is required")
+
+            delay = safe_int(self.get_parameter("delay", 0), 0)
+
+            logger.info(f"Pressing key: {key}")
+
+            async def perform_key_press() -> bool:
+                if delay > 0:
+                    await page.keyboard.press(key, delay=delay)
+                else:
+                    await page.keyboard.press(key)
+                return True
+
+            result = await retry_operation(
+                perform_key_press,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
+                operation_name=f"press key {key}",
+            )
+
+            if result.success:
+                self.set_output_value("page", page)
+                return self.success_result(
+                    {
+                        "key": key,
+                        "delay": delay,
+                        "attempts": result.attempts,
+                    }
+                )
+
+            raise result.last_error or RuntimeError(f"Failed to press key: {key}")
+
+        except Exception as e:
+            return self.error_result(e)

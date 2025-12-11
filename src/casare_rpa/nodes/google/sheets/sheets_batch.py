@@ -64,7 +64,7 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("updates", PortType.INPUT, DataType.ARRAY, required=True)
+        self.add_input_port("updates", PortType.INPUT, DataType.LIST, required=True)
         self.add_input_port(
             "value_input_option", PortType.INPUT, DataType.STRING, required=False
         )
@@ -224,13 +224,13 @@ class SheetsBatchGetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("ranges", PortType.INPUT, DataType.ARRAY, required=True)
+        self.add_input_port("ranges", PortType.INPUT, DataType.LIST, required=True)
         self.add_input_port(
             "value_render_option", PortType.INPUT, DataType.STRING, required=False
         )
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("ranges_count", PortType.OUTPUT, DataType.INTEGER)
 
     async def _execute_sheets(
@@ -337,10 +337,10 @@ class SheetsBatchClearNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("ranges", PortType.INPUT, DataType.ARRAY, required=True)
+        self.add_input_port("ranges", PortType.INPUT, DataType.LIST, required=True)
 
         self._define_common_output_ports()
-        self.add_output_port("cleared_ranges", PortType.OUTPUT, DataType.ARRAY)
+        self.add_output_port("cleared_ranges", PortType.OUTPUT, DataType.LIST)
 
     async def _execute_sheets(
         self,

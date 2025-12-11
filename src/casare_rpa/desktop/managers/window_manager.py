@@ -31,6 +31,8 @@ class WindowManager:
         """Initialize window manager."""
         logger.debug("Initializing WindowManager")
         self._launched_processes: List[int] = []
+        # PIDs to keep open when cleanup is called
+        self._keep_open_processes: set[int] = set()
 
     async def find_window(
         self, title: str, exact: bool = False, timeout: float = 5.0
@@ -119,6 +121,7 @@ class WindowManager:
         working_dir: Optional[str] = None,
         timeout: float = 10.0,
         window_title: Optional[str] = None,
+        keep_open: bool = True,
     ) -> DesktopElement:
         """
         Launch an application and return its main window.
@@ -129,6 +132,7 @@ class WindowManager:
             working_dir: Working directory for the process
             timeout: Maximum time to wait for window to appear
             window_title: Expected window title (if None, uses process name)
+            keep_open: If True, don't close this app on cleanup (default: True)
 
         Returns:
             DesktopElement wrapping the application's main window
@@ -136,7 +140,7 @@ class WindowManager:
         Raises:
             RuntimeError: If application fails to launch or window not found
         """
-        logger.info(f"Launching application: {path} {args}")
+        logger.info(f"Launching application: {path} {args} (keep_open={keep_open})")
 
         try:
             cmd_list = [path]
@@ -153,7 +157,15 @@ class WindowManager:
             process = subprocess.Popen(cmd_list, cwd=working_dir, shell=False)
 
             self._launched_processes.append(process.pid)
-            logger.debug(f"Process launched with PID: {process.pid}")
+            if keep_open:
+                self._keep_open_processes.add(process.pid)
+                logger.debug(
+                    f"Process launched with PID: {process.pid} (will keep open)"
+                )
+            else:
+                logger.debug(
+                    f"Process launched with PID: {process.pid} (will close on cleanup)"
+                )
 
             await asyncio.sleep(0.5)
 
@@ -554,10 +566,18 @@ class WindowManager:
         return properties
 
     def cleanup(self) -> None:
-        """Clean up resources and close applications launched by this manager."""
+        """Clean up resources and close applications launched by this manager.
+
+        Applications launched with keep_open=True will NOT be terminated.
+        """
         logger.info("Cleaning up WindowManager")
 
         for pid in self._launched_processes:
+            # Skip processes marked to keep open
+            if pid in self._keep_open_processes:
+                logger.debug(f"Keeping process {pid} open (keep_open=True)")
+                continue
+
             try:
                 process = psutil.Process(pid)
                 if process.is_running():
@@ -573,3 +593,4 @@ class WindowManager:
                 logger.warning(f"Error cleaning up process {pid}: {e}")
 
         self._launched_processes.clear()
+        self._keep_open_processes.clear()

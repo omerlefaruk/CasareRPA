@@ -13,6 +13,18 @@ from casare_rpa.domain.services.variable_resolver import (
     extract_variable_names,
     has_variables,
 )
+from casare_rpa.domain.services.headless_validator import (
+    HeadlessWorkflowSandbox,
+    WorkflowValidationResult,
+    WorkflowValidationError,
+)
+from casare_rpa.domain.services.workflow_validator import (
+    WorkflowValidator,
+    ValidationResult as QtValidationResult,
+    ValidationIssue as QtValidationIssue,
+    validate_workflow_with_qt,
+    get_valid_ports_for_node,
+)
 from casare_rpa.domain.validation import (
     ValidationSeverity,
     ValidationIssue,
@@ -38,6 +50,16 @@ __all__ = [
     "resolve_dict_variables",
     "extract_variable_names",
     "has_variables",
+    # Headless workflow validation
+    "HeadlessWorkflowSandbox",
+    "WorkflowValidationResult",
+    "WorkflowValidationError",
+    # Qt-based workflow validation
+    "WorkflowValidator",
+    "QtValidationResult",
+    "QtValidationIssue",
+    "validate_workflow_with_qt",
+    "get_valid_ports_for_node",
     # Validation
     "ValidationSeverity",
     "ValidationIssue",

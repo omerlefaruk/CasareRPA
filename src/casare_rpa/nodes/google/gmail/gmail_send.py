@@ -330,7 +330,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         )
         # Also accept attachments as array from port connection
         self.add_input_port(
-            "attachment_list", PortType.INPUT, DataType.ARRAY, required=False
+            "attachment_list", PortType.INPUT, DataType.LIST, required=False
         )
 
         # Additional outputs

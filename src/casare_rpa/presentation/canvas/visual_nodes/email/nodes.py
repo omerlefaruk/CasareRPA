@@ -81,9 +81,9 @@ class VisualReadEmailsNode(VisualNode):
         self.add_text_input(
             "timeout", "Timeout (s)", placeholder_text="30", tab="advanced"
         )
-        self.create_property("mark_as_read", False, widget_type=1, tab="advanced")
-        self.create_property("include_body", True, widget_type=1, tab="advanced")
-        self.create_property("newest_first", True, widget_type=1, tab="advanced")
+        self._safe_create_property("mark_as_read", False, widget_type=1, tab="advanced")
+        self._safe_create_property("include_body", True, widget_type=1, tab="advanced")
+        self._safe_create_property("newest_first", True, widget_type=1, tab="advanced")
         # Retry options
         self.add_text_input(
             "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
@@ -185,7 +185,9 @@ class VisualFilterEmailsNode(VisualNode):
             "subject_contains", "Subject Contains", text="", tab="filters"
         )
         self.add_text_input("from_contains", "From Contains", text="", tab="filters")
-        self.create_property("has_attachments", False, widget_type=1, tab="filters")
+        self._safe_create_property(
+            "has_attachments", False, widget_type=1, tab="filters"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -254,7 +256,7 @@ class VisualDeleteEmailNode(VisualNode):
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("folder", "Folder", text="INBOX", tab="config")
-        self.create_property("permanent", False, widget_type=1, tab="config")
+        self._safe_create_property("permanent", False, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""

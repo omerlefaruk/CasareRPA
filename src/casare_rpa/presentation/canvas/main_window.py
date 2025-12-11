@@ -109,6 +109,8 @@ class MainWindow(QMainWindow):
         self._robot_picker_panel = None
         self._analytics_panel = None
         self._command_palette: Optional["CommandPalette"] = None
+        self._ai_assistant_panel: Optional["AIAssistantDock"] = None
+        self._credentials_panel = None
 
         # 3-tier loading state
         self._normal_components_loaded: bool = False
@@ -679,6 +681,13 @@ class MainWindow(QMainWindow):
     def get_execution_history_viewer(self):
         return self._panel_manager.get_execution_history_viewer()
 
+    @property
+    def ai_assistant_panel(self):
+        return self._ai_assistant_panel
+
+    def get_ai_assistant_panel(self):
+        return self._ai_assistant_panel
+
     def is_auto_connect_enabled(self) -> bool:
         """Check if auto-connect mode is enabled."""
         return self._auto_connect_enabled
@@ -965,10 +974,35 @@ class MainWindow(QMainWindow):
     def _on_credential_updated(self, credential_id: str) -> None:
         self._signal_coordinator.on_credential_updated(credential_id)
 
+    def _on_open_credential_manager(self) -> None:
+        """Open the Credential Manager dialog."""
+        self._signal_coordinator.on_open_credential_manager()
+
     # ==================== Fleet Dashboard ====================
 
     def _on_fleet_dashboard(self) -> None:
         self._signal_coordinator.on_fleet_dashboard()
+
+    def _on_toggle_ai_assistant(self, checked: bool) -> None:
+        """Toggle AI Assistant panel visibility."""
+        if self._ai_assistant_panel is None:
+            # Lazy-load the AI Assistant panel
+            self._ai_assistant_panel = self._dock_creator.create_ai_assistant_panel()
+            # Connect signals if needed
+            if hasattr(self, "_signal_coordinator"):
+                # Connect workflow ready (auto-emitted after validation)
+                self._ai_assistant_panel.workflow_ready.connect(
+                    self._signal_coordinator.on_ai_workflow_ready
+                )
+                # Connect append requested (emitted when user clicks "Append to canvas")
+                self._ai_assistant_panel.append_requested.connect(
+                    self._signal_coordinator.on_ai_workflow_ready
+                )
+
+        if checked:
+            self._ai_assistant_panel.show()
+        else:
+            self._ai_assistant_panel.hide()
 
     # ==================== Window Events ====================
 

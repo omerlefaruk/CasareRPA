@@ -653,9 +653,9 @@ class DocsBatchUpdateNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_exec_input()
         self.add_input_port("document_id", DataType.STRING, "Document ID")
-        self.add_input_port("requests", DataType.ARRAY, "Array of request objects")
+        self.add_input_port("requests", DataType.LIST, "Array of request objects")
         self.add_exec_output()
-        self.add_output_port("replies", DataType.ARRAY, "Response replies")
+        self.add_output_port("replies", DataType.LIST, "Response replies")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 

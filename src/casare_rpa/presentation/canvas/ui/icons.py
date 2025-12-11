@@ -129,6 +129,149 @@ def _create_colored_icon(shape: str, color: str, size: int = 16) -> "QIcon":
         painter.setPen(QPen(qcolor))
         painter.drawPolygon(QPolygonF(arrow_points))
 
+    elif shape == "brain":
+        # Brain/AI icon - stylized brain with sparkle
+        from PySide6.QtGui import QPainterPath
+        import math
+
+        center_x = size / 2
+        center_y = size / 2
+        radius = inner_size * 0.4
+
+        # Draw brain outline (two hemispheres)
+        path = QPainterPath()
+
+        # Left hemisphere
+        path.moveTo(center_x, margin + inner_size * 0.1)
+        path.cubicTo(
+            margin,
+            margin + inner_size * 0.1,
+            margin,
+            size - margin - inner_size * 0.1,
+            center_x,
+            size - margin - inner_size * 0.1,
+        )
+
+        # Right hemisphere
+        path.cubicTo(
+            size - margin,
+            size - margin - inner_size * 0.1,
+            size - margin,
+            margin + inner_size * 0.1,
+            center_x,
+            margin + inner_size * 0.1,
+        )
+
+        # Draw brain with fill
+        painter.setBrush(QBrush(qcolor))
+        pen = QPen(qcolor.darker(120), size * 0.06)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.drawPath(path)
+
+        # Draw center line (brain fold)
+        painter.setPen(QPen(qcolor.darker(130), size * 0.04))
+        painter.drawLine(
+            QPointF(center_x, margin + inner_size * 0.2),
+            QPointF(center_x, size - margin - inner_size * 0.2),
+        )
+
+        # Draw sparkle (AI indicator) - small star at top-right
+        sparkle_x = size - margin - inner_size * 0.15
+        sparkle_y = margin + inner_size * 0.15
+        sparkle_size = size * 0.15
+
+        sparkle_color = QColor("#FFD700")  # Gold sparkle
+        painter.setBrush(QBrush(sparkle_color))
+        painter.setPen(QPen(sparkle_color))
+
+        # 4-point star
+        sparkle_points = [
+            QPointF(sparkle_x, sparkle_y - sparkle_size),
+            QPointF(sparkle_x + sparkle_size * 0.3, sparkle_y - sparkle_size * 0.3),
+            QPointF(sparkle_x + sparkle_size, sparkle_y),
+            QPointF(sparkle_x + sparkle_size * 0.3, sparkle_y + sparkle_size * 0.3),
+            QPointF(sparkle_x, sparkle_y + sparkle_size),
+            QPointF(sparkle_x - sparkle_size * 0.3, sparkle_y + sparkle_size * 0.3),
+            QPointF(sparkle_x - sparkle_size, sparkle_y),
+            QPointF(sparkle_x - sparkle_size * 0.3, sparkle_y - sparkle_size * 0.3),
+        ]
+        painter.drawPolygon(QPolygonF(sparkle_points))
+
+    elif shape == "key":
+        # Key icon for credentials
+        from PySide6.QtGui import QPainterPath
+
+        # Key dimensions
+        head_radius = inner_size * 0.25
+        head_center_x = margin + head_radius + inner_size * 0.05
+        head_center_y = margin + head_radius + inner_size * 0.05
+
+        # Draw key head (circle with hole)
+        painter.setBrush(QBrush(qcolor))
+        pen = QPen(qcolor.darker(120), size * 0.06)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+
+        # Outer circle
+        painter.drawEllipse(
+            QRectF(
+                head_center_x - head_radius,
+                head_center_y - head_radius,
+                head_radius * 2,
+                head_radius * 2,
+            )
+        )
+
+        # Inner hole (draw with background color)
+        hole_radius = head_radius * 0.4
+        painter.setBrush(QBrush(QColor("#1e1e1e")))  # Dark background
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(
+            QRectF(
+                head_center_x - hole_radius,
+                head_center_y - hole_radius,
+                hole_radius * 2,
+                hole_radius * 2,
+            )
+        )
+
+        # Draw key shaft (diagonal line from head to bottom-right)
+        shaft_start_x = head_center_x + head_radius * 0.7
+        shaft_start_y = head_center_y + head_radius * 0.7
+        shaft_end_x = size - margin - inner_size * 0.1
+        shaft_end_y = size - margin - inner_size * 0.1
+
+        pen = QPen(qcolor, size * 0.12)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.drawLine(
+            QPointF(shaft_start_x, shaft_start_y),
+            QPointF(shaft_end_x, shaft_end_y),
+        )
+
+        # Draw key teeth (two small protrusions)
+        teeth_pen = QPen(qcolor, size * 0.08)
+        teeth_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(teeth_pen)
+
+        # First tooth
+        tooth1_x = shaft_start_x + (shaft_end_x - shaft_start_x) * 0.5
+        tooth1_y = shaft_start_y + (shaft_end_y - shaft_start_y) * 0.5
+        tooth_length = inner_size * 0.15
+        painter.drawLine(
+            QPointF(tooth1_x, tooth1_y),
+            QPointF(tooth1_x + tooth_length, tooth1_y - tooth_length),
+        )
+
+        # Second tooth
+        tooth2_x = shaft_start_x + (shaft_end_x - shaft_start_x) * 0.7
+        tooth2_y = shaft_start_y + (shaft_end_y - shaft_start_y) * 0.7
+        painter.drawLine(
+            QPointF(tooth2_x, tooth2_y),
+            QPointF(tooth2_x + tooth_length, tooth2_y - tooth_length),
+        )
+
     painter.end()
 
     # Cache and return
@@ -234,6 +377,8 @@ class ToolbarIcons:
         "stop": ("stop", "#F44336"),  # Red
         "restart": ("restart", "#2196F3"),  # Blue
         "resume": ("play", "#4CAF50"),  # Green
+        "ai_assistant": ("brain", "#9C27B0"),  # Purple - AI brain icon
+        "credentials": ("key", "#FFB300"),  # Amber/Gold - Key icon for credentials
     }
 
     @classmethod

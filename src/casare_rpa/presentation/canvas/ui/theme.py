@@ -2,10 +2,10 @@
 CasareRPA Unified Theme System.
 
 Provides consistent visual styling across all UI components.
-Supports light and dark themes with centralized color management.
+Dark theme only with centralized color management.
 
 Usage:
-    from casare_rpa.presentation.canvas.ui.theme import Theme, ThemeMode
+    from casare_rpa.presentation.canvas.ui.theme import Theme
 
     # Get current colors
     colors = Theme.get_colors()
@@ -15,9 +15,6 @@ Usage:
     style = Theme.button_style("md")
     style = Theme.panel_style()
     style = Theme.message_box_style()
-
-    # Switch themes
-    Theme.set_mode(ThemeMode.LIGHT)
 """
 
 from dataclasses import dataclass
@@ -42,7 +39,6 @@ CHECKMARK_PATH = (ASSETS_DIR / "checkmark.svg").as_posix()
 class ThemeMode(Enum):
     """Available theme modes."""
 
-    LIGHT = "light"
     DARK = "dark"
 
 
@@ -239,6 +235,242 @@ TYPE_BADGES: Dict[str, str] = {
 
 
 # =============================================================================
+# CANVAS COLORS - Unified NodeGraph Styling
+# =============================================================================
+# Single source of truth for all canvas/NodeGraphQt colors.
+# Resolves conflicts between custom_node_item.py and category_utils.py.
+
+
+@dataclass(frozen=True)
+class CanvasColors:
+    """
+    Centralized color definitions for NodeGraph canvas components.
+
+    This replaces scattered hardcoded colors in:
+    - custom_node_item.py (_CATEGORY_HEADER_COLORS)
+    - custom_pipe.py (TYPE_WIRE_COLORS)
+    - category_utils.py (ROOT_CATEGORY_COLORS)
+    - node_icons.py (CATEGORY_COLORS)
+    """
+
+    # -------------------------------------------------------------------------
+    # Category Header Colors (for node headers)
+    # BOLD, VIBRANT, DISTINCT colors - each category easily recognizable
+    # -------------------------------------------------------------------------
+    category_browser: str = "#9C27B0"  # PURPLE - Browser automation
+    category_desktop: str = "#E91E63"  # PINK - Desktop automation
+    category_control_flow: str = "#F44336"  # RED - Control flow (if/loop/switch)
+    category_error_handling: str = "#D32F2F"  # DARK RED - Error handling
+    category_data: str = "#4CAF50"  # GREEN - Data operations
+    category_variable: str = "#2196F3"  # BLUE - Variables
+    category_database: str = "#00BCD4"  # CYAN - Database operations
+    category_rest_api: str = "#FF5722"  # DEEP ORANGE - REST API
+    category_file: str = "#FFC107"  # AMBER/YELLOW - File operations
+    category_office_automation: str = "#217346"  # EXCEL GREEN - Office/Excel
+    category_email: str = "#EA4335"  # GMAIL RED - Email
+    category_google: str = "#4285F4"  # GOOGLE BLUE - Google services
+    category_triggers: str = "#7C4DFF"  # DEEP PURPLE - Triggers/Events
+    category_messaging: str = "#25D366"  # WHATSAPP GREEN - Messaging
+    category_ai_ml: str = "#00ACC1"  # TEAL - AI/ML
+    category_document: str = "#FF9800"  # ORANGE - Documents
+    category_utility: str = "#607D8B"  # BLUE GRAY - Utilities
+    category_basic: str = "#3F51B5"  # INDIGO - Basic nodes
+    category_scripts: str = "#CDDC39"  # LIME - Scripts/Code
+    category_system: str = "#795548"  # BROWN - System operations
+    category_navigation: str = "#673AB7"  # VIOLET - Navigation
+    category_interaction: str = "#03A9F4"  # LIGHT BLUE - Interaction
+    category_wait: str = "#FF5722"  # DEEP ORANGE - Wait/Timing
+    category_debug: str = "#9E9E9E"  # GRAY - Debug
+    category_default: str = "#546E7A"  # SLATE - Default fallback
+
+    # -------------------------------------------------------------------------
+    # Wire Colors by DataType
+    # -------------------------------------------------------------------------
+    wire_exec: str = "#FFFFFF"  # White - execution flow (prominent)
+    wire_string: str = "#CE9178"  # Orange-brown
+    wire_integer: str = "#B5CEA8"  # Light green
+    wire_float: str = "#B5CEA8"  # Light green (same as integer)
+    wire_boolean: str = "#569CD6"  # Blue
+    wire_list: str = "#C586C0"  # Purple
+    wire_dict: str = "#4EC9B0"  # Teal
+    wire_page: str = "#C586C0"  # Purple - browser page
+    wire_element: str = "#C586C0"  # Purple - browser element
+    wire_window: str = "#9CDCFE"  # Light blue - desktop window
+    wire_desktop_element: str = "#9CDCFE"  # Light blue
+    wire_db_connection: str = "#4EC9B0"  # Teal
+    wire_workbook: str = "#217B4B"  # Office green
+    wire_worksheet: str = "#217B4B"  # Office green
+    wire_datatable: str = "#569CD6"  # Blue
+    wire_document: str = "#FF9800"  # Orange
+    wire_any: str = "#808080"  # Gray - fallback
+    wire_default: str = "#808080"  # Gray
+    wire_incompatible: str = "#F44336"  # Red - type mismatch
+
+    # -------------------------------------------------------------------------
+    # Status Colors (for node state indicators)
+    # -------------------------------------------------------------------------
+    status_success: str = "#22C55E"  # Green 500
+    status_error: str = "#EF4444"  # Red 500
+    status_warning: str = "#F59E0B"  # Amber 500
+    status_running: str = "#FBBF24"  # Amber 400 (animated)
+    status_idle: str = "#6B6B6B"  # Gray
+    status_skipped: str = "#A1A1AA"  # Zinc 400
+    status_disabled: str = "#3F3F46"  # Zinc 700
+    status_breakpoint: str = "#EF4444"  # Red 500
+
+    # -------------------------------------------------------------------------
+    # Node Visual Elements
+    # -------------------------------------------------------------------------
+    node_bg: str = "#27272A"  # Zinc 800 - node body
+    node_bg_header: str = "#3F3F46"  # Zinc 700 - header area
+    node_border_normal: str = "#3F3F46"  # Zinc 700
+    node_border_selected: str = "#FBBF24"  # Amber 400 - selection highlight
+    node_border_running: str = "#FBBF24"  # Amber 400 - animated
+    node_border_hover: str = "#52525B"  # Zinc 600
+    node_text_title: str = "#FAFAFA"  # Zinc 50 - title text
+    node_text_port: str = "#D4D4D8"  # Zinc 300 - port labels
+    node_text_secondary: str = "#A1A1AA"  # Zinc 400 - secondary text
+
+    # -------------------------------------------------------------------------
+    # Badges and Indicators
+    # -------------------------------------------------------------------------
+    badge_bg: str = "#18181B"  # Zinc 900
+    badge_text: str = "#E4E4E7"  # Zinc 200
+    badge_border: str = "#3F3F46"  # Zinc 700
+
+    # -------------------------------------------------------------------------
+    # Collapse Button
+    # -------------------------------------------------------------------------
+    collapse_btn_bg: str = "#3F3F46"  # Zinc 700
+    collapse_btn_bg_hover: str = "#52525B"  # Zinc 600
+    collapse_btn_symbol: str = "#D4D4D8"  # Zinc 300
+
+    # -------------------------------------------------------------------------
+    # Wire Visual Effects
+    # -------------------------------------------------------------------------
+    wire_flow_dot: str = "#FFFFFF"  # White flow indicator
+    wire_flow_glow: str = "#FFFFFF50"  # Semi-transparent glow
+    wire_completion_glow: str = "#22C55E99"  # Green with alpha
+    wire_hover: str = "#64B5F6"  # Light blue hover
+    wire_insert_highlight: str = "#FF8C00"  # Orange insertion point
+
+    # -------------------------------------------------------------------------
+    # Labels and Previews
+    # -------------------------------------------------------------------------
+    label_bg: str = "#27272A"  # Zinc 800
+    label_border: str = "#52525B"  # Zinc 600
+    label_text: str = "#D4D4D8"  # Zinc 300
+    preview_bg: str = "#32322D"  # Yellowish dark
+    preview_border: str = "#64645A"  # Yellowish border
+    preview_text: str = "#DCDCB4"  # Yellowish text
+
+
+# Dark theme canvas colors (only theme supported)
+DARK_CANVAS_COLORS = CanvasColors()
+
+
+# =============================================================================
+# DISABLED STATE VISUAL CONSTANTS
+# =============================================================================
+# Used by CasareNodeItem.paint() for disabled node rendering.
+# Centralized here for consistency and easy adjustment.
+
+# Opacity multiplier for disabled overlay (0.0 = invisible, 1.0 = fully opaque)
+NODE_DISABLED_OPACITY: float = 0.5  # More prominent grayscale effect
+
+# Background alpha for disabled nodes (0-255)
+NODE_DISABLED_BG_ALPHA: int = 50  # ~20% opacity - clearly grayed out
+
+# Overlay wash alpha for disabled effect (0-255)
+NODE_DISABLED_WASH_ALPHA: int = 180  # Stronger desaturation wash
+
+# Border width for disabled state (thicker dotted line for visibility)
+NODE_DISABLED_BORDER_WIDTH: float = 2.5
+
+# Border style: Use Qt.PenStyle.DotLine for dotted border
+NODE_DISABLED_BORDER_STYLE: str = "dot"
+
+
+# =============================================================================
+# QCOLOR CACHE - Performance optimization for paint() methods
+# =============================================================================
+# Avoid creating QColor objects on every paint call.
+# Colors are cached on first access and reused.
+
+from PySide6.QtGui import QColor as _QColor
+
+_qcolor_cache: Dict[str, "_QColor"] = {}
+
+
+def _hex_to_qcolor(hex_color: str) -> "_QColor":
+    """
+    Convert hex color string to QColor, with caching.
+
+    Args:
+        hex_color: Color in #RRGGBB or #RRGGBBAA format
+
+    Returns:
+        Cached QColor instance
+    """
+    if hex_color not in _qcolor_cache:
+        _qcolor_cache[hex_color] = _QColor(hex_color)
+    return _qcolor_cache[hex_color]
+
+
+def _rgb_to_qcolor(r: int, g: int, b: int, a: int = 255) -> "_QColor":
+    """
+    Convert RGB(A) values to QColor, with caching.
+
+    Args:
+        r, g, b: RGB values (0-255)
+        a: Alpha value (0-255), default 255
+
+    Returns:
+        Cached QColor instance
+    """
+    key = f"rgb({r},{g},{b},{a})"
+    if key not in _qcolor_cache:
+        _qcolor_cache[key] = _QColor(r, g, b, a)
+    return _qcolor_cache[key]
+
+
+# =============================================================================
+# CATEGORY COLOR MAPPING
+# =============================================================================
+# Maps category names to their colors for fast lookup
+
+CATEGORY_COLOR_MAP: Dict[str, str] = {
+    "browser": DARK_CANVAS_COLORS.category_browser,
+    "navigation": DARK_CANVAS_COLORS.category_navigation,
+    "interaction": DARK_CANVAS_COLORS.category_interaction,
+    "data": DARK_CANVAS_COLORS.category_data,
+    "data_operations": DARK_CANVAS_COLORS.category_data,
+    "variable": DARK_CANVAS_COLORS.category_variable,
+    "control_flow": DARK_CANVAS_COLORS.category_control_flow,
+    "error_handling": DARK_CANVAS_COLORS.category_error_handling,
+    "wait": DARK_CANVAS_COLORS.category_wait,
+    "debug": DARK_CANVAS_COLORS.category_debug,
+    "utility": DARK_CANVAS_COLORS.category_utility,
+    "file": DARK_CANVAS_COLORS.category_file,
+    "file_operations": DARK_CANVAS_COLORS.category_file,
+    "database": DARK_CANVAS_COLORS.category_database,
+    "rest_api": DARK_CANVAS_COLORS.category_rest_api,
+    "email": DARK_CANVAS_COLORS.category_email,
+    "office_automation": DARK_CANVAS_COLORS.category_office_automation,
+    "desktop": DARK_CANVAS_COLORS.category_desktop,
+    "desktop_automation": DARK_CANVAS_COLORS.category_desktop,
+    "triggers": DARK_CANVAS_COLORS.category_triggers,
+    "messaging": DARK_CANVAS_COLORS.category_messaging,
+    "ai_ml": DARK_CANVAS_COLORS.category_ai_ml,
+    "document": DARK_CANVAS_COLORS.category_document,
+    "google": DARK_CANVAS_COLORS.category_google,
+    "scripts": DARK_CANVAS_COLORS.category_scripts,
+    "system": DARK_CANVAS_COLORS.category_system,
+    "basic": DARK_CANVAS_COLORS.category_basic,
+}
+
+
+# =============================================================================
 # DARK THEME COLOR PALETTE (VSCode Dark+)
 # =============================================================================
 
@@ -311,78 +543,6 @@ DARK_COLORS = Colors(
 
 
 # =============================================================================
-# LIGHT THEME COLOR PALETTE
-# =============================================================================
-
-LIGHT_COLORS = Colors(
-    # Primary colors
-    primary="#0078D4",
-    primary_hover="#106EBE",
-    primary_pressed="#005A9E",
-    # Secondary colors
-    secondary="#E1E1E1",
-    secondary_hover="#D0D0D0",
-    # Accent colors
-    accent="#0078D4",
-    accent_hover="#106EBE",
-    # Background colors
-    background="#FFFFFF",
-    background_alt="#F3F3F3",
-    surface="#FAFAFA",
-    surface_hover="#E8E8E8",
-    header="#F0F0F0",
-    # Text colors
-    text_primary="#1E1E1E",
-    text_secondary="#333333",
-    text_muted="#6B6B6B",
-    text_disabled="#A0A0A0",
-    text_header="#444444",
-    # Border colors
-    border="#D0D0D0",
-    border_light="#E0E0E0",
-    border_dark="#C0C0C0",
-    border_focus="#0078D4",
-    # Status colors
-    error="#E74C3C",
-    warning="#F39C12",
-    success="#27AE60",
-    info="#3498DB",
-    # Selection
-    selection="#ADD6FF",
-    # Node-specific colors
-    node_background="#FFFFFF",
-    node_border="#D0D0D0",
-    node_selected="#ADD6FF",
-    node_header="#F0F0F0",
-    node_idle="#A0A0A0",
-    node_running="#F39C12",
-    node_success="#27AE60",
-    node_error="#E74C3C",
-    node_skipped="#9B59B6",
-    # Port/Wire colors
-    port_exec="#333333",
-    port_data="#0078D4",
-    wire_exec="#333333",
-    wire_data="#0078D4",
-    wire_bool="#E74C3C",
-    wire_string="#E67E22",
-    wire_number="#27AE60",
-    wire_list="#9B59B6",
-    wire_dict="#16A085",
-    wire_table="#2980B9",
-    # Toolbar
-    toolbar_bg="#F0F0F0",
-    toolbar_border="#D0D0D0",
-    toolbar_button_hover="#E0E0E0",
-    toolbar_button_pressed="#0078D4",
-    # Dock/panel
-    dock_title_bg="#F0F0F0",
-    dock_title_text="#444444",
-    splitter_handle="#D0D0D0",
-)
-
-
-# =============================================================================
 # SINGLETON INSTANCES
 # =============================================================================
 
@@ -419,14 +579,14 @@ class Theme:
         Set the theme mode.
 
         Args:
-            mode: ThemeMode.LIGHT or ThemeMode.DARK
+            mode: ThemeMode.DARK (only dark mode supported)
         """
         cls._mode = mode
 
     @classmethod
     def get_colors(cls) -> Colors:
-        """Get the current color palette based on theme mode."""
-        return DARK_COLORS if cls._mode == ThemeMode.DARK else LIGHT_COLORS
+        """Get the current color palette (dark theme only)."""
+        return DARK_COLORS
 
     @classmethod
     def get_spacing(cls) -> Spacing:
@@ -457,6 +617,173 @@ class Theme:
     def get_animations(cls) -> Animations:
         """Get animation duration values."""
         return ANIMATIONS
+
+    # =========================================================================
+    # CANVAS COLOR ACCESSORS
+    # =========================================================================
+
+    @classmethod
+    def get_canvas_colors(cls) -> CanvasColors:
+        """
+        Get canvas-specific colors (dark theme only).
+
+        Returns:
+            CanvasColors instance for NodeGraph styling
+        """
+        return DARK_CANVAS_COLORS
+
+    @classmethod
+    def get_category_color(cls, category: str) -> str:
+        """
+        Get hex color for a node category.
+
+        Args:
+            category: Category name (may be hierarchical like "google/gmail")
+
+        Returns:
+            Hex color string (e.g., "#C586C0")
+        """
+        if not category:
+            return cls.get_canvas_colors().category_default
+
+        # Extract root category from hierarchical path
+        root = category.split("/")[0].lower()
+        return CATEGORY_COLOR_MAP.get(root, cls.get_canvas_colors().category_default)
+
+    @classmethod
+    def get_category_qcolor(cls, category: str) -> "_QColor":
+        """
+        Get QColor for a node category (cached for performance).
+
+        Use this in paint() methods to avoid per-frame allocations.
+
+        Args:
+            category: Category name
+
+        Returns:
+            Cached QColor instance
+        """
+        hex_color = cls.get_category_color(category)
+        return _hex_to_qcolor(hex_color)
+
+    @classmethod
+    def get_wire_color(cls, data_type: str) -> str:
+        """
+        Get hex color for a wire based on data type.
+
+        Args:
+            data_type: DataType name (STRING, INTEGER, LIST, etc.)
+
+        Returns:
+            Hex color string
+        """
+        cc = cls.get_canvas_colors()
+        wire_map = {
+            "EXEC": cc.wire_exec,
+            "STRING": cc.wire_string,
+            "INTEGER": cc.wire_integer,
+            "INT": cc.wire_integer,
+            "FLOAT": cc.wire_float,
+            "BOOLEAN": cc.wire_boolean,
+            "BOOL": cc.wire_boolean,
+            "LIST": cc.wire_list,
+            "DICT": cc.wire_dict,
+            "PAGE": cc.wire_page,
+            "ELEMENT": cc.wire_element,
+            "BROWSER": cc.wire_page,
+            "WINDOW": cc.wire_window,
+            "DESKTOP_ELEMENT": cc.wire_desktop_element,
+            "DB_CONNECTION": cc.wire_db_connection,
+            "WORKBOOK": cc.wire_workbook,
+            "WORKSHEET": cc.wire_worksheet,
+            "DATATABLE": cc.wire_datatable,
+            "DOCUMENT": cc.wire_document,
+            "OBJECT": cc.wire_any,
+            "ANY": cc.wire_any,
+        }
+        return wire_map.get(data_type.upper() if data_type else "", cc.wire_default)
+
+    @classmethod
+    def get_wire_qcolor(cls, data_type: str) -> "_QColor":
+        """
+        Get QColor for a wire (cached for performance).
+
+        Args:
+            data_type: DataType name
+
+        Returns:
+            Cached QColor instance
+        """
+        hex_color = cls.get_wire_color(data_type)
+        return _hex_to_qcolor(hex_color)
+
+    @classmethod
+    def get_status_qcolor(cls, status: str) -> "_QColor":
+        """
+        Get QColor for a node execution status.
+
+        Args:
+            status: Status string (success, error, running, idle, skipped)
+
+        Returns:
+            Cached QColor instance
+        """
+        cc = cls.get_canvas_colors()
+        status_map = {
+            "success": cc.status_success,
+            "completed": cc.status_success,
+            "error": cc.status_error,
+            "failed": cc.status_error,
+            "warning": cc.status_warning,
+            "running": cc.status_running,
+            "idle": cc.status_idle,
+            "skipped": cc.status_skipped,
+            "disabled": cc.status_disabled,
+            "breakpoint": cc.status_breakpoint,
+        }
+        hex_color = status_map.get(status.lower() if status else "", cc.status_idle)
+        return _hex_to_qcolor(hex_color)
+
+    @classmethod
+    def get_node_border_qcolor(cls, state: str = "normal") -> "_QColor":
+        """
+        Get QColor for node border based on state.
+
+        Args:
+            state: "normal", "selected", "running", or "hover"
+
+        Returns:
+            Cached QColor instance
+        """
+        cc = cls.get_canvas_colors()
+        state_map = {
+            "normal": cc.node_border_normal,
+            "selected": cc.node_border_selected,
+            "running": cc.node_border_running,
+            "hover": cc.node_border_hover,
+        }
+        hex_color = state_map.get(state, cc.node_border_normal)
+        return _hex_to_qcolor(hex_color)
+
+    @classmethod
+    def get_node_bg_qcolor(cls) -> "_QColor":
+        """Get cached QColor for node background."""
+        return _hex_to_qcolor(cls.get_canvas_colors().node_bg)
+
+    @classmethod
+    def get_badge_colors(cls) -> tuple:
+        """
+        Get badge colors as QColor tuple.
+
+        Returns:
+            Tuple of (bg_qcolor, text_qcolor, border_qcolor)
+        """
+        cc = cls.get_canvas_colors()
+        return (
+            _hex_to_qcolor(cc.badge_bg),
+            _hex_to_qcolor(cc.badge_text),
+            _hex_to_qcolor(cc.badge_border),
+        )
 
     # =========================================================================
     # CSS GENERATION HELPERS

@@ -329,37 +329,39 @@ def get_full_display_path(category_path: str, separator: str = " > ") -> str:
     return separator.join(parts)
 
 
-# Base colors for root categories
+# ============================================================================
+# CATEGORY COLORS - Now delegating to unified theme
+# ============================================================================
+# ROOT_CATEGORY_COLORS is kept for backward compatibility but colors
+# are now sourced from the unified theme system (theme.py).
+
+from casare_rpa.presentation.canvas.ui.theme import Theme, CATEGORY_COLOR_MAP
+
+
+def _hex_to_rgb_tuple(hex_color: str) -> tuple:
+    """Convert hex color to RGB tuple for backward compatibility."""
+    hex_color = hex_color.lstrip("#")
+    return (
+        int(hex_color[0:2], 16),
+        int(hex_color[2:4], 16),
+        int(hex_color[4:6], 16),
+    )
+
+
+# ROOT_CATEGORY_COLORS now built from theme for consistency
+# This maintains backward compatibility with code that expects RGB tuples
 ROOT_CATEGORY_COLORS = {
-    "basic": (0x56, 0x9C, 0xD6),  # #569CD6 - Keyword blue
-    "browser": (0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    "control_flow": (0xF4, 0x87, 0x71),  # #F48771 - Red
-    "data": (0x89, 0xD1, 0x85),  # #89D185 - Green
-    "data_operations": (0x89, 0xD1, 0x85),  # Alias
-    "database": (0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
-    "desktop": (0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    "desktop_automation": (0xC5, 0x86, 0xC0),  # Alias
-    "email": (0xCE, 0x91, 0x78),  # #CE9178 - Orange
-    "error_handling": (0xF4, 0x87, 0x71),  # #F48771 - Red
-    "file": (0xDC, 0xDC, 0xAA),  # #DCDCAA - Warm yellow
-    "file_operations": (0xDC, 0xDC, 0xAA),  # Alias
-    "google": (0x42, 0x85, 0xF4),  # #4285F4 - Google Blue
-    "messaging": (0x25, 0xD3, 0x66),  # #25D366 - WhatsApp green
-    "office_automation": (0x21, 0x7B, 0x4B),  # #217B4B - Office green
-    "rest_api": (0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
-    "scripts": (0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
-    "system": (0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
-    "triggers": (0x9C, 0x27, 0xB0),  # #9C27B0 - Purple
-    "utility": (0x80, 0x80, 0x80),  # #808080 - Gray
-    "variable": (0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
-    "ai_ml": (0x00, 0xBC, 0xD4),  # #00BCD4 - Cyan
-    "document": (0xFF, 0x98, 0x00),  # #FF9800 - Orange
+    category: _hex_to_rgb_tuple(hex_color)
+    for category, hex_color in CATEGORY_COLOR_MAP.items()
 }
 
 
 def get_category_color(category_path: str) -> QColor:
     """
     Get color for a category, with distinct shades for subcategories.
+
+    Now delegates to the unified theme system for consistency across
+    nodes, icons, and wires.
 
     Subcategories get progressively lighter shades of their parent's color.
     Each depth level lightens by ~15%.
@@ -368,20 +370,15 @@ def get_category_color(category_path: str) -> QColor:
         category_path: Full category path (e.g., "google/gmail/send")
 
     Returns:
-        QColor for the category
+        QColor for the category (from unified theme)
     """
     parsed = CategoryPath.parse(category_path)
     if not parsed:
-        return QColor(0x80, 0x80, 0x80)  # Default gray
+        cc = Theme.get_canvas_colors()
+        return QColor(cc.category_default)
 
-    # Get root category color
-    root = parsed.root
-    rgb = ROOT_CATEGORY_COLORS.get(root)
-
-    if not rgb:
-        return QColor(0x80, 0x80, 0x80)  # Default gray
-
-    base_color = QColor(rgb[0], rgb[1], rgb[2])
+    # Get base color from unified theme
+    base_color = Theme.get_category_qcolor(parsed.root)
 
     # Lighten for subcategories (depth > 1)
     depth = parsed.depth
@@ -391,7 +388,7 @@ def get_category_color(category_path: str) -> QColor:
         lighten_factor = 100 + (depth - 1) * 15
         return base_color.lighter(lighten_factor)
 
-    return base_color
+    return QColor(base_color)  # Return copy to avoid modifying cached color
 
 
 def get_category_color_with_alpha(category_path: str, alpha: int = 180) -> QColor:
