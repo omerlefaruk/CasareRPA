@@ -14,6 +14,12 @@ GPU Optimization Modules:
 - LODManager: Centralized Level-of-Detail management
 - BackgroundCache: Pre-rendered node backgrounds
 - IconAtlas: Single texture for all node icons
+
+Extracted Delegate Classes (NodeGraphWidget refactoring):
+- GraphSetup: Graph configuration, optimization, signal setup
+- ConnectionHandler: Connection validation, pipe management
+- NodeSelectionHandler: Selection operations, delete, duplicate
+- GraphEventHandler: Event filtering, keyboard/mouse handling
 """
 
 from casare_rpa.presentation.canvas.graph.composite_node_creator import (
@@ -73,6 +79,38 @@ from casare_rpa.presentation.canvas.graph.icon_atlas import (
     preload_node_icons,
 )
 
+# Extracted Delegate Classes (NodeGraphWidget refactoring)
+from casare_rpa.presentation.canvas.graph.graph_setup import GraphSetup
+from casare_rpa.presentation.canvas.graph.connection_handler import ConnectionHandler
+from casare_rpa.presentation.canvas.graph.node_selection_handler import (
+    NodeSelectionHandler,
+)
+from casare_rpa.presentation.canvas.graph.graph_event_handler import GraphEventHandler
+
+# Keyboard Navigation
+from casare_rpa.presentation.canvas.graph.keyboard_navigator import KeyboardNavigator
+from casare_rpa.presentation.canvas.graph.focus_ring import FocusRing, FocusRingManager
+
+# Layout and Alignment
+from casare_rpa.presentation.canvas.graph.grid_snap_manager import (
+    GridSnapManager,
+    AlignmentGuideline,
+    GuidelineType,
+    get_grid_snap_manager,
+)
+from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
+    AutoLayoutManager,
+    LayoutDirection,
+    LayoutOptions,
+    get_auto_layout_manager,
+)
+from casare_rpa.presentation.canvas.graph.node_aligner import (
+    NodeAligner,
+    AlignmentType,
+    DistributeType,
+    get_node_aligner,
+)
+
 __all__ = [
     # Custom rendering
     "CasareNodeItem",
@@ -112,4 +150,26 @@ __all__ = [
     "IconTextureAtlas",
     "get_icon_atlas",
     "preload_node_icons",
+    # Extracted Delegate Classes
+    "GraphSetup",
+    "ConnectionHandler",
+    "NodeSelectionHandler",
+    "GraphEventHandler",
+    # Keyboard Navigation
+    "KeyboardNavigator",
+    "FocusRing",
+    "FocusRingManager",
+    # Layout and Alignment
+    "GridSnapManager",
+    "AlignmentGuideline",
+    "GuidelineType",
+    "get_grid_snap_manager",
+    "AutoLayoutManager",
+    "LayoutDirection",
+    "LayoutOptions",
+    "get_auto_layout_manager",
+    "NodeAligner",
+    "AlignmentType",
+    "DistributeType",
+    "get_node_aligner",
 ]

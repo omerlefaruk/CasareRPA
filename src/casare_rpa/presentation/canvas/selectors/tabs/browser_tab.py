@@ -8,7 +8,6 @@ Integrates with SelectorManager and healing chain for context capture.
 import asyncio
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,

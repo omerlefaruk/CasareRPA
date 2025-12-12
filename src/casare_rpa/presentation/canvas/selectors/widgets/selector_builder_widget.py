@@ -29,9 +29,7 @@ from casare_rpa.presentation.canvas.selectors.state.selector_state import (
 )
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.selectors.state.selector_state import (
-        ElementSelectorState,
-    )
+    pass
 
 
 class ScoreBar(QProgressBar):

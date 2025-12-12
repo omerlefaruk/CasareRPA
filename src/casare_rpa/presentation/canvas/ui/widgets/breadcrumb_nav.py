@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QCursor
+from PySide6.QtGui import QCursor
 
 from loguru import logger
 

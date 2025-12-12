@@ -9,7 +9,7 @@ Automatically spaces nodes apart with 150px gaps when needed.
 from typing import Optional, Tuple
 import math
 
-from PySide6.QtCore import QObject, Signal, Qt, QRectF, QTimer
+from PySide6.QtCore import QObject, Signal, QRectF, QTimer
 from PySide6.QtGui import QPainterPath, QPen, QColor
 from NodeGraphQt import NodeGraph, BaseNode
 

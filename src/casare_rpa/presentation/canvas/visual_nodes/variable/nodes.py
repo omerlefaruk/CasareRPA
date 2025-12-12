@@ -1,7 +1,5 @@
 """Visual nodes for variable category."""
 
-from typing import Optional
-
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.ui.theme import TYPE_COLORS

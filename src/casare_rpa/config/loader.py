@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from loguru import logger
 
@@ -36,7 +36,7 @@ from casare_rpa.config.schema import (
 )
 
 if TYPE_CHECKING:
-    from casare_rpa.application.dependency_injection import DIContainer
+    pass
 
 
 class ConfigurationError(Exception):

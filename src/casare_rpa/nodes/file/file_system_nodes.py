@@ -9,6 +9,7 @@ This module provides nodes for file system operations:
 SECURITY: All file operations are subject to path sandboxing.
 """
 
+import os
 import shutil
 
 from loguru import logger
@@ -97,8 +98,9 @@ class DeleteFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before delete operation
             path = validate_path_security(file_path, "delete", allow_dangerous)
@@ -239,9 +241,11 @@ class CopyFileNode(BaseNode):
             if not source_path or not dest_path:
                 raise ValueError("source_path and dest_path are required")
 
-            # Resolve {{variable}} patterns in paths
+            # Resolve {{variable}} patterns and environment variables in paths
             source_path = context.resolve_value(source_path)
+            source_path = os.path.expandvars(source_path)
             dest_path = context.resolve_value(dest_path)
+            dest_path = os.path.expandvars(dest_path)
 
             # SECURITY: Validate paths before any operation
             source = validate_path_security(source_path, "read", allow_dangerous)
@@ -375,9 +379,11 @@ class MoveFileNode(BaseNode):
             if not source_path or not dest_path:
                 raise ValueError("source_path and dest_path are required")
 
-            # Resolve {{variable}} patterns in paths
+            # Resolve {{variable}} patterns and environment variables in paths
             source_path = context.resolve_value(source_path)
+            source_path = os.path.expandvars(source_path)
             dest_path = context.resolve_value(dest_path)
+            dest_path = os.path.expandvars(dest_path)
 
             # SECURITY: Validate paths before any operation
             source = validate_path_security(source_path, "read", allow_dangerous)

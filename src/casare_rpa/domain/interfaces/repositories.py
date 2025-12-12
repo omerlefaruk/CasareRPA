@@ -19,7 +19,6 @@ Usage:
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol
-from abc import abstractmethod
 
 
 class IFolderStorage(Protocol):

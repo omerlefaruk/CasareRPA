@@ -508,10 +508,10 @@ class SubflowNodeItem(CasareNodeItem):
         # Draw node name
         from casare_rpa.presentation.canvas.graph.custom_node_item import (
             _get_title_font,
-            _HEADER_TEXT_COLOR,
         )
 
-        painter.setPen(_HEADER_TEXT_COLOR)
+        # Use bright white for maximum contrast on colored headers
+        painter.setPen(QColor(255, 255, 255))
         painter.setFont(_get_title_font())
 
         node_name = self.name if hasattr(self, "name") else "Subflow"

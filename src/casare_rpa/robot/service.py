@@ -440,7 +440,7 @@ def debug_service():
         format="<green>{time:HH:mm:ss}</green> | <level>{level:<8}</level> | {message}",
     )
 
-    from casare_rpa.robot.agent import RobotAgent, RobotConfig, run_agent
+    from casare_rpa.robot.agent import RobotConfig, run_agent
 
     config_data = get_service_config()
 

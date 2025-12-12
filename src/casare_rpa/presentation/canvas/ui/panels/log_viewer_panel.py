@@ -8,8 +8,8 @@ WebSocket for live streaming.
 
 import asyncio
 import json
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -26,10 +26,9 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
     QCheckBox,
-    QSpinBox,
     QGroupBox,
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
+from PySide6.QtCore import Qt, Signal, QThread, QObject
 from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
@@ -113,11 +112,11 @@ class LogStreamWorker(QObject):
                     except asyncio.TimeoutError:
                         # Send ping
                         await ws.send("ping")
-                    except Exception as e:
+                    except Exception:
                         if self._running:
                             raise
 
-        except Exception as e:
+        except Exception:
             self.disconnected.emit()
             raise
 

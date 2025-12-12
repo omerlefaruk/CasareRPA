@@ -6,8 +6,8 @@ Anchors are stable reference elements (labels, headings) used to
 reliably find dynamic target elements relative to their position.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from dataclasses import dataclass
+from typing import Dict, Any
 import json
 
 from loguru import logger

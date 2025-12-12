@@ -6,7 +6,7 @@ Uses asyncpg with connection pooling and bcrypt for secure password hashing.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from loguru import logger
 

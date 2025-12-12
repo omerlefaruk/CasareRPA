@@ -43,6 +43,8 @@ from casare_rpa.nodes.file import (
     GetFileSizeNode,
     GetFileInfoNode,
     ListFilesNode,
+    ListDirectoryNode,
+    CreateDirectoryNode,
     ReadCSVNode,
     WriteCSVNode,
     ReadJSONFileNode,
@@ -392,6 +394,75 @@ class VisualListFilesNode(VisualNode):
         self.add_exec_output("exec_out")
         self.add_typed_output("files", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualListDirectoryNode(VisualNode):
+    """Visual representation of ListDirectoryNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "List Directory"
+    NODE_CATEGORY = "file_operations/basic"
+    CASARE_NODE_CLASS = "ListDirectoryNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="dir_path",
+                label="Directory",
+                placeholder="Select directory...",
+            ),
+        )
+        # Note: pattern, recursive, files_only, dirs_only are auto-generated
+        # from @node_schema decorator on ListDirectoryNode - do not add manually
+
+    def get_node_class(self) -> type:
+        return ListDirectoryNode
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dir_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("items", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualCreateDirectoryNode(VisualNode):
+    """Visual representation of CreateDirectoryNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Create Directory"
+    NODE_CATEGORY = "file_operations/basic"
+    CASARE_NODE_CLASS = "CreateDirectoryNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="directory_path",
+                label="Directory",
+                placeholder="Select or enter directory path...",
+            ),
+        )
+        self.add_checkbox(
+            "parents", label="", text="Create Parents", state=True, tab="properties"
+        )
+        self.add_checkbox(
+            "exist_ok", label="", text="Exist OK", state=True, tab="properties"
+        )
+
+    def get_node_class(self) -> type:
+        return CreateDirectoryNode
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("directory_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("dir_path", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 

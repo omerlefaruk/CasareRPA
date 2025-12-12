@@ -1,61 +1,52 @@
 # CasareRPA
 
-Windows Desktop RPA platform with visual node-based workflow editor.
+Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD Clean Architecture
 
-**Stack**: Python 3.12 | PySide6 | Playwright | NodeGraphQt | DDD Clean Architecture
-
-## Rules Reference
-
-Rules are modularized in `.claude/rules/`. All `.md` files are auto-loaded.
-
-| Topic | File |
-|-------|------|
-| Role & Philosophy | `00-role.md` |
-| 5-Phase Workflow | `01-workflow.md` |
-| Coding Standards | `02-coding-standards.md` |
-| Architecture | `03-architecture.md` |
-| Agent Registry | `04-agents.md` |
-| Workflow Triggers | `05-triggers.md` |
-| Enforcement | `06-enforcement.md` |
-| MCP Tools | `07-mcp-tools.md` |
-| Token Optimization | `08-token-optimization.md` |
-| Brain Protocol | `09-brain-protocol.md` |
-| **Node Workflow** | `10-node-workflow.md` |
-| **Node Templates** | `11-node-templates.md` |
-
-### Path-Specific Rules
-| Scope | File |
-|-------|------|
-| Node development | `nodes/node-registration.md` |
-| UI/Presentation | `ui/theme-rules.md` |
-
-## Node Development: Plan → Search → Implement
-
-**Always follow this workflow for nodes:**
-
-1. **PLAN**: Define atomic operation (one node = one responsibility)
-2. **SEARCH**: Check existing nodes first (`nodes/_index.md`, `_NODE_REGISTRY`)
-3. **IMPLEMENT**: Use existing → Modify existing → Create new (last resort)
-
-See `.claude/rules/10-node-workflow.md` for full protocol.
-
-## Commands
-
+## Quick Commands
 ```bash
-python run.py          # Run application
-pytest tests/ -v       # Run tests
-pip install -e .       # Install in dev mode
+python run.py          # Run app
+pytest tests/ -v       # Tests
+pip install -e .       # Dev install
 ```
 
-## Documentation
+## Core Rules (Non-Negotiable)
 
-Detailed docs in `.brain/`:
-- `projectRules.md` - Full coding standards
-- `systemPatterns.md` - Architecture patterns
-- `docs/` - Implementation checklists
+1. **INDEX-FIRST**: Read `_index.md` before grep/glob. See `.claude/rules/01-core.md`
+2. **PARALLEL**: Launch independent agents/reads in ONE message block
+3. **SEARCH BEFORE CREATE**: Check existing code before writing new
+4. **NO SILENT FAILURES**: Wrap external calls in try/except, use loguru
+5. **THEME.* ONLY**: No hardcoded colors - use `presentation/canvas/ui/theme.py`
+6. **UnifiedHttpClient**: No raw httpx/aiohttp
 
-## Quick Start
+## DDD Layers
+| Layer | Path | Dependencies |
+|-------|------|--------------|
+| Domain | `domain/` | None |
+| Application | `application/` | Domain |
+| Infrastructure | `infrastructure/` | Domain, App |
+| Presentation | `presentation/` | All |
 
-1. Read `.brain/context/current.md` for session state
-2. Rules auto-load from `.claude/rules/`
-3. Follow 5-phase workflow: RESEARCH -> PLAN -> EXECUTE -> VALIDATE -> DOCS
+## Key Indexes (P0 - Always Check First)
+- `nodes/_index.md` - Node registry
+- `presentation/canvas/visual_nodes/_index.md` - Visual nodes
+- `domain/_index.md` - Core entities
+- `.brain/context/current.md` - Session state
+
+## Rules Reference
+| Topic | File |
+|-------|------|
+| Core workflow & standards | `.claude/rules/01-core.md` |
+| Architecture & agents | `.claude/rules/02-architecture.md` |
+| Node development | `.claude/rules/03-nodes.md` |
+
+### Path-Specific (auto-loaded)
+| Scope | File |
+|-------|------|
+| UI/Presentation | `.claude/rules/ui/theme-rules.md` |
+| Node files | `.claude/rules/nodes/node-registration.md` |
+
+## On-Demand Docs (Load When Needed)
+- `.brain/docs/node-templates.md` - Full node templates
+- `.brain/docs/node-checklist.md` - Node implementation steps
+- `.brain/projectRules.md` - Full coding standards
+- `.brain/systemPatterns.md` - Architecture patterns

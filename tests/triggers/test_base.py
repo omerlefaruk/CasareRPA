@@ -4,11 +4,13 @@ from datetime import datetime, timedelta
 import pytest
 
 from casare_rpa.triggers.base import (
+    TriggerEvent,
+    BaseTriggerConfig,
+)
+from casare_rpa.domain.value_objects.trigger_types import (
     TriggerType,
     TriggerStatus,
     TriggerPriority,
-    TriggerEvent,
-    BaseTriggerConfig,
 )
 
 

@@ -6,7 +6,7 @@ Provides operations for job control: cancel, retry, status updates.
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Path, Request
 from loguru import logger
@@ -176,8 +176,6 @@ async def retry_job(
         raise HTTPException(status_code=503, detail="Database not available")
 
     try:
-        import orjson
-
         async with pool.acquire() as conn:
             # Get original job
             row = await conn.fetchrow(

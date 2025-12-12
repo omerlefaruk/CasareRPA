@@ -5,6 +5,11 @@ from casare_rpa.domain.orchestrator.entities.dashboard_metrics import (
     JobHistoryEntry,
 )
 from casare_rpa.domain.orchestrator.entities.job import Job, JobPriority, JobStatus
+from casare_rpa.domain.orchestrator.entities.queue import (
+    Queue,
+    QueueItem,
+    QueueItemStatus,
+)
 from casare_rpa.domain.orchestrator.entities.robot import (
     Robot,
     RobotCapability,
@@ -20,6 +25,9 @@ __all__ = [
     "Job",
     "JobStatus",
     "JobPriority",
+    "Queue",
+    "QueueItem",
+    "QueueItemStatus",
     "Workflow",
     "WorkflowStatus",
     "Schedule",

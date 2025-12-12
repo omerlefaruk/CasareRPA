@@ -21,7 +21,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.trigger_types import (
     TriggerType,
     TriggerStatus,
-    TriggerPriority,
 )
 
 

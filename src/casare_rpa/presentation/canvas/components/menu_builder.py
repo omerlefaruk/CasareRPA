@@ -87,6 +87,7 @@ class MenuBuilder:
         - Clipboard (cut/copy/paste/duplicate)
         - Destructive (delete)
         - Selection and search
+        - Layout and alignment
         """
         edit_menu = menubar.addMenu("&Edit")
 
@@ -113,6 +114,13 @@ class MenuBuilder:
         edit_menu.addAction(mw.action_select_all)
         edit_menu.addAction(mw.action_find_node)
         edit_menu.addAction(mw.action_rename_node)
+
+        edit_menu.addSeparator()
+
+        # --- Layout and Alignment ---
+        edit_menu.addAction(mw.action_auto_layout)
+        edit_menu.addAction(mw.action_layout_selection)
+        edit_menu.addAction(mw.action_toggle_grid_snap)
 
         return edit_menu
 

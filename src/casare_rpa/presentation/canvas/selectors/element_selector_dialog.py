@@ -14,8 +14,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QFont, QImage, QPixmap, QKeyEvent, QIcon
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont, QImage, QPixmap, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QGraphicsDropShadowEffect,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -33,7 +32,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSlider,
-    QSpinBox,
     QTextEdit,
     QToolButton,
     QVBoxLayout,

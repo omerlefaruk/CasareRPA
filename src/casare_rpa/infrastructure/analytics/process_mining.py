@@ -435,18 +435,66 @@ class ProcessInsight:
 
 
 class ProcessEventLog:
-    """Storage and retrieval of execution traces for process mining."""
+    """
+    Storage and retrieval of execution traces for process mining.
 
-    def __init__(self, max_traces: int = 10000) -> None:
+    Supports hybrid storage mode:
+    - In-memory: Fast access to recent traces (configurable limit)
+    - Database: Persistent storage for older traces (via TraceRepository)
+
+    When persistence is enabled, traces are automatically archived to the
+    database when evicted from memory, and can be retrieved from database
+    when not found in memory.
+    """
+
+    def __init__(
+        self,
+        max_traces: int = 10000,
+        enable_persistence: bool = False,
+        retention_days: int = 90,
+    ) -> None:
         """Initialize event log.
 
         Args:
             max_traces: Maximum number of traces to store in memory.
+            enable_persistence: Enable database persistence for traces.
+            retention_days: Days to retain traces in database.
         """
         self._traces: Dict[str, ExecutionTrace] = {}
         self._workflow_traces: Dict[str, List[str]] = defaultdict(list)
         self._max_traces = max_traces
-        logger.debug(f"ProcessEventLog initialized (max_traces={max_traces})")
+        self._enable_persistence = enable_persistence
+        self._retention_days = retention_days
+        self._repository: Optional[Any] = None
+        self._pending_archive: List[ExecutionTrace] = []
+        self._archive_batch_size = 50
+        logger.debug(
+            f"ProcessEventLog initialized (max_traces={max_traces}, "
+            f"persistence={enable_persistence})"
+        )
+
+    async def initialize_persistence(self) -> None:
+        """
+        Initialize database persistence.
+
+        Must be called before using persistence features.
+        Creates tables if they don't exist.
+        """
+        if not self._enable_persistence:
+            return
+
+        try:
+            from casare_rpa.infrastructure.persistence.repositories.trace_repository import (
+                TraceRepository,
+            )
+
+            self._repository = TraceRepository()
+            await self._repository.ensure_tables()
+            logger.info("ProcessEventLog persistence initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize persistence: {e}")
+            self._enable_persistence = False
+            raise
 
     def add_trace(self, trace: ExecutionTrace) -> None:
         """Add execution trace to log."""
@@ -459,13 +507,78 @@ class ProcessEventLog:
                 if oldest_key in wf_traces:
                     wf_traces.remove(oldest_key)
 
+            # Queue for archival if persistence is enabled
+            if self._enable_persistence:
+                self._pending_archive.append(old_trace)
+
         self._traces[trace.case_id] = trace
         self._workflow_traces[trace.workflow_id].append(trace.case_id)
         logger.debug(f"Added trace {trace.case_id} for workflow {trace.workflow_id}")
 
+    async def add_trace_async(self, trace: ExecutionTrace) -> None:
+        """
+        Add execution trace with immediate persistence.
+
+        Args:
+            trace: ExecutionTrace to add.
+        """
+        self.add_trace(trace)
+
+        if self._enable_persistence and self._repository:
+            try:
+                await self._repository.save_trace(trace)
+            except Exception as e:
+                logger.error(f"Failed to persist trace {trace.case_id}: {e}")
+
+    async def flush_archive(self) -> int:
+        """
+        Flush pending traces to database.
+
+        Returns:
+            Number of traces archived.
+        """
+        if not self._enable_persistence or not self._repository:
+            return 0
+
+        if not self._pending_archive:
+            return 0
+
+        try:
+            count = await self._repository.save_traces_batch(self._pending_archive)
+            self._pending_archive.clear()
+            logger.debug(f"Flushed {count} traces to archive")
+            return count
+        except Exception as e:
+            logger.error(f"Failed to flush trace archive: {e}")
+            return 0
+
     def get_trace(self, case_id: str) -> Optional[ExecutionTrace]:
-        """Get trace by case ID."""
+        """Get trace by case ID from memory."""
         return self._traces.get(case_id)
+
+    async def get_trace_async(self, case_id: str) -> Optional[ExecutionTrace]:
+        """
+        Get trace by case ID, checking database if not in memory.
+
+        Args:
+            case_id: Trace ID to retrieve.
+
+        Returns:
+            ExecutionTrace if found, None otherwise.
+        """
+        # Check memory first
+        trace = self._traces.get(case_id)
+        if trace:
+            return trace
+
+        # Check database if persistence enabled
+        if self._enable_persistence and self._repository:
+            try:
+                return await self._repository.get_trace(case_id)
+            except Exception as e:
+                logger.error(f"Failed to get trace {case_id} from database: {e}")
+
+        return None
 
     def get_traces_for_workflow(
         self,
@@ -473,7 +586,7 @@ class ProcessEventLog:
         limit: Optional[int] = None,
         status: Optional[str] = None,
     ) -> List[ExecutionTrace]:
-        """Get all traces for a workflow."""
+        """Get traces for a workflow from memory."""
         case_ids = self._workflow_traces.get(workflow_id, [])
         traces = [self._traces[cid] for cid in case_ids if cid in self._traces]
 
@@ -485,13 +598,62 @@ class ProcessEventLog:
 
         return traces
 
+    async def get_traces_for_workflow_async(
+        self,
+        workflow_id: str,
+        limit: Optional[int] = None,
+        status: Optional[str] = None,
+        include_archived: bool = True,
+    ) -> List[ExecutionTrace]:
+        """
+        Get traces for a workflow, optionally including archived.
+
+        Args:
+            workflow_id: Workflow ID to filter by.
+            limit: Maximum traces to return.
+            status: Optional status filter.
+            include_archived: Include traces from database.
+
+        Returns:
+            List of ExecutionTrace objects.
+        """
+        # Get from memory
+        memory_traces = self.get_traces_for_workflow(workflow_id, limit, status)
+
+        if not include_archived or not self._enable_persistence or not self._repository:
+            return memory_traces
+
+        # Get from database
+        try:
+            memory_ids = {t.case_id for t in memory_traces}
+            db_traces = await self._repository.get_traces_for_workflow(
+                workflow_id=workflow_id,
+                limit=limit or 1000,
+                status=status,
+            )
+            # Filter out duplicates
+            db_traces = [t for t in db_traces if t.case_id not in memory_ids]
+
+            # Combine and sort
+            all_traces = memory_traces + db_traces
+            all_traces.sort(key=lambda t: t.start_time, reverse=True)
+
+            if limit:
+                all_traces = all_traces[:limit]
+
+            return all_traces
+
+        except Exception as e:
+            logger.error(f"Failed to get archived traces: {e}")
+            return memory_traces
+
     def get_traces_in_timerange(
         self,
         start_time: datetime,
         end_time: datetime,
         workflow_id: Optional[str] = None,
     ) -> List[ExecutionTrace]:
-        """Get traces within time range."""
+        """Get traces within time range from memory."""
         traces = []
         for trace in self._traces.values():
             if start_time <= trace.start_time <= end_time:
@@ -499,18 +661,103 @@ class ProcessEventLog:
                     traces.append(trace)
         return sorted(traces, key=lambda t: t.start_time)
 
+    async def get_traces_in_timerange_async(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        workflow_id: Optional[str] = None,
+        include_archived: bool = True,
+    ) -> List[ExecutionTrace]:
+        """
+        Get traces within time range, optionally including archived.
+
+        Args:
+            start_time: Range start.
+            end_time: Range end.
+            workflow_id: Optional workflow filter.
+            include_archived: Include traces from database.
+
+        Returns:
+            List of ExecutionTrace objects sorted by start_time.
+        """
+        memory_traces = self.get_traces_in_timerange(start_time, end_time, workflow_id)
+
+        if not include_archived or not self._enable_persistence or not self._repository:
+            return memory_traces
+
+        try:
+            memory_ids = {t.case_id for t in memory_traces}
+            db_traces = await self._repository.get_traces(
+                workflow_id=workflow_id,
+                start_date=start_time,
+                end_date=end_time,
+            )
+            db_traces = [t for t in db_traces if t.case_id not in memory_ids]
+
+            all_traces = memory_traces + db_traces
+            return sorted(all_traces, key=lambda t: t.start_time)
+
+        except Exception as e:
+            logger.error(f"Failed to get archived traces in timerange: {e}")
+            return memory_traces
+
     def get_all_workflows(self) -> List[str]:
-        """Get list of all workflow IDs with traces."""
+        """Get list of all workflow IDs with traces in memory."""
         return list(self._workflow_traces.keys())
 
+    async def get_all_workflows_async(self) -> List[str]:
+        """
+        Get list of all workflow IDs including archived.
+
+        Returns:
+            List of unique workflow IDs.
+        """
+        memory_workflows = set(self._workflow_traces.keys())
+
+        if self._enable_persistence and self._repository:
+            try:
+                db_workflows = await self._repository.get_workflow_ids()
+                return list(memory_workflows | set(db_workflows))
+            except Exception as e:
+                logger.error(f"Failed to get archived workflow IDs: {e}")
+
+        return list(memory_workflows)
+
     def get_trace_count(self, workflow_id: Optional[str] = None) -> int:
-        """Get count of traces."""
+        """Get count of traces in memory."""
         if workflow_id:
             return len(self._workflow_traces.get(workflow_id, []))
         return len(self._traces)
 
+    async def get_trace_count_async(
+        self,
+        workflow_id: Optional[str] = None,
+        include_archived: bool = True,
+    ) -> int:
+        """
+        Get count of traces including archived.
+
+        Args:
+            workflow_id: Optional workflow filter.
+            include_archived: Include database traces.
+
+        Returns:
+            Total trace count.
+        """
+        memory_count = self.get_trace_count(workflow_id)
+
+        if not include_archived or not self._enable_persistence or not self._repository:
+            return memory_count
+
+        try:
+            db_count = await self._repository.get_trace_count(workflow_id)
+            return memory_count + db_count
+        except Exception as e:
+            logger.error(f"Failed to get archived trace count: {e}")
+            return memory_count
+
     def clear(self, workflow_id: Optional[str] = None) -> None:
-        """Clear traces."""
+        """Clear traces from memory."""
         if workflow_id:
             case_ids = self._workflow_traces.pop(workflow_id, [])
             for cid in case_ids:
@@ -518,6 +765,32 @@ class ProcessEventLog:
         else:
             self._traces.clear()
             self._workflow_traces.clear()
+
+    async def cleanup_archived(self) -> Dict[str, Any]:
+        """
+        Cleanup old archived traces based on retention policy.
+
+        Returns:
+            Cleanup results dictionary.
+        """
+        if not self._enable_persistence or not self._repository:
+            return {"status": "persistence_disabled"}
+
+        try:
+            return await self._repository.cleanup_old_traces(self._retention_days)
+        except Exception as e:
+            logger.error(f"Failed to cleanup archived traces: {e}")
+            return {"status": "error", "error": str(e)}
+
+    @property
+    def persistence_enabled(self) -> bool:
+        """Check if persistence is enabled and initialized."""
+        return self._enable_persistence and self._repository is not None
+
+    @property
+    def pending_archive_count(self) -> int:
+        """Get count of traces pending archival."""
+        return len(self._pending_archive)
 
 
 # =============================================================================

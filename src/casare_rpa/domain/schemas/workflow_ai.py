@@ -227,12 +227,29 @@ class NodeConfigSchema(BaseModel):
 
 
 class PositionSchema(BaseModel):
-    """Optional position for node placement in canvas."""
+    """Optional position for node placement in canvas.
+
+    Accepts both list format [x, y] and dict format {"x": x, "y": y}
+    for compatibility with AI-generated workflows.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     x: float = Field(default=0.0, description="X coordinate")
     y: float = Field(default=0.0, description="Y coordinate")
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_list_to_dict(cls, values: Any) -> Any:
+        """Convert list format [x, y] to dict format {"x": x, "y": y}."""
+        if isinstance(values, (list, tuple)):
+            if len(values) >= 2:
+                return {"x": float(values[0]), "y": float(values[1])}
+            elif len(values) == 1:
+                return {"x": float(values[0]), "y": 0.0}
+            else:
+                return {"x": 0.0, "y": 0.0}
+        return values
 
 
 class NodeSchema(BaseModel):
@@ -371,6 +388,91 @@ class ConnectionSchema(BaseModel):
             "target_node": self.target_node,
             "target_port": self.target_port,
         }
+
+
+class NodeModificationSchema(BaseModel):
+    """
+    Schema for a single node modification in edit mode.
+
+    Represents changes to an existing node's configuration.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    node_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_NODE_ID_LENGTH,
+        description="ID of the existing node to modify",
+    )
+    changes: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Property changes to apply to the node's config",
+    )
+
+    @field_validator("node_id")
+    @classmethod
+    def validate_node_id(cls, v: str) -> str:
+        """Validate node_id format and security."""
+        if not v.strip():
+            raise ValueError("node_id cannot be whitespace-only")
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("node_id must be alphanumeric with _ or - only")
+        _check_dangerous_patterns(v, "node_id")
+        return v
+
+    @field_validator("changes")
+    @classmethod
+    def validate_changes(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate changes dict for security."""
+        return _validate_config_recursive(v, "changes", 0)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dict."""
+        return {
+            "node_id": self.node_id,
+            "changes": self.changes,
+        }
+
+
+class EditWorkflowSchema(BaseModel):
+    """
+    Schema for edit operations on existing workflows.
+
+    Used when the AI is modifying existing nodes rather than creating new ones.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: str = Field(
+        default="edit",
+        pattern=r"^edit$",
+        description="Action type (must be 'edit')",
+    )
+    modifications: List[NodeModificationSchema] = Field(
+        ...,
+        min_length=1,
+        description="List of node modifications to apply",
+    )
+
+    @model_validator(mode="after")
+    def validate_modifications_limit(self) -> "EditWorkflowSchema":
+        """Validate modifications don't exceed limits."""
+        if len(self.modifications) > MAX_NODES:
+            raise ValueError(f"Modifications exceed maximum of {MAX_NODES}")
+        return self
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dict."""
+        return {
+            "action": self.action,
+            "modifications": [mod.to_dict() for mod in self.modifications],
+        }
+
+    @classmethod
+    def is_edit_response(cls, data: Dict[str, Any]) -> bool:
+        """Check if data represents an edit response."""
+        return data.get("action") == "edit" and "modifications" in data
 
 
 class WorkflowSettingsSchema(BaseModel):
@@ -614,6 +716,8 @@ __all__ = [
     "WorkflowSettingsSchema",
     "WorkflowAISchema",
     "PositionSchema",
+    "NodeModificationSchema",
+    "EditWorkflowSchema",
     "SecurityValidationError",
     "MAX_NODES",
     "MAX_CONNECTIONS",

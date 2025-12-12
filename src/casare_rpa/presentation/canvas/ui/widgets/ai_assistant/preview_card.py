@@ -12,7 +12,7 @@ Features:
 - Collapsible JSON preview
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont

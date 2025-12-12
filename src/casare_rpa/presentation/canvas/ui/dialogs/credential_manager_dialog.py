@@ -35,9 +35,6 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogStyles,
     DialogSize,
     apply_dialog_style,
-    show_styled_warning,
-    show_styled_error,
-    show_styled_question,
     COLORS,
 )
 
@@ -124,6 +121,11 @@ class ApiKeyTestWorker(QObject):
                     "messages": [{"role": "user", "content": "Hi"}],
                     "max_tokens": 1,
                 },
+            },
+            "openrouter": {
+                "url": "https://openrouter.ai/api/v1/models",
+                "headers": {"Authorization": f"Bearer {api_key}"},
+                "method": "GET",
             },
             "azure": {
                 # Azure requires endpoint configuration, just validate key format
@@ -378,6 +380,7 @@ class CredentialManagerDialog(QDialog):
             ("Cohere", "cohere"),
             ("Together AI", "together"),
             ("Perplexity", "perplexity"),
+            ("OpenRouter", "openrouter"),
         ]
         for display_name, provider_id in providers:
             item = QListWidgetItem(display_name)

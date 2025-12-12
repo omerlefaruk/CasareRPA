@@ -37,6 +37,7 @@ Related:
 """
 
 import asyncio
+import re
 import time
 from typing import Any, Callable, Dict, Optional
 
@@ -145,6 +146,28 @@ class NodeExecutor:
             )
             self.event_bus.publish(event)
 
+    def _get_node_display_name(self, node: INode) -> str:
+        """
+        Get a human-readable display name for a node.
+
+        Priority:
+            1. config["label"] - User-defined label in properties
+            2. config["name"] - Alternative name field
+            3. Cleaned node_type - Remove "Node" suffix and add spaces
+        """
+        # Check config for user-defined label/name
+        label = node.config.get("label") or node.config.get("name")
+        if label:
+            return str(label)
+
+        # Fall back to cleaned node type name
+        node_type = node.__class__.__name__
+        # Remove "Node" suffix and add spaces before capitals
+        if node_type.endswith("Node"):
+            node_type = node_type[:-4]
+        # Add spaces before capital letters (e.g., "ClickElement" -> "Click Element")
+        return re.sub(r"(?<!^)(?=[A-Z])", " ", node_type)
+
     async def execute(self, node: INode) -> NodeExecutionResult:
         """
         Execute a single node with full lifecycle management.
@@ -177,14 +200,20 @@ class NodeExecutor:
         node.status = NodeStatus.RUNNING
         self.context.set_current_node(node.node_id)
 
+        node_type = node.__class__.__name__
+        node_name = self._get_node_display_name(node)
+
         self._emit_event(
             EventType.NODE_STARTED,
-            {"node_id": node.node_id, "node_type": node.__class__.__name__},
+            {
+                "node_id": node.node_id,
+                "node_type": node_type,
+                "node_name": node_name,
+            },
             node.node_id,
         )
 
         start_time = time.time()
-        node_type = node.__class__.__name__
 
         # Record metrics start (using cached instance)
         self._metrics.record_node_start(node_type, node.node_id)
@@ -270,6 +299,7 @@ class NodeExecutor:
             {
                 "node_id": node.node_id,
                 "node_type": node.__class__.__name__,
+                "node_name": self._get_node_display_name(node),
                 "bypassed": True,
                 "execution_time": 0,
                 "progress": self._calculate_progress(),
@@ -318,7 +348,12 @@ class NodeExecutor:
 
             self._emit_event(
                 EventType.NODE_ERROR,
-                {"node_id": node.node_id, "error": error_msg},
+                {
+                    "node_id": node.node_id,
+                    "node_type": node.__class__.__name__,
+                    "node_name": self._get_node_display_name(node),
+                    "error": error_msg,
+                },
                 node.node_id,
             )
 
@@ -354,6 +389,10 @@ class NodeExecutor:
         try:
             # NODE CONTRACT: execute() must return ExecutionResult dict
             # Expected: {"success": True/False, "data": {...}, "error": "..."}
+            logger.debug(
+                f"NodeExecutor: executing {node.__class__.__name__} ({node.node_id}) "
+                f"with context_id={id(self.context)}"
+            )
             result = await asyncio.wait_for(
                 node.execute(self.context), timeout=self.node_timeout
             )
@@ -413,7 +452,7 @@ class NodeExecutor:
                 EventType.NODE_COMPLETED,
                 {
                     "node_id": node.node_id,
-                    "node_name": getattr(node, "name", node.node_id),
+                    "node_name": self._get_node_display_name(node),
                     "node_type": node_type,
                     "message": result.get("data", {}).get("message", "Completed"),
                     "progress": self._calculate_progress(),
@@ -442,6 +481,8 @@ class NodeExecutor:
             EventType.NODE_ERROR,
             {
                 "node_id": node.node_id,
+                "node_name": self._get_node_display_name(node),
+                "node_type": node_type,
                 "error": error_msg,
                 "execution_time": execution_time,
             },
@@ -493,6 +534,8 @@ class NodeExecutor:
             EventType.NODE_ERROR,
             {
                 "node_id": node.node_id,
+                "node_name": self._get_node_display_name(node),
+                "node_type": node_type,
                 "error": error_msg,
                 "execution_time": execution_time,
             },
@@ -753,6 +796,8 @@ class NodeExecutorWithTryCatch(NodeExecutor):
                 EventType.NODE_ERROR,
                 {
                     "node_id": node.node_id,
+                    "node_name": self._get_node_display_name(node),
+                    "node_type": node_type,
                     "error": error_msg,
                     "execution_time": execution_time,
                 },

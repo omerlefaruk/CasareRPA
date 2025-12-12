@@ -41,8 +41,8 @@ from casare_rpa.presentation.canvas.ui.theme import (
     TYPE_BADGES,
 )
 
-# Legacy alias for THEME - provides attribute-style access to theme colors
-THEME = Theme.get_colors()
+# Get colors from theme (modern API)
+_colors = Theme.get_colors()
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
@@ -812,8 +812,8 @@ class HighlightDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._selected_item: Optional[QTreeWidgetItem] = None
-        self._highlight_color = QColor(THEME.bg_selected)  # Selection blue
-        self._hover_color = QColor(THEME.bg_hover)  # Subtle hover
+        self._highlight_color = QColor(_colors.selection)  # Selection blue
+        self._hover_color = QColor(_colors.surface_hover)  # Subtle hover
 
     def set_selected_item(self, item: Optional[QTreeWidgetItem]) -> None:
         """Set the currently selected item."""
@@ -1197,10 +1197,10 @@ class VariablePickerPopup(QWidget):
             header_font.setPointSize(9)
             header_font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 0.8)
             header_item.setFont(0, header_font)
-            header_item.setForeground(0, QColor(THEME.text_secondary))
+            header_item.setForeground(0, QColor(_colors.text_secondary))
             # Section header background for visual depth
-            header_item.setBackground(0, QBrush(QColor(THEME.bg_light)))
-            header_item.setBackground(1, QBrush(QColor(THEME.bg_light)))
+            header_item.setBackground(0, QBrush(QColor(_colors.surface)))
+            header_item.setBackground(1, QBrush(QColor(_colors.surface)))
             self._tree_widget.addTopLevelItem(header_item)
 
             # Add variables in this group
@@ -1242,14 +1242,14 @@ class VariablePickerPopup(QWidget):
         item.setForeground(0, QColor(var.type_color))
 
         # Subtle background on type column for visual depth (badge area)
-        item.setBackground(1, QBrush(QColor(THEME.bg_lighter)))
+        item.setBackground(1, QBrush(QColor(_colors.secondary_hover)))
 
         # Muted type label on the right with subtle styling
         type_font = QFont()
         type_font.setPointSize(10)
         type_font.setItalic(True)
         item.setFont(1, type_font)
-        item.setForeground(1, QColor(THEME.text_muted))
+        item.setForeground(1, QColor(_colors.text_muted))
 
         parent.addChild(item)
 
@@ -1892,26 +1892,26 @@ class VariableAwareLineEdit(QLineEdit):
         self._validation_status = status
         self._validation_message = message
 
-        # Define border colors using THEME
+        # Define border colors
         border_colors = {
-            "valid": THEME.border,  # Normal border
-            "invalid": THEME.status_error,  # Red border
-            "warning": THEME.status_warning,  # Orange border
+            "valid": _colors.border,  # Normal border
+            "invalid": _colors.error,  # Red border
+            "warning": _colors.warning,  # Orange border
         }
-        border_color = border_colors.get(status, THEME.border)
+        border_color = border_colors.get(status, _colors.border)
         border_width = "2px" if status != "valid" else "1px"
 
         # Apply validation-aware stylesheet
         self.setStyleSheet(f"""
             QLineEdit {{
-                background: {THEME.bg_light};
+                background: {_colors.surface};
                 border: {border_width} solid {border_color};
                 border-radius: 3px;
-                color: {THEME.text_primary};
+                color: {_colors.text_primary};
                 padding: 2px 28px 2px 4px;
             }}
             QLineEdit:focus {{
-                border: {border_width} solid {border_color if status != 'valid' else THEME.border_focus};
+                border: {border_width} solid {border_color if status != 'valid' else _colors.border_focus};
             }}
         """)
 
@@ -2055,17 +2055,17 @@ def create_variable_aware_line_edit(
     line_edit.setMinimumHeight(min_height)
     line_edit.setMinimumWidth(min_width)
 
-    # Apply dark theme styling using THEME
+    # Apply dark theme styling
     line_edit.setStyleSheet(f"""
         QLineEdit {{
-            background: {THEME.bg_light};
-            border: 1px solid {THEME.border};
+            background: {_colors.surface};
+            border: 1px solid {_colors.border};
             border-radius: 3px;
-            color: {THEME.text_primary};
+            color: {_colors.text_primary};
             padding: 2px 28px 2px 4px;
         }}
         QLineEdit:focus {{
-            border: 1px solid {THEME.border_focus};
+            border: 1px solid {_colors.border_focus};
         }}
     """)
 

@@ -595,24 +595,48 @@ class FormFillerNode(BrowserBaseNode):
         """
         Resolve variable references in a value.
 
-        Supports ${variable_name} syntax for variable substitution.
+        Supports {{variable_name}} and ${variable_name} syntax for variable substitution.
 
         Args:
             context: Execution context with variables
             value: Value to resolve
 
         Returns:
-            Resolved value
+            Resolved value (with float-to-int conversion for whole numbers)
         """
         if not isinstance(value, str):
             return value
 
-        # Check if value contains variable references
-        if "${" not in value:
+        # Check if value contains variable references (both syntaxes)
+        if "{{" not in value and "${" not in value:
             return value
 
         # Resolve using context
-        return context.resolve_value(value)
+        resolved = context.resolve_value(value)
+
+        # Convert whole-number floats to int for cleaner form values
+        # e.g., 40716543298.0 -> 40716543298 (phone numbers from Excel)
+        resolved = self._normalize_numeric_value(resolved)
+
+        return resolved
+
+    def _normalize_numeric_value(self, value: Any) -> Any:
+        """
+        Convert whole-number floats to integers for cleaner form input.
+
+        Excel often stores numbers (like phone numbers) as floats,
+        resulting in values like 40716543298.0 instead of 40716543298.
+        This method converts such values to integers.
+
+        Args:
+            value: Value to normalize
+
+        Returns:
+            Normalized value (int if whole-number float, original otherwise)
+        """
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        return value
 
     async def _fill_text(self, element: Any, value: Any, clear_first: bool) -> None:
         """

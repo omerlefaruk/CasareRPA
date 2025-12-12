@@ -10,13 +10,12 @@ Provides shared functionality for all desktop automation nodes:
 
 import asyncio
 import uuid
-from abc import abstractmethod
-from typing import Any, Dict, Optional, TypeVar, Generic
+from typing import Any, Dict, Optional, TypeVar
 
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects.types import NodeStatus, PortType, DataType
+from casare_rpa.domain.value_objects.types import NodeStatus
 from casare_rpa.desktop import DesktopContext
 
 # Type variable for result types

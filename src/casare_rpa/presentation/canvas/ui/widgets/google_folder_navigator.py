@@ -37,20 +37,14 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QFrame,
     QScrollArea,
-    QSizePolicy,
     QButtonGroup,
     QMenu,
     QWidgetAction,
     QListWidget,
     QListWidgetItem,
 )
-from PySide6.QtGui import QCursor
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
-from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
-    DropdownItem,
-    FetchThread,
-)
 
 
 # =============================================================================

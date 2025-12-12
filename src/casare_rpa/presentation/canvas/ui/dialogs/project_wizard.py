@@ -10,8 +10,7 @@ Project Creation Wizard Dialog.
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QFont, QIcon, QPixmap, QPainter, QColor
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -27,8 +26,6 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QFileDialog,
     QFrame,
-    QMessageBox,
-    QSizePolicy,
 )
 
 from loguru import logger

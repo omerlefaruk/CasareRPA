@@ -41,6 +41,11 @@ from casare_rpa.presentation.canvas.ui.panels.credentials_panel import Credentia
 from casare_rpa.presentation.canvas.ui.panels.project_explorer_panel import (
     ProjectExplorerPanel,
 )
+from casare_rpa.presentation.canvas.ui.panels.breakpoints_panel import BreakpointsPanel
+from casare_rpa.presentation.canvas.ui.panels.audit_panel import AuditPanel
+from casare_rpa.presentation.canvas.ui.panels.recorded_actions_panel import (
+    RecordedActionsPanel,
+)
 
 # TriggersTab removed - triggers are now visual nodes
 from casare_rpa.presentation.canvas.ui.panels.validation_tab import ValidationTab
@@ -70,6 +75,9 @@ __all__ = [
     "PortLegendPanel",
     "CredentialsPanel",
     "ProjectExplorerPanel",
+    "BreakpointsPanel",
+    "AuditPanel",
+    "RecordedActionsPanel",
     # Tabs
     "HistoryTab",
     "LogTab",

@@ -26,6 +26,7 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     RobotsTabWidget,
     JobsTabWidget,
     SchedulesTabWidget,
+    QueuesTabWidget,
     AnalyticsTabWidget,
     ApiKeysTabWidget,
 )
@@ -51,6 +52,7 @@ class FleetDashboardDialog(QDialog):
     - Robots tab: View and manage registered robots
     - Jobs tab: Monitor job queue and history
     - Schedules tab: Manage workflow schedules
+    - Queues tab: Transaction queue management (UiPath-style)
     - Analytics tab: Fleet statistics and charts
     - API Keys tab: Manage robot API keys
     - Tenant filtering: Filter by tenant (super admin only)
@@ -65,6 +67,10 @@ class FleetDashboardDialog(QDialog):
         schedule_edited: Emitted when schedule edit requested (schedule_id)
         schedule_deleted: Emitted when schedule is deleted (schedule_id)
         schedule_run_now: Emitted when run now is clicked (schedule_id)
+        queue_selected: Emitted when a queue is selected (queue_id)
+        queue_created: Emitted when queue is created (queue_data)
+        queue_deleted: Emitted when queue is deleted (queue_id)
+        queue_item_action: Emitted for queue item actions (queue_id, item_ids, action)
         api_key_generated: Emitted when API key generation requested (config_dict)
         api_key_revoked: Emitted when API key revoked (key_id)
         api_key_rotated: Emitted when API key rotation requested (key_id)
@@ -81,6 +87,10 @@ class FleetDashboardDialog(QDialog):
     schedule_edited = Signal(str)
     schedule_deleted = Signal(str)
     schedule_run_now = Signal(str)
+    queue_selected = Signal(str)
+    queue_created = Signal(dict)
+    queue_deleted = Signal(str)
+    queue_item_action = Signal(str, list, str)
     api_key_generated = Signal(dict)
     api_key_revoked = Signal(str)
     api_key_rotated = Signal(str)
@@ -154,6 +164,9 @@ class FleetDashboardDialog(QDialog):
         self._schedules_tab = SchedulesTabWidget()
         self._tabs.addTab(self._schedules_tab, "Schedules")
 
+        self._queues_tab = QueuesTabWidget()
+        self._tabs.addTab(self._queues_tab, "Queues")
+
         self._api_keys_tab = ApiKeysTabWidget()
         self._tabs.addTab(self._api_keys_tab, "API Keys")
 
@@ -200,6 +213,13 @@ class FleetDashboardDialog(QDialog):
         self._schedules_tab.schedule_deleted.connect(self.schedule_deleted.emit)
         self._schedules_tab.schedule_run_now.connect(self.schedule_run_now.emit)
         self._schedules_tab.refresh_requested.connect(self._on_refresh_schedules)
+
+        # Queues tab
+        self._queues_tab.queue_selected.connect(self.queue_selected.emit)
+        self._queues_tab.queue_created.connect(self.queue_created.emit)
+        self._queues_tab.queue_deleted.connect(self.queue_deleted.emit)
+        self._queues_tab.items_bulk_action.connect(self.queue_item_action.emit)
+        self._queues_tab.refresh_requested.connect(self._on_refresh_queues)
 
         # API Keys tab
         self._api_keys_tab.key_generated.connect(self.api_key_generated.emit)
@@ -288,6 +308,12 @@ class FleetDashboardDialog(QDialog):
         """Handle API keys tab refresh request."""
         self._status_label.setText("Refreshing API keys...")
         self._api_keys_tab.set_refreshing(True)
+        self.refresh_requested.emit()
+
+    def _on_refresh_queues(self) -> None:
+        """Handle queues tab refresh request."""
+        self._status_label.setText("Refreshing queues...")
+        self._queues_tab.set_refreshing(True)
         self.refresh_requested.emit()
 
     def _on_tenant_changed(self, tenant_id: Optional[str]) -> None:
@@ -393,6 +419,10 @@ class FleetDashboardDialog(QDialog):
         """Switch to API keys tab."""
         self._tabs.setCurrentWidget(self._api_keys_tab)
 
+    def show_queues_tab(self) -> None:
+        """Switch to queues tab."""
+        self._tabs.setCurrentWidget(self._queues_tab)
+
     def get_selected_job(self) -> Optional[Dict[str, Any]]:
         """Get currently selected job from jobs tab."""
         return self._jobs_tab.get_selected_job()
@@ -465,6 +495,39 @@ class FleetDashboardDialog(QDialog):
         """
         self._robots = robots
         self._api_keys_tab.update_robots(robots)
+
+    # =========================================================================
+    # Queues Support
+    # =========================================================================
+
+    def update_queues(self, queues: List[Dict[str, Any]]) -> None:
+        """
+        Update queues tab with new data.
+
+        Args:
+            queues: List of queue dictionaries.
+        """
+        self._queues_tab.update_queues(queues)
+        self._queues_tab.set_refreshing(False)
+        self._status_label.setText("Ready")
+
+    def update_queue_items(self, items: List[Dict[str, Any]]) -> None:
+        """
+        Update queue items list in queues tab.
+
+        Args:
+            items: List of queue item dictionaries.
+        """
+        self._queues_tab.update_queue_items(items)
+
+    def update_queue_statistics(self, stats: Dict[str, Any]) -> None:
+        """
+        Update queue statistics in queues tab.
+
+        Args:
+            stats: Statistics dictionary with counts.
+        """
+        self._queues_tab.update_statistics(stats)
 
     # =========================================================================
     # WebSocket Real-Time Updates

@@ -875,6 +875,129 @@ def require_permission(
 
 
 # =============================================================================
+# MFA-REQUIRED OPERATIONS
+# =============================================================================
+
+
+# Operations that require MFA verification
+MFA_REQUIRED_OPERATIONS: List[tuple[ResourceType, ActionType]] = [
+    # Credential management
+    (ResourceType.CREDENTIAL, ActionType.CREATE),
+    (ResourceType.CREDENTIAL, ActionType.UPDATE),
+    (ResourceType.CREDENTIAL, ActionType.DELETE),
+    # User management
+    (ResourceType.USER, ActionType.INVITE),
+    (ResourceType.USER, ActionType.UPDATE),
+    (ResourceType.USER, ActionType.REMOVE),
+    # System configuration
+    (ResourceType.TENANT, ActionType.SETTINGS),
+    (ResourceType.TENANT, ActionType.BILLING),
+    # Role management
+    (ResourceType.ROLE, ActionType.MANAGE),
+    # Workflow deletion
+    (ResourceType.WORKFLOW, ActionType.DELETE),
+    # API Key management
+    (ResourceType.API_KEY, ActionType.CREATE),
+    (ResourceType.API_KEY, ActionType.REVOKE),
+]
+
+
+class MFARequiredError(RBACError):
+    """Raised when MFA verification is required but not provided."""
+
+    def __init__(
+        self,
+        resource: ResourceType,
+        action: ActionType,
+    ) -> None:
+        message = f"MFA verification required for {action.value} on {resource.value}"
+        super().__init__(
+            message,
+            {
+                "resource": resource.value,
+                "action": action.value,
+                "mfa_required": True,
+            },
+        )
+        self.resource = resource
+        self.action = action
+
+
+def is_mfa_required(resource: ResourceType, action: ActionType) -> bool:
+    """
+    Check if an operation requires MFA verification.
+
+    Args:
+        resource: Resource type
+        action: Action type
+
+    Returns:
+        True if MFA is required for this operation
+    """
+    return (resource, action) in MFA_REQUIRED_OPERATIONS
+
+
+def require_mfa(
+    resource: ResourceType,
+    action: ActionType,
+    get_context: Optional[Callable[..., Dict[str, Any]]] = None,
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """
+    Decorator to require both permission and MFA verification.
+
+    Usage:
+        @require_mfa(ResourceType.CREDENTIAL, ActionType.DELETE)
+        async def delete_credential(self, credential_id: str, auth_context: AuthContext):
+            ...
+
+    Args:
+        resource: Required resource type
+        action: Required action
+        get_context: Optional function to extract context from args
+    """
+
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        async def wrapper(*args: Any, **kwargs: Any) -> T:
+            auth_context = kwargs.get("auth_context")
+            if not auth_context:
+                for arg in args:
+                    if hasattr(arg, "auth_context"):
+                        auth_context = arg.auth_context
+                        break
+
+            if not auth_context:
+                raise RBACError("No authentication context provided")
+
+            # Check MFA status
+            if not getattr(auth_context, "mfa_verified", False):
+                raise MFARequiredError(resource, action)
+
+            permission_context: Optional[Dict[str, Any]] = None
+            if get_context:
+                permission_context = get_context(*args, **kwargs)
+
+            # Check permission
+            auth_service: AuthorizationService = auth_context.auth_service
+            await auth_service.check_permission(
+                user_id=auth_context.user_id,
+                tenant_id=auth_context.tenant_id,
+                role_ids=auth_context.role_ids,
+                resource=resource,
+                action=action,
+                context=permission_context,
+                raise_on_deny=True,
+            )
+
+            return await func(*args, **kwargs)
+
+        wrapper.__name__ = func.__name__
+        wrapper.__doc__ = func.__doc__
+        return wrapper
+
+    return decorator
+
+
+# =============================================================================
 # FACTORY FUNCTIONS
 # =============================================================================
 

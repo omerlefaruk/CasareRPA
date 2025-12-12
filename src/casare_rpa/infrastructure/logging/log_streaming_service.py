@@ -8,8 +8,7 @@ Provides buffering for temporary disconnections and efficient batch processing.
 import asyncio
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Set
-from weakref import WeakSet
+from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
@@ -488,7 +487,6 @@ class LogStreamingService:
 
 
 # Thread-safe singleton using LazySingleton for deferred initialization
-from casare_rpa.application.dependency_injection.singleton import Singleton
 import threading
 
 _log_streaming_lock = threading.Lock()

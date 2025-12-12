@@ -37,13 +37,11 @@ from casare_rpa.infrastructure.orchestrator.scheduling.schedule_optimizer import
     SlidingWindowRateLimiter,
 )
 from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
-    CompletionRecord,
     DependencyConfig,
     DependencyTracker,
     DependencyGraphValidator,
 )
 from casare_rpa.infrastructure.orchestrator.scheduling.sla_monitor import (
-    ExecutionMetrics,
     SLAConfig,
     SLAMonitor,
     SLAStatus,

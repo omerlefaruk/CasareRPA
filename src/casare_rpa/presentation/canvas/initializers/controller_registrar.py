@@ -28,16 +28,7 @@ if TYPE_CHECKING:
         WorkflowController,
         ExecutionController,
         NodeController,
-        ConnectionController,
-        PanelController,
-        MenuController,
-        EventBusController,
-        ViewportController,
-        UIStateController,
         SelectorController,
-        ProjectController,
-        RobotController,
-        ProjectAutosaveController,
     )
 
 

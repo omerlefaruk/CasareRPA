@@ -119,6 +119,25 @@ from casare_rpa.infrastructure.analytics.process_mining import (
     get_process_miner,
 )
 
+# XES Export
+from casare_rpa.infrastructure.analytics.xes_exporter import (
+    XESExporter,
+    XESImporter,
+)
+
+# PM4Py Integration (lazy loaded)
+from casare_rpa.infrastructure.analytics.pm4py_integration import (
+    PM4PyIntegration,
+    DiscoveryAlgorithm,
+    ConformanceMethod,
+    PetriNetResult,
+    BPMNResult,
+    AlignmentResult,
+    TokenReplayResult,
+    ConformanceSummary,
+    get_pm4py_integration,
+)
+
 __all__ = [
     # Metrics Aggregator (facade)
     "MetricsAggregator",
@@ -200,4 +219,17 @@ __all__ = [
     "DeviationType",
     "DirectFollowsEdge",
     "get_process_miner",
+    # XES Export
+    "XESExporter",
+    "XESImporter",
+    # PM4Py Integration
+    "PM4PyIntegration",
+    "DiscoveryAlgorithm",
+    "ConformanceMethod",
+    "PetriNetResult",
+    "BPMNResult",
+    "AlignmentResult",
+    "TokenReplayResult",
+    "ConformanceSummary",
+    "get_pm4py_integration",
 ]

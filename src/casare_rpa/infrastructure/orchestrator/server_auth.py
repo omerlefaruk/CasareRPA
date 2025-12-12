@@ -8,7 +8,7 @@ import hmac
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Header, HTTPException, status
 from loguru import logger
 
 from casare_rpa.infrastructure.auth.robot_api_keys import (

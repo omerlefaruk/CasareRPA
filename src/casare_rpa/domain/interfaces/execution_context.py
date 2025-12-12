@@ -21,7 +21,6 @@ Usage:
 """
 
 from typing import Any, Dict, List, Optional, Protocol, TYPE_CHECKING
-from abc import abstractmethod
 
 if TYPE_CHECKING:
     from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId

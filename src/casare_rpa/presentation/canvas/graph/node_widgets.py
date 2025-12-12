@@ -129,7 +129,7 @@ class CasareCheckBox:
             return
 
         # Fix NodeGraphQt's large font (11pt) - use 8pt to match other widgets
-        from PySide6.QtGui import QFont, QFontMetrics
+        from PySide6.QtGui import QFontMetrics
 
         font = checkbox.font()
         font.setPointSize(8)
@@ -448,7 +448,11 @@ class CasareNodeDataDropFix:
 
 
 # Maximum length for port labels before truncation
-PORT_LABEL_MAX_LENGTH = 15
+PORT_LABEL_MAX_LENGTH = 12
+
+# Maximum pixel width for port labels (calculated from average char width at 8pt)
+# Using a conservative estimate to prevent overlap in the middle of nodes
+PORT_LABEL_MAX_WIDTH_PX = 80
 
 
 class CasareNodeBaseFontFix:
@@ -465,7 +469,7 @@ class CasareNodeBaseFontFix:
 
     This fix patches _add_port to:
     1. Properly create and set the font
-    2. Truncate long port labels (>15 chars) with ellipsis
+    2. Truncate long port labels with ellipsis using proper font metrics
     3. Set tooltip with full label on hover
 
     Usage:
@@ -479,6 +483,7 @@ class CasareNodeBaseFontFix:
         try:
             from PySide6.QtGui import QFont, QFontMetrics
             from PySide6.QtWidgets import QGraphicsTextItem
+            from PySide6.QtCore import Qt
             from NodeGraphQt.qgraphics.node_base import (
                 NodeItem,
                 PortTypeEnum,
@@ -496,14 +501,22 @@ class CasareNodeBaseFontFix:
                 font = QFont()
                 font.setPointSize(8)
 
-                # Truncate long labels with ellipsis (Phase 1 UI improvement)
-                if len(port_name) > PORT_LABEL_MAX_LENGTH:
-                    # Use QFontMetrics.elidedText for proper truncation
-                    fm = QFontMetrics(font)
-                    # Calculate max width based on max chars (approx 6px per char at 8pt)
-                    max_width = PORT_LABEL_MAX_LENGTH * 6
-                    from PySide6.QtCore import Qt
+                # Use QFontMetrics for accurate text measurement
+                fm = QFontMetrics(font)
 
+                # Calculate actual text width
+                text_width = fm.horizontalAdvance(port_name)
+
+                # Truncate if text exceeds max width OR max character count
+                if (
+                    text_width > PORT_LABEL_MAX_WIDTH_PX
+                    or len(port_name) > PORT_LABEL_MAX_LENGTH
+                ):
+                    # Use the smaller of the two constraints
+                    max_width = min(
+                        PORT_LABEL_MAX_WIDTH_PX,
+                        fm.horizontalAdvance("x" * PORT_LABEL_MAX_LENGTH),
+                    )
                     display_name = fm.elidedText(
                         port_name, Qt.TextElideMode.ElideRight, max_width
                     )
@@ -998,8 +1011,10 @@ def create_file_path_widget(
     layout.setSpacing(4)
 
     # Set explicit minimum size to ensure visibility
+    # NOTE: Minimum width should be large enough to fit within node bounds
+    # when combined with the label that NodeGraphQt's _NodeGroupBox adds above
     container.setMinimumHeight(26)
-    container.setMinimumWidth(160)
+    container.setMinimumWidth(180)  # Increased from 160 to fit better in nodes
     container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     # Create variable-aware line edit with {x} button for variable insertion
@@ -1171,8 +1186,10 @@ def create_directory_path_widget(
     layout.setSpacing(4)
 
     # Set explicit minimum size to ensure visibility
+    # NOTE: Minimum width should be large enough to fit within node bounds
+    # when combined with the label that NodeGraphQt's _NodeGroupBox adds above
     container.setMinimumHeight(26)
-    container.setMinimumWidth(160)
+    container.setMinimumWidth(180)  # Increased from 160 to fit better in nodes
     container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     # Create variable-aware line edit with {x} button for variable insertion
@@ -1445,6 +1462,13 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
         logger.error("NodeGraphQt not available")
         return None
 
+    # Truncate long labels to prevent widget from being too wide
+    # Max 12 chars with ellipsis keeps widget compact on nodes
+    MAX_LABEL_LENGTH = 12
+    display_label = label
+    if label and len(label) > MAX_LABEL_LENGTH:
+        display_label = label[: MAX_LABEL_LENGTH - 1] + "…"
+
     # Create the container widget with horizontal layout
     container = QtWidgets.QWidget()
     layout = QHBoxLayout(container)
@@ -1452,8 +1476,9 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
     layout.setSpacing(4)
 
     # Set explicit minimum size
+    # NOTE: Minimum width should be large enough to fit within node bounds
     container.setMinimumHeight(26)
-    container.setMinimumWidth(160)
+    container.setMinimumWidth(180)  # Increased from 160 to fit better in nodes
     container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     # Create variable-aware line edit
@@ -1621,10 +1646,12 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
     picker_btn.clicked.connect(on_picker_click)
     layout.addWidget(picker_btn)
 
-    # Create NodeBaseWidget
-    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    # Create NodeBaseWidget with truncated label for compact display
+    widget = NodeBaseWidget(parent=None, name=name, label=display_label)
     widget.set_custom_widget(container)
     widget_ref["widget"] = widget
+    # Store original label for tooltip/reference
+    widget._original_label = label
 
     # Force geometry update
     container.adjustSize()

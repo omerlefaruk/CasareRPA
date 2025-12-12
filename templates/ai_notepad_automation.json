@@ -1,0 +1,228 @@
+{
+    "metadata": {
+        "name": "AI Notepad Automation",
+        "description": "Opens Windows Notepad, types a multi-line message with timestamps, and closes gracefully. Generated using CasareRPA infrastructure/AI SmartWorkflowAgent patterns with PLAN -> BUILD -> VALIDATE -> REPAIR -> OUTPUT protocol.",
+        "version": "1.0.0",
+        "author": "CasareRPA AI SmartWorkflowAgent",
+        "tags": [
+            "notepad",
+            "desktop",
+            "automation",
+            "ai-generated",
+            "demo"
+        ],
+        "ai_config": {
+            "wait_strategy": "minimal_waits",
+            "error_handling": "critical_only",
+            "parallelization": "sequential"
+        }
+    },
+    "nodes": {
+        "0": {
+            "node_id": "0",
+            "node_type": "LaunchApplicationNode",
+            "config": {
+                "application_path": "notepad.exe",
+                "window_title_hint": "Notepad",
+                "timeout": 10.0,
+                "keep_open": true
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "1": {
+            "node_id": "1",
+            "node_type": "WaitNode",
+            "config": {
+                "duration_ms": 1000
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "2": {
+            "node_id": "2",
+            "node_type": "SendKeysNode",
+            "config": {
+                "keys": "=== CasareRPA AI Workflow Demo ===",
+                "interval": 0.02
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "3": {
+            "node_id": "3",
+            "node_type": "SendHotKeyNode",
+            "config": {
+                "modifier": "none",
+                "key": "Enter"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "4": {
+            "node_id": "4",
+            "node_type": "SendKeysNode",
+            "config": {
+                "keys": "This workflow was generated using the AI SmartWorkflowAgent.",
+                "interval": 0.02
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "5": {
+            "node_id": "5",
+            "node_type": "SendHotKeyNode",
+            "config": {
+                "modifier": "none",
+                "key": "Enter"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "6": {
+            "node_id": "6",
+            "node_type": "SendKeysNode",
+            "config": {
+                "keys": "Protocol: PLAN -> BUILD -> VALIDATE -> REPAIR -> OUTPUT",
+                "interval": 0.02
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "7": {
+            "node_id": "7",
+            "node_type": "SendHotKeyNode",
+            "config": {
+                "modifier": "none",
+                "key": "Enter"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "8": {
+            "node_id": "8",
+            "node_type": "SendKeysNode",
+            "config": {
+                "keys": "=================================",
+                "interval": 0.02
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "9": {
+            "node_id": "9",
+            "node_type": "WaitNode",
+            "config": {
+                "duration_ms": 2000
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "10": {
+            "node_id": "10",
+            "node_type": "CloseApplicationNode",
+            "config": {
+                "force_close": false,
+                "timeout": 5.0
+            },
+            "position": [
+                4000,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "0",
+            "source_port": "exec_out",
+            "target_node": "1",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "1",
+            "source_port": "exec_out",
+            "target_node": "2",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "2",
+            "source_port": "exec_out",
+            "target_node": "3",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "3",
+            "source_port": "exec_out",
+            "target_node": "4",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "4",
+            "source_port": "exec_out",
+            "target_node": "5",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "5",
+            "source_port": "exec_out",
+            "target_node": "6",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "6",
+            "source_port": "exec_out",
+            "target_node": "7",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "7",
+            "source_port": "exec_out",
+            "target_node": "8",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "8",
+            "source_port": "exec_out",
+            "target_node": "9",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "9",
+            "source_port": "exec_out",
+            "target_node": "10",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "0",
+            "source_port": "window",
+            "target_node": "10",
+            "target_port": "window"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 120,
+        "retry_count": 0
+    }
+}

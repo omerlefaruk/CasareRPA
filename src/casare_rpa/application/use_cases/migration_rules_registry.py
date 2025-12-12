@@ -7,7 +7,7 @@ import threading
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from loguru import logger
 
-from casare_rpa.domain.workflow.versioning import SemanticVersion, WorkflowVersion
+from casare_rpa.domain.workflow.versioning import SemanticVersion
 
 # Type aliases
 JsonValue = Union[

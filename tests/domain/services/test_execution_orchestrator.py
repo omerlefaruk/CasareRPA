@@ -499,14 +499,14 @@ class TestFindLoopBodyNodes:
     def test_loop_body_nodes(self, loop_workflow: WorkflowSchema) -> None:
         """Find nodes in loop body."""
         orch = ExecutionOrchestrator(loop_workflow)
-        body_nodes = orch.find_loop_body_nodes("loop")
+        body_nodes = orch.find_loop_body_nodes("loop", "loop_end")
         assert "body_node" in body_nodes
         assert "loop_end" in body_nodes
 
     def test_loop_body_excludes_outside(self, loop_workflow: WorkflowSchema) -> None:
         """Loop body excludes nodes outside loop."""
         orch = ExecutionOrchestrator(loop_workflow)
-        body_nodes = orch.find_loop_body_nodes("loop")
+        body_nodes = orch.find_loop_body_nodes("loop", "loop_end")
         assert "start" not in body_nodes
         assert "end" not in body_nodes
 
@@ -515,7 +515,7 @@ class TestFindLoopBodyNodes:
     ) -> None:
         """No body port returns empty set."""
         orch = ExecutionOrchestrator(simple_workflow)
-        body_nodes = orch.find_loop_body_nodes("node1")
+        body_nodes = orch.find_loop_body_nodes("node1", "nonexistent")
         assert len(body_nodes) == 0
 
 

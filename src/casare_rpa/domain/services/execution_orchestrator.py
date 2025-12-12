@@ -655,6 +655,7 @@ class ExecutionOrchestrator:
         queue: deque[NodeId] = deque()
 
         # Find the first node connected to loop_start's body port (O(1) lookup)
+        # Note: ForLoopStartNode and WhileLoopStartNode use "body" as port name
         for connection in self._port_connections.get((loop_start_id, "body"), []):
             queue.append(connection.target_node)
             body_nodes.add(connection.target_node)

@@ -24,7 +24,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualStartNode": "basic.nodes",
     "VisualEndNode": "basic.nodes",
     "VisualCommentNode": "basic.nodes",
-    # Browser (23 nodes)
+    # Browser (26 nodes)
     "VisualLaunchBrowserNode": "browser.nodes",
     "VisualCloseBrowserNode": "browser.nodes",
     "VisualNewTabNode": "browser.nodes",
@@ -49,6 +49,10 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualFormFieldNode": "browser.nodes",
     "VisualFormFillerNode": "browser.nodes",
     "VisualDetectFormsNode": "browser.nodes",
+    # Smart Selector AI nodes
+    "VisualSmartSelectorNode": "browser.nodes",
+    "VisualSmartSelectorOptionsNode": "browser.nodes",
+    "VisualRefineSelectorNode": "browser.nodes",
     # Control Flow (16 nodes)
     "VisualIfNode": "control_flow.nodes",
     "VisualForLoopNode": "control_flow.nodes",
@@ -156,7 +160,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualMarkEmailNode": "email.nodes",
     "VisualDeleteEmailNode": "email.nodes",
     "VisualMoveEmailNode": "email.nodes",
-    # Error Handling (9 nodes)
+    # Error Handling (10 nodes)
     "VisualRetryNode": "error_handling.nodes",
     "VisualRetrySuccessNode": "error_handling.nodes",
     "VisualRetryFailNode": "error_handling.nodes",
@@ -166,7 +170,8 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualErrorRecoveryNode": "error_handling.nodes",
     "VisualLogErrorNode": "error_handling.nodes",
     "VisualAssertNode": "error_handling.nodes",
-    # File Operations (40 nodes)
+    "VisualAIRecoveryNode": "error_handling.nodes",
+    # File Operations (42 nodes)
     "VisualReadFileNode": "file_operations.nodes",
     "VisualWriteFileNode": "file_operations.nodes",
     "VisualAppendFileNode": "file_operations.nodes",
@@ -177,6 +182,8 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualGetFileSizeNode": "file_operations.nodes",
     "VisualGetFileInfoNode": "file_operations.nodes",
     "VisualListFilesNode": "file_operations.nodes",
+    "VisualListDirectoryNode": "file_operations.nodes",
+    "VisualCreateDirectoryNode": "file_operations.nodes",
     "VisualReadCsvNode": "file_operations.nodes",
     "VisualWriteCsvNode": "file_operations.nodes",
     "VisualReadJsonNode": "file_operations.nodes",
@@ -340,13 +347,19 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualDriveTriggerNode": "triggers.nodes",
     "VisualSheetsTriggerNode": "triggers.nodes",
     "VisualCalendarTriggerNode": "triggers.nodes",
-    # AI/ML (6 nodes)
+    # AI/ML (10 nodes)
     "VisualLLMCompletionNode": "ai_ml.nodes",
     "VisualLLMChatNode": "ai_ml.nodes",
     "VisualLLMExtractDataNode": "ai_ml.nodes",
     "VisualLLMSummarizeNode": "ai_ml.nodes",
     "VisualLLMClassifyNode": "ai_ml.nodes",
     "VisualLLMTranslateNode": "ai_ml.nodes",
+    # AI Condition nodes
+    "VisualAIConditionNode": "ai_ml.nodes",
+    "VisualAISwitchNode": "ai_ml.nodes",
+    "VisualAIDecisionTableNode": "ai_ml.nodes",
+    # AI Agent
+    "VisualAIAgentNode": "ai_ml.nodes",
     # Document AI (5 nodes)
     "VisualClassifyDocumentNode": "document.nodes",
     "VisualExtractFormNode": "document.nodes",
@@ -460,6 +473,8 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualSubflowNode": "subflows.nodes",
     # Note: SubflowVisualNode is an alias available via import from subflows.nodes
     # but NOT registered here to avoid duplicate __identifier__ conflict
+    # Workflow nodes (1 node)
+    "VisualCallSubworkflowNode": "workflow",
 }
 
 # Cache for loaded modules and classes

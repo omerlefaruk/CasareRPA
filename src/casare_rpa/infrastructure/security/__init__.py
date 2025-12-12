@@ -27,6 +27,14 @@ from casare_rpa.infrastructure.security.vault_client import (
     VaultAuthenticationError,
     AuditEvent,
     AuditEventType,
+    AuditLogger,
+)
+from casare_rpa.infrastructure.security.data_masker import (
+    DataMasker,
+    MaskedLogger,
+    MaskingConfig,
+    get_masker,
+    mask_sensitive_data,
 )
 from casare_rpa.infrastructure.security.providers import (
     HashiCorpVaultProvider,
@@ -152,6 +160,13 @@ __all__ = [
     # Audit
     "AuditEvent",
     "AuditEventType",
+    "AuditLogger",
+    # Data Masking
+    "DataMasker",
+    "MaskedLogger",
+    "MaskingConfig",
+    "get_masker",
+    "mask_sensitive_data",
     # Providers
     "HashiCorpVaultProvider",
     "SupabaseVaultProvider",

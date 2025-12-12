@@ -30,6 +30,21 @@ class SecurityError(Exception):
 
 @node_schema(
     PropertyDef(
+        "command",
+        PropertyType.STRING,
+        default="",
+        label="Command",
+        tooltip="Command to execute",
+        required=True,
+    ),
+    PropertyDef(
+        "args",
+        PropertyType.STRING,
+        default="",
+        label="Arguments",
+        tooltip="Command arguments",
+    ),
+    PropertyDef(
         "shell",
         PropertyType.BOOLEAN,
         default=False,
@@ -280,6 +295,14 @@ class RunCommandNode(BaseNode):
 
 
 @node_schema(
+    PropertyDef(
+        "script",
+        PropertyType.STRING,
+        default="",
+        label="Script",
+        tooltip="PowerShell script or command",
+        required=True,
+    ),
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,

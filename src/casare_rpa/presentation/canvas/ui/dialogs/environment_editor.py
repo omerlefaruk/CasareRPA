@@ -11,11 +11,10 @@ Full-featured dialog for managing environments (dev, staging, production, custom
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QFont, QIcon
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
-    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -43,7 +42,6 @@ from casare_rpa.domain.entities.project import (
     EnvironmentType,
 )
 from casare_rpa.domain.entities.project.environment import (
-    ENVIRONMENT_INHERITANCE,
     generate_environment_id,
 )
 

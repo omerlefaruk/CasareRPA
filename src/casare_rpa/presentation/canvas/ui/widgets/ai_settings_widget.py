@@ -16,8 +16,12 @@ from PySide6.QtWidgets import (
     QLabel,
     QComboBox,
     QGroupBox,
+    QPushButton,
+    QMessageBox,
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt, QThread
+import urllib.request
+import json
 
 from loguru import logger
 
@@ -62,6 +66,13 @@ LLM_MODELS: Dict[str, List[str]] = {
         "deepseek-chat",
         "deepseek-coder",
     ],
+    "OpenRouter": [
+        "openrouter/openai/gpt-4o",
+        "openrouter/anthropic/claude-3.5-sonnet",
+        "openrouter/google/gemini-2.0-flash-exp:free",
+        "openrouter/meta-llama/llama-3.3-70b-instruct",
+        "openrouter/mistralai/mistral-large-latest",
+    ],
     "Local (Ollama)": [
         "ollama/llama3.2",
         "ollama/mistral",
@@ -78,6 +89,7 @@ PROVIDER_TO_CATEGORY = {
     "Mistral": "mistral",
     "Groq": "groq",
     "DeepSeek": "deepseek",
+    "OpenRouter": "openrouter",
     "Local (Ollama)": "ollama",
 }
 
@@ -133,7 +145,9 @@ def detect_provider_from_model(model: str) -> str:
     """
     model_lower = model.lower()
 
-    if "gpt" in model_lower or "o1" in model_lower:
+    if model_lower.startswith("openrouter/"):
+        return "OpenRouter"
+    elif "gpt" in model_lower or "o1" in model_lower:
         return "OpenAI"
     elif "claude" in model_lower:
         return "Anthropic"
@@ -265,13 +279,24 @@ class AISettingsWidget(QWidget):
             self._model_combo.setToolTip("Select AI model")
             self._update_models()  # Populate initial models
 
+            # Fetch models button (for OpenRouter)
+            self._fetch_btn = QPushButton("Refresh")
+            self._fetch_btn.setToolTip("Refresh available models from OpenRouter")
+            self._fetch_btn.clicked.connect(self._on_fetch_models_clicked)
+            self._fetch_btn.setVisible(False)  # Hidden by default
+
+            # Style the button to be small and unobtrusive
+            self._fetch_btn.setFixedWidth(60)
+
             if not self._compact:
                 model_layout.addWidget(model_label)
                 model_layout.addWidget(self._model_combo, 1)
+                model_layout.addWidget(self._fetch_btn)
                 layout.addLayout(model_layout)
             else:
                 layout.addWidget(model_label)
                 layout.addWidget(self._model_combo)
+                layout.addWidget(self._fetch_btn)
 
         if self._compact:
             layout.addStretch()
@@ -299,6 +324,10 @@ class AISettingsWidget(QWidget):
             self._credential_combo.currentIndexChanged.connect(
                 self._on_credential_changed
             )
+            # Emit initial credential selection so consumers can enable their UI
+            cred_id = self._credential_combo.currentData()
+            if cred_id:
+                self.credential_changed.emit(cred_id)
 
         if self._show_provider:
             self._provider_combo.currentTextChanged.connect(self._on_provider_changed)
@@ -342,7 +371,8 @@ class AISettingsWidget(QWidget):
             return
 
         cred_id = self._credential_combo.currentData()
-        if cred_id and cred_id != "auto":
+        # Emit for both "auto" and stored credentials (skip separator with None)
+        if cred_id:
             self.credential_changed.emit(cred_id)
 
         self._emit_settings_changed()
@@ -352,9 +382,25 @@ class AISettingsWidget(QWidget):
         if self._updating:
             return
 
+        # Show fetch button only for OpenRouter and auto-fetch
+        if hasattr(self, "_fetch_btn"):
+            is_openrouter = provider == "OpenRouter"
+            self._fetch_btn.setVisible(is_openrouter)
+
+            # Auto-fetch models when OpenRouter is selected
+            if is_openrouter:
+                self._auto_fetch_openrouter_models()
+
         self._update_models()
         self.provider_changed.emit(provider)
         self._emit_settings_changed()
+
+    def _auto_fetch_openrouter_models(self) -> None:
+        """Automatically fetch OpenRouter models in background."""
+        from PySide6.QtCore import QTimer
+
+        # Use QTimer to defer fetch slightly (allows UI to update first)
+        QTimer.singleShot(100, self._fetch_openrouter_silent)
 
     def _on_model_changed(self, model: str) -> None:
         """Handle model selection change."""
@@ -367,16 +413,146 @@ class AISettingsWidget(QWidget):
             current_provider = self._provider_combo.currentText()
 
             if detected_provider != current_provider:
-                # Check if model is in detected provider's list
-                if model in LLM_MODELS.get(detected_provider, []):
+                # Check if model is in detected provider's list OR if it's an OpenRouter model we just fetched
+                is_known_model = model in LLM_MODELS.get(detected_provider, [])
+                is_fetched_openrouter = (
+                    detected_provider == "OpenRouter"
+                    and model.startswith("openrouter/")
+                )
+
+                if is_known_model or is_fetched_openrouter:
                     self._updating = True
                     idx = self._provider_combo.findText(detected_provider)
                     if idx >= 0:
                         self._provider_combo.setCurrentIndex(idx)
+                        # Also show fetch button if we switched to OpenRouter
+                        if hasattr(self, "_fetch_btn"):
+                            self._fetch_btn.setVisible(
+                                detected_provider == "OpenRouter"
+                            )
                     self._updating = False
 
         self.model_changed.emit(model)
         self._emit_settings_changed()
+
+    def _fetch_openrouter_silent(self) -> None:
+        """Silently fetch OpenRouter models (no popups)."""
+        api_key = self._get_openrouter_api_key()
+        if not api_key:
+            logger.debug("No OpenRouter API key available for auto-fetch")
+            return
+
+        # Remember current selection to restore after fetch
+        current_model = self._model_combo.currentText() if self._show_model else ""
+
+        if hasattr(self, "_fetch_btn"):
+            self._fetch_btn.setEnabled(False)
+            self._fetch_btn.setText("...")
+
+        try:
+            models = self._fetch_openrouter_models(api_key)
+            if models:
+                LLM_MODELS["OpenRouter"] = models
+                self._update_models()
+
+                # Restore previous model selection if it exists in fetched list
+                if current_model and self._show_model:
+                    idx = self._model_combo.findText(current_model)
+                    if idx >= 0:
+                        self._model_combo.setCurrentIndex(idx)
+
+                logger.info(f"Auto-fetched {len(models)} OpenRouter models")
+        except Exception as e:
+            logger.warning(f"Auto-fetch OpenRouter models failed: {e}")
+        finally:
+            if hasattr(self, "_fetch_btn"):
+                self._fetch_btn.setEnabled(True)
+                self._fetch_btn.setText("Refresh")
+
+    def _get_openrouter_api_key(self) -> Optional[str]:
+        """Get OpenRouter API key from credentials."""
+        try:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+            )
+
+            store = get_credential_store()
+
+            cred_id = (
+                self._credential_combo.currentData() if self._show_credential else None
+            )
+
+            if cred_id and cred_id != "auto":
+                return store.get_api_key(cred_id)
+            else:
+                return store.get_api_key_by_provider("openrouter")
+        except Exception as e:
+            logger.debug(f"Could not get OpenRouter API key: {e}")
+            return None
+
+    def _on_fetch_models_clicked(self) -> None:
+        """Fetch models from OpenRouter API (manual button click)."""
+        api_key = self._get_openrouter_api_key()
+
+        if not api_key:
+            QMessageBox.warning(
+                self,
+                "Missing API Key",
+                "Please select a valid credential or ensure OPENROUTER_API_KEY is in your credential store.",
+            )
+            return
+
+        self._fetch_btn.setEnabled(False)
+        self._fetch_btn.setText("...")
+
+        try:
+            models = self._fetch_openrouter_models(api_key)
+            if models:
+                LLM_MODELS["OpenRouter"] = models
+                self._update_models()
+                QMessageBox.information(
+                    self, "Success", f"Fetched {len(models)} models from OpenRouter."
+                )
+            else:
+                QMessageBox.warning(self, "Error", "No models found or API error.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to fetch models: {str(e)}")
+        finally:
+            self._fetch_btn.setEnabled(True)
+            self._fetch_btn.setText("Refresh")
+
+    def _fetch_openrouter_models(self, api_key: str) -> List[str]:
+        """Call OpenRouter API to get models."""
+        url = "https://openrouter.ai/api/v1/models"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "HTTP-Referer": "https://casarerpa.com",
+            "X-Title": "CasareRPA",
+        }
+
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                if response.status != 200:
+                    raise Exception(f"HTTP Error {response.status}")
+
+                data = json.loads(response.read().decode())
+
+                models = []
+                for item in data.get("data", []):
+                    mid = item.get("id")
+                    if mid:
+                        models.append(
+                            f"openrouter/{mid}"
+                            if not mid.startswith("openrouter/")
+                            else mid
+                        )
+
+                models.sort()
+                return models
+        except Exception as e:
+            logger.error(f"OpenRouter API call failed: {e}")
+            raise e
 
     def _emit_settings_changed(self) -> None:
         """Emit settings_changed with current values."""
@@ -411,10 +587,17 @@ class AISettingsWidget(QWidget):
         """
         self._updating = True
 
-        if self._show_provider and "provider" in settings:
-            idx = self._provider_combo.findText(settings["provider"])
+        provider = settings.get("provider", "")
+
+        if self._show_provider and provider:
+            idx = self._provider_combo.findText(provider)
             if idx >= 0:
                 self._provider_combo.setCurrentIndex(idx)
+
+            # Show/hide fetch button based on provider
+            if hasattr(self, "_fetch_btn"):
+                self._fetch_btn.setVisible(provider == "OpenRouter")
+
             self._update_models()
 
         if self._show_model and "model" in settings:
@@ -429,6 +612,10 @@ class AISettingsWidget(QWidget):
                     break
 
         self._updating = False
+
+        # Auto-fetch OpenRouter models after settings are loaded
+        if provider == "OpenRouter":
+            self._auto_fetch_openrouter_models()
 
     def get_model(self) -> str:
         """Get currently selected model."""
@@ -461,10 +648,12 @@ class AISettingsWidget(QWidget):
                 self._provider_combo.setCurrentIndex(idx)
 
     def get_credential_id(self) -> Optional[str]:
-        """Get currently selected credential ID."""
+        """Get currently selected credential ID.
+
+        Returns 'auto' for environment variable detection, or the stored credential ID.
+        """
         if self._show_credential:
-            cred_id = self._credential_combo.currentData()
-            return cred_id if cred_id != "auto" else None
+            return self._credential_combo.currentData()
         return None
 
     def refresh_credentials(self) -> None:

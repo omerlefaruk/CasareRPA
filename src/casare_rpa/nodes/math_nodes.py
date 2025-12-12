@@ -10,7 +10,6 @@ Provides nodes for mathematical operations including:
 import math
 from loguru import logger
 
-from typing import Any, Union
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -85,12 +84,33 @@ def _resolve_numeric_param(
         tooltip="Mathematical operation to perform",
     ),
     PropertyDef(
+        "a",
+        PropertyType.FLOAT,
+        default=0.0,
+        label="Value A",
+        tooltip="First operand",
+    ),
+    PropertyDef(
+        "b",
+        PropertyType.FLOAT,
+        default=0.0,
+        label="Value B",
+        tooltip="Second operand",
+    ),
+    PropertyDef(
         "round_digits",
         PropertyType.INTEGER,
         default=None,
         min_value=0,
         label="Round Digits",
         tooltip="Number of decimal places to round result (optional)",
+    ),
+    PropertyDef(
+        "output_var",
+        PropertyType.STRING,
+        default="",
+        label="Output Variable",
+        tooltip="Variable name to store result (optional)",
     ),
 )
 @executable_node
@@ -191,6 +211,20 @@ class MathOperationNode(BaseNode):
 
 
 @node_schema(
+    PropertyDef(
+        "a",
+        PropertyType.ANY,
+        default=None,
+        label="Value A",
+        tooltip="First value to compare",
+    ),
+    PropertyDef(
+        "b",
+        PropertyType.ANY,
+        default=None,
+        label="Value B",
+        tooltip="Second value to compare",
+    ),
     PropertyDef(
         "operator",
         PropertyType.CHOICE,

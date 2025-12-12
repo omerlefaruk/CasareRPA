@@ -27,7 +27,6 @@ from casare_rpa.utils.pooling.http_session_pool import HttpSessionPool
 from casare_rpa.utils.resilience.retry import (
     RetryConfig,
     classify_error,
-    ErrorCategory,
 )
 from casare_rpa.utils.resilience.rate_limiter import (
     SlidingWindowRateLimiter,

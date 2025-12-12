@@ -18,10 +18,8 @@ Performance:
 
 from typing import Optional, List, Tuple, Set
 from dataclasses import dataclass
-from functools import lru_cache
 
 from PySide6.QtCore import QPointF, QRectF
-from PySide6.QtGui import QPainterPath
 
 from loguru import logger
 

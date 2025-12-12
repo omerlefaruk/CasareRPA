@@ -35,7 +35,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from loguru import logger
-from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from casare_rpa.infrastructure.events import (
@@ -47,7 +46,6 @@ from casare_rpa.infrastructure.orchestrator.api.dependencies import (
     get_pool_manager,
 )
 from casare_rpa.infrastructure.orchestrator.api.rate_limit import (
-    limiter,
     setup_rate_limiting,
 )
 from casare_rpa.infrastructure.orchestrator.api.responses import (
@@ -338,7 +336,6 @@ async def http_exception_handler(
     """
     Handle HTTPException with structured response.
     """
-    from fastapi import HTTPException
 
     request_id = getattr(request.state, "request_id", "unknown")
 

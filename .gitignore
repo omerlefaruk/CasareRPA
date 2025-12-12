@@ -45,6 +45,7 @@ env/
 .vscode/
 .idea/
 .claude/
+!.agent/
 .gitattributes
 *.swp
 *.swo
@@ -99,3 +100,6 @@ nul
 .gemini/
 gha-creds-*.json
 site/
+.qdrant/
+.casare/
+.agent/

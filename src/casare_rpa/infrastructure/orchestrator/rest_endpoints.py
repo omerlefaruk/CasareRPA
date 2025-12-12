@@ -11,7 +11,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from casare_rpa.domain.value_objects.log_entry import LogLevel, LogQuery
-from casare_rpa.infrastructure.orchestrator.robot_manager import PendingJob
 from casare_rpa.infrastructure.orchestrator.server_auth import verify_admin_api_key
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
     get_log_cleanup_job,

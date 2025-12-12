@@ -20,11 +20,10 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QStackedWidget,
     QAbstractItemView,
-    QHeaderView,
     QMessageBox,
 )
-from PySide6.QtCore import Qt, Signal, QMimeData
-from PySide6.QtGui import QColor, QBrush, QIcon, QDrag, QPixmap, QPainter
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QBrush, QIcon, QPixmap, QPainter
 
 from loguru import logger
 
@@ -32,11 +31,9 @@ from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     ToolbarButton,
-    get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
 from casare_rpa.domain.entities.project.folder import (
-    FolderColor,
     ProjectFolder,
 )
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage

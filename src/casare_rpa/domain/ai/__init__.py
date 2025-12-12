@@ -51,6 +51,7 @@ from casare_rpa.domain.ai.prompts import (
     CRITICAL_ONLY_ERROR_HANDLING_PROMPT,
     MINIMAL_ERROR_HANDLING_PROMPT,
     MISSING_NODE_PROTOCOL,
+    VARIABLE_SYNTAX_DOCUMENTATION,
     CONTROL_FLOW_PORT_DOCUMENTATION,
     PromptBuilder,
     get_workflow_generation_prompt,
@@ -72,6 +73,25 @@ from casare_rpa.domain.ai.config import (
     SIMPLE_FAST_CONFIG,
 )
 
+from casare_rpa.domain.ai.prompt_templates import (
+    PromptTemplate,
+    TemplateVariable,
+    TemplateCategory,
+    FewShotExample,
+    BUILTIN_TEMPLATES,
+    EXTRACT_ENTITIES_TEMPLATE,
+    CLASSIFY_DOCUMENT_TEMPLATE,
+    SUMMARIZE_MEETING_TEMPLATE,
+    TRANSLATE_FORMAL_TEMPLATE,
+    GENERATE_EMAIL_TEMPLATE,
+    ANALYZE_SENTIMENT_TEMPLATE,
+    EXTRACT_INVOICE_TEMPLATE,
+    DATA_CONVERSION_TEMPLATE,
+    get_builtin_template,
+    list_builtin_templates,
+    list_templates_by_category,
+)
+
 __all__ = [
     # Prompt Constants
     "GENIUS_SYSTEM_PROMPT",
@@ -86,6 +106,8 @@ __all__ = [
     "CRITICAL_ONLY_ERROR_HANDLING_PROMPT",
     "MINIMAL_ERROR_HANDLING_PROMPT",
     "MISSING_NODE_PROTOCOL",
+    # Variable Syntax Documentation (CRITICAL for correct array access)
+    "VARIABLE_SYNTAX_DOCUMENTATION",
     # Control Flow Port Documentation (CRITICAL for correct connections)
     "CONTROL_FLOW_PORT_DOCUMENTATION",
     # Prompt Builder
@@ -107,4 +129,21 @@ __all__ = [
     "PERFORMANCE_OPTIMIZED_CONFIG",
     "RELIABILITY_FOCUSED_CONFIG",
     "SIMPLE_FAST_CONFIG",
+    # Prompt Templates
+    "PromptTemplate",
+    "TemplateVariable",
+    "TemplateCategory",
+    "FewShotExample",
+    "BUILTIN_TEMPLATES",
+    "EXTRACT_ENTITIES_TEMPLATE",
+    "CLASSIFY_DOCUMENT_TEMPLATE",
+    "SUMMARIZE_MEETING_TEMPLATE",
+    "TRANSLATE_FORMAL_TEMPLATE",
+    "GENERATE_EMAIL_TEMPLATE",
+    "ANALYZE_SENTIMENT_TEMPLATE",
+    "EXTRACT_INVOICE_TEMPLATE",
+    "DATA_CONVERSION_TEMPLATE",
+    "get_builtin_template",
+    "list_builtin_templates",
+    "list_templates_by_category",
 ]

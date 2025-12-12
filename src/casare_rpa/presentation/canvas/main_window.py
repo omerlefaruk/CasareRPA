@@ -375,6 +375,7 @@ class MainWindow(QMainWindow):
     # ==================== Navigation ====================
 
     def _on_navigate_to_node(self, node_id: str) -> None:
+        logger.info(f"MainWindow._on_navigate_to_node received: {node_id}")
         self._signal_coordinator.on_navigate_to_node(node_id)
 
     def _on_panel_variables_changed(self, variables: dict) -> None:
@@ -1096,3 +1097,17 @@ class MainWindow(QMainWindow):
             node_controller,
             selector_controller,
         )
+
+    # ==================== Layout and Alignment Actions ====================
+
+    def _on_auto_layout(self) -> None:
+        """Handle auto-layout action."""
+        self._signal_coordinator.on_auto_layout()
+
+    def _on_layout_selection(self) -> None:
+        """Handle layout selection action."""
+        self._signal_coordinator.on_layout_selection()
+
+    def _on_toggle_grid_snap(self, checked: bool) -> None:
+        """Handle toggle grid snap action."""
+        self._signal_coordinator.on_toggle_grid_snap(checked)

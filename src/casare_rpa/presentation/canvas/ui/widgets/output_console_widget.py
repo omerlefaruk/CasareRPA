@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
     QStackedWidget,
 )
 from PySide6.QtGui import QTextCursor
-from PySide6.QtCore import Qt
 
 from loguru import logger
 

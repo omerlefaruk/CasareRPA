@@ -15,7 +15,7 @@ Rate Limit Categories:
 import os
 from typing import Callable, Optional
 
-from fastapi import Request, Response
+from fastapi import Request
 from loguru import logger
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded

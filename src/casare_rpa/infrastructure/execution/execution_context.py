@@ -18,6 +18,10 @@ from casare_rpa.domain.entities.execution_state import ExecutionState
 from casare_rpa.infrastructure.resources.browser_resource_manager import (
     BrowserResourceManager,
 )
+from casare_rpa.infrastructure.execution.variable_cache import (
+    VariableResolutionCache,
+    CacheStats,
+)
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
@@ -69,6 +73,9 @@ class ExecutionContext:
         # Infrastructure resources (Playwright)
         self._resources = BrowserResourceManager()
 
+        # Variable resolution cache for performance
+        self._var_cache = VariableResolutionCache(max_size=500)
+
         # Desktop context (lazy-initialized, not managed by domain or infrastructure layers)
         self.desktop_context: Any = None
 
@@ -91,12 +98,16 @@ class ExecutionContext:
         Set a variable in the context.
 
         Publishes VARIABLE_SET event after successfully setting the variable.
+        Notifies the resolution cache of the change for invalidation.
 
         Args:
             name: Variable name
             value: Variable value
         """
         self._state.set_variable(name, value)
+
+        # Notify cache of variable change for invalidation
+        self._var_cache.notify_variable_changed(name)
 
         # Publish VARIABLE_SET event (skip internal variables starting with _)
         if not name.startswith("_"):
@@ -138,14 +149,18 @@ class ExecutionContext:
     def delete_variable(self, name: str) -> None:
         """Delete a variable from the context."""
         self._state.delete_variable(name)
+        self._var_cache.notify_variable_changed(name)
 
     def clear_variables(self) -> None:
-        """Clear all variables."""
+        """Clear all variables and reset resolution cache."""
         self._state.clear_variables()
+        self._var_cache.clear()
 
     def resolve_value(self, value: Any) -> Any:
         """
         Resolve {{variable_name}} patterns in a value.
+
+        Uses caching for improved performance on repeated resolutions.
 
         Args:
             value: The value to resolve (only strings are processed)
@@ -153,7 +168,31 @@ class ExecutionContext:
         Returns:
             The resolved value with all {{variable}} patterns replaced.
         """
-        return self._state.resolve_value(value)
+        # Fast path: non-strings or no variables
+        if not isinstance(value, str) or "{{" not in value:
+            return value
+
+        # Check cache first
+        found, cached_result = self._var_cache.get_cached(value, self._state.variables)
+        if found:
+            return cached_result
+
+        # Cache miss - resolve using domain resolver
+        result = self._state.resolve_value(value)
+
+        # Cache the result
+        self._var_cache.cache_result(value, self._state.variables, result)
+
+        return result
+
+    def get_resolution_cache_stats(self) -> CacheStats:
+        """
+        Get statistics from the variable resolution cache.
+
+        Returns:
+            CacheStats with hits, misses, invalidations, evictions
+        """
+        return self._var_cache.get_stats()
 
     def resolve_credential_path(self, alias: str) -> Optional[str]:
         """
@@ -310,11 +349,21 @@ class ExecutionContext:
             page: Playwright page object
             name: Page identifier (for multiple tabs)
         """
+        logger.info(
+            f"ExecutionContext.set_active_page: name={name}, "
+            f"page={page is not None}, context_id={id(self)}, "
+            f"resources_id={id(self._resources)}"
+        )
         self._resources.set_active_page(page, name)
 
     def get_active_page(self) -> Optional["Page"]:
         """Get the currently active page."""
-        return self._resources.get_active_page()
+        page = self._resources.get_active_page()
+        logger.info(
+            f"ExecutionContext.get_active_page: page={page is not None}, "
+            f"context_id={id(self)}, resources_id={id(self._resources)}"
+        )
+        return page
 
     def get_page(self, name: str = "default") -> Optional["Page"]:
         """Get a page by name."""

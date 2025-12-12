@@ -6,8 +6,7 @@ to workflow nodes. Integrates with the BrowserRecorder to capture
 user interactions in real-time.
 """
 
-from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -24,7 +23,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QFont, QIcon
+from PySide6.QtGui import QColor, QFont
 
 from loguru import logger
 

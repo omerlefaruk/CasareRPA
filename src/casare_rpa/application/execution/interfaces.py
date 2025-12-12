@@ -8,7 +8,7 @@ Architecture:
     Presentation → implements → Application (Protocol) ← uses ← TriggerRunner
 """
 
-from typing import Any, Callable, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Callable, Optional, Protocol, runtime_checkable
 
 from loguru import logger
 

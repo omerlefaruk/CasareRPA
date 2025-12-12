@@ -36,7 +36,6 @@ from casare_rpa.infrastructure.orchestrator.scheduling import (
     AdvancedSchedule,
     ScheduleType,
     ScheduleStatus,
-    CronExpressionParser,
 )
 
 try:

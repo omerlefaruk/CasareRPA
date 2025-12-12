@@ -36,33 +36,32 @@ except ImportError:
         "file_path",
         PropertyType.FILE_PATH,
         default="",
-        label="Excel File",
+        required=True,
+        label="File Path",
         placeholder="C:\\path\\to\\file.xlsx",
-        tooltip="Path to Excel workbook (.xlsx, .xls)",
+        tooltip="Path to Excel file (.xlsx, .xls)",
         essential=True,
     ),
     PropertyDef(
-        "show_window",
+        "show_excel",
         PropertyType.BOOLEAN,
         default=False,
-        label="Show Window",
-        tooltip="Show Excel application window",
-        essential=True,
+        label="Show Excel",
+        tooltip="Show Excel window while working",
     ),
     PropertyDef(
         "read_only",
         PropertyType.BOOLEAN,
         default=False,
         label="Read Only",
-        tooltip="Open workbook in read-only mode (helps bypass Protected View)",
-        essential=True,
+        tooltip="Open in read-only mode (helps with Protected View)",
     ),
     PropertyDef(
         "create_if_missing",
         PropertyType.BOOLEAN,
         default=False,
         label="Create If Missing",
-        tooltip="Create new workbook if file doesn't exist",
+        tooltip="Create new file if not found",
     ),
 )
 @executable_node
@@ -96,8 +95,8 @@ class ExcelOpenNode(BaseNode):
         name: str = "Excel Open",
     ):
         default_config = {
-            "file_path": "",
-            "show_window": False,
+            "file_path": "",  # Can be set via properties panel or input port
+            "visible": False,
             "read_only": False,
             "create_if_missing": False,
         }
@@ -175,21 +174,22 @@ class ExcelOpenNode(BaseNode):
 
 @node_schema(
     PropertyDef(
-        "cell",
+        "sheet",
         PropertyType.STRING,
-        default="A1",
-        label="Cell Address",
-        placeholder="A1",
-        tooltip="Cell reference (e.g., A1, B2, C3)",
+        default="1",
+        label="Sheet",
+        placeholder="1 or Sheet1",
+        tooltip="Sheet name or index (1-based)",
         essential=True,
     ),
     PropertyDef(
-        "sheet",
+        "cell",
         PropertyType.STRING,
-        default="Sheet1",
-        label="Sheet Name",
-        placeholder="Sheet1",
-        tooltip="Sheet name or index (1-based)",
+        default="",
+        required=True,
+        label="Cell",
+        placeholder="A1",
+        tooltip="Cell reference (e.g., A1, B2)",
         essential=True,
     ),
 )
@@ -218,7 +218,7 @@ class ExcelReadCellNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Excel Read Cell",
     ):
-        default_config = {"sheet": "Sheet1", "cell": "A1"}
+        default_config = {"sheet": 1}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -275,12 +275,22 @@ class ExcelReadCellNode(BaseNode):
 
 @node_schema(
     PropertyDef(
+        "sheet",
+        PropertyType.STRING,
+        default="1",
+        label="Sheet",
+        placeholder="1 or Sheet1",
+        tooltip="Sheet name or index (1-based)",
+        essential=True,
+    ),
+    PropertyDef(
         "cell",
         PropertyType.STRING,
-        default="A1",
-        label="Cell Address",
+        default="",
+        required=True,
+        label="Cell",
         placeholder="A1",
-        tooltip="Cell reference (e.g., A1, B2, C3)",
+        tooltip="Cell reference (e.g., A1, B2)",
         essential=True,
     ),
     PropertyDef(
@@ -288,17 +298,8 @@ class ExcelReadCellNode(BaseNode):
         PropertyType.STRING,
         default="",
         label="Value",
-        placeholder="Enter value...",
+        placeholder="Value to write",
         tooltip="Value to write to the cell",
-        essential=True,
-    ),
-    PropertyDef(
-        "sheet",
-        PropertyType.STRING,
-        default="Sheet1",
-        label="Sheet Name",
-        placeholder="Sheet1",
-        tooltip="Sheet name or index (1-based)",
     ),
 )
 @executable_node
@@ -326,7 +327,7 @@ class ExcelWriteCellNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Excel Write Cell",
     ):
-        default_config = {"sheet": "Sheet1", "cell": "A1", "value": ""}
+        default_config = {"sheet": 1}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -383,29 +384,22 @@ class ExcelWriteCellNode(BaseNode):
 
 @node_schema(
     PropertyDef(
-        "range",
-        PropertyType.STRING,
-        default="A1:B10",
-        label="Range",
-        placeholder="A1:B10",
-        tooltip="Cell range reference (e.g., A1:C10)",
-        essential=True,
-    ),
-    PropertyDef(
         "sheet",
         PropertyType.STRING,
-        default="Sheet1",
+        default="1",
         label="Sheet",
-        placeholder="Sheet1",
+        placeholder="1 or Sheet1",
         tooltip="Sheet name or index (1-based)",
         essential=True,
     ),
     PropertyDef(
-        "first_row_is_header",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="First Row Contains Column Names",
-        tooltip="Convert data to list of dictionaries using first row as column headers",
+        "range",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Range",
+        placeholder="A1:G11",
+        tooltip="Range reference (e.g., A1:C10, A:C for entire columns)",
         essential=True,
     ),
 )
@@ -436,11 +430,7 @@ class ExcelGetRangeNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Excel Get Range",
     ):
-        default_config = {
-            "sheet": "Sheet1",
-            "range": "A1:B10",
-            "first_row_is_header": False,
-        }
+        default_config = {"sheet": 1, "range": ""}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -462,7 +452,6 @@ class ExcelGetRangeNode(BaseNode):
         workbook = self.get_input_value("workbook")
         sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
         range_ref = self.get_parameter("range")  # Check both port and config
-        first_row_is_header = self.config.get("first_row_is_header", False)
 
         # Resolve {{variable}} patterns
         if hasattr(context, "resolve_value"):
@@ -496,15 +485,6 @@ class ExcelGetRangeNode(BaseNode):
             rows = len(data)
             cols = len(data[0]) if data else 0
 
-            # If first row is header, convert to list of dictionaries
-            if first_row_is_header and rows > 1:
-                headers = [
-                    str(h) if h is not None else f"Column{i}"
-                    for i, h in enumerate(data[0])
-                ]
-                data = [dict(zip(headers, row)) for row in data[1:]]
-                rows = len(data)  # Update row count (minus header)
-
             self.set_output_value("data", data)
             self.set_output_value("rows", rows)
             self.set_output_value("columns", cols)
@@ -526,8 +506,8 @@ class ExcelGetRangeNode(BaseNode):
         "save",
         PropertyType.BOOLEAN,
         default=True,
-        label="Save Changes",
-        tooltip="Save workbook before closing",
+        label="Save Before Close",
+        tooltip="Save the workbook before closing",
         essential=True,
     ),
     PropertyDef(
@@ -535,8 +515,7 @@ class ExcelGetRangeNode(BaseNode):
         PropertyType.BOOLEAN,
         default=True,
         label="Quit Excel",
-        tooltip="Close Excel application after closing workbook",
-        essential=True,
+        tooltip="Quit the Excel application after closing workbook",
     ),
 )
 @executable_node
@@ -575,8 +554,8 @@ class ExcelCloseNode(BaseNode):
 
     def _define_ports(self):
         """Define input and output ports"""
-        self.add_input_port("workbook", DataType.ANY, "Workbook object")
-        self.add_input_port("app", DataType.ANY, "Excel application")
+        self.add_input_port("workbook", DataType.ANY, "Workbook object", required=True)
+        self.add_input_port("app", DataType.ANY, "Excel application", required=False)
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -613,40 +592,6 @@ class ExcelCloseNode(BaseNode):
 # ============================================================================
 
 
-@node_schema(
-    PropertyDef(
-        "file_path",
-        PropertyType.FILE_PATH,
-        default="",
-        label="Word File",
-        placeholder="C:\\path\\to\\document.docx",
-        tooltip="Path to Word document (.docx, .doc)",
-        essential=True,
-    ),
-    PropertyDef(
-        "show_window",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Show Window",
-        tooltip="Show Word application window",
-        essential=True,
-    ),
-    PropertyDef(
-        "read_only",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Read Only",
-        tooltip="Open document in read-only mode",
-        essential=True,
-    ),
-    PropertyDef(
-        "create_if_missing",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Create If Missing",
-        tooltip="Create new document if file doesn't exist",
-    ),
-)
 @executable_node
 class WordOpenNode(BaseNode):
     """
@@ -675,12 +620,7 @@ class WordOpenNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Word Open",
     ):
-        default_config = {
-            "file_path": "",
-            "show_window": False,
-            "read_only": False,
-            "create_if_missing": False,
-        }
+        default_config = {"visible": False, "create_if_missing": False}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -740,7 +680,6 @@ class WordOpenNode(BaseNode):
             raise
 
 
-@node_schema()  # No config properties - input port driven
 @executable_node
 class WordGetTextNode(BaseNode):
     """
@@ -802,40 +741,6 @@ class WordGetTextNode(BaseNode):
             raise
 
 
-@node_schema(
-    PropertyDef(
-        "find_text",
-        PropertyType.STRING,
-        default="",
-        label="Find Text",
-        placeholder="Text to find...",
-        tooltip="Text to search for in the document",
-        essential=True,
-    ),
-    PropertyDef(
-        "replace_text",
-        PropertyType.STRING,
-        default="",
-        label="Replace With",
-        placeholder="Replacement text...",
-        tooltip="Text to replace with",
-        essential=True,
-    ),
-    PropertyDef(
-        "match_case",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Match Case",
-        tooltip="Case-sensitive search",
-    ),
-    PropertyDef(
-        "replace_all",
-        PropertyType.BOOLEAN,
-        default=True,
-        label="Replace All",
-        tooltip="Replace all occurrences (not just first)",
-    ),
-)
 @executable_node
 class WordReplaceTextNode(BaseNode):
     """
@@ -865,12 +770,7 @@ class WordReplaceTextNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Word Replace Text",
     ):
-        default_config = {
-            "find_text": "",
-            "replace_text": "",
-            "match_case": False,
-            "replace_all": True,
-        }
+        default_config = {"match_case": False, "replace_all": True}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -937,24 +837,6 @@ class WordReplaceTextNode(BaseNode):
             raise
 
 
-@node_schema(
-    PropertyDef(
-        "save",
-        PropertyType.BOOLEAN,
-        default=True,
-        label="Save Changes",
-        tooltip="Save document before closing",
-        essential=True,
-    ),
-    PropertyDef(
-        "quit_app",
-        PropertyType.BOOLEAN,
-        default=True,
-        label="Quit Word",
-        tooltip="Close Word application after closing document",
-        essential=True,
-    ),
-)
 @executable_node
 class WordCloseNode(BaseNode):
     """
@@ -1029,58 +911,6 @@ class WordCloseNode(BaseNode):
 # ============================================================================
 
 
-@node_schema(
-    PropertyDef(
-        "to",
-        PropertyType.STRING,
-        default="",
-        label="To",
-        placeholder="recipient@example.com",
-        tooltip="Recipient email address(es), comma-separated for multiple",
-        essential=True,
-    ),
-    PropertyDef(
-        "subject",
-        PropertyType.STRING,
-        default="",
-        label="Subject",
-        placeholder="Email subject...",
-        tooltip="Email subject line",
-        essential=True,
-    ),
-    PropertyDef(
-        "body",
-        PropertyType.TEXT,
-        default="",
-        label="Body",
-        placeholder="Email body content...",
-        tooltip="Email body content",
-        essential=True,
-    ),
-    PropertyDef(
-        "cc",
-        PropertyType.STRING,
-        default="",
-        label="CC",
-        placeholder="cc@example.com",
-        tooltip="CC recipients, comma-separated",
-    ),
-    PropertyDef(
-        "bcc",
-        PropertyType.STRING,
-        default="",
-        label="BCC",
-        placeholder="bcc@example.com",
-        tooltip="BCC recipients, comma-separated",
-    ),
-    PropertyDef(
-        "html_body",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="HTML Body",
-        tooltip="Send body as HTML instead of plain text",
-    ),
-)
 @executable_node
 class OutlookSendEmailNode(BaseNode):
     """
@@ -1111,14 +941,7 @@ class OutlookSendEmailNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Outlook Send Email",
     ):
-        default_config = {
-            "to": "",
-            "subject": "",
-            "body": "",
-            "cc": "",
-            "bcc": "",
-            "html_body": False,
-        }
+        default_config = {"html_body": False}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -1204,34 +1027,6 @@ class OutlookSendEmailNode(BaseNode):
             raise
 
 
-@node_schema(
-    PropertyDef(
-        "folder",
-        PropertyType.STRING,
-        default="Inbox",
-        label="Folder",
-        placeholder="Inbox",
-        tooltip="Outlook folder to read from",
-        essential=True,
-    ),
-    PropertyDef(
-        "count",
-        PropertyType.INTEGER,
-        default=10,
-        label="Max Count",
-        tooltip="Maximum number of emails to read",
-        min_value=1,
-        essential=True,
-    ),
-    PropertyDef(
-        "unread_only",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Unread Only",
-        tooltip="Only read unread emails",
-        essential=True,
-    ),
-)
 @executable_node
 class OutlookReadEmailsNode(BaseNode):
     """
@@ -1334,7 +1129,6 @@ class OutlookReadEmailsNode(BaseNode):
             raise
 
 
-@node_schema()  # No config properties needed - outputs only
 @executable_node
 class OutlookGetInboxCountNode(BaseNode):
     """

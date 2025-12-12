@@ -6,14 +6,12 @@ Handles hierarchical folder structure with drag-drop support.
 """
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.domain.entities.project import (
     FolderColor,
-    FoldersFile,
     ProjectFolder,
 )
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage

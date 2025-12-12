@@ -5,26 +5,14 @@ This module provides nodes for reading file content:
 - ReadFileNode: Read text or binary content from files
 
 SECURITY: All file operations are subject to path sandboxing.
-NOTE: File I/O is wrapped in asyncio.to_thread() to avoid blocking the event loop.
+NOTE: File I/O uses AsyncFileOperations for non-blocking operations.
 """
 
-import asyncio
-from pathlib import Path
-from typing import Union
+import os
 
 from loguru import logger
 
-
-def _read_file_sync(
-    path: Path, binary_mode: bool, encoding: str, errors: str
-) -> Union[bytes, str]:
-    """Synchronous file read - called via asyncio.to_thread()."""
-    if binary_mode:
-        with open(path, "rb") as f:
-            return f.read()
-    else:
-        with open(path, "r", encoding=encoding, errors=errors) as f:
-            return f.read()
+from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -148,8 +136,9 @@ class ReadFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "read", allow_dangerous)
@@ -168,10 +157,11 @@ class ReadFileNode(BaseNode):
                 f"Reading file: {path} (binary={binary_mode}, encoding={encoding})"
             )
 
-            # Run blocking file I/O in thread pool to avoid blocking event loop
-            content = await asyncio.to_thread(
-                _read_file_sync, path, binary_mode, encoding, errors
-            )
+            # Use async file operations for non-blocking I/O
+            if binary_mode:
+                content = await AsyncFileOperations.read_binary(path)
+            else:
+                content = await AsyncFileOperations.read_text(path, encoding, errors)
 
             self.set_output_value("content", content)
             self.set_output_value("size", size)

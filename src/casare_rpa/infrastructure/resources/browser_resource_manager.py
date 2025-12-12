@@ -118,6 +118,11 @@ class BrowserResourceManager:
         Returns:
             Active page or None
         """
+        if self.active_page is None:
+            logger.warning(
+                f"get_active_page called but active_page is None. "
+                f"Pages dict: {list(self.pages.keys())}"
+            )
         return self.active_page
 
     def set_active_page(self, page: "Page", name: str = "default") -> None:
@@ -130,7 +135,7 @@ class BrowserResourceManager:
         """
         self.active_page = page
         self.pages[name] = page
-        logger.debug(f"Active page set: {name}")
+        logger.info(f"Active page set: {name}, page={page is not None}, id={id(self)}")
 
     def close_page(self, name: str) -> None:
         """

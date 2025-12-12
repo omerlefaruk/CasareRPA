@@ -13,7 +13,7 @@ All nodes extend BrowserBaseNode for consistent patterns:
 
 import csv
 import io
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from loguru import logger
 

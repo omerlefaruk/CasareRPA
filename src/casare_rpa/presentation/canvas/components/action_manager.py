@@ -487,6 +487,33 @@ class ActionManager:
             checkable=True,
         )
 
+        # === NODE ALIGNMENT ACTIONS ===
+        mw.action_auto_layout = self._create_action(
+            "auto_layout",
+            "Auto-&Layout",
+            QKeySequence("Ctrl+L"),
+            "Automatically arrange all nodes (Ctrl+L)",
+            mw._on_auto_layout,
+        )
+
+        mw.action_layout_selection = self._create_action(
+            "layout_selection",
+            "Layout &Selection",
+            None,
+            "Automatically arrange selected nodes",
+            mw._on_layout_selection,
+        )
+
+        mw.action_toggle_grid_snap = self._create_action(
+            "toggle_grid_snap",
+            "Snap to &Grid",
+            QKeySequence("Ctrl+Shift+G"),
+            "Toggle snap-to-grid mode (Ctrl+Shift+G)",
+            mw._on_toggle_grid_snap,
+            checkable=True,
+        )
+        mw.action_toggle_grid_snap.setChecked(True)  # Enabled by default
+
         # Apply saved hotkeys
         self._load_hotkeys()
 

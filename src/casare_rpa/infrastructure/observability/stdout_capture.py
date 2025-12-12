@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import atexit
 import sys
-import io
 import threading
 from typing import Callable, Optional, TextIO
 from contextlib import contextmanager

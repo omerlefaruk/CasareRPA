@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QTextEdit,
     QFrame,
-    QSizePolicy,
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (

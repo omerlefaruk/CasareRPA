@@ -79,6 +79,32 @@ def create_vault_provider(
                 f"Install with: pip install aiosqlite cryptography"
             )
 
+    elif backend == VaultBackend.AZURE_KEYVAULT:
+        try:
+            from .azure_keyvault import AzureKeyVaultProvider
+
+            logger.debug("Creating Azure Key Vault provider")
+            return AzureKeyVaultProvider(config)
+        except ImportError as e:
+            last_error = e
+            logger.warning(
+                f"Azure Key Vault provider unavailable: {e}. "
+                f"Install with: pip install azure-identity azure-keyvault-secrets"
+            )
+
+    elif backend == VaultBackend.AWS_SECRETS_MANAGER:
+        try:
+            from .aws_secrets import AWSSecretsManagerProvider
+
+            logger.debug("Creating AWS Secrets Manager provider")
+            return AWSSecretsManagerProvider(config)
+        except ImportError as e:
+            last_error = e
+            logger.warning(
+                f"AWS Secrets Manager provider unavailable: {e}. "
+                f"Install with: pip install boto3"
+            )
+
     # Fallback to SQLite if configured backend unavailable
     if fallback_to_sqlite and backend != VaultBackend.SQLITE:
         try:
@@ -134,6 +160,23 @@ def get_available_backends() -> dict[VaultBackend, bool]:
     except ImportError:
         available[VaultBackend.SQLITE] = False
 
+    # Check Azure Key Vault
+    try:
+        from azure.keyvault.secrets import SecretClient  # noqa: F401
+        from azure.identity import DefaultAzureCredential  # noqa: F401
+
+        available[VaultBackend.AZURE_KEYVAULT] = True
+    except ImportError:
+        available[VaultBackend.AZURE_KEYVAULT] = False
+
+    # Check AWS Secrets Manager
+    try:
+        import boto3  # noqa: F401
+
+        available[VaultBackend.AWS_SECRETS_MANAGER] = True
+    except ImportError:
+        available[VaultBackend.AWS_SECRETS_MANAGER] = False
+
     return available
 
 
@@ -141,10 +184,12 @@ def get_recommended_backend() -> VaultBackend:
     """
     Get the recommended vault backend based on available dependencies.
 
-    Priority:
-    1. HashiCorp Vault (if hvac available)
-    2. Supabase Vault (if asyncpg available)
-    3. SQLite (if aiosqlite and cryptography available)
+    Priority (enterprise to development):
+    1. HashiCorp Vault (enterprise standard)
+    2. Azure Key Vault (Azure cloud)
+    3. AWS Secrets Manager (AWS cloud)
+    4. Supabase Vault (managed cloud)
+    5. SQLite (local development)
 
     Returns:
         Recommended VaultBackend
@@ -153,6 +198,10 @@ def get_recommended_backend() -> VaultBackend:
 
     if available.get(VaultBackend.HASHICORP):
         return VaultBackend.HASHICORP
+    if available.get(VaultBackend.AZURE_KEYVAULT):
+        return VaultBackend.AZURE_KEYVAULT
+    if available.get(VaultBackend.AWS_SECRETS_MANAGER):
+        return VaultBackend.AWS_SECRETS_MANAGER
     if available.get(VaultBackend.SUPABASE):
         return VaultBackend.SUPABASE
     if available.get(VaultBackend.SQLITE):

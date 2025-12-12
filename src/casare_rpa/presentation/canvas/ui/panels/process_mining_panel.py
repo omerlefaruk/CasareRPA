@@ -2,7 +2,8 @@
 Process Mining Panel UI Component.
 
 Provides AI-powered process discovery, variant analysis, conformance checking,
-and optimization insights from workflow execution logs.
+pattern recognition, ROI estimation, and optimization insights from workflow
+execution logs.
 """
 
 from typing import Any, Dict, List, Optional
@@ -25,6 +26,9 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QTreeWidget,
     QTreeWidgetItem,
+    QSpinBox,
+    QDoubleSpinBox,
+    QFileDialog,
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
 from PySide6.QtGui import QColor, QBrush, QFont
@@ -199,6 +203,13 @@ class ProcessMiningPanel(QDockWidget):
         self._current_insights: List[Dict[str, Any]] = []
         self._llm_manager = None
 
+        # Pattern recognition and ROI
+        self._pattern_recognizer = None
+        self._frequent_miner = None
+        self._roi_estimator = None
+        self._current_patterns: List[Any] = []
+        self._current_roi_estimates: List[Any] = []
+
         # Thread management for AI enhancement
         self._ai_thread: Optional[QThread] = None
         self._ai_worker: Optional[AIEnhanceWorker] = None
@@ -256,6 +267,10 @@ class ProcessMiningPanel(QDockWidget):
         variants_tab = self._create_variants_tab()
         self._tabs.addTab(variants_tab, "Variants")
 
+        # Patterns tab (ML pattern recognition)
+        patterns_tab = self._create_patterns_tab()
+        self._tabs.addTab(patterns_tab, "Patterns")
+
         # Insights tab
         insights_tab = self._create_insights_tab()
         self._tabs.addTab(insights_tab, "Insights")
@@ -263,6 +278,10 @@ class ProcessMiningPanel(QDockWidget):
         # Conformance tab
         conformance_tab = self._create_conformance_tab()
         self._tabs.addTab(conformance_tab, "Conformance")
+
+        # ROI / Automation Candidates tab
+        candidates_tab = self._create_candidates_tab()
+        self._tabs.addTab(candidates_tab, "ROI")
 
         main_layout.addWidget(self._tabs)
         if not self._embedded:
@@ -316,6 +335,7 @@ class ProcessMiningPanel(QDockWidget):
                 "Mistral",
                 "Groq",
                 "DeepSeek",
+                "OpenRouter",
                 "Local (Ollama)",
             ]
         )
@@ -390,6 +410,12 @@ class ProcessMiningPanel(QDockWidget):
                 "mixtral-8x7b-32768",
             ],
             "DeepSeek": ["deepseek-chat", "deepseek-coder"],
+            "OpenRouter": [
+                "openrouter/openai/gpt-4o",
+                "openrouter/anthropic/claude-3.5-sonnet",
+                "openrouter/google/gemini-2.0-flash-exp:free",
+                "openrouter/meta-llama/llama-3.3-70b-instruct",
+            ],
             "Local (Ollama)": ["ollama/llama3.2", "ollama/mistral", "ollama/codellama"],
         }
 
@@ -416,6 +442,7 @@ class ProcessMiningPanel(QDockWidget):
             "Mistral": "MISTRAL_API_KEY",
             "Groq": "GROQ_API_KEY",
             "DeepSeek": "DEEPSEEK_API_KEY",
+            "OpenRouter": "OPENROUTER_API_KEY",
             "Local (Ollama)": None,  # No API key needed
         }
 
@@ -751,6 +778,230 @@ class ProcessMiningPanel(QDockWidget):
 
         return widget
 
+    def _create_patterns_tab(self) -> QWidget:
+        """Create ML pattern recognition tab."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(4, 4, 4, 4)
+
+        # Header with info and controls
+        info_label = QLabel(
+            "ML-based pattern recognition identifies repetitive task patterns\n"
+            "using DBSCAN clustering. Higher automation potential = better candidate."
+        )
+        info_label.setWordWrap(True)
+        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        layout.addWidget(info_label)
+
+        # Controls row
+        controls_layout = QHBoxLayout()
+
+        # Min samples control
+        min_samples_label = QLabel("Min Samples:")
+        self._min_samples_spin = QSpinBox()
+        self._min_samples_spin.setRange(2, 20)
+        self._min_samples_spin.setValue(3)
+        self._min_samples_spin.setToolTip("Minimum traces for a cluster")
+
+        # Epsilon control
+        eps_label = QLabel("Epsilon:")
+        self._eps_spin = QDoubleSpinBox()
+        self._eps_spin.setRange(0.1, 2.0)
+        self._eps_spin.setValue(0.5)
+        self._eps_spin.setSingleStep(0.1)
+        self._eps_spin.setToolTip("Maximum distance for DBSCAN clustering")
+
+        # Analyze button
+        self._analyze_patterns_btn = QPushButton("Find Patterns")
+        self._analyze_patterns_btn.setFixedWidth(100)
+        self._analyze_patterns_btn.clicked.connect(self._run_pattern_analysis)
+        self._analyze_patterns_btn.setEnabled(False)
+
+        controls_layout.addWidget(min_samples_label)
+        controls_layout.addWidget(self._min_samples_spin)
+        controls_layout.addWidget(eps_label)
+        controls_layout.addWidget(self._eps_spin)
+        controls_layout.addStretch()
+        controls_layout.addWidget(self._analyze_patterns_btn)
+        layout.addLayout(controls_layout)
+
+        # Progress bar (hidden by default)
+        self._pattern_progress = QProgressBar()
+        self._pattern_progress.setTextVisible(True)
+        self._pattern_progress.setFormat("Analyzing patterns...")
+        self._pattern_progress.setRange(0, 0)
+        self._pattern_progress.hide()
+        layout.addWidget(self._pattern_progress)
+
+        # Patterns table
+        self._patterns_table = QTableWidget()
+        self._patterns_table.setColumnCount(6)
+        self._patterns_table.setHorizontalHeaderLabels(
+            ["Pattern", "Frequency", "Avg Time", "Success", "Potential", "Variance"]
+        )
+        self._patterns_table.setAlternatingRowColors(True)
+        self._patterns_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self._patterns_table.itemSelectionChanged.connect(self._on_pattern_selected)
+
+        header = self._patterns_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for col in range(1, 6):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+
+        layout.addWidget(self._patterns_table)
+
+        # Pattern detail
+        detail_group = QGroupBox("Pattern Details")
+        detail_layout = QVBoxLayout(detail_group)
+
+        self._pattern_detail = QTextEdit()
+        self._pattern_detail.setReadOnly(True)
+        self._pattern_detail.setMaximumHeight(100)
+        self._pattern_detail.setPlaceholderText(
+            "Select a pattern to see activity sequence..."
+        )
+        detail_layout.addWidget(self._pattern_detail)
+
+        # Create subflow button
+        btn_layout = QHBoxLayout()
+        self._create_subflow_btn = QPushButton("Create Subflow from Pattern")
+        self._create_subflow_btn.setEnabled(False)
+        self._create_subflow_btn.clicked.connect(self._create_subflow_from_pattern)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self._create_subflow_btn)
+        detail_layout.addLayout(btn_layout)
+
+        layout.addWidget(detail_group)
+
+        return widget
+
+    def _create_candidates_tab(self) -> QWidget:
+        """Create ROI / Automation Candidates tab."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(4, 4, 4, 4)
+
+        # Header info
+        info_label = QLabel(
+            "ROI estimation scores automation candidates by potential savings.\n"
+            "Higher score = better return on investment for automation."
+        )
+        info_label.setWordWrap(True)
+        info_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        layout.addWidget(info_label)
+
+        # Configuration row
+        config_layout = QHBoxLayout()
+
+        # Hourly cost
+        cost_label = QLabel("Hourly Cost ($):")
+        self._hourly_cost_spin = QDoubleSpinBox()
+        self._hourly_cost_spin.setRange(10.0, 500.0)
+        self._hourly_cost_spin.setValue(50.0)
+        self._hourly_cost_spin.setSingleStep(5.0)
+        self._hourly_cost_spin.setToolTip("Hourly labor cost for ROI calculation")
+
+        # Calculate ROI button
+        self._calc_roi_btn = QPushButton("Calculate ROI")
+        self._calc_roi_btn.setFixedWidth(100)
+        self._calc_roi_btn.clicked.connect(self._calculate_roi)
+        self._calc_roi_btn.setEnabled(False)
+
+        # Export button
+        self._export_roi_btn = QPushButton("Export CSV")
+        self._export_roi_btn.setFixedWidth(80)
+        self._export_roi_btn.clicked.connect(self._export_roi_csv)
+        self._export_roi_btn.setEnabled(False)
+
+        config_layout.addWidget(cost_label)
+        config_layout.addWidget(self._hourly_cost_spin)
+        config_layout.addStretch()
+        config_layout.addWidget(self._calc_roi_btn)
+        config_layout.addWidget(self._export_roi_btn)
+        layout.addLayout(config_layout)
+
+        # Summary stats
+        summary_group = QGroupBox("ROI Summary")
+        summary_layout = QHBoxLayout(summary_group)
+
+        # Total savings
+        savings_layout = QVBoxLayout()
+        self._total_savings_label = QLabel("$0")
+        self._total_savings_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._total_savings_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        savings_desc = QLabel("Annual Savings")
+        savings_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        savings_layout.addWidget(self._total_savings_label)
+        savings_layout.addWidget(savings_desc)
+
+        # Hours saved
+        hours_layout = QVBoxLayout()
+        self._total_hours_label = QLabel("0h")
+        self._total_hours_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._total_hours_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hours_desc = QLabel("Hours/Year")
+        hours_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hours_layout.addWidget(self._total_hours_label)
+        hours_layout.addWidget(hours_desc)
+
+        # Avg payback
+        payback_layout = QVBoxLayout()
+        self._avg_payback_label = QLabel("-")
+        self._avg_payback_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self._avg_payback_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        payback_desc = QLabel("Avg Payback")
+        payback_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        payback_layout.addWidget(self._avg_payback_label)
+        payback_layout.addWidget(payback_desc)
+
+        summary_layout.addLayout(savings_layout)
+        summary_layout.addLayout(hours_layout)
+        summary_layout.addLayout(payback_layout)
+        layout.addWidget(summary_group)
+
+        # Candidates table
+        self._candidates_table = QTableWidget()
+        self._candidates_table.setColumnCount(7)
+        self._candidates_table.setHorizontalHeaderLabels(
+            [
+                "Pattern",
+                "ROI Score",
+                "Hours/Yr",
+                "Savings/Yr",
+                "Dev Hours",
+                "Payback",
+                "Rec.",
+            ]
+        )
+        self._candidates_table.setAlternatingRowColors(True)
+        self._candidates_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self._candidates_table.itemSelectionChanged.connect(self._on_candidate_selected)
+
+        header = self._candidates_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for col in range(1, 7):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+
+        layout.addWidget(self._candidates_table)
+
+        # Candidate detail
+        detail_group = QGroupBox("ROI Details")
+        detail_layout = QVBoxLayout(detail_group)
+        self._candidate_detail = QTextEdit()
+        self._candidate_detail.setReadOnly(True)
+        self._candidate_detail.setMaximumHeight(100)
+        self._candidate_detail.setPlaceholderText(
+            "Select a candidate to see detailed ROI breakdown..."
+        )
+        detail_layout.addWidget(self._candidate_detail)
+        layout.addWidget(detail_group)
+
+        return widget
+
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling using THEME system."""
         self.setStyleSheet(f"""
@@ -920,6 +1171,15 @@ class ProcessMiningPanel(QDockWidget):
         workflow_id = self._workflow_combo.currentData()
         self._current_workflow = workflow_id
         self._discover_btn.setEnabled(workflow_id is not None)
+        self._analyze_patterns_btn.setEnabled(workflow_id is not None)
+
+        # Clear patterns when workflow changes
+        self._current_patterns = []
+        self._current_roi_estimates = []
+        self._patterns_table.setRowCount(0)
+        self._candidates_table.setRowCount(0)
+        self._calc_roi_btn.setEnabled(False)
+        self._export_roi_btn.setEnabled(False)
 
         if workflow_id:
             self.workflow_selected.emit(workflow_id)
@@ -1417,3 +1677,473 @@ class ProcessMiningPanel(QDockWidget):
             "Make sure your API key is configured correctly.",
         )
         logger.error(f"AI enhancement failed: {error_msg}")
+
+    # =========================================================================
+    # Pattern Recognition Methods
+    # =========================================================================
+
+    def _get_pattern_recognizer(self):
+        """Get or create pattern recognizer instance."""
+        if self._pattern_recognizer is None:
+            try:
+                from casare_rpa.infrastructure.analytics.pattern_recognizer import (
+                    PatternRecognizer,
+                )
+
+                self._pattern_recognizer = PatternRecognizer()
+            except ImportError:
+                logger.warning("PatternRecognizer not available")
+                return None
+        return self._pattern_recognizer
+
+    def _get_roi_estimator(self):
+        """Get or create ROI estimator instance."""
+        if self._roi_estimator is None:
+            try:
+                from casare_rpa.infrastructure.analytics.roi_estimator import (
+                    ROIEstimator,
+                    ROIConfig,
+                )
+
+                config = ROIConfig(hourly_labor_cost=self._hourly_cost_spin.value())
+                self._roi_estimator = ROIEstimator(config)
+            except ImportError:
+                logger.warning("ROIEstimator not available")
+                return None
+        return self._roi_estimator
+
+    def _run_pattern_analysis(self) -> None:
+        """Run pattern recognition on current workflow traces."""
+        if not self._current_workflow:
+            return
+
+        miner = self._get_miner()
+        if not miner:
+            return
+
+        recognizer = self._get_pattern_recognizer()
+        if not recognizer:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Pattern Recognition",
+                "Pattern recognizer not available. Install scikit-learn for ML features.",
+            )
+            return
+
+        # Get traces
+        traces = miner.event_log.get_traces_for_workflow(self._current_workflow)
+        if not traces:
+            return
+
+        # Show progress
+        self._pattern_progress.show()
+        self._analyze_patterns_btn.setEnabled(False)
+
+        try:
+            # Extract patterns
+            patterns = recognizer.extract_patterns(
+                traces=traces,
+                min_samples=self._min_samples_spin.value(),
+                eps=self._eps_spin.value(),
+            )
+
+            self._current_patterns = patterns
+            self._update_patterns_table(patterns)
+
+            # Enable ROI calculation if patterns found
+            self._calc_roi_btn.setEnabled(len(patterns) > 0)
+
+            logger.info(f"Found {len(patterns)} patterns in workflow")
+
+        except Exception as e:
+            logger.error(f"Pattern analysis failed: {e}")
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Pattern Analysis Error",
+                f"Failed to analyze patterns:\n\n{str(e)}",
+            )
+        finally:
+            self._pattern_progress.hide()
+            self._analyze_patterns_btn.setEnabled(True)
+
+    def _update_patterns_table(self, patterns: List[Any]) -> None:
+        """Update patterns table with discovered patterns."""
+        self._patterns_table.setRowCount(0)
+
+        for pattern in patterns:
+            row = self._patterns_table.rowCount()
+            self._patterns_table.insertRow(row)
+
+            # Pattern ID
+            id_item = QTableWidgetItem(pattern.pattern_id)
+            id_item.setData(Qt.ItemDataRole.UserRole, pattern)
+            self._patterns_table.setItem(row, 0, id_item)
+
+            # Frequency
+            freq_item = QTableWidgetItem(str(pattern.frequency))
+            freq_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._patterns_table.setItem(row, 1, freq_item)
+
+            # Avg duration
+            duration_s = pattern.avg_duration / 1000
+            duration_item = QTableWidgetItem(f"{duration_s:.1f}s")
+            duration_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._patterns_table.setItem(row, 2, duration_item)
+
+            # Success rate
+            success_pct = pattern.success_rate * 100
+            success_item = QTableWidgetItem(f"{success_pct:.0f}%")
+            success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if success_pct >= 90:
+                success_item.setForeground(QBrush(QColor(THEME.status_success)))
+            elif success_pct >= 70:
+                success_item.setForeground(QBrush(QColor(THEME.status_warning)))
+            else:
+                success_item.setForeground(QBrush(QColor(THEME.status_error)))
+            self._patterns_table.setItem(row, 3, success_item)
+
+            # Automation potential
+            potential_pct = pattern.automation_potential * 100
+            potential_item = QTableWidgetItem(f"{potential_pct:.0f}%")
+            potential_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if potential_pct >= 70:
+                potential_item.setForeground(QBrush(QColor(THEME.status_success)))
+            elif potential_pct >= 40:
+                potential_item.setForeground(QBrush(QColor(THEME.status_warning)))
+            else:
+                potential_item.setForeground(QBrush(QColor(THEME.status_error)))
+            self._patterns_table.setItem(row, 4, potential_item)
+
+            # Variance
+            variance_item = QTableWidgetItem(f"{pattern.variance_score:.2f}")
+            variance_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._patterns_table.setItem(row, 5, variance_item)
+
+    def _on_pattern_selected(self) -> None:
+        """Handle pattern selection in table."""
+        items = self._patterns_table.selectedItems()
+        if not items:
+            self._create_subflow_btn.setEnabled(False)
+            return
+
+        row = items[0].row()
+        id_item = self._patterns_table.item(row, 0)
+        pattern = id_item.data(Qt.ItemDataRole.UserRole)
+
+        if pattern:
+            self._create_subflow_btn.setEnabled(True)
+
+            # Show pattern details
+            detail_text = f"**Pattern: {pattern.pattern_id}**\n\n"
+            detail_text += "**Activity Sequence:**\n"
+            detail_text += " -> ".join(pattern.activity_sequence)
+            detail_text += f"\n\n**Node Types:** {', '.join(pattern.node_types)}"
+
+            if pattern.time_pattern:
+                detail_text += f"\n**Time Pattern:** {pattern.time_pattern}"
+
+            detail_text += f"\n**Representative Traces:** {', '.join(pattern.representative_traces[:3])}"
+
+            self._pattern_detail.setText(detail_text)
+
+    def _create_subflow_from_pattern(self) -> None:
+        """Create a subflow from the selected pattern."""
+        items = self._patterns_table.selectedItems()
+        if not items:
+            return
+
+        row = items[0].row()
+        id_item = self._patterns_table.item(row, 0)
+        pattern = id_item.data(Qt.ItemDataRole.UserRole)
+
+        if not pattern:
+            return
+
+        # Emit signal or create subflow
+        from PySide6.QtWidgets import QMessageBox
+
+        QMessageBox.information(
+            self,
+            "Create Subflow",
+            f"Would create subflow from pattern {pattern.pattern_id}\n\n"
+            f"Activities: {', '.join(pattern.activity_sequence)}\n\n"
+            "This feature will be connected to the workflow editor.",
+        )
+
+        logger.info(f"Create subflow requested for pattern {pattern.pattern_id}")
+
+    # =========================================================================
+    # ROI Estimation Methods
+    # =========================================================================
+
+    def _calculate_roi(self) -> None:
+        """Calculate ROI for discovered patterns."""
+        if not self._current_patterns:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.information(
+                self,
+                "Calculate ROI",
+                "No patterns available. Run pattern analysis first.",
+            )
+            return
+
+        # Update ROI estimator with current hourly cost
+        try:
+            from casare_rpa.infrastructure.analytics.roi_estimator import (
+                ROIEstimator,
+                ROIConfig,
+            )
+
+            config = ROIConfig(hourly_labor_cost=self._hourly_cost_spin.value())
+            self._roi_estimator = ROIEstimator(config)
+
+        except ImportError:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "ROI Calculation",
+                "ROI estimator not available.",
+            )
+            return
+
+        try:
+            # Calculate ROI for all patterns
+            estimates = self._roi_estimator.estimate_batch(self._current_patterns)
+            self._current_roi_estimates = estimates
+
+            self._update_candidates_table(estimates)
+            self._update_roi_summary(estimates)
+
+            self._export_roi_btn.setEnabled(len(estimates) > 0)
+
+            logger.info(f"Calculated ROI for {len(estimates)} patterns")
+
+        except Exception as e:
+            logger.error(f"ROI calculation failed: {e}")
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "ROI Calculation Error",
+                f"Failed to calculate ROI:\n\n{str(e)}",
+            )
+
+    def _update_candidates_table(self, estimates: List[Any]) -> None:
+        """Update candidates table with ROI estimates."""
+        self._candidates_table.setRowCount(0)
+
+        for estimate in estimates:
+            row = self._candidates_table.rowCount()
+            self._candidates_table.insertRow(row)
+
+            # Pattern ID
+            id_item = QTableWidgetItem(estimate.pattern_id)
+            id_item.setData(Qt.ItemDataRole.UserRole, estimate)
+            self._candidates_table.setItem(row, 0, id_item)
+
+            # ROI Score
+            score_item = QTableWidgetItem(f"{estimate.roi_score:.0f}")
+            score_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if estimate.roi_score >= 70:
+                score_item.setForeground(QBrush(QColor(THEME.status_success)))
+            elif estimate.roi_score >= 40:
+                score_item.setForeground(QBrush(QColor(THEME.status_warning)))
+            else:
+                score_item.setForeground(QBrush(QColor(THEME.status_error)))
+            self._candidates_table.setItem(row, 1, score_item)
+
+            # Hours/Year
+            hours_item = QTableWidgetItem(f"{estimate.annual_hours_saved:.0f}h")
+            hours_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._candidates_table.setItem(row, 2, hours_item)
+
+            # Savings/Year
+            savings_item = QTableWidgetItem(f"${estimate.annual_cost_savings:,.0f}")
+            savings_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._candidates_table.setItem(row, 3, savings_item)
+
+            # Dev Hours
+            dev_item = QTableWidgetItem(f"{estimate.estimated_dev_hours:.0f}h")
+            dev_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._candidates_table.setItem(row, 4, dev_item)
+
+            # Payback
+            if estimate.payback_months < 999:
+                payback_text = f"{estimate.payback_months:.1f}mo"
+            else:
+                payback_text = ">3yr"
+            payback_item = QTableWidgetItem(payback_text)
+            payback_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if estimate.payback_months <= 6:
+                payback_item.setForeground(QBrush(QColor(THEME.status_success)))
+            elif estimate.payback_months <= 18:
+                payback_item.setForeground(QBrush(QColor(THEME.status_warning)))
+            else:
+                payback_item.setForeground(QBrush(QColor(THEME.status_error)))
+            self._candidates_table.setItem(row, 5, payback_item)
+
+            # Recommendation
+            rec_text = estimate.recommendation.value.replace("_", " ").title()
+            rec_item = QTableWidgetItem(rec_text[:12])  # Truncate for display
+            rec_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            rec_item.setToolTip(rec_text)
+            self._candidates_table.setItem(row, 6, rec_item)
+
+    def _update_roi_summary(self, estimates: List[Any]) -> None:
+        """Update ROI summary statistics."""
+        if not estimates:
+            self._total_savings_label.setText("$0")
+            self._total_hours_label.setText("0h")
+            self._avg_payback_label.setText("-")
+            return
+
+        # Calculate totals (for recommended patterns only)
+        recommended = [
+            e
+            for e in estimates
+            if e.recommendation.value in ("highly_recommended", "recommended")
+        ]
+
+        if recommended:
+            total_savings = sum(e.annual_cost_savings for e in recommended)
+            total_hours = sum(e.annual_hours_saved for e in recommended)
+            avg_payback = sum(min(e.payback_months, 36) for e in recommended) / len(
+                recommended
+            )
+        else:
+            total_savings = sum(e.annual_cost_savings for e in estimates)
+            total_hours = sum(e.annual_hours_saved for e in estimates)
+            avg_payback = sum(min(e.payback_months, 36) for e in estimates) / len(
+                estimates
+            )
+
+        self._total_savings_label.setText(f"${total_savings:,.0f}")
+        if total_savings > 10000:
+            self._total_savings_label.setStyleSheet(f"color: {THEME.status_success};")
+        else:
+            self._total_savings_label.setStyleSheet("")
+
+        self._total_hours_label.setText(f"{total_hours:.0f}h")
+
+        self._avg_payback_label.setText(f"{avg_payback:.1f}mo")
+        if avg_payback <= 6:
+            self._avg_payback_label.setStyleSheet(f"color: {THEME.status_success};")
+        elif avg_payback <= 18:
+            self._avg_payback_label.setStyleSheet(f"color: {THEME.status_warning};")
+        else:
+            self._avg_payback_label.setStyleSheet(f"color: {THEME.status_error};")
+
+    def _on_candidate_selected(self) -> None:
+        """Handle candidate selection in table."""
+        items = self._candidates_table.selectedItems()
+        if not items:
+            return
+
+        row = items[0].row()
+        id_item = self._candidates_table.item(row, 0)
+        estimate = id_item.data(Qt.ItemDataRole.UserRole)
+
+        if estimate:
+            # Show ROI details
+            factors = estimate.factors
+
+            detail_text = f"**{estimate.pattern_id} - {estimate.recommendation.value.replace('_', ' ').title()}**\n\n"
+            detail_text += f"**ROI Score:** {estimate.roi_score:.0f}/100 (Confidence: {estimate.confidence*100:.0f}%)\n"
+            detail_text += f"**Complexity:** {estimate.complexity.value}\n\n"
+            detail_text += "**Calculations:**\n"
+            detail_text += (
+                f"  - Annual Executions: {factors.get('annual_executions', 0):,}\n"
+            )
+            detail_text += f"  - Time per Execution: {factors.get('time_per_exec_hours', 0)*60:.1f} min\n"
+            detail_text += (
+                f"  - Development Cost: ${factors.get('dev_cost_usd', 0):,.0f}\n"
+            )
+            detail_text += f"  - Annual Maintenance: ${factors.get('annual_maintenance_usd', 0):,.0f}\n"
+
+            self._candidate_detail.setText(detail_text)
+
+    def _export_roi_csv(self) -> None:
+        """Export ROI estimates to CSV file."""
+        if not self._current_roi_estimates:
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export ROI Analysis",
+            "roi_analysis.csv",
+            "CSV Files (*.csv);;All Files (*)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            import csv
+
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+
+                # Header
+                writer.writerow(
+                    [
+                        "Pattern ID",
+                        "ROI Score",
+                        "Annual Hours Saved",
+                        "Annual Cost Savings",
+                        "Development Hours",
+                        "Payback Months",
+                        "Recommendation",
+                        "Complexity",
+                        "Confidence",
+                    ]
+                )
+
+                # Data
+                for e in self._current_roi_estimates:
+                    writer.writerow(
+                        [
+                            e.pattern_id,
+                            f"{e.roi_score:.1f}",
+                            f"{e.annual_hours_saved:.1f}",
+                            f"{e.annual_cost_savings:.2f}",
+                            f"{e.estimated_dev_hours:.1f}",
+                            f"{e.payback_months:.1f}",
+                            e.recommendation.value,
+                            e.complexity.value,
+                            f"{e.confidence:.2f}",
+                        ]
+                    )
+
+            logger.info(f"ROI analysis exported to {file_path}")
+
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"ROI analysis exported to:\n{file_path}",
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to export ROI: {e}")
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Export Error",
+                f"Failed to export ROI analysis:\n\n{str(e)}",
+            )
+
+    def _on_workflow_changed_pattern_update(self, index: int) -> None:
+        """Update pattern buttons when workflow changes."""
+        workflow_id = self._workflow_combo.currentData()
+        has_workflow = workflow_id is not None
+
+        self._analyze_patterns_btn.setEnabled(has_workflow)
+        self._calc_roi_btn.setEnabled(has_workflow and len(self._current_patterns) > 0)

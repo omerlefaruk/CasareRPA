@@ -25,6 +25,7 @@ class LLMProvider(Enum):
     ANTHROPIC = "anthropic"
     AZURE = "azure"
     OLLAMA = "ollama"
+    OPENROUTER = "openrouter"
     CUSTOM = "custom"
 
 
@@ -199,6 +200,7 @@ class LLMResourceManager:
         "mixtral-": "groq",
         "deepseek-": "deepseek",
         "ollama/": "ollama",
+        "openrouter/": "openrouter",
     }
 
     def __init__(self) -> None:
@@ -288,6 +290,7 @@ class LLMResourceManager:
             LLMProvider.ANTHROPIC: "anthropic",
             LLMProvider.AZURE: "azure",
             LLMProvider.OLLAMA: None,  # Ollama doesn't need API key
+            LLMProvider.OPENROUTER: "openrouter",
             LLMProvider.CUSTOM: None,
         }
 
@@ -334,6 +337,11 @@ class LLMResourceManager:
                 return f"azure/{model_name}"
             elif provider == LLMProvider.ANTHROPIC:
                 # Anthropic models work directly
+                return model_name
+            elif provider == LLMProvider.OPENROUTER:
+                # OpenRouter format: openrouter/<model>
+                if not model_name.startswith("openrouter/"):
+                    return f"openrouter/{model_name}"
                 return model_name
             elif provider == LLMProvider.OLLAMA:
                 # Ollama format: ollama/<model>
@@ -724,9 +732,69 @@ Return ONLY the extracted JSON, no other text."""
         return self._config
 
     async def cleanup(self) -> None:
-        """Clean up resources."""
+        """Clean up resources including litellm async HTTP clients."""
         self._conversations.clear()
+
+        # Clean up litellm's internal async HTTP clients
+        if self._initialized:
+            try:
+                from litellm.llms.custom_httpx.async_client_cleanup import (
+                    close_litellm_async_clients,
+                )
+
+                await close_litellm_async_clients()
+                logger.debug("litellm async clients cleaned up")
+            except ImportError:
+                # Cleanup module not available in this litellm version
+                pass
+            except Exception as e:
+                logger.debug(f"litellm cleanup: {e}")
+
+        self._initialized = False
         logger.debug("LLM resource manager cleaned up")
+
+    def dispose(self) -> None:
+        """
+        Synchronous disposal for DI container cleanup.
+
+        This method is called by DIContainer during application shutdown.
+        It runs the async cleanup in a new event loop since the main loop
+        may already be closed.
+        """
+        import asyncio
+
+        self._conversations.clear()
+
+        if self._initialized:
+            try:
+                from litellm.llms.custom_httpx.async_client_cleanup import (
+                    close_litellm_async_clients,
+                )
+
+                # Try to run cleanup - create new event loop if needed
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # Can't run sync in running loop, schedule it
+                        loop.create_task(close_litellm_async_clients())
+                    else:
+                        loop.run_until_complete(close_litellm_async_clients())
+                except RuntimeError:
+                    # No event loop, create a temporary one
+                    loop = asyncio.new_event_loop()
+                    try:
+                        loop.run_until_complete(close_litellm_async_clients())
+                    finally:
+                        loop.close()
+
+                logger.debug("litellm async clients disposed")
+            except ImportError:
+                pass
+            except Exception as e:
+                logger.debug(f"litellm dispose: {e}")
+
+        self._initialized = False
+        logger.debug("LLM resource manager disposed")
 
     def __repr__(self) -> str:
         """String representation."""

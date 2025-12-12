@@ -1,18 +1,26 @@
 {
   "mcpServers": {
-    "Ref": {
-      "type": "http",
-      "url": "https://api.ref.tools/mcp",
-      "headers": {
-        "x-ref-api-key": "${REF_API_KEY}"
-      }
-    },
     "exa": {
-      "type": "stdio",
-      "command": "npx",
+      "command": "C:\\nvm4w\\nodejs\\npx.cmd",
       "args": ["-y", "exa-mcp-server"],
       "env": {
-        "EXA_API_KEY": "${EXA_API_KEY}"
+        "EXA_API_KEY": "d219ea70-7fd3-4375-9ccb-e504956bdb65"
+      }
+    },
+    "context7": {
+      "command": "C:\\nvm4w\\nodejs\\npx.cmd",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "env": {
+        "CONTEXT7_API_KEY": "ref-efff67960dfd70d8d699"
+      }
+    },
+    "qdrant": {
+      "command": "uvx",
+      "args": ["mcp-server-qdrant"],
+      "env": {
+        "QDRANT_LOCAL_PATH": "C:\\Users\\Rau\\Desktop\\CasareRPA\\.qdrant",
+        "COLLECTION_NAME": "casare_codebase",
+        "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
       }
     }
   }

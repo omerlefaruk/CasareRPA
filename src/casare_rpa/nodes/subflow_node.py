@@ -382,7 +382,6 @@ class SubflowNode(BaseNode):
                 SubflowOutputDefinition,
             )
             from casare_rpa.domain.entities.workflow import WorkflowSchema
-            from casare_rpa.domain.entities.node_connection import NodeConnection
 
             # Transform NodeGraphQt format to executable format
             executable_nodes, id_mapping, reroute_mapping = (

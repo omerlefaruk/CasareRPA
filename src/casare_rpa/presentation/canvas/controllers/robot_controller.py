@@ -17,7 +17,6 @@ from casare_rpa.presentation.canvas.controllers.base_controller import BaseContr
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
-    from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability
     from casare_rpa.infrastructure.orchestrator.client import OrchestratorClient
 
 

@@ -24,7 +24,6 @@ from NodeGraphQt.qgraphics.node_base import NodeItem
 # Import GPU optimization managers (lazy import to avoid circular deps)
 # These are imported at module level for performance - no function call overhead
 from casare_rpa.presentation.canvas.graph.lod_manager import get_lod_manager, LODLevel
-from casare_rpa.presentation.canvas.graph.background_cache import get_background_cache
 from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 
 # Import unified theme system for all colors
@@ -597,6 +596,83 @@ class CasareNodeItem(NodeItem):
         """Get the actual node rectangle (without badge area)."""
         return super().boundingRect()
 
+    def calc_size(self, add_w=0.0, add_h=0.0):
+        """
+        Override to ensure minimum width for port labels AND embedded widgets.
+
+        FIX: NodeGraphQt's default calc_size may not account for port labels
+        or embedded widgets properly, causing:
+        1. Input and output labels to overlap in the middle of the node
+        2. Widgets (like selector widgets with labels) to extend beyond node bounds
+
+        This fix ensures the node is wide enough to contain:
+        - Port labels on both sides with proper padding
+        - All embedded widgets (including their labels) with margins
+        """
+        width, height = super().calc_size(add_w, add_h)
+
+        # Calculate actual required width for port labels
+        port_label_padding = 20  # Padding between input and output labels
+
+        # Get max input port label width
+        max_input_width = 0.0
+        for port, text in self._input_items.items():
+            if port.isVisible() and text.isVisible():
+                max_input_width = max(max_input_width, text.boundingRect().width())
+
+        # Get max output port label width
+        max_output_width = 0.0
+        for port, text in self._output_items.items():
+            if port.isVisible() and text.isVisible():
+                max_output_width = max(max_output_width, text.boundingRect().width())
+
+        # Ensure node is wide enough for both labels plus padding
+        # Port circles are about 10px each (on left and right edges)
+        min_required_width = (
+            max_input_width + max_output_width + port_label_padding + 20
+        )
+
+        if width < min_required_width:
+            width = min_required_width
+
+        # FIX: Also account for embedded widget widths
+        # Widgets are stored in self._widgets dict and include their labels
+        # in their boundingRect(). We need the node to be wide enough for them.
+        #
+        # CRITICAL FIX: boundingRect() may return incorrect values before the widget
+        # is fully laid out. We need to:
+        # 1. Force the widget to calculate its size first
+        # 2. Use the underlying QWidget's sizeHint for accurate measurement
+        # 3. Add sufficient margin for label + content
+        widget_margin = 40  # 20px left + 20px right margin for widgets inside node
+        max_widget_width = 0.0
+        if hasattr(self, "_widgets") and self._widgets:
+            for widget in self._widgets.values():
+                if widget and widget.isVisible():
+                    # Get the underlying QWidget (the _NodeGroupBox)
+                    qwidget = widget.widget()
+                    if qwidget:
+                        # Force layout calculation to get accurate size
+                        qwidget.adjustSize()
+                        # Use sizeHint which includes label + content
+                        size_hint = qwidget.sizeHint()
+                        widget_width = max(
+                            size_hint.width(), 200
+                        )  # Min 200px for file widgets
+                    else:
+                        # Fallback to boundingRect if no QWidget
+                        widget_width = widget.boundingRect().width()
+
+                    if widget_width > max_widget_width:
+                        max_widget_width = widget_width
+
+        # Ensure node is at least as wide as the widest widget plus margins
+        min_widget_required = max_widget_width + widget_margin
+        if width < min_widget_required:
+            width = min_widget_required
+
+        return width, height
+
     def _align_widgets_horizontal(self, v_offset):
         """
         Override to use actual node rect and custom header height.
@@ -604,6 +680,9 @@ class CasareNodeItem(NodeItem):
         FIX: Parent class calculates v_offset from _text_item which we hide.
         Instead, use our custom header height (26px) for consistent widget positioning.
         Also use _get_node_rect() to avoid badge area offset issues.
+
+        Additional FIX: Clamp widget positions to ensure they stay within node bounds.
+        This prevents widgets from floating outside the node when their labels are long.
         """
         if not self._widgets:
             return
@@ -615,21 +694,52 @@ class CasareNodeItem(NodeItem):
         y = rect.y() + custom_header_height
         inputs = [p for p in self.inputs if p.isVisible()]
         outputs = [p for p in self.outputs if p.isVisible()]
+
+        # Calculate safe bounds for widget positioning
+        # Leave 10px margin on each side for aesthetics
+        margin = 10
+        min_x = rect.left() + margin
+        max_x = rect.right() - margin
+
         for widget in self._widgets.values():
             if not widget.isVisible():
                 continue
-            widget_rect = widget.boundingRect()
+
+            # Get accurate widget width using sizeHint (matches calc_size logic)
+            qwidget = widget.widget()
+            if qwidget:
+                qwidget.adjustSize()
+                size_hint = qwidget.sizeHint()
+                widget_width = max(size_hint.width(), 200)
+                widget_height = size_hint.height()
+            else:
+                widget_rect = widget.boundingRect()
+                widget_width = widget_rect.width()
+                widget_height = widget_rect.height()
+
             if not inputs:
-                x = rect.left() + 10
+                x = rect.left() + margin
                 widget.widget().setTitleAlign("left")
             elif not outputs:
-                x = rect.right() - widget_rect.width() - 10
+                x = rect.right() - widget_width - margin
                 widget.widget().setTitleAlign("right")
             else:
-                x = rect.center().x() - (widget_rect.width() / 2)
+                # Center the widget
+                x = rect.center().x() - (widget_width / 2)
                 widget.widget().setTitleAlign("center")
+
+            # Clamp x position to keep widget within node bounds
+            # This prevents widgets from floating outside the node
+            if x < min_x:
+                x = min_x
+            if x + widget_width > max_x:
+                x = max_x - widget_width
+                # If widget is still wider than available space, align to left
+                if x < min_x:
+                    x = min_x
+
             widget.setPos(x, y)
-            y += widget_rect.height()
+            y += widget_height
 
     def _paint_lod(self, painter: QPainter, lod_level: LODLevel = LODLevel.LOW) -> None:
         """

@@ -59,6 +59,43 @@ from casare_rpa.infrastructure.tunnel import (
     CertificateManager,
 )
 
+# AI exports
+from casare_rpa.infrastructure.ai import (
+    SmartWorkflowAgent,
+    generate_smart_workflow,
+    WorkflowGenerationResult,
+)
+
+# Browser exports
+from casare_rpa.infrastructure.browser import (
+    PlaywrightManager,
+    get_playwright_singleton,
+)
+
+# Observability exports
+from casare_rpa.infrastructure.observability import (
+    Observability,
+    configure_observability,
+)
+
+# Analytics exports
+from casare_rpa.infrastructure.analytics import (
+    MetricsAggregator,
+    ProcessMiner,
+)
+
+# Security exports
+from casare_rpa.infrastructure.security import (
+    VaultClient,
+    AuthorizationService,
+)
+
+# Queue exports
+from casare_rpa.infrastructure.queue import (
+    PgQueuerConsumer,
+    PgQueuerProducer,
+)
+
 # HTTP exports
 from casare_rpa.infrastructure.http import (
     UnifiedHttpClient,
@@ -90,6 +127,25 @@ __all__ = [
     "TunnelState",
     "MTLSConfig",
     "CertificateManager",
+    # AI
+    "SmartWorkflowAgent",
+    "generate_smart_workflow",
+    "WorkflowGenerationResult",
+    # Browser
+    "PlaywrightManager",
+    "get_playwright_singleton",
+    # Observability
+    "Observability",
+    "configure_observability",
+    # Analytics
+    "MetricsAggregator",
+    "ProcessMiner",
+    # Security
+    "VaultClient",
+    "AuthorizationService",
+    # Queue
+    "PgQueuerConsumer",
+    "PgQueuerProducer",
     # HTTP
     "UnifiedHttpClient",
     "UnifiedHttpClientConfig",

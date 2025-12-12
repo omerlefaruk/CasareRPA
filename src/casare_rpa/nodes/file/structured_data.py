@@ -7,22 +7,23 @@ This module provides nodes for structured data file operations:
 - ZipFilesNode, UnzipFilesNode
 
 SECURITY: All file operations are subject to path sandboxing.
+NOTE: File I/O uses AsyncFileOperations for non-blocking operations.
 """
 
-import csv
 import glob
-import json
+import os
 import zipfile
 from pathlib import Path
 
 from loguru import logger
+
+from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -148,8 +149,9 @@ class ReadCSVNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
@@ -165,44 +167,17 @@ class ReadCSVNode(BaseNode):
                 f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})"
             )
 
-            with open(path, "r", encoding=encoding, newline="") as f:
-                # Build CSV reader options
-                csv_options = {
-                    "delimiter": delimiter,
-                    "quotechar": quotechar,
-                    "doublequote": doublequote,
-                    "strict": strict,
-                }
-                if escapechar:
-                    csv_options["escapechar"] = escapechar
-
-                # Skip initial rows if configured
-                for _ in range(skip_rows):
-                    next(f, None)
-
-                if has_header:
-                    reader = csv.DictReader(f, **csv_options)
-                    headers = reader.fieldnames or []
-
-                    # Read data with optional max_rows limit
-                    if max_rows > 0:
-                        for i, row in enumerate(reader):
-                            if i >= max_rows:
-                                break
-                            data.append(row)
-                    else:
-                        data = list(reader)
-                else:
-                    reader = csv.reader(f, **csv_options)
-
-                    # Read data with optional max_rows limit
-                    if max_rows > 0:
-                        for i, row in enumerate(reader):
-                            if i >= max_rows:
-                                break
-                            data.append(row)
-                    else:
-                        data = list(reader)
+            # Use async file operations for non-blocking I/O
+            data, headers = await AsyncFileOperations.read_csv(
+                path,
+                encoding=encoding,
+                delimiter=delimiter,
+                has_header=has_header,
+                skip_rows=skip_rows,
+                max_rows=max_rows,
+                quotechar=quotechar,
+                strict=strict,
+            )
 
             self.set_output_value("data", data)
             self.set_output_value("headers", headers)
@@ -293,8 +268,9 @@ class WriteCSVNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns
+            # Resolve {{variable}} patterns and environment variables
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
             data = context.resolve_value(data) or []
             headers = context.resolve_value(headers) if headers else None
 
@@ -305,26 +281,16 @@ class WriteCSVNode(BaseNode):
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
-            row_count = 0
-
-            with open(path, "w", encoding=encoding, newline="") as f:
-                if data and isinstance(data[0], dict):
-                    # Dict data
-                    fieldnames = headers or (list(data[0].keys()) if data else [])
-                    writer = csv.DictWriter(
-                        f, fieldnames=fieldnames, delimiter=delimiter
-                    )
-                    if write_header:
-                        writer.writeheader()
-                    writer.writerows(data)
-                    row_count = len(data)
-                else:
-                    # List data
-                    writer = csv.writer(f, delimiter=delimiter)
-                    if write_header and headers:
-                        writer.writerow(headers)
-                    writer.writerows(data)
-                    row_count = len(data)
+            # Use async file operations for non-blocking I/O
+            row_count = await AsyncFileOperations.write_csv(
+                path,
+                data,
+                headers=headers,
+                encoding=encoding,
+                delimiter=delimiter,
+                write_header=write_header,
+                create_dirs=True,
+            )
 
             self.set_output_value("file_path", str(path))
             self.set_output_value("attachment_file", [str(path)])
@@ -396,8 +362,9 @@ class ReadJSONFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
@@ -406,8 +373,8 @@ class ReadJSONFileNode(BaseNode):
             if not path.exists():
                 raise FileNotFoundError(f"JSON file not found: {file_path}")
 
-            with open(path, "r", encoding=encoding) as f:
-                data = json.load(f)
+            # Use async file operations for non-blocking I/O
+            data = await AsyncFileOperations.read_json(path, encoding=encoding)
 
             self.set_output_value("data", data)
             self.set_output_value("success", True)
@@ -419,13 +386,21 @@ class ReadJSONFileNode(BaseNode):
                 "next_nodes": ["exec_out"],
             }
 
-        except json.JSONDecodeError as e:
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": f"Invalid JSON: {e}", "next_nodes": []}
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
+            # Check for JSON decode error
+            import json
+
+            if isinstance(e, json.JSONDecodeError) or (
+                hasattr(e, "__cause__")
+                and isinstance(e.__cause__, json.JSONDecodeError)
+            ):
+                return {
+                    "success": False,
+                    "error": f"Invalid JSON: {e}",
+                    "next_nodes": [],
+                }
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -491,8 +466,9 @@ class WriteJSONFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path and data
+            # Resolve {{variable}} patterns and environment variables in file_path and data
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
             data = context.resolve_value(data)
 
             # SECURITY: Validate path before access
@@ -502,8 +478,15 @@ class WriteJSONFileNode(BaseNode):
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(path, "w", encoding=encoding) as f:
-                json.dump(data, f, indent=indent, ensure_ascii=ensure_ascii)
+            # Use async file operations for non-blocking I/O
+            await AsyncFileOperations.write_json(
+                path,
+                data,
+                encoding=encoding,
+                indent=indent,
+                ensure_ascii=ensure_ascii,
+                create_dirs=True,
+            )
 
             self.set_output_value("file_path", str(path))
             self.set_output_value("attachment_file", [str(path)])
@@ -621,12 +604,15 @@ class ZipFilesNode(BaseNode):
             if not zip_path:
                 raise ValueError("zip_path is required")
 
-            # Resolve {{variable}} patterns
+            # Resolve {{variable}} patterns and environment variables
             zip_path = context.resolve_value(zip_path)
+            zip_path = os.path.expandvars(zip_path)
             if source_path:
                 source_path = context.resolve_value(source_path)
+                source_path = os.path.expandvars(source_path)
             if base_dir:
                 base_dir = context.resolve_value(base_dir)
+                base_dir = os.path.expandvars(base_dir)
 
             # SECURITY: Validate output zip path before access
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
@@ -802,9 +788,11 @@ class UnzipFilesNode(BaseNode):
             if not extract_to:
                 raise ValueError("extract_to is required")
 
-            # Resolve {{variable}} patterns in zip_path and extract_to
+            # Resolve {{variable}} patterns and environment variables in zip_path and extract_to
             zip_path = context.resolve_value(zip_path)
+            zip_path = os.path.expandvars(zip_path)
             extract_to = context.resolve_value(extract_to)
+            extract_to = os.path.expandvars(extract_to)
 
             # SECURITY: Validate paths
             zip_file = validate_path_security(zip_path, "read", allow_dangerous)

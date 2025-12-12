@@ -7,7 +7,6 @@ plus shared PropertyDef constants for email-related nodes.
 
 from __future__ import annotations
 
-import email as email_module
 from email.header import decode_header
 from email.message import Message as EmailMessage
 from email.utils import parsedate_to_datetime

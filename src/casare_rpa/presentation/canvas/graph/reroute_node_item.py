@@ -27,7 +27,6 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QGraphicsItem
 from NodeGraphQt.qgraphics.node_base import NodeItem
 
-from loguru import logger
 
 # Import unified theme system for all colors
 from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor

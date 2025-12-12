@@ -7,7 +7,7 @@ Provides CRUD operations for robot registration, status updates, and deletion.
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
+from fastapi import APIRouter, HTTPException, Path, Query, Request
 from loguru import logger
 from pydantic import BaseModel, Field
 from slowapi import Limiter
