@@ -14,7 +14,6 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
-    TIMEOUT_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,

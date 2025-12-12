@@ -117,9 +117,6 @@ from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
     ProfilingEntry,
     PercentageBarDelegate,
 )
-from casare_rpa.presentation.canvas.ui.widgets.collapsible_section import (
-    CollapsibleSection,
-)
 
 __all__ = [
     "VariableEditorWidget",
@@ -215,6 +212,4 @@ __all__ = [
     "ProfilingTreeWidget",
     "ProfilingEntry",
     "PercentageBarDelegate",
-    # Collapsible Section
-    "CollapsibleSection",
 ]

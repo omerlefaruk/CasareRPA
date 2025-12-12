@@ -1,0 +1,113 @@
+{
+    "metadata": {
+        "name": "Notepad Automation with Variables",
+        "description": "Opens Notepad, sets a message variable, types it, and shows a tooltip",
+        "version": "1.0.0",
+        "author": "CasareRPA",
+        "tags": [
+            "notepad",
+            "desktop",
+            "variables"
+        ]
+    },
+    "nodes": {
+        "set_message": {
+            "node_id": "set_message",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "message",
+                "value": "Hello from CasareRPA!"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "launch_notepad": {
+            "node_id": "launch_notepad",
+            "node_type": "LaunchApplicationNode",
+            "config": {
+                "application_path": "notepad.exe",
+                "arguments": "",
+                "window_title_hint": "Notepad",
+                "timeout": 10
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "wait_for_notepad": {
+            "node_id": "wait_for_notepad",
+            "node_type": "WaitForWindowNode",
+            "config": {
+                "title": "Notepad",
+                "timeout": 10.0,
+                "state": "visible",
+                "poll_interval": 0.5
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "type_message": {
+            "node_id": "type_message",
+            "node_type": "SendKeysNode",
+            "config": {
+                "keys": "{{message}}",
+                "interval": 0.05
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "show_tooltip": {
+            "node_id": "show_tooltip",
+            "node_type": "TooltipNode",
+            "config": {
+                "message": "Automation complete!",
+                "duration": 3000
+            },
+            "position": [
+                1600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "set_message",
+            "source_port": "exec_out",
+            "target_node": "launch_notepad",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "launch_notepad",
+            "source_port": "exec_out",
+            "target_node": "wait_for_notepad",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wait_for_notepad",
+            "source_port": "exec_out",
+            "target_node": "type_message",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "type_message",
+            "source_port": "exec_out",
+            "target_node": "show_tooltip",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {
+        "message": "Hello from CasareRPA!"
+    },
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60,
+        "retry_count": 0
+    }
+}

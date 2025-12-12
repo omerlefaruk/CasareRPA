@@ -9,6 +9,8 @@ This module provides nodes for directory operations:
 SECURITY: All file operations are subject to path sandboxing.
 """
 
+import os
+
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -105,8 +107,9 @@ class CreateDirectoryNode(BaseNode):
             if not dir_path:
                 raise ValueError("directory_path is required")
 
-            # Resolve {{variable}} patterns in dir_path
+            # Resolve {{variable}} patterns and environment variables in dir_path
             dir_path = context.resolve_value(dir_path)
+            dir_path = os.path.expandvars(dir_path)
 
             # SECURITY: Validate path before directory creation
             path = validate_path_security(dir_path, "mkdir", allow_dangerous)
@@ -215,8 +218,9 @@ class ListFilesNode(BaseNode):
             if not dir_path:
                 raise ValueError("directory_path is required")
 
-            # Resolve {{variable}} patterns in dir_path and pattern
+            # Resolve {{variable}} patterns and environment variables in dir_path and pattern
             dir_path = context.resolve_value(dir_path)
+            dir_path = os.path.expandvars(dir_path)
             pattern = context.resolve_value(pattern)
 
             # SECURITY: Validate directory path (read-only)
@@ -358,8 +362,9 @@ class ListDirectoryNode(BaseNode):
             if not dir_path:
                 raise ValueError("dir_path is required")
 
-            # Resolve {{variable}} patterns in dir_path and pattern
+            # Resolve {{variable}} patterns and environment variables in dir_path and pattern
             dir_path = context.resolve_value(dir_path)
+            dir_path = os.path.expandvars(dir_path)
             pattern = context.resolve_value(pattern)
 
             # SECURITY: Validate directory path (read-only)

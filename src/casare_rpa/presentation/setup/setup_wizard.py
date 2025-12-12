@@ -15,8 +15,7 @@ import asyncio
 import socket
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, Slot, QTimer
-from PySide6.QtGui import QFont, QPixmap, QPainter, QColor
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import (
     QWizard,
     QWizardPage,
@@ -33,7 +32,6 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QProgressBar,
     QFrame,
-    QSizePolicy,
 )
 
 from loguru import logger

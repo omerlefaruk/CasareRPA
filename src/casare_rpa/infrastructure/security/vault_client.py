@@ -32,6 +32,8 @@ class VaultBackend(str, Enum):
     HASHICORP = "hashicorp"
     SUPABASE = "supabase"
     SQLITE = "sqlite"  # Development fallback
+    AZURE_KEYVAULT = "azure_keyvault"  # Azure Key Vault
+    AWS_SECRETS_MANAGER = "aws_secrets_manager"  # AWS Secrets Manager
 
 
 class CredentialType(str, Enum):
@@ -287,6 +289,48 @@ class VaultConfig(BaseModel):
         default=None, description="Path to client private key"
     )
 
+    # Azure Key Vault settings
+    azure_vault_url: Optional[str] = Field(
+        default=None,
+        description="Azure Key Vault URL (e.g., https://myvault.vault.azure.net/)",
+    )
+    azure_tenant_id: Optional[str] = Field(
+        default=None, description="Azure AD tenant ID for Service Principal auth"
+    )
+    azure_client_id: Optional[str] = Field(
+        default=None, description="Azure AD client ID for Service Principal auth"
+    )
+    azure_client_secret: Optional[SecretStr] = Field(
+        default=None, description="Azure AD client secret for Service Principal auth"
+    )
+    azure_use_managed_identity: bool = Field(
+        default=False, description="Use Azure Managed Identity for authentication"
+    )
+    azure_managed_identity_client_id: Optional[str] = Field(
+        default=None, description="Client ID for user-assigned managed identity"
+    )
+
+    # AWS Secrets Manager settings
+    aws_region: Optional[str] = Field(
+        default=None, description="AWS region for Secrets Manager"
+    )
+    aws_access_key_id: Optional[str] = Field(
+        default=None,
+        description="AWS access key ID (optional, uses env/IAM if not set)",
+    )
+    aws_secret_access_key: Optional[SecretStr] = Field(
+        default=None, description="AWS secret access key"
+    )
+    aws_session_token: Optional[SecretStr] = Field(
+        default=None, description="AWS session token for temporary credentials"
+    )
+    aws_profile: Optional[str] = Field(
+        default=None, description="AWS profile name from ~/.aws/credentials"
+    )
+    aws_endpoint_url: Optional[str] = Field(
+        default=None, description="Custom AWS endpoint URL (for LocalStack, testing)"
+    )
+
     @field_validator("hashicorp_url")
     @classmethod
     def validate_hashicorp_url(cls, v: Optional[str]) -> Optional[str]:
@@ -301,6 +345,8 @@ class VaultConfig(BaseModel):
             VaultBackend.HASHICORP: "HashiCorp Vault",
             VaultBackend.SUPABASE: "Supabase Vault",
             VaultBackend.SQLITE: "Local Encrypted SQLite",
+            VaultBackend.AZURE_KEYVAULT: "Azure Key Vault",
+            VaultBackend.AWS_SECRETS_MANAGER: "AWS Secrets Manager",
         }
         return names.get(self.backend, self.backend.value)
 
@@ -585,16 +631,66 @@ class VaultProvider(ABC):
 
 
 class AuditLogger:
-    """Handles audit logging for vault operations."""
+    """
+    Handles audit logging for vault operations.
 
-    def __init__(self, enabled: bool = True, log_reads: bool = True) -> None:
+    Supports both in-memory buffering for fast access and persistent
+    storage via AuditRepository for compliance and analysis.
+
+    Features:
+    - Hybrid storage: in-memory for recent events, database for history
+    - Async database writes to avoid blocking
+    - Configurable logging of read operations
+    - Hash chain integrity through repository
+    """
+
+    def __init__(
+        self,
+        enabled: bool = True,
+        log_reads: bool = True,
+        use_persistent_storage: bool = True,
+    ) -> None:
+        """
+        Initialize the audit logger.
+
+        Args:
+            enabled: Enable/disable audit logging
+            log_reads: Log secret read operations
+            use_persistent_storage: Enable persistent database storage
+        """
         self._enabled = enabled
         self._log_reads = log_reads
+        self._use_persistent_storage = use_persistent_storage
         self._events: List[AuditEvent] = []
         self._max_buffer_size = 1000
+        self._pending_events: List[AuditEvent] = []
+        self._flush_task: Optional[asyncio.Task] = None
+        self._repository = None
+
+    async def _get_repository(self):
+        """Get or create the audit repository."""
+        if self._repository is None and self._use_persistent_storage:
+            try:
+                from casare_rpa.infrastructure.persistence.repositories.audit_repository import (
+                    AuditRepository,
+                )
+
+                self._repository = AuditRepository()
+                await self._repository.initialize()
+            except Exception as e:
+                logger.warning(f"Failed to initialize audit repository: {e}")
+                self._use_persistent_storage = False
+        return self._repository
 
     def log(self, event: AuditEvent) -> None:
-        """Log an audit event."""
+        """
+        Log an audit event.
+
+        Stores in memory immediately and queues for async database write.
+
+        Args:
+            event: Audit event to log
+        """
         if not self._enabled:
             return
 
@@ -608,10 +704,39 @@ class AuditLogger:
         else:
             logger.warning(f"VAULT_AUDIT: {event.to_log_string()}")
 
-        # Buffer event
+        # Buffer event in memory
         self._events.append(event)
         if len(self._events) > self._max_buffer_size:
             self._events = self._events[-self._max_buffer_size :]
+
+        # Queue for persistent storage
+        if self._use_persistent_storage:
+            self._pending_events.append(event)
+            self._schedule_flush()
+
+    def _schedule_flush(self) -> None:
+        """Schedule async flush of pending events."""
+        if self._flush_task is None or self._flush_task.done():
+            try:
+                loop = asyncio.get_running_loop()
+                self._flush_task = loop.create_task(self._flush_pending())
+            except RuntimeError:
+                # No running event loop - will flush on next async operation
+                pass
+
+    async def _flush_pending(self) -> None:
+        """Flush pending events to persistent storage."""
+        if not self._pending_events:
+            return
+
+        try:
+            repository = await self._get_repository()
+            if repository:
+                events_to_flush = self._pending_events.copy()
+                self._pending_events.clear()
+                await repository.log_events_batch(events_to_flush)
+        except Exception as e:
+            logger.error(f"Failed to flush audit events to storage: {e}")
 
     def log_read(
         self,
@@ -663,13 +788,132 @@ class AuditLogger:
         )
 
     def get_recent_events(self, count: int = 100) -> List[AuditEvent]:
-        """Get recent audit events."""
+        """Get recent audit events from memory."""
         return self._events[-count:]
 
+    async def get_events_from_storage(
+        self,
+        event_type: Optional[str] = None,
+        resource: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        limit: int = 100,
+    ) -> List[AuditEvent]:
+        """
+        Query events from persistent storage.
+
+        Args:
+            event_type: Filter by event type
+            resource: Filter by resource path
+            workflow_id: Filter by workflow ID
+            start_time: Filter by start time
+            end_time: Filter by end time
+            limit: Maximum events to return
+
+        Returns:
+            List of matching audit events
+        """
+        repository = await self._get_repository()
+        if not repository:
+            return self._events[-limit:]
+
+        return await repository.get_events(
+            event_type=event_type,
+            resource=resource,
+            workflow_id=workflow_id,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+        )
+
+    async def get_statistics(self) -> Dict[str, Any]:
+        """
+        Get audit statistics.
+
+        Returns:
+            Dictionary with event counts and statistics
+        """
+        repository = await self._get_repository()
+        if not repository:
+            return {
+                "total_events": len(self._events),
+                "successful_events": sum(1 for e in self._events if e.success),
+                "failed_events": sum(1 for e in self._events if not e.success),
+            }
+
+        return await repository.get_statistics()
+
+    async def verify_integrity(self, limit: int = 1000) -> Dict[str, Any]:
+        """
+        Verify audit chain integrity.
+
+        Args:
+            limit: Maximum events to verify
+
+        Returns:
+            Dictionary with verification results
+        """
+        repository = await self._get_repository()
+        if not repository:
+            return {"valid": True, "message": "No persistent storage configured"}
+
+        return await repository.verify_integrity(limit)
+
+    async def export_events(
+        self,
+        output_path: str,
+        format_type: str = "json",
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+    ) -> int:
+        """
+        Export audit events to file.
+
+        Args:
+            output_path: Path for output file
+            format_type: Export format (json, csv)
+            start_time: Filter by start time
+            end_time: Filter by end time
+
+        Returns:
+            Number of events exported
+        """
+        repository = await self._get_repository()
+        if not repository:
+            return 0
+
+        if format_type == "csv":
+            return await repository.export_to_csv(output_path, start_time, end_time)
+        else:
+            return await repository.export_to_json(output_path, start_time, end_time)
+
+    async def cleanup_old_events(self, retention_days: int = 90) -> Dict[str, Any]:
+        """
+        Remove old events per retention policy.
+
+        Args:
+            retention_days: Days to retain events
+
+        Returns:
+            Cleanup results
+        """
+        repository = await self._get_repository()
+        if not repository:
+            return {"events_deleted": 0, "message": "No persistent storage configured"}
+
+        return await repository.cleanup_old_events(retention_days)
+
     async def flush(self) -> None:
-        """Flush buffered events (for external audit systems)."""
-        # In production, this would send to external audit system
-        self._events.clear()
+        """Flush all buffered events to persistent storage."""
+        await self._flush_pending()
+
+    async def close(self) -> None:
+        """Close the audit logger and repository."""
+        await self.flush()
+        if self._repository:
+            await self._repository.close()
+            self._repository = None
 
 
 # =============================================================================

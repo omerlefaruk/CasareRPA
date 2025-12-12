@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QLineEdit
+from PySide6.QtWidgets import QWidget, QLabel, QLineEdit
 
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem

@@ -7,7 +7,7 @@ Refactored to minimize token footprint and enforce Single Responsibility.
 
 import asyncio
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
@@ -21,7 +21,6 @@ from casare_rpa.domain.errors import (
     Err,
     WorkflowExecutionError,
     NodeExecutionError,
-    ErrorContext,
 )
 
 from casare_rpa.infrastructure.execution import ExecutionContext

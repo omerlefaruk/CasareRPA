@@ -14,7 +14,6 @@ Design:
 - Emits progress events through EventBus
 """
 
-import asyncio
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -29,7 +28,6 @@ from casare_rpa.domain.value_objects.types import EventType, NodeId
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.application.use_cases.node_executor import (
     NodeExecutor,
-    NodeExecutionResult,
 )
 from casare_rpa.application.use_cases.variable_resolver import VariableResolver
 from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP

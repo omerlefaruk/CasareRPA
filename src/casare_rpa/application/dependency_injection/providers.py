@@ -13,7 +13,7 @@ Usage:
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from loguru import logger
 

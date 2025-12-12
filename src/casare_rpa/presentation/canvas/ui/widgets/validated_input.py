@@ -15,7 +15,6 @@ from enum import Enum, auto
 from typing import Any, Callable, List, Optional
 
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,

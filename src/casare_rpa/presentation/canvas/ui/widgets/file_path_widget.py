@@ -5,7 +5,7 @@ Reusable widget for file and directory path selection with browse button.
 Provides Windows Explorer integration for easy file/folder selection.
 """
 
-from typing import Optional, List
+from typing import Optional
 from enum import Enum
 
 from PySide6.QtWidgets import (

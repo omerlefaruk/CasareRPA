@@ -23,7 +23,6 @@ from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
 from loguru import logger
 
 from casare_rpa.infrastructure.analytics.aggregation_strategies import (
-    StatisticalAggregationStrategy,
     TimeSeriesDataPoint,
 )
 

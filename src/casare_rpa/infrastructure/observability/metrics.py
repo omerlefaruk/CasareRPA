@@ -32,9 +32,6 @@ from casare_rpa.infrastructure.observability.telemetry import (
 )
 from casare_rpa.infrastructure.observability.system_metrics import (
     get_system_metrics_collector,
-    SystemMetricsCollector,
-    ProcessMetrics,
-    SystemMetrics,
 )
 from casare_rpa.infrastructure.events import (
     get_monitoring_event_bus,

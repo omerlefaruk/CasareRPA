@@ -7,6 +7,13 @@ Provides shared functionality for all Playwright-based nodes:
 - Retry logic with configurable attempts and intervals
 - Screenshot capture on failure
 - Consistent error handling and logging
+- Browser context pool integration for performance
+
+PERFORMANCE: Browser pool integration provides:
+- Pre-warmed browser contexts for faster launches
+- Context reuse to avoid setup overhead
+- Automatic cleanup and resource management
+- Pool sizing based on workload
 
 Usage:
     from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
@@ -24,7 +31,7 @@ import asyncio
 import os
 from abc import ABC
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Optional, TypeVar
+from typing import Any, Awaitable, Callable, Optional, TypeVar, TYPE_CHECKING
 
 from loguru import logger
 
@@ -33,17 +40,141 @@ from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils.selectors.selector_normalizer import normalize_selector
 from casare_rpa.config import DEFAULT_NODE_TIMEOUT
+
+if TYPE_CHECKING:
+    from casare_rpa.infrastructure.execution import ExecutionContext
+    from casare_rpa.utils.pooling.browser_pool import BrowserPoolManager
 
 
 T = TypeVar("T")
 
+# Resource key for storing BrowserPoolManager in ExecutionContext
+BROWSER_POOL_RESOURCE_KEY = "_browser_pool_manager"
+
 # Global healing chain instance (lazy initialized)
 _healing_chain = None
+
+
+# =============================================================================
+# Browser Pool Integration
+# =============================================================================
+
+
+async def get_browser_pool_from_context(
+    context: "ExecutionContext",
+    min_size: int = 1,
+    max_size: int = 5,
+) -> "BrowserPoolManager":
+    """
+    Get or create BrowserPoolManager from ExecutionContext resources.
+
+    The pool is stored in context.resources for reuse across all browser nodes
+    in the workflow execution. This ensures:
+    - Pre-warmed browser contexts for faster launches
+    - Context reuse to avoid setup overhead
+    - Automatic cleanup at workflow end
+
+    Args:
+        context: ExecutionContext for the workflow
+        min_size: Minimum number of browser contexts in pool
+        max_size: Maximum number of browser contexts in pool
+
+    Returns:
+        BrowserPoolManager instance (shared across all browser nodes)
+    """
+    from casare_rpa.utils.pooling.browser_pool import BrowserPoolManager
+
+    if BROWSER_POOL_RESOURCE_KEY not in context.resources:
+        pool = BrowserPoolManager(min_size=min_size, max_size=max_size)
+        await pool.initialize()
+        context.resources[BROWSER_POOL_RESOURCE_KEY] = pool
+        logger.debug(
+            f"Created BrowserPoolManager for workflow execution "
+            f"(min={min_size}, max={max_size})"
+        )
+
+    return context.resources[BROWSER_POOL_RESOURCE_KEY]
+
+
+async def acquire_browser_context_from_pool(
+    context: "ExecutionContext",
+    headless: bool = True,
+    user_agent: Optional[str] = None,
+    viewport: Optional[dict] = None,
+    **options: Any,
+) -> tuple[Any, str]:
+    """
+    Acquire a browser context from the pool.
+
+    The context is checked out from the pool and should be released
+    back when no longer needed via release_browser_context_to_pool().
+
+    Args:
+        context: ExecutionContext for the workflow
+        headless: Whether to run browser in headless mode
+        user_agent: Custom user agent string
+        viewport: Custom viewport size {"width": int, "height": int}
+        **options: Additional browser context options
+
+    Returns:
+        Tuple of (BrowserContext, context_id) for tracking
+    """
+    pool = await get_browser_pool_from_context(context)
+
+    browser_context, context_id = await pool.acquire(
+        headless=headless,
+        user_agent=user_agent,
+        viewport=viewport,
+        **options,
+    )
+
+    logger.debug(f"Acquired browser context from pool: {context_id}")
+    return browser_context, context_id
+
+
+async def release_browser_context_to_pool(
+    context: "ExecutionContext",
+    context_id: str,
+    clean: bool = True,
+) -> None:
+    """
+    Release a browser context back to the pool.
+
+    The context is returned to the pool for reuse. If clean=True,
+    the context is cleaned (cookies cleared, storage reset) before reuse.
+
+    Args:
+        context: ExecutionContext for the workflow
+        context_id: ID of the browser context to release
+        clean: Whether to clean the context before returning to pool
+    """
+    if BROWSER_POOL_RESOURCE_KEY not in context.resources:
+        logger.warning("Browser pool not found in context, cannot release")
+        return
+
+    pool = context.resources[BROWSER_POOL_RESOURCE_KEY]
+    await pool.release(context_id, clean=clean)
+    logger.debug(f"Released browser context to pool: {context_id}")
+
+
+async def close_browser_pool_from_context(context: "ExecutionContext") -> None:
+    """
+    Close BrowserPoolManager stored in ExecutionContext.
+
+    Called automatically during ExecutionContext.cleanup().
+
+    Args:
+        context: ExecutionContext for the workflow
+    """
+    if BROWSER_POOL_RESOURCE_KEY in context.resources:
+        pool = context.resources[BROWSER_POOL_RESOURCE_KEY]
+        if pool is not None:
+            await pool.shutdown()
+            logger.debug("Closed BrowserPoolManager for workflow execution")
+        del context.resources[BROWSER_POOL_RESOURCE_KEY]
 
 
 def get_healing_chain():
@@ -92,7 +223,7 @@ class PageNotAvailableError(PlaywrightError):
 
 async def get_page_from_context(
     node: "BrowserBaseNode",
-    context: ExecutionContext,
+    context: "ExecutionContext",
     port_name: str = "page",
 ) -> Any:
     """
@@ -236,7 +367,7 @@ class BrowserBaseNode(BaseNode, ABC):
     # Page Access
     # =========================================================================
 
-    def get_page(self, context: ExecutionContext) -> Any:
+    def get_page(self, context: "ExecutionContext") -> Any:
         """
         Get page from input port or context (sync wrapper for common pattern).
 
@@ -251,18 +382,33 @@ class BrowserBaseNode(BaseNode, ABC):
         Raises:
             PageNotAvailableError: If no page is available
         """
+        # Debug: Check input port first
         page = self.get_input_value("page")
+        logger.debug(
+            f"BrowserBaseNode.get_page ({self.__class__.__name__}): "
+            f"input_port_page={page is not None}"
+        )
+
         if page is None:
+            logger.debug(
+                f"BrowserBaseNode.get_page ({self.__class__.__name__}): "
+                f"falling back to context.get_active_page(), context_id={id(context)}"
+            )
             page = context.get_active_page()
 
         if page is None:
+            logger.error(
+                f"BrowserBaseNode.get_page ({self.__class__.__name__}): "
+                f"NO PAGE FOUND! context_id={id(context)}, "
+                f"context.pages={list(context.pages.keys()) if hasattr(context, 'pages') else 'N/A'}"
+            )
             raise PageNotAvailableError(
                 "No page instance found. Launch browser and navigate first."
             )
 
         return page
 
-    async def get_page_async(self, context: ExecutionContext) -> Any:
+    async def get_page_async(self, context: "ExecutionContext") -> Any:
         """
         Get page from input port or context (async version).
 
@@ -283,7 +429,7 @@ class BrowserBaseNode(BaseNode, ABC):
 
     def get_normalized_selector(
         self,
-        context: ExecutionContext,
+        context: "ExecutionContext",
         param_name: str = "selector",
     ) -> str:
         """
@@ -308,7 +454,7 @@ class BrowserBaseNode(BaseNode, ABC):
 
     def get_optional_normalized_selector(
         self,
-        context: ExecutionContext,
+        context: "ExecutionContext",
         param_name: str = "selector",
     ) -> Optional[str]:
         """
@@ -436,7 +582,7 @@ class BrowserBaseNode(BaseNode, ABC):
     async def find_element_smart(
         self,
         page: Any,
-        context: ExecutionContext,
+        context: "ExecutionContext",
         selector: str,
         timeout_ms: int = 5000,
         param_name: str = "selector",

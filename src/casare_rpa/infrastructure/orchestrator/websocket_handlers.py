@@ -14,7 +14,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.log_entry import LogLevel
 from casare_rpa.infrastructure.orchestrator.robot_manager import ConnectedRobot
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
-    get_config,
     get_log_streaming_service,
     get_robot_manager,
 )

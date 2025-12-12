@@ -10,7 +10,7 @@ to improve perceived startup performance.
 
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 
 from loguru import logger
 
@@ -18,11 +18,6 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QMenu
 
     from ..main_window import MainWindow
-    from ..ui.panels import BottomPanelDock, SidePanelDock
-    from ..ui.panels.process_mining_panel import ProcessMiningPanel
-    from ..ui.panels.robot_picker_panel import RobotPickerPanel
-    from ..ui.debug_panel import DebugPanel
-    from ..controllers.robot_controller import RobotController
 
 
 class UIComponentInitializer:

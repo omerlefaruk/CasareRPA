@@ -9,8 +9,7 @@ batch transmission for efficiency.
 import asyncio
 import json
 from collections import deque
-from datetime import datetime, timezone
-from typing import Any, Callable, Deque, Dict, List, Optional
+from typing import Any, Callable, Deque, Dict, Optional
 
 from loguru import logger
 

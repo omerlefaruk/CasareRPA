@@ -2,7 +2,8 @@
 Browser automation nodes package.
 
 This package provides browser automation nodes built on Playwright:
-- Browser lifecycle (launch, close, tabs)
+- Browser lifecycle (launch, close) - imported from browser_nodes
+- Tab management (new tab, switch tab)
 - Navigation (goto, back, forward, refresh)
 - Interaction (click, type, select)
 - Data extraction (text, attributes, screenshots)
@@ -39,6 +40,37 @@ from casare_rpa.nodes.browser.property_constants import (
     # Highlight
     BROWSER_HIGHLIGHT,
 )
+from casare_rpa.nodes.browser.smart_selector_node import (
+    SmartSelectorNode,
+    SmartSelectorOptionsNode,
+    RefineSelectorNode,
+)
+
+# New modules
+from casare_rpa.nodes.browser.lifecycle import (
+    LaunchBrowserNode,
+    CloseBrowserNode,
+)
+from casare_rpa.nodes.browser.tabs import (
+    NewTabNode,
+)
+from casare_rpa.nodes.browser.navigation import (
+    GoToURLNode,
+    GoBackNode,
+    GoForwardNode,
+    RefreshPageNode,
+)
+from casare_rpa.nodes.browser.interaction import (
+    ClickElementNode,
+    TypeTextNode,
+    SelectDropdownNode,
+    ImageClickNode,
+    PressKeyNode,
+)
+from casare_rpa.nodes.browser.extraction_nodes import (
+    GetAllImagesNode,
+    DownloadFileNode,
+)
 
 __all__ = [
     # Base class
@@ -58,4 +90,27 @@ __all__ = [
     "BROWSER_FORCE",
     "BROWSER_NO_WAIT_AFTER",
     "BROWSER_HIGHLIGHT",
+    # Smart selector nodes
+    "SmartSelectorNode",
+    "SmartSelectorOptionsNode",
+    "RefineSelectorNode",
+    # Lifecycle
+    "LaunchBrowserNode",
+    "CloseBrowserNode",
+    # Tabs
+    "NewTabNode",
+    # Navigation
+    "GoToURLNode",
+    "GoBackNode",
+    "GoForwardNode",
+    "RefreshPageNode",
+    # Interaction
+    "ClickElementNode",
+    "TypeTextNode",
+    "SelectDropdownNode",
+    "ImageClickNode",
+    "PressKeyNode",
+    # Extraction
+    "GetAllImagesNode",
+    "DownloadFileNode",
 ]

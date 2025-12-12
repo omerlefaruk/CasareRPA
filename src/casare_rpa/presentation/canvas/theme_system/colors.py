@@ -1,0 +1,223 @@
+"""
+Theme color definitions for CasareRPA Canvas.
+
+Contains the CanvasThemeColors dataclass with all color values,
+wire colors, status colors, and helper functions for color lookup.
+"""
+
+from dataclasses import dataclass
+from typing import Dict
+
+
+@dataclass
+class CanvasThemeColors:
+    """
+    Premium Dark theme colors.
+
+    A sophisticated dark palette using deep zinc grays and vibrant indigo accents
+    for a modern, professional, and accessible interface.
+    """
+
+    # Base backgrounds (Zinc palette)
+    bg_darkest: str = "#18181b"  # Zinc 900 (Main Layout BG)
+    bg_dark: str = "#27272a"  # Zinc 800 (Panels/Sidebar)
+    bg_medium: str = "#3f3f46"  # Zinc 700 (Inputs/Hovers)
+    bg_light: str = "#52525b"  # Zinc 600 (Borders/Separators)
+    bg_lighter: str = "#71717a"  # Zinc 500 (Disabled/Secondary)
+
+    bg_panel: str = "#27272a"  # Panels
+    bg_header: str = "#18181b"  # Headers (Darker for contrast)
+    bg_hover: str = "#3f3f46"  # Hover states
+    bg_selected: str = "#3730a3"  # Indigo 800 (Selection Background)
+
+    # Node graph specific
+    bg_canvas: str = "#18181b"  # Canvas background
+    bg_node: str = "#27272a"  # Node body
+    bg_node_selected: str = "#312e81"  # Indigo 900
+    bg_node_header: str = "#27272a"  # Node header (same as body for seamless look)
+
+    # Borders
+    border_dark: str = "#09090b"  # Zinc 950
+    border: str = "#3f3f46"  # Zinc 700
+    border_light: str = "#52525b"  # Zinc 600
+    border_focus: str = "#6366f1"  # Indigo 500 (Focus ring)
+
+    # Text
+    text_primary: str = "#f4f4f5"  # Zinc 100 (Primary Text)
+    text_secondary: str = "#a1a1aa"  # Zinc 400 (Secondary Text)
+    text_muted: str = "#71717a"  # Zinc 500 (Placeholder/Disabled)
+    text_disabled: str = "#52525b"  # Zinc 600
+    text_header: str = "#e4e4e7"  # Zinc 200
+
+    # Status colors (Refined, less saturated)
+    status_success: str = "#10b981"  # Emerald 500
+    status_warning: str = "#f59e0b"  # Amber 500
+    status_error: str = "#ef4444"  # Red 500
+    status_info: str = "#3b82f6"  # Blue 500
+    status_running: str = "#f59e0b"  # Amber 500 (Running)
+    status_idle: str = "#71717a"  # Zinc 500
+
+    # Node status (Pastel variants for better text contrast)
+    node_idle: str = "#a1a1aa"
+    node_running: str = "#fbbf24"
+    node_success: str = "#34d399"
+    node_error: str = "#f87171"
+    node_skipped: str = "#a78bfa"
+    node_breakpoint: str = "#f87171"
+
+    # Selection/Input
+    selection_bg: str = "#4338ca"  # Indigo 700
+    input_bg: str = "#18181b"  # Darker input background for depth
+
+    # Accent colors
+    accent_primary: str = "#6366f1"  # Indigo 500 (Primary Brand Color)
+    accent_secondary: str = "#818cf8"  # Indigo 400
+    accent_hover: str = "#4f46e5"  # Indigo 600
+    accent_success: str = "#10b981"
+    accent_warning: str = "#f59e0b"
+    accent_error: str = "#ef4444"
+
+    # Wire colors (Vibrant for visibility against dark bg)
+    wire_exec: str = "#ffffff"  # White
+    wire_data: str = "#6366f1"  # Indigo 500
+    wire_bool: str = "#ef4444"  # Red 500
+    wire_string: str = "#f97316"  # Orange 500
+    wire_number: str = "#10b981"  # Emerald 500
+    wire_list: str = "#a78bfa"  # Violet 400
+    wire_dict: str = "#2dd4bf"  # Teal 400
+    wire_table: str = "#3b82f6"  # Blue 500
+
+    # Toolbar
+    toolbar_bg: str = "#18181b"
+    toolbar_border: str = "#27272a"
+    toolbar_button_hover: str = "#27272a"
+    toolbar_button_pressed: str = "#3f3f46"
+
+    # Dock/panel
+    dock_title_bg: str = "#18181b"
+    dock_title_text: str = "#a1a1aa"
+    splitter_handle: str = "#18181b"  # Invisible splitter (matches bg)
+
+
+# Wire color mapping by data type
+WIRE_COLOR_MAP: Dict[str, str] = {
+    "exec": "#ffffff",
+    "any": "#6366f1",
+    "bool": "#ef4444",
+    "boolean": "#ef4444",
+    "string": "#f97316",
+    "str": "#f97316",
+    "number": "#10b981",
+    "int": "#10b981",
+    "float": "#10b981",
+    "list": "#a78bfa",
+    "array": "#a78bfa",
+    "dict": "#2dd4bf",
+    "object": "#2dd4bf",
+}
+
+# Node status color mapping
+NODE_STATUS_COLOR_MAP: Dict[str, str] = {
+    "idle": "#a1a1aa",
+    "running": "#fbbf24",
+    "success": "#34d399",
+    "error": "#f87171",
+    "skipped": "#a78bfa",
+    "breakpoint": "#f87171",
+}
+
+# General status color mapping
+STATUS_COLOR_MAP: Dict[str, str] = {
+    "success": "#10b981",
+    "completed": "#10b981",
+    "warning": "#f59e0b",
+    "running": "#f59e0b",
+    "error": "#ef4444",
+    "failed": "#ef4444",
+    "info": "#3b82f6",
+    "idle": "#71717a",
+}
+
+
+def get_node_status_color(status: str, theme: CanvasThemeColors = None) -> str:
+    """
+    Get the color for a node execution status.
+
+    Args:
+        status: Node status string (idle, running, success, error, skipped)
+        theme: Optional theme instance (uses defaults if None)
+
+    Returns:
+        Hex color string for the status.
+    """
+    if theme is None:
+        return NODE_STATUS_COLOR_MAP.get(status.lower(), NODE_STATUS_COLOR_MAP["idle"])
+
+    status_map = {
+        "idle": theme.node_idle,
+        "running": theme.node_running,
+        "success": theme.node_success,
+        "error": theme.node_error,
+        "skipped": theme.node_skipped,
+        "breakpoint": theme.node_breakpoint,
+    }
+    return status_map.get(status.lower(), theme.node_idle)
+
+
+def get_wire_color(data_type: str, theme: CanvasThemeColors = None) -> str:
+    """
+    Get the color for a connection wire based on data type.
+
+    Args:
+        data_type: The data type of the connection.
+        theme: Optional theme instance (uses defaults if None)
+
+    Returns:
+        Hex color string for the wire.
+    """
+    if theme is None:
+        return WIRE_COLOR_MAP.get(data_type.lower(), WIRE_COLOR_MAP["any"])
+
+    type_map = {
+        "exec": theme.wire_exec,
+        "any": theme.wire_data,
+        "bool": theme.wire_bool,
+        "boolean": theme.wire_bool,
+        "string": theme.wire_string,
+        "str": theme.wire_string,
+        "number": theme.wire_number,
+        "int": theme.wire_number,
+        "float": theme.wire_number,
+        "list": theme.wire_list,
+        "array": theme.wire_list,
+        "dict": theme.wire_dict,
+        "object": theme.wire_dict,
+    }
+    return type_map.get(data_type.lower(), theme.wire_data)
+
+
+def get_status_color(status: str, theme: CanvasThemeColors = None) -> str:
+    """
+    Get color for a general status string.
+
+    Args:
+        status: Status string.
+        theme: Optional theme instance (uses defaults if None)
+
+    Returns:
+        Hex color string.
+    """
+    if theme is None:
+        return STATUS_COLOR_MAP.get(status.lower(), "#a1a1aa")
+
+    status_map = {
+        "success": theme.status_success,
+        "completed": theme.status_success,
+        "warning": theme.status_warning,
+        "running": theme.status_running,
+        "error": theme.status_error,
+        "failed": theme.status_error,
+        "info": theme.status_info,
+        "idle": theme.status_idle,
+    }
+    return status_map.get(status.lower(), theme.text_secondary)

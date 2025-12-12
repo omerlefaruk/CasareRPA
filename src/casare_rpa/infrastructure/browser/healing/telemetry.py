@@ -31,7 +31,10 @@ class HealingTier(Enum):
     """Tier 2: Anchor-based spatial healing."""
 
     CV = "cv"
-    """Tier 3: Computer vision fallback."""
+    """Tier 3: Computer vision fallback (OCR + template matching)."""
+
+    VISION = "vision"
+    """Tier 4: Vision AI fallback (GPT-4V/Claude Vision)."""
 
     FAILED = "failed"
     """All healing attempts failed."""

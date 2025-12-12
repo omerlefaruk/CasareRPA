@@ -20,7 +20,7 @@ Security:
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from casare_rpa.domain.ai.config import AgentConfig
@@ -556,6 +556,113 @@ Port Naming Convention:
 
 
 # =============================================================================
+# CRITICAL: VARIABLE SYNTAX DOCUMENTATION
+# =============================================================================
+
+VARIABLE_SYNTAX_DOCUMENTATION: str = """## CRITICAL - Variable Syntax Rules
+
+### Basic Syntax
+Use double curly braces: `{{variable_name}}`
+
+### Property Access (Objects/Dicts)
+Use dot notation for named properties:
+- `{{user.name}}` - Access 'name' property of user object
+- `{{data.field.nested}}` - Nested object access
+- Property names MUST start with a letter (a-z, A-Z)
+
+### Array Index Access - IMPORTANT
+**MUST use bracket notation for numeric indices:**
+- `{{row[0]}}` - First element of row array ✅ CORRECT
+- `{{items[2]}}` - Third element ✅ CORRECT
+- `{{data[0].name}}` - First element's name property ✅ CORRECT
+
+**WRONG - This will NOT work:**
+- `{{row.0}}` - ❌ INCORRECT - dot notation requires letter after dot
+- `{{items.1}}` - ❌ INCORRECT - numbers not allowed after dot
+
+### Loop Variable Access Pattern
+When iterating with ForLoopStartNode:
+```
+ForLoopStartNode config:
+  item_var: "row"
+
+Access in subsequent nodes:
+  {{row[0]}} - first column
+  {{row[1]}} - second column
+  {{row[2]}} - third column
+```
+
+### System Variables
+Built-in variables starting with $:
+- `{{$currentDate}}` - Current date (YYYY-MM-DD)
+- `{{$currentTime}}` - Current time (HH:MM:SS)
+- `{{$currentDateTime}}` - ISO datetime
+- `{{$timestamp}}` - Unix timestamp
+
+### Node Output References - CRITICAL
+**After a node executes, its outputs are stored and can be referenced by other nodes!**
+
+Syntax: `{{node_id.output_port_name}}`
+
+The node_id is the unique ID you assign to each node in the workflow.
+The output_port_name is one of the node's output ports (shown in manifest as `->output1,output2`).
+
+**Examples:**
+```json
+// Node 1: Get environment variable (node_id: "get_user_profile")
+// EnvironmentVariableNode outputs: result_value, exists, success
+
+// Node 2: Use the result in another node
+{
+  "node_id": "list_desktop",
+  "node_type": "ListDirectoryNode",
+  "config": {
+    "dir_path": "{{get_user_profile.result_value}}\\Desktop"
+  }
+}
+```
+
+**Common Patterns:**
+- `{{read_file.content}}` - Content from ReadFileNode
+- `{{extract_text.text}}` - Extracted text from ExtractTextNode
+- `{{http_request.response}}` - Response from HTTP request
+- `{{get_env.result_value}}` - Environment variable value
+
+**IMPORTANT:** The node with the output MUST execute BEFORE the node that references it!
+This is controlled by execution flow connections (exec_out → exec_in).
+
+### Examples in FormFillerNode
+```json
+{
+  "field_mapping": {
+    "input[name='firstName']": "{{row[0]}}",
+    "input[name='lastName']": "{{row[1]}}",
+    "input[name='email']": "{{row[2]}}"
+  }
+}
+```
+
+### Common Mistakes to Avoid
+1. Using `{{row.0}}` instead of `{{row[0]}}` for array access
+2. Missing closing braces: `{{variable}`
+3. Using single braces: `{variable}`
+4. Spaces inside variable names: `{{my variable}}` (use underscores)
+5. Wrong output port name: `{{node.value}}` instead of `{{node.result_value}}` - check manifest!
+6. Referencing node output before node executes - check execution flow connections
+7. **CRITICAL**: Using `${variable}` or `$variable` - THIS IS WRONG! Always use `{{variable}}`
+8. Using `result` instead of `result_value` for EnvironmentVariableNode output
+
+### WRONG vs CORRECT Syntax Examples
+| WRONG ❌ | CORRECT ✅ | Why |
+|----------|------------|-----|
+| `${node.output}` | `{{node.output}}` | Wrong delimiters - NEVER use ${}! |
+| `$variable` | `{{variable}}` | Wrong syntax - NEVER use $! |
+| `{variable}` | `{{variable}}` | Single braces don't work |
+| `{{node.result}}` | `{{node.result_value}}` | Wrong port name for EnvironmentVariableNode |
+"""
+
+
+# =============================================================================
 # CRITICAL: CONTROL FLOW NODE PORT DEFINITIONS
 # =============================================================================
 
@@ -762,6 +869,9 @@ class PromptBuilder:
         # Add node context
         sections.append(NODE_CONTEXT_PROMPT.format(node_manifest=node_manifest))
 
+        # CRITICAL: Add variable syntax documentation (always included)
+        sections.append(VARIABLE_SYNTAX_DOCUMENTATION)
+
         # CRITICAL: Add control flow port documentation (always included)
         sections.append(CONTROL_FLOW_PORT_DOCUMENTATION)
 
@@ -939,6 +1049,9 @@ def get_workflow_generation_prompt(
         ATOMIC_WORKFLOW_PROMPT,
         "",
         NODE_CONTEXT_PROMPT.format(node_manifest=node_manifest),
+        "",
+        # CRITICAL: Always include variable syntax documentation
+        VARIABLE_SYNTAX_DOCUMENTATION,
         "",
         # CRITICAL: Always include control flow port documentation
         CONTROL_FLOW_PORT_DOCUMENTATION,
@@ -1118,6 +1231,8 @@ __all__ = [
     "ATOMIC_WORKFLOW_PROMPT",
     "NODE_CONTEXT_PROMPT",
     "JSON_SCHEMA_TEMPLATE",
+    # Variable syntax documentation (CRITICAL for correct array access)
+    "VARIABLE_SYNTAX_DOCUMENTATION",
     # Control flow port documentation (CRITICAL for correct connections)
     "CONTROL_FLOW_PORT_DOCUMENTATION",
     # Protocol prompts

@@ -80,6 +80,9 @@ from casare_rpa.presentation.canvas.controllers.project_controller import (
     ProjectController,
 )
 from casare_rpa.presentation.canvas.controllers.robot_controller import RobotController
+from casare_rpa.presentation.canvas.controllers.recording_controller import (
+    RecordingController,
+)
 
 __all__ = [
     # Base
@@ -100,6 +103,7 @@ __all__ = [
     "ProjectAutosaveController",
     "ProjectController",
     "RobotController",
+    "RecordingController",
     # Event utilities
     "EventTypes",
     "Event",

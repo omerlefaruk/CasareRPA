@@ -29,6 +29,9 @@ from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     DialogSize,
     apply_dialog_style,
 )
+from casare_rpa.presentation.canvas.ui.widgets.ai_settings_widget import (
+    AISettingsWidget,
+)
 
 
 class PreferencesDialog(QDialog):
@@ -96,6 +99,10 @@ class PreferencesDialog(QDialog):
         # Performance settings tab
         performance_tab = self._create_performance_tab()
         self._tabs.addTab(performance_tab, "Performance")
+
+        # AI settings tab
+        ai_tab = self._create_ai_tab()
+        self._tabs.addTab(ai_tab, "AI")
 
         layout.addWidget(self._tabs)
 
@@ -340,6 +347,28 @@ class PreferencesDialog(QDialog):
 
         return widget
 
+    def _create_ai_tab(self) -> QWidget:
+        """
+        Create AI settings tab.
+
+        Returns:
+            AI tab widget
+        """
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+
+        # AI Settings Widget
+        self._ai_settings = AISettingsWidget(
+            title="AI Configuration",
+            show_credential=True,
+            show_provider=True,
+            show_model=True,
+        )
+        layout.addWidget(self._ai_settings)
+        layout.addStretch()
+
+        return widget
+
     def _load_preferences(self) -> None:
         """Load current preferences into widgets."""
         # General
@@ -414,6 +443,10 @@ class PreferencesDialog(QDialog):
         if "cache_size" in self.preferences:
             self._cache_size.setValue(int(self.preferences["cache_size"]))
 
+        # AI
+        if "ai_settings" in self.preferences:
+            self._ai_settings.set_settings(self.preferences["ai_settings"])
+
     def _gather_preferences(self) -> Dict[str, Any]:
         """
         Gather preferences from widgets.
@@ -450,6 +483,9 @@ class PreferencesDialog(QDialog):
         preferences["fps_limit"] = self._fps_limit.value()
         preferences["max_undo_steps"] = self._max_undo_steps.value()
         preferences["cache_size"] = self._cache_size.value()
+
+        # AI
+        preferences["ai_settings"] = self._ai_settings.get_settings()
 
         return preferences
 

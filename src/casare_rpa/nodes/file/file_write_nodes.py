@@ -6,26 +6,14 @@ This module provides nodes for writing file content:
 - AppendFileNode: Append content to existing files
 
 SECURITY: All file operations are subject to path sandboxing.
-NOTE: File I/O is wrapped in asyncio.to_thread() to avoid blocking the event loop.
+NOTE: File I/O uses AsyncFileOperations for non-blocking operations.
 """
 
-import asyncio
-from pathlib import Path
-from typing import Union
+import os
 
 from loguru import logger
 
-
-def _write_file_sync(
-    path: Path, content: Union[bytes, str], mode: str, encoding: str, errors: str
-) -> int:
-    """Synchronous file write - called via asyncio.to_thread()."""
-    if "b" in mode:  # Binary mode
-        with open(path, mode) as f:
-            return f.write(content)
-    else:
-        with open(path, mode, encoding=encoding, errors=errors) as f:
-            return f.write(str(content) if content else "")
+from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -169,8 +157,9 @@ class WriteFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path and content
+            # Resolve {{variable}} patterns and environment variables in file_path and content
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
             content = context.resolve_value(content)
 
             # SECURITY: Validate path before any operation
@@ -187,14 +176,34 @@ class WriteFileNode(BaseNode):
 
             logger.info(f"Writing file: {path} (mode={mode}, encoding={encoding})")
 
-            # Prepare content for writing
-            if binary_mode and isinstance(content, str):
-                content = content.encode(encoding)
-
-            # Run blocking file I/O in thread pool to avoid blocking event loop
-            bytes_written = await asyncio.to_thread(
-                _write_file_sync, path, content, mode, encoding, errors
-            )
+            # Use async file operations for non-blocking I/O
+            if binary_mode:
+                # Prepare content for binary writing
+                if isinstance(content, str):
+                    content = content.encode(encoding)
+                if append_mode:
+                    # For binary append, read existing content first
+                    existing = b""
+                    if path.exists():
+                        existing = await AsyncFileOperations.read_binary(path)
+                    bytes_written = await AsyncFileOperations.write_binary(
+                        path, existing + content, create_dirs=create_dirs
+                    )
+                else:
+                    bytes_written = await AsyncFileOperations.write_binary(
+                        path, content, create_dirs=create_dirs
+                    )
+            else:
+                # Text mode
+                text_content = str(content) if content else ""
+                if append_mode:
+                    bytes_written = await AsyncFileOperations.append_text(
+                        path, text_content, encoding, errors, create_dirs=create_dirs
+                    )
+                else:
+                    bytes_written = await AsyncFileOperations.write_text(
+                        path, text_content, encoding, errors, create_dirs=create_dirs
+                    )
 
             self.set_output_value("file_path", str(path))
             self.set_output_value("attachment_file", [str(path)])
@@ -313,8 +322,9 @@ class AppendFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path and content
+            # Resolve {{variable}} patterns and environment variables in file_path and content
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
             content = context.resolve_value(content)
 
             # SECURITY: Validate path before any operation
@@ -326,9 +336,10 @@ class AppendFileNode(BaseNode):
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Run blocking file I/O in thread pool to avoid blocking event loop
-            bytes_written = await asyncio.to_thread(
-                _write_file_sync, path, content, "a", encoding, "replace"
+            # Use async file operations for non-blocking I/O
+            text_content = str(content) if content else ""
+            bytes_written = await AsyncFileOperations.append_text(
+                path, text_content, encoding, "replace", create_dirs=True
             )
 
             self.set_output_value("file_path", str(path))

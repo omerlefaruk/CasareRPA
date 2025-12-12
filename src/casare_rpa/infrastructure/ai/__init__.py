@@ -64,6 +64,55 @@ from casare_rpa.infrastructure.ai.smart_agent import (
     MaxRetriesExceededError,
 )
 
+from casare_rpa.infrastructure.ai.ai_recovery_analyzer import (
+    AIRecoveryAnalyzer,
+    RecoveryRecommendation,
+    RecoveryStrategy,
+    ErrorContext,
+)
+
+from casare_rpa.infrastructure.ai.smart_selector_generator import (
+    SmartSelectorGenerator,
+    GeneratedSelector,
+)
+
+from casare_rpa.infrastructure.ai.agent_tools import (
+    ParameterSpec,
+    AgentTool,
+    AgentToolRegistry,
+    get_default_tool_registry,
+)
+
+from casare_rpa.infrastructure.ai.agent_executor import (
+    StepType,
+    AgentExecutor,
+    AgentStep,
+    AgentResult,
+)
+
+from casare_rpa.infrastructure.ai.embedding_manager import (
+    EmbeddingManager,
+    EmbeddingConfig,
+    EmbeddingResult,
+    BatchEmbeddingResult,
+    EmbeddingMetrics,
+    get_embedding_manager,
+)
+
+from casare_rpa.infrastructure.ai.vector_store import (
+    VectorStore,
+    Document,
+    SearchResult,
+    VectorStoreMetrics,
+    get_vector_store,
+    get_default_persist_path,
+)
+
+from casare_rpa.infrastructure.ai.prompt_template_manager import (
+    PromptTemplateManager,
+    get_prompt_template_manager,
+)
+
 __all__ = [
     # Registry dumper
     "dump_node_manifest",
@@ -88,4 +137,39 @@ __all__ = [
     "JSONParseError",
     "ValidationError",
     "MaxRetriesExceededError",
+    # AI Recovery
+    "AIRecoveryAnalyzer",
+    "RecoveryRecommendation",
+    "RecoveryStrategy",
+    "ErrorContext",
+    # Smart Selector
+    "SmartSelectorGenerator",
+    "GeneratedSelector",
+    # Agent Tools
+    "ParameterSpec",
+    "AgentTool",
+    "AgentToolRegistry",
+    "get_default_tool_registry",
+    # Agent Executor
+    "StepType",
+    "AgentExecutor",
+    "AgentStep",
+    "AgentResult",
+    # Embedding Manager
+    "EmbeddingManager",
+    "EmbeddingConfig",
+    "EmbeddingResult",
+    "BatchEmbeddingResult",
+    "EmbeddingMetrics",
+    "get_embedding_manager",
+    # Vector Store
+    "VectorStore",
+    "Document",
+    "SearchResult",
+    "VectorStoreMetrics",
+    "get_vector_store",
+    "get_default_persist_path",
+    # Prompt Template Manager
+    "PromptTemplateManager",
+    "get_prompt_template_manager",
 ]

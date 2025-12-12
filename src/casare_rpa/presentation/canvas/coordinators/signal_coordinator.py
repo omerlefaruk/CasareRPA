@@ -10,7 +10,7 @@ Usage:
     # Actions are connected via ActionManager, handlers route here
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 import asyncio
 
 from PySide6.QtCore import QTimer
@@ -864,6 +864,18 @@ class SignalCoordinator:
 
             # Find the NodeGraphQt identifier
             identifier = node_type_map.get(node_type)
+
+            # Case-insensitive fallback if exact match not found
+            if not identifier:
+                node_type_lower = node_type.lower()
+                for key, value in node_type_map.items():
+                    if key.lower() == node_type_lower:
+                        identifier = value
+                        logger.info(
+                            f"  Found case-insensitive match: {node_type} -> {key}"
+                        )
+                        break
+
             logger.info(f"  Identifier for {node_type}: {identifier}")
             if not identifier:
                 logger.warning(f"Unknown node type: {node_type} (not in map)")
@@ -1005,6 +1017,17 @@ class SignalCoordinator:
                 "ForEach": "ForLoopStartNode",
                 "LaunchBrowser": "LaunchBrowserNode",
                 "CloseBrowser": "CloseBrowserNode",
+                # Directory operations
+                "ListDirectory": "ListDirectoryNode",
+                "ListDir": "ListDirectoryNode",
+                "ListFolder": "ListDirectoryNode",
+                "ListFolders": "ListDirectoryNode",
+                "CreateDirectory": "CreateDirectoryNode",
+                "CreateDir": "CreateDirectoryNode",
+                "MakeDirectory": "CreateDirectoryNode",
+                "MakeDir": "CreateDirectoryNode",
+                "Mkdir": "CreateDirectoryNode",
+                "NewFolder": "CreateDirectoryNode",
             }
             for alias, target in aliases.items():
                 if target in type_map and alias not in type_map:
@@ -1118,21 +1141,40 @@ class SignalCoordinator:
 
     def _select_node_by_id(self, node_id: str) -> None:
         """Select node by ID and center view."""
+        logger.info(f"_select_node_by_id called with node_id: {node_id}")
+
         if not self._mw._central_widget or not hasattr(
             self._mw._central_widget, "graph"
         ):
+            logger.warning("No central widget or graph found")
             return
 
         try:
             graph = self._mw._central_widget.graph
             graph.clear_selection()
-            for node in graph.all_nodes():
-                if node.id() == node_id or getattr(node, "node_id", None) == node_id:
+            all_nodes = graph.all_nodes()
+            logger.info(f"Searching {len(all_nodes)} nodes for {node_id}")
+
+            for node in all_nodes:
+                # Check multiple ways node_id might be stored
+                visual_node_id = None
+                if hasattr(node, "get_property"):
+                    visual_node_id = node.get_property("node_id")
+                if not visual_node_id:
+                    visual_node_id = getattr(node, "node_id", None)
+
+                # node.id is a property, not a method
+                graph_node_id = node.id if hasattr(node, "id") else None
+
+                if graph_node_id == node_id or visual_node_id == node_id:
+                    logger.info(f"Found node! Selecting: {graph_node_id}")
                     node.set_selected(True)
                     graph.fit_to_selection()
-                    break
+                    return
+
+            logger.warning(f"No node found matching: {node_id}")
         except Exception as e:
-            logger.debug(f"Could not select node {node_id}: {e}")
+            logger.exception(f"Could not select node {node_id}: {e}")
 
     def on_property_panel_changed(self, node_id: str, prop_name: str, value) -> None:
         """Handle property panel value change."""
@@ -1158,3 +1200,70 @@ class SignalCoordinator:
         """Handle variables changed in panel."""
         self._mw.set_modified(True)
         logger.debug(f"Variables updated: {len(variables)} variables")
+
+    # ==================== Layout and Alignment Actions ====================
+
+    def on_auto_layout(self) -> None:
+        """Automatically arrange all nodes using layered layout algorithm."""
+        graph = self._mw.get_graph()
+        if not graph:
+            self._mw.show_status("No graph available", 2000)
+            return
+
+        try:
+            from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
+                get_auto_layout_manager,
+            )
+
+            layout_manager = get_auto_layout_manager()
+            layout_manager.set_graph(graph)
+            layout_manager.layout_workflow(direction="LR")
+            self._mw.set_modified(True)
+            self._mw.show_status("Auto-layout applied", 2000)
+            logger.debug("Auto-layout applied to workflow")
+        except Exception as e:
+            logger.error(f"Auto-layout failed: {e}")
+            self._mw.show_status(f"Auto-layout failed: {e}", 3000)
+
+    def on_layout_selection(self) -> None:
+        """Automatically arrange selected nodes."""
+        graph = self._mw.get_graph()
+        if not graph:
+            self._mw.show_status("No graph available", 2000)
+            return
+
+        selected = graph.selected_nodes()
+        if len(selected) < 2:
+            self._mw.show_status("Select at least 2 nodes for layout", 2000)
+            return
+
+        try:
+            from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
+                get_auto_layout_manager,
+            )
+
+            layout_manager = get_auto_layout_manager()
+            layout_manager.set_graph(graph)
+            layout_manager.layout_selection(selected, direction="LR")
+            self._mw.set_modified(True)
+            self._mw.show_status(f"Layout applied to {len(selected)} nodes", 2000)
+            logger.debug(f"Layout applied to {len(selected)} selected nodes")
+        except Exception as e:
+            logger.error(f"Layout selection failed: {e}")
+            self._mw.show_status(f"Layout selection failed: {e}", 3000)
+
+    def on_toggle_grid_snap(self, checked: bool) -> None:
+        """Toggle snap-to-grid mode."""
+        try:
+            from casare_rpa.presentation.canvas.graph.grid_snap_manager import (
+                get_grid_snap_manager,
+            )
+
+            snap_manager = get_grid_snap_manager()
+            snap_manager.set_enabled(checked)
+
+            status = "enabled" if checked else "disabled"
+            self._mw.show_status(f"Snap to grid {status}", 2000)
+            logger.debug(f"Grid snap: {status}")
+        except Exception as e:
+            logger.error(f"Failed to toggle grid snap: {e}")

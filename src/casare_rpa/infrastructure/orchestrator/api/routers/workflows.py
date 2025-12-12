@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel, Field, UUID4, field_validator
+from pydantic import BaseModel, Field, field_validator
 from loguru import logger
 import orjson
 

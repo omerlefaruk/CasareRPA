@@ -8,7 +8,7 @@ These are secondary options, hidden by default for progressive disclosure.
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QPixmap, QImage
+from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QSlider,
     QPushButton,
     QTabWidget,
-    QGroupBox,
     QFileDialog,
 )
 

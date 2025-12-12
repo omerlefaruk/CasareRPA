@@ -10,7 +10,7 @@ Hierarchical tree view displaying DOM/UI element structure with:
 
 from typing import Callable, Dict, List, Optional, Any
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QLabel,
 )
-from PySide6.QtGui import QColor, QBrush, QFont
+from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
 

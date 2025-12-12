@@ -1,0 +1,3 @@
+# Visual regression baseline images directory
+# Baseline images are stored here for comparison during tests
+# Do not delete this file - it ensures the directory is tracked by git

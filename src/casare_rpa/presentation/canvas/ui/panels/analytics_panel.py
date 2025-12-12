@@ -21,10 +21,8 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QTabWidget,
     QTextEdit,
-    QProgressBar,
     QGroupBox,
     QSpinBox,
-    QSplitter,
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
 from PySide6.QtGui import QColor, QBrush, QFont

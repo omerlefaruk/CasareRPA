@@ -1,33 +1,33 @@
 """
-CasareRPA Infrastructure - Robot Authentication.
+CasareRPA Infrastructure - Authentication.
 
-Provides secure API key management for robot-to-orchestrator authentication.
-API keys are SHA-256 hashed before storage - raw keys are never persisted.
+Comprehensive authentication and session management:
+- Robot API keys for robot-to-orchestrator auth
+- User authentication with password hashing
+- JWT token management
+- TOTP-based MFA
+- Session management with timeouts
 
 Usage:
     from casare_rpa.infrastructure.auth import (
+        # Robot API Keys
         RobotApiKeyService,
         RobotApiKey,
-        RobotApiKeyError,
+        # User Authentication
+        UserManager,
+        AuthenticationResult,
+        # JWT Tokens
+        TokenManager,
+        TokenPayload,
+        # MFA
+        TOTPManager,
+        # Sessions
+        SessionManager,
+        SessionConfig,
     )
-
-    # Generate a new key
-    service = RobotApiKeyService(supabase_client)
-    raw_key, key_record = await service.generate_api_key(
-        robot_id="robot-uuid",
-        name="Production Key",
-        created_by="admin-user"
-    )
-
-    # Display raw_key to user ONCE - it cannot be recovered
-
-    # Validate on robot connection
-    key_record = await service.validate_api_key(raw_key)
-    if key_record:
-        robot_id = key_record.robot_id
-        # Proceed with authentication
 """
 
+# Robot API Keys
 from casare_rpa.infrastructure.auth.robot_api_keys import (
     ApiKeyValidationResult,
     RobotApiKey,
@@ -37,11 +37,96 @@ from casare_rpa.infrastructure.auth.robot_api_keys import (
     hash_api_key,
 )
 
+# TOTP Manager
+from casare_rpa.infrastructure.auth.totp_manager import (
+    TOTPManager,
+    TOTPError,
+    InvalidSecretError,
+    InvalidCodeError,
+)
+
+# Token Manager
+from casare_rpa.infrastructure.auth.token_manager import (
+    TokenManager,
+    TokenConfig,
+    TokenPayload,
+    TokenType,
+    TokenError,
+    TokenExpiredError,
+    TokenInvalidError,
+    TokenRevokedError,
+    generate_secret_key,
+)
+
+# User Manager
+from casare_rpa.infrastructure.auth.user_manager import (
+    UserManager,
+    UserManagerError,
+    UserNotFoundError,
+    UserExistsError,
+    InvalidPasswordError,
+    InvalidEmailError,
+    AccountLockedError,
+    AuthenticationResult,
+    AuthResult,
+    PasswordPolicy,
+)
+
+# Session Manager
+from casare_rpa.infrastructure.auth.session_manager import (
+    SessionManager,
+    SessionConfig,
+    Session,
+    SessionStatus,
+    ClientInfo,
+    SessionError,
+    SessionNotFoundError,
+    SessionExpiredError,
+    SessionLimitExceededError,
+)
+
 __all__ = [
+    # Robot API Keys
     "RobotApiKey",
     "RobotApiKeyService",
     "RobotApiKeyError",
     "ApiKeyValidationResult",
     "generate_api_key_raw",
     "hash_api_key",
+    # TOTP Manager
+    "TOTPManager",
+    "TOTPError",
+    "InvalidSecretError",
+    "InvalidCodeError",
+    # Token Manager
+    "TokenManager",
+    "TokenConfig",
+    "TokenPayload",
+    "TokenType",
+    "TokenError",
+    "TokenExpiredError",
+    "TokenInvalidError",
+    "TokenRevokedError",
+    "generate_secret_key",
+    # User Manager
+    "UserManager",
+    "UserManagerError",
+    "UserNotFoundError",
+    "UserExistsError",
+    "InvalidPasswordError",
+    "InvalidEmailError",
+    "AccountLockedError",
+    "AuthenticationResult",
+    "AuthResult",
+    "PasswordPolicy",
+    # Session Manager
+    "SessionManager",
+    "SessionConfig",
+    "Session",
+    "SessionStatus",
+    "ClientInfo",
+    "SessionError",
+    "SessionNotFoundError",
+    "SessionExpiredError",
+    "SessionLimitExceededError",
 ]

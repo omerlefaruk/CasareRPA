@@ -10,8 +10,6 @@ import sys
 from pathlib import Path
 from typing import Final
 
-from loguru import logger
-
 
 # Detect if running as frozen executable (PyInstaller)
 IS_FROZEN: Final[bool] = getattr(sys, "frozen", False)

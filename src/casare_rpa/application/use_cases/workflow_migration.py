@@ -113,10 +113,8 @@ class MigrationResult:
 
 
 from casare_rpa.application.use_cases.migration_rules_registry import (
-    NodeMigrationRule,
     MigrationRuleRegistry,
     get_rule_registry,
-    register_migration_rule,
 )
 
 

@@ -5,6 +5,7 @@ Contains tab widgets for the Fleet Dashboard dialog:
 - RobotsTabWidget: Robot management with real-time status updates
 - JobsTabWidget: Job monitoring with progress bars
 - SchedulesTabWidget: Schedule management
+- QueuesTabWidget: Transaction queue management
 - AnalyticsTabWidget: Fleet statistics and charts
 - ApiKeysTabWidget: API key management
 """
@@ -22,6 +23,9 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.robots_tab import (
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.jobs_tab import JobsTabWidget
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.schedules_tab import (
     SchedulesTabWidget,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.queues_tab import (
+    QueuesTabWidget,
 )
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.analytics_tab import (
     AnalyticsTabWidget,
@@ -42,6 +46,7 @@ __all__ = [
     "RobotsTabWidget",
     "JobsTabWidget",
     "SchedulesTabWidget",
+    "QueuesTabWidget",
     "AnalyticsTabWidget",
     "ApiKeysTabWidget",
 ]

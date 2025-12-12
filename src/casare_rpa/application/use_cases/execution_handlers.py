@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from casare_rpa.domain.value_objects.types import NodeId
-from casare_rpa.domain.value_objects.types import EventType
 
 
 class ExecutionResultHandler:

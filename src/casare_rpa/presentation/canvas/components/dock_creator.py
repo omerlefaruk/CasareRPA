@@ -8,13 +8,12 @@ from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QDockWidget
 
 from loguru import logger
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ..ui.panels import BottomPanelDock, SidePanelDock
+    from ..ui.panels import BottomPanelDock, SidePanelDock, BreakpointsPanel
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.panels.analytics_panel import AnalyticsPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
@@ -523,3 +522,94 @@ class DockCreator:
         ai_assistant.hide()
 
         return ai_assistant
+
+    def create_breakpoints_panel(
+        self, debug_controller: Optional["DebugController"] = None
+    ) -> "BreakpointsPanel":
+        """
+        Create the Breakpoints Panel for managing workflow breakpoints.
+
+        Features:
+        - List view of all breakpoints with type, node, condition, hit count
+        - Enable/disable individual breakpoints or all at once
+        - Context menu for edit, delete, go to node actions
+        - Double-click to edit condition
+        - Click to navigate to node on canvas
+
+        Args:
+            debug_controller: Optional debug controller for integration
+
+        Returns:
+            Created BreakpointsPanel instance
+        """
+        from ..ui.panels import BreakpointsPanel
+
+        mw = self._main_window
+        breakpoints_panel = BreakpointsPanel(mw, debug_controller)
+
+        # Connect signals
+        breakpoints_panel.navigate_to_node.connect(mw._on_navigate_to_node)
+        breakpoints_panel.edit_breakpoint.connect(
+            lambda node_id: self._on_edit_breakpoint(breakpoints_panel, node_id)
+        )
+
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, breakpoints_panel)
+
+        # Connect dock state changes to auto-save
+        if hasattr(mw, "_schedule_ui_state_save"):
+            breakpoints_panel.dockLocationChanged.connect(mw._schedule_ui_state_save)
+            breakpoints_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
+            breakpoints_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu with shortcut (Ctrl+B)
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = breakpoints_panel.toggleViewAction()
+                toggle_action.setText("&Breakpoints Panel")
+                toggle_action.setShortcut(QKeySequence("Ctrl+B"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_breakpoints_panel = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add Breakpoints Panel to View menu: {e}")
+
+        # Initially hidden
+        breakpoints_panel.hide()
+
+        return breakpoints_panel
+
+    def _on_edit_breakpoint(self, panel: "BreakpointsPanel", node_id: str) -> None:
+        """
+        Handle edit breakpoint request from panel.
+
+        Args:
+            panel: The breakpoints panel
+            node_id: ID of the node to edit breakpoint for
+        """
+        from ..ui.dialogs import show_breakpoint_edit_dialog
+
+        mw = self._main_window
+        debug_controller = getattr(mw, "_debug_controller", None)
+        if not debug_controller:
+            return
+
+        breakpoint = debug_controller.get_breakpoint(node_id)
+        result = show_breakpoint_edit_dialog(
+            parent=mw,
+            node_id=node_id,
+            breakpoint=breakpoint,
+            debug_controller=debug_controller,
+        )
+
+        if result:
+            # Remove old breakpoint and add new one with updated settings
+            debug_controller.remove_breakpoint(node_id)
+            debug_controller.add_breakpoint(
+                node_id=result["node_id"],
+                breakpoint_type=result["breakpoint_type"],
+                condition=result.get("condition"),
+                hit_count_target=result.get("hit_count_target", 1),
+                log_message=result.get("log_message"),
+            )
+            panel.refresh_breakpoints()

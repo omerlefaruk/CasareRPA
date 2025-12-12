@@ -11,9 +11,8 @@ All nodes use Google Drive API v3 and require OAuth2 authentication.
 Credential selection is handled by NodeGoogleCredentialWidget in the visual layer.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-import aiohttp
 from loguru import logger
 
 from casare_rpa.domain.decorators import executable_node, node_schema
@@ -21,7 +20,6 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient

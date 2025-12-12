@@ -29,7 +29,9 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
 )
 from PySide6.QtCore import Qt, Signal, QRect, QModelIndex
-from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont
+from PySide6.QtGui import QPainter, QColor, QBrush, QPen
+
+from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
@@ -167,17 +169,23 @@ class ProfilingTreeWidget(QWidget):
     UiPath-style profiling tree widget.
 
     Displays hierarchical execution profiling with colored percentage bars.
+    Features a collapsible root node showing total execution time.
 
     Signals:
+        node_clicked: Emitted when a node is clicked (str: node_id) - selects node
         node_double_clicked: Emitted when a node is double-clicked (str: node_id)
     """
 
+    node_clicked = Signal(str)
     node_double_clicked = Signal(str)
 
     # Column indices
     COL_ACTIVITY = 0
     COL_DURATION = 1
     COL_PERCENTAGE = 2
+
+    # Root node identifier
+    ROOT_NODE_ID = "__root__"
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -186,6 +194,8 @@ class ProfilingTreeWidget(QWidget):
         self._root_entries: List[str] = []
         self._total_duration_ms: float = 0.0
         self._tree_items: Dict[str, QTreeWidgetItem] = {}
+        self._root_item: Optional[QTreeWidgetItem] = None
+        self._workflow_name: str = "Workflow Execution"
 
         self._setup_ui()
         self._apply_styles()
@@ -232,6 +242,7 @@ class ProfilingTreeWidget(QWidget):
         self._tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._tree.setAnimated(True)
         self._tree.setIndentation(20)
+        self._tree.itemClicked.connect(self._on_item_clicked)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
 
         # Set column widths
@@ -317,7 +328,64 @@ class ProfilingTreeWidget(QWidget):
         self._root_entries.clear()
         self._tree_items.clear()
         self._total_duration_ms = 0.0
+        self._root_item = None
         self._tree.clear()
+
+    def set_workflow_name(self, name: str) -> None:
+        """Set the workflow name displayed in the root node."""
+        self._workflow_name = name or "Workflow Execution"
+        if self._root_item:
+            self._root_item.setText(self.COL_ACTIVITY, f"🔷 {self._workflow_name}")
+
+    def _ensure_root_item(self) -> QTreeWidgetItem:
+        """Ensure the root item exists and return it."""
+        if self._root_item is None:
+            self._root_item = QTreeWidgetItem(self._tree)
+            self._root_item.setText(self.COL_ACTIVITY, f"🔷 {self._workflow_name}")
+            self._root_item.setText(self.COL_DURATION, "...")
+            self._root_item.setData(
+                self.COL_PERCENTAGE, Qt.ItemDataRole.UserRole, 100.0
+            )
+            self._root_item.setData(
+                self.COL_ACTIVITY, Qt.ItemDataRole.UserRole, self.ROOT_NODE_ID
+            )
+
+            # Style the root item with bold font
+            font = self._root_item.font(self.COL_ACTIVITY)
+            font.setBold(True)
+            font.setPointSize(font.pointSize() + 1)
+            self._root_item.setFont(self.COL_ACTIVITY, font)
+            self._root_item.setFont(self.COL_DURATION, font)
+
+            # Expand by default
+            self._root_item.setExpanded(True)
+
+        return self._root_item
+
+    def _update_root_item(self) -> None:
+        """Update the root item with total duration."""
+        if self._root_item is None:
+            return
+
+        # Format total duration
+        total_ms = int(self._total_duration_ms)
+        if total_ms <= 0:
+            duration_text = "..."
+        elif total_ms < 1000:
+            duration_text = f"{total_ms}ms"
+        elif total_ms < 60000:
+            seconds = total_ms // 1000
+            ms = total_ms % 1000
+            duration_text = f"{seconds}s {ms}ms"
+        else:
+            minutes = total_ms // 60000
+            remaining_ms = total_ms % 60000
+            seconds = remaining_ms // 1000
+            ms = remaining_ms % 1000
+            duration_text = f"{minutes}m {seconds}s {ms}ms"
+
+        self._root_item.setText(self.COL_DURATION, duration_text)
+        self._root_item.setData(self.COL_PERCENTAGE, Qt.ItemDataRole.UserRole, 100.0)
 
     def add_entry(
         self,
@@ -390,6 +458,9 @@ class ProfilingTreeWidget(QWidget):
             if node_id in self._entries and self._entries[node_id].duration_ms > 0
         )
 
+        # Update root item with total duration
+        self._update_root_item()
+
         if self._total_duration_ms <= 0:
             return
 
@@ -400,11 +471,12 @@ class ProfilingTreeWidget(QWidget):
 
     def _create_tree_item(self, entry: ProfilingEntry) -> QTreeWidgetItem:
         """Create a tree item for the entry."""
-        # Determine parent
+        # Determine parent - use root item for top-level entries
         if entry.parent_id and entry.parent_id in self._tree_items:
             parent = self._tree_items[entry.parent_id]
         else:
-            parent = self._tree.invisibleRootItem()
+            # Top-level entries go under the root item
+            parent = self._ensure_root_item()
 
         item = QTreeWidgetItem(parent)
         item.setText(
@@ -501,16 +573,24 @@ class ProfilingTreeWidget(QWidget):
         """Filter tree items by search text."""
         search_text = text.lower().strip()
 
-        def set_item_visible(item: QTreeWidgetItem) -> bool:
+        def set_item_visible(item: QTreeWidgetItem, is_root: bool = False) -> bool:
             """Recursively set item visibility."""
             activity = item.text(self.COL_ACTIVITY).lower()
-            matches = not search_text or search_text in activity
+            # Root always matches if any child matches
+            matches = is_root or not search_text or search_text in activity
 
             # Check children
+            child_matches = False
             for i in range(item.childCount()):
                 child = item.child(i)
-                if set_item_visible(child):
-                    matches = True
+                if set_item_visible(child, is_root=False):
+                    child_matches = True
+
+            # Root stays visible if any child matches
+            if is_root:
+                matches = child_matches or not search_text
+            elif child_matches:
+                matches = True
 
             item.setHidden(not matches)
             if matches and search_text:
@@ -518,11 +598,22 @@ class ProfilingTreeWidget(QWidget):
 
             return matches
 
-        for i in range(self._tree.topLevelItemCount()):
-            set_item_visible(self._tree.topLevelItem(i))
+        # Process root item (the only top-level item)
+        if self._root_item:
+            set_item_visible(self._root_item, is_root=True)
+
+    def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
+        """Handle item click to select node in canvas."""
+        node_id = item.data(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole)
+        logger.info(f"Profiling item clicked: node_id={node_id}")
+        # Don't emit for root node, only for actual workflow nodes
+        if node_id and node_id != self.ROOT_NODE_ID:
+            logger.info(f"Emitting node_clicked signal for: {node_id}")
+            self.node_clicked.emit(node_id)
 
     def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item double-click to navigate to node."""
         node_id = item.data(self.COL_ACTIVITY, Qt.ItemDataRole.UserRole)
-        if node_id:
+        # Don't emit for root node, only for actual workflow nodes
+        if node_id and node_id != self.ROOT_NODE_ID:
             self.node_double_clicked.emit(node_id)

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-from PySide6.QtCore import Qt, Signal, QThread, QObject
+from PySide6.QtCore import Signal, QThread, QObject
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -44,7 +44,7 @@ from PySide6.QtWidgets import (
 from loguru import logger
 
 # Import scopes from google_client
-from casare_rpa.infrastructure.resources.google_client import SCOPES, GoogleScope
+from casare_rpa.infrastructure.resources.google_client import GoogleScope
 
 
 # Scope definitions with human-readable names

@@ -13,7 +13,7 @@ Features:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QIcon, QColor
+from PySide6.QtGui import QColor
 
 from loguru import logger
 

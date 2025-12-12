@@ -2,7 +2,14 @@
 Selector Healing Chain.
 
 Implements the tiered fallback chain for self-healing selectors:
-Original -> Heuristic -> Anchor -> CV (placeholder)
+Original -> Heuristic -> Anchor -> CV -> Vision AI
+
+Tiers:
+    0. Original: Direct selector (no healing)
+    1. Heuristic: Attribute-based fallbacks
+    2. Anchor: Spatial relationship healing
+    3. CV: Template matching + OCR
+    4. Vision: AI vision models (GPT-4V/Claude)
 
 Each tier is attempted in sequence until one succeeds or all fail.
 """
@@ -118,7 +125,8 @@ class SelectorHealingChain:
     1. Original selector (no healing)
     2. Heuristic healing (Tier 1) - attribute-based fallbacks
     3. Anchor healing (Tier 2) - spatial relationship based
-    4. CV healing (Tier 3) - computer vision (placeholder)
+    4. CV healing (Tier 3) - computer vision (OCR + template)
+    5. Vision AI healing (Tier 4) - GPT-4V/Claude Vision
 
     Example:
         chain = SelectorHealingChain()
@@ -139,16 +147,21 @@ class SelectorHealingChain:
     MAX_FINGERPRINTS = 500
     MAX_SPATIAL_CONTEXTS = 200
     MAX_CV_CONTEXTS = 100  # Smaller limit due to image data
+    MAX_VISION_CONTEXTS = 50  # Even smaller for vision descriptions
 
     def __init__(
         self,
         heuristic_healer: Optional[SelectorHealer] = None,
         anchor_healer: Optional[AnchorHealer] = None,
         cv_healer: Optional[CVHealer] = None,
+        vision_finder: Optional[Any] = None,
         telemetry: Optional[HealingTelemetry] = None,
         healing_budget_ms: float = 400.0,
         cv_budget_ms: float = 2000.0,
+        vision_budget_ms: float = 10000.0,
         enable_cv_fallback: bool = False,
+        enable_vision_fallback: bool = False,
+        vision_model: str = "gpt-4o",
     ) -> None:
         """
         Initialize the healing chain.
@@ -157,22 +170,44 @@ class SelectorHealingChain:
             heuristic_healer: Tier 1 heuristic healer (created if not provided).
             anchor_healer: Tier 2 anchor healer (created if not provided).
             cv_healer: Tier 3 CV healer (created if not provided when enabled).
+            vision_finder: Tier 4 Vision AI finder (created if not provided).
             telemetry: Telemetry collector (global instance if not provided).
             healing_budget_ms: Maximum time budget for Tier 1-2 healing attempts.
             cv_budget_ms: Maximum time budget for Tier 3 CV healing (default 2000ms).
+            vision_budget_ms: Maximum time budget for Tier 4 Vision AI (default 10000ms).
             enable_cv_fallback: Whether to enable CV fallback (Tier 3).
+            enable_vision_fallback: Whether to enable Vision AI fallback (Tier 4).
+            vision_model: Vision model to use (default: gpt-4o).
         """
         self._heuristic_healer = heuristic_healer or SelectorHealer()
         self._anchor_healer = anchor_healer or AnchorHealer()
         self._cv_healer = cv_healer
+        self._vision_finder = vision_finder
         self._telemetry = telemetry or get_healing_telemetry()
         self._healing_budget_ms = healing_budget_ms
         self._cv_budget_ms = cv_budget_ms
+        self._vision_budget_ms = vision_budget_ms
         self._enable_cv_fallback = enable_cv_fallback
+        self._enable_vision_fallback = enable_vision_fallback
+        self._vision_model = vision_model
 
         # Initialize CV healer lazily when enabled
         if enable_cv_fallback and self._cv_healer is None:
             self._cv_healer = CVHealer(budget_ms=cv_budget_ms)
+
+        # Initialize Vision finder lazily when enabled
+        if enable_vision_fallback and self._vision_finder is None:
+            try:
+                from casare_rpa.infrastructure.ai.vision_element_finder import (
+                    VisionElementFinder,
+                )
+
+                self._vision_finder = VisionElementFinder(
+                    default_model=vision_model,
+                    timeout_ms=vision_budget_ms,
+                )
+            except ImportError:
+                logger.warning("VisionElementFinder not available")
 
         # Element fingerprints for heuristic healing
         self._fingerprints: Dict[str, ElementFingerprint] = {}
@@ -183,9 +218,13 @@ class SelectorHealingChain:
         # CV contexts for computer vision healing
         self._cv_contexts: Dict[str, CVContext] = {}
 
+        # Vision contexts (element descriptions for AI)
+        self._vision_contexts: Dict[str, str] = {}
+
         logger.debug(
             f"SelectorHealingChain initialized (budget={healing_budget_ms}ms, "
-            f"cv={enable_cv_fallback}, cv_budget={cv_budget_ms}ms)"
+            f"cv={enable_cv_fallback}, vision={enable_vision_fallback}, "
+            f"cv_budget={cv_budget_ms}ms, vision_budget={vision_budget_ms}ms)"
         )
 
     def _store_fingerprint(
@@ -211,11 +250,19 @@ class SelectorHealingChain:
             del self._cv_contexts[oldest]
         self._cv_contexts[selector] = context
 
+    def _store_vision_context(self, selector: str, description: str) -> None:
+        """Store vision context (element description) with LRU-style eviction."""
+        if len(self._vision_contexts) >= self.MAX_VISION_CONTEXTS:
+            oldest = next(iter(self._vision_contexts))
+            del self._vision_contexts[oldest]
+        self._vision_contexts[selector] = description
+
     def clear_contexts(self) -> None:
         """Clear all cached contexts to free memory."""
         self._fingerprints.clear()
         self._spatial_contexts.clear()
         self._cv_contexts.clear()
+        self._vision_contexts.clear()
         logger.debug("Cleared all healing chain contexts")
 
     async def capture_element_context(
@@ -261,17 +308,28 @@ class SelectorHealingChain:
                     self._store_cv_context(selector, cv_context)
                     self._cv_healer.store_context(selector, cv_context)
 
+            # Capture vision context (element description) for Vision AI
+            vision_description = None
+            if self._enable_vision_fallback:
+                vision_description = await self._capture_vision_description(
+                    page, selector
+                )
+                if vision_description:
+                    self._store_vision_context(selector, vision_description)
+
             success = (
                 fingerprint is not None
                 or spatial_context is not None
                 or cv_context is not None
+                or vision_description is not None
             )
             if success:
                 logger.debug(
                     f"Captured context for {selector}: "
                     f"fingerprint={'yes' if fingerprint else 'no'}, "
                     f"spatial={'yes' if spatial_context else 'no'}, "
-                    f"cv={'yes' if cv_context else 'no'}"
+                    f"cv={'yes' if cv_context else 'no'}, "
+                    f"vision={'yes' if vision_description else 'no'}"
                 )
             else:
                 logger.warning(f"Failed to capture any context for: {selector}")
@@ -455,6 +513,41 @@ class SelectorHealingChain:
                     # Store click coordinates in tier_results for caller
                 )
 
+        # Tier 4: Vision AI fallback (GPT-4V/Claude Vision)
+        if self._enable_vision_fallback and self._vision_finder:
+            vision_description = self._vision_contexts.get(selector)
+
+            vision_result = await self._try_vision_healing(
+                page, selector, vision_description
+            )
+            tier_results["vision"] = vision_result
+            tiers_attempted.append("vision")
+
+            if vision_result.get("success"):
+                total_time = (time.perf_counter() - start_time) * 1000
+                click_x = vision_result.get("click_x", 0)
+                click_y = vision_result.get("click_y", 0)
+                self._record_telemetry(
+                    selector=selector,
+                    page_url=page.url,
+                    success=True,
+                    tier_used=HealingTier.VISION,
+                    healing_time_ms=total_time,
+                    healed_selector=f"vision:({click_x},{click_y})",
+                    confidence=vision_result.get("confidence", 0.5),
+                    tiers_attempted=tiers_attempted,
+                )
+                return HealingChainResult(
+                    success=True,
+                    original_selector=selector,
+                    final_selector=f"vision:({click_x},{click_y})",
+                    tier_used=HealingTier.VISION,
+                    confidence=vision_result.get("confidence", 0.5),
+                    total_time_ms=total_time,
+                    tier_results=tier_results,
+                    element=None,  # Vision returns coordinates, not element
+                )
+
         # All tiers failed
         total_time = (time.perf_counter() - start_time) * 1000
         self._record_telemetry(
@@ -597,6 +690,223 @@ class SelectorHealingChain:
                 error_message=str(e),
             )
 
+    async def _try_vision_healing(
+        self,
+        page: Page,
+        selector: str,
+        description: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Attempt Tier 4 Vision AI healing using GPT-4V/Claude Vision.
+
+        Uses vision language models to find elements by natural language
+        description. Most expensive but can handle arbitrary UI changes.
+
+        Args:
+            page: Playwright Page object.
+            selector: Original selector.
+            description: Natural language description of the element.
+
+        Returns:
+            Dictionary with healing result including coordinates.
+        """
+        if not self._vision_finder:
+            return {
+                "success": False,
+                "error": "Vision finder not initialized",
+            }
+
+        try:
+            # Build description from context if not provided
+            effective_description = description
+            if not effective_description:
+                # Try to extract description from selector
+                effective_description = self._selector_to_description(selector)
+
+            if not effective_description:
+                return {
+                    "success": False,
+                    "error": "No element description available",
+                }
+
+            # Take screenshot
+            screenshot_bytes = await page.screenshot(type="png")
+
+            # Use vision finder
+            result = await self._vision_finder.find_element(
+                screenshot=screenshot_bytes,
+                description=effective_description,
+                model=self._vision_model,
+            )
+
+            if result.found:
+                logger.info(
+                    f"Vision healing succeeded for {selector}: "
+                    f"({result.center_x}, {result.center_y}) "
+                    f"confidence={result.confidence:.2f}"
+                )
+                return {
+                    "success": True,
+                    "click_x": result.center_x,
+                    "click_y": result.center_y,
+                    "confidence": result.confidence,
+                    "description_matched": result.description_matched,
+                    "reasoning": result.reasoning,
+                    "processing_time_ms": result.processing_time_ms,
+                }
+
+            return {
+                "success": False,
+                "error": result.error_message or "Element not found",
+                "processing_time_ms": result.processing_time_ms,
+            }
+
+        except Exception as e:
+            logger.error(f"Vision healing failed for {selector}: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
+    def _selector_to_description(self, selector: str) -> Optional[str]:
+        """
+        Convert a CSS/XPath selector to a natural language description.
+
+        Args:
+            selector: CSS or XPath selector string.
+
+        Returns:
+            Natural language description, or None if cannot convert.
+        """
+        # Extract meaningful parts from selector
+        description_parts = []
+
+        # Handle ID selectors
+        if "#" in selector:
+            import re
+
+            match = re.search(r"#([a-zA-Z][a-zA-Z0-9_-]*)", selector)
+            if match:
+                id_name = match.group(1).replace("-", " ").replace("_", " ")
+                description_parts.append(f"element with id '{id_name}'")
+
+        # Handle class selectors
+        if "." in selector:
+            import re
+
+            classes = re.findall(r"\.([a-zA-Z][a-zA-Z0-9_-]*)", selector)
+            if classes:
+                class_names = ", ".join(c.replace("-", " ") for c in classes[:3])
+                description_parts.append(f"element with class '{class_names}'")
+
+        # Handle button/input types
+        if "button" in selector.lower():
+            description_parts.append("button")
+        elif "input" in selector.lower():
+            description_parts.append("input field")
+        elif "submit" in selector.lower():
+            description_parts.append("submit button")
+        elif "login" in selector.lower():
+            description_parts.append("login button")
+
+        # Handle text content selectors
+        if "text=" in selector.lower() or ":has-text" in selector:
+            import re
+
+            match = re.search(r'(?:text=|:has-text\(["\'])([^"\']+)', selector)
+            if match:
+                text = match.group(1)
+                description_parts.append(f"element containing text '{text}'")
+
+        if description_parts:
+            return " ".join(description_parts)
+
+        return None
+
+    async def _capture_vision_description(
+        self,
+        page: Page,
+        selector: str,
+    ) -> Optional[str]:
+        """
+        Capture a natural language description of an element for vision healing.
+
+        Args:
+            page: Playwright Page object.
+            selector: Selector for the target element.
+
+        Returns:
+            Natural language description, or None if element not found.
+        """
+        try:
+            element = await page.query_selector(selector)
+            if not element:
+                return None
+
+            # Extract element properties for description
+            properties = await element.evaluate(
+                """el => {
+                    return {
+                        tag: el.tagName.toLowerCase(),
+                        text: (el.textContent || '').trim().slice(0, 50),
+                        type: el.getAttribute('type'),
+                        placeholder: el.getAttribute('placeholder'),
+                        value: el.value,
+                        ariaLabel: el.getAttribute('aria-label'),
+                        title: el.getAttribute('title'),
+                        className: el.className,
+                        id: el.id
+                    };
+                }"""
+            )
+
+            # Build description from properties
+            parts = []
+
+            # Tag-based description
+            tag = properties.get("tag", "")
+            if tag == "button":
+                parts.append("button")
+            elif tag == "input":
+                input_type = properties.get("type", "text")
+                parts.append(f"{input_type} input field")
+            elif tag == "a":
+                parts.append("link")
+            elif tag == "select":
+                parts.append("dropdown")
+            elif tag == "textarea":
+                parts.append("text area")
+            else:
+                parts.append(f"{tag} element")
+
+            # Add text content
+            text = properties.get("text", "")
+            if text:
+                parts.append(f"with text '{text}'")
+
+            # Add placeholder
+            placeholder = properties.get("placeholder")
+            if placeholder:
+                parts.append(f"placeholder '{placeholder}'")
+
+            # Add aria-label
+            aria_label = properties.get("ariaLabel")
+            if aria_label:
+                parts.append(f"labeled '{aria_label}'")
+
+            # Add ID/class hints
+            elem_id = properties.get("id")
+            if elem_id:
+                parts.append(f"(id: {elem_id})")
+
+            description = " ".join(parts)
+            logger.debug(f"Captured vision description for {selector}: {description}")
+            return description
+
+        except Exception as e:
+            logger.debug(f"Failed to capture vision description for {selector}: {e}")
+            return self._selector_to_description(selector)
+
     async def _try_selector(
         self,
         page: Page,
@@ -678,7 +988,10 @@ class SelectorHealingChain:
 def create_healing_chain(
     healing_budget_ms: float = 400.0,
     cv_budget_ms: float = 2000.0,
+    vision_budget_ms: float = 10000.0,
     enable_cv: bool = False,
+    enable_vision: bool = False,
+    vision_model: str = "gpt-4o",
 ) -> SelectorHealingChain:
     """
     Create a configured healing chain.
@@ -686,7 +999,10 @@ def create_healing_chain(
     Args:
         healing_budget_ms: Maximum time for Tier 1-2 healing attempts.
         cv_budget_ms: Maximum time for Tier 3 CV healing (default 2000ms).
-        enable_cv: Whether to enable CV fallback.
+        vision_budget_ms: Maximum time for Tier 4 Vision AI (default 10000ms).
+        enable_cv: Whether to enable CV fallback (Tier 3).
+        enable_vision: Whether to enable Vision AI fallback (Tier 4).
+        vision_model: Vision model to use (gpt-4o, claude-3-5-sonnet-latest, etc.).
 
     Returns:
         Configured SelectorHealingChain instance.
@@ -694,7 +1010,10 @@ def create_healing_chain(
     return SelectorHealingChain(
         healing_budget_ms=healing_budget_ms,
         cv_budget_ms=cv_budget_ms,
+        vision_budget_ms=vision_budget_ms,
         enable_cv_fallback=enable_cv,
+        enable_vision_fallback=enable_vision,
+        vision_model=vision_model,
     )
 
 

@@ -7,7 +7,6 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 
 from __future__ import annotations
 
-import os
 from abc import abstractmethod
 from typing import Any, Optional
 

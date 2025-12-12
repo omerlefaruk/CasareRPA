@@ -4,7 +4,7 @@ Quick Node Configuration Dialog.
 Allows users to assign/remove hotkeys for any node in the system.
 """
 
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeySequence
 
 from PySide6.QtWidgets import QDialog
 

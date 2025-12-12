@@ -1,63 +1,76 @@
-# Nodes Index
+# Nodes Package Index
 
-Quick reference for node implementations. Use for fast discovery.
+Quick reference for automation nodes. 413+ nodes across 18 categories.
 
-## Categories
+## Directory Structure
 
-| Category | Path | Description |
-|----------|------|-------------|
-| browser | `nodes/browser/` | Web automation (Playwright) |
-| desktop | `nodes/desktop_nodes/` | Windows UI automation |
-| control_flow | `nodes/control_flow_nodes.py` | If/Switch/Loop/Wait |
-| data | `nodes/data_nodes.py`, `nodes/data_operation_nodes.py` | Variables, transforms |
-| data_operation | `nodes/data_operation/` | Dataset comparison, reconciliation |
-| file | `nodes/file/` | File I/O, paths, structured data |
-| email | `nodes/email/` | SMTP, IMAP |
-| google | `nodes/google/` | Drive, Sheets, Docs, Gmail, Calendar |
-| http | `nodes/http/` | REST API calls |
-| database | `nodes/database/` | SQL operations |
-| messaging | `nodes/messaging/` | Telegram, WhatsApp |
-| llm | `nodes/llm/` | AI/LLM integrations |
-| trigger | `nodes/trigger_nodes/` | Event triggers |
-| system | `nodes/system/` | Dialog boxes, system ops |
+| Directory | Purpose | Key Nodes |
+|-----------|---------|-----------|
+| `browser/` | Web automation base | BrowserBaseNode, SmartSelectorNode |
+| `control_flow/` | Conditionals, loops | IfNode, ForLoopNode, SwitchNode |
+| `data/` | Data operations | JSONNode, CSVNode |
+| `data_operation/` | Data comparison | DataCompareNode |
+| `database/` | SQL operations | DatabaseQueryNode |
+| `desktop_nodes/` | Desktop automation | FindElementNode, ClickElementNode |
+| `document/` | PDF, Office | PDFReaderNode |
+| `email/` | Email automation | SendEmailNode, IMAPNode |
+| `error_handling/` | Error recovery | TryCatchNode, RetryNode |
+| `file/` | File I/O | ReadFileNode, WriteFileNode |
+| `google/` | Google services | SheetsNode, DriveNode, DocsNode |
+| `http/` | HTTP requests | HttpRequestNode |
+| `llm/` | AI/LLM nodes | LLMNode, PromptNode |
+| `messaging/` | Telegram, WhatsApp | TelegramNode |
+| `system/` | System operations | RunProcessNode |
+| `trigger_nodes/` | Workflow triggers | ScheduleNode, WebhookNode |
+| `workflow/` | Subflows | SubflowNode |
 
-## Key Files
+## Key Files (Root)
 
-| File | Contains |
-|------|----------|
-| `__init__.py` | _NODE_REGISTRY - all node mappings |
-| `basic_nodes.py` | StartNode, EndNode, CommentNode |
-| `control_flow_nodes.py` | IfNode, SwitchNode, ForLoopNode, WhileLoopNode |
-| `browser_nodes.py` | ClickNode, TypeNode, NavigateNode, etc. |
-| `browser/browser_base.py` | BrowserNode base class |
-| `desktop_nodes/desktop_base.py` | DesktopNode base class |
+| File | Contains | Lines |
+|------|----------|-------|
+| `__init__.py` | Lazy-load registry | ~1400 |
+| `browser_nodes.py` | Browser lifecycle | ~1540 |
+| `interaction_nodes.py` | Click, type, scroll | ~1200 |
+| `navigation_nodes.py` | Goto, back, forward | ~700 |
+| `text_nodes.py` | Text extraction | ~1200 |
+| `data_nodes.py` | Data transforms | ~700 |
+| `wait_nodes.py` | Wait operations | ~400 |
+| `variable_nodes.py` | Variables | ~400 |
 
-## Registration
-
-New nodes require:
-1. `nodes/{category}/__init__.py` - Export class
-2. `nodes/__init__.py` - Add to _NODE_REGISTRY
-3. `workflow_loader.py` - Add to NODE_TYPE_MAP
-
-## Common Patterns
+## Entry Points
 
 ```python
-# Base class
-from casare_rpa.nodes.browser.browser_base import BrowserNode
+# Import specific nodes
+from casare_rpa.nodes import LaunchBrowserNode, ClickElementNode, TypeInputNode
 
-# Async execution
-async def execute(self, context: ExecutionContext) -> dict:
-    page = await context.get_page()
-    # ... implementation
-    return {"success": True, "result": value}
+# Import browser base
+from casare_rpa.nodes.browser import BrowserBaseNode, get_page_from_context
+
+# Import control flow
+from casare_rpa.nodes.control_flow import IfNode, ForLoopStartNode, BreakNode
 ```
 
-## Sample Workflows
+## Node Registry
 
-Pre-built workflows in `/workflows/`:
+Nodes are registered in `_NODE_REGISTRY` dict in `__init__.py`:
+```python
+_NODE_REGISTRY = {
+    "LaunchBrowserNode": "browser_nodes",
+    "ClickElementNode": "interaction_nodes",
+    # ...
+}
+```
 
-| Workflow | Description | Nodes |
-|----------|-------------|-------|
-| `invoice_processing.json` | Monitor PDF inbox, OCR text, extract date/total, write CSV | FileWatch, ReadPDF, Regex, WriteCSV |
-| `web_scraping_leads.json` | Login to CRM, scrape leads table, save JSON | Browser, Navigation, TableScraper, WriteJSON |
-| `data_reconciliation.json` | Compare Excel datasets, report differences | ExcelOpen/GetRange, DataCompare, WriteJSON |
+## Creating New Nodes
+
+See `agent-rules/rules/10-node-workflow.md` for full protocol:
+1. Check existing nodes first
+2. Create node file with `@executable_node` decorator
+3. Add to `_NODE_REGISTRY`
+4. Create tests in `tests/nodes/`
+
+## Related Indexes
+
+- [browser/_index.md](browser/_index.md) - Browser automation base
+- [control_flow/_index.md](control_flow/_index.md) - Control flow nodes
+- [desktop_nodes/_index.md](desktop_nodes/_index.md) - Desktop automation

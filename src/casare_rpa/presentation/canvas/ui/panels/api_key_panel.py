@@ -26,19 +26,15 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QDateTimeEdit,
     QCheckBox,
-    QDialogButtonBox,
     QTextEdit,
     QApplication,
-    QSpinBox,
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QDateTime
-from PySide6.QtGui import QColor, QBrush, QFont, QClipboard
-
-from loguru import logger
+from PySide6.QtGui import QColor, QBrush
 
 
 if TYPE_CHECKING:
-    from casare_rpa.infrastructure.auth.robot_api_keys import RobotApiKey
+    pass
 
 
 STATUS_COLORS = {

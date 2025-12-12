@@ -29,7 +29,7 @@ from __future__ import annotations
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Type, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Set, Type, TYPE_CHECKING
 
 from loguru import logger
 
@@ -219,6 +219,70 @@ DATA_INPUT_NODES = {
     "CloseBrowserNode": ["page"],  # Browser page to close
 }
 
+# =============================================================================
+# DATA-ONLY NODES (no exec_in/exec_out ports)
+# =============================================================================
+# These nodes are pure data transformers without execution flow ports.
+# They receive data through typed input ports and produce results on typed outputs.
+# The execution engine handles them specially - they execute when their outputs
+# are needed by downstream nodes.
+
+DATA_ONLY_NODES = {
+    # List operations
+    "CreateListNode": {
+        "inputs": ["item_1", "item_2", "item_3"],
+        "outputs": ["list"],
+    },
+    "ListGetItemNode": {
+        "inputs": ["list", "index"],
+        "outputs": ["item"],
+    },
+    # JSON/Dict operations
+    "JsonParseNode": {
+        "inputs": ["json_string"],
+        "outputs": ["data"],
+    },
+    "GetPropertyNode": {
+        "inputs": ["object", "property_path"],
+        "outputs": ["value"],
+    },
+    "SetPropertyNode": {
+        "inputs": ["object", "property_path", "value"],
+        "outputs": ["result"],
+    },
+    # Math operations (pure functions)
+    "MathAddNode": {
+        "inputs": ["a", "b"],
+        "outputs": ["result"],
+    },
+    "MathSubtractNode": {
+        "inputs": ["a", "b"],
+        "outputs": ["result"],
+    },
+    "MathMultiplyNode": {
+        "inputs": ["a", "b"],
+        "outputs": ["result"],
+    },
+    "MathDivideNode": {
+        "inputs": ["a", "b"],
+        "outputs": ["result"],
+    },
+    # String operations (pure functions)
+    "StringConcatNode": {
+        "inputs": ["string_1", "string_2"],
+        "outputs": ["result"],
+    },
+    "StringFormatNode": {
+        "inputs": ["template", "values"],
+        "outputs": ["result"],
+    },
+    # Comparison operations (pure functions)
+    "ComparisonNode": {
+        "inputs": ["left", "right"],
+        "outputs": ["result"],
+    },
+}
+
 
 # =============================================================================
 # WORKFLOW VALIDATOR
@@ -295,6 +359,12 @@ class WorkflowValidator:
             self._port_cache[node_type] = ports
             return ports
 
+        # Check data-only nodes (no exec_in/exec_out ports)
+        if node_type in DATA_ONLY_NODES:
+            ports = DATA_ONLY_NODES[node_type]
+            self._port_cache[node_type] = ports
+            return ports
+
         # Try to get ports from actual visual node class
         registry = self._load_visual_node_registry()
         if node_type in registry:
@@ -345,7 +415,7 @@ class WorkflowValidator:
                 inputs = []
                 outputs = []
 
-                # Parse add_exec_input/add_typed_input calls
+                # Parse add_exec_input/add_typed_input calls WITH explicit arguments
                 input_patterns = [
                     r'add_exec_input\(["\'](\w+)["\']',
                     r'add_typed_input\(["\'](\w+)["\']',
@@ -354,7 +424,7 @@ class WorkflowValidator:
                 for pattern in input_patterns:
                     inputs.extend(re.findall(pattern, source))
 
-                # Parse add_exec_output/add_typed_output calls
+                # Parse add_exec_output/add_typed_output calls WITH explicit arguments
                 output_patterns = [
                     r'add_exec_output\(["\'](\w+)["\']',
                     r'add_typed_output\(["\'](\w+)["\']',
@@ -362,6 +432,17 @@ class WorkflowValidator:
                 ]
                 for pattern in output_patterns:
                     outputs.extend(re.findall(pattern, source))
+
+                # CRITICAL: Detect add_exec_input() and add_exec_output() WITHOUT arguments
+                # These use default port names "exec_in" and "exec_out"
+                # Match add_exec_input( ) or add_exec_input() - no string argument inside parens
+                if re.search(r"add_exec_input\s*\(\s*\)", source):
+                    if "exec_in" not in inputs:
+                        inputs.append("exec_in")
+
+                if re.search(r"add_exec_output\s*\(\s*\)", source):
+                    if "exec_out" not in outputs:
+                        outputs.append("exec_out")
 
                 if inputs or outputs:
                     return {"inputs": inputs, "outputs": outputs}

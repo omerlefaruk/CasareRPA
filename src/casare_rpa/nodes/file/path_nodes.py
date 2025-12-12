@@ -9,6 +9,7 @@ This module provides nodes for path and file information:
 SECURITY: All file operations are subject to path sandboxing.
 """
 
+import os
 from datetime import datetime
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -94,8 +95,9 @@ class FileExistsNode(BaseNode):
             if not file_path:
                 raise ValueError("path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only, allows system paths)
             allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
@@ -194,8 +196,9 @@ class GetFileSizeNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only)
             path = validate_path_security_readonly(file_path, "stat", allow_dangerous)
@@ -288,8 +291,9 @@ class GetFileInfoNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns and environment variables in file_path
             file_path = context.resolve_value(file_path)
+            file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only)
             path = validate_path_security_readonly(file_path, "stat", allow_dangerous)

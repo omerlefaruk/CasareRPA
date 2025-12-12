@@ -4,37 +4,38 @@ Advanced HTTP nodes for CasareRPA.
 This module provides advanced HTTP operations:
 - SetHttpHeadersNode: Configure headers for requests
 - ParseJsonResponseNode: Parse JSON response and extract data
-- HttpDownloadFileNode: Download file from URL
-- HttpUploadFileNode: Upload file via HTTP
+- HttpDownloadFileNode: Download file from URL (uses UnifiedHttpClient)
+- HttpUploadFileNode: Upload file via HTTP (uses UnifiedHttpClient)
 - BuildUrlNode: Build URL with query parameters
+
+PERFORMANCE: Download/Upload nodes now use UnifiedHttpClient for:
+- Connection pooling and reuse
+- Per-domain rate limiting
+- Circuit breaker protection
+- SSRF protection
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 from pathlib import Path
-from typing import Any
-from urllib.parse import urlencode, urljoin
+from typing import Any, TYPE_CHECKING
 
-import aiohttp
-from aiohttp import ClientTimeout, FormData
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
     PortType,
 )
-from casare_rpa.nodes.http.http_base import (
-    get_shared_http_session,
-    validate_url_for_ssrf,
-)
+from casare_rpa.nodes.http.http_base import get_http_client_from_context
+
+if TYPE_CHECKING:
+    from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 @node_schema(
@@ -100,7 +101,7 @@ class SetHttpHeadersNode(BaseNode):
 
         self.add_output_port("headers", DataType.DICT)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -228,7 +229,7 @@ class ParseJsonResponseNode(BaseNode):
 
         return current
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -401,7 +402,13 @@ class HttpDownloadFileNode(BaseNode):
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+        """
+        Download file using UnifiedHttpClient.
+
+        Uses pooled connections, rate limiting, circuit breaker, and SSRF protection
+        built into UnifiedHttpClient.
+        """
         self.status = NodeStatus.RUNNING
 
         try:
@@ -410,10 +417,7 @@ class HttpDownloadFileNode(BaseNode):
             headers = self.get_parameter("headers", {})
             timeout_seconds = self.get_parameter("timeout", 300.0)
             overwrite = self.get_parameter("overwrite", True)
-            verify_ssl = self.get_parameter("verify_ssl", True)
-            proxy = self.get_parameter("proxy", "")
             retry_count = self.get_parameter("retry_count", 0)
-            retry_delay = self.get_parameter("retry_delay", 2.0)
             chunk_size = self.get_parameter("chunk_size", 8192)
 
             url = context.resolve_value(url)
@@ -424,9 +428,7 @@ class HttpDownloadFileNode(BaseNode):
             if not save_path:
                 raise ValueError("Save path is required")
 
-            # Validate URL for SSRF
-            allow_internal = self.get_parameter("allow_internal_urls", False)
-            validate_url_for_ssrf(url, allow_internal=allow_internal)
+            # UnifiedHttpClient handles SSRF protection internally
 
             save_path = Path(save_path)
 
@@ -441,62 +443,50 @@ class HttpDownloadFileNode(BaseNode):
                 except json.JSONDecodeError:
                     headers = {}
 
-            timeout = ClientTimeout(total=float(timeout_seconds))
-            ssl_context = None if verify_ssl else False
-
             logger.info(f"Downloading file from {url}")
 
-            # Get shared session for connection pooling
-            session = await get_shared_http_session()
+            # Get UnifiedHttpClient from context (pooled, rate-limited, circuit-breaker)
+            client = await get_http_client_from_context(context)
 
-            for attempt in range(max(1, retry_count + 1)):
-                try:
-                    request_kwargs = {
-                        "headers": headers,
-                        "ssl": ssl_context,
-                        "timeout": timeout,
-                    }
-                    if proxy:
-                        request_kwargs["proxy"] = proxy
+            # Make request through UnifiedHttpClient
+            # Note: UnifiedHttpClient handles SSRF, rate limiting, circuit breaker, retry
+            response = await client.request(
+                method="GET",
+                url=url,
+                headers=headers if headers else None,
+                timeout=float(timeout_seconds),
+                retry_count=max(1, retry_count + 1),
+            )
 
-                    async with session.get(url, **request_kwargs) as response:
-                        if response.status != 200:
-                            raise aiohttp.ClientError(f"HTTP {response.status}")
+            if response.status != 200:
+                await response.release()
+                raise ValueError(f"HTTP {response.status}")
 
-                        with open(save_path, "wb") as f:
-                            async for chunk in response.content.iter_chunked(
-                                chunk_size
-                            ):
-                                f.write(chunk)
+            # Stream response to file
+            with open(save_path, "wb") as f:
+                async for chunk in response.content.iter_chunked(chunk_size):
+                    f.write(chunk)
 
-                        file_size = save_path.stat().st_size
+            await response.release()
 
-                        self.set_output_value("file_path", str(save_path))
-                        self.set_output_value("file_size", file_size)
-                        self.set_output_value("success", True)
-                        self.set_output_value("error", "")
+            file_size = save_path.stat().st_size
 
-                        logger.info(f"Downloaded {file_size} bytes to {save_path}")
+            self.set_output_value("file_path", str(save_path))
+            self.set_output_value("file_size", file_size)
+            self.set_output_value("success", True)
+            self.set_output_value("error", "")
 
-                        self.status = NodeStatus.SUCCESS
-                        return {
-                            "success": True,
-                            "data": {
-                                "file_path": str(save_path),
-                                "file_size": file_size,
-                                "attempts": attempt + 1,
-                            },
-                            "next_nodes": ["exec_out"],
-                        }
+            logger.info(f"Downloaded {file_size} bytes to {save_path}")
 
-                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-                    if attempt < retry_count:
-                        logger.warning(
-                            f"Download failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
-                        )
-                        await asyncio.sleep(retry_delay)
-                    else:
-                        raise
+            self.status = NodeStatus.SUCCESS
+            return {
+                "success": True,
+                "data": {
+                    "file_path": str(save_path),
+                    "file_size": file_size,
+                },
+                "next_nodes": ["exec_out"],
+            }
 
         except Exception as e:
             error_msg = f"Download error: {str(e)}"
@@ -627,19 +617,26 @@ class HttpUploadFileNode(BaseNode):
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+        """
+        Upload file using UnifiedHttpClient.
+
+        Note: For multipart form uploads, we use the underlying aiohttp session
+        from UnifiedHttpClient since it requires FormData which is aiohttp-specific.
+        Still benefits from connection pooling via the shared session pool.
+        """
         self.status = NodeStatus.RUNNING
 
         try:
+            from aiohttp import FormData
+
             url = self.get_parameter("url")
             file_path = self.get_parameter("file_path")
             field_name = self.get_parameter("field_name", "file")
             headers = self.get_parameter("headers", {})
             extra_fields = self.get_parameter("extra_fields", {})
             timeout_seconds = self.get_parameter("timeout", 300.0)
-            verify_ssl = self.get_parameter("verify_ssl", True)
             retry_count = self.get_parameter("retry_count", 0)
-            retry_delay = self.get_parameter("retry_delay", 2.0)
 
             url = context.resolve_value(url)
             file_path = context.resolve_value(file_path)
@@ -649,9 +646,7 @@ class HttpUploadFileNode(BaseNode):
             if not file_path:
                 raise ValueError("File path is required")
 
-            # Validate URL for SSRF
-            allow_internal = self.get_parameter("allow_internal_urls", False)
-            validate_url_for_ssrf(url, allow_internal=allow_internal)
+            # UnifiedHttpClient handles SSRF protection internally
 
             file_path = Path(file_path)
             if not file_path.exists():
@@ -669,77 +664,65 @@ class HttpUploadFileNode(BaseNode):
                 except json.JSONDecodeError:
                     extra_fields = {}
 
-            timeout = ClientTimeout(total=float(timeout_seconds))
-            ssl_context = None if verify_ssl else False
-
             logger.info(f"Uploading file {file_path} to {url}")
 
-            # Get shared session for connection pooling
-            session = await get_shared_http_session()
+            # Get UnifiedHttpClient from context
+            client = await get_http_client_from_context(context)
 
-            for attempt in range(max(1, retry_count + 1)):
-                file_handle = None
+            # For multipart uploads, we need to use aiohttp FormData directly
+            # The UnifiedHttpClient still provides connection pooling benefits
+            file_handle = None
+            try:
+                file_handle = open(file_path, "rb")
+                data = FormData()
+                data.add_field(field_name, file_handle, filename=file_path.name)
+                for key, value in extra_fields.items():
+                    data.add_field(key, str(value))
+
+                # Make request through UnifiedHttpClient with data parameter
+                response = await client.request(
+                    method="POST",
+                    url=url,
+                    headers=headers if headers else None,
+                    data=data,
+                    timeout=float(timeout_seconds),
+                    retry_count=max(1, retry_count + 1),
+                )
+
+                response_body = await response.text()
+                status_code = response.status
+
+                await response.release()
+
+                response_json = None
                 try:
-                    # Open file with explicit handle for proper cleanup
-                    file_handle = open(file_path, "rb")
-                    data = FormData()
-                    data.add_field(field_name, file_handle, filename=file_path.name)
-                    for key, value in extra_fields.items():
-                        data.add_field(key, str(value))
+                    response_json = json.loads(response_body)
+                except (json.JSONDecodeError, ValueError):
+                    pass
 
-                    async with session.post(
-                        url,
-                        data=data,
-                        headers=headers,
-                        ssl=ssl_context,
-                        timeout=timeout,
-                    ) as response:
-                        response_body = await response.text()
-                        status_code = response.status
+                success = 200 <= status_code < 300
 
-                        response_json = None
-                        try:
-                            response_json = json.loads(response_body)
-                        except (json.JSONDecodeError, ValueError):
-                            pass
+                self.set_output_value("response_body", response_body)
+                self.set_output_value("response_json", response_json)
+                self.set_output_value("status_code", status_code)
+                self.set_output_value("success", success)
+                self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                        success = 200 <= status_code < 300
+                logger.info(f"Upload completed: HTTP {status_code}")
 
-                        self.set_output_value("response_body", response_body)
-                        self.set_output_value("response_json", response_json)
-                        self.set_output_value("status_code", status_code)
-                        self.set_output_value("success", success)
-                        self.set_output_value(
-                            "error", "" if success else f"HTTP {status_code}"
-                        )
+                self.status = NodeStatus.SUCCESS
+                return {
+                    "success": True,
+                    "data": {
+                        "status_code": status_code,
+                        "file": str(file_path),
+                    },
+                    "next_nodes": ["exec_out"],
+                }
 
-                        logger.info(
-                            f"Upload completed: HTTP {status_code} (attempt {attempt + 1})"
-                        )
-
-                        self.status = NodeStatus.SUCCESS
-                        return {
-                            "success": True,
-                            "data": {
-                                "status_code": status_code,
-                                "file": str(file_path),
-                                "attempts": attempt + 1,
-                            },
-                            "next_nodes": ["exec_out"],
-                        }
-
-                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-                    if attempt < retry_count:
-                        logger.warning(
-                            f"Upload failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
-                        )
-                        await asyncio.sleep(retry_delay)
-                    else:
-                        raise
-                finally:
-                    # Always close the file handle to prevent resource leak
-                    if file_handle is not None:
-                        file_handle.close()
+            finally:
+                if file_handle is not None:
+                    file_handle.close()
 
         except Exception as e:
             error_msg = f"Upload error: {str(e)}"
@@ -810,10 +793,12 @@ class BuildUrlNode(BaseNode):
 
         self.add_output_port("url", PortType.OUTPUT, DataType.STRING)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
+            from urllib.parse import urlencode, urljoin
+
             base_url = self.get_parameter("base_url")
             path = self.get_parameter("path", "")
             params = self.get_parameter("params", {})

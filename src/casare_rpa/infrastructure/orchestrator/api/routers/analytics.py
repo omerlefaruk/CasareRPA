@@ -10,30 +10,18 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from casare_rpa.infrastructure.analytics import (
     # Process Mining
     get_process_miner,
-    ProcessModel,
     ExecutionTrace,
     Activity,
     ActivityStatus,
-    ConformanceReport,
-    ProcessInsight,
-    # Bottleneck Detection
     BottleneckDetector,
-    BottleneckInfo,
-    DetailedBottleneckAnalysis,
-    NodeExecutionStats,
-    # Execution Analysis
     ExecutionAnalyzer,
-    ExecutionAnalysisResult,
-    ExecutionInsight,
-    DurationTrend,
-    SuccessRateTrend,
 )
 
 router = APIRouter()

@@ -71,6 +71,12 @@ from casare_rpa.presentation.canvas.ui.dialogs.project_wizard import (
     ProjectWizard,
     show_project_wizard,
 )
+from casare_rpa.presentation.canvas.ui.dialogs.breakpoint_edit_dialog import (
+    BreakpointEditDialog,
+    show_breakpoint_edit_dialog,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.login_dialog import LoginDialog
+from casare_rpa.presentation.canvas.ui.dialogs.mfa_setup_dialog import MFASetupDialog
 
 __all__ = [
     # Dialog Styles
@@ -109,4 +115,10 @@ __all__ = [
     # Project Wizard
     "ProjectWizard",
     "show_project_wizard",
+    # Breakpoint Edit
+    "BreakpointEditDialog",
+    "show_breakpoint_edit_dialog",
+    # Authentication Dialogs
+    "LoginDialog",
+    "MFASetupDialog",
 ]

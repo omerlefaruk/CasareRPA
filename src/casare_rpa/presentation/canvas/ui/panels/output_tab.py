@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
     QMenu,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QBrush, QCursor
+from PySide6.QtGui import QColor, QBrush
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (

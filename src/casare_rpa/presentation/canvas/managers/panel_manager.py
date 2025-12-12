@@ -12,7 +12,6 @@ Usage:
 
 from typing import TYPE_CHECKING, Optional
 
-from loguru import logger
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow

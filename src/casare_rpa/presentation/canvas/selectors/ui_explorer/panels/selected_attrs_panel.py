@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorModel,

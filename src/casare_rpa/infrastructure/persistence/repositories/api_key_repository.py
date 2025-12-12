@@ -4,7 +4,7 @@ ApiKeyRepository - PostgreSQL persistence for Robot API Keys.
 Provides CRUD operations for robot API key management using asyncpg.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from loguru import logger

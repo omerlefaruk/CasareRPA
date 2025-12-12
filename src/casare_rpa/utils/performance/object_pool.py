@@ -30,8 +30,6 @@ from weakref import WeakValueDictionary
 from collections import deque
 import threading
 
-from loguru import logger
-
 
 T = TypeVar("T")
 

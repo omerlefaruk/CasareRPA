@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QSplitter,
-    QFrame,
     QLabel,
     QMenu,
     QMessageBox,
@@ -56,7 +55,6 @@ from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_previe
 )
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     UIExplorerElement,
-    ElementSource,
 )
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorModel,

@@ -5,12 +5,10 @@ Handles setup for both local Postgres and Supabase.
 """
 
 import os
-import sys
 import typer
 import asyncpg
 import asyncio
 from pathlib import Path
-from typing import Optional
 
 app = typer.Typer()
 

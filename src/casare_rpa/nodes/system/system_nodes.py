@@ -6,7 +6,6 @@ process management, environment variables, and system information.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -857,7 +856,6 @@ class SystemInfoNode(BaseNode):
 
         try:
             import platform
-            import os
 
             info_type = self.get_parameter("info_type", "all")
             info = {}

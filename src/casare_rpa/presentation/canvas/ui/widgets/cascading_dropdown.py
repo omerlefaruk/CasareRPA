@@ -17,9 +17,9 @@ import asyncio
 import time
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
-from PySide6.QtCore import Qt, Signal, QThread, QObject, QTimer
+from PySide6.QtCore import Qt, Signal, QThread, QObject
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,

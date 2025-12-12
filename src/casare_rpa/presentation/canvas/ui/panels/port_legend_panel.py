@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, QTimer, QPoint, QSettings, Signal
-from PySide6.QtGui import QColor, QMouseEvent, QPainter, QFont
+from PySide6.QtGui import QColor, QMouseEvent, QPainter
 
 from loguru import logger
 

@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
-from loguru import logger
 
 # Cron aliases for human-readable scheduling
 CRON_ALIASES: Dict[str, str] = {

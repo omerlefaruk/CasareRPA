@@ -24,7 +24,6 @@ from PySide6.QtCore import (
     QEasingCurve,
     QMimeData,
     QPoint,
-    QPointF,
     QPropertyAnimation,
     QSize,
     Qt,
@@ -35,10 +34,6 @@ from PySide6.QtGui import (
     QColor,
     QDrag,
     QFont,
-    QFontMetrics,
-    QPainter,
-    QPen,
-    QBrush,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -55,7 +50,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
-    QSizePolicy,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -1611,6 +1605,26 @@ class NodeOutputPopup(QFrame):
                 new_geo.width() >= self.MIN_WIDTH
                 and new_geo.height() >= self.MIN_HEIGHT
             ):
+                try:
+                    # Clamp geometry to primary screen available area to avoid
+                    # QWindowsWindow::setGeometry warnings when requested geometry
+                    # is outside monitor limits or constrained by min/max.
+                    screen = QApplication.primaryScreen()
+                    if screen is not None:
+                        avail = screen.availableGeometry()
+                        # Constrain edges
+                        if new_geo.left() < avail.left():
+                            new_geo.moveLeft(avail.left())
+                        if new_geo.top() < avail.top():
+                            new_geo.moveTop(avail.top())
+                        if new_geo.right() > avail.right():
+                            new_geo.setRight(avail.right())
+                        if new_geo.bottom() > avail.bottom():
+                            new_geo.setBottom(avail.bottom())
+                except Exception:
+                    # Fall back to original behaviour if anything unexpected
+                    pass
+
                 self.setGeometry(new_geo)
             event.accept()
         else:

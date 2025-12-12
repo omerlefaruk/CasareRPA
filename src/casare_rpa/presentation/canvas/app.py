@@ -75,6 +75,9 @@ from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
 )
 from casare_rpa.presentation.canvas.main_window import MainWindow
+
+# Lazy import for litellm cleanup to avoid import if litellm not used
+_litellm_cleanup_registered = False
 from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
 from casare_rpa.presentation.canvas.controllers import (
     WorkflowController,
@@ -215,6 +218,9 @@ class CasareRPAApp:
         # Create qasync event loop
         self._loop = QEventLoop(self._app)
         asyncio.set_event_loop(self._loop)
+
+        # Connect aboutToQuit to ensure async cleanup before event loop terminates
+        self._app.aboutToQuit.connect(self._on_about_to_quit)
 
     def _create_ui(self) -> None:
         """Create main window and central widget."""
@@ -1003,6 +1009,51 @@ class CasareRPAApp:
                 controller.cleanup()
             except Exception as e:
                 logger.error(f"Error cleaning up {controller.__class__.__name__}: {e}")
+
+    def _on_about_to_quit(self) -> None:
+        """
+        Handle application quit - cleanup async resources before event loop terminates.
+
+        This prevents RuntimeWarning from litellm about unawaited coroutines by
+        properly closing async HTTP clients before the Qt/asyncio event loop ends.
+        """
+        logger.debug("Application about to quit - running async cleanup")
+
+        # Cleanup litellm async HTTP clients
+        try:
+            from litellm.llms.custom_httpx.async_client_cleanup import (
+                close_litellm_async_clients,
+            )
+
+            # Run the async cleanup synchronously before event loop terminates
+            # We need to use the existing event loop since it's still running
+            if self._loop.is_running():
+                # Schedule cleanup and wait for it
+                future = asyncio.run_coroutine_threadsafe(
+                    close_litellm_async_clients(), self._loop
+                )
+                try:
+                    # Wait with a short timeout to avoid blocking shutdown
+                    future.result(timeout=2.0)
+                    logger.debug("litellm async clients cleaned up")
+                except TimeoutError:
+                    logger.warning("litellm cleanup timed out")
+                except Exception as e:
+                    logger.debug(f"litellm cleanup: {e}")
+            else:
+                # Event loop not running, try direct execution
+                try:
+                    self._loop.run_until_complete(close_litellm_async_clients())
+                    logger.debug("litellm async clients cleaned up (sync)")
+                except Exception as e:
+                    logger.debug(f"litellm cleanup (sync): {e}")
+
+        except ImportError:
+            # litellm not installed or cleanup module not available
+            logger.debug("litellm cleanup module not available - skipping")
+        except Exception as e:
+            # Don't let cleanup errors prevent application exit
+            logger.debug(f"litellm cleanup error (non-fatal): {e}")
 
 
 def main() -> int:

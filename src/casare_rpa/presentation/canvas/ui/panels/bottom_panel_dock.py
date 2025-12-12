@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QTabWidget,
     QSizePolicy,
-    QScrollArea,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 from loguru import logger

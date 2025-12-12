@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "name": "Simple Notepad Automation",
+    "description": "Opens Windows Notepad, types a greeting message, and closes it. Created using CasareRPA AI-assisted workflow generation patterns.",
+    "version": "1.0.0",
+    "author": "CasareRPA AI",
+    "tags": ["notepad", "desktop", "automation", "demo"]
+  },
+  "nodes": {
+    "launch_notepad": {
+      "node_id": "launch_notepad",
+      "node_type": "LaunchApplicationNode",
+      "config": {
+        "application_path": "notepad.exe",
+        "window_title_hint": "Notepad",
+        "timeout": 10.0,
+        "keep_open": true
+      },
+      "position": [0, 0]
+    },
+    "wait_for_window": {
+      "node_id": "wait_for_window",
+      "node_type": "WaitNode",
+      "config": {
+        "duration_ms": 1000
+      },
+      "position": [400, 0]
+    },
+    "type_greeting": {
+      "node_id": "type_greeting",
+      "node_type": "SendKeysNode",
+      "config": {
+        "keys": "Hello from CasareRPA!",
+        "interval": 0.02
+      },
+      "position": [800, 0]
+    },
+    "type_newline": {
+      "node_id": "type_newline",
+      "node_type": "SendHotKeyNode",
+      "config": {
+        "modifier": "none",
+        "key": "Enter"
+      },
+      "position": [1200, 0]
+    },
+    "type_second_line": {
+      "node_id": "type_second_line",
+      "node_type": "SendKeysNode",
+      "config": {
+        "keys": "This workflow was created with AI assistance.",
+        "interval": 0.02
+      },
+      "position": [1600, 0]
+    },
+    "wait_before_close": {
+      "node_id": "wait_before_close",
+      "node_type": "WaitNode",
+      "config": {
+        "duration_ms": 2000
+      },
+      "position": [2000, 0]
+    },
+    "close_notepad": {
+      "node_id": "close_notepad",
+      "node_type": "CloseApplicationNode",
+      "config": {
+        "force_close": false,
+        "timeout": 5.0
+      },
+      "position": [2400, 0]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "launch_notepad",
+      "source_port": "exec_out",
+      "target_node": "wait_for_window",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "wait_for_window",
+      "source_port": "exec_out",
+      "target_node": "type_greeting",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "type_greeting",
+      "source_port": "exec_out",
+      "target_node": "type_newline",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "type_newline",
+      "source_port": "exec_out",
+      "target_node": "type_second_line",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "type_second_line",
+      "source_port": "exec_out",
+      "target_node": "wait_before_close",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "wait_before_close",
+      "source_port": "exec_out",
+      "target_node": "close_notepad",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "launch_notepad",
+      "source_port": "window",
+      "target_node": "close_notepad",
+      "target_port": "window"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 60,
+    "retry_count": 0
+  }
+}

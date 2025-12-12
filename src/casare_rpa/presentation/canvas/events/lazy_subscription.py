@@ -24,7 +24,6 @@ from typing import Callable, List
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QWidget
 
-from loguru import logger
 
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType

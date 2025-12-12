@@ -11,7 +11,7 @@ Features:
 - Clear anchor button
 """
 
-from typing import Optional, Any, Callable
+from typing import Optional, Any
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QFrame,
-    QSizePolicy,
 )
 
 from loguru import logger

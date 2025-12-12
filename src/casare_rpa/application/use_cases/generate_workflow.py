@@ -28,8 +28,6 @@ from casare_rpa.domain.schemas.workflow_ai import (
     WorkflowAISchema,
     NodeSchema,
     ConnectionSchema,
-    WorkflowMetadataSchema,
-    WorkflowSettingsSchema,
     PositionSchema,
 )
 from casare_rpa.infrastructure.ai.registry_dumper import (
@@ -121,6 +119,16 @@ Your task: Generate valid CasareRPA workflow JSON from natural language descript
 6. Use meaningful node IDs that describe the action
 7. Position nodes with x starting at 0, incrementing by 400 for each node
 
+## CRITICAL - Variable Reference Syntax
+**ALWAYS use double curly braces: `{{{{node_id.output_port}}}}`**
+
+WRONG ❌: `${{node.output}}`, `$variable`, `${{variable}}`, `{{{{node.result}}}}`
+CORRECT ✅: `{{{{node_id.result_value}}}}`, `{{{{variable_name}}}}`
+
+- NEVER use `$` symbol for variables!
+- NEVER use `${{}}` syntax - this is shell/JS syntax, NOT CasareRPA!
+- EnvironmentVariableNode output port is `result_value`, NOT `result`!
+
 ## PERFORMANCE RULES
 - NEVER use WaitNode with hardcoded duration_ms values
 - ALWAYS use WaitForElementNode with state='visible' before clicking elements
@@ -174,6 +182,36 @@ Your task: Generate valid CasareRPA workflow JSON from natural language descript
 - ExtractTextNode: {{"selector": "..."}}
 - ScreenshotNode: {{"path": "screenshot.png", "full_page": false}}
 - LaunchApplicationNode: {{"application_path": "notepad.exe", "arguments": ""}}
+- EnvironmentVariableNode: {{"action": "get", "var_name": "USERPROFILE"}}
+- ListDirectoryNode: {{"dir_path": "C:\\path", "pattern": "*", "files_only": false}}
+
+## CRITICAL - Node Output References
+When one node's output is needed by another node, use: `{{{{node_id.output_port}}}}`
+
+The manifest shows outputs as `NodeType(inputs)->output1,output2`. Use these output names!
+
+**Example - List Desktop Directory:**
+```json
+{{
+  "nodes": {{
+    "get_profile": {{
+      "node_id": "get_profile",
+      "node_type": "EnvironmentVariableNode",
+      "config": {{"action": "get", "var_name": "USERPROFILE"}},
+      "position": [0, 0]
+    }},
+    "list_desktop": {{
+      "node_id": "list_desktop",
+      "node_type": "ListDirectoryNode",
+      "config": {{"dir_path": "{{{{get_profile.result_value}}}}\\Desktop"}},
+      "position": [400, 0]
+    }}
+  }},
+  "connections": [
+    {{"source_node": "get_profile", "source_port": "exec_out", "target_node": "list_desktop", "target_port": "exec_in"}}
+  ]
+}}
+```
 
 Output ONLY the JSON object with action nodes. NO StartNode or EndNode."""
 

@@ -67,6 +67,7 @@ class APIKeyStore:
         "together": "TOGETHER_API_KEY",
         "perplexity": "PERPLEXITY_API_KEY",
         "deepseek": "DEEPSEEK_API_KEY",
+        "openrouter": "OPENROUTER_API_KEY",
     }
 
     def __init__(self, store_path: Optional[Path] = None) -> None:

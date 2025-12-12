@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QFrame,
     QScrollArea,
-    QSizePolicy,
 )
 
 from loguru import logger
@@ -269,7 +268,6 @@ class ActionRowWidget(QFrame):
 
     def _start_drag(self, event) -> None:
         """Start drag operation."""
-        from PySide6.QtCore import QPoint
 
         drag = QDrag(self)
         mime_data = QMimeData()

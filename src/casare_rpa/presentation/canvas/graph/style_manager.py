@@ -7,7 +7,7 @@ Consolidates color palettes, themes, and style application logic.
 Following Single Responsibility Principle - this module handles ONLY visual styling.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict
 from PySide6.QtGui import QColor, QPen, QBrush
 from PySide6.QtCore import Qt
 

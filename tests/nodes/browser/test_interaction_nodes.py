@@ -129,6 +129,11 @@ class TestClickElementNode:
         execution_context.get_active_page = MagicMock(return_value=mock_page)
 
         node = ClickElementNode(node_id="test_not_found", selector="#nonexistent")
+        # Mock healing to fail so it falls back to page.click
+        node.find_element_with_healing = AsyncMock(
+            side_effect=Exception("Healing failed")
+        )
+
         result = await node.execute(execution_context)
 
         assert result["success"] is False
@@ -146,6 +151,11 @@ class TestClickElementNode:
             node_id="test_force",
             config={"selector": "#hidden-button", "force": True, "timeout": 5000},
         )
+        # Mock healing to fail so it uses force in fallback
+        node.find_element_with_healing = AsyncMock(
+            side_effect=Exception("Healing failed")
+        )
+
         result = await node.execute(execution_context)
 
         assert result["success"] is True

@@ -515,3 +515,246 @@ class VisualLLMTranslateNode(VisualNode, LLMVisualNodeMixin):
         self.add_typed_output("tokens_used", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+
+class VisualAIConditionNode(VisualNode, LLMVisualNodeMixin):
+    """Visual representation of AIConditionNode.
+
+    Evaluate natural language conditions using AI.
+    Returns true/false with confidence score.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "AI Condition"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize AI condition node."""
+        super().__init__()
+        self._create_widgets()
+        self._setup_credential_model_link()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        cred_items = [name for _, name in get_llm_credentials()]
+        self.add_combo_menu("credential", "API Key", items=cred_items)
+
+        self.add_text_input(
+            "condition",
+            "Condition",
+            placeholder_text="Is the email about a complaint?",
+        )
+        self.add_text_input(
+            "context",
+            "Context",
+            placeholder_text="Data to evaluate against...",
+        )
+        self.add_combo_menu("model", "Model", items=ALL_MODELS)
+        self.set_property("model", "gpt-4o-mini")
+        self.add_text_input("temperature", "Temperature", text="0.0")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow - branching outputs
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_true")
+        self.add_exec_output("exec_false")
+
+        # Data inputs
+        self.add_typed_input("condition", DataType.STRING)
+        self.add_typed_input("context", DataType.ANY)
+        self.add_typed_input("model", DataType.STRING)
+        self.add_typed_input("temperature", DataType.FLOAT)
+
+        # Data outputs
+        self.add_typed_output("result", DataType.BOOLEAN)
+        self.add_typed_output("confidence", DataType.FLOAT)
+        self.add_typed_output("reasoning", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualAISwitchNode(VisualNode, LLMVisualNodeMixin):
+    """Visual representation of AISwitchNode.
+
+    Multi-way branching using AI classification.
+    Routes to one of multiple output paths.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "AI Switch"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize AI switch node."""
+        super().__init__()
+        self._create_widgets()
+        self._setup_credential_model_link()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        cred_items = [name for _, name in get_llm_credentials()]
+        self.add_combo_menu("credential", "API Key", items=cred_items)
+
+        self.add_text_input(
+            "question",
+            "Question",
+            placeholder_text="What type of document is this?",
+        )
+        self.add_text_input(
+            "options",
+            "Options",
+            placeholder_text="invoice, receipt, contract, other",
+        )
+        self.add_text_input(
+            "context",
+            "Context",
+            placeholder_text="Data to classify...",
+        )
+        self.add_combo_menu("model", "Model", items=ALL_MODELS)
+        self.set_property("model", "gpt-4o-mini")
+        self.add_text_input("temperature", "Temperature", text="0.0")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_default")
+
+        # Data inputs
+        self.add_typed_input("question", DataType.STRING)
+        self.add_typed_input("options", DataType.LIST)
+        self.add_typed_input("context", DataType.ANY)
+        self.add_typed_input("model", DataType.STRING)
+        self.add_typed_input("temperature", DataType.FLOAT)
+
+        # Data outputs
+        self.add_typed_output("selected_option", DataType.STRING)
+        self.add_typed_output("confidence", DataType.FLOAT)
+        self.add_typed_output("reasoning", DataType.STRING)
+        self.add_typed_output("all_scores", DataType.DICT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualAIDecisionTableNode(VisualNode, LLMVisualNodeMixin):
+    """Visual representation of AIDecisionTableNode.
+
+    Evaluate decision table with AI fuzzy matching.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "AI Decision Table"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize AI decision table node."""
+        super().__init__()
+        self._create_widgets()
+        self._setup_credential_model_link()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        cred_items = [name for _, name in get_llm_credentials()]
+        self.add_combo_menu("credential", "API Key", items=cred_items)
+
+        self.add_text_input(
+            "decision_table",
+            "Decision Table",
+            placeholder_text='{"rules": [...], "default_action": "..."}',
+        )
+        self.add_text_input(
+            "context",
+            "Context",
+            placeholder_text="Data to evaluate...",
+        )
+        self.add_combo_menu("model", "Model", items=ALL_MODELS)
+        self.set_property("model", "gpt-4o-mini")
+        self.add_text_input("temperature", "Temperature", text="0.0")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("decision_table", DataType.DICT)
+        self.add_typed_input("context", DataType.ANY)
+        self.add_typed_input("model", DataType.STRING)
+        self.add_typed_input("temperature", DataType.FLOAT)
+
+        # Data outputs
+        self.add_typed_output("matched_action", DataType.STRING)
+        self.add_typed_output("matched_rule_index", DataType.INTEGER)
+        self.add_typed_output("confidence", DataType.FLOAT)
+        self.add_typed_output("reasoning", DataType.STRING)
+        self.add_typed_output("all_matches", DataType.LIST)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualAIAgentNode(VisualNode, LLMVisualNodeMixin):
+    """Visual representation of AIAgentNode.
+
+    Autonomous AI agent with multi-step reasoning and tool use.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "AI Agent"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize AI agent node."""
+        super().__init__()
+        self._create_widgets()
+        self._setup_credential_model_link()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        cred_items = [name for _, name in get_llm_credentials()]
+        self.add_combo_menu("credential", "API Key", items=cred_items)
+
+        self.add_text_input(
+            "goal",
+            "Goal",
+            placeholder_text="Find the order status for customer 12345...",
+        )
+        self.add_text_input(
+            "context",
+            "Context",
+            placeholder_text="Additional context for the agent...",
+        )
+        self.add_text_input(
+            "available_tools",
+            "Available Tools",
+            placeholder_text="read_file, http_request, calculate (comma-separated)",
+        )
+        self.add_combo_menu("model", "Model", items=ALL_MODELS)
+        self.set_property("model", "gpt-4o-mini")
+        self.add_text_input("max_steps", "Max Steps", text="10")
+        self.add_text_input("timeout", "Timeout (sec)", text="300")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_exec_output("exec_error")
+
+        # Data inputs
+        self.add_typed_input("goal", DataType.STRING)
+        self.add_typed_input("context", DataType.ANY)
+        self.add_typed_input("available_tools", DataType.LIST)
+        self.add_typed_input("max_steps", DataType.INTEGER)
+        self.add_typed_input("timeout", DataType.FLOAT)
+        self.add_typed_input("model", DataType.STRING)
+
+        # Data outputs
+        self.add_typed_output("result", DataType.ANY)
+        self.add_typed_output("steps_taken", DataType.LIST)
+        self.add_typed_output("step_count", DataType.INTEGER)
+        self.add_typed_output("total_tokens", DataType.INTEGER)
+        self.add_typed_output("execution_time", DataType.FLOAT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)

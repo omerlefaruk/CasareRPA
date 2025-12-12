@@ -15,6 +15,7 @@ from casare_rpa.application.services.browser_recording_service import (
     BrowserRecordingService,
     get_browser_recording_service,
 )
+from casare_rpa.application.services.queue_service import QueueService
 
 __all__ = [
     "ExecutionLifecycleManager",
@@ -26,4 +27,5 @@ __all__ = [
     "AiohttpClient",
     "BrowserRecordingService",
     "get_browser_recording_service",
+    "QueueService",
 ]

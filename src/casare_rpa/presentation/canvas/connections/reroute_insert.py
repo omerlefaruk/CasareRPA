@@ -9,10 +9,10 @@ Usage:
 """
 
 import traceback
-from typing import Optional, Tuple
+from typing import Optional
 
 from PySide6.QtCore import QObject, Signal, Qt, QPointF
-from PySide6.QtGui import QPainterPath, QPainterPathStroker
+from PySide6.QtGui import QPainterPathStroker
 from NodeGraphQt import NodeGraph
 
 from loguru import logger

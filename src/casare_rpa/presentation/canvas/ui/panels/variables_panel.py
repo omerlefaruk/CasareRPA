@@ -15,7 +15,7 @@ Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -34,7 +34,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QLineEdit,
-    QPushButton,
     QCheckBox,
     QTextEdit,
     QSpinBox,
@@ -61,7 +60,7 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_toolbar_stylesheet,
 )
 from casare_rpa.domain.entities.variable import Variable
-from casare_rpa.domain.entities.project.variables import VariableScope, VariableType
+from casare_rpa.infrastructure.security.data_masker import get_masker
 
 
 # Variable type definitions
@@ -803,9 +802,45 @@ class VariablesPanel(QDockWidget):
         # Update scope group visibility
         self._apply_scope_filter()
 
+    def _is_sensitive_variable_name(self, name: str) -> bool:
+        """
+        Check if a variable name suggests sensitive data.
+
+        Uses DataMasker to detect sensitive key patterns.
+
+        Args:
+            name: Variable name to check
+
+        Returns:
+            True if name suggests sensitive data
+        """
+        try:
+            masker = get_masker()
+            return masker.is_sensitive_key(name)
+        except Exception:
+            # Fallback to basic check if masker unavailable
+            sensitive_patterns = {
+                "password",
+                "passwd",
+                "pwd",
+                "secret",
+                "token",
+                "api_key",
+                "apikey",
+                "credential",
+                "auth",
+                "key",
+                "private",
+            }
+            name_lower = name.lower()
+            return any(pattern in name_lower for pattern in sensitive_patterns)
+
     def _format_value_display(self, variable: Variable) -> str:
         """
         Format value for display in the tree.
+
+        Automatically masks sensitive values based on variable name
+        patterns or explicit sensitive flag.
 
         Args:
             variable: Variable entity
@@ -813,7 +848,12 @@ class VariablesPanel(QDockWidget):
         Returns:
             Formatted display string (masked if sensitive)
         """
+        # Explicit sensitive flag takes priority
         if variable.sensitive:
+            return MASKED_VALUE
+
+        # Auto-detect sensitive variable names
+        if self._is_sensitive_variable_name(variable.name):
             return MASKED_VALUE
 
         value = variable.default_value
@@ -827,6 +867,12 @@ class VariablesPanel(QDockWidget):
 
             try:
                 text = json_module.dumps(value)
+                # Mask any sensitive values in the JSON
+                try:
+                    masker = get_masker()
+                    text = masker.mask_string(text)
+                except Exception:
+                    pass
                 if len(text) > 30:
                     text = text[:27] + "..."
                 return text
@@ -834,6 +880,12 @@ class VariablesPanel(QDockWidget):
                 return str(value)[:30]
         else:
             text = str(value)
+            # Mask any sensitive patterns in string values
+            try:
+                masker = get_masker()
+                text = masker.mask_string(text)
+            except Exception:
+                pass
             if len(text) > 30:
                 text = text[:27] + "..."
             return text
@@ -1056,6 +1108,11 @@ class VariablesPanel(QDockWidget):
         if name in self._variables.get(scope, {}):
             logger.warning(f"Variable '{name}' already exists in {scope} scope")
             return False
+
+        # Auto-detect sensitive variables based on name
+        if not sensitive and self._is_sensitive_variable_name(name):
+            sensitive = True
+            logger.debug(f"Auto-detected sensitive variable: {name}")
 
         # Create Variable entity
         try:

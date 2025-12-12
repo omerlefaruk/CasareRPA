@@ -13,10 +13,8 @@ from __future__ import annotations
 
 import statistics
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Protocol
-
-from loguru import logger
 
 
 class MetricsDataSource(Protocol):

@@ -63,7 +63,6 @@ from casare_rpa.robot.metrics import MetricsCollector, get_metrics_collector
 from casare_rpa.robot.audit import (
     AuditLogger,
     AuditEventType,
-    AuditSeverity,
     init_audit_logger,
 )
 

@@ -24,20 +24,19 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QProgressBar,
     QMessageBox,
-    QDialogButtonBox,
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QFont
 
 from loguru import logger
 from PySide6.QtWidgets import QDialog
 
 
 if TYPE_CHECKING:
-    from casare_rpa.domain.orchestrator.entities.robot import Robot
+    pass
 
 
 STATUS_COLORS = {

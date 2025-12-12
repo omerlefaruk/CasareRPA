@@ -9,7 +9,6 @@ from typing import Optional, List, Dict, Any
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal
 
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.panels.api_key_panel import ApiKeyPanel
 

@@ -30,6 +30,12 @@
     "max_undo_steps": 100,
     "cache_size_mb": 200
   },
+  "ai": {
+    "provider": "OpenRouter",
+    "model": "openrouter/deepseek/deepseek-v3.2",
+    "credential_id": "cred_6ec90107cce8",
+    "debug_mode": true
+  },
   "canvas": {
     "quick_node_mode": true,
     "auto_connect": false

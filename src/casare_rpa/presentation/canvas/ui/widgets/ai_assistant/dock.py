@@ -11,6 +11,8 @@ Features:
 - Status bar showing validation progress
 - Preview card for generated workflows
 - Integration with SmartWorkflowAgent for validated workflow generation
+- Multi-turn conversation support with intent classification
+- Undo/redo for workflow changes
 """
 
 from __future__ import annotations
@@ -18,8 +20,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
-from PySide6.QtGui import QFont, QKeyEvent
+from PySide6.QtCore import Qt, Signal, QThread, QObject
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QComboBox,
     QDockWidget,
@@ -30,18 +32,24 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
+    QTextEdit,
     QWidget,
 )
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.theme import Theme, ANIMATIONS
+from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.chat_area import ChatArea
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.preview_card import (
     PreviewCard,
 )
+from casare_rpa.presentation.canvas.ui.widgets.ai_settings_widget import (
+    AISettingsWidget,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.ai.smart_agent import WorkflowGenerationResult
+    from casare_rpa.infrastructure.ai.conversation_manager import ConversationManager
+    from casare_rpa.infrastructure.ai.intent_classifier import IntentClassifier
 
 
 # =============================================================================
@@ -64,6 +72,7 @@ class WorkflowGenerationWorker(QObject):
         prompt: str,
         model_id: str,
         credential_id: Optional[str] = None,
+        provider: Optional[str] = None,
         existing_workflow: Optional[Dict[str, Any]] = None,
         canvas_state: Optional[Dict[str, Any]] = None,
         is_edit: bool = False,
@@ -72,6 +81,7 @@ class WorkflowGenerationWorker(QObject):
         self._prompt = prompt
         self._model_id = model_id
         self._credential_id = credential_id
+        self._provider = provider
         self._existing_workflow = existing_workflow
         self._canvas_state = canvas_state
         self._is_edit = is_edit
@@ -87,16 +97,32 @@ class WorkflowGenerationWorker(QObject):
             )
 
             store = get_credential_store()
-            cred_data = store.get_credential(self._credential_id)
+            # If explicit credential ID is provided
+            if self._credential_id != "auto":
+                cred_data = store.get_credential(self._credential_id)
+                if cred_data:
+                    return (
+                        cred_data.get("api_key")
+                        or cred_data.get("key")
+                        or cred_data.get("token")
+                        or cred_data.get("secret")
+                    )
 
-            if cred_data:
-                # Try common key field names
-                return (
-                    cred_data.get("api_key")
-                    or cred_data.get("key")
-                    or cred_data.get("token")
-                    or cred_data.get("secret")
+            # If "auto" or provider-based lookup needed
+            if self._provider:
+                # Map provider string to store key
+                provider_key = self._provider.lower()
+                if "openai" in provider_key:
+                    provider_key = "openai"
+                elif "anthropic" in provider_key:
+                    provider_key = "anthropic"
+                elif "openrouter" in provider_key:
+                    provider_key = "openrouter"
+
+                return store.get_api_key_by_provider(provider_key) or store.get_key(
+                    provider_key
                 )
+
         except Exception as e:
             logger.warning(f"Could not retrieve credential: {e}")
 
@@ -124,16 +150,32 @@ class WorkflowGenerationWorker(QObject):
             # Configure LLM client with the credential
             llm_client = LLMResourceManager()
 
-            # Detect provider from model ID
-            model_lower = self._model_id.lower()
-            if model_lower.startswith("gemini") or "gemini" in model_lower:
-                provider = LLMProvider.CUSTOM  # Gemini uses custom base
-            elif model_lower.startswith("gpt") or model_lower.startswith("o1"):
-                provider = LLMProvider.OPENAI
-            elif model_lower.startswith("claude"):
-                provider = LLMProvider.ANTHROPIC
+            # Determine provider enum
+            provider = LLMProvider.OPENAI  # Default
+
+            if self._provider:
+                p_lower = self._provider.lower()
+                if "openrouter" in p_lower:
+                    provider = LLMProvider.OPENROUTER
+                elif "anthropic" in p_lower:
+                    provider = LLMProvider.ANTHROPIC
+                elif "google" in p_lower or "gemini" in p_lower:
+                    provider = (
+                        LLMProvider.AZURE
+                    )  # Assuming Azure/Google mapping or CUSTOM
+                elif "ollama" in p_lower:
+                    provider = LLMProvider.OLLAMA
+                elif "openai" in p_lower:
+                    provider = LLMProvider.OPENAI
             else:
-                provider = LLMProvider.OPENAI  # Default
+                # Fallback to model name detection
+                model_lower = self._model_id.lower()
+                if model_lower.startswith("gemini") or "gemini" in model_lower:
+                    provider = LLMProvider.CUSTOM
+                elif model_lower.startswith("gpt") or model_lower.startswith("o1"):
+                    provider = LLMProvider.OPENAI
+                elif model_lower.startswith("claude"):
+                    provider = LLMProvider.ANTHROPIC
 
             config = LLMConfig(
                 provider=provider,
@@ -178,6 +220,140 @@ class WorkflowGenerationWorker(QObject):
             self.finished.emit(error_result)
 
 
+class AutoResizingTextEdit(QTextEdit):
+    """
+    Text edit that auto-resizes vertically based on content.
+    """
+
+    returnPressed = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptRichText(False)
+        self.setPlaceholderText("Message AI Assistant...")
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.document().documentLayout().documentSizeChanged.connect(
+            self._adjust_height
+        )
+        self.setFixedHeight(40)
+        self._min_height = 40
+        self._max_height = 120
+
+    def _adjust_height(self):
+        doc_height = self.document().size().height()
+        new_height = min(max(doc_height + 10, self._min_height), self._max_height)
+        self.setFixedHeight(int(new_height))
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Return and not event.modifiers():
+            self.returnPressed.emit()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+
+class InputBar(QFrame):
+    """
+    Modern floating input bar with rounded corners and embedded button.
+    """
+
+    sendClicked = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        colors = Theme.get_colors()
+
+        # Container style
+        self.setStyleSheet(f"""
+            InputBar {{
+                background-color: {colors.surface};
+                border-top: 1px solid {colors.border};
+            }}
+            QFrame#InputContainer {{
+                background-color: {colors.background};
+                border: 1px solid {colors.border};
+                border-radius: 20px;
+            }}
+            QFrame#InputContainer:focus-within {{
+                border: 1px solid {colors.accent};
+                background-color: {colors.background};
+            }}
+        """)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 12, 16, 16)
+
+        # Rounded Container
+        self._container = QFrame()
+        self._container.setObjectName("InputContainer")
+        container_layout = QHBoxLayout(self._container)
+        container_layout.setContentsMargins(12, 4, 4, 4)
+
+        # Text Edit
+        self._text_edit = AutoResizingTextEdit()
+        self._text_edit.setFrameStyle(QFrame.Shape.NoFrame)
+        self._text_edit.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: transparent;
+                color: {colors.text_primary};
+                font-size: 13px;
+            }}
+        """)
+        container_layout.addWidget(self._text_edit)
+
+        # Send Button
+        self._send_btn = QPushButton("➢")  # Arrow icon or similar
+        self._send_btn.setFixedSize(32, 32)
+        self._send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._send_btn.clicked.connect(self.sendClicked.emit)
+        self._text_edit.returnPressed.connect(self.sendClicked.emit)
+
+        self._send_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {colors.accent};
+                color: white;
+                border-radius: 16px;
+                font-weight: bold;
+                font-size: 14px;
+                padding-bottom: 2px;
+            }}
+            QPushButton:hover {{
+                background-color: {colors.accent_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {colors.primary_pressed};
+            }}
+            QPushButton:disabled {{
+                background-color: {colors.surface_hover};
+                color: {colors.text_disabled};
+            }}
+        """)
+        container_layout.addWidget(
+            self._send_btn, alignment=Qt.AlignmentFlag.AlignBottom
+        )
+
+        layout.addWidget(self._container)
+
+    def text(self) -> str:
+        return self._text_edit.toPlainText()
+
+    def clear(self):
+        self._text_edit.clear()
+
+    def setEnabled(self, enabled: bool):
+        super().setEnabled(enabled)
+        self._text_edit.setEnabled(
+            enabled
+        )  # Keep it visibly enabled but maybe read-only? No, disable is fine.
+        self._send_btn.setEnabled(enabled)
+
+    def setPlaceholderText(self, text: str):
+        self._text_edit.setPlaceholderText(text)
+
+
 class WorkflowGenerationThread(QThread):
     """Thread wrapper for workflow generation worker."""
 
@@ -188,6 +364,7 @@ class WorkflowGenerationThread(QThread):
         prompt: str,
         model_id: str,
         credential_id: Optional[str] = None,
+        provider: Optional[str] = None,
         existing_workflow: Optional[Dict[str, Any]] = None,
         canvas_state: Optional[Dict[str, Any]] = None,
         is_edit: bool = False,
@@ -198,6 +375,7 @@ class WorkflowGenerationThread(QThread):
             prompt=prompt,
             model_id=model_id,
             credential_id=credential_id,
+            provider=provider,
             existing_workflow=existing_workflow,
             canvas_state=canvas_state,
             is_edit=is_edit,
@@ -233,27 +411,6 @@ class AIAssistantDock(QDockWidget):
     generation_finished = Signal(bool)
     credential_changed = Signal(str)
 
-    # Supported AI provider tags (lowercase as stored in credential store)
-    # Maps credential tag -> display label
-    SUPPORTED_PROVIDER_TAGS = {
-        "google": "Google AI",
-        "openai": "OpenAI",
-    }
-
-    # Available AI models by provider (model_id, display_name)
-    # Model IDs use LiteLLM format: gemini/<model-name>
-    GOOGLE_AI_MODELS = [
-        ("gemini/gemini-3-pro-preview", "Gemini 3 Pro (Preview)"),
-        ("gemini/gemini-flash-latest", "Gemini Flash (Latest)"),
-        ("gemini/gemini-flash-lite-latest", "Gemini Flash Lite"),
-    ]
-
-    OPENAI_MODELS = [
-        ("gpt-4o", "GPT-4o (Best)"),
-        ("gpt-4o-mini", "GPT-4o Mini (Fast)"),
-        ("gpt-4-turbo", "GPT-4 Turbo"),
-    ]
-
     def __init__(
         self,
         parent: Optional[QWidget] = None,
@@ -277,6 +434,11 @@ class AIAssistantDock(QDockWidget):
         self._last_prompt: Optional[str] = None
         self._auto_append = True  # Auto-append workflows to canvas
 
+        # Multi-turn conversation support
+        self._conversation_manager: Optional["ConversationManager"] = None
+        self._intent_classifier: Optional["IntentClassifier"] = None
+        self._init_conversation_support()
+
         if embedded:
             QWidget.__init__(self, parent)
         else:
@@ -288,9 +450,35 @@ class AIAssistantDock(QDockWidget):
         self._setup_ui()
         self._apply_styles()
         self._connect_signals()
-        self._load_credentials()
 
-        logger.debug("AIAssistantDock initialized")
+        logger.debug("AIAssistantDock initialized with conversation support")
+
+    def _init_conversation_support(self) -> None:
+        """Initialize conversation manager and intent classifier."""
+        try:
+            from casare_rpa.infrastructure.ai.conversation_manager import (
+                ConversationManager,
+            )
+            from casare_rpa.infrastructure.ai.intent_classifier import (
+                IntentClassifier,
+            )
+
+            self._conversation_manager = ConversationManager(
+                max_messages=20,
+                max_workflow_history=10,
+            )
+            self._intent_classifier = IntentClassifier(
+                confidence_threshold=0.7,
+            )
+            logger.debug("Conversation support initialized")
+        except ImportError as e:
+            logger.warning(f"Could not initialize conversation support: {e}")
+            self._conversation_manager = None
+            self._intent_classifier = None
+        except Exception as e:
+            logger.error(f"Error initializing conversation support: {e}")
+            self._conversation_manager = None
+            self._intent_classifier = None
 
     def _get_credential_store(self):
         """Lazy-load the credential store."""
@@ -367,12 +555,32 @@ class AIAssistantDock(QDockWidget):
         """
         Detect if user is requesting edits to existing nodes.
 
+        Uses intent classifier if available, falls back to keyword matching.
+
         Args:
             prompt: User's prompt text
 
         Returns:
             True if this looks like an edit request
         """
+        # Try using intent classifier
+        if self._intent_classifier is not None:
+            from casare_rpa.infrastructure.ai.conversation_manager import UserIntent
+
+            has_workflow = self._current_workflow is not None
+            classification = self._intent_classifier.classify(prompt, has_workflow)
+
+            edit_intents = {
+                UserIntent.MODIFY_WORKFLOW,
+                UserIntent.ADD_NODE,
+                UserIntent.REMOVE_NODE,
+                UserIntent.REFINE,
+            }
+
+            if classification.intent in edit_intents:
+                return True
+
+        # Fallback to keyword matching
         prompt_lower = prompt.lower()
 
         # Edit keywords
@@ -397,6 +605,22 @@ class AIAssistantDock(QDockWidget):
                 return True
 
         return False
+
+    def _classify_intent(self, prompt: str):
+        """
+        Classify user intent from prompt.
+
+        Args:
+            prompt: User's prompt text
+
+        Returns:
+            IntentClassification or None if classifier not available
+        """
+        if self._intent_classifier is None:
+            return None
+
+        has_workflow = self._current_workflow is not None
+        return self._intent_classifier.classify(prompt, has_workflow)
 
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
@@ -443,13 +667,9 @@ class AIAssistantDock(QDockWidget):
         self._preview_card.setVisible(False)
         main_layout.addWidget(self._preview_card)
 
-        # Input section
-        input_section = self._create_input_section()
-        main_layout.addWidget(input_section)
-
-        # Status bar
-        self._status_bar = self._create_status_bar()
-        main_layout.addWidget(self._status_bar)
+        # Input Bar (Replaces old input section + status bar)
+        self._input_bar = InputBar()
+        main_layout.addWidget(self._input_bar)
 
         if not self._embedded:
             self.setWidget(container)
@@ -476,6 +696,15 @@ class AIAssistantDock(QDockWidget):
         title_row.addWidget(title_label)
         title_row.addStretch()
 
+        # Debug toggle checkbox
+        from PySide6.QtWidgets import QCheckBox
+
+        self._debug_checkbox = QCheckBox("Debug")
+        self._debug_checkbox.setObjectName("DebugCheckbox")
+        self._debug_checkbox.setToolTip("Show raw LLM output for debugging")
+        self._debug_checkbox.setChecked(False)
+        title_row.addWidget(self._debug_checkbox)
+
         # Clear chat button
         self._clear_btn = QPushButton("Clear")
         self._clear_btn.setObjectName("ClearChatButton")
@@ -485,109 +714,18 @@ class AIAssistantDock(QDockWidget):
 
         header_layout.addLayout(title_row)
 
-        # Credential selector row
-        cred_row = QHBoxLayout()
-        cred_label = QLabel("AI Provider:")
-        cred_label.setObjectName("CredentialLabel")
-        cred_row.addWidget(cred_label)
-
-        self._credential_combo = QComboBox()
-        self._credential_combo.setObjectName("CredentialCombo")
-        self._credential_combo.setToolTip("Select AI credential (Google AI or OpenAI)")
-        self._credential_combo.setMinimumWidth(180)
-        self._credential_combo.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        # Unified AI Settings Widget
+        self._ai_settings_widget = AISettingsWidget(
+            parent=header,
+            show_credential=True,
+            show_provider=True,
+            show_model=True,
+            compact=False,
+            title="",  # No group box
         )
-        cred_row.addWidget(self._credential_combo, stretch=1)
-
-        # Refresh credentials button
-        self._refresh_cred_btn = QPushButton("R")
-        self._refresh_cred_btn.setObjectName("RefreshCredButton")
-        self._refresh_cred_btn.setToolTip("Refresh credentials")
-        self._refresh_cred_btn.setFixedSize(28, 28)
-        cred_row.addWidget(self._refresh_cred_btn)
-
-        header_layout.addLayout(cred_row)
-
-        # Model selector row
-        model_row = QHBoxLayout()
-        model_label = QLabel("Model:")
-        model_label.setObjectName("ModelLabel")
-        model_row.addWidget(model_label)
-
-        self._model_combo = QComboBox()
-        self._model_combo.setObjectName("ModelCombo")
-        self._model_combo.setToolTip("Select AI model for generation")
-        self._model_combo.setMinimumWidth(180)
-        self._model_combo.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
-        self._model_combo.setEnabled(False)  # Disabled until credential selected
-        model_row.addWidget(self._model_combo, stretch=1)
-
-        header_layout.addLayout(model_row)
+        header_layout.addWidget(self._ai_settings_widget)
 
         return header
-
-    def _create_input_section(self) -> QFrame:
-        """Create the input field and send button."""
-        colors = Theme.get_colors()
-        spacing = Theme.get_spacing()
-
-        input_frame = QFrame()
-        input_frame.setObjectName("InputSection")
-        input_layout = QHBoxLayout(input_frame)
-        input_layout.setContentsMargins(spacing.sm, spacing.sm, spacing.sm, spacing.sm)
-        input_layout.setSpacing(spacing.xs)
-
-        # Input field
-        self._input_field = QLineEdit()
-        self._input_field.setObjectName("ChatInput")
-        self._input_field.setPlaceholderText(
-            "Describe the workflow you want to create..."
-        )
-        self._input_field.setMinimumHeight(36)
-        input_layout.addWidget(self._input_field, stretch=1)
-
-        # Send button
-        self._send_btn = QPushButton("Send")
-        self._send_btn.setObjectName("SendButton")
-        self._send_btn.setMinimumHeight(36)
-        self._send_btn.setMinimumWidth(70)
-        input_layout.addWidget(self._send_btn)
-
-        return input_frame
-
-    def _create_status_bar(self) -> QFrame:
-        """Create the status bar showing validation progress."""
-        colors = Theme.get_colors()
-        spacing = Theme.get_spacing()
-
-        status_frame = QFrame()
-        status_frame.setObjectName("StatusBar")
-        status_frame.setFixedHeight(28)
-        status_layout = QHBoxLayout(status_frame)
-        status_layout.setContentsMargins(spacing.sm, 0, spacing.sm, 0)
-
-        # Status icon (animated dot or checkmark)
-        self._status_icon = QLabel()
-        self._status_icon.setObjectName("StatusIcon")
-        self._status_icon.setFixedSize(16, 16)
-        self._status_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        status_layout.addWidget(self._status_icon)
-
-        # Status text
-        self._status_label = QLabel("Ready")
-        self._status_label.setObjectName("StatusLabel")
-        status_layout.addWidget(self._status_label, stretch=1)
-
-        # Validation badge (hidden initially)
-        self._validation_badge = QLabel()
-        self._validation_badge.setObjectName("ValidationBadge")
-        self._validation_badge.setVisible(False)
-        status_layout.addWidget(self._validation_badge)
-
-        return status_frame
 
     def _apply_styles(self) -> None:
         """Apply theme styling."""
@@ -780,161 +918,125 @@ class AIAssistantDock(QDockWidget):
 
     def _connect_signals(self) -> None:
         """Connect internal signals."""
-        # Send button
-        self._send_btn.clicked.connect(self._on_send_clicked)
-
-        # Input field Enter key
-        self._input_field.returnPressed.connect(self._on_send_clicked)
+        # Input Bar
+        self._input_bar.sendClicked.connect(self._on_send_clicked)
 
         # Clear chat
         self._clear_btn.clicked.connect(self._clear_chat)
 
-        # Credential selector
-        self._credential_combo.currentIndexChanged.connect(self._on_credential_changed)
+        # AI Settings Widget signals
+        self._ai_settings_widget.credential_changed.connect(self._on_credential_changed)
+        self._ai_settings_widget.provider_changed.connect(self._on_provider_changed)
+        self._ai_settings_widget.model_changed.connect(self._on_model_changed)
+        self._ai_settings_widget.settings_changed.connect(self._save_ai_settings)
 
-        # Model selector
-        self._model_combo.currentIndexChanged.connect(self._on_model_changed)
-
-        # Refresh credentials
-        self._refresh_cred_btn.clicked.connect(self._load_credentials)
+        # Debug checkbox
+        self._debug_checkbox.toggled.connect(self._on_debug_toggled)
 
         # Preview card signals
         self._preview_card.append_clicked.connect(self._on_append_clicked)
         self._preview_card.regenerate_clicked.connect(self._on_regenerate_clicked)
 
-    def _load_credentials(self) -> None:
-        """Load AI provider credentials into combo box."""
-        self._credential_combo.clear()
-        self._credential_combo.addItem("Select AI Provider...", None)
+        # Load saved settings (must be after widget setup)
+        self._load_ai_settings()
 
-        store = self._get_credential_store()
-        if not store:
-            logger.warning("Credential store not available")
-            return
+        # Initialize input bar state based on current credential selection
+        # (signal was emitted before we connected, so we need to sync manually)
+        initial_cred = self._ai_settings_widget.get_credential_id()
+        if initial_cred:
+            self._on_credential_changed(initial_cred)
 
+    def _load_ai_settings(self) -> None:
+        """Load AI assistant settings from persistent storage."""
         try:
-            # Get LLM credentials (category="llm")
-            credentials = store.list_credentials(category="llm")
-            ai_creds: List[Dict[str, Any]] = []
+            from casare_rpa.utils.settings_manager import get_settings_manager
 
-            for cred in credentials:
-                cred_id = cred.get("id", "")
-                matched_provider = None
+            manager = get_settings_manager()
 
-                # Method 1: Check tags for supported providers
-                tags = cred.get("tags", [])
-                for tag in tags:
-                    tag_lower = tag.lower()
-                    if tag_lower in self.SUPPORTED_PROVIDER_TAGS:
-                        matched_provider = tag_lower
-                        break
+            # Load saved settings
+            saved_provider = manager.get("ai.provider")
+            saved_model = manager.get("ai.model")
+            saved_credential = manager.get("ai.credential_id")
+            saved_debug = manager.get("ai.debug_mode", False)
 
-                # Method 2: If no tag match, try to get provider from encrypted data
-                if not matched_provider and cred_id:
-                    try:
-                        cred_data = store.get_credential(cred_id)
-                        if cred_data:
-                            provider = cred_data.get("provider", "").lower()
-                            if provider in self.SUPPORTED_PROVIDER_TAGS:
-                                matched_provider = provider
-                    except Exception as e:
-                        logger.debug(
-                            f"Could not get provider from credential data: {e}"
-                        )
+            if saved_provider or saved_model or saved_credential:
+                settings = {}
+                if saved_provider:
+                    settings["provider"] = saved_provider
+                if saved_model:
+                    settings["model"] = saved_model
+                if saved_credential:
+                    settings["credential_id"] = saved_credential
 
-                if matched_provider:
-                    cred["_provider_tag"] = matched_provider
-                    ai_creds.append(cred)
+                self._ai_settings_widget.set_settings(settings)
+                logger.debug(
+                    f"Loaded AI settings: provider={saved_provider}, model={saved_model}"
+                )
 
-            # Sort by name
-            ai_creds.sort(key=lambda c: c.get("name", "").lower())
-
-            for cred in ai_creds:
-                cred_id = cred.get("id", "")
-                name = cred.get("name", "Unknown")
-                provider_tag = cred.get("_provider_tag", "")
-
-                # Get display label from mapping
-                provider_label = self.SUPPORTED_PROVIDER_TAGS.get(provider_tag, "AI")
-                display_text = f"{name} ({provider_label})"
-
-                self._credential_combo.addItem(display_text, cred_id)
-
-            logger.debug(f"Loaded {len(ai_creds)} AI credentials")
+            # Restore debug mode setting
+            self._debug_checkbox.setChecked(saved_debug)
 
         except Exception as e:
-            logger.error(f"Failed to load credentials: {e}")
+            logger.warning(f"Could not load AI settings: {e}")
 
-    def _on_credential_changed(self, index: int) -> None:
+    def _save_ai_settings(self, settings: dict) -> None:
+        """Save AI assistant settings to persistent storage."""
+        try:
+            from casare_rpa.utils.settings_manager import get_settings_manager
+
+            manager = get_settings_manager()
+
+            if "provider" in settings:
+                manager.set("ai.provider", settings["provider"])
+            if "model" in settings:
+                manager.set("ai.model", settings["model"])
+            if "credential_id" in settings and settings["credential_id"]:
+                manager.set("ai.credential_id", settings["credential_id"])
+
+            logger.debug(f"Saved AI settings: {settings}")
+
+        except Exception as e:
+            logger.warning(f"Could not save AI settings: {e}")
+
+    def _on_debug_toggled(self, checked: bool) -> None:
+        """Handle debug checkbox toggle."""
+        try:
+            from casare_rpa.utils.settings_manager import get_settings_manager
+
+            manager = get_settings_manager()
+            manager.set("ai.debug_mode", checked)
+            logger.debug(f"Debug mode {'enabled' if checked else 'disabled'}")
+
+        except Exception as e:
+            logger.warning(f"Could not save debug setting: {e}")
+
+    def _on_credential_changed(self, cred_id: str) -> None:
         """Handle credential selection change."""
-        cred_id = self._credential_combo.currentData()
         self._current_credential_id = cred_id
         self.credential_changed.emit(cred_id or "")
 
-        # Determine provider from credential
-        provider = None
+        # Enable UI if valid credential selected
         if cred_id:
-            # Get provider tag from the credential info stored earlier
-            for i in range(self._credential_combo.count()):
-                if self._credential_combo.itemData(i) == cred_id:
-                    text = self._credential_combo.itemText(i)
-                    if "Google" in text:
-                        provider = "google"
-                    elif "OpenAI" in text:
-                        provider = "openai"
-                    break
-
-        self._current_provider = provider
-        self._load_models_for_provider(provider)
-
-        # Update status
-        if cred_id:
-            self._set_status("Ready", "ready")
-            self._input_field.setEnabled(True)
-            self._send_btn.setEnabled(True)
-            self._model_combo.setEnabled(True)
+            self._set_status("Connected", "ready")
+            self._input_bar.setEnabled(True)
         else:
             self._set_status("Select an AI provider to start", "idle")
-            self._input_field.setEnabled(False)
-            self._send_btn.setEnabled(False)
-            self._model_combo.setEnabled(False)
+            self._input_bar.setEnabled(False)
 
-    def _load_models_for_provider(self, provider: Optional[str]) -> None:
-        """Load available models for the selected provider."""
-        self._model_combo.clear()
+    def _on_provider_changed(self, provider: str) -> None:
+        """Handle provider selection change."""
+        self._current_provider = provider
+        logger.debug(f"Selected provider: {provider}")
 
-        if not provider:
-            self._model_combo.addItem("Select model...", None)
-            self._current_model_id = None
-            return
-
-        if provider == "google":
-            models = self.GOOGLE_AI_MODELS
-        elif provider == "openai":
-            models = self.OPENAI_MODELS
-        else:
-            models = []
-
-        for model_id, display_name in models:
-            self._model_combo.addItem(display_name, model_id)
-
-        # Select first model by default
-        if models:
-            self._current_model_id = models[0][0]
-
-        logger.debug(f"Loaded {len(models)} models for provider: {provider}")
-
-    def _on_model_changed(self, index: int) -> None:
+    def _on_model_changed(self, model_id: str) -> None:
         """Handle model selection change."""
-        model_id = self._model_combo.currentData()
         self._current_model_id = model_id
-
         if model_id:
             logger.debug(f"Selected model: {model_id}")
 
     def _on_send_clicked(self) -> None:
         """Handle send button click."""
-        prompt = self._input_field.text().strip()
+        prompt = self._input_bar.text().strip()
         if not prompt:
             return
 
@@ -945,24 +1047,57 @@ class AIAssistantDock(QDockWidget):
         if self._is_generating:
             return
 
-        # Add user message
+        # Add user message to UI
         self._chat_area.add_user_message(prompt)
-        self._input_field.clear()
+        self._input_bar.clear()
+
+        # Add to conversation manager
+        if self._conversation_manager is not None:
+            self._conversation_manager.add_user_message(prompt)
+
+        # Classify intent
+        classification = self._classify_intent(prompt)
+
+        # Handle special intents locally
+        if classification is not None:
+            from casare_rpa.infrastructure.ai.conversation_manager import UserIntent
+
+            if classification.intent == UserIntent.UNDO:
+                self._handle_undo()
+                return
+
+            if classification.intent == UserIntent.REDO:
+                self._handle_redo()
+                return
+
+            if classification.intent == UserIntent.CLEAR:
+                self._clear_chat()
+                self._chat_area.add_ai_message(
+                    "Conversation cleared. How can I help you?"
+                )
+                return
+
+            if classification.intent == UserIntent.HELP:
+                self._show_help()
+                return
 
         # Start generation
-        self._start_generation(prompt)
+        self._start_generation(prompt, classification)
 
-    def _start_generation(self, prompt: str) -> None:
+    def _start_generation(self, prompt: str, classification=None) -> None:
         """
         Start workflow generation using SmartWorkflowAgent.
 
         Spawns a background thread to run async LLM calls without blocking UI.
+
+        Args:
+            prompt: User prompt text
+            classification: Optional intent classification result
         """
         self._is_generating = True
         self._last_prompt = prompt
         self._set_status("Generating workflow...", "loading")
-        self._send_btn.setEnabled(False)
-        self._input_field.setEnabled(False)
+        self._input_bar.setEnabled(False)
 
         # Show thinking indicator
         self._chat_area.show_thinking()
@@ -987,11 +1122,24 @@ class AIAssistantDock(QDockWidget):
         # Get canvas state for context
         canvas_state = self._get_canvas_state()
 
-        # Detect if this is an edit request
-        is_edit = self._is_edit_request(prompt) and canvas_state is not None
+        # Determine if this is an edit request using classification or fallback
+        if classification is not None:
+            from casare_rpa.infrastructure.ai.conversation_manager import UserIntent
+
+            edit_intents = {
+                UserIntent.MODIFY_WORKFLOW,
+                UserIntent.ADD_NODE,
+                UserIntent.REMOVE_NODE,
+                UserIntent.REFINE,
+            }
+            is_edit = classification.intent in edit_intents and canvas_state is not None
+            intent_str = classification.intent.value
+        else:
+            is_edit = self._is_edit_request(prompt) and canvas_state is not None
+            intent_str = "edit" if is_edit else "generate"
 
         if is_edit:
-            logger.info("Detected edit request - will modify existing nodes")
+            logger.info(f"Detected {intent_str} request - will modify existing nodes")
             self._set_status("Analyzing canvas and modifying...", "loading")
 
         # Create and start generation thread
@@ -999,6 +1147,7 @@ class AIAssistantDock(QDockWidget):
             prompt=prompt,
             model_id=model_id,
             credential_id=credential_id,
+            provider=self._current_provider,
             existing_workflow=None,
             canvas_state=canvas_state,
             is_edit=is_edit,
@@ -1007,12 +1156,82 @@ class AIAssistantDock(QDockWidget):
         self._generation_thread.finished.connect(self._on_generation_complete)
         self._generation_thread.start()
 
-        mode = "edit" if is_edit else "generate"
         logger.info(
-            f"Started workflow {mode}: {prompt[:50]}... "
-            f"(model: {model_id}, credential: {credential_id[:8]}..., "
-            f"canvas_nodes: {canvas_state.get('node_count', 0) if canvas_state else 0})"
+            f"Started workflow generation: intent={intent_str}, prompt='{prompt[:50]}...', "
+            f"model={model_id}, credential={credential_id[:8] if credential_id else 'None'}..., "
+            f"canvas_nodes={canvas_state.get('node_count', 0) if canvas_state else 0}"
         )
+
+    def _handle_undo(self) -> None:
+        """Handle undo request."""
+        if self._conversation_manager is None:
+            self._chat_area.add_ai_message("Undo is not available.")
+            return
+
+        workflow = self._conversation_manager.undo_workflow()
+        if workflow:
+            self._current_workflow = workflow
+            self.append_requested.emit(workflow)
+            self._chat_area.add_ai_message(
+                "Undone. Previous workflow version restored."
+            )
+            if self._conversation_manager is not None:
+                self._conversation_manager.add_assistant_message(
+                    "Undone. Previous workflow version restored."
+                )
+        else:
+            self._chat_area.add_ai_message("Nothing to undo.")
+            if self._conversation_manager is not None:
+                self._conversation_manager.add_assistant_message("Nothing to undo.")
+
+    def _handle_redo(self) -> None:
+        """Handle redo request."""
+        if self._conversation_manager is None:
+            self._chat_area.add_ai_message("Redo is not available.")
+            return
+
+        workflow = self._conversation_manager.redo_workflow()
+        if workflow:
+            self._current_workflow = workflow
+            self.append_requested.emit(workflow)
+            self._chat_area.add_ai_message("Redone. Workflow restored.")
+            if self._conversation_manager is not None:
+                self._conversation_manager.add_assistant_message(
+                    "Redone. Workflow restored."
+                )
+        else:
+            self._chat_area.add_ai_message("Nothing to redo.")
+            if self._conversation_manager is not None:
+                self._conversation_manager.add_assistant_message("Nothing to redo.")
+
+    def _show_help(self) -> None:
+        """Show help message with available commands."""
+        help_text = """I can help you create and modify RPA workflows. Here's what I can do:
+
+**Create Workflows:**
+- "Create a workflow to login to example.com"
+- "Build an automation to scrape data from a website"
+- "Make a workflow to fill out a form"
+
+**Modify Workflows:**
+- "Add a click after the login"
+- "Change the URL to https://..."
+- "Remove the wait node"
+
+**Refine Workflows:**
+- "Add error handling"
+- "Optimize the waits"
+- "Make it more robust"
+
+**Commands:**
+- "undo" - Undo the last change
+- "redo" - Redo an undone change
+- "clear" - Start a new conversation
+
+What would you like to create?"""
+        self._chat_area.add_ai_message(help_text)
+        if self._conversation_manager is not None:
+            self._conversation_manager.add_assistant_message(help_text)
 
     def _on_generation_complete(self, result: "WorkflowGenerationResult") -> None:
         """
@@ -1036,13 +1255,41 @@ class AIAssistantDock(QDockWidget):
                     f"I've created a workflow based on your request.\n\n"
                     f"**Nodes:** {node_count}\n"
                     f"**Connections:** {conn_count}\n"
-                    f"**Attempts:** {result.attempts}"
+                    f"**Attempts:** {result.attempts}\n"
+                    f"**Time:** {result.generation_time_ms:.0f}ms"
                 )
                 self._chat_area.add_ai_message(response)
+
+                # Show raw LLM output if debug mode is enabled
+                if self._debug_checkbox.isChecked() and result.raw_response:
+                    self._chat_area.add_system_message("📋 Raw LLM Output:")
+                    # Truncate if too long
+                    raw_output = result.raw_response
+                    if len(raw_output) > 3000:
+                        raw_output = raw_output[:3000] + "\n\n... (truncated)"
+                    self._chat_area.add_code_block(raw_output)
+
+                # Track assistant response in conversation manager
+                if self._conversation_manager is not None:
+                    self._conversation_manager.add_assistant_message(
+                        response,
+                        metadata={"workflow_generated": True, "node_count": node_count},
+                    )
 
                 # Store workflow and log info
                 try:
                     self._current_workflow = result.workflow
+
+                    # Update conversation manager with new workflow
+                    if self._conversation_manager is not None:
+                        description = (
+                            f"Generated: {self._last_prompt[:50]}..."
+                            if self._last_prompt
+                            else "Generated workflow"
+                        )
+                        self._conversation_manager.set_workflow(
+                            result.workflow, description
+                        )
 
                     # Log detailed workflow info for debugging
                     nodes = result.workflow.get("nodes", {})
@@ -1096,6 +1343,24 @@ class AIAssistantDock(QDockWidget):
                     f"Please try rephrasing your request or check the AI provider settings."
                 )
                 self._chat_area.add_ai_message(response)
+
+                # Show raw LLM output if debug mode is enabled (helpful for debugging failures)
+                if self._debug_checkbox.isChecked() and result.raw_response:
+                    self._chat_area.add_system_message(
+                        "📋 Raw LLM Output (for debugging):"
+                    )
+                    raw_output = result.raw_response
+                    if len(raw_output) > 3000:
+                        raw_output = raw_output[:3000] + "\n\n... (truncated)"
+                    self._chat_area.add_code_block(raw_output)
+
+                # Track failure in conversation manager
+                if self._conversation_manager is not None:
+                    self._conversation_manager.add_assistant_message(
+                        response,
+                        metadata={"workflow_generated": False, "error": error_msg},
+                    )
+
                 self._finish_generation(False)
         except Exception as e:
             logger.error(f"Error handling generation result: {e}", exc_info=True)
@@ -1116,9 +1381,7 @@ class AIAssistantDock(QDockWidget):
                 (used when auto-append already emitted append_requested)
         """
         self._is_generating = False
-        self._send_btn.setEnabled(True)
-        self._input_field.setEnabled(True)
-        self._input_field.setFocus()
+        self._input_bar.setEnabled(True)
 
         if success:
             self._set_status("Workflow generated", "success")
@@ -1150,46 +1413,33 @@ class AIAssistantDock(QDockWidget):
             self._start_generation(last_prompt)
 
     def _clear_chat(self) -> None:
-        """Clear conversation history."""
+        """Clear conversation history and reset conversation state."""
         self._chat_area.clear_messages()
         self._preview_card.setVisible(False)
         self._current_workflow = None
         self._set_status("Ready", "ready")
         self._show_validation_badge(False)
 
+        # Clear conversation manager state
+        if self._conversation_manager is not None:
+            self._conversation_manager.clear_all()
+            logger.debug("Conversation manager cleared")
+
     def _set_status(self, message: str, state: str = "idle") -> None:
-        """Update status bar."""
-        colors = Theme.get_colors()
-
-        self._status_label.setText(message)
-
-        # Update status icon based on state
-        icons = {
-            "idle": "",
-            "ready": "",
-            "loading": "",
-            "success": "",
-            "warning": "",
-            "error": "",
-        }
-
-        state_colors = {
-            "idle": colors.text_muted,
-            "ready": colors.success,
-            "loading": colors.warning,
-            "success": colors.success,
-            "warning": colors.warning,
-            "error": colors.error,
-        }
-
-        icon_color = state_colors.get(state, colors.text_muted)
-        self._status_icon.setStyleSheet(f"color: {icon_color};")
+        """Update status (placeholder text on input bar)."""
+        if hasattr(self, "_input_bar"):
+            if state in ("idle", "ready", "success") and message in (
+                "Ready",
+                "Connected",
+            ):
+                self._input_bar.setPlaceholderText("Message AI Assistant...")
+            else:
+                self._input_bar.setPlaceholderText(message)
+        logger.debug(f"Status update: {message} ({state})")
 
     def _show_validation_badge(self, show: bool) -> None:
-        """Show/hide validation badge."""
-        self._validation_badge.setVisible(show)
-        if show:
-            self._validation_badge.setText("Verified")
+        """Show/hide validation badge (No-op in new UI)."""
+        pass
 
     # ==================== Public API ====================
 

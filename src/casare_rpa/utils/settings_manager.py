@@ -4,7 +4,7 @@ Handles application settings persistence.
 """
 
 import orjson
-from typing import Any, Optional
+from typing import Any
 from loguru import logger
 
 from casare_rpa.config import CONFIG_DIR
@@ -48,6 +48,12 @@ class SettingsManager:
             "fps_limit": 60,
             "max_undo_steps": 100,
             "cache_size_mb": 200,
+        },
+        "ai": {
+            "provider": "OpenAI",
+            "model": "gpt-4o-mini",
+            "credential_id": "auto",
+            "debug_mode": False,
         },
     }
 

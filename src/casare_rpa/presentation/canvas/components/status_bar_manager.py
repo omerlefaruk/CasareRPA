@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtWidgets import QLabel, QPushButton, QStatusBar
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
+from casare_rpa.presentation.canvas.ui.widgets.zoom_widget import ZoomWidget
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -81,7 +82,8 @@ class StatusBarManager:
         self._main_window = main_window
 
         # Status bar widgets
-        self._zoom_label: Optional[QLabel] = None
+        self._zoom_widget: Optional[ZoomWidget] = None
+        self._zoom_label: Optional[QLabel] = None  # Kept for backward compat
         self._node_count_label: Optional[QLabel] = None
         self._exec_status_label: Optional[QLabel] = None
         self._btn_variables: Optional[QPushButton] = None
@@ -101,10 +103,18 @@ class StatusBarManager:
         mw.setStatusBar(status_bar)
         status_bar.setStyleSheet(self._get_status_bar_style())
 
-        # Zoom indicator
+        # Zoom widget with presets
+        self._zoom_widget = ZoomWidget()
+        self._zoom_widget.setToolTip("Zoom level - click for presets")
+        self._zoom_widget.zoom_changed.connect(self._on_zoom_changed)
+        self._zoom_widget.fit_to_window.connect(self._on_fit_to_window)
+        self._zoom_widget.fit_to_selection.connect(self._on_fit_to_selection)
+        self._zoom_widget.reset_zoom.connect(self._on_reset_zoom)
+        status_bar.addPermanentWidget(self._zoom_widget)
+
+        # Keep old label reference for backward compatibility
         self._zoom_label = QLabel("100%")
-        self._zoom_label.setToolTip("Current zoom level")
-        status_bar.addPermanentWidget(self._zoom_label)
+        self._zoom_label.hide()  # Hidden but available for legacy code
 
         self._add_separator(status_bar)
 
@@ -147,6 +157,7 @@ class StatusBarManager:
 
         # Store references on main window for compatibility
         mw._zoom_label = self._zoom_label
+        mw._zoom_widget = self._zoom_widget
         mw._node_count_label = self._node_count_label
         mw._exec_status_label = self._exec_status_label
         mw._btn_variables = self._btn_variables
@@ -155,6 +166,65 @@ class StatusBarManager:
         mw._btn_validation = self._btn_validation
 
         return status_bar
+
+    def _on_zoom_changed(self, zoom_factor: float) -> None:
+        """Handle zoom change from widget."""
+        mw = self._main_window
+        if hasattr(mw, "_central_widget") and mw._central_widget:
+            graph = getattr(mw._central_widget, "graph", None)
+            if graph:
+                try:
+                    graph.set_zoom(zoom_factor)
+                except Exception:
+                    pass
+
+    def _on_fit_to_window(self) -> None:
+        """Handle fit to window request."""
+        mw = self._main_window
+        if hasattr(mw, "_central_widget") and mw._central_widget:
+            graph = getattr(mw._central_widget, "graph", None)
+            if graph and graph.all_nodes():
+                try:
+                    graph.fit_to_selection()
+                    zoom = graph.get_zoom()
+                    self._zoom_widget.set_zoom(zoom)
+                except Exception:
+                    pass
+
+    def _on_fit_to_selection(self) -> None:
+        """Handle fit to selection request."""
+        mw = self._main_window
+        if hasattr(mw, "_central_widget") and mw._central_widget:
+            graph = getattr(mw._central_widget, "graph", None)
+            if graph and graph.selected_nodes():
+                try:
+                    graph.fit_to_selection()
+                    zoom = graph.get_zoom()
+                    self._zoom_widget.set_zoom(zoom)
+                except Exception:
+                    pass
+
+    def _on_reset_zoom(self) -> None:
+        """Handle reset zoom to 100% request."""
+        mw = self._main_window
+        if hasattr(mw, "_central_widget") and mw._central_widget:
+            graph = getattr(mw._central_widget, "graph", None)
+            if graph:
+                try:
+                    graph.reset_zoom()
+                    self._zoom_widget.set_zoom(1.0)
+                except Exception:
+                    pass
+
+    def connect_to_graph(self, graph) -> None:
+        """
+        Connect zoom widget to a NodeGraph instance.
+
+        Args:
+            graph: NodeGraph instance
+        """
+        if self._zoom_widget:
+            self._zoom_widget.set_graph(graph)
 
     def _add_separator(self, status_bar: QStatusBar) -> None:
         """Add a vertical separator to the status bar."""
@@ -195,8 +265,12 @@ class StatusBarManager:
         Update the zoom level display.
 
         Args:
-            zoom_percent: Current zoom percentage
+            zoom_percent: Current zoom percentage (e.g., 100 for 100%)
         """
+        zoom_factor = zoom_percent / 100.0
+        if self._zoom_widget:
+            self._zoom_widget.set_zoom(zoom_factor)
+        # Keep legacy label updated for backward compatibility
         if self._zoom_label:
             self._zoom_label.setText(f"{int(zoom_percent)}%")
 

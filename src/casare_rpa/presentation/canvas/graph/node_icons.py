@@ -14,7 +14,7 @@ import tempfile
 import os
 
 # Import unified theme system for all colors
-from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 # ============================================================================

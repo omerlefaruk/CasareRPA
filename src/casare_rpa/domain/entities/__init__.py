@@ -29,6 +29,7 @@ from casare_rpa.domain.entities.trigger_config import (
     TriggerConfig,
     TriggerConfigProtocol,
 )
+from casare_rpa.domain.entities.user import User, UserStatus
 
 # WorkflowSchedule removed - use Schedule Trigger node instead
 from casare_rpa.domain.entities.project import (
@@ -97,4 +98,7 @@ __all__ = [
     # Trigger entities
     "TriggerConfig",
     "TriggerConfigProtocol",
+    # User entities
+    "User",
+    "UserStatus",
 ]

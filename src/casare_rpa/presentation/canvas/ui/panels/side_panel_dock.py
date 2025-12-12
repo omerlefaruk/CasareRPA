@@ -54,6 +54,7 @@ class SidePanelDock(QDockWidget):
 
     Signals:
         navigate_to_node: Emitted when navigation to a node is requested
+        select_node: Emitted when a node should be selected in canvas
         step_over_requested: Debug step over
         step_into_requested: Debug step into
         step_out_requested: Debug step out
@@ -61,6 +62,7 @@ class SidePanelDock(QDockWidget):
     """
 
     navigate_to_node = Signal(str)
+    select_node = Signal(str)
     step_over_requested = Signal()
     step_into_requested = Signal()
     step_out_requested = Signal()
@@ -210,7 +212,8 @@ class SidePanelDock(QDockWidget):
         # Profiling tab - UiPath-style execution profiling
         if HAS_PROFILING:
             self._profiling_tab = ProfilingTreeWidget()
-            self._profiling_tab.node_double_clicked.connect(self.navigate_to_node.emit)
+            # Single click selects and centers node in canvas
+            self._profiling_tab.node_clicked.connect(self.navigate_to_node.emit)
             profiling_scroll = self._wrap_in_scroll_area(self._profiling_tab)
             self._tab_widget.addTab(profiling_scroll, "Profiling")
             self._tab_widget.setTabToolTip(

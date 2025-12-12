@@ -10,40 +10,16 @@ from PySide6.QtGui import QColor
 
 from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
 from casare_rpa.domain.value_objects.types import PortType, DataType
-from casare_rpa.application.services.port_type_service import PortTypeRegistry
+from casare_rpa.domain.port_type_system import (
+    PortTypeRegistry,
+    get_port_type_registry,
+)
 from casare_rpa.domain.schemas import PropertyType, NodeSchema
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
-# ============================================================================
-# PERFORMANCE: Module-level cached port type registry
-# Avoids function call overhead on every node creation
-# ============================================================================
-_port_type_registry_instance: Optional[PortTypeRegistry] = None
-
-
-def _get_port_type_registry() -> PortTypeRegistry:
-    """
-    Get cached port type registry instance.
-
-    PERFORMANCE: Caches the registry at module level to avoid
-    repeated function calls during node creation.
-
-    Returns:
-        The singleton PortTypeRegistry instance
-    """
-    global _port_type_registry_instance
-    if _port_type_registry_instance is None:
-        from casare_rpa.application.services.port_type_service import (
-            get_port_type_registry,
-        )
-
-        _port_type_registry_instance = get_port_type_registry()
-    return _port_type_registry_instance
-
-
-# Premium Dark color scheme for node body
-# Matches CanvasThemeColors.bg_node (#27272a / Zinc 800)
-UNIFIED_NODE_COLOR = QColor(39, 39, 42)
+# VSCode Dark+ color scheme for nodes
+# Node body should be slightly lighter than canvas (#1E1E1E) to be visible
+UNIFIED_NODE_COLOR = QColor(37, 37, 38)  # VSCode sidebar background - #252526
 
 
 class VisualNode(NodeGraphQtBaseNode):
@@ -57,16 +33,6 @@ class VisualNode(NodeGraphQtBaseNode):
     __identifier__ = "casare_rpa"
     NODE_NAME = "Visual Node"
     NODE_CATEGORY = "basic"
-
-    # Class-level cache for CasareRPA class mapping (avoids repeated lookups)
-    # Each subclass gets its own cached value via _get_cached_casare_class()
-    _cached_casare_class: Optional[type] = None
-    _casare_class_checked: bool = False  # Flag to avoid re-checking None results
-
-    # PERFORMANCE: Class-level cached category color
-    # Each subclass gets its own cached color based on NODE_CATEGORY
-    # Populated on first node creation of each type, reused for all subsequent instances
-    _cached_category_color: Optional[QColor] = None
 
     def __init__(self, qgraphics_item=None) -> None:
         """
@@ -92,32 +58,32 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Port type registry for typed connections
         self._port_types: Dict[str, Optional[DataType]] = {}
-        self._type_registry: PortTypeRegistry = _get_port_type_registry()
+        self._type_registry: PortTypeRegistry = get_port_type_registry()
 
         # Collapse state - collapsed by default for cleaner canvas
         self._collapsed: bool = True
 
-        # PERFORMANCE: Lazy widget initialization flag
-        # Widgets are embedded on first paint, not during construction
-        # This makes node creation instant (<30ms instead of 200-500ms)
-        self._widgets_initialized: bool = False
-
         # Set node colors with category-based accents
         self._apply_category_colors()
 
-        # Configure selection colors - Premium Indigo Theme
+        # Configure selection colors - VSCode selection style
         self.model.selected_color = (
-            55,
-            48,
-            163,
-            255,
-        )  # Indigo 800 (#3730a3) for selection background
+            38,
+            79,
+            120,
+            128,
+        )  # VSCode editor selection (#264F78) with transparency
         self.model.selected_border_color = (
-            99,
-            102,
-            241,
+            0,
+            122,
+            204,
             255,
-        )  # Indigo 500 (#6366f1) for focus border
+        )  # VSCode focus border (#007ACC)
+
+        # Set temporary icon (will be updated with actual icons later)
+        # Use file path for model.icon (required for JSON serialization in copy/paste)
+        icon_path = self._create_temp_icon()
+        self.model.icon = icon_path
 
         # Create and initialize node properties
         self.create_property("node_id", "")
@@ -150,89 +116,50 @@ class VisualNode(NodeGraphQtBaseNode):
         # Apply initial collapsed state (hide non-essential widgets and update view)
         if self._collapsed:
             self._update_widget_visibility()
-            # Also sync view's collapse state
+            # Also sync view's collapse state and trigger layout
             if hasattr(self.view, "set_collapsed"):
                 self.view.set_collapsed(True)
-            # PERFORMANCE: Don't call post_init() here - it's EXTREMELY slow (200-500ms)
-            # Widget embedding is deferred to first paint via _ensure_widgets_initialized()
-            # This makes node creation instant
-
-    def _ensure_widgets_initialized(self) -> None:
-        """
-        Lazy-initialize widgets on first paint or interaction.
-
-        PERFORMANCE: Widget embedding via QGraphicsProxyWidget is extremely slow
-        (200-500ms per node). By deferring this to first paint, node creation
-        becomes instant (<30ms), making paste/load operations 10x faster.
-
-        This method is called by CasareNodeItem.paint() on first render.
-        """
-        if self._widgets_initialized:
-            return
-
-        self._widgets_initialized = True
-
-        # Now call post_init() to embed widgets into QGraphicsProxyWidget
-        if hasattr(self.view, "post_init"):
-            self.view.post_init()
-
-    @classmethod
-    def _get_cached_casare_class(cls) -> Optional[type]:
-        """
-        Get the CasareRPA class for this visual node type (cached at class level).
-
-        PERFORMANCE: Caches the mapping lookup at the class level to avoid
-        repeated dictionary lookups for every node instance. The mapping dict
-        lookup itself is O(1), but avoiding it entirely is faster, especially
-        when creating many nodes (paste, load workflow, etc.).
-
-        Returns:
-            CasareRPA node class or None if this is a visual-only node
-        """
-        if not cls._casare_class_checked:
-            from ..graph.node_registry import get_casare_node_mapping
-
-            mapping = get_casare_node_mapping()
-            cls._cached_casare_class = mapping.get(cls)
-            cls._casare_class_checked = True
-        return cls._cached_casare_class
+            if hasattr(self.view, "post_init"):
+                self.view.post_init()
 
     def _apply_category_colors(self) -> None:
-        """
-        Apply VSCode Dark+ category-based colors to the node.
+        """Apply VSCode Dark+ category-based colors to the node."""
+        from casare_rpa.presentation.canvas.graph.node_icons import CATEGORY_COLORS
 
-        PERFORMANCE: Uses class-level cached color to avoid repeated dict lookups
-        for CATEGORY_COLORS. Each subclass caches its own color on first instantiation.
-        """
-        # Use class-level cached color (type(self) ensures each subclass gets its own cache)
-        if type(self)._cached_category_color is None:
-            from casare_rpa.presentation.canvas.graph.node_icons import CATEGORY_COLORS
+        # Get category color
+        category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
 
-            type(self)._cached_category_color = CATEGORY_COLORS.get(
-                self.NODE_CATEGORY, QColor(62, 62, 66)
-            )
+        # VSCode sidebar background for all nodes (#252526)
+        self.set_color(37, 37, 38)
 
-        category_color = type(self)._cached_category_color
+        # Category-colored border (use VSCode syntax colors)
+        # Slightly darker for subtlety
+        border_r = int(category_color.red() * 0.8)
+        border_g = int(category_color.green() * 0.8)
+        border_b = int(category_color.blue() * 0.8)
+        self.model.border_color = (border_r, border_g, border_b, 255)
 
-        # Unified Node Body Color (Zinc 800)
-        self.set_color(39, 39, 42)
-
-        # Category-colored border (Vibrant but professional)
-        # Use slightly desaturated values for professional look
-        self.model.border_color = (
-            category_color.red(),
-            category_color.green(),
-            category_color.blue(),
-            255,
-        )
-
-        # Primary Text Color (Zinc 100 - #f4f4f5)
-        self.model.text_color = (244, 244, 245, 255)
+        # VSCode text color (#D4D4D4)
+        self.model.text_color = (212, 212, 212, 255)
 
         # Set category on view for header coloring
         if hasattr(self, "view") and self.view is not None:
             if hasattr(self.view, "set_category"):
                 self.view.set_category(self.NODE_CATEGORY)
+
+    def _create_temp_icon(self) -> str:
+        """
+        Create a professional icon for this node type.
+        Returns cached file path for NodeGraphQt model.icon (required for JSON serialization).
+        The file is only generated once per node type thanks to path caching.
+        """
+        from casare_rpa.presentation.canvas.graph.node_icons import (
+            get_cached_node_icon_path,
+        )
+
+        # Use the node name to get the appropriate icon path
+        node_name = self.NODE_NAME
+        return get_cached_node_icon_path(node_name, size=24)
 
     def setup_ports(self) -> None:
         """
@@ -441,52 +368,6 @@ class VisualNode(NodeGraphQtBaseNode):
         # Re-apply port colors now that we have type info
         self._configure_port_colors()
 
-    def _remove_property_if_exists(self, prop_name: str) -> None:
-        """
-        Remove a property if it exists (from schema auto-generation or previous creation).
-
-        This prevents NodePropertyError conflicts when adding custom widgets
-        or properties that may already exist from @node_schema decoration.
-
-        Args:
-            prop_name: Name of property to remove if exists
-        """
-        # Check if property exists in model's custom_properties
-        if hasattr(self, "model") and prop_name in self.model.custom_properties:
-            del self.model.custom_properties[prop_name]
-            # Also remove from widgets dict if present
-            if hasattr(self, "_widgets") and prop_name in self._widgets:
-                del self._widgets[prop_name]
-
-    def _safe_create_property(
-        self,
-        name: str,
-        value,
-        widget_type: int = 0,
-        tab: Optional[str] = None,
-        items: Optional[list] = None,
-    ):
-        """
-        Safely create a property, removing any existing one first.
-
-        This avoids NodePropertyError conflicts when manually defining properties
-        that may have been auto-generated from @node_schema.
-
-        Args:
-            name: Property name
-            value: Default value
-            widget_type: Widget type (0=line edit, 1=checkbox, 2=spinbox, 3=combo)
-            tab: Tab name for grouping
-            items: Items for combo box widget_type=3
-        """
-        self._remove_property_if_exists(name)
-        if items is not None:
-            self.create_property(
-                name, value, widget_type=widget_type, tab=tab, items=items
-            )
-        else:
-            self.create_property(name, value, widget_type=widget_type, tab=tab)
-
     def _add_variable_aware_text_input(
         self,
         name: str,
@@ -514,9 +395,6 @@ class VisualNode(NodeGraphQtBaseNode):
         Returns:
             The created widget
         """
-        # Remove existing property if it was auto-generated from schema
-        self._remove_property_if_exists(name)
-
         # PERFORMANCE: Try direct creation path first
         # This creates VariableAwareLineEdit directly in a NodeBaseWidget,
         # avoiding the create standard widget + replace internal QLineEdit pattern
@@ -557,60 +435,6 @@ class VisualNode(NodeGraphQtBaseNode):
 
         return self.get_widget(name)
 
-    def add_text_input(
-        self,
-        name: str,
-        label: str = "",
-        text: str = "",
-        tab: Optional[str] = None,
-        **kwargs,
-    ):
-        """
-        Override add_text_input to safely remove existing properties first.
-
-        This prevents NodePropertyError when adding text inputs that may have been
-        auto-generated from @node_schema decoration.
-        """
-        self._remove_property_if_exists(name)
-        return super().add_text_input(name, label, text=text, tab=tab, **kwargs)
-
-    def add_combo_menu(
-        self,
-        name: str,
-        label: str = "",
-        items: Optional[list] = None,
-        tab: Optional[str] = None,
-        **kwargs,
-    ):
-        """
-        Override add_combo_menu to safely remove existing properties first.
-
-        This prevents NodePropertyError when adding combo menus that may have been
-        auto-generated from @node_schema decoration.
-        """
-        self._remove_property_if_exists(name)
-        return super().add_combo_menu(name, label, items=items or [], tab=tab, **kwargs)
-
-    def add_checkbox(
-        self,
-        name: str,
-        label: str = "",
-        text: str = "",
-        state: bool = False,
-        tab: Optional[str] = None,
-        **kwargs,
-    ):
-        """
-        Override add_checkbox to safely remove existing properties first.
-
-        This prevents NodePropertyError when adding checkboxes that may have been
-        auto-generated from @node_schema decoration.
-        """
-        self._remove_property_if_exists(name)
-        return super().add_checkbox(
-            name, label, text=text, state=state, tab=tab, **kwargs
-        )
-
     def _style_text_inputs(self) -> None:
         """Apply custom styling to text input widgets for better visibility."""
         # Get all widgets in this node
@@ -620,20 +444,18 @@ class VisualNode(NodeGraphQtBaseNode):
                 custom_widget = widget.get_custom_widget()
                 if hasattr(custom_widget, "setStyleSheet"):
                     # Apply a more visible background color for text inputs
-                    # Apply a more visible background color for text inputs
-                    # Matching Premium Dark theme input_bg and borders
                     custom_widget.setStyleSheet("""
                         QLineEdit {
-                            background: #18181b; /* Zinc 900 */
-                            border: 1px solid #3f3f46; /* Zinc 700 */
-                            border-radius: 4px;
-                            color: #f4f4f5; /* Zinc 100 */
-                            padding: 4px 8px;
-                            selection-background-color: #4338ca; /* Indigo 700 */
+                            background: rgb(60, 60, 80);
+                            border: 1px solid rgb(80, 80, 100);
+                            border-radius: 3px;
+                            color: rgba(230, 230, 230, 255);
+                            padding: 2px;
+                            selection-background-color: rgba(100, 150, 200, 150);
                         }
                         QLineEdit:focus {
-                            background: #27272a; /* Zinc 800 */
-                            border: 1px solid #6366f1; /* Indigo 500 */
+                            background: rgb(70, 70, 90);
+                            border: 1px solid rgb(100, 150, 200);
                         }
                     """)
 
@@ -693,14 +515,8 @@ class VisualNode(NodeGraphQtBaseNode):
     def _auto_create_casare_node(self) -> None:
         """
         Automatically create and link CasareRPA node.
-
         Called during __init__ to ensure every visual node has a backing CasareRPA node.
         Handles all creation scenarios: menu, copy/paste, undo/redo, workflow loading.
-
-        PERFORMANCE: Uses class-level cached CasareRPA class lookup via
-        _get_cached_casare_class() to avoid repeated dictionary lookups.
-        Also creates the node directly instead of going through factory.create_casare_node()
-        which would do another mapping lookup.
 
         Note: For paste/duplicate operations, NodeGraphQt restores properties AFTER
         __init__ completes. The paste hook in node_graph_widget.py handles regenerating
@@ -710,30 +526,31 @@ class VisualNode(NodeGraphQtBaseNode):
             return  # Already has a node
 
         try:
+            # Import here to avoid circular dependency
+            from ..graph.node_registry import get_node_factory, get_casare_node_mapping
             from loguru import logger
 
-            # PERFORMANCE: Use cached class lookup instead of mapping.get(type(self))
-            casare_class = type(self)._get_cached_casare_class()
-            if casare_class is None:
+            # Check if this visual node type has a casare_node mapping
+            mapping = get_casare_node_mapping()
+            if type(self) not in mapping:
                 # Visual-only node (e.g., comment, sticky note) - no casare_node needed
                 return
 
-            # PERFORMANCE: Create CasareRPA node directly instead of through factory
-            # This bypasses factory.create_casare_node() which does another mapping lookup
-            from casare_rpa.utils.id_generator import generate_node_id
+            factory = get_node_factory()
 
-            node_id = generate_node_id(casare_class.__name__)
-            casare_node = casare_class(node_id=node_id)
+            # Create the CasareRPA node
+            casare_node = factory.create_casare_node(self)
+            if casare_node:
+                # Node is already linked via factory.create_casare_node -> set_casare_node
+                # Sync visual node properties to casare_node.config
+                self._sync_properties_to_casare_node(casare_node)
+            else:
+                # Log error but don't crash - paste hook will try to create later
+                from loguru import logger
 
-            # Link nodes
-            self.set_casare_node(casare_node)
-
-            # Sync visual node properties to casare_node.config
-            self._sync_properties_to_casare_node(casare_node)
-
-            logger.debug(
-                f"Created CasareRPA node: {casare_class.__name__} (id: {node_id})"
-            )
+                logger.warning(
+                    f"_auto_create_casare_node: factory returned None for {type(self).__name__}"
+                )
         except ImportError:
             # Factory not ready yet (e.g., during testing or early initialization)
             # The paste hook will handle creating the casare_node later
@@ -814,29 +631,8 @@ class VisualNode(NodeGraphQtBaseNode):
         # Get existing widget names (created in setup_widgets)
         existing_widgets = set(self.widgets().keys())
 
-        # Reserved property names in NodeGraphQt that cannot be used
-        RESERVED_PROPERTIES = {
-            "name",
-            "color",
-            "width",
-            "height",
-            "icon",
-            "text_color",
-            "border_color",
-            "selected",
-            "disabled",
-            "visible",
-            "pos",
-            "x",
-            "y",
-            "id",
-        }
-
         # Generate widgets from schema
         for prop_def in schema.properties:
-            # Skip reserved properties that conflict with NodeGraphQt internals
-            if prop_def.name in RESERVED_PROPERTIES:
-                continue
             # Skip if widget already exists (created in setup_widgets)
             if prop_def.name in existing_widgets:
                 continue
@@ -922,11 +718,9 @@ class VisualNode(NodeGraphQtBaseNode):
                     )
 
             elif prop_def.type == PropertyType.BOOLEAN:
-                # For checkboxes, put label as text next to indicator (not as group title)
                 self.add_checkbox(
                     prop_def.name,
-                    label="",  # No group box title
-                    text=prop_def.label or prop_def.name,  # Text next to checkbox
+                    prop_def.label or prop_def.name,
                     state=bool(prop_def.default)
                     if prop_def.default is not None
                     else False,
@@ -1110,10 +904,6 @@ class VisualNode(NodeGraphQtBaseNode):
 
         self._collapsed = collapsed
 
-        # PERFORMANCE: Ensure widgets are initialized before updating visibility
-        # This is needed when expanding a node that was created but never painted
-        self._ensure_widgets_initialized()
-
         # Update widget visibility based on schema
         self._update_widget_visibility()
 
@@ -1121,8 +911,8 @@ class VisualNode(NodeGraphQtBaseNode):
         if hasattr(self.view, "set_collapsed"):
             self.view.set_collapsed(collapsed)
 
-        # Trigger layout update (only if widgets are initialized)
-        if self._widgets_initialized and hasattr(self.view, "post_init"):
+        # Trigger layout update
+        if hasattr(self.view, "post_init"):
             self.view.post_init()
 
     def _update_widget_visibility(self) -> None:

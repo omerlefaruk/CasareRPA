@@ -8,7 +8,6 @@ import re
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List, Tuple
 from loguru import logger
-import weakref
 
 from casare_rpa.utils.selectors.selector_generator import (
     SmartSelectorGenerator,

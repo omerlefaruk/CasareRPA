@@ -1,0 +1,255 @@
+{
+    "metadata": {
+        "name": "RPA Challenge - Single Loop Workflow",
+        "description": "Automates the RPA Challenge with a single loop through 10 Excel rows for 100% success rate.",
+        "version": "1.1.0",
+        "author": "CasareRPA",
+        "tags": [
+            "rpachallenge",
+            "form-filling",
+            "browser-automation",
+            "excel",
+            "demo"
+        ]
+    },
+    "nodes": {
+        "0": {
+            "node_id": "0",
+            "node_type": "ExcelOpenNode",
+            "config": {
+                "file_path": "C:\\Users\\Rau\\Downloads\\challenge (1).xlsx",
+                "show_excel": false,
+                "read_only": true,
+                "create_if_missing": false
+            },
+            "position": [0, 0]
+        },
+        "1": {
+            "node_id": "1",
+            "node_type": "ExcelGetRangeNode",
+            "config": {
+                "sheet": "1",
+                "range": "A2:G11"
+            },
+            "position": [300, 0]
+        },
+        "2": {
+            "node_id": "2",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "excel_rows"
+            },
+            "position": [600, 0]
+        },
+        "3": {
+            "node_id": "3",
+            "node_type": "ExcelCloseNode",
+            "config": {
+                "save": false
+            },
+            "position": [900, 0]
+        },
+        "4": {
+            "node_id": "4",
+            "node_type": "LaunchBrowserNode",
+            "config": {
+                "browser_type": "chromium",
+                "headless": false,
+                "slow_mo": 50
+            },
+            "position": [1200, 0]
+        },
+        "5": {
+            "node_id": "5",
+            "node_type": "GoToURLNode",
+            "config": {
+                "url": "https://rpachallenge.com",
+                "wait_until": "networkidle"
+            },
+            "position": [1500, 0]
+        },
+        "6": {
+            "node_id": "6",
+            "node_type": "ClickElementNode",
+            "config": {
+                "selector": "button:has-text('Start')",
+                "wait_for_navigation": false,
+                "timeout": 5000
+            },
+            "position": [1800, 0]
+        },
+        "7": {
+            "node_id": "7",
+            "node_type": "GetVariableNode",
+            "config": {
+                "variable_name": "excel_rows"
+            },
+            "position": [2100, 0]
+        },
+        "8": {
+            "node_id": "8",
+            "node_type": "ForLoopStartNode",
+            "config": {
+                "mode": "items",
+                "item_var": "row"
+            },
+            "position": [2400, 0]
+        },
+        "9": {
+            "node_id": "9",
+            "node_type": "FormFillerNode",
+            "config": {
+                "form_selector": "form",
+                "field_mapping": "{\"input[ng-reflect-name='labelFirstName']\": \"{{row[0]}}\", \"input[ng-reflect-name='labelLastName']\": \"{{row[1]}}\", \"input[ng-reflect-name='labelCompanyName']\": \"{{row[2]}}\", \"input[ng-reflect-name='labelRole']\": \"{{row[3]}}\", \"input[ng-reflect-name='labelAddress']\": \"{{row[4]}}\", \"input[ng-reflect-name='labelEmail']\": \"{{row[5]}}\", \"input[ng-reflect-name='labelPhone']\": \"{{row[6]}}\"}",
+                "fast_mode": true,
+                "clear_first": true,
+                "auto_submit": false,
+                "timeout": 3000
+            },
+            "position": [2700, 0]
+        },
+        "10": {
+            "node_id": "10",
+            "node_type": "ClickElementNode",
+            "config": {
+                "selector": "input[type='submit']",
+                "wait_for_navigation": false,
+                "timeout": 3000
+            },
+            "position": [3000, 0]
+        },
+        "11": {
+            "node_id": "11",
+            "node_type": "ForLoopEndNode",
+            "config": {
+                "paired_start_id": "8"
+            },
+            "position": [3300, 0]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "0",
+            "source_port": "exec_out",
+            "target_node": "1",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "0",
+            "source_port": "workbook",
+            "target_node": "1",
+            "target_port": "workbook"
+        },
+        {
+            "source_node": "1",
+            "source_port": "exec_out",
+            "target_node": "2",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "1",
+            "source_port": "data",
+            "target_node": "2",
+            "target_port": "value"
+        },
+        {
+            "source_node": "2",
+            "source_port": "exec_out",
+            "target_node": "3",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "0",
+            "source_port": "workbook",
+            "target_node": "3",
+            "target_port": "workbook"
+        },
+        {
+            "source_node": "3",
+            "source_port": "exec_out",
+            "target_node": "4",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "4",
+            "source_port": "exec_out",
+            "target_node": "5",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "4",
+            "source_port": "page",
+            "target_node": "5",
+            "target_port": "page"
+        },
+        {
+            "source_node": "5",
+            "source_port": "exec_out",
+            "target_node": "6",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "5",
+            "source_port": "page",
+            "target_node": "6",
+            "target_port": "page"
+        },
+        {
+            "source_node": "6",
+            "source_port": "exec_out",
+            "target_node": "7",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "6",
+            "source_port": "page",
+            "target_node": "9",
+            "target_port": "page"
+        },
+        {
+            "source_node": "7",
+            "source_port": "exec_out",
+            "target_node": "8",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "7",
+            "source_port": "value",
+            "target_node": "8",
+            "target_port": "items"
+        },
+        {
+            "source_node": "8",
+            "source_port": "body",
+            "target_node": "9",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "9",
+            "source_port": "exec_out",
+            "target_node": "10",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "9",
+            "source_port": "page",
+            "target_node": "10",
+            "target_port": "page"
+        },
+        {
+            "source_node": "10",
+            "source_port": "exec_out",
+            "target_node": "11",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {
+        "excel_rows": [],
+        "row": []
+    },
+    "settings": {
+        "stop_on_error": false,
+        "timeout": 600,
+        "retry_count": 0
+    }
+}

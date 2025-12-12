@@ -59,17 +59,18 @@ class WindowManager:
 
         def _search_window() -> Optional[DesktopElement]:
             """Blocking window search - runs in thread."""
-            try:
-                if exact:
-                    window = auto.WindowControl(searchDepth=1, Name=title)
-                else:
-                    window = auto.WindowControl(searchDepth=1, SubName=title)
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    if exact:
+                        window = auto.WindowControl(searchDepth=1, Name=title)
+                    else:
+                        window = auto.WindowControl(searchDepth=1, SubName=title)
 
-                if window.Exists(0, 0):
-                    return DesktopElement(window)
-            except Exception as e:
-                logger.debug(f"Window search attempt failed: {e}")
-            return None
+                    if window.Exists(0, 0):
+                        return DesktopElement(window)
+                except Exception as e:
+                    logger.debug(f"Window search attempt failed: {e}")
+                return None
 
         while time.time() - start_time < timeout:
             check_count += 1
@@ -103,12 +104,13 @@ class WindowManager:
         logger.debug(f"Getting all windows (include_invisible={include_invisible})")
 
         def _get_windows() -> List[DesktopElement]:
-            windows = []
-            for window in auto.GetRootControl().GetChildren():
-                if window.ControlTypeName == "WindowControl":
-                    if include_invisible or window.IsEnabled:
-                        windows.append(DesktopElement(window))
-            return windows
+            with auto.UIAutomationInitializerInThread():
+                windows = []
+                for window in auto.GetRootControl().GetChildren():
+                    if window.ControlTypeName == "WindowControl":
+                        if include_invisible or window.IsEnabled:
+                            windows.append(DesktopElement(window))
+                return windows
 
         windows = await asyncio.to_thread(_get_windows)
         logger.info(f"Found {len(windows)} windows")
@@ -173,7 +175,8 @@ class WindowManager:
                 exe_name = os.path.splitext(os.path.basename(path))[0]
                 window_title = exe_name
 
-            window_search_timeout = min(timeout, 3.0)
+            # Use full timeout for title search as it's more reliable than PID for modern apps
+            window_search_timeout = timeout
 
             try:
                 window = await self.find_window(
@@ -189,38 +192,41 @@ class WindowManager:
 
                 def _search_by_pid() -> Optional[DesktopElement]:
                     """Search for window by PID - runs in thread."""
-                    search_start = time.time()
-                    max_search_time = 3.0
-                    windows_checked = 0
+                    with auto.UIAutomationInitializerInThread():
+                        search_start = time.time()
+                        max_search_time = 3.0
+                        windows_checked = 0
 
-                    try:
-                        for window in auto.GetRootControl().GetChildren():
-                            if time.time() - search_start > max_search_time:
-                                logger.warning(
-                                    f"Process-based window search timed out "
-                                    f"after checking {windows_checked} windows"
-                                )
-                                break
+                        try:
+                            for window in auto.GetRootControl().GetChildren():
+                                if time.time() - search_start > max_search_time:
+                                    logger.warning(
+                                        f"Process-based window search timed out "
+                                        f"after checking {windows_checked} windows"
+                                    )
+                                    break
 
-                            windows_checked += 1
+                                windows_checked += 1
 
-                            if (
-                                window.ControlTypeName == "WindowControl"
-                                and window.IsEnabled
-                            ):
-                                try:
-                                    if window.ProcessId == process.pid:
-                                        return DesktopElement(window)
-                                except Exception:
-                                    continue
+                                if (
+                                    window.ControlTypeName == "WindowControl"
+                                    and window.IsEnabled
+                                ):
+                                    try:
+                                        if window.ProcessId == process.pid:
+                                            return DesktopElement(window)
+                                    except Exception:
+                                        continue
 
-                        logger.error(
-                            f"No window found for PID {process.pid} "
-                            f"after checking {windows_checked} windows"
-                        )
-                    except Exception as e:
-                        logger.error(f"Error during process-based window search: {e}")
-                    return None
+                            logger.error(
+                                f"No window found for PID {process.pid} "
+                                f"after checking {windows_checked} windows"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Error during process-based window search: {e}"
+                            )
+                        return None
 
                 result = await asyncio.to_thread(_search_by_pid)
                 if result is not None:
@@ -263,17 +269,18 @@ class WindowManager:
             elif isinstance(window_or_pid, int):
 
                 def _find_by_pid() -> Optional[DesktopElement]:
-                    all_windows = []
-                    for w in auto.GetRootControl().GetChildren():
-                        if w.ControlTypeName == "WindowControl" and w.IsEnabled:
-                            all_windows.append(DesktopElement(w))
-                    for w in all_windows:
-                        try:
-                            if w._control.ProcessId == window_or_pid:
-                                return w
-                        except Exception:
-                            pass
-                    return None
+                    with auto.UIAutomationInitializerInThread():
+                        all_windows = []
+                        for w in auto.GetRootControl().GetChildren():
+                            if w.ControlTypeName == "WindowControl" and w.IsEnabled:
+                                all_windows.append(DesktopElement(w))
+                        for w in all_windows:
+                            try:
+                                if w._control.ProcessId == window_or_pid:
+                                    return w
+                            except Exception:
+                                pass
+                        return None
 
                 window = await asyncio.to_thread(_find_by_pid)
                 if window is None:
@@ -300,14 +307,15 @@ class WindowManager:
                 logger.info(f"Attempting graceful close of window: {window.get_text()}")
 
                 def _try_close() -> None:
-                    try:
-                        window._control.GetWindowPattern().Close()
-                    except Exception as e:
-                        logger.debug(
-                            f"WindowPattern.Close() failed, trying Alt+F4: {e}"
-                        )
-                        window._control.SetFocus()
-                        window._control.SendKeys("{Alt}F4")
+                    with auto.UIAutomationInitializerInThread():
+                        try:
+                            window._control.GetWindowPattern().Close()
+                        except Exception as e:
+                            logger.debug(
+                                f"WindowPattern.Close() failed, trying Alt+F4: {e}"
+                            )
+                            window._control.SetFocus()
+                            window._control.SendKeys("{Alt}F4")
 
                 await asyncio.to_thread(_try_close)
 
@@ -358,17 +366,18 @@ class WindowManager:
         logger.debug(f"Resizing window to {width}x{height}")
 
         def _resize() -> bool:
-            try:
-                import win32gui
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    import win32gui
 
-                hwnd = window._control.NativeWindowHandle
-                rect = window.get_bounding_rect()
-                current_x = rect["left"]
-                current_y = rect["top"]
-                win32gui.MoveWindow(hwnd, current_x, current_y, width, height, True)
-                return True
-            except Exception as e:
-                raise ValueError(f"Failed to resize window: {e}")
+                    hwnd = window._control.NativeWindowHandle
+                    rect = window.get_bounding_rect()
+                    current_x = rect["left"]
+                    current_y = rect["top"]
+                    win32gui.MoveWindow(hwnd, current_x, current_y, width, height, True)
+                    return True
+                except Exception as e:
+                    raise ValueError(f"Failed to resize window: {e}")
 
         result = await asyncio.to_thread(_resize)
         logger.info(f"Resized window to {width}x{height}")
@@ -392,17 +401,18 @@ class WindowManager:
         logger.debug(f"Moving window to ({x}, {y})")
 
         def _move() -> bool:
-            try:
-                import win32gui
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    import win32gui
 
-                hwnd = window._control.NativeWindowHandle
-                rect = window.get_bounding_rect()
-                current_width = rect["width"]
-                current_height = rect["height"]
-                win32gui.MoveWindow(hwnd, x, y, current_width, current_height, True)
-                return True
-            except Exception as e:
-                raise ValueError(f"Failed to move window: {e}")
+                    hwnd = window._control.NativeWindowHandle
+                    rect = window.get_bounding_rect()
+                    current_width = rect["width"]
+                    current_height = rect["height"]
+                    win32gui.MoveWindow(hwnd, x, y, current_width, current_height, True)
+                    return True
+                except Exception as e:
+                    raise ValueError(f"Failed to move window: {e}")
 
         result = await asyncio.to_thread(_move)
         logger.info(f"Moved window to ({x}, {y})")
@@ -421,15 +431,16 @@ class WindowManager:
         logger.debug("Maximizing window")
 
         def _maximize() -> bool:
-            try:
-                import win32con
-                import win32gui
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    import win32con
+                    import win32gui
 
-                hwnd = window._control.NativeWindowHandle
-                win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
-                return True
-            except Exception as e:
-                raise ValueError(f"Failed to maximize window: {e}")
+                    hwnd = window._control.NativeWindowHandle
+                    win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+                    return True
+                except Exception as e:
+                    raise ValueError(f"Failed to maximize window: {e}")
 
         result = await asyncio.to_thread(_maximize)
         logger.info(f"Maximized window: {window.get_text()}")
@@ -448,15 +459,16 @@ class WindowManager:
         logger.debug("Minimizing window")
 
         def _minimize() -> bool:
-            try:
-                import win32con
-                import win32gui
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    import win32con
+                    import win32gui
 
-                hwnd = window._control.NativeWindowHandle
-                win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
-                return True
-            except Exception as e:
-                raise ValueError(f"Failed to minimize window: {e}")
+                    hwnd = window._control.NativeWindowHandle
+                    win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
+                    return True
+                except Exception as e:
+                    raise ValueError(f"Failed to minimize window: {e}")
 
         result = await asyncio.to_thread(_minimize)
         logger.info(f"Minimized window: {window.get_text()}")
@@ -475,15 +487,16 @@ class WindowManager:
         logger.debug("Restoring window")
 
         def _restore() -> bool:
-            try:
-                import win32con
-                import win32gui
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    import win32con
+                    import win32gui
 
-                hwnd = window._control.NativeWindowHandle
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                return True
-            except Exception as e:
-                raise ValueError(f"Failed to restore window: {e}")
+                    hwnd = window._control.NativeWindowHandle
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                    return True
+                except Exception as e:
+                    raise ValueError(f"Failed to restore window: {e}")
 
         result = await asyncio.to_thread(_restore)
         logger.info(f"Restored window: {window.get_text()}")
@@ -502,64 +515,65 @@ class WindowManager:
         logger.debug("Getting window properties")
 
         def _get_properties() -> Dict[str, Any]:
-            try:
-                import win32con
-                import win32gui
+            with auto.UIAutomationInitializerInThread():
+                try:
+                    import win32con
+                    import win32gui
 
-                hwnd = window._control.NativeWindowHandle
-                rect = window.get_bounding_rect()
-                placement = win32gui.GetWindowPlacement(hwnd)
-                show_state = placement[1]
+                    hwnd = window._control.NativeWindowHandle
+                    rect = window.get_bounding_rect()
+                    placement = win32gui.GetWindowPlacement(hwnd)
+                    show_state = placement[1]
 
-                state_map = {
-                    win32con.SW_HIDE: "hidden",
-                    win32con.SW_MINIMIZE: "minimized",
-                    win32con.SW_MAXIMIZE: "maximized",
-                    win32con.SW_RESTORE: "normal",
-                    win32con.SW_SHOW: "normal",
-                    win32con.SW_SHOWMINIMIZED: "minimized",
-                    win32con.SW_SHOWMAXIMIZED: "maximized",
-                    win32con.SW_SHOWNOACTIVATE: "normal",
-                    win32con.SW_SHOWNORMAL: "normal",
-                }
-                window_state = state_map.get(show_state, "normal")
-                style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+                    state_map = {
+                        win32con.SW_HIDE: "hidden",
+                        win32con.SW_MINIMIZE: "minimized",
+                        win32con.SW_MAXIMIZE: "maximized",
+                        win32con.SW_RESTORE: "normal",
+                        win32con.SW_SHOW: "normal",
+                        win32con.SW_SHOWMINIMIZED: "minimized",
+                        win32con.SW_SHOWMAXIMIZED: "maximized",
+                        win32con.SW_SHOWNOACTIVATE: "normal",
+                        win32con.SW_SHOWNORMAL: "normal",
+                    }
+                    window_state = state_map.get(show_state, "normal")
+                    style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
 
-                return {
-                    "title": window.get_text(),
-                    "process_id": window._control.ProcessId,
-                    "handle": hwnd,
-                    "automation_id": window.get_property("AutomationId"),
-                    "class_name": window._control.ClassName,
-                    "control_type": window._control.ControlTypeName,
-                    "is_enabled": window.is_enabled(),
-                    "is_visible": window.is_visible(),
-                    "bounds": rect,
-                    "x": rect["left"],
-                    "y": rect["top"],
-                    "width": rect["width"],
-                    "height": rect["height"],
-                    "state": window_state,
-                    "is_maximized": bool(style & win32con.WS_MAXIMIZE),
-                    "is_minimized": bool(style & win32con.WS_MINIMIZE),
-                    "is_resizable": bool(style & win32con.WS_THICKFRAME),
-                    "has_title_bar": bool(style & win32con.WS_CAPTION),
-                }
-            except Exception as e:
-                logger.warning(f"Failed to get full window properties: {e}")
-                rect = window.get_bounding_rect()
-                return {
-                    "title": window.get_text(),
-                    "process_id": window.get_property("ProcessId"),
-                    "is_enabled": window.is_enabled(),
-                    "is_visible": window.is_visible(),
-                    "bounds": rect,
-                    "x": rect["left"],
-                    "y": rect["top"],
-                    "width": rect["width"],
-                    "height": rect["height"],
-                    "state": "unknown",
-                }
+                    return {
+                        "title": window.get_text(),
+                        "process_id": window._control.ProcessId,
+                        "handle": hwnd,
+                        "automation_id": window.get_property("AutomationId"),
+                        "class_name": window._control.ClassName,
+                        "control_type": window._control.ControlTypeName,
+                        "is_enabled": window.is_enabled(),
+                        "is_visible": window.is_visible(),
+                        "bounds": rect,
+                        "x": rect["left"],
+                        "y": rect["top"],
+                        "width": rect["width"],
+                        "height": rect["height"],
+                        "state": window_state,
+                        "is_maximized": bool(style & win32con.WS_MAXIMIZE),
+                        "is_minimized": bool(style & win32con.WS_MINIMIZE),
+                        "is_resizable": bool(style & win32con.WS_THICKFRAME),
+                        "has_title_bar": bool(style & win32con.WS_CAPTION),
+                    }
+                except Exception as e:
+                    logger.warning(f"Failed to get full window properties: {e}")
+                    rect = window.get_bounding_rect()
+                    return {
+                        "title": window.get_text(),
+                        "process_id": window.get_property("ProcessId"),
+                        "is_enabled": window.is_enabled(),
+                        "is_visible": window.is_visible(),
+                        "bounds": rect,
+                        "x": rect["left"],
+                        "y": rect["top"],
+                        "width": rect["width"],
+                        "height": rect["height"],
+                        "state": "unknown",
+                    }
 
         properties = await asyncio.to_thread(_get_properties)
         logger.info(f"Got properties for window: {properties['title']}")
