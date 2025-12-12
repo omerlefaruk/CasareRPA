@@ -8,12 +8,14 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 
 | Directory | Purpose | Key Exports |
 |-----------|---------|-------------|
+| `aggregates/` | DDD Aggregate Roots | Workflow, WorkflowId, WorkflowNode, Position |
 | `entities/` | Domain entities with identity | BaseNode, WorkflowSchema, Variable, Subflow, Project, Scenario |
-| `value_objects/` | Immutable types | DataType, NodeStatus, PortType, Port, LogEntry, Connection |
+| `events/` | Typed domain events | DomainEvent, NodeAdded, WorkflowStarted, etc. |
+| `value_objects/` | Immutable types | DataType, NodeStatus, PortType, Port, LogEntry, Connection, Position |
 | `services/` | Domain services | ExecutionOrchestrator, ProjectContext, resolve_variables, WorkflowValidator |
 | `schemas/` | Property/validation schemas | PropertyDef, NodeSchema, PropertyType, WorkflowAISchema |
 | `protocols/` | Interface contracts | CredentialProviderProtocol, ExecutionContextProtocol |
-| `interfaces/` | Core protocols | INode, IExecutionContext, IFolderStorage |
+| `interfaces/` | Core protocols | INode, IExecutionContext, IFolderStorage, AbstractUnitOfWork |
 | `ai/` | AI/LLM domain config | Prompt templates, AI configuration |
 | `validation/` | Workflow validation | ValidationResult, ValidationIssue, validate_workflow |
 | `errors/` | Error handling | ErrorCode, custom exceptions, error handlers |
@@ -26,8 +28,8 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 
 | File | Contains | Lines |
 |------|----------|-------|
-| `__init__.py` | Domain exports: executable_node, CredentialAwareMixin, protocols | ~64 |
-| `decorators.py` | `@executable_node`, `@node_schema` decorators | ~145 |
+| `__init__.py` | Domain exports: node, CredentialAwareMixin, protocols | ~64 |
+| `decorators.py` | `@node`, `@properties` decorators | ~145 |
 | `credentials.py` | CredentialAwareMixin, credential property helpers | Variable |
 | `port_type_system.py` | Port type compatibility and validation | Variable |
 | `variable_resolver.py` | Variable pattern resolution utilities | Variable |
@@ -43,20 +45,21 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 | `schemas/property_schema.py` | PropertyDef, NodeSchema for declarative config | ~295 |
 | `schemas/property_types.py` | PropertyType enum | Variable |
 | `protocols/__init__.py` | Protocol exports for dependency inversion | ~25 |
-| `interfaces/__init__.py` | INode, IExecutionContext interfaces | ~52 |
+| `interfaces/__init__.py` | INode, IExecutionContext, AbstractUnitOfWork interfaces | ~55 |
+| `interfaces/unit_of_work.py` | AbstractUnitOfWork - Unit of Work pattern interface | ~105 |
 
 ## Entry Points
 
 ```python
 # Node decorators - auto-add exec ports and schema
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-@node_schema(
+@properties(
     PropertyDef("url", PropertyType.STRING, default="", essential=True),
     PropertyDef("timeout", PropertyType.INTEGER, default=30000),
 )
-@executable_node
+@node
 class MyNode(BaseNode):
     pass
 
@@ -82,7 +85,7 @@ from casare_rpa.domain import (
 )
 
 # Interfaces for dependency inversion
-from casare_rpa.domain.interfaces import INode, IExecutionContext
+from casare_rpa.domain.interfaces import INode, IExecutionContext, AbstractUnitOfWork
 
 # Domain services
 from casare_rpa.domain.services import (
@@ -98,7 +101,55 @@ from casare_rpa.domain.entities import (
     Variable,
     Subflow,
 )
+
+# Workflow Aggregate (DDD 2025 pattern)
+from casare_rpa.domain.aggregates import (
+    Workflow,
+    WorkflowId,
+    WorkflowNode,
+    Position,
+    NodeAdded,
+    NodeRemoved,
+    NodeConnected,
+)
 ```
+
+## Aggregate Pattern (DDD 2025)
+
+The `Workflow` aggregate root enforces consistency boundaries:
+
+```python
+from casare_rpa.domain.aggregates import Workflow, WorkflowId, Position
+
+# Create workflow through aggregate root
+workflow = Workflow(id=WorkflowId.generate(), name="My Automation")
+
+# All modifications go through aggregate
+node_id = workflow.add_node(
+    node_type="ClickElementNode",
+    position=Position(x=100, y=200),
+    config={"selector": "#button"},
+)
+
+# Connect nodes within aggregate boundary
+workflow.connect(
+    source_node=start_node,
+    source_port="exec_out",
+    target_node=node_id,
+    target_port="exec_in",
+)
+
+# Collect domain events after transaction
+events = workflow.collect_events()
+for event in events:
+    event_bus.publish(event)  # NodeAdded, NodeConnected events
+```
+
+Key principles:
+- **Aggregate Root**: Only `Workflow` is accessed from outside
+- **Consistency Boundary**: All modifications validated within aggregate
+- **Event Collection**: Domain events raised but not published until transaction complete
+- **Reference by ID**: Other aggregates referenced by ID only, never by object
 
 ## Entity Hierarchy
 
@@ -135,12 +186,12 @@ entities/
 
 ## Schema System
 
-The `@node_schema` decorator enables declarative property definitions:
+The `@properties` decorator enables declarative property definitions:
 
 ```python
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-@node_schema(
+@properties(
     PropertyDef("selector", PropertyType.SELECTOR, essential=True,
                 placeholder="Pick element..."),
     PropertyDef("timeout", PropertyType.INTEGER, default=30000,

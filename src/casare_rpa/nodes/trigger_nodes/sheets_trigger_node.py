@@ -7,7 +7,7 @@ Workflow starts when cells are modified in the monitored range.
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -17,7 +17,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     # Connection settings
     PropertyDef(
         "credential_name",
@@ -103,7 +104,6 @@ from casare_rpa.triggers.base import TriggerType
         tab="advanced",
     ),
 )
-@trigger_node
 class SheetsTriggerNode(BaseTriggerNode):
     """
     Google Sheets trigger node that monitors for spreadsheet changes.

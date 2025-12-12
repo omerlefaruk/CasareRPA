@@ -26,7 +26,6 @@ from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 
 if TYPE_CHECKING:
@@ -181,20 +180,20 @@ class HttpBaseNode(BaseNode):
 
     def _define_common_output_ports(self) -> None:
         """Define standard output ports for HTTP response."""
-        self.add_output_port("response_body", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("response_json", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("status_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("response_headers", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("response_body", DataType.STRING)
+        self.add_output_port("response_json", DataType.ANY)
+        self.add_output_port("status_code", DataType.INTEGER)
+        self.add_output_port("response_headers", DataType.DICT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     def _define_common_input_ports(self, include_body: bool = False) -> None:
         """Define standard input ports for HTTP request."""
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers", PortType.INPUT, DataType.DICT)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("url", DataType.STRING)
+        self.add_input_port("headers", DataType.DICT)
+        self.add_input_port("timeout", DataType.FLOAT)
         if include_body:
-            self.add_input_port("body", PortType.INPUT, DataType.ANY)
+            self.add_input_port("body", DataType.ANY)
 
     def _parse_json_param(self, value: Any, default: Any = None) -> Any:
         """Parse a parameter that may be JSON string or already parsed."""

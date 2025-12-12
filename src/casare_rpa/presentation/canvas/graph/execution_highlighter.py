@@ -12,9 +12,10 @@ Connects to DebugController signals to update node visual states.
 """
 
 from enum import Enum, auto
+from functools import partial
 from typing import Dict, Optional, TYPE_CHECKING, List
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -355,7 +356,7 @@ class ExecutionHighlighter(QObject):
         """Start fade timer for success highlight."""
         timer = QTimer(self)
         timer.setSingleShot(True)
-        timer.timeout.connect(lambda: self._on_fade_complete(node_id))
+        timer.timeout.connect(partial(self._on_fade_complete, node_id))
         timer.start(self._success_fade_duration)
         self._fade_timers[node_id] = timer
 

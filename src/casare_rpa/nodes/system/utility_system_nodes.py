@@ -21,11 +21,10 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -36,7 +35,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "watch_path",
         PropertyType.FILE_PATH,
@@ -70,7 +70,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Monitor subdirectories as well",
     ),
 )
-@executable_node
 class FileWatcherNode(BaseNode):
     """
     Monitor a file or folder for changes.
@@ -89,10 +88,10 @@ class FileWatcherNode(BaseNode):
         self.node_type = "FileWatcherNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("event_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("triggered", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("timed_out", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("event_type", DataType.STRING)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("triggered", DataType.BOOLEAN)
+        self.add_output_port("timed_out", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -235,7 +234,8 @@ class FileWatcherNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "action",
         PropertyType.CHOICE,
@@ -276,7 +276,6 @@ class FileWatcherNode(BaseNode):
         tooltip="Size of the generated QR code in pixels",
     ),
 )
-@executable_node
 class QRCodeNode(BaseNode):
     """Generate or read QR codes."""
 
@@ -291,9 +290,9 @@ class QRCodeNode(BaseNode):
         self.node_type = "QRCodeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("data", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("data", DataType.STRING)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -409,7 +408,8 @@ class QRCodeNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "action",
         PropertyType.CHOICE,
@@ -428,7 +428,6 @@ class QRCodeNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class Base64Node(BaseNode):
     """Encode or decode base64 strings."""
 
@@ -443,9 +442,9 @@ class Base64Node(BaseNode):
         self.node_type = "Base64Node"
 
     def _define_ports(self) -> None:
-        self.add_input_port("input_text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("output", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("input_text", DataType.STRING)
+        self.add_output_port("output", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -502,7 +501,8 @@ class Base64Node(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "uuid_version",
         PropertyType.CHOICE,
@@ -521,7 +521,6 @@ class Base64Node(BaseNode):
         tooltip="Number of UUIDs to generate",
     ),
 )
-@executable_node
 class UUIDGeneratorNode(BaseNode):
     """Generate UUIDs."""
 
@@ -536,9 +535,9 @@ class UUIDGeneratorNode(BaseNode):
         self.node_type = "UUIDGeneratorNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("uuid", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("uuids", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("uuid", DataType.STRING)
+        self.add_output_port("uuids", DataType.LIST)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -581,7 +580,8 @@ class UUIDGeneratorNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "condition",
         PropertyType.STRING,
@@ -605,7 +605,6 @@ class UUIDGeneratorNode(BaseNode):
         tooltip="If true, node fails when condition is false; if false, just outputs result",
     ),
 )
-@executable_node
 class AssertSystemNode(BaseNode):
     """Validate conditions and optionally fail the workflow."""
 
@@ -620,10 +619,10 @@ class AssertSystemNode(BaseNode):
         self.node_type = "AssertSystemNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("condition", PortType.INPUT, DataType.ANY)
-        self.add_input_port("value", PortType.INPUT, DataType.ANY)
-        self.add_output_port("passed", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("condition", DataType.ANY)
+        self.add_input_port("value", DataType.ANY)
+        self.add_output_port("passed", DataType.BOOLEAN)
+        self.add_output_port("message", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -736,7 +735,8 @@ class AssertSystemNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "log_file_path",
         PropertyType.FILE_PATH,
@@ -776,7 +776,6 @@ class AssertSystemNode(BaseNode):
         tooltip="Add timestamp to log entries",
     ),
 )
-@executable_node
 class LogToFileNode(BaseNode):
     """Write messages to a custom log file."""
 
@@ -791,9 +790,9 @@ class LogToFileNode(BaseNode):
         self.node_type = "LogToFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("log_message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("lines_written", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("log_message", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("lines_written", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING

@@ -14,11 +14,10 @@ import os
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -30,7 +29,8 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "directory_path",
         PropertyType.STRING,
@@ -61,12 +61,11 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class CreateDirectoryNode(BaseNode):
     """
     Create a directory.
 
-    Config (via @node_schema):
+    Config (via @properties):
         directory_path: Path to create (required)
         parents: Create parent directories (default: True)
         exist_ok: Don't error if exists (default: True)
@@ -91,9 +90,9 @@ class CreateDirectoryNode(BaseNode):
         self.node_type = "CreateDirectoryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("dir_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("directory_path", DataType.STRING)
+        self.add_output_port("dir_path", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -140,7 +139,8 @@ class CreateDirectoryNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "directory_path",
         PropertyType.STRING,
@@ -171,12 +171,11 @@ class CreateDirectoryNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class ListFilesNode(BaseNode):
     """
     List files in a directory.
 
-    Config (via @node_schema):
+    Config (via @properties):
         directory_path: Directory to list (required)
         pattern: Glob pattern to filter (default: *)
         recursive: Search recursively (default: False)
@@ -201,10 +200,10 @@ class ListFilesNode(BaseNode):
         self.node_type = "ListFilesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("directory_path", DataType.STRING)
+        self.add_output_port("files", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -265,7 +264,8 @@ class ListFilesNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "dir_path",
         PropertyType.STRING,
@@ -310,12 +310,11 @@ class ListFilesNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class ListDirectoryNode(BaseNode):
     """
     List files and directories in a folder.
 
-    Config (via @node_schema):
+    Config (via @properties):
         dir_path: Path to the directory to list (required)
         pattern: Glob pattern to filter (default: *)
         recursive: Search recursively (default: False)
@@ -343,10 +342,10 @@ class ListDirectoryNode(BaseNode):
         self.node_type = "ListDirectoryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dir_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("items", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("dir_path", DataType.STRING)
+        self.add_output_port("items", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

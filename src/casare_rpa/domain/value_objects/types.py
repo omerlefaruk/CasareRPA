@@ -2,16 +2,24 @@
 CasareRPA - Domain Layer Type Definitions
 
 This module defines core value objects for the domain layer:
-- Enums: DataType, PortType, NodeStatus, ExecutionMode, EventType, ErrorCode
+- Enums: DataType, PortType, NodeStatus, NodeState, ExecutionMode, ErrorCode, EventType
+- Dataclasses: NodeResult
 - Type aliases: NodeId, PortId, Connection, NodeConfig, etc.
 - Constants: SCHEMA_VERSION, DEFAULT_TIMEOUT, etc.
+
+NOTE: EventType enum is provided for backward compatibility. New code should prefer
+typed domain events from casare_rpa.domain.events (e.g., NodeStarted, NodeCompleted).
 
 All types here are framework-agnostic and represent pure domain concepts.
 """
 
+from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 import sys
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.value_objects.execution_metadata import ExecutionMetadata
 
 
 # =============================================================================
@@ -65,7 +73,7 @@ def intern_port_name(port_name: str) -> str:
 
 
 class NodeStatus(Enum):
-    """Execution status of a node."""
+    """Execution status of a node (legacy, use NodeState for new code)."""
 
     IDLE = auto()  # Node has not been executed
     RUNNING = auto()  # Node is currently executing
@@ -73,6 +81,55 @@ class NodeStatus(Enum):
     ERROR = auto()  # Node encountered an error
     SKIPPED = auto()  # Node was skipped (conditional logic)
     CANCELLED = auto()  # Node execution was cancelled
+
+
+class NodeState(Enum):
+    """Rich node execution state (Prefect/Airflow pattern).
+
+    Provides more granular execution states than NodeStatus,
+    including scheduling and retry states.
+    """
+
+    PENDING = auto()  # Not yet scheduled
+    SCHEDULED = auto()  # Queued for execution
+    RUNNING = auto()  # Currently executing
+    SUCCESS = auto()  # Completed successfully
+    FAILED = auto()  # Failed with error
+    SKIPPED = auto()  # Skipped due to condition
+    CANCELLED = auto()  # Cancelled by user/system
+    RETRYING = auto()  # Awaiting retry attempt
+    UPSTREAM_FAILED = auto()  # Upstream node failed
+
+    def to_node_status(self) -> NodeStatus:
+        """Convert to legacy NodeStatus for backward compatibility."""
+        mapping = {
+            NodeState.PENDING: NodeStatus.IDLE,
+            NodeState.SCHEDULED: NodeStatus.IDLE,
+            NodeState.RUNNING: NodeStatus.RUNNING,
+            NodeState.SUCCESS: NodeStatus.SUCCESS,
+            NodeState.FAILED: NodeStatus.ERROR,
+            NodeState.SKIPPED: NodeStatus.SKIPPED,
+            NodeState.CANCELLED: NodeStatus.CANCELLED,
+            NodeState.RETRYING: NodeStatus.RUNNING,
+            NodeState.UPSTREAM_FAILED: NodeStatus.SKIPPED,
+        }
+        return mapping[self]
+
+    @property
+    def is_terminal(self) -> bool:
+        """Check if this is a terminal state (no further transitions)."""
+        return self in {
+            NodeState.SUCCESS,
+            NodeState.FAILED,
+            NodeState.SKIPPED,
+            NodeState.CANCELLED,
+            NodeState.UPSTREAM_FAILED,
+        }
+
+    @property
+    def is_running(self) -> bool:
+        """Check if node is actively executing."""
+        return self in {NodeState.RUNNING, NodeState.RETRYING}
 
 
 class PortType(Enum):
@@ -127,22 +184,50 @@ class ExecutionMode(Enum):
 
 
 class EventType(Enum):
-    """Types of events that can be emitted."""
+    """
+    Event types for workflow execution events.
 
-    NODE_STARTED = auto()  # Node execution started
-    NODE_COMPLETED = auto()  # Node execution completed
-    NODE_ERROR = auto()  # Node encountered error
-    NODE_SKIPPED = auto()  # Node was skipped
-    WORKFLOW_STARTED = auto()  # Workflow execution started
-    WORKFLOW_COMPLETED = auto()  # Workflow execution completed
-    WORKFLOW_ERROR = auto()  # Workflow encountered error
-    WORKFLOW_STOPPED = auto()  # Workflow execution stopped by user
-    WORKFLOW_PAUSED = auto()  # Workflow execution paused
-    WORKFLOW_RESUMED = auto()  # Workflow execution resumed
-    WORKFLOW_PROGRESS = auto()  # Workflow progress update (e.g., parallel execution)
-    VARIABLE_SET = auto()  # Variable was set in context
-    LOG_MESSAGE = auto()  # Log message emitted
-    BROWSER_PAGE_READY = auto()  # Browser page is ready for selector/recording
+    This enum provides backward compatibility for code using the legacy
+    string-based event system. New code should prefer the typed domain events
+    from casare_rpa.domain.events (e.g., NodeStarted, NodeCompleted, etc.).
+
+    Migration guide:
+        # Old (legacy enum)
+        event_bus.subscribe(EventType.NODE_COMPLETED, handler)
+        event_bus.emit(EventType.NODE_COMPLETED, data)
+
+        # New (typed events - preferred)
+        from casare_rpa.domain.events import NodeCompleted
+        event_bus.subscribe(NodeCompleted, handler)
+        event_bus.publish(NodeCompleted(node_id="x", node_type="Y"))
+    """
+
+    # Node execution events
+    NODE_STARTED = auto()
+    NODE_COMPLETED = auto()
+    NODE_ERROR = auto()
+    NODE_SKIPPED = auto()
+    NODE_STATUS_CHANGED = auto()
+
+    # Workflow lifecycle events
+    WORKFLOW_STARTED = auto()
+    WORKFLOW_COMPLETED = auto()
+    WORKFLOW_ERROR = auto()
+    WORKFLOW_FAILED = auto()
+    WORKFLOW_STOPPED = auto()
+    WORKFLOW_PAUSED = auto()
+    WORKFLOW_RESUMED = auto()
+    WORKFLOW_PROGRESS = auto()
+
+    # Variable events
+    VARIABLE_SET = auto()
+
+    # System events
+    LOG_MESSAGE = auto()
+    BROWSER_PAGE_READY = auto()
+    DEBUG_BREAKPOINT_HIT = auto()
+    RESOURCE_ACQUIRED = auto()
+    RESOURCE_RELEASED = auto()
 
 
 class ErrorCode(Enum):
@@ -384,3 +469,130 @@ MAX_RETRIES: int = 3
 # Port name constants
 EXEC_IN_PORT: str = "exec_in"
 EXEC_OUT_PORT: str = "exec_out"
+
+
+# ============================================================================
+# DATACLASSES
+# ============================================================================
+
+
+@dataclass
+class NodeResult:
+    """Enhanced execution result with rich metadata.
+
+    Provides structured result handling with flow control signals
+    and retry capabilities. Replaces dict-based ExecutionResult
+    for new node implementations.
+
+    Attributes:
+        success: Whether the node executed successfully.
+        data: Output data dictionary (port name -> value).
+        error: Error message if failed.
+        error_code: Structured error code for programmatic handling.
+        metadata: Execution metadata (timing, attempts, context).
+        route_to: Override next node ID for dynamic routing.
+        loop_back_to: Signal loop continuation to specified node.
+        parallel_branches: Fork execution to multiple branches.
+        should_retry: Signal that execution should be retried.
+        retry_delay_ms: Delay before retry in milliseconds.
+    """
+
+    success: bool
+    data: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[str] = None
+    error_code: Optional[str] = None
+    metadata: Optional["ExecutionMetadata"] = None
+
+    # Flow control signals
+    route_to: Optional[str] = None
+    loop_back_to: Optional[str] = None
+    parallel_branches: Optional[List[str]] = None
+
+    # Retry signals
+    should_retry: bool = False
+    retry_delay_ms: int = 0
+
+    @classmethod
+    def ok(cls, **outputs: Any) -> "NodeResult":
+        """Create success result with outputs.
+
+        Args:
+            **outputs: Output port values (port_name=value).
+
+        Returns:
+            NodeResult with success=True and data populated.
+
+        Example:
+            return NodeResult.ok(text="Hello", count=42)
+        """
+        return cls(success=True, data=outputs)
+
+    @classmethod
+    def fail(cls, error: str, code: str = "UNKNOWN_ERROR") -> "NodeResult":
+        """Create failure result.
+
+        Args:
+            error: Human-readable error message.
+            code: Structured error code for programmatic handling.
+
+        Returns:
+            NodeResult with success=False and error details.
+
+        Example:
+            return NodeResult.fail("Element not found", "ELEMENT_NOT_FOUND")
+        """
+        return cls(success=False, error=error, error_code=code)
+
+    @classmethod
+    def retry(
+        cls, error: str, delay_ms: int = 1000, code: str = "RETRY_REQUESTED"
+    ) -> "NodeResult":
+        """Create result requesting retry.
+
+        Args:
+            error: Reason for retry.
+            delay_ms: Delay before retry attempt.
+            code: Error code.
+
+        Returns:
+            NodeResult signaling retry should occur.
+        """
+        return cls(
+            success=False,
+            error=error,
+            error_code=code,
+            should_retry=True,
+            retry_delay_ms=delay_ms,
+        )
+
+    def with_metadata(self, metadata: "ExecutionMetadata") -> "NodeResult":
+        """Create new result with metadata attached.
+
+        Args:
+            metadata: Execution metadata to attach.
+
+        Returns:
+            New NodeResult with metadata set.
+        """
+        return NodeResult(
+            success=self.success,
+            data=self.data,
+            error=self.error,
+            error_code=self.error_code,
+            metadata=metadata,
+            route_to=self.route_to,
+            loop_back_to=self.loop_back_to,
+            parallel_branches=self.parallel_branches,
+            should_retry=self.should_retry,
+            retry_delay_ms=self.retry_delay_ms,
+        )
+
+    @property
+    def is_success(self) -> bool:
+        """Check if result represents successful execution."""
+        return self.success
+
+    @property
+    def is_failure(self) -> bool:
+        """Check if result represents failed execution."""
+        return not self.success

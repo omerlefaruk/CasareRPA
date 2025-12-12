@@ -5,6 +5,7 @@ Domain entities are objects with identity that persist over time.
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.entities.resource_node import ResourceNode
 from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
 from casare_rpa.domain.entities.node_connection import NodeConnection
 from casare_rpa.domain.entities.variable import (
@@ -58,6 +59,7 @@ from casare_rpa.domain.entities.project import (
 
 __all__ = [
     "BaseNode",
+    "ResourceNode",
     "WorkflowMetadata",
     "NodeConnection",
     "WorkflowSchema",

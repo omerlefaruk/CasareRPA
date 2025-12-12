@@ -7,7 +7,7 @@ Provides quick actions: Stop, Mode switch, Cancel.
 
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -100,14 +100,14 @@ class PickerToolbar(QWidget):
         self._browser_btn = QPushButton("Web")
         self._browser_btn.setFixedSize(48, 28)
         self._browser_btn.setCheckable(True)
-        self._browser_btn.clicked.connect(lambda: self._set_mode(PickingMode.BROWSER))
+        self._browser_btn.clicked.connect(self._on_browser_mode_clicked)
         self._browser_btn.setStyleSheet(self._mode_btn_style(False))
         layout.addWidget(self._browser_btn)
 
         self._desktop_btn = QPushButton("Win")
         self._desktop_btn.setFixedSize(48, 28)
         self._desktop_btn.setCheckable(True)
-        self._desktop_btn.clicked.connect(lambda: self._set_mode(PickingMode.DESKTOP))
+        self._desktop_btn.clicked.connect(self._on_desktop_mode_clicked)
         self._desktop_btn.setStyleSheet(self._mode_btn_style(False))
         layout.addWidget(self._desktop_btn)
 
@@ -151,6 +151,16 @@ class PickerToolbar(QWidget):
             }
         """)
         layout.addWidget(self._stop_btn)
+
+    @Slot()
+    def _on_browser_mode_clicked(self) -> None:
+        """Handle browser mode button click."""
+        self._set_mode(PickingMode.BROWSER)
+
+    @Slot()
+    def _on_desktop_mode_clicked(self) -> None:
+        """Handle desktop mode button click."""
+        self._set_mode(PickingMode.DESKTOP)
 
     def _mode_btn_style(self, checked: bool) -> str:
         """Get style for mode button."""

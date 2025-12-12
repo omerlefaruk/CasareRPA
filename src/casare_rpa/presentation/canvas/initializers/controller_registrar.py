@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
+from PySide6.QtCore import Slot
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -147,9 +148,10 @@ class ControllerRegistrar:
             self._on_project_opened_for_autosave
         )
         mw._project_controller.project_closed.connect(
-            lambda: mw._project_autosave_controller.clear_project()
+            self._on_project_closed_for_autosave
         )
 
+    @Slot(object)
     def _on_project_opened_for_autosave(self, project) -> None:
         """Handle project opened - register with autosave controller."""
         mw = self._main_window
@@ -159,6 +161,13 @@ class ControllerRegistrar:
             if project_path:
                 mw._project_autosave_controller.set_project(project, project_path)
                 logger.info(f"Project autosave enabled: {project_path}")
+
+    @Slot()
+    def _on_project_closed_for_autosave(self) -> None:
+        """Handle project closed - clear autosave controller."""
+        mw = self._main_window
+        if mw._project_autosave_controller:
+            mw._project_autosave_controller.clear_project()
 
     def set_external_controllers(
         self,
@@ -228,22 +237,14 @@ class ControllerRegistrar:
         if not wc:
             return
 
-        wc.workflow_created.connect(lambda: mw.workflow_new.emit())
-        wc.workflow_loaded.connect(lambda path: mw.workflow_open.emit(path))
-        wc.workflow_saved.connect(lambda path: logger.info(f"Workflow saved: {path}"))
-        wc.workflow_imported.connect(lambda path: mw.workflow_import.emit(path))
-        wc.workflow_imported_json.connect(
-            lambda json_str: mw.workflow_import_json.emit(json_str)
-        )
-        wc.workflow_exported.connect(
-            lambda path: mw.workflow_export_selected.emit(path)
-        )
-        wc.current_file_changed.connect(
-            lambda file: self._on_current_file_changed(file)
-        )
-        wc.modified_changed.connect(
-            lambda modified: self._on_modified_changed(modified)
-        )
+        wc.workflow_created.connect(self._on_workflow_created)
+        wc.workflow_loaded.connect(self._on_workflow_loaded)
+        wc.workflow_saved.connect(self._on_workflow_saved)
+        wc.workflow_imported.connect(self._on_workflow_imported)
+        wc.workflow_imported_json.connect(self._on_workflow_imported_json)
+        wc.workflow_exported.connect(self._on_workflow_exported)
+        wc.current_file_changed.connect(self._on_current_file_changed)
+        wc.modified_changed.connect(self._on_modified_changed)
 
     def _connect_execution_signals(self) -> None:
         """Connect ExecutionController signals to MainWindow UI updates."""
@@ -253,18 +254,14 @@ class ControllerRegistrar:
         if not ec:
             return
 
-        ec.execution_started.connect(lambda: self._on_execution_started())
-        ec.execution_paused.connect(lambda: logger.info("Execution paused"))
-        ec.execution_resumed.connect(lambda: logger.info("Execution resumed"))
-        ec.execution_stopped.connect(lambda: self._on_execution_stopped())
-        ec.execution_completed.connect(lambda: self._on_execution_completed())
-        ec.execution_error.connect(lambda error: self._on_execution_error(error))
-        ec.run_to_node_requested.connect(
-            lambda node_id: mw.workflow_run_to_node.emit(node_id)
-        )
-        ec.run_single_node_requested.connect(
-            lambda node_id: mw.workflow_run_single_node.emit(node_id)
-        )
+        ec.execution_started.connect(self._on_execution_started)
+        ec.execution_paused.connect(self._on_execution_paused)
+        ec.execution_resumed.connect(self._on_execution_resumed)
+        ec.execution_stopped.connect(self._on_execution_stopped)
+        ec.execution_completed.connect(self._on_execution_completed)
+        ec.execution_error.connect(self._on_execution_error)
+        ec.run_to_node_requested.connect(self._on_run_to_node_requested)
+        ec.run_single_node_requested.connect(self._on_run_single_node_requested)
 
     def _connect_node_signals(self) -> None:
         """Connect NodeController signals for logging/debugging."""
@@ -274,12 +271,8 @@ class ControllerRegistrar:
         if not nc:
             return
 
-        nc.node_selected.connect(
-            lambda node_id: logger.debug(f"Node selected: {node_id}")
-        )
-        nc.node_deselected.connect(
-            lambda node_id: logger.debug(f"Node deselected: {node_id}")
-        )
+        nc.node_selected.connect(self._on_node_selected)
+        nc.node_deselected.connect(self._on_node_deselected)
 
     def _connect_panel_signals(self) -> None:
         """Connect PanelController signals."""
@@ -289,19 +282,51 @@ class ControllerRegistrar:
         if not pc:
             return
 
-        pc.bottom_panel_toggled.connect(
-            lambda visible: logger.debug(f"Bottom panel toggled: {visible}")
-        )
+        pc.bottom_panel_toggled.connect(self._on_bottom_panel_toggled)
 
-    # Signal handlers
+    # Signal handlers - Workflow signals
+    @Slot()
+    def _on_workflow_created(self) -> None:
+        """Handle workflow created signal."""
+        self._main_window.workflow_new.emit()
+
+    @Slot(str)
+    def _on_workflow_loaded(self, path: str) -> None:
+        """Handle workflow loaded signal."""
+        self._main_window.workflow_open.emit(path)
+
+    @Slot(str)
+    def _on_workflow_saved(self, path: str) -> None:
+        """Handle workflow saved signal."""
+        logger.info(f"Workflow saved: {path}")
+
+    @Slot(str)
+    def _on_workflow_imported(self, path: str) -> None:
+        """Handle workflow imported signal."""
+        self._main_window.workflow_import.emit(path)
+
+    @Slot(str)
+    def _on_workflow_imported_json(self, json_str: str) -> None:
+        """Handle workflow imported from JSON signal."""
+        self._main_window.workflow_import_json.emit(json_str)
+
+    @Slot(str)
+    def _on_workflow_exported(self, path: str) -> None:
+        """Handle workflow exported signal."""
+        self._main_window.workflow_export_selected.emit(path)
+
+    @Slot(object)
     def _on_current_file_changed(self, file: Optional[Path]) -> None:
         """Handle current file change."""
         pass  # Reserved for future window title updates
 
+    @Slot(bool)
     def _on_modified_changed(self, modified: bool) -> None:
         """Handle modified state change."""
         pass  # Reserved for future window title updates
 
+    # Signal handlers - Execution signals
+    @Slot()
     def _on_execution_started(self) -> None:
         """Update UI when execution starts."""
         mw = self._main_window
@@ -311,6 +336,17 @@ class ControllerRegistrar:
         mw.action_stop.setEnabled(True)
         mw.statusBar().showMessage("Workflow execution started...", 0)
 
+    @Slot()
+    def _on_execution_paused(self) -> None:
+        """Update UI when execution is paused."""
+        logger.info("Execution paused")
+
+    @Slot()
+    def _on_execution_resumed(self) -> None:
+        """Update UI when execution is resumed."""
+        logger.info("Execution resumed")
+
+    @Slot()
     def _on_execution_stopped(self) -> None:
         """Update UI when execution is stopped."""
         mw = self._main_window
@@ -319,6 +355,7 @@ class ControllerRegistrar:
         mw.action_stop.setEnabled(False)
         mw.statusBar().showMessage("Workflow execution stopped", 3000)
 
+    @Slot()
     def _on_execution_completed(self) -> None:
         """Update UI when execution completes."""
         mw = self._main_window
@@ -327,6 +364,7 @@ class ControllerRegistrar:
         mw.action_stop.setEnabled(False)
         mw.statusBar().showMessage("Workflow execution completed", 3000)
 
+    @Slot(str)
     def _on_execution_error(self, error: str) -> None:
         """Update UI when execution encounters an error."""
         mw = self._main_window
@@ -334,6 +372,33 @@ class ControllerRegistrar:
         mw.action_pause.setEnabled(False)
         mw.action_stop.setEnabled(False)
         mw.statusBar().showMessage(f"Execution error: {error}", 5000)
+
+    @Slot(str)
+    def _on_run_to_node_requested(self, node_id: str) -> None:
+        """Handle run to node requested signal."""
+        self._main_window.workflow_run_to_node.emit(node_id)
+
+    @Slot(str)
+    def _on_run_single_node_requested(self, node_id: str) -> None:
+        """Handle run single node requested signal."""
+        self._main_window.workflow_run_single_node.emit(node_id)
+
+    # Signal handlers - Node signals
+    @Slot(str)
+    def _on_node_selected(self, node_id: str) -> None:
+        """Handle node selected signal."""
+        logger.debug(f"Node selected: {node_id}")
+
+    @Slot(str)
+    def _on_node_deselected(self, node_id: str) -> None:
+        """Handle node deselected signal."""
+        logger.debug(f"Node deselected: {node_id}")
+
+    # Signal handlers - Panel signals
+    @Slot(bool)
+    def _on_bottom_panel_toggled(self, visible: bool) -> None:
+        """Handle bottom panel toggled signal."""
+        logger.debug(f"Bottom panel toggled: {visible}")
 
     def cleanup_all(self) -> None:
         """

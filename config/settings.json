@@ -38,6 +38,6 @@
   },
   "canvas": {
     "quick_node_mode": true,
-    "auto_connect": false
+    "auto_connect": true
   }
 }

@@ -24,13 +24,12 @@ from typing import Any, TYPE_CHECKING
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.nodes.http.http_base import get_http_client_from_context
 
@@ -38,7 +37,8 @@ if TYPE_CHECKING:
     from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "header_name",
         PropertyType.STRING,
@@ -61,12 +61,11 @@ if TYPE_CHECKING:
         tooltip="Multiple headers as JSON object",
     ),
 )
-@executable_node
 class SetHttpHeadersNode(BaseNode):
     """
     Configure HTTP headers for subsequent requests.
 
-    Config (via @node_schema):
+    Config (via @properties):
         header_name: Single header name
         header_value: Single header value
         headers_json: Multiple headers as dict
@@ -144,7 +143,8 @@ class SetHttpHeadersNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "path",
         PropertyType.STRING,
@@ -161,12 +161,11 @@ class SetHttpHeadersNode(BaseNode):
         tooltip="Default value if path not found",
     ),
 )
-@executable_node
 class ParseJsonResponseNode(BaseNode):
     """
     Parse JSON response and extract data using JSONPath-like expressions.
 
-    Config (via @node_schema):
+    Config (via @properties):
         path: Path to extract (dot notation)
         default: Default value if path not found
 
@@ -276,7 +275,8 @@ class ParseJsonResponseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "url",
         PropertyType.STRING,
@@ -354,12 +354,11 @@ class ParseJsonResponseNode(BaseNode):
         tooltip="Download chunk size in bytes",
     ),
 )
-@executable_node
 class HttpDownloadFileNode(BaseNode):
     """
     Download a file from a URL and save to disk.
 
-    Config (via @node_schema):
+    Config (via @properties):
         url: URL to download from (required)
         save_path: Path to save file (required)
         headers: Request headers
@@ -391,16 +390,16 @@ class HttpDownloadFileNode(BaseNode):
         self.node_type = "HttpDownloadFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("save_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers", PortType.INPUT, DataType.DICT)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("url", DataType.STRING)
+        self.add_input_port("save_path", DataType.STRING)
+        self.add_input_port("headers", DataType.DICT)
+        self.add_input_port("timeout", DataType.FLOAT)
         self.add_input_port("allow_internal_urls", DataType.BOOLEAN, required=False)
 
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("file_size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("file_size", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: "ExecutionContext") -> ExecutionResult:
         """
@@ -497,7 +496,8 @@ class HttpDownloadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "url",
         PropertyType.STRING,
@@ -567,12 +567,11 @@ class HttpDownloadFileNode(BaseNode):
         tooltip="Delay between retry attempts",
     ),
 )
-@executable_node
 class HttpUploadFileNode(BaseNode):
     """
     Upload a file via HTTP POST multipart/form-data.
 
-    Config (via @node_schema):
+    Config (via @properties):
         url: Upload URL (required)
         file_path: Path to file (required)
         field_name: Form field name
@@ -603,19 +602,19 @@ class HttpUploadFileNode(BaseNode):
         self.node_type = "HttpUploadFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("field_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers", PortType.INPUT, DataType.DICT)
-        self.add_input_port("extra_fields", PortType.INPUT, DataType.DICT)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("url", DataType.STRING)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_input_port("field_name", DataType.STRING)
+        self.add_input_port("headers", DataType.DICT)
+        self.add_input_port("extra_fields", DataType.DICT)
+        self.add_input_port("timeout", DataType.FLOAT)
         self.add_input_port("allow_internal_urls", DataType.BOOLEAN, required=False)
 
-        self.add_output_port("response_body", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("response_json", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("status_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("response_body", DataType.STRING)
+        self.add_output_port("response_json", DataType.ANY)
+        self.add_output_port("status_code", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: "ExecutionContext") -> ExecutionResult:
         """
@@ -734,7 +733,8 @@ class HttpUploadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "base_url",
         PropertyType.STRING,
@@ -759,12 +759,11 @@ class HttpUploadFileNode(BaseNode):
         tooltip="Query parameters as JSON object",
     ),
 )
-@executable_node
 class BuildUrlNode(BaseNode):
     """
     Build a URL with query parameters.
 
-    Config (via @node_schema):
+    Config (via @properties):
         base_url: Base URL (required)
         path: Path to append
         params: Query parameters
@@ -787,11 +786,11 @@ class BuildUrlNode(BaseNode):
         self.node_type = "BuildUrlNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("base_url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("params", PortType.INPUT, DataType.DICT)
+        self.add_input_port("base_url", DataType.STRING)
+        self.add_input_port("path", DataType.STRING)
+        self.add_input_port("params", DataType.DICT)
 
-        self.add_output_port("url", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("url", DataType.STRING)
 
     async def execute(self, context: "ExecutionContext") -> ExecutionResult:
         self.status = NodeStatus.RUNNING

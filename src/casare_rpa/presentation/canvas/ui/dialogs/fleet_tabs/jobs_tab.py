@@ -26,7 +26,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
+from functools import partial
+
+from PySide6.QtCore import Qt, Signal, QTimer, Slot
 from PySide6.QtGui import QBrush
 
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
@@ -67,6 +69,7 @@ class JobsTabWidget(QWidget):
         self._jobs: List[Dict[str, Any]] = []
         self._job_map: Dict[str, Dict[str, Any]] = {}
         self._selected_job: Optional[Dict[str, Any]] = None
+        self._context_job: Optional[Dict[str, Any]] = None  # Context menu target
         self._setup_ui()
         self._apply_styles()
 
@@ -344,18 +347,18 @@ class JobsTabWidget(QWidget):
             if status in ("pending", "queued", "running"):
                 cancel_btn = QPushButton("Cancel")
                 cancel_btn.setMaximumHeight(24)
-                cancel_btn.clicked.connect(lambda _, j=job: self._on_cancel_job(j))
+                cancel_btn.clicked.connect(partial(self._on_cancel_job, job))
                 actions_layout.addWidget(cancel_btn)
 
             if status in ("failed", "cancelled"):
                 retry_btn = QPushButton("Retry")
                 retry_btn.setMaximumHeight(24)
-                retry_btn.clicked.connect(lambda _, j=job: self._on_retry_job(j))
+                retry_btn.clicked.connect(partial(self._on_retry_job, job))
                 actions_layout.addWidget(retry_btn)
 
             view_btn = QPushButton("View")
             view_btn.setMaximumHeight(24)
-            view_btn.clicked.connect(lambda _, j=job: self._show_job_details(j))
+            view_btn.clicked.connect(partial(self._show_job_details, job))
             actions_layout.addWidget(view_btn)
 
             self._table.setCellWidget(row, 7, actions_widget)
@@ -422,23 +425,44 @@ class JobsTabWidget(QWidget):
         if not job:
             return
 
+        # Store context job for slot methods
+        self._context_job = job
+
         menu = QMenu(self)
         status = job.get("status", "")
 
         view_action = menu.addAction("View Details")
-        view_action.triggered.connect(lambda: self._show_job_details(job))
+        view_action.triggered.connect(self._on_context_view_details)
 
         menu.addSeparator()
 
         if status in ("pending", "queued", "running"):
             cancel_action = menu.addAction("Cancel")
-            cancel_action.triggered.connect(lambda: self._on_cancel_job(job))
+            cancel_action.triggered.connect(self._on_context_cancel_job)
 
         if status in ("failed", "cancelled"):
             retry_action = menu.addAction("Retry")
-            retry_action.triggered.connect(lambda: self._on_retry_job(job))
+            retry_action.triggered.connect(self._on_context_retry_job)
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
+
+    @Slot()
+    def _on_context_view_details(self) -> None:
+        """Handle view details context menu action."""
+        if self._context_job:
+            self._show_job_details(self._context_job)
+
+    @Slot()
+    def _on_context_cancel_job(self) -> None:
+        """Handle cancel job context menu action."""
+        if self._context_job:
+            self._on_cancel_job(self._context_job)
+
+    @Slot()
+    def _on_context_retry_job(self) -> None:
+        """Handle retry job context menu action."""
+        if self._context_job:
+            self._on_retry_job(self._context_job)
 
     def _on_selection_changed(self) -> None:
         """Handle table selection change."""

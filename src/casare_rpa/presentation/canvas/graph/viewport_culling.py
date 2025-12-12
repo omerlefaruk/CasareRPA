@@ -10,6 +10,7 @@ References:
 """
 
 from collections import defaultdict
+from functools import partial
 from typing import Dict, Set, Tuple, Optional, List
 
 from PySide6.QtCore import QRectF, QObject, Signal
@@ -468,8 +469,8 @@ def create_viewport_culler_for_graph(
     # Connect signals for node changes
     try:
         graph = graph_widget.graph
-        graph.node_created.connect(lambda n: _on_node_created(culler, n))
-        graph.nodes_deleted.connect(lambda ids: _on_nodes_deleted(culler, ids))
+        graph.node_created.connect(partial(_on_node_created, culler))
+        graph.nodes_deleted.connect(partial(_on_nodes_deleted, culler))
     except Exception as e:
         logger.warning(f"Could not connect node signals for culling: {e}")
 

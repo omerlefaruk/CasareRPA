@@ -10,11 +10,10 @@ from typing import Tuple
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -83,7 +82,8 @@ def _get_browser_profile_path(
     return profile_config.get(profile_mode, ("", ""))
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "url",
         PropertyType.STRING,
@@ -255,7 +255,6 @@ def _get_browser_profile_path(
         tab="advanced",
     ),
 )
-@executable_node
 class LaunchBrowserNode(BaseNode):
     """
     Launch browser node - creates a new browser instance.
@@ -288,10 +287,10 @@ class LaunchBrowserNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("url", PortType.INPUT, DataType.STRING, required=False)
-        self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("url", DataType.STRING, required=False)
+        self.add_output_port("browser", DataType.BROWSER)
+        self.add_output_port("page", DataType.PAGE)
+        self.add_output_port("window", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -674,24 +673,19 @@ class LaunchBrowserNode(BaseNode):
 
                 # Emit BROWSER_PAGE_READY event for UI to enable picker/recorder
                 try:
-                    from casare_rpa.domain.events import get_event_bus, Event
-                    from casare_rpa.domain.value_objects.types import EventType
+                    from casare_rpa.domain.events import get_event_bus, BrowserPageReady
 
                     event_bus = get_event_bus()
-                    handlers = event_bus._handlers.get(EventType.BROWSER_PAGE_READY, [])
-                    logger.info(
-                        f"Publishing BROWSER_PAGE_READY (bus={id(event_bus)}, handlers={len(handlers)})"
-                    )
+                    logger.info(f"Publishing BrowserPageReady (bus={id(event_bus)})")
                     event_bus.publish(
-                        Event(
-                            EventType.BROWSER_PAGE_READY,
-                            data={"page": page},
+                        BrowserPageReady(
+                            page=page,
                             node_id=getattr(self, "node_id", None),
                         )
                     )
-                    logger.info("BROWSER_PAGE_READY event published successfully")
+                    logger.info("BrowserPageReady event published successfully")
                 except Exception as e:
-                    logger.error(f"Could not emit BROWSER_PAGE_READY event: {e}")
+                    logger.error(f"Could not emit BrowserPageReady event: {e}")
 
                 self.status = NodeStatus.SUCCESS
                 logger.info(
@@ -734,7 +728,8 @@ class LaunchBrowserNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -767,7 +762,6 @@ class LaunchBrowserNode(BaseNode):
         min_value=0,
     ),
 )
-@executable_node
 class CloseBrowserNode(BaseNode):
     """
     Close browser node - closes the browser instance.
@@ -794,7 +788,7 @@ class CloseBrowserNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER, required=False)
+        self.add_input_port("browser", DataType.BROWSER, required=False)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

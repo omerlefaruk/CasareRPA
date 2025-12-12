@@ -11,18 +11,18 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
-    PortType,
     DataType,
     NodeStatus,
     ExecutionResult,
 )
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "branch_count",
         PropertyType.INTEGER,
@@ -40,7 +40,6 @@ from casare_rpa.domain.value_objects.types import (
         tooltip="If True, stop all branches when one fails. If False, continue other branches.",
     ),
 )
-@executable_node
 class ForkNode(BaseNode):
     """
     Fork node that splits execution into multiple parallel branches.
@@ -76,12 +75,12 @@ class ForkNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_exec_input("exec_in")
 
         # Create branch output ports based on config
         branch_count = self.get_parameter("branch_count", 2)
         for i in range(1, branch_count + 1):
-            self.add_output_port(f"branch_{i}", PortType.EXEC_OUTPUT)
+            self.add_exec_output(f"branch_{i}")
 
     def set_paired_join(self, join_node_id: str) -> None:
         """Set the paired JoinNode ID."""
@@ -128,7 +127,8 @@ class ForkNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "merge_strategy",
         PropertyType.CHOICE,
@@ -138,7 +138,6 @@ class ForkNode(BaseNode):
         tooltip="How to merge branch results: all (combine), first (first to complete), last (last to complete)",
     ),
 )
-@executable_node
 class JoinNode(BaseNode):
     """
     Join node that synchronizes parallel branches from a ForkNode.
@@ -172,10 +171,10 @@ class JoinNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-        self.add_output_port("results", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("branch_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_output_port("results", DataType.DICT)
+        self.add_output_port("branch_count", DataType.INTEGER)
 
     def set_paired_fork(self, fork_node_id: str) -> None:
         """Set the paired ForkNode ID."""
@@ -244,7 +243,8 @@ class JoinNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "batch_size",
         PropertyType.INTEGER,
@@ -270,7 +270,6 @@ class JoinNode(BaseNode):
         tooltip="Maximum time in seconds for each item's processing",
     ),
 )
-@executable_node
 class ParallelForEachNode(BaseNode):
     """
     Parallel ForEach node that processes list items concurrently.
@@ -314,13 +313,13 @@ class ParallelForEachNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("items", PortType.INPUT, DataType.LIST, required=True)
-        self.add_output_port("body", PortType.EXEC_OUTPUT)
-        self.add_output_port("completed", PortType.EXEC_OUTPUT)
-        self.add_output_port("current_item", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("current_index", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
+        self.add_exec_input("exec_in")
+        self.add_input_port("items", DataType.LIST, required=True)
+        self.add_exec_output("body")
+        self.add_exec_output("completed")
+        self.add_output_port("current_item", DataType.ANY)
+        self.add_output_port("current_index", DataType.INTEGER)
+        self.add_output_port("results", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

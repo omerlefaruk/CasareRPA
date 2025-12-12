@@ -20,7 +20,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import (
@@ -61,14 +60,14 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
         self._define_common_input_ports()
 
         # Specific inputs
-        self.add_input_port("title", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("sheets", PortType.INPUT, DataType.LIST, required=False)
-        self.add_input_port("locale", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("title", DataType.STRING, required=True)
+        self.add_input_port("sheets", DataType.LIST, required=False)
+        self.add_input_port("locale", DataType.STRING, required=False)
 
         # Outputs
         self._define_common_output_ports()
-        self.add_output_port("spreadsheet_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("spreadsheet_url", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("spreadsheet_id", DataType.STRING)
+        self.add_output_port("spreadsheet_url", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -162,13 +161,11 @@ class SheetsGetSpreadsheetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "include_grid_data", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("include_grid_data", DataType.BOOLEAN, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("sheets", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("title", DataType.STRING)
+        self.add_output_port("sheets", DataType.LIST)
 
     async def _execute_sheets(
         self,
@@ -250,19 +247,13 @@ class SheetsAddSheetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "row_count", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port(
-            "column_count", PortType.INPUT, DataType.INTEGER, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=True)
+        self.add_input_port("row_count", DataType.INTEGER, required=False)
+        self.add_input_port("column_count", DataType.INTEGER, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("sheet_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("sheet_name", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("sheet_id", DataType.INTEGER)
+        self.add_output_port("sheet_name", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -353,7 +344,7 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("sheet_id", PortType.INPUT, DataType.INTEGER, required=True)
+        self.add_input_port("sheet_id", DataType.INTEGER, required=True)
 
         self._define_common_output_ports()
 
@@ -433,19 +424,15 @@ class SheetsCopySheetNode(SheetsBaseNode):
         """Define input and output ports."""
         self._define_common_input_ports()
 
+        self.add_input_port("source_spreadsheet_id", DataType.STRING, required=True)
+        self.add_input_port("source_sheet_id", DataType.INTEGER, required=True)
         self.add_input_port(
-            "source_spreadsheet_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "source_sheet_id", PortType.INPUT, DataType.INTEGER, required=True
-        )
-        self.add_input_port(
-            "destination_spreadsheet_id", PortType.INPUT, DataType.STRING, required=True
+            "destination_spreadsheet_id", DataType.STRING, required=True
         )
 
         self._define_common_output_ports()
-        self.add_output_port("new_sheet_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("new_sheet_name", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("new_sheet_id", DataType.INTEGER)
+        self.add_output_port("new_sheet_name", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -549,19 +536,13 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "source_sheet_id", PortType.INPUT, DataType.INTEGER, required=True
-        )
-        self.add_input_port(
-            "new_sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "insert_index", PortType.INPUT, DataType.INTEGER, required=False
-        )
+        self.add_input_port("source_sheet_id", DataType.INTEGER, required=True)
+        self.add_input_port("new_sheet_name", DataType.STRING, required=False)
+        self.add_input_port("insert_index", DataType.INTEGER, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("new_sheet_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("new_sheet_name", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("new_sheet_id", DataType.INTEGER)
+        self.add_output_port("new_sheet_name", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -662,8 +643,8 @@ class SheetsRenameSheetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("sheet_id", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("new_name", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("sheet_id", DataType.INTEGER, required=True)
+        self.add_input_port("new_name", DataType.STRING, required=True)
 
         self._define_common_output_ports()
 

@@ -12,13 +12,14 @@ import json
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "json_string",
         PropertyType.TEXT,
@@ -29,7 +30,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         essential=True,
     ),
 )
-@executable_node
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
 
@@ -64,7 +64,8 @@ class JsonParseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "property_path",
         PropertyType.STRING,
@@ -75,7 +76,6 @@ class JsonParseNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
 
@@ -123,7 +123,8 @@ class GetPropertyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "key",
         PropertyType.STRING,
@@ -134,7 +135,6 @@ class GetPropertyNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
 
@@ -184,7 +184,8 @@ class DictGetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "key",
         PropertyType.STRING,
@@ -195,7 +196,6 @@ class DictGetNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class DictSetNode(BaseNode):
     """Node that sets a value in a dictionary."""
 
@@ -242,7 +242,8 @@ class DictSetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "key",
         PropertyType.STRING,
@@ -253,7 +254,6 @@ class DictSetNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class DictRemoveNode(BaseNode):
     """Node that removes a key from a dictionary."""
 
@@ -300,8 +300,8 @@ class DictRemoveNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DictMergeNode(BaseNode):
     """Node that merges two dictionaries."""
 
@@ -343,8 +343,8 @@ class DictMergeNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DictKeysNode(BaseNode):
     """Node that gets all keys from a dictionary."""
 
@@ -388,8 +388,8 @@ class DictKeysNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DictValuesNode(BaseNode):
     """Node that gets all values from a dictionary."""
 
@@ -433,8 +433,8 @@ class DictValuesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DictHasKeyNode(BaseNode):
     """Node that checks if a dictionary has a key."""
 
@@ -474,8 +474,8 @@ class DictHasKeyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class CreateDictNode(BaseNode):
     """Node that creates a dictionary from key-value pairs."""
 
@@ -520,7 +520,8 @@ class CreateDictNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "indent",
         PropertyType.INTEGER,
@@ -544,7 +545,6 @@ class CreateDictNode(BaseNode):
         tooltip="Escape non-ASCII characters",
     ),
 )
-@executable_node
 class DictToJsonNode(BaseNode):
     """Node that converts a dictionary to a JSON string."""
 
@@ -596,8 +596,8 @@ class DictToJsonNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DictItemsNode(BaseNode):
     """Node that gets key-value pairs from a dictionary as a list of dicts."""
 

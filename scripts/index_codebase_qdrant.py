@@ -33,7 +33,10 @@ except ImportError:
 # Configuration
 QDRANT_PATH = Path(__file__).parent.parent / ".qdrant"
 COLLECTION_NAME = "casare_codebase"
+# Must match fastembed model naming for MCP server compatibility
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# Vector name used by mcp-server-qdrant (fastembed naming convention)
+VECTOR_NAME = "fast-all-minilm-l6-v2"
 SRC_DIR = Path(__file__).parent.parent / "src"
 
 # File patterns to index
@@ -165,9 +168,13 @@ def main():
         client.delete_collection(COLLECTION_NAME)
 
     print(f"  Creating collection: {COLLECTION_NAME}")
+    print(f"  Vector name: {VECTOR_NAME}")
+    # Use named vector to match mcp-server-qdrant expectations
     client.create_collection(
         collection_name=COLLECTION_NAME,
-        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+        vectors_config={
+            VECTOR_NAME: VectorParams(size=vector_size, distance=Distance.COSINE)
+        },
     )
 
     # Collect all chunks
@@ -201,16 +208,17 @@ def main():
         # Generate embeddings
         embeddings = list(embedding_model.embed(texts))
 
-        # Create points
+        # Create points with named vector for mcp-server-qdrant compatibility
         points = [
             PointStruct(
                 id=i + j,
-                vector=embeddings[j].tolist(),
+                vector={VECTOR_NAME: embeddings[j].tolist()},
                 payload={
+                    # MCP server expects "document" field for content
+                    "document": batch[j]["content"],
                     "type": batch[j]["type"],
                     "name": batch[j]["name"],
                     "path": batch[j]["path"],
-                    "content": batch[j]["content"],
                     "line_start": batch[j]["line_start"],
                     "line_end": batch[j]["line_end"],
                 },

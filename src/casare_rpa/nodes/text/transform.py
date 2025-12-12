@@ -10,7 +10,7 @@ This module provides nodes for transforming multiple texts:
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -20,7 +20,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "separator",
         PropertyType.STRING,
@@ -29,7 +30,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Separator to use (default: empty string)",
     ),
 )
-@executable_node
 class TextJoinNode(BaseNode):
     """
     Join a list of strings with a separator.

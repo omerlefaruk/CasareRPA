@@ -11,12 +11,11 @@ import json
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.whatsapp_client import WhatsAppClient
@@ -69,7 +68,8 @@ WHATSAPP_TO = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -91,7 +91,6 @@ WHATSAPP_TO = PropertyDef(
         tooltip="Enable URL preview in message",
     ),
 )
-@executable_node
 class WhatsAppSendMessageNode(WhatsAppBaseNode):
     """
     Send a text message via WhatsApp.
@@ -127,13 +126,11 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Message-specific ports
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "preview_url", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("text", DataType.STRING, required=True)
+        self.add_input_port("preview_url", DataType.BOOLEAN, required=False)
 
         # Additional output
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("text", DataType.STRING)
 
     async def _execute_whatsapp(
         self,
@@ -182,7 +179,8 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -213,7 +211,6 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         tooltip="JSON array of template component parameters",
     ),
 )
-@executable_node
 class WhatsAppSendTemplateNode(WhatsAppBaseNode):
     """
     Send a template message via WhatsApp.
@@ -251,18 +248,12 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Template-specific ports
-        self.add_input_port(
-            "template_name", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "language_code", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "components", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("template_name", DataType.STRING, required=True)
+        self.add_input_port("language_code", DataType.STRING, required=False)
+        self.add_input_port("components", DataType.STRING, required=False)
 
         # Additional output
-        self.add_output_port("template_name", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("template_name", DataType.STRING)
 
     async def _execute_whatsapp(
         self,
@@ -330,7 +321,8 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -353,7 +345,6 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         tooltip="Optional caption for the image",
     ),
 )
-@executable_node
 class WhatsAppSendImageNode(WhatsAppBaseNode):
     """
     Send an image via WhatsApp.
@@ -388,11 +379,11 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Image-specific ports
-        self.add_input_port("image", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("caption", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("image", DataType.STRING, required=True)
+        self.add_input_port("caption", DataType.STRING, required=False)
 
         # Additional output
-        self.add_output_port("image_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("image_path", DataType.STRING)
 
     async def _execute_whatsapp(
         self,
@@ -439,7 +430,8 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -470,7 +462,6 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         tooltip="Optional caption for the document",
     ),
 )
-@executable_node
 class WhatsAppSendDocumentNode(WhatsAppBaseNode):
     """
     Send a document via WhatsApp.
@@ -506,12 +497,12 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Document-specific ports
-        self.add_input_port("document", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("filename", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("caption", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("document", DataType.STRING, required=True)
+        self.add_input_port("filename", DataType.STRING, required=False)
+        self.add_input_port("caption", DataType.STRING, required=False)
 
         # Additional output
-        self.add_output_port("document_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("document_path", DataType.STRING)
 
     async def _execute_whatsapp(
         self,
@@ -563,7 +554,8 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -586,7 +578,6 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         tooltip="Optional caption for the video",
     ),
 )
-@executable_node
 class WhatsAppSendVideoNode(WhatsAppBaseNode):
     """
     Send a video via WhatsApp.
@@ -621,11 +612,11 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Video-specific ports
-        self.add_input_port("video", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("caption", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("video", DataType.STRING, required=True)
+        self.add_input_port("caption", DataType.STRING, required=False)
 
         # Additional output
-        self.add_output_port("video_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("video_path", DataType.STRING)
 
     async def _execute_whatsapp(
         self,
@@ -672,7 +663,8 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -716,7 +708,6 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         tooltip="Address text for the location",
     ),
 )
-@executable_node
 class WhatsAppSendLocationNode(WhatsAppBaseNode):
     """
     Send a location via WhatsApp.
@@ -753,14 +744,14 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Location-specific ports
-        self.add_input_port("latitude", PortType.INPUT, DataType.FLOAT, required=True)
-        self.add_input_port("longitude", PortType.INPUT, DataType.FLOAT, required=True)
-        self.add_input_port("name", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("address", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("latitude", DataType.FLOAT, required=True)
+        self.add_input_port("longitude", DataType.FLOAT, required=True)
+        self.add_input_port("name", DataType.STRING, required=False)
+        self.add_input_port("address", DataType.STRING, required=False)
 
         # Additional outputs
-        self.add_output_port("latitude", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("longitude", PortType.OUTPUT, DataType.FLOAT)
+        self.add_output_port("latitude", DataType.FLOAT)
+        self.add_output_port("longitude", DataType.FLOAT)
 
     async def _execute_whatsapp(
         self,
@@ -841,7 +832,8 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
     WHATSAPP_CREDENTIAL_NAME,
@@ -890,7 +882,6 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         tooltip="Optional footer text",
     ),
 )
-@executable_node
 class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
     """
     Send an interactive message (buttons, lists) via WhatsApp.
@@ -928,22 +919,14 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
         self._define_common_output_ports()
 
         # Interactive-specific ports
-        self.add_input_port(
-            "interactive_type", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("body_text", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "action_json", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "header_json", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "footer_text", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("interactive_type", DataType.STRING, required=True)
+        self.add_input_port("body_text", DataType.STRING, required=True)
+        self.add_input_port("action_json", DataType.STRING, required=True)
+        self.add_input_port("header_json", DataType.STRING, required=False)
+        self.add_input_port("footer_text", DataType.STRING, required=False)
 
         # Additional output
-        self.add_output_port("interactive_type", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("interactive_type", DataType.STRING)
 
     async def _execute_whatsapp(
         self,

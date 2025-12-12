@@ -30,8 +30,8 @@ from casare_rpa.domain.errors import (
     RecoveryDecision,
     get_error_handler_registry,
 )
-from casare_rpa.domain.events import EventBus, get_event_bus
-from casare_rpa.domain.value_objects.types import EventType, NodeId
+from casare_rpa.domain.events import EventBus, get_event_bus, NodeFailed
+from casare_rpa.domain.value_objects.types import NodeId
 from casare_rpa.infrastructure.execution.recovery_strategies import (
     CircuitBreaker,
     CircuitBreakerConfig,
@@ -473,23 +473,15 @@ class ErrorRecoveryUseCase:
             decision: Recovery decision.
         """
         if self.event_bus:
-            self.event_bus.emit(
-                EventType.NODE_ERROR,
-                {
-                    "node_id": context.node_id,
-                    "node_type": context.node_type,
-                    "error": context.message,
-                    "error_code": context.error_code.name
-                    if context.error_code
-                    else None,
-                    "category": context.category.name,
-                    "classification": context.classification.name,
-                    "severity": context.severity.name,
-                    "recovery_action": decision.action.name,
-                    "retry_count": context.retry_count,
-                    "screenshot_path": context.screenshot_path,
-                },
-                node_id=context.node_id,
+            self.event_bus.publish(
+                NodeFailed(
+                    node_id=context.node_id,
+                    node_type=context.node_type,
+                    workflow_id="",
+                    error_message=context.message,
+                    error_code=context.error_code,  # Pass enum directly, not .name
+                    is_retryable=decision.action == RecoveryAction.RETRY,
+                )
             )
 
     def record_success(self, node_id: NodeId, node_type: str) -> None:

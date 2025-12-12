@@ -22,7 +22,9 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QMessageBox,
 )
-from PySide6.QtCore import Qt, Signal
+from functools import partial
+
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QBrush, QIcon, QPixmap, QPainter
 
 from loguru import logger
@@ -97,6 +99,9 @@ class ProjectExplorerPanel(QDockWidget):
         self._projects: Dict[str, Dict[str, Any]] = {}  # project_id -> project_data
         self._folder_items: Dict[str, QTreeWidgetItem] = {}  # folder_id -> tree_item
         self._project_items: Dict[str, QTreeWidgetItem] = {}  # project_id -> tree_item
+        self._context_item_id: Optional[str] = None  # Context menu target item ID
+        self._context_item_type: Optional[int] = None  # Context menu target item type
+        self._move_project_id: Optional[str] = None  # Project being moved
 
         if not embedded:
             self._setup_dock()
@@ -501,32 +506,32 @@ class ProjectExplorerPanel(QDockWidget):
             item_type = item.data(0, self.ROLE_ITEM_TYPE)
             item_id = item.data(0, self.ROLE_ITEM_ID)
 
+            # Store context item for slot methods
+            self._context_item_id = item_id
+            self._context_item_type = item_type
+
             if item_type == self.ITEM_TYPE_FOLDER:
                 # Folder context menu
                 new_folder_action = menu.addAction("New Subfolder")
-                new_folder_action.triggered.connect(
-                    lambda: self._create_subfolder(item_id)
-                )
+                new_folder_action.triggered.connect(self._on_context_create_subfolder)
 
                 menu.addSeparator()
 
                 rename_action = menu.addAction("Rename")
-                rename_action.triggered.connect(lambda: self._rename_folder(item_id))
+                rename_action.triggered.connect(self._on_context_rename_folder)
 
                 color_action = menu.addAction("Change Color")
-                color_action.triggered.connect(
-                    lambda: self._change_folder_color(item_id)
-                )
+                color_action.triggered.connect(self._on_context_change_color)
 
                 menu.addSeparator()
 
                 delete_action = menu.addAction("Delete")
-                delete_action.triggered.connect(lambda: self._delete_folder(item_id))
+                delete_action.triggered.connect(self._on_context_delete_folder)
 
             elif item_type == self.ITEM_TYPE_PROJECT:
                 # Project context menu
                 open_action = menu.addAction("Open Project")
-                open_action.triggered.connect(lambda: self.project_opened.emit(item_id))
+                open_action.triggered.connect(self._on_context_open_project)
 
                 menu.addSeparator()
 
@@ -540,12 +545,45 @@ class ProjectExplorerPanel(QDockWidget):
 
         menu.exec_(self._tree.mapToGlobal(pos))
 
+    @Slot()
+    def _on_context_create_subfolder(self) -> None:
+        """Handle create subfolder context menu action."""
+        if self._context_item_id:
+            self._create_subfolder(self._context_item_id)
+
+    @Slot()
+    def _on_context_rename_folder(self) -> None:
+        """Handle rename folder context menu action."""
+        if self._context_item_id:
+            self._rename_folder(self._context_item_id)
+
+    @Slot()
+    def _on_context_change_color(self) -> None:
+        """Handle change color context menu action."""
+        if self._context_item_id:
+            self._change_folder_color(self._context_item_id)
+
+    @Slot()
+    def _on_context_delete_folder(self) -> None:
+        """Handle delete folder context menu action."""
+        if self._context_item_id:
+            self._delete_folder(self._context_item_id)
+
+    @Slot()
+    def _on_context_open_project(self) -> None:
+        """Handle open project context menu action."""
+        if self._context_item_id:
+            self.project_opened.emit(self._context_item_id)
+
     def _populate_move_menu(self, menu: QMenu, project_id: str) -> None:
         """Populate the 'Move to Folder' submenu."""
+        # Store project_id for move operations
+        self._move_project_id = project_id
+
         # Add root option
         root_action = menu.addAction("(Root)")
         root_action.triggered.connect(
-            lambda: self._move_project_to_folder(project_id, None)
+            partial(self._move_project_to_folder, project_id, None)
         )
 
         menu.addSeparator()
@@ -556,9 +594,7 @@ class ProjectExplorerPanel(QDockWidget):
             if not folder.is_archived:
                 action = menu.addAction(folder.name)
                 action.triggered.connect(
-                    lambda checked, fid=folder.id: self._move_project_to_folder(
-                        project_id, fid
-                    )
+                    partial(self._move_project_to_folder, project_id, folder.id)
                 )
 
     def _create_subfolder(self, parent_id: str) -> None:

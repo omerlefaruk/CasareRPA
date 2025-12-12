@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import PortType, DataType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
@@ -88,21 +88,21 @@ class WindowNodeBase(DesktopNodeBase):
         return window
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     WIDTH_PROP,
     HEIGHT_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
 )
-@executable_node
 class ResizeWindowNode(WindowNodeBase):
     """
     Resize a Windows desktop window.
 
     Changes the dimensions of a window to specified width and height.
 
-    Config (via @node_schema):
+    Config (via @properties):
         width: Target width in pixels (default: 800)
         height: Target height in pixels (default: 600)
         retry_count: Number of retries on failure (default: 0)
@@ -135,10 +135,10 @@ class ResizeWindowNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("width", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("height", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_input_port("width", DataType.INTEGER)
+        self.add_input_port("height", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - resize window."""
@@ -166,21 +166,21 @@ class ResizeWindowNode(WindowNodeBase):
         )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     POSITION_X_PROP,
     POSITION_Y_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
 )
-@executable_node
 class MoveWindowNode(WindowNodeBase):
     """
     Move a Windows desktop window.
 
     Moves a window to specified screen coordinates.
 
-    Config (via @node_schema):
+    Config (via @properties):
         x: Target X position (default: 100)
         y: Target Y position (default: 100)
         retry_count: Number of retries on failure (default: 0)
@@ -213,10 +213,10 @@ class MoveWindowNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("x", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("y", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_input_port("x", DataType.INTEGER)
+        self.add_input_port("y", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - move window."""
@@ -244,18 +244,18 @@ class MoveWindowNode(WindowNodeBase):
         )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
-@executable_node
 class MaximizeWindowNode(WindowNodeBase):
     """
     Maximize a Windows desktop window.
 
     Maximizes a window to fill the screen.
 
-    Config (via @node_schema):
+    Config (via @properties):
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries (default: 1.0 seconds)
 
@@ -283,8 +283,8 @@ class MaximizeWindowNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - maximize window."""
@@ -303,18 +303,18 @@ class MaximizeWindowNode(WindowNodeBase):
         )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
-@executable_node
 class MinimizeWindowNode(WindowNodeBase):
     """
     Minimize a Windows desktop window.
 
     Minimizes a window to the taskbar.
 
-    Config (via @node_schema):
+    Config (via @properties):
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries (default: 1.0 seconds)
 
@@ -342,8 +342,8 @@ class MinimizeWindowNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - minimize window."""
@@ -362,18 +362,18 @@ class MinimizeWindowNode(WindowNodeBase):
         )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
-@executable_node
 class RestoreWindowNode(WindowNodeBase):
     """
     Restore a Windows desktop window.
 
     Restores a window to normal state from maximized or minimized.
 
-    Config (via @node_schema):
+    Config (via @properties):
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries (default: 1.0 seconds)
 
@@ -401,8 +401,8 @@ class RestoreWindowNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - restore window."""
@@ -421,7 +421,7 @@ class RestoreWindowNode(WindowNodeBase):
         )
 
 
-@executable_node
+@node(category="desktop")
 class GetWindowPropertiesNode(WindowNodeBase):
     """
     Get properties of a Windows desktop window.
@@ -461,16 +461,16 @@ class GetWindowPropertiesNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_output_port("properties", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("x", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("y", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("width", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("height", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("state", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("is_maximized", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("is_minimized", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_output_port("properties", DataType.DICT)
+        self.add_output_port("title", DataType.STRING)
+        self.add_output_port("x", DataType.INTEGER)
+        self.add_output_port("y", DataType.INTEGER)
+        self.add_output_port("width", DataType.INTEGER)
+        self.add_output_port("height", DataType.INTEGER)
+        self.add_output_port("state", DataType.STRING)
+        self.add_output_port("is_maximized", DataType.BOOLEAN)
+        self.add_output_port("is_minimized", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - get window properties."""
@@ -504,19 +504,19 @@ class GetWindowPropertiesNode(WindowNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     WINDOW_STATE_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
-@executable_node
 class SetWindowStateNode(WindowNodeBase):
     """
     Set the state of a Windows desktop window.
 
     Sets window state to normal, maximized, or minimized.
 
-    Config (via @node_schema):
+    Config (via @properties):
         state: Target state (normal/maximized/minimized) (default: "normal")
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries (default: 1.0 seconds)
@@ -546,9 +546,9 @@ class SetWindowStateNode(WindowNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("state", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_input_port("state", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - set window state."""

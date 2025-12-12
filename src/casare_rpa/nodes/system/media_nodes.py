@@ -17,11 +17,10 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -32,7 +31,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "speech_text",
         PropertyType.TEXT,
@@ -67,7 +67,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Wait for speech to complete before continuing",
     ),
 )
-@executable_node
 class TextToSpeechNode(BaseNode):
     """Read text aloud using text-to-speech."""
 
@@ -82,8 +81,8 @@ class TextToSpeechNode(BaseNode):
         self.node_type = "TextToSpeechNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("text", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -156,7 +155,8 @@ class TextToSpeechNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "pdf_path",
         PropertyType.FILE_PATH,
@@ -183,7 +183,6 @@ class TextToSpeechNode(BaseNode):
         tooltip="Zoom level (0.25 to 4.0)",
     ),
 )
-@executable_node
 class PDFPreviewDialogNode(BaseNode):
     """Preview a PDF file with page navigation."""
 
@@ -198,9 +197,9 @@ class PDFPreviewDialogNode(BaseNode):
         self.node_type = "PDFPreviewDialogNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("confirmed", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("current_page", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("confirmed", DataType.BOOLEAN)
+        self.add_output_port("current_page", DataType.INTEGER)
+        self.add_output_port("page_count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING
@@ -414,7 +413,8 @@ class PDFPreviewDialogNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "camera_id",
         PropertyType.INTEGER,
@@ -439,7 +439,6 @@ class PDFPreviewDialogNode(BaseNode):
         tooltip="Show preview window before capturing",
     ),
 )
-@executable_node
 class WebcamCaptureNode(BaseNode):
     """Capture an image from a webcam."""
 
@@ -454,10 +453,10 @@ class WebcamCaptureNode(BaseNode):
         self.node_type = "WebcamCaptureNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("image_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("width", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("height", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("image_path", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("width", DataType.INTEGER)
+        self.add_output_port("height", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
         self.status = NodeStatus.RUNNING

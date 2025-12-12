@@ -8,11 +8,10 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -21,7 +20,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit, _create_styled_text_edit
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -51,12 +51,11 @@ from .widgets import _create_styled_line_edit, _create_styled_text_edit
         tooltip="Hide input characters",
     ),
 )
-@executable_node
 class InputDialogNode(BaseNode):
     """
     Display an input dialog to get user input.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog window title (default: "Input")
         prompt: Message displayed to user (default: "Enter value:")
         default_value: Pre-filled value (default: "")
@@ -78,8 +77,8 @@ class InputDialogNode(BaseNode):
         self.node_type = "InputDialogNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confirmed", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("value", DataType.STRING)
+        self.add_output_port("confirmed", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -155,7 +154,8 @@ class InputDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -186,12 +186,11 @@ class InputDialogNode(BaseNode):
         tooltip="Maximum character limit (0 = unlimited)",
     ),
 )
-@executable_node
 class MultilineInputDialogNode(BaseNode):
     """
     Display a multi-line text input dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Enter Text')
         default_text: Default text (default: '')
         placeholder: Placeholder text (default: '')
@@ -324,7 +323,8 @@ class MultilineInputDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -361,12 +361,11 @@ class MultilineInputDialogNode(BaseNode):
         tooltip="Hide password characters",
     ),
 )
-@executable_node
 class CredentialDialogNode(BaseNode):
     """
     Display a username/password credential dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Login')
         username_label: Label for username (default: 'Username:')
         password_label: Label for password (default: 'Password:')

@@ -85,13 +85,12 @@ def validate_sql_identifier(
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 
 from casare_rpa.nodes.database.sql_nodes import (
@@ -105,8 +104,8 @@ if AIOMYSQL_AVAILABLE:
     import aiomysql
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="database")
+@properties()  # Input port driven
 class TableExistsNode(BaseNode):
     """
     Check if a table exists in the database.
@@ -135,12 +134,12 @@ class TableExistsNode(BaseNode):
         self.node_type = "TableExistsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
-        self.add_input_port("table_name", PortType.INPUT, DataType.STRING)
+        self.add_input_port("connection", DataType.ANY)
+        self.add_input_port("table_name", DataType.STRING)
 
-        self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("exists", DataType.BOOLEAN)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -231,8 +230,8 @@ class TableExistsNode(BaseNode):
         return row is not None
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="database")
+@properties()  # Input port driven
 class GetTableColumnsNode(BaseNode):
     """
     Get column information for a table.
@@ -264,13 +263,13 @@ class GetTableColumnsNode(BaseNode):
         self.node_type = "GetTableColumnsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
-        self.add_input_port("table_name", PortType.INPUT, DataType.STRING)
+        self.add_input_port("connection", DataType.ANY)
+        self.add_input_port("table_name", DataType.STRING)
 
-        self.add_output_port("columns", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("column_names", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("columns", DataType.LIST)
+        self.add_output_port("column_names", DataType.LIST)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

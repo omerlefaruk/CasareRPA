@@ -20,11 +20,10 @@ except ImportError:
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -32,7 +31,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "timezone",
         PropertyType.STRING,
@@ -50,7 +50,6 @@ from casare_rpa.utils import safe_int
         tooltip="Output format string (default: ISO format)",
     ),
 )
-@executable_node
 class GetCurrentDateTimeNode(BaseNode):
     """
     Get the current date and time.
@@ -79,15 +78,15 @@ class GetCurrentDateTimeNode(BaseNode):
         self.node_type = "GetCurrentDateTimeNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("datetime", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("timestamp", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("year", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("month", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("day", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("hour", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("minute", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("second", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("day_of_week", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("datetime", DataType.STRING)
+        self.add_output_port("timestamp", DataType.FLOAT)
+        self.add_output_port("year", DataType.INTEGER)
+        self.add_output_port("month", DataType.INTEGER)
+        self.add_output_port("day", DataType.INTEGER)
+        self.add_output_port("hour", DataType.INTEGER)
+        self.add_output_port("minute", DataType.INTEGER)
+        self.add_output_port("second", DataType.INTEGER)
+        self.add_output_port("day_of_week", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -144,7 +143,8 @@ class GetCurrentDateTimeNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "format",
         PropertyType.STRING,
@@ -154,7 +154,6 @@ class GetCurrentDateTimeNode(BaseNode):
         tooltip="strftime format string",
     ),
 )
-@executable_node
 class FormatDateTimeNode(BaseNode):
     """
     Format a datetime to a string.
@@ -181,9 +180,9 @@ class FormatDateTimeNode(BaseNode):
         self.node_type = "FormatDateTimeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("datetime", PortType.INPUT, DataType.ANY)
-        self.add_input_port("input_format", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("datetime", DataType.ANY)
+        self.add_input_port("input_format", DataType.STRING)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -238,7 +237,8 @@ class FormatDateTimeNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "format",
         PropertyType.STRING,
@@ -248,7 +248,6 @@ class FormatDateTimeNode(BaseNode):
         tooltip="Expected format string (optional, will try auto-detect)",
     ),
 )
-@executable_node
 class ParseDateTimeNode(BaseNode):
     """
     Parse a datetime string into components.
@@ -277,16 +276,16 @@ class ParseDateTimeNode(BaseNode):
         self.node_type = "ParseDateTimeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("datetime_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("timestamp", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("year", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("month", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("day", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("hour", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("minute", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("second", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("iso_format", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("datetime_string", DataType.STRING)
+        self.add_output_port("timestamp", DataType.FLOAT)
+        self.add_output_port("year", DataType.INTEGER)
+        self.add_output_port("month", DataType.INTEGER)
+        self.add_output_port("day", DataType.INTEGER)
+        self.add_output_port("hour", DataType.INTEGER)
+        self.add_output_port("minute", DataType.INTEGER)
+        self.add_output_port("second", DataType.INTEGER)
+        self.add_output_port("iso_format", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -351,8 +350,8 @@ class ParseDateTimeNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DateTimeAddNode(BaseNode):
     """
     Add or subtract time from a datetime.
@@ -383,17 +382,17 @@ class DateTimeAddNode(BaseNode):
         self.node_type = "DateTimeAddNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("datetime", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("datetime", DataType.ANY, required=False)
         # All time components are optional with default 0
-        self.add_input_port("years", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("months", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("weeks", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("days", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("hours", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("minutes", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("seconds", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("timestamp", PortType.OUTPUT, DataType.FLOAT)
+        self.add_input_port("years", DataType.INTEGER, required=False)
+        self.add_input_port("months", DataType.INTEGER, required=False)
+        self.add_input_port("weeks", DataType.INTEGER, required=False)
+        self.add_input_port("days", DataType.INTEGER, required=False)
+        self.add_input_port("hours", DataType.INTEGER, required=False)
+        self.add_input_port("minutes", DataType.INTEGER, required=False)
+        self.add_input_port("seconds", DataType.INTEGER, required=False)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("timestamp", DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -446,8 +445,8 @@ class DateTimeAddNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DateTimeDiffNode(BaseNode):
     """
     Calculate the difference between two datetimes.
@@ -478,16 +477,16 @@ class DateTimeDiffNode(BaseNode):
         self.node_type = "DateTimeDiffNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("datetime_1", PortType.INPUT, DataType.ANY)
-        self.add_input_port("datetime_2", PortType.INPUT, DataType.ANY)
-        self.add_output_port("total_seconds", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("total_minutes", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("total_hours", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("total_days", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("days", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("hours", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("minutes", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("seconds", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("datetime_1", DataType.ANY)
+        self.add_input_port("datetime_2", DataType.ANY)
+        self.add_output_port("total_seconds", DataType.FLOAT)
+        self.add_output_port("total_minutes", DataType.FLOAT)
+        self.add_output_port("total_hours", DataType.FLOAT)
+        self.add_output_port("total_days", DataType.FLOAT)
+        self.add_output_port("days", DataType.INTEGER)
+        self.add_output_port("hours", DataType.INTEGER)
+        self.add_output_port("minutes", DataType.INTEGER)
+        self.add_output_port("seconds", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -551,8 +550,8 @@ class DateTimeDiffNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class DateTimeCompareNode(BaseNode):
     """
     Compare two datetimes.
@@ -579,12 +578,12 @@ class DateTimeCompareNode(BaseNode):
         self.node_type = "DateTimeCompareNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("datetime_1", PortType.INPUT, DataType.ANY)
-        self.add_input_port("datetime_2", PortType.INPUT, DataType.ANY)
-        self.add_output_port("is_before", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("is_after", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("is_equal", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("comparison", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("datetime_1", DataType.ANY)
+        self.add_input_port("datetime_2", DataType.ANY)
+        self.add_output_port("is_before", DataType.BOOLEAN)
+        self.add_output_port("is_after", DataType.BOOLEAN)
+        self.add_output_port("is_equal", DataType.BOOLEAN)
+        self.add_output_port("comparison", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -634,7 +633,8 @@ class DateTimeCompareNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "milliseconds",
         PropertyType.BOOLEAN,
@@ -643,7 +643,6 @@ class DateTimeCompareNode(BaseNode):
         tooltip="Return milliseconds instead of seconds",
     ),
 )
-@executable_node
 class GetTimestampNode(BaseNode):
     """
     Get current Unix timestamp.
@@ -666,7 +665,7 @@ class GetTimestampNode(BaseNode):
         self.node_type = "GetTimestampNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("timestamp", PortType.OUTPUT, DataType.FLOAT)
+        self.add_output_port("timestamp", DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

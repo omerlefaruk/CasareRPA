@@ -17,7 +17,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import (
@@ -64,14 +63,12 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("updates", PortType.INPUT, DataType.LIST, required=True)
-        self.add_input_port(
-            "value_input_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("updates", DataType.LIST, required=True)
+        self.add_input_port("value_input_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("total_updated_cells", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("total_updated_rows", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("total_updated_cells", DataType.INTEGER)
+        self.add_output_port("total_updated_rows", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -224,14 +221,12 @@ class SheetsBatchGetNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("ranges", PortType.INPUT, DataType.LIST, required=True)
-        self.add_input_port(
-            "value_render_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("ranges", DataType.LIST, required=True)
+        self.add_input_port("value_render_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("ranges_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("values", DataType.LIST)
+        self.add_output_port("ranges_count", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -337,10 +332,10 @@ class SheetsBatchClearNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("ranges", PortType.INPUT, DataType.LIST, required=True)
+        self.add_input_port("ranges", DataType.LIST, required=True)
 
         self._define_common_output_ports()
-        self.add_output_port("cleared_ranges", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("cleared_ranges", DataType.LIST)
 
     async def _execute_sheets(
         self,

@@ -26,14 +26,13 @@ from loguru import logger
 
 from casare_rpa.domain.credentials import CredentialAwareMixin, CREDENTIAL_NAME_PROP
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 
 # Try to import optional database drivers
@@ -232,7 +231,8 @@ class DatabaseConnection:
             self.connection = None
 
 
-@node_schema(
+@node(category="database")
+@properties(
     CREDENTIAL_NAME_PROP,  # For vault credential lookup
     PropertyDef(
         "db_type",
@@ -357,7 +357,6 @@ class DatabaseConnection:
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
-@executable_node
 class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
     """
     Establish a database connection.
@@ -372,7 +371,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
     2. Direct parameters (username, password, connection_string)
     3. Environment variables (DB_USERNAME, DB_PASSWORD, DATABASE_URL)
 
-    Config (via @node_schema):
+    Config (via @properties):
         credential_name: Vault credential alias for DB credentials
         db_type: Database type (sqlite, postgresql, mysql)
         host: Database host
@@ -410,17 +409,17 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         self.node_type = "DatabaseConnectNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("db_type", PortType.INPUT, DataType.STRING)
-        self.add_input_port("host", PortType.INPUT, DataType.STRING)
-        self.add_input_port("port", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("database", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("connection_string", PortType.INPUT, DataType.STRING)
+        self.add_input_port("db_type", DataType.STRING)
+        self.add_input_port("host", DataType.STRING)
+        self.add_input_port("port", DataType.INTEGER)
+        self.add_input_port("database", DataType.STRING)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("connection_string", DataType.STRING)
 
-        self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("connection", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -630,7 +629,8 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         )
 
 
-@node_schema(
+@node(category="database")
+@properties(
     PropertyDef(
         "query",
         PropertyType.STRING,
@@ -663,12 +663,11 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
-@executable_node
 class ExecuteQueryNode(BaseNode):
     """
     Execute a SELECT query and return results.
 
-    Config (via @node_schema):
+    Config (via @properties):
         query: SQL SELECT query
         parameters: Query parameters for parameterized queries
         retry_count: Number of retries on failure
@@ -694,16 +693,16 @@ class ExecuteQueryNode(BaseNode):
         self.node_type = "ExecuteQueryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
-        self.add_input_port("query", PortType.INPUT, DataType.STRING)
+        self.add_input_port("connection", DataType.ANY)
+        self.add_input_port("query", DataType.STRING)
         # Parameters are optional - queries may not need them
-        self.add_input_port("parameters", PortType.INPUT, DataType.LIST, required=False)
+        self.add_input_port("parameters", DataType.LIST, required=False)
 
-        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("columns", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("results", DataType.LIST)
+        self.add_output_port("row_count", DataType.INTEGER)
+        self.add_output_port("columns", DataType.LIST)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -872,7 +871,8 @@ class ExecuteQueryNode(BaseNode):
             await connection.release()
 
 
-@node_schema(
+@node(category="database")
+@properties(
     PropertyDef(
         "query",
         PropertyType.STRING,
@@ -905,12 +905,11 @@ class ExecuteQueryNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
-@executable_node
 class ExecuteNonQueryNode(BaseNode):
     """
     Execute INSERT, UPDATE, DELETE, or DDL statements.
 
-    Config (via @node_schema):
+    Config (via @properties):
         query: SQL statement
         parameters: Query parameters for parameterized queries
         retry_count: Number of retries on failure
@@ -936,15 +935,15 @@ class ExecuteNonQueryNode(BaseNode):
         self.node_type = "ExecuteNonQueryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
-        self.add_input_port("query", PortType.INPUT, DataType.STRING)
+        self.add_input_port("connection", DataType.ANY)
+        self.add_input_port("query", DataType.STRING)
         # Parameters are optional - queries may not need them
-        self.add_input_port("parameters", PortType.INPUT, DataType.LIST, required=False)
+        self.add_input_port("parameters", DataType.LIST, required=False)
 
-        self.add_output_port("rows_affected", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("last_insert_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("rows_affected", DataType.INTEGER)
+        self.add_output_port("last_insert_id", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1106,8 +1105,8 @@ class ExecuteNonQueryNode(BaseNode):
                 await connection.release()
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="database")
+@properties()  # Input port driven
 class BeginTransactionNode(BaseNode):
     """
     Begin a database transaction.
@@ -1134,11 +1133,11 @@ class BeginTransactionNode(BaseNode):
         self.node_type = "BeginTransactionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
+        self.add_input_port("connection", DataType.ANY)
 
-        self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("connection", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1191,8 +1190,8 @@ class BeginTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="database")
+@properties()  # Input port driven
 class CommitTransactionNode(BaseNode):
     """
     Commit the current database transaction.
@@ -1219,11 +1218,11 @@ class CommitTransactionNode(BaseNode):
         self.node_type = "CommitTransactionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
+        self.add_input_port("connection", DataType.ANY)
 
-        self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("connection", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1277,8 +1276,8 @@ class CommitTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="database")
+@properties()  # Input port driven
 class RollbackTransactionNode(BaseNode):
     """
     Rollback the current database transaction.
@@ -1305,11 +1304,11 @@ class RollbackTransactionNode(BaseNode):
         self.node_type = "RollbackTransactionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
+        self.add_input_port("connection", DataType.ANY)
 
-        self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("connection", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1363,8 +1362,8 @@ class RollbackTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="database")
+@properties()  # Input port driven
 class CloseDatabaseNode(BaseNode):
     """
     Close a database connection.
@@ -1390,10 +1389,10 @@ class CloseDatabaseNode(BaseNode):
         self.node_type = "CloseDatabaseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
+        self.add_input_port("connection", DataType.ANY)
 
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1429,7 +1428,8 @@ class CloseDatabaseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="database")
+@properties(
     PropertyDef(
         "statements",
         PropertyType.LIST,
@@ -1461,12 +1461,11 @@ class CloseDatabaseNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
-@executable_node
 class ExecuteBatchNode(BaseNode):
     """
     Execute multiple SQL statements as a batch.
 
-    Config (via @node_schema):
+    Config (via @properties):
         statements: List of SQL statements
         stop_on_error: Stop on first error
         retry_count: Number of retries per statement
@@ -1492,13 +1491,13 @@ class ExecuteBatchNode(BaseNode):
         self.node_type = "ExecuteBatchNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("connection", PortType.INPUT, DataType.ANY)
-        self.add_input_port("statements", PortType.INPUT, DataType.LIST)
+        self.add_input_port("connection", DataType.ANY)
+        self.add_input_port("statements", DataType.LIST)
 
-        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("total_rows_affected", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("results", DataType.LIST)
+        self.add_output_port("total_rows_affected", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -62,7 +62,8 @@ DRIVE_FOLDER_ID = PropertyDef(
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_IDS,
     PropertyDef(
         "continue_on_error",
@@ -72,7 +73,6 @@ DRIVE_FOLDER_ID = PropertyDef(
         tooltip="Continue deleting remaining files if one fails",
     ),
 )
-@executable_node
 class DriveBatchDeleteNode(DriveBaseNode):
     """
     Delete multiple Google Drive files in a batch operation.
@@ -222,7 +222,8 @@ class DriveBatchDeleteNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_IDS,
     DRIVE_FOLDER_ID,
     PropertyDef(
@@ -233,7 +234,6 @@ class DriveBatchDeleteNode(DriveBaseNode):
         tooltip="Continue moving remaining files if one fails",
     ),
 )
-@executable_node
 class DriveBatchMoveNode(DriveBaseNode):
     """
     Move multiple Google Drive files to a folder in a batch operation.
@@ -391,7 +391,8 @@ class DriveBatchMoveNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_IDS,
     DRIVE_FOLDER_ID,
     PropertyDef(
@@ -409,7 +410,6 @@ class DriveBatchMoveNode(DriveBaseNode):
         tooltip="Keep original file names (otherwise appends ' - Copy')",
     ),
 )
-@executable_node
 class DriveBatchCopyNode(DriveBaseNode):
     """
     Copy multiple Google Drive files to a folder in a batch operation.

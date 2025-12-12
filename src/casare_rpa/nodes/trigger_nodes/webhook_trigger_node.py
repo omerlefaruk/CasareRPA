@@ -7,7 +7,7 @@ Enhanced with CORS, IP whitelist, authentication, and binary data support.
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -17,7 +17,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     # Basic settings
     PropertyDef(
         "endpoint",
@@ -148,7 +149,6 @@ from casare_rpa.triggers.base import TriggerType
         label="Max Payload Size (bytes)",
     ),
 )
-@trigger_node
 class WebhookTriggerNode(BaseTriggerNode):
     """
     Webhook trigger node that listens for HTTP requests.

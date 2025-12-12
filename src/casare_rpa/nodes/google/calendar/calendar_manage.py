@@ -10,12 +10,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_calendar_client import (
@@ -64,7 +63,8 @@ CALENDAR_ID = PropertyDef(
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     PropertyDef(
@@ -90,7 +90,6 @@ CALENDAR_ID = PropertyDef(
         tooltip="Filter calendars by minimum access level",
     ),
 )
-@executable_node
 class CalendarListCalendarsNode(CalendarBaseNode):
     """
     List all calendars accessible to the user.
@@ -125,19 +124,13 @@ class CalendarListCalendarsNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "show_hidden", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "show_deleted", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "min_access_role", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("show_hidden", DataType.BOOLEAN, required=False)
+        self.add_input_port("show_deleted", DataType.BOOLEAN, required=False)
+        self.add_input_port("min_access_role", DataType.STRING, required=False)
 
-        self.add_output_port("calendars", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("calendar_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("primary_calendar", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("calendars", DataType.LIST)
+        self.add_output_port("calendar_count", DataType.INTEGER)
+        self.add_output_port("primary_calendar", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -191,12 +184,12 @@ class CalendarListCalendarsNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
 )
-@executable_node
 class CalendarGetCalendarNode(CalendarBaseNode):
     """
     Get calendar information by ID.
@@ -230,14 +223,12 @@ class CalendarGetCalendarNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=True
-        )
+        self.add_input_port("calendar_id", DataType.STRING, required=True)
 
-        self.add_output_port("calendar", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("summary", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("timezone", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("access_role", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("calendar", DataType.DICT)
+        self.add_output_port("summary", DataType.STRING)
+        self.add_output_port("timezone", DataType.STRING)
+        self.add_output_port("access_role", DataType.STRING)
 
     async def _execute_calendar(
         self,
@@ -285,7 +276,8 @@ class CalendarGetCalendarNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     PropertyDef(
@@ -322,7 +314,6 @@ class CalendarGetCalendarNode(CalendarBaseNode):
         tooltip="Timezone for the calendar (e.g., America/New_York)",
     ),
 )
-@executable_node
 class CalendarCreateCalendarNode(CalendarBaseNode):
     """
     Create a new Google Calendar.
@@ -357,15 +348,13 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port("summary", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("location", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("timezone", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("summary", DataType.STRING, required=True)
+        self.add_input_port("description", DataType.STRING, required=False)
+        self.add_input_port("location", DataType.STRING, required=False)
+        self.add_input_port("timezone", DataType.STRING, required=False)
 
-        self.add_output_port("calendar_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("calendar", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("calendar_id", DataType.STRING)
+        self.add_output_port("calendar", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -420,7 +409,8 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -433,7 +423,6 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
         tooltip="Must be true to confirm calendar deletion (prevents accidental deletion)",
     ),
 )
-@executable_node
 class CalendarDeleteCalendarNode(CalendarBaseNode):
     """
     Delete a Google Calendar.
@@ -467,14 +456,10 @@ class CalendarDeleteCalendarNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "confirm_delete", PortType.INPUT, DataType.BOOLEAN, required=True
-        )
+        self.add_input_port("calendar_id", DataType.STRING, required=True)
+        self.add_input_port("confirm_delete", DataType.BOOLEAN, required=True)
 
-        self.add_output_port("deleted_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("deleted_id", DataType.STRING)
 
     async def _execute_calendar(
         self,

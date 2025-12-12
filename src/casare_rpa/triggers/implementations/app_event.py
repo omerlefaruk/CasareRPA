@@ -207,19 +207,28 @@ class AppEventTrigger(BaseTrigger):
         event_types = config.get("event_types", ["workflow_completed"])
 
         try:
-            from casare_rpa.domain.events import get_event_bus, EventType
+            from casare_rpa.domain.events import (
+                get_event_bus,
+                WorkflowStarted,
+                WorkflowCompleted,
+                WorkflowFailed,
+                WorkflowStopped,
+                NodeStarted,
+                NodeCompleted,
+                NodeFailed,
+            )
 
             event_bus = get_event_bus()
 
-            # Map event type strings to EventType enum
+            # Map event type strings to typed event classes
             event_map = {
-                "workflow_started": EventType.WORKFLOW_STARTED,
-                "workflow_completed": EventType.WORKFLOW_COMPLETED,
-                "workflow_error": EventType.WORKFLOW_ERROR,
-                "workflow_stopped": EventType.WORKFLOW_STOPPED,
-                "node_started": EventType.NODE_STARTED,
-                "node_completed": EventType.NODE_COMPLETED,
-                "node_error": EventType.NODE_ERROR,
+                "workflow_started": WorkflowStarted,
+                "workflow_completed": WorkflowCompleted,
+                "workflow_error": WorkflowFailed,
+                "workflow_stopped": WorkflowStopped,
+                "node_started": NodeStarted,
+                "node_completed": NodeCompleted,
+                "node_error": NodeFailed,
             }
 
             def make_handler(et_str: str):
@@ -231,12 +240,12 @@ class AppEventTrigger(BaseTrigger):
                 return handler
 
             for event_type_str in event_types:
-                event_type = event_map.get(event_type_str)
-                if event_type:
+                event_class = event_map.get(event_type_str)
+                if event_class:
                     handler = make_handler(event_type_str)
-                    event_bus.subscribe(event_type, handler)
+                    event_bus.subscribe(event_class, handler)
                     self._event_subscriptions.append(
-                        lambda et=event_type, h=handler: event_bus.unsubscribe(et, h)
+                        lambda ec=event_class, h=handler: event_bus.unsubscribe(ec, h)
                     )
 
             return True
@@ -248,13 +257,20 @@ class AppEventTrigger(BaseTrigger):
 
     async def _on_rpa_event(self, event_type: str, event) -> None:
         """Handle internal RPA event."""
+        # Extract node_id from typed events (they have node_id attribute for node events)
+        node_id = getattr(event, "node_id", None)
+
+        # Extract timestamp from typed events
+        timestamp = getattr(event, "timestamp", None)
+        if timestamp:
+            timestamp_str = timestamp.isoformat()
+        else:
+            timestamp_str = datetime.now(timezone.utc).isoformat()
+
         payload = {
             "event_type": event_type,
-            "node_id": event.node_id,
-            "data": event.data,
-            "timestamp": event.timestamp.isoformat()
-            if event.timestamp
-            else datetime.now(timezone.utc).isoformat(),
+            "node_id": node_id,
+            "timestamp": timestamp_str,
         }
 
         metadata = {

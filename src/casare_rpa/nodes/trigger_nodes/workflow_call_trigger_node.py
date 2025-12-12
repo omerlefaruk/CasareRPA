@@ -7,7 +7,7 @@ Enables sub-workflow patterns.
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -17,7 +17,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     PropertyDef(
         "call_alias",
         PropertyType.STRING,
@@ -57,7 +58,6 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Maximum time to wait for completion",
     ),
 )
-@trigger_node
 class WorkflowCallTriggerNode(BaseTriggerNode):
     """
     Workflow call trigger node for sub-workflow invocation.

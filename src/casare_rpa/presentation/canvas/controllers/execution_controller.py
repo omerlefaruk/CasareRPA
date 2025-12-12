@@ -11,13 +11,15 @@ Handles all execution-related operations:
 
 import asyncio
 from datetime import datetime
+from functools import partial
 from typing import Optional, TYPE_CHECKING
-from PySide6.QtCore import Signal, QObject, Qt
+from PySide6.QtCore import Signal, QObject, Qt, Slot
 from PySide6.QtWidgets import QMessageBox
 from loguru import logger
 
 from .base_controller import BaseController
 from casare_rpa.application.services import ExecutionLifecycleManager
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -62,6 +64,27 @@ class _ThreadSafeTerminalBridge(QObject):
     def emit_stderr(self, text: str) -> None:
         """Emit stderr signal (thread-safe)."""
         self.stderr_received.emit(text)
+
+
+class _ThreadSafeEventBusBridge(QObject):
+    """
+    Thread-safe bridge for EventBus events → UI updates.
+
+    EventBus callbacks are invoked from background threads during workflow
+    execution. This bridge marshals those calls to the main Qt thread using
+    signals with QueuedConnection.
+    """
+
+    node_started = Signal(object)
+    node_completed = Signal(object)
+    node_error = Signal(object)
+    workflow_completed = Signal(object)
+    workflow_error = Signal(object)
+    workflow_stopped = Signal(object)
+    browser_page_ready = Signal(object)
+
+    def __init__(self, parent: Optional[QObject] = None):
+        super().__init__(parent)
 
 
 class ExecutionController(BaseController):
@@ -110,10 +133,23 @@ class ExecutionController(BaseController):
         # Thread-safe bridges for cross-thread Qt calls
         self._log_bridge: Optional[_ThreadSafeLogBridge] = None
         self._terminal_bridge: Optional[_ThreadSafeTerminalBridge] = None
+        self._event_bus_bridge: Optional[_ThreadSafeEventBusBridge] = None
 
         # Execution lifecycle manager for state machine and cleanup
         self._lifecycle_manager = ExecutionLifecycleManager()
         logger.debug("ExecutionLifecycleManager initialized")
+
+    def _emit_to_bridge(self, signal, event) -> None:
+        """
+        Helper method to emit events to bridge signals.
+
+        Used with functools.partial to avoid lambdas in EventBus subscriptions.
+
+        Args:
+            signal: Qt Signal to emit to
+            event: Event object to emit
+        """
+        signal.emit(event)
 
     def initialize(self) -> None:
         """Initialize controller."""
@@ -139,22 +175,22 @@ class ExecutionController(BaseController):
         if info:
             msg.setInformativeText(info)
         msg.setIcon(icon)
-        msg.setStyleSheet("""
-            QMessageBox { background: #252526; }
-            QMessageBox QLabel { color: #D4D4D4; font-size: 12px; }
-            QPushButton {
-                background: #2D2D30;
-                border: 1px solid #454545;
+        msg.setStyleSheet(f"""
+            QMessageBox {{ background: {THEME.bg_darkest}; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; font-size: 12px; }}
+            QPushButton {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
                 border-radius: 4px;
                 padding: 0 16px;
-                color: #D4D4D4;
+                color: {THEME.text_primary};
                 font-size: 12px;
                 font-weight: 500;
                 min-height: 32px;
                 min-width: 80px;
-            }
-            QPushButton:hover { background: #2A2D2E; border-color: #007ACC; color: white; }
-            QPushButton:default { background: #007ACC; border-color: #007ACC; color: white; }
+            }}
+            QPushButton:hover {{ background: {THEME.bg_medium}; border-color: {THEME.accent_primary}; color: white; }}
+            QPushButton:default {{ background: {THEME.accent_primary}; border-color: {THEME.accent_primary}; color: white; }}
         """)
         msg.exec()
 
@@ -164,26 +200,86 @@ class ExecutionController(BaseController):
 
         Extracted from: canvas/components/execution_component.py
         Subscribes to domain events for visual node feedback.
+
+        Uses a thread-safe bridge with QueuedConnection to ensure UI updates
+        happen on the main Qt thread, since EventBus callbacks are invoked
+        from background workflow execution threads.
         """
         try:
-            from ....domain.events import EventType, get_event_bus
+            from ....domain.events import (
+                get_event_bus,
+                NodeStarted,
+                NodeCompleted,
+                NodeFailed,
+                WorkflowCompleted,
+                WorkflowFailed,
+                WorkflowStopped,
+                BrowserPageReady,
+            )
 
             self._event_bus = get_event_bus()
 
-            # Subscribe to execution events for visual feedback
-            self._event_bus.subscribe(EventType.NODE_STARTED, self._on_node_started)
-            self._event_bus.subscribe(EventType.NODE_COMPLETED, self._on_node_completed)
-            self._event_bus.subscribe(EventType.NODE_ERROR, self._on_node_error)
-            self._event_bus.subscribe(
-                EventType.WORKFLOW_COMPLETED, self._on_workflow_completed
+            # Create thread-safe bridge for cross-thread event handling
+            self._event_bus_bridge = _ThreadSafeEventBusBridge(self.main_window)
+
+            # Connect bridge signals to handler slots with QueuedConnection
+            # This ensures UI updates happen on the main thread
+            self._event_bus_bridge.node_started.connect(
+                self._on_node_started, Qt.ConnectionType.QueuedConnection
             )
-            self._event_bus.subscribe(EventType.WORKFLOW_ERROR, self._on_workflow_error)
-            self._event_bus.subscribe(
-                EventType.WORKFLOW_STOPPED, self._on_workflow_stopped
+            self._event_bus_bridge.node_completed.connect(
+                self._on_node_completed, Qt.ConnectionType.QueuedConnection
             )
-            # Subscribe to browser events to enable picker/recorder
+            self._event_bus_bridge.node_error.connect(
+                self._on_node_error, Qt.ConnectionType.QueuedConnection
+            )
+            self._event_bus_bridge.workflow_completed.connect(
+                self._on_workflow_completed, Qt.ConnectionType.QueuedConnection
+            )
+            self._event_bus_bridge.workflow_error.connect(
+                self._on_workflow_error, Qt.ConnectionType.QueuedConnection
+            )
+            self._event_bus_bridge.workflow_stopped.connect(
+                self._on_workflow_stopped, Qt.ConnectionType.QueuedConnection
+            )
+            self._event_bus_bridge.browser_page_ready.connect(
+                self._on_browser_page_ready, Qt.ConnectionType.QueuedConnection
+            )
+
+            # Subscribe to EventBus - callbacks emit to bridge signals (thread-safe)
+            # Using typed event classes (DDD pattern) instead of string enums
+            # Using functools.partial instead of lambdas per signal-slot-rules.md
             self._event_bus.subscribe(
-                EventType.BROWSER_PAGE_READY, self._on_browser_page_ready
+                NodeStarted,
+                partial(self._emit_to_bridge, self._event_bus_bridge.node_started),
+            )
+            self._event_bus.subscribe(
+                NodeCompleted,
+                partial(self._emit_to_bridge, self._event_bus_bridge.node_completed),
+            )
+            self._event_bus.subscribe(
+                NodeFailed,
+                partial(self._emit_to_bridge, self._event_bus_bridge.node_error),
+            )
+            self._event_bus.subscribe(
+                WorkflowCompleted,
+                partial(
+                    self._emit_to_bridge, self._event_bus_bridge.workflow_completed
+                ),
+            )
+            self._event_bus.subscribe(
+                WorkflowFailed,
+                partial(self._emit_to_bridge, self._event_bus_bridge.workflow_error),
+            )
+            self._event_bus.subscribe(
+                WorkflowStopped,
+                partial(self._emit_to_bridge, self._event_bus_bridge.workflow_stopped),
+            )
+            self._event_bus.subscribe(
+                BrowserPageReady,
+                partial(
+                    self._emit_to_bridge, self._event_bus_bridge.browser_page_ready
+                ),
             )
 
             # Subscribe all events to log viewer if available
@@ -191,9 +287,14 @@ class ExecutionController(BaseController):
             log_viewer = self.main_window.get_log_viewer()
             if log_viewer and hasattr(log_viewer, "log_event"):
                 self._event_bus.subscribe_all(log_viewer.log_event)
+
+            logger.debug(
+                "EventBus bridge setup with QueuedConnection for thread safety"
+            )
         except ImportError as e:
             logger.warning(f"EventBus not available: {e}")
             self._event_bus = None
+            self._event_bus_bridge = None
 
     def _setup_log_tab_bridge(self) -> None:
         """
@@ -387,6 +488,11 @@ class ExecutionController(BaseController):
             self._terminal_bridge.deleteLater()
             self._terminal_bridge = None
 
+        # Clean up event bus bridge
+        if self._event_bus_bridge:
+            self._event_bus_bridge.deleteLater()
+            self._event_bus_bridge = None
+
         super().cleanup()
         logger.info("ExecutionController cleanup")
 
@@ -410,6 +516,7 @@ class ExecutionController(BaseController):
         super().cleanup()
         logger.info("ExecutionController async cleanup completed")
 
+    @Slot(object)
     def _on_node_started(self, event) -> None:
         """
         Handle NODE_STARTED event from EventBus.
@@ -429,6 +536,7 @@ class ExecutionController(BaseController):
                 # Start flow animation on outgoing pipes
                 self._start_pipe_animations(visual_node)
 
+    @Slot(object)
     def _on_node_completed(self, event) -> None:
         """
         Handle NODE_COMPLETED event from EventBus.
@@ -508,6 +616,7 @@ class ExecutionController(BaseController):
                 }
                 bottom_panel.append_history_entry(history_entry)
 
+    @Slot(object)
     def _on_node_error(self, event) -> None:
         """
         Handle NODE_ERROR event from EventBus.
@@ -550,6 +659,7 @@ class ExecutionController(BaseController):
                 }
                 bottom_panel.append_history_entry(history_entry)
 
+    @Slot(object)
     def _on_workflow_completed(self, event) -> None:
         """
         Handle WORKFLOW_COMPLETED event from EventBus.
@@ -584,6 +694,7 @@ class ExecutionController(BaseController):
 
         self.on_execution_completed()
 
+    @Slot(object)
     def _on_workflow_error(self, event) -> None:
         """
         Handle WORKFLOW_ERROR event from EventBus.
@@ -615,6 +726,7 @@ class ExecutionController(BaseController):
 
         self.on_execution_error(str(error))
 
+    @Slot(object)
     def _on_workflow_stopped(self, event) -> None:
         """
         Handle WORKFLOW_STOPPED event from EventBus.
@@ -628,6 +740,7 @@ class ExecutionController(BaseController):
         # Disable browser picker/recorder when workflow stops
         self.main_window.set_browser_running(False)
 
+    @Slot(object)
     def _on_browser_page_ready(self, event) -> None:
         """
         Handle BROWSER_PAGE_READY event from EventBus.
@@ -1188,6 +1301,7 @@ class ExecutionController(BaseController):
         else:
             logger.warning("Failed to resume workflow via lifecycle manager")
 
+    @Slot(bool)
     def toggle_pause(self, checked: bool) -> None:
         """
         Toggle pause/resume state.
@@ -1279,6 +1393,7 @@ class ExecutionController(BaseController):
 
         self.main_window.show_status("Workflow restarted", 3000)
 
+    @Slot()
     def on_execution_completed(self) -> None:
         """Handle workflow execution completion."""
         logger.info("Workflow execution completed")
@@ -1292,6 +1407,7 @@ class ExecutionController(BaseController):
 
         self.main_window.show_status("Workflow execution completed", 3000)
 
+    @Slot(str)
     def on_execution_error(self, error_message: str) -> None:
         """
         Handle workflow execution error.

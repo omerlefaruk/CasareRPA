@@ -610,7 +610,7 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         Auto-generate widgets from linked CasareNode schema.
 
-        If the CasareNode class has a __node_schema__ attribute (from @node_schema decorator),
+        If the CasareNode class has a __node_schema__ attribute (from @properties decorator),
         this method automatically creates widgets matching the schema properties.
 
         This provides a declarative way to define node properties once and have both
@@ -978,6 +978,39 @@ class VisualNode(NodeGraphQtBaseNode):
             return []
 
         return schema.get_essential_properties()
+
+    def _get_visible_properties(self) -> list:
+        """
+        Get properties that should be visible based on current config.
+
+        Filters properties by:
+        - Visibility level (excludes internal)
+        - Conditional display (display_when/hidden_when)
+
+        Returns:
+            List of PropertyDef that should be rendered
+        """
+        from casare_rpa.domain.schemas import PropertyDef
+
+        if not self._casare_node:
+            return []
+
+        if not hasattr(self._casare_node, "__node_schema__"):
+            return []
+
+        schema = self._casare_node.__class__.__node_schema__
+        visible: list = []
+
+        for prop in schema.get_sorted_properties():
+            # Skip internal properties (never displayed)
+            if prop.visibility == "internal":
+                continue
+            # Check conditional display rules
+            if not schema.should_display(prop.name, self._casare_node.config):
+                continue
+            visible.append(prop)
+
+        return visible
 
     # =========================================================================
     # OUTPUT INSPECTOR METHODS

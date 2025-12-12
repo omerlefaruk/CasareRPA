@@ -13,19 +13,19 @@ from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.entities.subflow import Subflow
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from typing import List
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
-    PortType,
     DataType,
     NodeStatus,
     ExecutionResult,
 )
 
 
-@node_schema(
+@node(category="workflow")
+@properties(
     PropertyDef(
         "subflow_id",
         PropertyType.STRING,
@@ -42,7 +42,6 @@ from casare_rpa.domain.value_objects.types import (
         placeholder="workflows/subflows/my_subflow.json",
     ),
 )
-@executable_node
 class SubflowNode(BaseNode):
     """
     Executes a subflow (reusable workflow fragment).
@@ -90,9 +89,9 @@ class SubflowNode(BaseNode):
         Default ports are created initially, then updated when subflow is loaded.
         """
         # Default exec ports - always present
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-        self.add_output_port("error", PortType.EXEC_OUTPUT)
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_exec_output("error")
 
         # Dynamic ports will be added when subflow is loaded
         # via configure_from_subflow()
@@ -124,13 +123,13 @@ class SubflowNode(BaseNode):
         for port in subflow.inputs:
             # SubflowPort now uses DataType enum directly
             data_type = self._normalize_data_type(port.data_type)
-            self.add_input_port(port.name, PortType.INPUT, data_type)
+            self.add_input_port(port.name, data_type)
 
         # Add output ports from subflow
         for port in subflow.outputs:
             # SubflowPort now uses DataType enum directly
             data_type = self._normalize_data_type(port.data_type)
-            self.add_output_port(port.name, PortType.OUTPUT, data_type)
+            self.add_output_port(port.name, data_type)
 
         # Generate PropertyDefs from promoted parameters
         self._promoted_property_defs: List[PropertyDef] = []

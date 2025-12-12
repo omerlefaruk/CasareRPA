@@ -10,7 +10,7 @@ import asyncio
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -20,7 +20,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -36,12 +37,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Display real-time coordinates while selecting",
     ),
 )
-@executable_node
 class ScreenRegionPickerNode(BaseNode):
     """
     Allow user to select a screen region using mouse.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Window title (default: 'Select Screen Region')
         show_coordinates: Show coordinates while selecting (default: True)
 
@@ -240,7 +240,8 @@ class ScreenRegionPickerNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "action",
         PropertyType.CHOICE,
@@ -259,12 +260,11 @@ class ScreenRegionPickerNode(BaseNode):
         tooltip="Volume level (0-100) for set action",
     ),
 )
-@executable_node
 class VolumeControlNode(BaseNode):
     """
     Get or set system volume.
 
-    Config (via @node_schema):
+    Config (via @properties):
         action: get/set/mute/unmute (default: 'get')
         level: Volume level 0-100 for set action (default: 50)
 
@@ -365,7 +365,8 @@ class VolumeControlNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "filter_name",
         PropertyType.STRING,
@@ -381,12 +382,11 @@ class VolumeControlNode(BaseNode):
         tooltip="Include CPU, memory, and other details",
     ),
 )
-@executable_node
 class ProcessListNode(BaseNode):
     """
     List running processes.
 
-    Config (via @node_schema):
+    Config (via @properties):
         filter_name: Filter by process name (default: '' = all)
         include_details: Include CPU/memory info (default: True)
 
@@ -486,7 +486,8 @@ class ProcessListNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "pid_or_name",
         PropertyType.STRING,
@@ -512,12 +513,11 @@ class ProcessListNode(BaseNode):
         tooltip="Timeout in seconds for graceful termination",
     ),
 )
-@executable_node
 class ProcessKillNode(BaseNode):
     """
     Kill a process by PID or name.
 
-    Config (via @node_schema):
+    Config (via @properties):
         pid_or_name: Process ID or name (essential)
         force: Force kill (default: False)
         timeout: Graceful termination timeout (default: 5s)
@@ -631,7 +631,8 @@ class ProcessKillNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "action",
         PropertyType.CHOICE,
@@ -664,12 +665,11 @@ class ProcessKillNode(BaseNode):
         tooltip="Variable scope (process=current only, user/system=persistent)",
     ),
 )
-@executable_node
 class EnvironmentVariableNode(BaseNode):
     """
     Get or set environment variables.
 
-    Config (via @node_schema):
+    Config (via @properties):
         action: get/set (default: 'get')
         name: Variable name (essential)
         value: Value to set (default: '')
@@ -808,7 +808,8 @@ class EnvironmentVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "info_type",
         PropertyType.CHOICE,
@@ -818,12 +819,11 @@ class EnvironmentVariableNode(BaseNode):
         tooltip="Type of system information to retrieve",
     ),
 )
-@executable_node
 class SystemInfoNode(BaseNode):
     """
     Get system information.
 
-    Config (via @node_schema):
+    Config (via @properties):
         info_type: os/cpu/ram/disk/network/all (default: 'all')
 
     Outputs:

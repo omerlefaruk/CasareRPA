@@ -12,19 +12,18 @@ import subprocess
 import sys
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="system")
+@properties()  # Input port driven
 class GetServiceStatusNode(BaseNode):
     """
     Get the status of a Windows service.
@@ -51,10 +50,10 @@ class GetServiceStatusNode(BaseNode):
         self.node_type = "GetServiceStatusNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("status", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("display_name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("service_name", DataType.STRING)
+        self.add_output_port("status", DataType.STRING)
+        self.add_output_port("display_name", DataType.STRING)
+        self.add_output_port("exists", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -127,8 +126,8 @@ class GetServiceStatusNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="system")
+@properties()  # Input port driven
 class StartServiceNode(BaseNode):
     """
     Start a Windows service.
@@ -152,9 +151,9 @@ class StartServiceNode(BaseNode):
         self.node_type = "StartServiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("service_name", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("message", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -197,8 +196,8 @@ class StartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="system")
+@properties()  # Input port driven
 class StopServiceNode(BaseNode):
     """
     Stop a Windows service.
@@ -222,9 +221,9 @@ class StopServiceNode(BaseNode):
         self.node_type = "StopServiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("service_name", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("message", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -265,7 +264,8 @@ class StopServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "wait_time",
         PropertyType.INTEGER,
@@ -275,12 +275,11 @@ class StopServiceNode(BaseNode):
         tooltip="Seconds to wait between stop and start",
     ),
 )
-@executable_node
 class RestartServiceNode(BaseNode):
     """
     Restart a Windows service.
 
-    Config (via @node_schema):
+    Config (via @properties):
         wait_time: Seconds to wait between stop and start (default: 2)
 
     Inputs:
@@ -302,9 +301,9 @@ class RestartServiceNode(BaseNode):
         self.node_type = "RestartServiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("service_name", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("message", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import asyncio
@@ -355,7 +354,8 @@ class RestartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "state_filter",
         PropertyType.CHOICE,
@@ -365,12 +365,11 @@ class RestartServiceNode(BaseNode):
         tooltip="Filter services by state",
     ),
 )
-@executable_node
 class ListServicesNode(BaseNode):
     """
     List all Windows services.
 
-    Config (via @node_schema):
+    Config (via @properties):
         state_filter: 'all', 'running', 'stopped' (default: all)
 
     Outputs:
@@ -389,8 +388,8 @@ class ListServicesNode(BaseNode):
         self.node_type = "ListServicesNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("services", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("services", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

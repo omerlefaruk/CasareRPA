@@ -29,7 +29,9 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QApplication,
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QDateTime
+from functools import partial
+
+from PySide6.QtCore import Qt, Signal, QTimer, QDateTime, Slot
 from PySide6.QtGui import QColor, QBrush
 
 
@@ -251,6 +253,7 @@ class ApiKeyPanel(QWidget):
         self._api_keys: List[Dict[str, Any]] = []
         self._robots: List[Dict[str, Any]] = []
         self._tenant_id: Optional[str] = None
+        self._context_key: Optional[Dict[str, Any]] = None  # Context menu target
         self._setup_ui()
         self._apply_styles()
 
@@ -498,12 +501,12 @@ class ApiKeyPanel(QWidget):
                 revoke_btn = QPushButton("Revoke")
                 revoke_btn.setMaximumHeight(24)
                 revoke_btn.setProperty("key_id", key.get("id"))
-                revoke_btn.clicked.connect(lambda _, k=key: self._on_revoke_key(k))
+                revoke_btn.clicked.connect(partial(self._on_revoke_key, key))
                 actions_layout.addWidget(revoke_btn)
 
                 rotate_btn = QPushButton("Rotate")
                 rotate_btn.setMaximumHeight(24)
-                rotate_btn.clicked.connect(lambda _, k=key: self._on_rotate_key(k))
+                rotate_btn.clicked.connect(partial(self._on_rotate_key, key))
                 actions_layout.addWidget(rotate_btn)
             else:
                 disabled_label = QLabel("Inactive")
@@ -603,21 +606,42 @@ class ApiKeyPanel(QWidget):
         if not key:
             return
 
+        # Store context key for slot methods
+        self._context_key = key
+
         menu = QMenu(self)
 
         if key.get("status") in ("valid", "active"):
             revoke_action = menu.addAction("Revoke Key")
-            revoke_action.triggered.connect(lambda: self._on_revoke_key(key))
+            revoke_action.triggered.connect(self._on_context_revoke_key)
 
             rotate_action = menu.addAction("Rotate Key")
-            rotate_action.triggered.connect(lambda: self._on_rotate_key(key))
+            rotate_action.triggered.connect(self._on_context_rotate_key)
 
             menu.addSeparator()
 
         details_action = menu.addAction("View Details")
-        details_action.triggered.connect(lambda: self._on_view_details(key))
+        details_action.triggered.connect(self._on_context_view_details)
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
+
+    @Slot()
+    def _on_context_revoke_key(self) -> None:
+        """Handle revoke key context menu action."""
+        if self._context_key:
+            self._on_revoke_key(self._context_key)
+
+    @Slot()
+    def _on_context_rotate_key(self) -> None:
+        """Handle rotate key context menu action."""
+        if self._context_key:
+            self._on_rotate_key(self._context_key)
+
+    @Slot()
+    def _on_context_view_details(self) -> None:
+        """Handle view details context menu action."""
+        if self._context_key:
+            self._on_view_details(self._context_key)
 
     def _on_generate_key(self) -> None:
         """Open dialog to generate new API key."""

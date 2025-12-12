@@ -13,8 +13,10 @@ Classes:
     NodeDirectoryPathWidget: Directory path input with browse button
 """
 
+from functools import partial
 from typing import Optional
 
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QColor, QFont, QTransform
 from PySide6.QtWidgets import (
     QComboBox,
@@ -899,6 +901,37 @@ def _install_widget_init_patches() -> None:
 # =============================================================================
 
 
+@Slot()
+def _trigger_widget_value_changed(widget, *args) -> None:
+    """
+    Trigger value changed on a widget, ignoring any signal arguments.
+
+    Used with functools.partial to replace lambdas in signal connections.
+    This avoids closure issues with lambdas in factory functions.
+
+    Args:
+        widget: NodeBaseWidget to trigger value change on
+        *args: Ignored signal arguments
+    """
+    widget.on_value_changed()
+
+
+@Slot()
+def _set_parent_value_from_picker(target_picker, source_picker, *args) -> None:
+    """
+    Set parent value on target picker from source picker's selected ID.
+
+    Used for cascading picker widgets where the target needs to update
+    when the source selection changes.
+
+    Args:
+        target_picker: Picker widget to update
+        source_picker: Picker widget to get selected ID from
+        *args: Ignored signal arguments
+    """
+    target_picker.set_parent_value(source_picker.get_selected_id())
+
+
 def create_variable_text_widget(
     name: str,
     label: str,
@@ -965,7 +998,7 @@ def create_variable_text_widget(
 
     # Connect signals
     line_edit.editingFinished.connect(widget.on_value_changed)
-    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+    line_edit.variable_inserted.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._line_edit = line_edit
@@ -1102,7 +1135,7 @@ def create_file_path_widget(
     line_edit.editingFinished.connect(widget.on_value_changed)
 
     # Connect variable insertion to trigger value change
-    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+    line_edit.variable_inserted.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference to line edit for get/set value
     widget._line_edit = line_edit
@@ -1272,7 +1305,7 @@ def create_directory_path_widget(
     line_edit.editingFinished.connect(widget.on_value_changed)
 
     # Connect variable insertion to trigger value change
-    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+    line_edit.variable_inserted.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference to line edit for get/set value
     widget._line_edit = line_edit
@@ -1658,7 +1691,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
 
     # Connect line edit changes
     line_edit.editingFinished.connect(widget.on_value_changed)
-    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+    line_edit.variable_inserted.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store references
     widget._line_edit = line_edit
@@ -1844,7 +1877,7 @@ def create_google_credential_widget(
     widget.set_custom_widget(picker)
 
     # Connect signals
-    picker.credential_changed.connect(lambda _: widget.on_value_changed())
+    picker.credential_changed.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._picker = picker
@@ -1900,9 +1933,7 @@ def create_google_spreadsheet_widget(
     # Connect to parent credential widget if provided
     if credential_widget and hasattr(credential_widget, "_picker"):
         cred_picker = credential_widget._picker
-        cred_picker.credential_changed.connect(
-            lambda cred_id: picker.set_parent_value(cred_id)
-        )
+        cred_picker.credential_changed.connect(picker.set_parent_value)
         # Initialize with current credential if already selected
         current_cred = cred_picker.get_credential_id()
         if current_cred:
@@ -1913,7 +1944,7 @@ def create_google_spreadsheet_widget(
     widget.set_custom_widget(picker)
 
     # Connect signals
-    picker.selection_changed.connect(lambda: widget.on_value_changed())
+    picker.selection_changed.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._picker = picker
@@ -1970,16 +2001,12 @@ def create_google_sheet_widget(
 
     # Connect to parent credential widget if provided
     if credential_widget and hasattr(credential_widget, "_picker"):
-        credential_widget._picker.credential_changed.connect(
-            lambda cred_id: picker.set_credential_id(cred_id)
-        )
+        credential_widget._picker.credential_changed.connect(picker.set_credential_id)
 
     # Connect to parent spreadsheet widget if provided
     if spreadsheet_widget and hasattr(spreadsheet_widget, "_picker"):
         spreadsheet_widget._picker.selection_changed.connect(
-            lambda: picker.set_parent_value(
-                spreadsheet_widget._picker.get_selected_id()
-            )
+            partial(_set_parent_value_from_picker, picker, spreadsheet_widget._picker)
         )
 
     # Create NodeBaseWidget
@@ -1987,7 +2014,7 @@ def create_google_sheet_widget(
     widget.set_custom_widget(picker)
 
     # Connect signals
-    picker.selection_changed.connect(lambda: widget.on_value_changed())
+    picker.selection_changed.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._picker = picker
@@ -2045,9 +2072,7 @@ def create_google_drive_file_widget(
     # Connect to parent credential widget if provided
     if credential_widget and hasattr(credential_widget, "_picker"):
         cred_picker = credential_widget._picker
-        cred_picker.credential_changed.connect(
-            lambda cred_id: picker.set_parent_value(cred_id)
-        )
+        cred_picker.credential_changed.connect(picker.set_parent_value)
         # Initialize with current credential if already selected
         current_cred = cred_picker.get_credential_id()
         if current_cred:
@@ -2058,7 +2083,7 @@ def create_google_drive_file_widget(
     widget.set_custom_widget(picker)
 
     # Connect signals
-    picker.selection_changed.connect(lambda: widget.on_value_changed())
+    picker.selection_changed.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._picker = picker
@@ -2135,9 +2160,7 @@ def _create_simple_folder_widget(
     # Connect to parent credential widget if provided
     if credential_widget and hasattr(credential_widget, "_picker"):
         cred_picker = credential_widget._picker
-        cred_picker.credential_changed.connect(
-            lambda cred_id: picker.set_parent_value(cred_id)
-        )
+        cred_picker.credential_changed.connect(picker.set_parent_value)
         # Initialize with current credential if already selected
         current_cred = cred_picker.get_credential_id()
         if current_cred:
@@ -2148,7 +2171,7 @@ def _create_simple_folder_widget(
     widget.set_custom_widget(picker)
 
     # Connect signals
-    picker.selection_changed.connect(lambda: widget.on_value_changed())
+    picker.selection_changed.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._picker = picker
@@ -2199,9 +2222,7 @@ def _create_enhanced_folder_widget(
     # Connect to parent credential widget if provided
     if credential_widget and hasattr(credential_widget, "_picker"):
         cred_picker = credential_widget._picker
-        cred_picker.credential_changed.connect(
-            lambda cred_id: navigator.set_credential_id(cred_id)
-        )
+        cred_picker.credential_changed.connect(navigator.set_credential_id)
         # Initialize with current credential if already selected
         current_cred = cred_picker.get_credential_id()
         if current_cred:
@@ -2212,7 +2233,7 @@ def _create_enhanced_folder_widget(
     widget.set_custom_widget(navigator)
 
     # Connect signals
-    navigator.folder_selected.connect(lambda: widget.on_value_changed())
+    navigator.folder_selected.connect(partial(_trigger_widget_value_changed, widget))
 
     # Store reference
     widget._navigator = navigator

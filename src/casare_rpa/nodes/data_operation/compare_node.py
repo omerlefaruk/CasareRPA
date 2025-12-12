@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Set, Tuple
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -63,7 +63,8 @@ def _rows_equal(
     return len(different_columns) == 0, different_columns
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "key_columns",
         PropertyType.STRING,
@@ -86,7 +87,6 @@ def _rows_equal(
         tooltip="Case sensitivity for string comparison",
     ),
 )
-@executable_node
 class DataCompareNode(BaseNode):
     """
     Compare two datasets and report differences.

@@ -13,7 +13,7 @@ Usage:
 from typing import TYPE_CHECKING
 import asyncio
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Slot
 from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
 
 from loguru import logger
@@ -50,34 +50,71 @@ class SignalCoordinator:
         self._mw = main_window
         self._browser_recorder = None
         self._recording_stop_in_progress = False
+        self._connections: list = []  # Track signal connections for cleanup
+
+    def _connect(self, signal, slot, conn_type=None) -> None:
+        """
+        Connect a signal to a slot and track for cleanup.
+
+        Args:
+            signal: Qt signal to connect
+            slot: Slot/callback to receive signal
+            conn_type: Optional Qt.ConnectionType for cross-thread safety
+        """
+        if conn_type:
+            signal.connect(slot, conn_type)
+        else:
+            signal.connect(slot)
+        self._connections.append((signal, slot))
+
+    def cleanup(self) -> None:
+        """
+        Disconnect all tracked signals and release resources.
+
+        Called during MainWindow shutdown to prevent dangling connections.
+        """
+        for signal, slot in self._connections:
+            try:
+                signal.disconnect(slot)
+            except RuntimeError:
+                pass  # Already disconnected
+        self._connections.clear()
+        self._browser_recorder = None
+        logger.debug("SignalCoordinator cleanup complete")
 
     # ==================== Workflow Actions ====================
 
+    @Slot()
     def on_new_workflow(self) -> None:
         """Handle new workflow action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.new_workflow()
 
+    @Slot()
     def on_open_workflow(self) -> None:
         """Handle open workflow action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.open_workflow()
 
+    @Slot()
     def on_import_workflow(self) -> None:
         """Handle import workflow action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.import_workflow()
 
+    @Slot()
     def on_export_selected(self) -> None:
         """Handle export selected nodes action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.export_selected_nodes()
 
+    @Slot()
     def on_paste_workflow(self) -> None:
         """Handle paste workflow action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.paste_workflow()
 
+    @Slot()
     def on_save_workflow(self) -> None:
         """Handle save workflow action."""
         if self._mw._workflow_controller:
@@ -85,47 +122,56 @@ class SignalCoordinator:
         else:
             logger.warning("Cannot save: workflow controller not initialized")
 
+    @Slot()
     def on_save_as_workflow(self) -> None:
         """Handle save as workflow action."""
         if self._mw._workflow_controller:
             self._mw._workflow_controller.save_workflow_as()
 
+    @Slot()
     def on_save_as_scenario(self) -> None:
         """Handle save as scenario action - emits signal for app.py."""
         self._mw.save_as_scenario_requested.emit()
 
     # ==================== Execution Actions ====================
 
+    @Slot()
     def on_run_workflow(self) -> None:
         """Handle run workflow action."""
         if self._mw._execution_controller:
             self._mw._execution_controller.run_workflow()
 
+    @Slot()
     def on_run_to_node(self) -> None:
         """Handle run to node action."""
         if self._mw._execution_controller:
             self._mw._execution_controller.run_to_node()
 
+    @Slot()
     def on_run_single_node(self) -> None:
         """Handle run single node action."""
         if self._mw._execution_controller:
             self._mw._execution_controller.run_single_node()
 
+    @Slot()
     def on_run_all_workflows(self) -> None:
         """Run all workflows on canvas concurrently (Shift+F3)."""
         if self._mw._execution_controller:
             self._mw._execution_controller.run_all_workflows()
 
+    @Slot()
     def on_run_local(self) -> None:
         """Handle run local action."""
         if self._mw._workflow_controller:
             asyncio.create_task(self._mw._workflow_controller.run_local())
 
+    @Slot()
     def on_run_on_robot(self) -> None:
         """Handle run on robot action."""
         if self._mw._workflow_controller:
             asyncio.create_task(self._mw._workflow_controller.run_on_robot())
 
+    @Slot()
     def on_submit(self) -> None:
         """Handle submit for internet robots action."""
         if self._mw._workflow_controller:
@@ -133,21 +179,25 @@ class SignalCoordinator:
                 self._mw._workflow_controller.submit_for_internet_robots()
             )
 
+    @Slot(bool)
     def on_pause_workflow(self, checked: bool) -> None:
         """Handle pause workflow toggle."""
         if self._mw._execution_controller:
             self._mw._execution_controller.toggle_pause(checked)
 
+    @Slot()
     def on_stop_workflow(self) -> None:
         """Handle stop workflow action."""
         if self._mw._execution_controller:
             self._mw._execution_controller.stop_workflow()
 
+    @Slot()
     def on_restart_workflow(self) -> None:
         """Restart workflow - stop, reset, and run fresh (F8)."""
         if self._mw._execution_controller:
             self._mw._execution_controller.restart_workflow()
 
+    @Slot()
     def on_start_listening(self) -> None:
         """Start listening for trigger events (F9)."""
         if self._mw._execution_controller:
@@ -157,6 +207,7 @@ class SignalCoordinator:
             if hasattr(self._mw, "action_stop_listening"):
                 self._mw.action_stop_listening.setEnabled(True)
 
+    @Slot()
     def on_stop_listening(self) -> None:
         """Stop listening for trigger events (Shift+F9)."""
         if self._mw._execution_controller:
@@ -168,11 +219,13 @@ class SignalCoordinator:
 
     # ==================== Debug Actions ====================
 
+    @Slot()
     def on_debug_workflow(self) -> None:
         """Handle debug workflow action."""
         if self._mw._execution_controller:
             self._mw._execution_controller.debug_workflow()
 
+    @Slot(bool)
     def on_debug_mode_toggled(self, enabled: bool) -> None:
         """Handle debug mode toggle."""
         if self._mw._execution_controller:
@@ -184,26 +237,31 @@ class SignalCoordinator:
                 self._mw._debug_panel.hide()
         logger.debug(f"Debug mode {'enabled' if enabled else 'disabled'}")
 
+    @Slot()
     def on_debug_step_over(self) -> None:
         """Handle step over in debug mode."""
         if self._mw._execution_controller:
             self._mw._execution_controller.step_over()
 
+    @Slot()
     def on_debug_step_into(self) -> None:
         """Handle step into in debug mode."""
         if self._mw._execution_controller:
             self._mw._execution_controller.step_into()
 
+    @Slot()
     def on_debug_step_out(self) -> None:
         """Handle step out in debug mode."""
         if self._mw._execution_controller:
             self._mw._execution_controller.step_out()
 
+    @Slot()
     def on_debug_continue(self) -> None:
         """Handle continue in debug mode."""
         if self._mw._execution_controller:
             self._mw._execution_controller.continue_execution()
 
+    @Slot()
     def on_toggle_breakpoint(self) -> None:
         """Handle toggle breakpoint on selected node."""
         if self._mw._node_controller:
@@ -211,6 +269,7 @@ class SignalCoordinator:
             if selected and self._mw._execution_controller:
                 self._mw._execution_controller.toggle_breakpoint(selected[0])
 
+    @Slot()
     def on_clear_breakpoints(self) -> None:
         """Handle clear all breakpoints."""
         if self._mw._execution_controller:
@@ -223,6 +282,7 @@ class SignalCoordinator:
         focus_widget = QApplication.focusWidget()
         return isinstance(focus_widget, (QLineEdit, QTextEdit))
 
+    @Slot()
     def on_select_nearest_node(self) -> None:
         """Select nearest node to cursor."""
         if self._is_text_widget_focused():
@@ -230,6 +290,7 @@ class SignalCoordinator:
         if self._mw._node_controller:
             self._mw._node_controller.select_nearest_node()
 
+    @Slot()
     def on_toggle_collapse_nearest(self) -> None:
         """Toggle collapse/expand on nearest node (hotkey 1)."""
         if self._is_text_widget_focused():
@@ -237,6 +298,7 @@ class SignalCoordinator:
         if self._mw._node_controller:
             self._mw._node_controller.toggle_collapse_nearest_node()
 
+    @Slot()
     def on_toggle_disable_node(self) -> None:
         """Toggle disable state on selected node."""
         if self._is_text_widget_focused():
@@ -244,6 +306,7 @@ class SignalCoordinator:
         if self._mw._node_controller:
             self._mw._node_controller.toggle_disable_node()
 
+    @Slot()
     def on_disable_all_selected(self) -> None:
         """Disable all selected nodes."""
         if self._is_text_widget_focused():
@@ -251,6 +314,7 @@ class SignalCoordinator:
         if self._mw._node_controller:
             self._mw._node_controller.disable_all_selected()
 
+    @Slot()
     def on_rename_node(self) -> None:
         """Rename selected node (F2)."""
         if self._is_text_widget_focused():
@@ -273,6 +337,7 @@ class SignalCoordinator:
             node.set_name(new_name)
             self._mw.show_status(f"Renamed to: {new_name}", 2000)
 
+    @Slot()
     def on_get_exec_out(self) -> None:
         """Get nearest node's exec_out port (hotkey 3)."""
         if self._is_text_widget_focused():
@@ -280,6 +345,7 @@ class SignalCoordinator:
         if self._mw._node_controller:
             self._mw._node_controller.get_nearest_exec_out()
 
+    @Slot()
     def on_find_node(self) -> None:
         """Open find node dialog."""
         if self._mw._node_controller:
@@ -287,6 +353,7 @@ class SignalCoordinator:
 
     # ==================== View/UI Actions ====================
 
+    @Slot()
     def on_focus_view(self) -> None:
         """Focus view: zoom to selected node (F)."""
         if self._is_text_widget_focused():
@@ -294,6 +361,7 @@ class SignalCoordinator:
         if self._mw._viewport_controller:
             self._mw._viewport_controller.focus_view()
 
+    @Slot()
     def on_home_all(self) -> None:
         """Home all: fit all nodes in view (G)."""
         if self._is_text_widget_focused():
@@ -301,6 +369,7 @@ class SignalCoordinator:
         if self._mw._viewport_controller:
             self._mw._viewport_controller.home_all()
 
+    @Slot(bool)
     def on_toggle_minimap(self, checked: bool) -> None:
         """Handle minimap toggle."""
         if self._mw._viewport_controller:
@@ -310,11 +379,13 @@ class SignalCoordinator:
         else:
             self._mw.hide_minimap()
 
+    @Slot()
     def on_create_frame(self) -> None:
         """Create frame around selected nodes."""
         if self._mw._viewport_controller:
             self._mw._viewport_controller.create_frame()
 
+    @Slot()
     def on_save_ui_layout(self) -> None:
         """Save current UI layout."""
         if self._mw._ui_state_controller:
@@ -325,6 +396,7 @@ class SignalCoordinator:
 
     # ==================== Mode Toggles ====================
 
+    @Slot(bool)
     def on_toggle_auto_connect(self, checked: bool) -> None:
         """
         Toggle auto-connect mode for node connections.
@@ -351,6 +423,7 @@ class SignalCoordinator:
         self._mw.show_status(f"Auto-connect {status}", 2000)
         logger.debug(f"Auto-connect mode: {status}")
 
+    @Slot(bool)
     def on_toggle_high_performance_mode(self, checked: bool) -> None:
         """
         Toggle high performance rendering mode.
@@ -365,6 +438,7 @@ class SignalCoordinator:
         status = "enabled" if checked else "disabled"
         self._mw.show_status(f"High Performance Mode {status}", 2000)
 
+    @Slot(bool)
     def on_toggle_quick_node_mode(self, checked: bool) -> None:
         """
         Toggle quick node creation mode.
@@ -391,26 +465,31 @@ class SignalCoordinator:
 
     # ==================== Menu Actions ====================
 
+    @Slot()
     def on_preferences(self) -> None:
         """Open preferences dialog."""
         if self._mw._menu_controller:
             self._mw._menu_controller.open_preferences()
 
+    @Slot()
     def on_open_hotkey_manager(self) -> None:
         """Open hotkey manager dialog."""
         if self._mw._menu_controller:
             self._mw._menu_controller.open_hotkey_manager()
 
+    @Slot()
     def on_open_performance_dashboard(self) -> None:
         """Open performance dashboard."""
         if self._mw._menu_controller:
             self._mw._menu_controller.open_performance_dashboard()
 
+    @Slot()
     def on_open_command_palette(self) -> None:
         """Open command palette."""
         if self._mw._menu_controller:
             self._mw._menu_controller.open_command_palette()
 
+    @Slot()
     def on_open_quick_node_config(self) -> None:
         """Open Quick Node Hotkey Configuration dialog."""
         from ..ui.dialogs import QuickNodeConfigDialog
@@ -418,31 +497,37 @@ class SignalCoordinator:
         dialog = QuickNodeConfigDialog(self._mw._quick_node_manager, self._mw)
         dialog.exec()
 
+    @Slot(str)
     def on_open_recent_file(self, path: str) -> None:
         """Open a recent file."""
         if self._mw._menu_controller:
             self._mw._menu_controller.open_recent_file(path)
 
+    @Slot()
     def on_clear_recent_files(self) -> None:
         """Clear recent files list."""
         if self._mw._menu_controller:
             self._mw._menu_controller.clear_recent_files()
 
+    @Slot()
     def on_about(self) -> None:
         """Show about dialog."""
         if self._mw._menu_controller:
             self._mw._menu_controller.show_about_dialog()
 
+    @Slot()
     def on_show_documentation(self) -> None:
         """Show documentation."""
         if self._mw._menu_controller:
             self._mw._menu_controller.show_documentation()
 
+    @Slot()
     def on_show_keyboard_shortcuts(self) -> None:
         """Show keyboard shortcuts dialog."""
         if self._mw._menu_controller:
             self._mw._menu_controller.show_keyboard_shortcuts()
 
+    @Slot()
     def on_check_updates(self) -> None:
         """Check for updates."""
         if self._mw._menu_controller:
@@ -450,10 +535,12 @@ class SignalCoordinator:
 
     # ==================== Selector/Picker Actions ====================
 
+    @Slot()
     def on_pick_selector(self) -> None:
         """Legacy handler - delegates to unified picker."""
         self.on_pick_element()
 
+    @Slot()
     def on_pick_element(self) -> None:
         """Show unified element selector (browser mode by default)."""
         if self._mw._selector_controller:
@@ -463,6 +550,7 @@ class SignalCoordinator:
                 initial_mode="browser",
             )
 
+    @Slot()
     def on_pick_element_desktop(self) -> None:
         """Show unified element selector with desktop mode."""
         if self._mw._selector_controller:
@@ -472,12 +560,14 @@ class SignalCoordinator:
                 initial_mode="desktop",
             )
 
+    @Slot()
     def on_open_desktop_selector_builder(self) -> None:
         """Legacy handler - delegates to unified picker desktop tab."""
         self.on_pick_element_desktop()
 
     # ==================== Recording Actions ====================
 
+    @Slot(bool)
     def on_toggle_browser_recording(self, checked: bool) -> None:
         """Toggle browser recording mode using BrowserRecorder."""
         if checked:
@@ -736,21 +826,25 @@ class SignalCoordinator:
 
     # ==================== Project Management ====================
 
+    @Slot()
     def on_project_manager(self) -> None:
         """Open the project manager dialog."""
         if self._mw._project_controller:
             self._mw._project_controller.show_project_manager()
 
+    @Slot(str)
     def on_project_opened(self, project_id: str) -> None:
         """Handle project opened from Project Explorer."""
         logger.info(f"Opening project: {project_id}")
         if self._mw._project_controller:
             self._mw._project_controller.load_project(project_id)
 
+    @Slot(str)
     def on_project_selected(self, project_id: str) -> None:
         """Handle project selection from Project Explorer."""
         logger.debug(f"Project selected: {project_id}")
 
+    @Slot(str)
     def on_credential_updated(self, credential_id: str) -> None:
         """Handle credential updated - refresh nodes that use credentials."""
         logger.info(f"Credential updated: {credential_id}")
@@ -760,6 +854,7 @@ class SignalCoordinator:
                 if hasattr(node, "refresh_credential"):
                     node.refresh_credential(credential_id)
 
+    @Slot()
     def on_open_credential_manager(self) -> None:
         """Open the Credential Manager dialog."""
         try:
@@ -772,12 +867,14 @@ class SignalCoordinator:
         except Exception as e:
             logger.error(f"Failed to open Credential Manager: {e}")
 
+    @Slot()
     def on_fleet_dashboard(self) -> None:
         """Open the fleet management dashboard dialog."""
         self._mw._fleet_dashboard_manager.open_dashboard()
 
     # ==================== AI Assistant ====================
 
+    @Slot(dict)
     def on_ai_workflow_ready(self, workflow_data: dict) -> None:
         """
         Handle AI-generated workflow ready for canvas.
@@ -1126,15 +1223,18 @@ class SignalCoordinator:
 
     # ==================== Validation/Navigation ====================
 
+    @Slot()
     def on_validate_workflow(self) -> None:
         """Handle validate workflow action."""
         self._mw.validate_current_workflow()
 
+    @Slot(str)
     def on_validation_issue_clicked(self, location: str) -> None:
         """Handle click on validation issue - navigate to node."""
         if location and location.startswith("node:"):
             self._select_node_by_id(location.split(":", 1)[1])
 
+    @Slot(str)
     def on_navigate_to_node(self, node_id: str) -> None:
         """Navigate to and select a node."""
         self._select_node_by_id(node_id)
@@ -1176,6 +1276,7 @@ class SignalCoordinator:
         except Exception as e:
             logger.exception(f"Could not select node {node_id}: {e}")
 
+    @Slot(str, str, object)
     def on_property_panel_changed(self, node_id: str, prop_name: str, value) -> None:
         """Handle property panel value change."""
         self._mw.set_modified(True)
@@ -1196,6 +1297,7 @@ class SignalCoordinator:
                         )
                     break
 
+    @Slot(dict)
     def on_panel_variables_changed(self, variables: dict) -> None:
         """Handle variables changed in panel."""
         self._mw.set_modified(True)
@@ -1203,6 +1305,7 @@ class SignalCoordinator:
 
     # ==================== Layout and Alignment Actions ====================
 
+    @Slot()
     def on_auto_layout(self) -> None:
         """Automatically arrange all nodes using layered layout algorithm."""
         graph = self._mw.get_graph()
@@ -1225,6 +1328,7 @@ class SignalCoordinator:
             logger.error(f"Auto-layout failed: {e}")
             self._mw.show_status(f"Auto-layout failed: {e}", 3000)
 
+    @Slot()
     def on_layout_selection(self) -> None:
         """Automatically arrange selected nodes."""
         graph = self._mw.get_graph()
@@ -1252,6 +1356,7 @@ class SignalCoordinator:
             logger.error(f"Layout selection failed: {e}")
             self._mw.show_status(f"Layout selection failed: {e}", 3000)
 
+    @Slot(bool)
     def on_toggle_grid_snap(self, checked: bool) -> None:
         """Toggle snap-to-grid mode."""
         try:

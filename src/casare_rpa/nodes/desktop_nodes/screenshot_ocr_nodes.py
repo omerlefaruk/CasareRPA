@@ -11,12 +11,12 @@ Provides nodes for capturing screenshots and extracting text:
 from typing import Any, Dict
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.utils import safe_int
 
 
-@executable_node
+@node(category="desktop")
 class CaptureScreenshotNode(BaseNode):
     """
     Node to capture a screenshot of the screen or a specific region.
@@ -92,7 +92,7 @@ class CaptureScreenshotNode(BaseNode):
         }
 
 
-@executable_node
+@node(category="desktop")
 class CaptureElementImageNode(BaseNode):
     """
     Node to capture an image of a specific desktop element.
@@ -180,7 +180,7 @@ class CaptureElementImageNode(BaseNode):
         }
 
 
-@executable_node
+@node(category="desktop")
 class OCRExtractTextNode(BaseNode):
     """
     Node to extract text from an image using OCR.
@@ -272,7 +272,7 @@ class OCRExtractTextNode(BaseNode):
         }
 
 
-@executable_node
+@node(category="desktop")
 class CompareImagesNode(BaseNode):
     """
     Node to compare two images and return similarity metrics.

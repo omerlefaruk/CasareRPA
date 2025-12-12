@@ -13,8 +13,8 @@ Provides nodes for direct mouse and keyboard input:
 import asyncio
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import DataType, NodeStatus, PortType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
@@ -105,13 +105,13 @@ KEY_PROP = PropertyDef(
 )
 
 
-@node_schema(DURATION_PROP, EASE_PROP, STEPS_PROP)
-@executable_node
+@node(category="desktop")
+@properties(DURATION_PROP, EASE_PROP, STEPS_PROP)
 class MoveMouseNode(DesktopNodeBase):
     """
     Move the mouse cursor to a specific position.
 
-    Config (via @node_schema):
+    Config (via @properties):
         duration: Animation duration in seconds (default: 0.0)
         ease: Easing function (default: "linear")
         steps: Number of interpolation steps (default: 10)
@@ -144,12 +144,12 @@ class MoveMouseNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("x", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("y", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("duration", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("final_x", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("final_y", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("x", DataType.INTEGER)
+        self.add_input_port("y", DataType.INTEGER)
+        self.add_input_port("duration", DataType.FLOAT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("final_x", DataType.INTEGER)
+        self.add_output_port("final_y", DataType.INTEGER)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute mouse movement."""
@@ -187,7 +187,8 @@ class MoveMouseNode(DesktopNodeBase):
         return self.success_result(x=x, y=y, duration=duration, ease=ease)
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     MOUSE_BUTTON_PROP,
     CLICK_TYPE_PROP,
     CLICK_COUNT_PROP,
@@ -196,12 +197,11 @@ class MoveMouseNode(DesktopNodeBase):
     WITH_ALT_PROP,
     CLICK_DELAY_PROP,
 )
-@executable_node
 class MouseClickNode(DesktopNodeBase):
     """
     Perform mouse clicks at a position.
 
-    Config (via @node_schema):
+    Config (via @properties):
         button: Mouse button - left/right/middle (default: "left")
         click_type: Click type - single/double/triple (default: "single")
         click_count: Number of clicks (default: 1)
@@ -237,11 +237,11 @@ class MouseClickNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("x", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("y", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("click_x", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("click_y", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("x", DataType.INTEGER)
+        self.add_input_port("y", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("click_x", DataType.INTEGER)
+        self.add_output_port("click_y", DataType.INTEGER)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute mouse click."""
@@ -304,7 +304,8 @@ class MouseClickNode(DesktopNodeBase):
         )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     KEYS_PROP,
     INTERVAL_PROP,
     WITH_SHIFT_PROP,
@@ -313,12 +314,11 @@ class MouseClickNode(DesktopNodeBase):
     PRESS_ENTER_AFTER_PROP,
     CLEAR_FIRST_PROP,
 )
-@executable_node
 class SendKeysNode(DesktopNodeBase):
     """
     Send keyboard input.
 
-    Config (via @node_schema):
+    Config (via @properties):
         keys: Keys to send (default: "")
         interval: Delay between keystrokes (default: 0.0)
         with_shift: Hold Shift (default: False)
@@ -355,10 +355,10 @@ class SendKeysNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("keys", PortType.INPUT, DataType.STRING)
-        self.add_input_port("interval", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("keys_sent", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("keys", DataType.STRING)
+        self.add_input_port("interval", DataType.FLOAT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("keys_sent", DataType.INTEGER)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute key sending."""
@@ -408,13 +408,13 @@ class SendKeysNode(DesktopNodeBase):
         return self.success_result(keys=keys, interval=interval, modifiers=modifiers)
 
 
-@node_schema(HOTKEY_MODIFIER_PROP, KEY_PROP, KEYS_PROP, WAIT_TIME_PROP)
-@executable_node
+@node(category="desktop")
+@properties(HOTKEY_MODIFIER_PROP, KEY_PROP, KEYS_PROP, WAIT_TIME_PROP)
 class SendHotKeyNode(DesktopNodeBase):
     """
     Send hotkey combinations (e.g., Ctrl+C, Alt+Tab, Enter).
 
-    Config (via @node_schema):
+    Config (via @properties):
         modifier: Modifier key (default: "none")
         key: Main key to press (default: "Enter")
         keys: Custom comma-separated keys (default: "")
@@ -445,9 +445,9 @@ class SendHotKeyNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("keys", PortType.INPUT, DataType.STRING)
-        self.add_input_port("wait_time", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("keys", DataType.STRING)
+        self.add_input_port("wait_time", DataType.FLOAT)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute hotkey combination."""
@@ -487,7 +487,7 @@ class SendHotKeyNode(DesktopNodeBase):
         return self.success_result(keys=keys)
 
 
-@executable_node
+@node(category="desktop")
 class GetMousePositionNode(DesktopNodeBase):
     """
     Get the current mouse cursor position.
@@ -514,8 +514,8 @@ class GetMousePositionNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_output_port("x", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("y", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("x", DataType.INTEGER)
+        self.add_output_port("y", DataType.INTEGER)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Get current mouse position."""
@@ -530,13 +530,13 @@ class GetMousePositionNode(DesktopNodeBase):
         return self.success_result(x=x, y=y)
 
 
-@node_schema(MOUSE_BUTTON_PROP, DURATION_PROP)
-@executable_node
+@node(category="desktop")
+@properties(MOUSE_BUTTON_PROP, DURATION_PROP)
 class DragMouseNode(DesktopNodeBase):
     """
     Drag the mouse from one position to another.
 
-    Config (via @node_schema):
+    Config (via @properties):
         button: Mouse button to hold (default: "left")
         duration: Drag duration in seconds (default: 0.5)
 
@@ -572,12 +572,12 @@ class DragMouseNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("start_x", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("start_y", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("end_x", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("end_y", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("duration", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("start_x", DataType.INTEGER)
+        self.add_input_port("start_y", DataType.INTEGER)
+        self.add_input_port("end_x", DataType.INTEGER)
+        self.add_input_port("end_y", DataType.INTEGER)
+        self.add_input_port("duration", DataType.FLOAT)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute mouse drag."""

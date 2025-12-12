@@ -12,14 +12,15 @@ from typing import Any, Dict
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -56,7 +57,6 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Clear existing value before filling (text inputs only)",
     ),
 )
-@executable_node
 class FormFieldNode(BrowserBaseNode):
     """
     Define a form field for batch filling.

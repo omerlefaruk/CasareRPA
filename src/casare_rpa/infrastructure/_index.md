@@ -19,7 +19,7 @@ Quick reference for infrastructure layer. Framework integrations and external ad
 | `logging/` | Log streaming, cleanup | LogStreamingService, LogCleanupJob |
 | `observability/` | OpenTelemetry integration | Observability, TelemetryProvider |
 | `orchestrator/` | Distributed robot orchestration | OrchestratorClient, OrchestratorConfig |
-| `persistence/` | File system repositories | ProjectStorage, FolderStorage |
+| `persistence/` | File system repositories | ProjectStorage, FolderStorage, JsonUnitOfWork |
 | `queue/` | PostgreSQL job queue | PgQueuerConsumer, PgQueuerProducer, DLQManager |
 | `realtime/` | Supabase Realtime integration | RealtimeClient, SubscriptionManager |
 | `resources/` | External resource managers | LLMResourceManager, GoogleAPIClient |
@@ -40,6 +40,7 @@ Quick reference for infrastructure layer. Framework integrations and external ad
 | `http/unified_http_client.py` | Circuit breaker, retry logic |
 | `security/vault_client.py` | Credential management |
 | `security/rbac.py` | Role-based access control |
+| `persistence/unit_of_work.py` | JsonUnitOfWork - Unit of Work pattern implementation |
 
 ## Entry Points
 
@@ -106,6 +107,7 @@ from casare_rpa.infrastructure.resources import (
 - **Singleton**: Shared resources (HTTP client, credential cache)
 - **Circuit Breaker**: Resilience for external API calls
 - **mTLS**: Mutual TLS for secure robot-orchestrator communication
+- **Unit of Work**: Transactional operations across repositories with domain event publishing
 
 ## Export Counts
 

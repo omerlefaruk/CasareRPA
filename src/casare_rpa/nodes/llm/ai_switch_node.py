@@ -15,7 +15,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
@@ -50,24 +49,24 @@ class AISwitchNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution input
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_exec_input_port("exec_in")
 
         # Data inputs
-        self.add_input_port("question", PortType.INPUT, DataType.STRING)
-        self.add_input_port("options", PortType.INPUT, DataType.LIST)
-        self.add_input_port("context", PortType.INPUT, DataType.ANY)
+        self.add_input_port("question", DataType.STRING)
+        self.add_input_port("options", DataType.LIST)
+        self.add_input_port("context", DataType.ANY)
         self._define_common_input_ports()
 
         # Data outputs
-        self.add_output_port("selected_option", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("reasoning", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("all_scores", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("selected_option", DataType.STRING)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("reasoning", DataType.STRING)
+        self.add_output_port("all_scores", DataType.DICT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
         # Default exec output (fallback)
-        self.add_output_port("exec_default", PortType.EXEC_OUTPUT)
+        self.add_exec_output_port("exec_default")
 
     def _update_dynamic_ports(self, options: List[str]) -> None:
         """Update dynamic exec output ports based on options."""
@@ -85,7 +84,7 @@ class AISwitchNode(LLMBaseNode):
                 not hasattr(self, "_output_ports")
                 or port_name not in self._output_ports
             ):
-                self.add_output_port(port_name, PortType.EXEC_OUTPUT)
+                self.add_exec_output_port(port_name)
 
     def _sanitize_port_name(self, option: str) -> str:
         """Convert option to valid port name."""

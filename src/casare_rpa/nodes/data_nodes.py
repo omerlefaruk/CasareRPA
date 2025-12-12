@@ -17,13 +17,12 @@ from pathlib import Path
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
@@ -46,7 +45,8 @@ from casare_rpa.utils.resilience import retry_operation
 # =============================================================================
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -85,7 +85,6 @@ from casare_rpa.utils.resilience import retry_operation
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
-@executable_node
 class ExtractTextNode(BrowserBaseNode):
     """
     Extract text node - extracts text content from an element.
@@ -93,7 +92,7 @@ class ExtractTextNode(BrowserBaseNode):
     Finds an element and retrieves its text content.
     Extends BrowserBaseNode for shared page/selector/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS or XPath selector
         variable_name: Variable name for result
         timeout: Timeout in milliseconds
@@ -132,7 +131,7 @@ class ExtractTextNode(BrowserBaseNode):
         """Define node ports."""
         self.add_page_input_port()
         self.add_selector_input_port()
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("text", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute text extraction."""
@@ -236,7 +235,8 @@ class ExtractTextNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -268,7 +268,6 @@ class ExtractTextNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
-@executable_node
 class GetAttributeNode(BrowserBaseNode):
     """
     Get attribute node - retrieves an attribute value from an element.
@@ -276,7 +275,7 @@ class GetAttributeNode(BrowserBaseNode):
     Finds an element and gets the specified attribute value.
     Extends BrowserBaseNode for shared page/selector/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS or XPath selector
         attribute: Attribute name to retrieve
         variable_name: Variable name for result
@@ -315,8 +314,8 @@ class GetAttributeNode(BrowserBaseNode):
         """Define node ports."""
         self.add_page_input_port()
         self.add_selector_input_port()
-        self.add_input_port("attribute", PortType.INPUT, DataType.STRING)
-        self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("attribute", DataType.STRING)
+        self.add_output_port("value", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute attribute retrieval."""
@@ -431,7 +430,8 @@ class GetAttributeNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.FILE_PATH,
@@ -508,7 +508,6 @@ class GetAttributeNode(BrowserBaseNode):
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
 )
-@executable_node
 class ScreenshotNode(BrowserBaseNode):
     """
     Screenshot node - captures a screenshot of the page or element.
@@ -516,7 +515,7 @@ class ScreenshotNode(BrowserBaseNode):
     Takes a screenshot and saves it to a file.
     Extends BrowserBaseNode for shared page/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path where screenshot will be saved
         selector: Optional selector for element screenshot
         full_page: Whether to capture full scrollable page
@@ -557,9 +556,9 @@ class ScreenshotNode(BrowserBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_page_input_port()
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("attachment_file", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute screenshot capture."""

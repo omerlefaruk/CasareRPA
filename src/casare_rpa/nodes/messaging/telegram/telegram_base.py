@@ -18,7 +18,6 @@ from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.telegram_client import (
@@ -61,20 +60,16 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
 
     def _define_common_input_ports(self) -> None:
         """Define standard Telegram input ports."""
-        self.add_input_port(
-            "bot_token", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "credential_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("chat_id", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("bot_token", DataType.STRING, required=False)
+        self.add_input_port("credential_name", DataType.STRING, required=False)
+        self.add_input_port("chat_id", DataType.STRING, required=True)
 
     def _define_common_output_ports(self) -> None:
         """Define standard Telegram output ports."""
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("chat_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("message_id", DataType.INTEGER)
+        self.add_output_port("chat_id", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _get_telegram_client(self, context: ExecutionContext) -> TelegramClient:
         """

@@ -12,7 +12,7 @@ from typing import Any
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -62,8 +62,8 @@ def _resolve_list_param(
     return param
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
 
@@ -112,8 +112,8 @@ class CreateListNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
 
@@ -166,8 +166,8 @@ class ListGetItemNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
 
@@ -201,8 +201,8 @@ class ListLengthNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListAppendNode(BaseNode):
     """Node that appends an item to a list."""
 
@@ -249,8 +249,8 @@ class ListAppendNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListContainsNode(BaseNode):
     """Node that checks if a list contains an item."""
 
@@ -303,8 +303,8 @@ class ListContainsNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListSliceNode(BaseNode):
     """Node that gets a slice of a list."""
 
@@ -365,7 +365,8 @@ class ListSliceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "separator",
         PropertyType.STRING,
@@ -374,7 +375,6 @@ class ListSliceNode(BaseNode):
         tooltip="Separator to use when joining items",
     ),
 )
-@executable_node
 class ListJoinNode(BaseNode):
     """Node that joins a list into a string."""
 
@@ -422,7 +422,8 @@ class ListJoinNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "reverse",
         PropertyType.BOOLEAN,
@@ -438,7 +439,6 @@ class ListJoinNode(BaseNode):
         tooltip="Dot-separated path to sort by (for dict items)",
     ),
 )
-@executable_node
 class ListSortNode(BaseNode):
     """Node that sorts a list."""
 
@@ -511,8 +511,8 @@ class ListSortNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListReverseNode(BaseNode):
     """Node that reverses a list."""
 
@@ -547,8 +547,8 @@ class ListReverseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ListUniqueNode(BaseNode):
     """Node that removes duplicates from a list."""
 
@@ -596,7 +596,8 @@ class ListUniqueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "condition",
         PropertyType.CHOICE,
@@ -625,7 +626,6 @@ class ListUniqueNode(BaseNode):
         tooltip="Dot-separated path to compare (for dict items)",
     ),
 )
-@executable_node
 class ListFilterNode(BaseNode):
     """Node that filters a list based on a condition."""
 
@@ -739,7 +739,8 @@ class ListFilterNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "transform",
         PropertyType.CHOICE,
@@ -765,7 +766,6 @@ class ListFilterNode(BaseNode):
         tooltip="Dot-separated path to extract (for dict items)",
     ),
 )
-@executable_node
 class ListMapNode(BaseNode):
     """Node that transforms each item in a list."""
 
@@ -852,7 +852,8 @@ class ListMapNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "operation",
         PropertyType.CHOICE,
@@ -879,7 +880,6 @@ class ListMapNode(BaseNode):
         tooltip="Dot-separated path to values (for dict items)",
     ),
 )
-@executable_node
 class ListReduceNode(BaseNode):
     """Node that reduces a list to a single value."""
 
@@ -994,7 +994,8 @@ class ListReduceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "depth",
         PropertyType.INTEGER,
@@ -1004,7 +1005,6 @@ class ListReduceNode(BaseNode):
         tooltip="How many levels to flatten",
     ),
 )
-@executable_node
 class ListFlattenNode(BaseNode):
     """Node that flattens a nested list."""
 

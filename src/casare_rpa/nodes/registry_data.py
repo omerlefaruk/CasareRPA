@@ -145,6 +145,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "WriteJSONFileNode": "file.structured_data",
     "ZipFilesNode": "file.structured_data",
     "UnzipFilesNode": "file.structured_data",
+    # File system nodes - image operations
+    "ImageConvertNode": "file.image_nodes",
     # Email nodes - send operations
     "SendEmailNode": "email.send_nodes",
     # Email nodes - receive/read operations

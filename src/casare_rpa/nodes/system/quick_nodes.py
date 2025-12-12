@@ -9,7 +9,7 @@ import asyncio
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -19,7 +19,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "hotkey",
         PropertyType.STRING,
@@ -45,12 +46,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Prevent the key from reaching other applications",
     ),
 )
-@executable_node
 class HotkeyWaitNode(BaseNode):
     """
     Wait for a specific hotkey combination.
 
-    Config (via @node_schema):
+    Config (via @properties):
         hotkey: Key combination (e.g., 'ctrl+shift+a') (essential)
         timeout: Max wait time in ms, 0 = forever (default: 0)
         consume_key: Block key from other apps (default: True)
@@ -158,7 +158,8 @@ class HotkeyWaitNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "frequency",
         PropertyType.INTEGER,
@@ -178,12 +179,11 @@ class HotkeyWaitNode(BaseNode):
         tooltip="Beep duration in milliseconds",
     ),
 )
-@executable_node
 class BeepNode(BaseNode):
     """
     Play a simple system beep.
 
-    Config (via @node_schema):
+    Config (via @properties):
         frequency: Beep frequency Hz (default: 440)
         duration: Beep duration ms (default: 200)
 
@@ -268,7 +268,8 @@ class BeepNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -294,12 +295,11 @@ class BeepNode(BaseNode):
         tooltip="Type of clipboard content to monitor",
     ),
 )
-@executable_node
 class ClipboardMonitorNode(BaseNode):
     """
     Monitor clipboard for changes.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Max wait time in ms, 0 = forever (default: 30000)
         trigger_on_change: Trigger on content change (default: True)
         content_type: text/any (default: 'text')

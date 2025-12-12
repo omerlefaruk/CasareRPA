@@ -9,8 +9,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import PortType, DataType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
@@ -118,15 +118,15 @@ class InteractionNodeBase(DesktopNodeBase):
         return "Element"
 
 
-@node_schema(BY_TEXT_PROP)
-@executable_node
+@node(category="desktop")
+@properties(BY_TEXT_PROP)
 class SelectFromDropdownNode(InteractionNodeBase):
     """
     Select an item from a dropdown/combobox.
 
     Supports selection by text (partial or exact match) or by index.
 
-    Config (via @node_schema):
+    Config (via @properties):
         by_text: Select by text vs index (default: True)
 
     Inputs:
@@ -157,9 +157,9 @@ class SelectFromDropdownNode(InteractionNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_input_port("value", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY)
+        self.add_input_port("value", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - select from dropdown."""
@@ -183,15 +183,15 @@ class SelectFromDropdownNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(CHECK_PROP)
-@executable_node
+@node(category="desktop")
+@properties(CHECK_PROP)
 class CheckCheckboxNode(InteractionNodeBase):
     """
     Check or uncheck a checkbox.
 
     Uses TogglePattern for reliable checkbox interaction.
 
-    Config (via @node_schema):
+    Config (via @properties):
         check: Check vs uncheck (default: True)
 
     Inputs:
@@ -221,8 +221,8 @@ class CheckCheckboxNode(InteractionNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - check or uncheck checkbox."""
@@ -244,7 +244,8 @@ class CheckCheckboxNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@executable_node
+@node(category="desktop")
+@properties()
 class SelectRadioButtonNode(InteractionNodeBase):
     """
     Select a radio button.
@@ -278,8 +279,8 @@ class SelectRadioButtonNode(InteractionNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - select radio button."""
@@ -298,15 +299,15 @@ class SelectRadioButtonNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(TAB_NAME_PROP, TAB_INDEX_PROP)
-@executable_node
+@node(category="desktop")
+@properties(TAB_NAME_PROP, TAB_INDEX_PROP)
 class SelectTabNode(InteractionNodeBase):
     """
     Select a tab in a tab control.
 
     Supports selection by tab name or index.
 
-    Config (via @node_schema):
+    Config (via @properties):
         tab_name: Name of the tab to select (default: "")
         tab_index: Index of the tab (-1 to use name) (default: -1)
 
@@ -339,10 +340,10 @@ class SelectTabNode(InteractionNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("tab_control", PortType.INPUT, DataType.ANY)
-        self.add_input_port("tab_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("tab_index", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("tab_control", DataType.ANY)
+        self.add_input_port("tab_name", DataType.STRING)
+        self.add_input_port("tab_index", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - select tab."""
@@ -373,15 +374,15 @@ class SelectTabNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(EXPAND_PROP)
-@executable_node
+@node(category="desktop")
+@properties(EXPAND_PROP)
 class ExpandTreeItemNode(InteractionNodeBase):
     """
     Expand or collapse a tree item.
 
     Uses ExpandCollapsePattern for reliable tree item manipulation.
 
-    Config (via @node_schema):
+    Config (via @properties):
         expand: Expand vs collapse (default: True)
 
     Inputs:
@@ -411,8 +412,8 @@ class ExpandTreeItemNode(InteractionNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - expand or collapse tree item."""
@@ -434,15 +435,15 @@ class ExpandTreeItemNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(SCROLL_DIRECTION_PROP, SCROLL_AMOUNT_PROP)
-@executable_node
+@node(category="desktop")
+@properties(SCROLL_DIRECTION_PROP, SCROLL_AMOUNT_PROP)
 class ScrollElementNode(InteractionNodeBase):
     """
     Scroll an element (scrollbar, list, window, etc.).
 
     Supports vertical and horizontal scrolling with configurable amount.
 
-    Config (via @node_schema):
+    Config (via @properties):
         direction: Scroll direction - up/down/left/right (default: "down")
         amount: Scroll amount 0.0 to 1.0 (default: 0.5)
 
@@ -470,8 +471,8 @@ class ScrollElementNode(InteractionNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - scroll element."""

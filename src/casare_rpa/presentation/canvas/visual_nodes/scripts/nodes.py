@@ -42,7 +42,7 @@ class VisualRunPythonScriptNode(VisualNode):
 class VisualRunPythonFileNode(VisualNode):
     """Visual representation of RunPythonFileNode.
 
-    Widgets are auto-generated from RunPythonFileNode's @node_schema decorator.
+    Widgets are auto-generated from RunPythonFileNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.scripts"
@@ -66,7 +66,7 @@ class VisualRunPythonFileNode(VisualNode):
 class VisualEvalExpressionNode(VisualNode):
     """Visual representation of EvalExpressionNode.
 
-    Widgets auto-generated from EvalExpressionNode's @node_schema decorator.
+    Widgets auto-generated from EvalExpressionNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.scripts"
@@ -88,7 +88,7 @@ class VisualEvalExpressionNode(VisualNode):
 class VisualRunBatchScriptNode(VisualNode):
     """Visual representation of RunBatchScriptNode.
 
-    Widgets are auto-generated from RunBatchScriptNode's @node_schema decorator.
+    Widgets are auto-generated from RunBatchScriptNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.scripts"

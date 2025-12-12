@@ -11,7 +11,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
@@ -31,7 +31,8 @@ except ImportError:
 # ============================================================================
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.FILE_PATH,
@@ -64,7 +65,6 @@ except ImportError:
         tooltip="Create new file if not found",
     ),
 )
-@executable_node
 class ExcelOpenNode(BaseNode):
     """
     Node to open an Excel workbook.
@@ -172,7 +172,8 @@ class ExcelOpenNode(BaseNode):
             raise
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     PropertyDef(
         "sheet",
         PropertyType.STRING,
@@ -193,7 +194,6 @@ class ExcelOpenNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class ExcelReadCellNode(BaseNode):
     """
     Node to read a cell value from Excel.
@@ -273,7 +273,8 @@ class ExcelReadCellNode(BaseNode):
             raise
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     PropertyDef(
         "sheet",
         PropertyType.STRING,
@@ -302,7 +303,6 @@ class ExcelReadCellNode(BaseNode):
         tooltip="Value to write to the cell",
     ),
 )
-@executable_node
 class ExcelWriteCellNode(BaseNode):
     """
     Node to write a value to an Excel cell.
@@ -382,7 +382,8 @@ class ExcelWriteCellNode(BaseNode):
             raise
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     PropertyDef(
         "sheet",
         PropertyType.STRING,
@@ -403,7 +404,6 @@ class ExcelWriteCellNode(BaseNode):
         essential=True,
     ),
 )
-@executable_node
 class ExcelGetRangeNode(BaseNode):
     """
     Node to read a range of cells from Excel.
@@ -501,7 +501,8 @@ class ExcelGetRangeNode(BaseNode):
             raise
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     PropertyDef(
         "save",
         PropertyType.BOOLEAN,
@@ -518,7 +519,6 @@ class ExcelGetRangeNode(BaseNode):
         tooltip="Quit the Excel application after closing workbook",
     ),
 )
-@executable_node
 class ExcelCloseNode(BaseNode):
     """
     Node to close an Excel workbook.
@@ -592,7 +592,7 @@ class ExcelCloseNode(BaseNode):
 # ============================================================================
 
 
-@executable_node
+@node(category="desktop")
 class WordOpenNode(BaseNode):
     """
     Node to open a Word document.
@@ -680,7 +680,7 @@ class WordOpenNode(BaseNode):
             raise
 
 
-@executable_node
+@node(category="desktop")
 class WordGetTextNode(BaseNode):
     """
     Node to get text content from a Word document.
@@ -741,7 +741,7 @@ class WordGetTextNode(BaseNode):
             raise
 
 
-@executable_node
+@node(category="desktop")
 class WordReplaceTextNode(BaseNode):
     """
     Node to find and replace text in a Word document.
@@ -837,7 +837,7 @@ class WordReplaceTextNode(BaseNode):
             raise
 
 
-@executable_node
+@node(category="desktop")
 class WordCloseNode(BaseNode):
     """
     Node to close a Word document.
@@ -911,7 +911,7 @@ class WordCloseNode(BaseNode):
 # ============================================================================
 
 
-@executable_node
+@node(category="desktop")
 class OutlookSendEmailNode(BaseNode):
     """
     Node to send an email via Outlook.
@@ -1027,7 +1027,7 @@ class OutlookSendEmailNode(BaseNode):
             raise
 
 
-@executable_node
+@node(category="desktop")
 class OutlookReadEmailsNode(BaseNode):
     """
     Node to read emails from Outlook inbox.
@@ -1129,7 +1129,7 @@ class OutlookReadEmailsNode(BaseNode):
             raise
 
 
-@executable_node
+@node(category="desktop")
 class OutlookGetInboxCountNode(BaseNode):
     """
     Node to get the count of emails in Outlook inbox.

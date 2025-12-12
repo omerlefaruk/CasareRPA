@@ -10,12 +10,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import GoogleSheetsClient
@@ -86,7 +85,8 @@ SHEETS_VALUE_INPUT_OPTION = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -112,7 +112,6 @@ SHEETS_VALUE_INPUT_OPTION = PropertyDef(
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
-@executable_node
 class SheetsWriteCellNode(SheetsBaseNode):
     """
     Write a single cell value to Google Sheets.
@@ -146,18 +145,14 @@ class SheetsWriteCellNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("cell", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=True)
-        self.add_input_port(
-            "value_input_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("cell", DataType.STRING, required=True)
+        self.add_input_port("value", DataType.ANY, required=True)
+        self.add_input_port("value_input_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("updated_cells", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("updated_range", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("updated_cells", DataType.INTEGER)
+        self.add_output_port("updated_range", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -219,7 +214,8 @@ class SheetsWriteCellNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -244,7 +240,6 @@ class SheetsWriteCellNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
-@executable_node
 class SheetsWriteRangeNode(SheetsBaseNode):
     """
     Write a range of values to Google Sheets.
@@ -279,17 +274,15 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("range", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=True)
-        self.add_input_port(
-            "value_input_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("range", DataType.STRING, required=True)
+        self.add_input_port("values", DataType.LIST, required=True)
+        self.add_input_port("value_input_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("updated_cells", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("updated_rows", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("updated_columns", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("updated_range", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("updated_cells", DataType.INTEGER)
+        self.add_output_port("updated_rows", DataType.INTEGER)
+        self.add_output_port("updated_columns", DataType.INTEGER)
+        self.add_output_port("updated_range", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -364,7 +357,8 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -381,7 +375,6 @@ class SheetsWriteRangeNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
-@executable_node
 class SheetsAppendRowNode(SheetsBaseNode):
     """
     Append a row to the end of data in a Google Sheet.
@@ -415,18 +408,14 @@ class SheetsAppendRowNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=True)
-        self.add_input_port(
-            "value_input_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("values", DataType.LIST, required=True)
+        self.add_input_port("value_input_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("updated_cells", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("updated_range", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("table_range", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("updated_cells", DataType.INTEGER)
+        self.add_output_port("updated_range", DataType.STRING)
+        self.add_output_port("table_range", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -497,7 +486,8 @@ class SheetsAppendRowNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -532,7 +522,6 @@ class SheetsAppendRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
-@executable_node
 class SheetsUpdateRowNode(SheetsBaseNode):
     """
     Update an existing row in Google Sheets.
@@ -567,21 +556,15 @@ class SheetsUpdateRowNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("row_num", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=True)
-        self.add_input_port(
-            "start_col", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "value_input_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("row_num", DataType.INTEGER, required=True)
+        self.add_input_port("values", DataType.LIST, required=True)
+        self.add_input_port("start_col", DataType.STRING, required=False)
+        self.add_input_port("value_input_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("updated_cells", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("updated_range", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("updated_cells", DataType.INTEGER)
+        self.add_output_port("updated_range", DataType.STRING)
 
     async def _execute_sheets(
         self,
@@ -660,7 +643,8 @@ class SheetsUpdateRowNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -687,7 +671,6 @@ class SheetsUpdateRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
-@executable_node
 class SheetsInsertRowNode(SheetsBaseNode):
     """
     Insert a new row at a specific position in Google Sheets.
@@ -723,17 +706,13 @@ class SheetsInsertRowNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("row_num", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("values", PortType.INPUT, DataType.LIST, required=False)
-        self.add_input_port(
-            "value_input_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("row_num", DataType.INTEGER, required=True)
+        self.add_input_port("values", DataType.LIST, required=False)
+        self.add_input_port("value_input_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("inserted_row", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("inserted_row", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -822,7 +801,8 @@ class SheetsInsertRowNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -848,7 +828,6 @@ class SheetsInsertRowNode(SheetsBaseNode):
         min_value=1,
     ),
 )
-@executable_node
 class SheetsDeleteRowNode(SheetsBaseNode):
     """
     Delete one or more rows from Google Sheets.
@@ -882,16 +861,12 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("row_num", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port(
-            "num_rows", PortType.INPUT, DataType.INTEGER, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("row_num", DataType.INTEGER, required=True)
+        self.add_input_port("num_rows", DataType.INTEGER, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("deleted_rows", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("deleted_rows", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -968,7 +943,8 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -983,7 +959,6 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         tooltip="Range in A1 notation to clear (e.g., 'Sheet1!A1:Z1000')",
     ),
 )
-@executable_node
 class SheetsClearRangeNode(SheetsBaseNode):
     """
     Clear values from a range in Google Sheets.
@@ -1017,10 +992,10 @@ class SheetsClearRangeNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("range", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("range", DataType.STRING, required=True)
 
         self._define_common_output_ports()
-        self.add_output_port("cleared_range", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("cleared_range", DataType.STRING)
 
     async def _execute_sheets(
         self,

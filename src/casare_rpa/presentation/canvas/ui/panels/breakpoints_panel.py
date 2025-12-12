@@ -14,7 +14,7 @@ Features:
 
 from typing import Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -369,6 +369,7 @@ class BreakpointsPanel(QDockWidget):
         self._btn_disable_all.setEnabled(has_items)
         self._btn_clear_all.setEnabled(has_items)
 
+    @Slot(QTreeWidgetItem, int)
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item click."""
         node_id = item.data(0, Qt.ItemDataRole.UserRole)
@@ -381,6 +382,7 @@ class BreakpointsPanel(QDockWidget):
             self._toggle_breakpoint_enabled(node_id, enabled)
             self.breakpoint_toggled.emit(node_id, enabled)
 
+    @Slot(QTreeWidgetItem, int)
     def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle item double-click (navigate to node or edit)."""
         node_id = item.data(0, Qt.ItemDataRole.UserRole)
@@ -392,6 +394,7 @@ class BreakpointsPanel(QDockWidget):
         else:  # Other columns - navigate
             self.navigate_to_node.emit(node_id)
 
+    @Slot(object)
     def _on_context_menu(self, position) -> None:
         """Show context menu for breakpoint item."""
         item = self._tree.itemAt(position) if self._tree else None
@@ -401,6 +404,15 @@ class BreakpointsPanel(QDockWidget):
         node_id = item.data(0, Qt.ItemDataRole.UserRole)
         if not node_id:
             return
+
+        # Store context data for slot methods
+        self._context_node_id = node_id
+        bp = (
+            self._debug_controller.get_breakpoint(node_id)
+            if self._debug_controller
+            else None
+        )
+        self._context_bp_enabled = bp.enabled if bp else False
 
         menu = QMenu(self)
         menu.setStyleSheet(f"""
@@ -428,38 +440,57 @@ class BreakpointsPanel(QDockWidget):
 
         # Go to Node
         action_goto = QAction("Go to Node", menu)
-        action_goto.triggered.connect(lambda: self.navigate_to_node.emit(node_id))
+        action_goto.triggered.connect(self._on_context_goto_node)
         menu.addAction(action_goto)
 
         # Edit Condition
         action_edit = QAction("Edit Breakpoint...", menu)
-        action_edit.triggered.connect(lambda: self.edit_breakpoint.emit(node_id))
+        action_edit.triggered.connect(self._on_context_edit_breakpoint)
         menu.addAction(action_edit)
 
         menu.addSeparator()
 
         # Enable/Disable
-        bp = (
-            self._debug_controller.get_breakpoint(node_id)
-            if self._debug_controller
-            else None
-        )
         if bp:
             enable_text = "Disable" if bp.enabled else "Enable"
             action_toggle = QAction(f"{enable_text} Breakpoint", menu)
-            action_toggle.triggered.connect(
-                lambda: self._toggle_breakpoint_enabled(node_id, not bp.enabled)
-            )
+            action_toggle.triggered.connect(self._on_context_toggle_breakpoint)
             menu.addAction(action_toggle)
 
         menu.addSeparator()
 
         # Delete
         action_delete = QAction("Delete Breakpoint", menu)
-        action_delete.triggered.connect(lambda: self._delete_breakpoint(node_id))
+        action_delete.triggered.connect(self._on_context_delete_breakpoint)
         menu.addAction(action_delete)
 
         menu.exec(self._tree.mapToGlobal(position))
+
+    @Slot()
+    def _on_context_goto_node(self) -> None:
+        """Navigate to node from context menu."""
+        if hasattr(self, "_context_node_id") and self._context_node_id:
+            self.navigate_to_node.emit(self._context_node_id)
+
+    @Slot()
+    def _on_context_edit_breakpoint(self) -> None:
+        """Edit breakpoint from context menu."""
+        if hasattr(self, "_context_node_id") and self._context_node_id:
+            self.edit_breakpoint.emit(self._context_node_id)
+
+    @Slot()
+    def _on_context_toggle_breakpoint(self) -> None:
+        """Toggle breakpoint from context menu."""
+        if hasattr(self, "_context_node_id") and self._context_node_id:
+            self._toggle_breakpoint_enabled(
+                self._context_node_id, not self._context_bp_enabled
+            )
+
+    @Slot()
+    def _on_context_delete_breakpoint(self) -> None:
+        """Delete breakpoint from context menu."""
+        if hasattr(self, "_context_node_id") and self._context_node_id:
+            self._delete_breakpoint(self._context_node_id)
 
     def _toggle_breakpoint_enabled(self, node_id: str, enabled: bool) -> None:
         """Toggle enabled state of a breakpoint."""
@@ -480,6 +511,7 @@ class BreakpointsPanel(QDockWidget):
         self._debug_controller.remove_breakpoint(node_id)
         # refresh_breakpoints will be called via signal
 
+    @Slot()
     def _on_enable_all(self) -> None:
         """Enable all breakpoints."""
         if not self._debug_controller:
@@ -491,6 +523,7 @@ class BreakpointsPanel(QDockWidget):
         self.refresh_breakpoints()
         logger.debug("All breakpoints enabled")
 
+    @Slot()
     def _on_disable_all(self) -> None:
         """Disable all breakpoints."""
         if not self._debug_controller:
@@ -502,6 +535,7 @@ class BreakpointsPanel(QDockWidget):
         self.refresh_breakpoints()
         logger.debug("All breakpoints disabled")
 
+    @Slot()
     def _on_clear_all(self) -> None:
         """Clear all breakpoints."""
         if not self._debug_controller:
@@ -511,10 +545,12 @@ class BreakpointsPanel(QDockWidget):
         # refresh_breakpoints will be called via signal
         logger.info(f"Cleared {count} breakpoints")
 
+    @Slot(str)
     def _on_breakpoint_added(self, node_id: str) -> None:
         """Handle breakpoint added signal."""
         self.refresh_breakpoints()
 
+    @Slot(str)
     def _on_breakpoint_removed(self, node_id: str) -> None:
         """Handle breakpoint removed signal."""
         self.refresh_breakpoints()

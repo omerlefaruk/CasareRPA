@@ -15,13 +15,12 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
@@ -46,7 +45,8 @@ from casare_rpa.utils.resilience import retry_operation
 # =============================================================================
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -134,7 +134,6 @@ from casare_rpa.utils.resilience import retry_operation
     ),
     BROWSER_ANCHOR_CONFIG,
 )
-@executable_node
 class ClickElementNode(BrowserBaseNode):
     """
     Click element node - clicks on a page element.
@@ -142,7 +141,7 @@ class ClickElementNode(BrowserBaseNode):
     Finds an element by selector and performs a click action.
     Extends BrowserBaseNode for shared page/selector/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS or XPath selector
         timeout: Timeout in milliseconds (default: 30000)
         button: Mouse button (left, right, middle)
@@ -344,7 +343,8 @@ class ClickElementNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -419,7 +419,6 @@ class ClickElementNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
-@executable_node
 class TypeTextNode(BrowserBaseNode):
     """
     Type text node - types text into an input field.
@@ -427,7 +426,7 @@ class TypeTextNode(BrowserBaseNode):
     Finds an input element and types the specified text.
     Extends BrowserBaseNode for shared page/selector/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS or XPath selector
         text: Text to type
         delay: Delay between keystrokes in ms
@@ -472,7 +471,7 @@ class TypeTextNode(BrowserBaseNode):
         """Define node ports."""
         self.add_page_passthrough_ports()
         self.add_selector_input_port()
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute text typing."""
@@ -637,7 +636,8 @@ class TypeTextNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -676,7 +676,6 @@ class TypeTextNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
-@executable_node
 class SelectDropdownNode(BrowserBaseNode):
     """
     Select dropdown node - selects an option from a dropdown.
@@ -684,7 +683,7 @@ class SelectDropdownNode(BrowserBaseNode):
     Finds a select element and chooses an option by value, label, or index.
     Extends BrowserBaseNode for shared page/selector/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS or XPath selector
         value: Value, label, or index to select
         timeout: Timeout in milliseconds
@@ -725,7 +724,7 @@ class SelectDropdownNode(BrowserBaseNode):
         """Define node ports."""
         self.add_page_passthrough_ports()
         self.add_selector_input_port()
-        self.add_input_port("value", PortType.INPUT, DataType.STRING)
+        self.add_input_port("value", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute dropdown selection."""
@@ -821,7 +820,8 @@ class SelectDropdownNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "image_template",
         PropertyType.STRING,
@@ -877,7 +877,6 @@ class SelectDropdownNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
-@executable_node
 class ImageClickNode(BrowserBaseNode):
     """
     Image click node - clicks at a location found by image/template matching.
@@ -886,7 +885,7 @@ class ImageClickNode(BrowserBaseNode):
     at the center of the matched region. Useful when selectors are unreliable
     or for visual elements without proper DOM structure.
 
-    Config (via @node_schema):
+    Config (via @properties):
         image_template: Base64-encoded image or healing context reference
         similarity_threshold: Minimum match similarity (0.0-1.0)
         button: Mouse button (left, right, middle)
@@ -1099,7 +1098,8 @@ class ImageClickNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "key",
         PropertyType.STRING,
@@ -1122,7 +1122,6 @@ class ImageClickNode(BrowserBaseNode):
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
 )
-@executable_node
 class PressKeyNode(BrowserBaseNode):
     """
     Press key node - presses a keyboard key on the browser page.
@@ -1131,7 +1130,7 @@ class PressKeyNode(BrowserBaseNode):
     Useful for pressing keys like Escape to dismiss modals, Enter to submit,
     Tab to navigate, or any special keys.
 
-    Config (via @node_schema):
+    Config (via @properties):
         key: Key to press (Enter, Escape, Tab, F1-F12, ArrowUp/Down/Left/Right, etc.)
         delay: Delay between keydown and keyup in ms
         timeout: Operation timeout in milliseconds

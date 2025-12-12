@@ -11,18 +11,18 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "description",
         PropertyType.STRING,
@@ -68,7 +68,6 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Fail if selector matches multiple elements",
     ),
 )
-@executable_node
 class SmartSelectorNode(BrowserBaseNode):
     """
     AI-powered selector generation from natural language.
@@ -105,18 +104,16 @@ class SmartSelectorNode(BrowserBaseNode):
         """Define node ports."""
         # Input ports
         self.add_page_input_port(required=False)
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("hints", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
+        self.add_input_port("hints", DataType.STRING, required=False)
 
         # Output ports
-        self.add_output_port("selector", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("selector_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("element_description", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("alternatives", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("is_unique", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("selector", DataType.STRING)
+        self.add_output_port("selector_type", DataType.STRING)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("element_description", DataType.STRING)
+        self.add_output_port("alternatives", DataType.LIST)
+        self.add_output_port("is_unique", DataType.BOOLEAN)
         self.add_page_output_port()
 
     async def execute(self, context: Any) -> ExecutionResult:
@@ -290,7 +287,8 @@ class SmartSelectorNode(BrowserBaseNode):
             )
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "description",
         PropertyType.STRING,
@@ -316,7 +314,6 @@ class SmartSelectorNode(BrowserBaseNode):
         tooltip="LLM model for selector generation",
     ),
 )
-@executable_node
 class SmartSelectorOptionsNode(BrowserBaseNode):
     """
     Generate multiple selector options for user selection.
@@ -347,12 +344,10 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_page_input_port(required=False)
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("description", DataType.STRING, required=False)
 
-        self.add_output_port("options", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("best_selector", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("options", DataType.LIST)
+        self.add_output_port("best_selector", DataType.STRING)
         self.add_page_output_port()
 
     async def execute(self, context: Any) -> ExecutionResult:
@@ -421,7 +416,8 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
             return self.error_result(str(e))
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "original_selector",
         PropertyType.STRING,
@@ -452,7 +448,6 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
         tooltip="LLM model for selector refinement",
     ),
 )
-@executable_node
 class RefineSelectorNode(BrowserBaseNode):
     """
     Refine a problematic selector using AI.
@@ -486,17 +481,13 @@ class RefineSelectorNode(BrowserBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_page_input_port(required=False)
-        self.add_input_port(
-            "original_selector", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("original_selector", DataType.STRING, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
 
-        self.add_output_port("selector", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("selector_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("is_unique", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("selector", DataType.STRING)
+        self.add_output_port("selector_type", DataType.STRING)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("is_unique", DataType.BOOLEAN)
         self.add_page_output_port()
 
     async def execute(self, context: Any) -> ExecutionResult:

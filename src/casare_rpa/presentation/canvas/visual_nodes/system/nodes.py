@@ -124,7 +124,7 @@ class VisualClipboardClearNode(VisualNode):
 class VisualMessageBoxNode(VisualNode):
     """Visual representation of MessageBoxNode.
 
-    Widgets auto-generated from MessageBoxNode's @node_schema decorator.
+    Widgets auto-generated from MessageBoxNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -133,7 +133,7 @@ class VisualMessageBoxNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on MessageBoxNode
+        # Widgets auto-generated from @properties on MessageBoxNode
 
     def get_node_class(self) -> type:
         return MessageBoxNode
@@ -149,7 +149,7 @@ class VisualMessageBoxNode(VisualNode):
 class VisualInputDialogNode(VisualNode):
     """Visual representation of InputDialogNode.
 
-    Widgets auto-generated from InputDialogNode's @node_schema decorator.
+    Widgets auto-generated from InputDialogNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -158,7 +158,7 @@ class VisualInputDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on InputDialogNode
+        # Widgets auto-generated from @properties on InputDialogNode
 
     def get_node_class(self) -> type:
         return InputDialogNode
@@ -174,7 +174,7 @@ class VisualInputDialogNode(VisualNode):
 class VisualTooltipNode(VisualNode):
     """Visual representation of TooltipNode.
 
-    Widgets auto-generated from TooltipNode's @node_schema decorator.
+    Widgets auto-generated from TooltipNode's @properties decorator.
     Message property is essential (shows widget directly on node).
     """
 
@@ -184,7 +184,7 @@ class VisualTooltipNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on TooltipNode
+        # Widgets auto-generated from @properties on TooltipNode
 
     def get_node_class(self) -> type:
         return TooltipNode
@@ -199,7 +199,7 @@ class VisualTooltipNode(VisualNode):
 class VisualSystemNotificationNode(VisualNode):
     """Visual representation of SystemNotificationNode.
 
-    Widgets auto-generated from SystemNotificationNode's @node_schema decorator.
+    Widgets auto-generated from SystemNotificationNode's @properties decorator.
     Shows Windows system toast notifications.
     """
 
@@ -209,7 +209,7 @@ class VisualSystemNotificationNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on SystemNotificationNode
+        # Widgets auto-generated from @properties on SystemNotificationNode
 
     def get_node_class(self) -> type:
         return SystemNotificationNode
@@ -227,7 +227,7 @@ class VisualConfirmDialogNode(VisualNode):
     """Visual representation of ConfirmDialogNode.
 
     Yes/No confirmation dialog with customizable buttons.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -236,7 +236,7 @@ class VisualConfirmDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return ConfirmDialogNode
@@ -253,7 +253,7 @@ class VisualProgressDialogNode(VisualNode):
     """Visual representation of ProgressDialogNode.
 
     Shows progress bar during long operations.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -262,7 +262,7 @@ class VisualProgressDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return ProgressDialogNode
@@ -278,7 +278,7 @@ class VisualFilePickerDialogNode(VisualNode):
     """Visual representation of FilePickerDialogNode.
 
     File selection dialog with filter and multi-select support.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -287,7 +287,7 @@ class VisualFilePickerDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return FilePickerDialogNode
@@ -303,7 +303,7 @@ class VisualFolderPickerDialogNode(VisualNode):
     """Visual representation of FolderPickerDialogNode.
 
     Folder selection dialog.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -312,7 +312,7 @@ class VisualFolderPickerDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return FolderPickerDialogNode
@@ -328,7 +328,7 @@ class VisualColorPickerDialogNode(VisualNode):
     """Visual representation of ColorPickerDialogNode.
 
     Color selection dialog with optional alpha channel.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -337,7 +337,7 @@ class VisualColorPickerDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return ColorPickerDialogNode
@@ -354,7 +354,7 @@ class VisualDateTimePickerDialogNode(VisualNode):
     """Visual representation of DateTimePickerDialogNode.
 
     Date/time selection dialog with multiple modes.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -363,7 +363,7 @@ class VisualDateTimePickerDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return DateTimePickerDialogNode
@@ -380,7 +380,7 @@ class VisualSnackbarNode(VisualNode):
     """Visual representation of SnackbarNode.
 
     Material-style bottom notification bar.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -389,7 +389,7 @@ class VisualSnackbarNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return SnackbarNode
@@ -406,7 +406,7 @@ class VisualBalloonTipNode(VisualNode):
     """Visual representation of BalloonTipNode.
 
     Balloon tooltip anchored to screen position.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -415,7 +415,7 @@ class VisualBalloonTipNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema
+        # Widgets auto-generated from @properties
 
     def get_node_class(self) -> type:
         return BalloonTipNode
@@ -435,7 +435,7 @@ class VisualBalloonTipNode(VisualNode):
 class VisualRunCommandNode(VisualNode):
     """Visual representation of RunCommandNode.
 
-    Widgets auto-generated from RunCommandNode's @node_schema decorator.
+    Widgets auto-generated from RunCommandNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -444,7 +444,7 @@ class VisualRunCommandNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on RunCommandNode
+        # Widgets auto-generated from @properties on RunCommandNode
 
     def get_node_class(self) -> type:
         return RunCommandNode
@@ -463,7 +463,7 @@ class VisualRunCommandNode(VisualNode):
 class VisualRunPowerShellNode(VisualNode):
     """Visual representation of RunPowerShellNode.
 
-    Widgets auto-generated from RunPowerShellNode's @node_schema decorator.
+    Widgets auto-generated from RunPowerShellNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -472,7 +472,7 @@ class VisualRunPowerShellNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on RunPowerShellNode
+        # Widgets auto-generated from @properties on RunPowerShellNode
 
     def get_node_class(self) -> type:
         return RunPowerShellNode
@@ -550,7 +550,7 @@ class VisualStopServiceNode(VisualNode):
 class VisualRestartServiceNode(VisualNode):
     """Visual representation of RestartServiceNode.
 
-    Widgets auto-generated from RestartServiceNode's @node_schema decorator.
+    Widgets auto-generated from RestartServiceNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -559,7 +559,7 @@ class VisualRestartServiceNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on RestartServiceNode
+        # Widgets auto-generated from @properties on RestartServiceNode
 
     def get_node_class(self) -> type:
         return RestartServiceNode
@@ -575,7 +575,7 @@ class VisualRestartServiceNode(VisualNode):
 class VisualListServicesNode(VisualNode):
     """Visual representation of ListServicesNode.
 
-    Widgets auto-generated from ListServicesNode's @node_schema decorator.
+    Widgets auto-generated from ListServicesNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -584,7 +584,7 @@ class VisualListServicesNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Widgets auto-generated from @node_schema on ListServicesNode
+        # Widgets auto-generated from @properties on ListServicesNode
 
     def get_node_class(self) -> type:
         return ListServicesNode
@@ -605,7 +605,7 @@ class VisualListPickerDialogNode(VisualNode):
     """Visual representation of ListPickerDialogNode.
 
     Single/multi-select list picker dialog.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -627,7 +627,7 @@ class VisualMultilineInputDialogNode(VisualNode):
     """Visual representation of MultilineInputDialogNode.
 
     Multi-line text input dialog.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -649,7 +649,7 @@ class VisualCredentialDialogNode(VisualNode):
     """Visual representation of CredentialDialogNode.
 
     Username/password credential input dialog.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -672,7 +672,7 @@ class VisualFormDialogNode(VisualNode):
     """Visual representation of FormDialogNode.
 
     Custom form dialog with dynamic fields.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -694,7 +694,7 @@ class VisualImagePreviewDialogNode(VisualNode):
     """Visual representation of ImagePreviewDialogNode.
 
     Image preview with zoom support.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -716,7 +716,7 @@ class VisualTableDialogNode(VisualNode):
     """Visual representation of TableDialogNode.
 
     Tabular data display dialog with optional row selection.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -739,7 +739,7 @@ class VisualWizardDialogNode(VisualNode):
     """Visual representation of WizardDialogNode.
 
     Multi-step wizard dialog.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -763,7 +763,7 @@ class VisualSplashScreenNode(VisualNode):
     """Visual representation of SplashScreenNode.
 
     Splash screen with optional progress.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -784,7 +784,7 @@ class VisualAudioAlertNode(VisualNode):
     """Visual representation of AudioAlertNode.
 
     Play audio file or system beep.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -810,7 +810,7 @@ class VisualScreenRegionPickerNode(VisualNode):
     """Visual representation of ScreenRegionPickerNode.
 
     Interactive screen region selection.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -834,7 +834,7 @@ class VisualVolumeControlNode(VisualNode):
     """Visual representation of VolumeControlNode.
 
     Get/set system volume.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -857,7 +857,7 @@ class VisualProcessListNode(VisualNode):
     """Visual representation of ProcessListNode.
 
     List running processes.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -879,7 +879,7 @@ class VisualProcessKillNode(VisualNode):
     """Visual representation of ProcessKillNode.
 
     Kill a process by PID or name.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -901,7 +901,7 @@ class VisualEnvironmentVariableNode(VisualNode):
     """Visual representation of EnvironmentVariableNode.
 
     Get/set environment variables.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -925,7 +925,7 @@ class VisualSystemInfoNode(VisualNode):
     """Visual representation of SystemInfoNode.
 
     Get system information.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -954,7 +954,7 @@ class VisualHotkeyWaitNode(VisualNode):
     """Visual representation of HotkeyWaitNode.
 
     Wait for a specific hotkey combination.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -976,7 +976,7 @@ class VisualBeepNode(VisualNode):
     """Visual representation of BeepNode.
 
     Simple system beep.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -998,7 +998,7 @@ class VisualClipboardMonitorNode(VisualNode):
     """Visual representation of ClipboardMonitorNode.
 
     Monitor clipboard for changes.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1025,7 +1025,7 @@ class VisualFileWatcherNode(VisualNode):
     """Visual representation of FileWatcherNode.
 
     Monitor file/folder for changes.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1048,7 +1048,7 @@ class VisualQRCodeNode(VisualNode):
     """Visual representation of QRCodeNode.
 
     Generate or read QR codes.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1070,7 +1070,7 @@ class VisualBase64Node(VisualNode):
     """Visual representation of Base64Node.
 
     Encode/decode base64 strings.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1092,7 +1092,7 @@ class VisualUUIDGeneratorNode(VisualNode):
     """Visual representation of UUIDGeneratorNode.
 
     Generate UUIDs.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1114,7 +1114,7 @@ class VisualAssertSystemNode(VisualNode):
     """Visual representation of AssertSystemNode.
 
     Validate conditions and optionally fail workflow.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1137,7 +1137,7 @@ class VisualLogToFileNode(VisualNode):
     """Visual representation of LogToFileNode.
 
     Write to custom log file.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1164,7 +1164,7 @@ class VisualTextToSpeechNode(VisualNode):
     """Visual representation of TextToSpeechNode.
 
     Read text aloud using text-to-speech.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1185,7 +1185,7 @@ class VisualPDFPreviewDialogNode(VisualNode):
     """Visual representation of PDFPreviewDialogNode.
 
     Preview PDF with page navigation.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"
@@ -1207,7 +1207,7 @@ class VisualWebcamCaptureNode(VisualNode):
     """Visual representation of WebcamCaptureNode.
 
     Capture image from webcam.
-    Widgets auto-generated from @node_schema decorator.
+    Widgets auto-generated from @properties decorator.
     """
 
     __identifier__ = "casare_rpa.system"

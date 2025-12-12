@@ -8,7 +8,7 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -19,7 +19,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -57,12 +58,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Show indeterminate progress bar",
     ),
 )
-@executable_node
 class ProgressDialogNode(BaseNode):
     """
     Display a progress dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Progress')
         message: Progress message (essential - shows widget)
         show_percent: Show percentage (default: True)
@@ -173,7 +173,8 @@ class ProgressDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "message",
         PropertyType.STRING,
@@ -206,12 +207,11 @@ class ProgressDialogNode(BaseNode):
         tooltip="Show progress bar",
     ),
 )
-@executable_node
 class SplashScreenNode(BaseNode):
     """
     Display a splash screen with optional progress.
 
-    Config (via @node_schema):
+    Config (via @properties):
         message: Message to display (essential)
         image_path: Optional splash image (default: '')
         duration: Display duration ms (default: 3000)

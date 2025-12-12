@@ -17,11 +17,10 @@ from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -32,7 +31,8 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -98,12 +98,11 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class WriteFileNode(BaseNode):
     """
     Write content to a file, creating or overwriting.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path to write to (required)
         content: Content to write (required)
         encoding: Text encoding (default: utf-8)
@@ -134,12 +133,12 @@ class WriteFileNode(BaseNode):
         self.node_type = "WriteFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("content", PortType.INPUT, DataType.STRING)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("bytes_written", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_input_port("content", DataType.STRING)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("attachment_file", DataType.LIST)
+        self.add_output_port("bytes_written", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -232,7 +231,8 @@ class WriteFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -270,12 +270,11 @@ class WriteFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class AppendFileNode(BaseNode):
     """
     Append content to an existing file.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path to append to (required)
         content: Content to append (required)
         encoding: Text encoding (default: utf-8)
@@ -303,11 +302,11 @@ class AppendFileNode(BaseNode):
         self.node_type = "AppendFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("content", PortType.INPUT, DataType.STRING)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("bytes_written", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_input_port("content", DataType.STRING)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("bytes_written", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

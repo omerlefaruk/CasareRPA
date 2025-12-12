@@ -7,6 +7,15 @@ Defines the types of properties that can be used in node schemas.
 from enum import Enum
 
 
+class PropertyVisibility(str, Enum):
+    """Property visibility levels in UI."""
+
+    ESSENTIAL = "essential"  # Always visible, even when collapsed
+    NORMAL = "normal"  # Visible when expanded (default)
+    ADVANCED = "advanced"  # Hidden in "Advanced" collapsible section
+    INTERNAL = "internal"  # Never shown in UI (for system use)
+
+
 class PropertyType(str, Enum):
     """Types of properties for node configuration."""
 

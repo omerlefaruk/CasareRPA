@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -116,7 +116,7 @@ def _create_message_with_attachment(
 # =============================================================================
 
 
-@executable_node
+@node(category="integration")
 class GmailSendEmailNode(BaseNode):
     """Send an email via Gmail."""
 
@@ -178,7 +178,7 @@ class GmailSendEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailSendWithAttachmentNode(BaseNode):
     """Send an email with attachments via Gmail."""
 
@@ -244,7 +244,7 @@ class GmailSendWithAttachmentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailCreateDraftNode(BaseNode):
     """Create a draft email in Gmail."""
 
@@ -304,7 +304,7 @@ class GmailCreateDraftNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailSendDraftNode(BaseNode):
     """Send an existing draft from Gmail."""
 
@@ -362,7 +362,7 @@ class GmailSendDraftNode(BaseNode):
 # =============================================================================
 
 
-@executable_node
+@node(category="integration")
 class GmailGetEmailNode(BaseNode):
     """Get a specific email by ID from Gmail."""
 
@@ -466,7 +466,7 @@ class GmailGetEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailListEmailsNode(BaseNode):
     """List emails from Gmail inbox."""
 
@@ -525,7 +525,7 @@ class GmailListEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailSearchEmailsNode(BaseNode):
     """Search emails in Gmail using query."""
 
@@ -585,7 +585,7 @@ class GmailSearchEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailGetThreadNode(BaseNode):
     """Get a complete email thread from Gmail."""
 
@@ -648,7 +648,7 @@ class GmailGetThreadNode(BaseNode):
 # =============================================================================
 
 
-@executable_node
+@node(category="integration")
 class GmailModifyLabelsNode(BaseNode):
     """Modify labels on a Gmail message."""
 
@@ -708,7 +708,7 @@ class GmailModifyLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailMoveToTrashNode(BaseNode):
     """Move a Gmail message to trash."""
 
@@ -750,7 +750,7 @@ class GmailMoveToTrashNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailMarkAsReadNode(BaseNode):
     """Mark a Gmail message as read."""
 
@@ -794,7 +794,7 @@ class GmailMarkAsReadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailMarkAsUnreadNode(BaseNode):
     """Mark a Gmail message as unread."""
 
@@ -838,7 +838,7 @@ class GmailMarkAsUnreadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailStarEmailNode(BaseNode):
     """Star or unstar a Gmail message."""
 
@@ -891,7 +891,7 @@ class GmailStarEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailArchiveEmailNode(BaseNode):
     """Archive a Gmail message (remove from inbox)."""
 
@@ -935,7 +935,7 @@ class GmailArchiveEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailDeleteEmailNode(BaseNode):
     """Permanently delete a Gmail message."""
 
@@ -982,7 +982,7 @@ class GmailDeleteEmailNode(BaseNode):
 # =============================================================================
 
 
-@executable_node
+@node(category="integration")
 class GmailBatchSendNode(BaseNode):
     """Send multiple emails in batch."""
 
@@ -1075,7 +1075,7 @@ class GmailBatchSendNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailBatchModifyNode(BaseNode):
     """Modify multiple Gmail messages in batch."""
 
@@ -1128,7 +1128,7 @@ class GmailBatchModifyNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailBatchDeleteNode(BaseNode):
     """Delete multiple Gmail messages in batch."""
 
@@ -1178,7 +1178,7 @@ class GmailBatchDeleteNode(BaseNode):
 # =============================================================================
 
 
-@executable_node
+@node(category="integration")
 class GmailAddLabelNode(BaseNode):
     """Add label(s) to a Gmail message."""
 
@@ -1243,7 +1243,7 @@ class GmailAddLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailRemoveLabelNode(BaseNode):
     """Remove label(s) from a Gmail message."""
 
@@ -1308,7 +1308,7 @@ class GmailRemoveLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailGetLabelsNode(BaseNode):
     """Get all labels from Gmail account."""
 
@@ -1368,7 +1368,7 @@ class GmailGetLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="integration")
 class GmailTrashEmailNode(BaseNode):
     """Move a Gmail message to trash (alias for MoveToTrash with clearer name)."""
 

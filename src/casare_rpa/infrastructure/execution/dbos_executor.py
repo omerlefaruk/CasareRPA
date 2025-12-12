@@ -28,8 +28,15 @@ import asyncpg
 from loguru import logger
 import orjson
 
-from casare_rpa.domain.events import EventBus, Event, get_event_bus
-from casare_rpa.domain.value_objects.types import EventType
+from casare_rpa.domain.events import (
+    EventBus,
+    get_event_bus,
+    WorkflowStarted,
+    WorkflowCompleted,
+    WorkflowFailed,
+    NodeCompleted,
+)
+from casare_rpa.domain.value_objects.types import ExecutionMode
 
 # Lazy imports to avoid circular dependencies
 # These are imported inside functions where needed:
@@ -389,15 +396,15 @@ class DBOSWorkflowExecutor:
             await self._save_checkpoint(checkpoint)
 
             # Emit workflow started event
-            self._emit_event(
-                EventType.WORKFLOW_STARTED,
-                {
-                    "workflow_id": workflow_id,
-                    "workflow_name": workflow.metadata.name,
-                    "total_nodes": total_nodes,
-                    "recovered": recovered,
-                },
-            )
+            if self.event_bus:
+                self.event_bus.publish(
+                    WorkflowStarted(
+                        workflow_id=workflow_id,
+                        workflow_name=workflow.metadata.name,
+                        execution_mode=ExecutionMode.NORMAL,
+                        total_nodes=total_nodes,
+                    )
+                )
 
             # Create execution use case
             settings = ExecutionSettings(
@@ -415,12 +422,16 @@ class DBOSWorkflowExecutor:
             # Set up progress tracking
             if on_progress:
 
-                def on_node_complete(event: Event) -> None:
+                def on_node_complete(event: NodeCompleted) -> None:
                     node_id = event.node_id or ""
-                    progress = int(event.data.get("progress", 0))
+                    progress = (
+                        int(event.output_data.get("progress", 0))
+                        if event.output_data
+                        else 0
+                    )
                     asyncio.create_task(on_progress(progress, node_id))
 
-                self.event_bus.subscribe(EventType.NODE_COMPLETED, on_node_complete)
+                self.event_bus.subscribe(NodeCompleted, on_node_complete)
 
             # Execute with timeout
             try:
@@ -452,15 +463,24 @@ class DBOSWorkflowExecutor:
             await self._save_checkpoint(checkpoint)
 
             # Emit completion event
-            self._emit_event(
-                EventType.WORKFLOW_COMPLETED if success else EventType.WORKFLOW_ERROR,
-                {
-                    "workflow_id": workflow_id,
-                    "success": success,
-                    "executed_nodes": len(use_case.executed_nodes),
-                    "duration_ms": duration_ms,
-                },
-            )
+            if self.event_bus:
+                if success:
+                    self.event_bus.publish(
+                        WorkflowCompleted(
+                            workflow_id=workflow_id,
+                            workflow_name=workflow.metadata.name,
+                            execution_time_ms=duration_ms,
+                            nodes_executed=len(use_case.executed_nodes),
+                        )
+                    )
+                else:
+                    self.event_bus.publish(
+                        WorkflowFailed(
+                            workflow_id=workflow_id,
+                            workflow_name=workflow.metadata.name,
+                            error_message=checkpoint.error or "Workflow failed",
+                        )
+                    )
 
             logger.info(
                 f"Workflow {workflow_id} {'completed' if success else 'failed'} "
@@ -492,14 +512,14 @@ class DBOSWorkflowExecutor:
             await self._save_checkpoint(checkpoint)
 
             # Emit error event
-            self._emit_event(
-                EventType.WORKFLOW_ERROR,
-                {
-                    "workflow_id": workflow_id,
-                    "error": error_msg,
-                    "traceback": traceback.format_exc(),
-                },
-            )
+            if self.event_bus:
+                self.event_bus.publish(
+                    WorkflowFailed(
+                        workflow_id=workflow_id,
+                        workflow_name="",
+                        error_message=error_msg,
+                    )
+                )
 
             return DurableExecutionResult(
                 workflow_id=workflow_id,
@@ -633,12 +653,6 @@ class DBOSWorkflowExecutor:
         except Exception as e:
             logger.error(f"Failed to clear checkpoint for {workflow_id}: {e}")
             return False
-
-    def _emit_event(self, event_type: EventType, data: Dict[str, Any]) -> None:
-        """Emit an event to the event bus."""
-        if self.event_bus:
-            event = Event(event_type=event_type, data=data)
-            self.event_bus.publish(event)
 
 
 # Convenience function for simple usage

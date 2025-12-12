@@ -45,6 +45,7 @@ from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualFTPRenameNode,
     VisualFTPDisconnectNode,
     VisualFTPGetSizeNode,
+    VisualImageConvertNode,
 )
 
 __all__ = [
@@ -90,4 +91,5 @@ __all__ = [
     "VisualFTPRenameNode",
     "VisualFTPDisconnectNode",
     "VisualFTPGetSizeNode",
+    "VisualImageConvertNode",
 ]

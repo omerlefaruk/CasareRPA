@@ -8,7 +8,7 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -19,7 +19,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "image_path",
         PropertyType.FILE_PATH,
@@ -52,12 +53,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Enable mouse wheel zoom",
     ),
 )
-@executable_node
 class ImagePreviewDialogNode(BaseNode):
     """
     Display an image preview dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         image_path: Path to image (essential)
         title: Dialog title (default: 'Image Preview')
         scale: Initial scale factor (default: 1.0)
@@ -219,7 +219,8 @@ class ImagePreviewDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -250,12 +251,11 @@ class ImagePreviewDialogNode(BaseNode):
         tooltip="Allow row selection",
     ),
 )
-@executable_node
 class TableDialogNode(BaseNode):
     """
     Display tabular data in a dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Data Table')
         data: Table data as JSON (essential)
         columns: Column headers, comma-separated (default: auto-detect)

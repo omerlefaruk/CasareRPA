@@ -14,7 +14,6 @@ from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.resources.document_ai_manager import (
     DocumentAIManager,
@@ -155,16 +154,16 @@ class ClassifyDocumentNode(DocumentBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("document", PortType.INPUT, DataType.STRING)
-        self.add_input_port("categories", PortType.INPUT, DataType.LIST, required=False)
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("document", DataType.STRING)
+        self.add_input_port("categories", DataType.LIST, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("document_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("all_scores", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("document_type", DataType.STRING)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("all_scores", DataType.DICT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_document(
         self,
@@ -236,27 +235,25 @@ class ExtractInvoiceNode(DocumentBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("document", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "custom_fields", PortType.INPUT, DataType.LIST, required=False
-        )
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("document", DataType.STRING)
+        self.add_input_port("custom_fields", DataType.LIST, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("vendor_name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("invoice_number", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("invoice_date", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("due_date", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("total_amount", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("currency", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("subtotal", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("tax_amount", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("line_items", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("raw_extraction", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("needs_review", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("vendor_name", DataType.STRING)
+        self.add_output_port("invoice_number", DataType.STRING)
+        self.add_output_port("invoice_date", DataType.STRING)
+        self.add_output_port("due_date", DataType.STRING)
+        self.add_output_port("total_amount", DataType.FLOAT)
+        self.add_output_port("currency", DataType.STRING)
+        self.add_output_port("subtotal", DataType.FLOAT)
+        self.add_output_port("tax_amount", DataType.FLOAT)
+        self.add_output_port("line_items", DataType.LIST)
+        self.add_output_port("raw_extraction", DataType.DICT)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("needs_review", DataType.BOOLEAN)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_document(
         self,
@@ -341,20 +338,18 @@ class ExtractFormNode(DocumentBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("document", PortType.INPUT, DataType.STRING)
-        self.add_input_port("field_schema", PortType.INPUT, DataType.DICT)
-        self.add_input_port(
-            "fuzzy_match", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("document", DataType.STRING)
+        self.add_input_port("field_schema", DataType.DICT)
+        self.add_input_port("fuzzy_match", DataType.BOOLEAN, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("extracted_fields", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("unmatched_fields", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("needs_review", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("extracted_fields", DataType.DICT)
+        self.add_output_port("unmatched_fields", DataType.LIST)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("needs_review", DataType.BOOLEAN)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_document(
         self,
@@ -446,19 +441,17 @@ class ExtractTableNode(DocumentBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("document", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "table_hint", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("document", DataType.STRING)
+        self.add_input_port("table_hint", DataType.STRING, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("tables", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("column_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("tables", DataType.LIST)
+        self.add_output_port("row_count", DataType.INTEGER)
+        self.add_output_port("column_count", DataType.INTEGER)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_document(
         self,
@@ -531,23 +524,19 @@ class ValidateExtractionNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("extraction", PortType.INPUT, DataType.DICT)
-        self.add_input_port("required_fields", PortType.INPUT, DataType.LIST)
-        self.add_input_port(
-            "confidence_threshold", PortType.INPUT, DataType.FLOAT, required=False
-        )
-        self.add_input_port(
-            "validation_rules", PortType.INPUT, DataType.DICT, required=False
-        )
+        self.add_input_port("extraction", DataType.DICT)
+        self.add_input_port("required_fields", DataType.LIST)
+        self.add_input_port("confidence_threshold", DataType.FLOAT, required=False)
+        self.add_input_port("validation_rules", DataType.DICT, required=False)
 
         # Outputs
-        self.add_output_port("is_valid", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("needs_review", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("confidence_score", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("validation_errors", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("field_status", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("is_valid", DataType.BOOLEAN)
+        self.add_output_port("needs_review", DataType.BOOLEAN)
+        self.add_output_port("confidence_score", DataType.FLOAT)
+        self.add_output_port("validation_errors", DataType.LIST)
+        self.add_output_port("field_status", DataType.DICT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: Any) -> ExecutionResult:
         """Execute validation."""

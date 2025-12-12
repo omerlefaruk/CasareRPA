@@ -10,12 +10,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_docs_client import (
@@ -60,12 +59,12 @@ GOOGLE_DOCUMENT_ID = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
 )
-@executable_node
 class DocsGetDocumentNode(DocsBaseNode):
     """
     Get full document content from Google Docs.
@@ -103,8 +102,8 @@ class DocsGetDocumentNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Additional outputs
-        self.add_output_port("document", PortType.OUTPUT, DataType.OBJECT)
-        self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("document", DataType.OBJECT)
+        self.add_output_port("title", DataType.STRING)
 
     async def _execute_docs(
         self,
@@ -143,12 +142,12 @@ class DocsGetDocumentNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
 )
-@executable_node
 class DocsGetTextNode(DocsBaseNode):
     """
     Extract plain text content from a Google Doc.
@@ -185,7 +184,7 @@ class DocsGetTextNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Text-specific output
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("text", DataType.STRING)
 
     async def _execute_docs(
         self,
@@ -223,7 +222,8 @@ class DocsGetTextNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -244,7 +244,6 @@ class DocsGetTextNode(DocsBaseNode):
         tooltip="File path to save exported document (optional, returns bytes if empty)",
     ),
 )
-@executable_node
 class DocsExportNode(DocsBaseNode):
     """
     Export a Google Doc to various formats.
@@ -294,14 +293,12 @@ class DocsExportNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Export-specific ports
-        self.add_input_port("format", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "output_path", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("format", DataType.STRING, required=False)
+        self.add_input_port("output_path", DataType.STRING, required=False)
 
         # Additional outputs
-        self.add_output_port("content", PortType.OUTPUT, DataType.OBJECT)
-        self.add_output_port("output_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("content", DataType.OBJECT)
+        self.add_output_port("output_path", DataType.STRING)
 
     async def _execute_docs(
         self,

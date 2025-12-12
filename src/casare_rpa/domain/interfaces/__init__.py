@@ -39,6 +39,7 @@ from casare_rpa.domain.interfaces.repositories import (
     IEnvironmentStorage,
     ITemplateStorage,
 )
+from casare_rpa.domain.interfaces.unit_of_work import AbstractUnitOfWork
 
 __all__ = [
     # Core Protocols
@@ -48,4 +49,6 @@ __all__ = [
     "IFolderStorage",
     "IEnvironmentStorage",
     "ITemplateStorage",
+    # Unit of Work
+    "AbstractUnitOfWork",
 ]

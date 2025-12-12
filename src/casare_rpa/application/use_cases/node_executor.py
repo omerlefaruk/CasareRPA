@@ -43,8 +43,13 @@ from typing import Any, Callable, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.events import Event, EventBus
-from casare_rpa.domain.value_objects.types import DataType, EventType, NodeStatus
+from casare_rpa.domain.events import (
+    EventBus,
+    NodeStarted,
+    NodeCompleted,
+    NodeFailed,
+)
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 # Interface for type hints (dependency inversion)
 from casare_rpa.domain.interfaces import IExecutionContext, INode
@@ -127,24 +132,47 @@ class NodeExecutor:
         # Related: See utils.performance.performance_metrics for metrics tracking
         self._metrics = get_metrics()
 
-    def _emit_event(
-        self, event_type: EventType, data: Dict[str, Any], node_id: Optional[str] = None
-    ) -> None:
-        """
-        Emit an event to the event bus.
-
-        Args:
-            event_type: Type of event
-            data: Event data payload
-            node_id: Optional node ID associated with event
-        """
+    def _publish_node_started(self, node: INode, node_type: str) -> None:
+        """Publish NodeStarted event to the event bus."""
         if self.event_bus:
-            event = Event(
-                event_type=event_type,
-                data=data,
-                node_id=node_id,
+            self.event_bus.publish(
+                NodeStarted(
+                    node_id=node.node_id,
+                    node_type=node_type,
+                    workflow_id=getattr(self.context, "workflow_id", ""),
+                )
             )
-            self.event_bus.publish(event)
+
+    def _publish_node_completed(
+        self,
+        node: INode,
+        node_type: str,
+        execution_time: float,
+        outputs: Dict[str, Any],
+    ) -> None:
+        """Publish NodeCompleted event to the event bus."""
+        if self.event_bus:
+            self.event_bus.publish(
+                NodeCompleted(
+                    node_id=node.node_id,
+                    node_type=node_type,
+                    workflow_id=getattr(self.context, "workflow_id", ""),
+                    execution_time_ms=execution_time * 1000,
+                    output_data=outputs,
+                )
+            )
+
+    def _publish_node_failed(self, node: INode, node_type: str, error_msg: str) -> None:
+        """Publish NodeFailed event to the event bus."""
+        if self.event_bus:
+            self.event_bus.publish(
+                NodeFailed(
+                    node_id=node.node_id,
+                    node_type=node_type,
+                    workflow_id=getattr(self.context, "workflow_id", ""),
+                    error_message=error_msg,
+                )
+            )
 
     def _get_node_display_name(self, node: INode) -> str:
         """
@@ -203,15 +231,7 @@ class NodeExecutor:
         node_type = node.__class__.__name__
         node_name = self._get_node_display_name(node)
 
-        self._emit_event(
-            EventType.NODE_STARTED,
-            {
-                "node_id": node.node_id,
-                "node_type": node_type,
-                "node_name": node_name,
-            },
-            node.node_id,
-        )
+        self._publish_node_started(node, node_type)
 
         start_time = time.time()
 
@@ -294,17 +314,11 @@ class NodeExecutor:
                 f"Bypassed node {node.node_id}: passed through {passthrough_count} values"
             )
 
-        self._emit_event(
-            EventType.NODE_COMPLETED,
-            {
-                "node_id": node.node_id,
-                "node_type": node.__class__.__name__,
-                "node_name": self._get_node_display_name(node),
-                "bypassed": True,
-                "execution_time": 0,
-                "progress": self._calculate_progress(),
-            },
-            node.node_id,
+        self._publish_node_completed(
+            node,
+            node.__class__.__name__,
+            0.0,
+            {"bypassed": True, "passthrough_count": passthrough_count},
         )
 
         return NodeExecutionResult(
@@ -346,16 +360,7 @@ class NodeExecutor:
             node.status = NodeStatus.ERROR
             execution_time = time.time() - start_time
 
-            self._emit_event(
-                EventType.NODE_ERROR,
-                {
-                    "node_id": node.node_id,
-                    "node_type": node.__class__.__name__,
-                    "node_name": self._get_node_display_name(node),
-                    "error": error_msg,
-                },
-                node.node_id,
-            )
+            self._publish_node_failed(node, node.__class__.__name__, error_msg)
 
             return NodeExecutionResult(
                 success=False,
@@ -448,19 +453,7 @@ class NodeExecutor:
                     if port.data_type != DataType.EXEC:
                         outputs[port_name] = port.value
 
-            self._emit_event(
-                EventType.NODE_COMPLETED,
-                {
-                    "node_id": node.node_id,
-                    "node_name": self._get_node_display_name(node),
-                    "node_type": node_type,
-                    "message": result.get("data", {}).get("message", "Completed"),
-                    "progress": self._calculate_progress(),
-                    "execution_time": execution_time,
-                    "outputs": outputs,  # Output port values for inspector
-                },
-                node.node_id,
-            )
+            self._publish_node_completed(node, node_type, execution_time, outputs)
 
             # Record successful execution in metrics
             self._metrics.record_node_complete(
@@ -477,17 +470,7 @@ class NodeExecutor:
         node.status = NodeStatus.ERROR
         error_msg = result.get("error", "Unknown error")
 
-        self._emit_event(
-            EventType.NODE_ERROR,
-            {
-                "node_id": node.node_id,
-                "node_name": self._get_node_display_name(node),
-                "node_type": node_type,
-                "error": error_msg,
-                "execution_time": execution_time,
-            },
-            node.node_id,
-        )
+        self._publish_node_failed(node, node_type, error_msg)
 
         logger.error(f"Node execution failed: {node.node_id} - {error_msg}")
 
@@ -530,17 +513,7 @@ class NodeExecutor:
         execution_time = time.time() - start_time
         node_type = node.__class__.__name__
 
-        self._emit_event(
-            EventType.NODE_ERROR,
-            {
-                "node_id": node.node_id,
-                "node_name": self._get_node_display_name(node),
-                "node_type": node_type,
-                "error": error_msg,
-                "execution_time": execution_time,
-            },
-            node.node_id,
-        )
+        self._publish_node_failed(node, node_type, error_msg)
 
         logger.exception(f"Exception during node execution: {node.node_id}")
 
@@ -792,17 +765,7 @@ class NodeExecutorWithTryCatch(NodeExecutor):
         )
 
         if not error_captured:
-            self._emit_event(
-                EventType.NODE_ERROR,
-                {
-                    "node_id": node.node_id,
-                    "node_name": self._get_node_display_name(node),
-                    "node_type": node_type,
-                    "error": error_msg,
-                    "execution_time": execution_time,
-                },
-                node.node_id,
-            )
+            self._publish_node_failed(node, node_type, error_msg)
             logger.exception(f"Exception during node execution: {node.node_id}")
         else:
             logger.info(

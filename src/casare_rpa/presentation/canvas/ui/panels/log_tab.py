@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMenu,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QBrush
 from loguru import logger
 
@@ -42,7 +42,7 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
 )
 
 if TYPE_CHECKING:
-    from casare_rpa.domain.events import Event
+    from casare_rpa.domain.events import DomainEvent
 
 
 class LogTab(QWidget):
@@ -252,6 +252,7 @@ class LogTab(QWidget):
             }}
         """)
 
+    @Slot(str)
     def _on_filter_changed(self, filter_text: str) -> None:
         """Handle filter change."""
         self._current_filter = filter_text
@@ -280,10 +281,12 @@ class LogTab(QWidget):
         else:
             self._count_label.setText(f"{visible_count} of {total}")
 
+    @Slot(bool)
     def _on_auto_scroll_toggled(self, checked: bool) -> None:
         """Handle auto-scroll toggle."""
         self._auto_scroll = checked
 
+    @Slot(QTableWidgetItem)
     def _on_double_click(self, item: QTableWidgetItem) -> None:
         """Handle double-click on log entry."""
         row = item.row()
@@ -293,6 +296,7 @@ class LogTab(QWidget):
             if node_id:
                 self.navigate_to_node.emit(node_id)
 
+    @Slot(object)
     def _on_context_menu(self, pos) -> None:
         """Show context menu for log entry."""
         item = self._table.itemAt(pos)
@@ -300,6 +304,10 @@ class LogTab(QWidget):
             return
 
         row = item.row()
+        # Store row and node_id for slot methods
+        self._context_menu_row = row
+        self._context_menu_node_id = None
+
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
@@ -327,27 +335,43 @@ class LogTab(QWidget):
         # Copy message
         msg_item = self._table.item(row, self.COL_MESSAGE)
         if msg_item:
+            self._context_menu_message = msg_item.text()
             copy_msg = menu.addAction("Copy Message")
-            copy_msg.triggered.connect(
-                lambda: QApplication.clipboard().setText(msg_item.text())
-            )
+            copy_msg.triggered.connect(self._on_copy_message)
 
         # Copy entire row
         copy_row = menu.addAction("Copy Log Entry")
-        copy_row.triggered.connect(lambda: self._copy_row(row))
+        copy_row.triggered.connect(self._on_copy_row)
 
         # Navigate to node
         node_item = self._table.item(row, self.COL_NODE)
         if node_item:
             node_id = node_item.data(Qt.ItemDataRole.UserRole)
             if node_id:
+                self._context_menu_node_id = node_id
                 menu.addSeparator()
                 nav_action = menu.addAction("Go to Node")
-                nav_action.triggered.connect(
-                    lambda: self.navigate_to_node.emit(node_id)
-                )
+                nav_action.triggered.connect(self._on_navigate_to_node)
 
         menu.exec_(self._table.mapToGlobal(pos))
+
+    @Slot()
+    def _on_copy_message(self) -> None:
+        """Copy context menu message to clipboard."""
+        if hasattr(self, "_context_menu_message"):
+            QApplication.clipboard().setText(self._context_menu_message)
+
+    @Slot()
+    def _on_copy_row(self) -> None:
+        """Copy context menu row to clipboard."""
+        if hasattr(self, "_context_menu_row"):
+            self._copy_row(self._context_menu_row)
+
+    @Slot()
+    def _on_navigate_to_node(self) -> None:
+        """Navigate to node from context menu."""
+        if hasattr(self, "_context_menu_node_id") and self._context_menu_node_id:
+            self.navigate_to_node.emit(self._context_menu_node_id)
 
     def _copy_row(self, row: int) -> None:
         """Copy a log row to clipboard."""
@@ -358,6 +382,7 @@ class LogTab(QWidget):
                 parts.append(item.text())
         QApplication.clipboard().setText("\t".join(parts))
 
+    @Slot()
     def _on_export(self) -> None:
         """Export log to file."""
         file_path, _ = QFileDialog.getSaveFileName(
@@ -431,36 +456,57 @@ class LogTab(QWidget):
 
     # ==================== Public API ====================
 
-    def log_event(self, event: "Event") -> None:
+    def log_event(self, event: "DomainEvent") -> None:
         """
         Log an execution event.
 
         Args:
-            event: Event to log
+            event: Typed domain event to log
         """
-        from casare_rpa.domain.events import EventType
+        from casare_rpa.domain.events import (
+            WorkflowStarted,
+            WorkflowCompleted,
+            WorkflowFailed,
+            WorkflowStopped,
+            WorkflowPaused,
+            WorkflowResumed,
+            NodeStarted,
+            NodeCompleted,
+            NodeFailed,
+        )
 
-        # Map event types to log levels
+        # Map event classes to log levels
         level_map = {
-            EventType.WORKFLOW_STARTED: "info",
-            EventType.WORKFLOW_COMPLETED: "success",
-            EventType.WORKFLOW_ERROR: "error",
-            EventType.WORKFLOW_STOPPED: "warning",
-            EventType.WORKFLOW_PAUSED: "warning",
-            EventType.WORKFLOW_RESUMED: "info",
-            EventType.NODE_STARTED: "info",
-            EventType.NODE_COMPLETED: "success",
-            EventType.NODE_ERROR: "error",
+            WorkflowStarted: "info",
+            WorkflowCompleted: "success",
+            WorkflowFailed: "error",
+            WorkflowStopped: "warning",
+            WorkflowPaused: "warning",
+            WorkflowResumed: "info",
+            NodeStarted: "info",
+            NodeCompleted: "success",
+            NodeFailed: "error",
         }
 
-        level = level_map.get(event.event_type, "info")
-        message = event.event_type.name
+        event_class = type(event)
+        level = level_map.get(event_class, "info")
+        message = event_class.__name__
 
-        if event.data:
-            data_str = ", ".join(f"{k}={v}" for k, v in event.data.items())
-            message += f": {data_str}"
+        # Build data string from typed event attributes
+        data_parts = []
+        for attr in ["node_id", "workflow_id", "error_message", "execution_time_ms"]:
+            if hasattr(event, attr):
+                val = getattr(event, attr)
+                if val is not None:
+                    data_parts.append(f"{attr}={val}")
 
-        self.log_message(message, level, event.node_id)
+        if data_parts:
+            message += f": {', '.join(data_parts)}"
+
+        # Get node_id from typed event
+        node_id = getattr(event, "node_id", None)
+
+        self.log_message(message, level, node_id)
 
     def _is_tab_visible(self) -> bool:
         """
@@ -584,6 +630,7 @@ class LogTab(QWidget):
         # Trim if needed
         self._trim_log()
 
+    @Slot()
     def clear(self) -> None:
         """Clear the log."""
         self._table.setRowCount(0)

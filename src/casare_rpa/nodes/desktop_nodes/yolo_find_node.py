@@ -14,9 +14,9 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import DataType, NodeStatus, PortType
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
@@ -128,7 +128,8 @@ USE_GPU_PROP = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     ELEMENT_TYPE_PROP,
     ELEMENT_INDEX_PROP,
     CONFIDENCE_THRESHOLD_PROP,
@@ -142,7 +143,6 @@ USE_GPU_PROP = PropertyDef(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
-@executable_node
 class YOLOFindElementNode(DesktopNodeBase):
     """
     Find UI elements using YOLO object detection.
@@ -154,7 +154,7 @@ class YOLOFindElementNode(DesktopNodeBase):
     - Remote desktop sessions
     - Games and custom UI frameworks
 
-    Config (via @node_schema):
+    Config (via @properties):
         element_type: Type to find (button, input, etc.)
         element_index: Which match to use (0 = first)
         confidence_threshold: Min detection confidence (default: 0.5)
@@ -194,20 +194,18 @@ class YOLOFindElementNode(DesktopNodeBase):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Inputs
-        self.add_input_port("exec_in", PortType.EXEC, DataType.EXEC)
-        self.add_input_port(
-            "window_handle", PortType.INPUT, DataType.INTEGER, required=False
-        )
+        self.add_input_port("exec_in", DataType.EXEC)
+        self.add_input_port("window_handle", DataType.INTEGER, required=False)
 
         # Outputs
-        self.add_output_port("exec_out", PortType.EXEC, DataType.EXEC)
-        self.add_output_port("x", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("y", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("width", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("height", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.NUMBER)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("all_elements", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("exec_out", DataType.EXEC)
+        self.add_output_port("x", DataType.INTEGER)
+        self.add_output_port("y", DataType.INTEGER)
+        self.add_output_port("width", DataType.INTEGER)
+        self.add_output_port("height", DataType.INTEGER)
+        self.add_output_port("confidence", DataType.NUMBER)
+        self.add_output_port("found", DataType.BOOLEAN)
+        self.add_output_port("all_elements", DataType.LIST)
 
     def _get_detector(self) -> Any:
         """Get or create YOLO detector."""

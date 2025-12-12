@@ -6,7 +6,7 @@ Trigger node that fires when new emails arrive.
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -16,7 +16,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     PropertyDef(
         "provider",
         PropertyType.CHOICE,
@@ -122,7 +123,6 @@ from casare_rpa.triggers.base import TriggerType
         placeholder="C:\\Downloads\\Attachments",
     ),
 )
-@trigger_node
 class EmailTriggerNode(BaseTriggerNode):
     """
     Email trigger node that fires when new emails arrive.

@@ -14,7 +14,7 @@ Entry Points:
 
 Key Patterns:
     - Lazy Loading: Nodes imported on first access via NODE_REGISTRY
-    - Decorator Registration: @executable_node registers node metadata
+    - Decorator Registration: @node registers node metadata
     - Base Classes: BrowserBaseNode, GoogleBaseNode for shared functionality
     - Async Execution: All node execute() methods are async
     - Property System: Nodes define input/output via typed properties

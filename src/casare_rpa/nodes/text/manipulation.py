@@ -15,7 +15,7 @@ import re
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -58,7 +58,8 @@ def _resolve_string_param(
     return str(param) if param is not None else default
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "max_split",
         PropertyType.INTEGER,
@@ -67,7 +68,6 @@ def _resolve_string_param(
         tooltip="Maximum number of splits (-1 for unlimited)",
     ),
 )
-@executable_node
 class TextSplitNode(BaseNode):
     """
     Split a string into a list.
@@ -143,7 +143,8 @@ class TextSplitNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "count",
         PropertyType.INTEGER,
@@ -180,7 +181,6 @@ class TextSplitNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
-@executable_node
 class TextReplaceNode(BaseNode):
     """
     Replace occurrences in a string.
@@ -279,7 +279,8 @@ class TextReplaceNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "mode",
         PropertyType.CHOICE,
@@ -296,7 +297,6 @@ class TextReplaceNode(BaseNode):
         tooltip="Characters to trim (default: whitespace)",
     ),
 )
-@executable_node
 class TextTrimNode(BaseNode):
     """
     Trim whitespace from a string.
@@ -366,7 +366,8 @@ class TextTrimNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "case",
         PropertyType.CHOICE,
@@ -376,7 +377,6 @@ class TextTrimNode(BaseNode):
         tooltip="Case transformation to apply",
     ),
 )
-@executable_node
 class TextCaseNode(BaseNode):
     """
     Change the case of a string.
@@ -442,7 +442,8 @@ class TextCaseNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "mode",
         PropertyType.CHOICE,
@@ -459,7 +460,6 @@ class TextCaseNode(BaseNode):
         tooltip="Character to use for padding",
     ),
 )
-@executable_node
 class TextPadNode(BaseNode):
     """
     Pad a string to a certain length.
@@ -531,7 +531,7 @@ class TextPadNode(BaseNode):
         return True, ""
 
 
-@executable_node
+@node(category="text")
 class TextReverseNode(BaseNode):
     """
     Reverse a string.
@@ -582,7 +582,8 @@ class TextReverseNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "mode",
         PropertyType.CHOICE,
@@ -607,7 +608,6 @@ class TextReverseNode(BaseNode):
         tooltip="Remove empty lines when splitting",
     ),
 )
-@executable_node
 class TextLinesNode(BaseNode):
     """
     Split text into lines or join lines into text.

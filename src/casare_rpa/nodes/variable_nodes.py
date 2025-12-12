@@ -5,12 +5,11 @@ This module provides nodes for setting and getting variables in the execution co
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.services.variable_resolver import resolve_variables
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -18,7 +17,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from loguru import logger
 
 
-@node_schema(
+@node(category="variable")
+@properties(
     PropertyDef(
         "variable_name",
         PropertyType.STRING,
@@ -54,7 +54,6 @@ from loguru import logger
         tooltip="Type to convert value to",
     ),
 )
-@executable_node
 class SetVariableNode(BaseNode):
     """
     Set variable node - stores a value in the execution context.
@@ -87,11 +86,9 @@ class SetVariableNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # value port is optional - can use default_value from config instead
-        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port(
-            "variable_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("value", DataType.ANY, required=False)
+        self.add_input_port("variable_name", DataType.STRING, required=False)
+        self.add_output_port("value", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -190,7 +187,8 @@ class SetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="variable")
+@properties(
     PropertyDef(
         "variable_name",
         PropertyType.STRING,
@@ -207,7 +205,6 @@ class SetVariableNode(BaseNode):
         tooltip="Default value if variable not found",
     ),
 )
-@executable_node
 class GetVariableNode(BaseNode):
     """
     Get variable node - retrieves a value from the execution context.
@@ -240,10 +237,8 @@ class GetVariableNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # variable_name optional - can come from config or port
-        self.add_input_port(
-            "variable_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("variable_name", DataType.STRING, required=False)
+        self.add_output_port("value", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -288,7 +283,8 @@ class GetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="variable")
+@properties(
     PropertyDef(
         "variable_name",
         PropertyType.STRING,
@@ -305,7 +301,6 @@ class GetVariableNode(BaseNode):
         tooltip="Amount to increment by",
     ),
 )
-@executable_node
 class IncrementVariableNode(BaseNode):
     """
     Increment variable node - increments a numeric variable.
@@ -338,11 +333,9 @@ class IncrementVariableNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Ports optional - can come from config or port connections
-        self.add_input_port(
-            "variable_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("increment", PortType.INPUT, DataType.FLOAT, required=False)
-        self.add_output_port("value", PortType.OUTPUT, DataType.FLOAT)
+        self.add_input_port("variable_name", DataType.STRING, required=False)
+        self.add_input_port("increment", DataType.FLOAT, required=False)
+        self.add_output_port("value", DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

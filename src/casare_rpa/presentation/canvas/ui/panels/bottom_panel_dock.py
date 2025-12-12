@@ -28,7 +28,7 @@ from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult
-    from casare_rpa.domain.events import Event
+    from casare_rpa.domain.events import DomainEvent
 
 
 class BottomPanelDock(QDockWidget):
@@ -458,12 +458,12 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Log API ====================
 
-    def log_event(self, event: "Event") -> None:
+    def log_event(self, event: "DomainEvent") -> None:
         """
         Log an execution event.
 
         Args:
-            event: Event to log
+            event: Typed domain event to log
         """
         self._log_tab.log_event(event)
         self._update_tab_badges()

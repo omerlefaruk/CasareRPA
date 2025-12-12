@@ -1,648 +1,817 @@
 # CasareRPA Operations Runbook
 
-This runbook provides operational procedures for deploying, managing, and maintaining the CasareRPA platform.
+This runbook provides operational procedures for running CasareRPA in production environments.
 
 ## Table of Contents
 
-1. [System Startup](#system-startup)
-2. [System Shutdown](#system-shutdown)
-3. [Scaling Procedures](#scaling-procedures)
-4. [Backup and Recovery](#backup-and-recovery)
-5. [Monitoring](#monitoring)
-6. [Maintenance Procedures](#maintenance-procedures)
-7. [Incident Response](#incident-response)
+- [Startup Procedures](#startup-procedures)
+- [Shutdown Procedures](#shutdown-procedures)
+- [Scaling](#scaling)
+- [Monitoring](#monitoring)
+- [Backup](#backup)
+- [Recovery](#recovery)
 
 ---
 
-## System Startup
+## Startup Procedures
 
-### Pre-Flight Checklist
+### Canvas Application Startup
 
-Before starting CasareRPA components, verify:
+The Canvas is the visual workflow designer (GUI application).
 
-- [ ] Python 3.12+ installed
-- [ ] Virtual environment activated
-- [ ] Dependencies installed (`pip install -e .`)
-- [ ] Playwright browsers installed (`playwright install chromium`)
-- [ ] Environment variables configured
-- [ ] Network ports available (8765, 8766)
-- [ ] Supabase credentials valid (if using cloud)
+#### Prerequisites
 
-### Starting the Orchestrator
+- Windows 10/11 with Python 3.12+
+- PySide6 installed
+- Display available (not headless)
+
+#### Startup Command
 
 ```powershell
-# 1. Navigate to project directory
-cd C:\Users\Rau\Desktop\CasareRPA
-
-# 2. Activate virtual environment
-.\.venv\Scripts\Activate.ps1
-
-# 3. Start Orchestrator
-python -m casare_rpa.infrastructure.orchestrator.server
-
-# Or with specific configuration
-python -m casare_rpa.infrastructure.orchestrator.server --host 0.0.0.0 --port 8765
-```
-
-**Verification:**
-```powershell
-# Check if server is listening
-netstat -an | findstr "8765"
-# Expected: TCP    0.0.0.0:8765    LISTENING
-```
-
-### Starting Robot Agents
-
-```powershell
-# On each robot machine
-
-# 1. Navigate to project directory
-cd C:\RPA\CasareRPA
-
-# 2. Activate virtual environment
-.\.venv\Scripts\Activate.ps1
-
-# 3. Configure robot (first time only)
-# Edit robot_config.yaml or set environment variables
-
-# 4. Start robot agent
-python -m casare_rpa.robot.agent
-
-# Or connect to specific orchestrator
-python -m casare_rpa.robot.agent --orchestrator ws://orchestrator-host:8765
-```
-
-**Verification:**
-```powershell
-# Check robot registration in Orchestrator logs
-# Expected: "Robot 'Robot-Name' (robot-uuid) registered"
-```
-
-### Starting the Canvas (Designer)
-
-```powershell
-# On designer workstation
-
-cd C:\Users\Rau\Desktop\CasareRPA
-.\.venv\Scripts\Activate.ps1
+# Standard startup
 python run.py
 
-# Or directly
+# With debug logging
+set CASARE_LOG_LEVEL=DEBUG
+python run.py
+
+# Alternative using module
 python -m casare_rpa.presentation.canvas
 ```
 
-### Startup Order
+#### Startup Verification
 
-```mermaid
-flowchart LR
-    A[1. Database/Supabase] --> B[2. Orchestrator]
-    B --> C[3. Robot Agents]
-    B --> D[4. Canvas Designer]
-```
+1. Main window appears within 5 seconds
+2. Status bar shows "Ready"
+3. Node palette loads in left panel
+4. No error dialogs appear
 
-**Important:** Always start the Orchestrator before Robot Agents to ensure proper registration.
+#### Common Startup Issues
+
+| Symptom | Cause | Resolution |
+|---------|-------|------------|
+| Black window | GPU driver issue | Set `QT_OPENGL=software` |
+| Missing fonts | Font not installed | Install Segoe UI fonts |
+| Crash on load | Corrupted settings | Delete `%APPDATA%\CasareRPA\settings.json` |
 
 ---
 
-## System Shutdown
+### Robot Agent Startup
 
-### Graceful Shutdown Procedure
+Robot agents execute workflows assigned by the Orchestrator.
 
-#### Step 1: Stop New Job Submissions
+#### Environment Variables
 
-```python
-# Via Orchestrator API
-await engine.pause_job_submissions()
+```powershell
+# Required
+$env:CASARE_ROBOT_NAME = "robot-prod-01"
+$env:CASARE_CONTROL_PLANE_URL = "wss://orchestrator.example.com/ws/robot"
+$env:CASARE_API_KEY = "crpa_your_api_key_here"
+
+# Optional
+$env:CASARE_ROBOT_ID = "robot-prod-01"
+$env:CASARE_HEARTBEAT_INTERVAL = "30"
+$env:CASARE_MAX_CONCURRENT_JOBS = "1"
+$env:CASARE_CAPABILITIES = "browser,desktop"
+$env:CASARE_TAGS = "production,windows"
+$env:CASARE_ENVIRONMENT = "production"
+$env:CASARE_LOG_LEVEL = "INFO"
+$env:CASARE_JOB_TIMEOUT = "3600"
 ```
 
-Or disable triggers in the UI.
+#### Startup Command
 
-#### Step 2: Wait for Running Jobs
+```powershell
+# Using CLI
+python -m casare_rpa.robot.cli start
 
-```python
-# Check running jobs
-running_jobs = engine.get_queue_stats()["running"]
-print(f"Waiting for {running_jobs} jobs to complete...")
-
-# Wait with timeout
+# Using environment variables
+python -c "
 import asyncio
-await asyncio.wait_for(engine.wait_for_completion(), timeout=300)
+from casare_rpa.infrastructure.agent import RobotAgent, RobotConfig
+
+config = RobotConfig.from_env()
+agent = RobotAgent(config)
+asyncio.run(agent.start())
+"
+
+# As Windows Service (recommended for production)
+# Use NSSM or similar to wrap the command
+nssm install CasareRobotAgent python -m casare_rpa.robot.cli start
+nssm start CasareRobotAgent
 ```
 
-#### Step 3: Disconnect Robots Gracefully
+#### Startup Verification
 
-```python
-# Send shutdown command to all robots
-from casare_rpa.infrastructure.orchestrator.communication.websocket_server import MessageBuilder
+Check these in logs:
 
-for robot_id in engine.connected_robots:
-    msg = MessageBuilder.shutdown(robot_id, graceful=True)
-    await engine.broadcast(msg)
-
-# Wait for disconnections
-await asyncio.sleep(30)
+```
+INFO | Starting robot agent: robot-prod-01 (ID: robot-prod-01)
+INFO | Control plane: wss://orchestrator.example.com/ws/robot
+INFO | Capabilities: browser, desktop
+INFO | Connecting to orchestrator...
+INFO | Connected to orchestrator
+INFO | Registering with orchestrator...
+INFO | Registered with orchestrator as: robot-prod-01
 ```
 
-#### Step 4: Stop Orchestrator
+---
 
-```python
-await engine.stop()
+### Orchestrator Startup
+
+The Orchestrator manages robot fleet and job distribution.
+
+#### Environment Variables
+
+```bash
+# Required
+export HOST=0.0.0.0
+export PORT=8000
+export API_SECRET=your_secure_secret
+
+# Optional - Database
+export DATABASE_URL=postgresql://user:pass@host:5432/casare
+export SUPABASE_URL=https://xxx.supabase.co
+export SUPABASE_KEY=your_supabase_key
+
+# Optional - Configuration
+export WORKERS=4
+export CORS_ORIGINS=https://dashboard.example.com,https://admin.example.com
+export ROBOT_HEARTBEAT_TIMEOUT=90
+export JOB_TIMEOUT_DEFAULT=3600
+export WS_PING_INTERVAL=30
+
+# Optional - Redis Queue
+export REDIS_URL=redis://localhost:6379/0
 ```
 
-Or press `Ctrl+C` in the terminal.
+#### Startup Command
+
+```bash
+# Development
+python -m casare_rpa.infrastructure.orchestrator.server
+
+# Production with uvicorn
+uvicorn casare_rpa.infrastructure.orchestrator.server:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --log-level info
+
+# With gunicorn (recommended)
+gunicorn casare_rpa.infrastructure.orchestrator.server:app \
+    -w 4 \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000
+```
+
+#### Docker Startup
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  orchestrator:
+    image: casare-rpa/orchestrator:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - API_SECRET=${API_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - CORS_ORIGINS=*
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+---
+
+### Health Check Verification
+
+After all components are started, verify health:
+
+#### Orchestrator Health Endpoints
+
+```bash
+# Basic health
+curl http://orchestrator:8000/health
+# Expected: {"status": "healthy", "service": "casare-orchestrator"}
+
+# Liveness probe (Kubernetes)
+curl http://orchestrator:8000/health/live
+# Expected: {"alive": true}
+
+# Readiness probe (includes robot/job counts)
+curl http://orchestrator:8000/health/ready
+# Expected: {"ready": true, "connected_robots": 5, "pending_jobs": 0}
+```
+
+#### Robot Agent Health
+
+Check via Orchestrator API:
+
+```bash
+curl -H "X-Api-Key: $API_SECRET" \
+    http://orchestrator:8000/api/robots
+# Returns list of connected robots with status
+```
+
+---
+
+## Shutdown Procedures
+
+### Graceful Shutdown
+
+#### Canvas Application
+
+1. File > Exit or close window
+2. Wait for "Saving preferences..." message
+3. Application closes cleanly
+
+#### Robot Agent
+
+```powershell
+# Send SIGTERM (Linux) or Ctrl+C
+# Agent will:
+# 1. Stop accepting new jobs
+# 2. Wait for running jobs to complete (up to 60s)
+# 3. Close WebSocket connection
+# 4. Exit with status 0
+```
+
+Expected logs:
+```
+INFO | Received signal, initiating shutdown...
+INFO | Stopping robot agent...
+INFO | Waiting for 2 jobs to complete...
+INFO | Robot agent stopped. Jobs completed: 15, Failed: 1
+```
+
+#### Orchestrator
+
+```bash
+# Send SIGTERM to main process
+kill -TERM $ORCHESTRATOR_PID
+
+# Or if using Docker
+docker-compose stop orchestrator
+
+# Or Kubernetes
+kubectl rollout restart deployment/orchestrator
+```
+
+Shutdown sequence:
+1. Stop accepting new connections
+2. Close WebSocket connections to robots
+3. Close database pool
+4. Stop log streaming service
+5. Exit
+
+---
 
 ### Emergency Shutdown
 
-For immediate shutdown (may lose in-progress jobs):
+When immediate shutdown is required:
+
+#### Robot Agent Force Stop
 
 ```powershell
 # Windows
-taskkill /F /IM python.exe
+taskkill /F /IM python.exe /T
 
-# Or kill specific process
-taskkill /F /PID <process_id>
+# Linux
+kill -9 $ROBOT_PID
 ```
 
-### Shutdown Checklist
+> **Warning:** Force shutdown will abandon running jobs. Jobs will be requeued when robot reconnects.
 
-- [ ] All scheduled jobs paused
-- [ ] Running jobs completed or checkpointed
-- [ ] Robots disconnected gracefully
-- [ ] Orchestrator stopped
-- [ ] Logs archived if needed
-
----
-
-## Scaling Procedures
-
-### Adding New Robots
-
-#### Step 1: Prepare Robot Machine
-
-```powershell
-# Install Python 3.12+
-winget install Python.Python.3.12
-
-# Clone repository or copy installation
-git clone https://github.com/org/CasareRPA.git C:\RPA\CasareRPA
-
-# Create virtual environment
-cd C:\RPA\CasareRPA
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -e .
-playwright install chromium
-```
-
-#### Step 2: Configure Robot
-
-Create `robot_config.yaml`:
-
-```yaml
-robot:
-  robot_id: "robot-unique-id"  # Or leave empty for auto-generate
-  robot_name: "Production Robot 3"
-  environment: "production"
-  max_concurrent_jobs: 3
-  tags:
-    - browser
-    - desktop
-    - excel
-
-connection:
-  url: "https://your-project.supabase.co"
-  key: "your-anon-key"
-  orchestrator_url: "ws://orchestrator-host:8765"
-
-job_execution:
-  checkpoint_enabled: true
-  progress_update_interval: 5
-
-observability:
-  audit_enabled: true
-  resource_monitoring_enabled: true
-```
-
-#### Step 3: Register and Start
-
-```powershell
-python -m casare_rpa.robot.agent
-```
-
-The robot will automatically register with the Orchestrator.
-
-### Horizontal Scaling
-
-```mermaid
-flowchart TB
-    subgraph LoadBalancer["Load Balancer (Optional)"]
-        LB[HAProxy/Nginx]
-    end
-
-    subgraph Orchestrators["Orchestrator Cluster"]
-        O1[Orchestrator 1]
-        O2[Orchestrator 2]
-    end
-
-    subgraph RobotPool["Robot Pool"]
-        R1[Robot 1]
-        R2[Robot 2]
-        R3[Robot 3]
-        R4[Robot 4]
-    end
-
-    subgraph Storage["Shared Storage"]
-        DB[(Supabase)]
-    end
-
-    LB --> O1
-    LB --> O2
-    O1 --> DB
-    O2 --> DB
-    O1 <--> R1
-    O1 <--> R2
-    O2 <--> R3
-    O2 <--> R4
-```
-
-### Environment-Based Scaling
-
-Configure robot environments for workload isolation:
-
-```yaml
-# Production robots
-environment: "production"
-max_concurrent_jobs: 1  # Conservative for stability
-
-# Development robots
-environment: "development"
-max_concurrent_jobs: 5  # More aggressive for testing
-```
-
-### Auto-Scaling (Advanced)
-
-For cloud deployments, implement auto-scaling based on queue depth:
-
-```python
-async def auto_scale_check():
-    stats = engine.get_queue_stats()
-    available_robots = engine.available_count
-
-    queued_jobs = stats["queued"]
-    jobs_per_robot = 3
-
-    required_robots = (queued_jobs // jobs_per_robot) + 1
-    current_robots = len(engine.connected_robots)
-
-    if required_robots > current_robots:
-        # Scale up - launch new robot instances
-        await launch_robot_instances(required_robots - current_robots)
-    elif required_robots < current_robots - 2:
-        # Scale down with buffer
-        await terminate_idle_robots(current_robots - required_robots - 2)
-```
-
----
-
-## Backup and Recovery
-
-### What to Back Up
-
-| Data | Location | Frequency |
-|------|----------|-----------|
-| Workflows | `workflows/` directory | Daily |
-| Robot configs | `robot_config.yaml` | On change |
-| Orchestrator configs | `orchestrator_config.yaml` | On change |
-| Job history | Supabase/local DB | Daily |
-| Checkpoints | `checkpoints/` | Continuous |
-| Audit logs | `logs/audit/` | Weekly |
-
-### Backup Procedure
-
-#### Local Backup Script
-
-```powershell
-# backup.ps1
-$date = Get-Date -Format "yyyy-MM-dd"
-$backupDir = "C:\Backups\CasareRPA\$date"
-
-# Create backup directory
-New-Item -ItemType Directory -Force -Path $backupDir
-
-# Backup workflows
-Copy-Item -Recurse "C:\Users\Rau\Desktop\CasareRPA\workflows" "$backupDir\workflows"
-
-# Backup configuration
-Copy-Item "C:\Users\Rau\Desktop\CasareRPA\*.yaml" "$backupDir\"
-Copy-Item "C:\Users\Rau\Desktop\CasareRPA\.env" "$backupDir\" -ErrorAction SilentlyContinue
-
-# Backup checkpoints
-Copy-Item -Recurse "C:\Users\Rau\Desktop\CasareRPA\checkpoints" "$backupDir\checkpoints" -ErrorAction SilentlyContinue
-
-# Backup local database
-Copy-Item "C:\Users\Rau\Desktop\CasareRPA\*.db" "$backupDir\" -ErrorAction SilentlyContinue
-
-# Compress
-Compress-Archive -Path "$backupDir\*" -DestinationPath "C:\Backups\CasareRPA\backup-$date.zip"
-
-# Cleanup directory
-Remove-Item -Recurse -Force $backupDir
-
-Write-Host "Backup completed: backup-$date.zip"
-```
-
-#### Supabase Backup
-
-Use Supabase dashboard or CLI:
+#### Orchestrator Force Stop
 
 ```bash
-# Export data
-supabase db dump -f backup.sql
+# Kill all workers
+pkill -9 -f "uvicorn.*orchestrator"
 
-# Or via pg_dump
-pg_dump $DATABASE_URL > backup.sql
+# Docker
+docker-compose kill orchestrator
 ```
 
-### Recovery Procedure
+> **Warning:** Active WebSocket connections will be dropped. Robots will automatically reconnect.
 
-#### Restore from Backup
+---
 
-```powershell
-# restore.ps1
-param($backupFile)
+### Job Drain Procedures
 
-$restoreDir = "C:\Users\Rau\Desktop\CasareRPA"
+Before maintenance, drain jobs from robots:
 
-# Extract backup
-Expand-Archive -Path $backupFile -DestinationPath "C:\Temp\CasareRestore"
+1. **Stop Job Assignment**
+   ```bash
+   # Set robot to maintenance mode via API
+   curl -X PUT -H "X-Api-Key: $API_SECRET" \
+       http://orchestrator:8000/api/robots/robot-id/maintenance
+   ```
 
-# Stop services first
-# ... shutdown procedures ...
+2. **Wait for Completion**
+   ```bash
+   # Poll until no active jobs
+   while true; do
+       status=$(curl -s http://orchestrator:8000/api/robots/robot-id | jq '.active_jobs')
+       if [ "$status" = "0" ]; then break; fi
+       sleep 10
+   done
+   ```
 
-# Restore workflows
-Copy-Item -Recurse -Force "C:\Temp\CasareRestore\workflows\*" "$restoreDir\workflows\"
+3. **Proceed with Maintenance**
 
-# Restore configuration
-Copy-Item -Force "C:\Temp\CasareRestore\*.yaml" "$restoreDir\"
+---
 
-# Restore checkpoints
-Copy-Item -Recurse -Force "C:\Temp\CasareRestore\checkpoints\*" "$restoreDir\checkpoints\"
+## Scaling
 
-# Cleanup
-Remove-Item -Recurse -Force "C:\Temp\CasareRestore"
+### Adding Robot Agents
 
-Write-Host "Restore completed. Restart services."
-```
+#### Horizontal Scaling
 
-#### Checkpoint Recovery
+1. **Deploy New Agent**
+   ```powershell
+   # Configure with unique robot name
+   $env:CASARE_ROBOT_NAME = "robot-prod-02"
+   $env:CASARE_ROBOT_ID = "robot-prod-02"
+   python -m casare_rpa.robot.cli start
+   ```
 
-To recover a job from checkpoint:
+2. **Verify Registration**
+   ```bash
+   curl -H "X-Api-Key: $API_SECRET" \
+       http://orchestrator:8000/api/robots | jq '.[] | select(.robot_name == "robot-prod-02")'
+   ```
+
+3. **Configure Capabilities**
+   - `browser` - Can execute browser automation
+   - `desktop` - Can execute desktop automation (Windows only)
+   - `high_memory` - Has 8GB+ RAM for large workflows
+   - `gpu` - Has GPU for vision tasks
+
+#### Capacity Planning
+
+| Workflow Type | Recommended Robots | Memory per Robot |
+|--------------|-------------------|------------------|
+| Browser only | 1 per 10 workflows/hour | 4GB |
+| Desktop automation | 1 per 5 workflows/hour | 8GB |
+| Mixed workload | 1 per 3 workflows/hour | 8GB |
+| Vision/OCR heavy | 1 per 2 workflows/hour | 16GB |
+
+---
+
+### Load Balancing
+
+The Orchestrator automatically load-balances jobs across available robots.
+
+#### Selection Criteria (Priority Order)
+
+1. **Target Robot** - If job specifies `target_robot_id`
+2. **Required Capabilities** - Robot must have all required capabilities
+3. **Environment Match** - Production jobs to production robots
+4. **Tenant Isolation** - Multi-tenant deployments
+5. **Available Slots** - Robot with most available capacity
+6. **Least Recently Used** - Distribute load evenly
+
+#### Configuring Job Assignment
 
 ```python
-from casare_rpa.robot.checkpoint import CheckpointManager
+# Submit job with specific requirements
+response = requests.post(
+    "http://orchestrator:8000/api/jobs",
+    json={
+        "workflow_id": "my-workflow",
+        "priority": 5,  # Higher = more urgent (0-10)
+        "required_capabilities": ["browser", "high_memory"],
+        "target_robot_id": None,  # Or specific robot
+        "timeout": 1800,  # 30 minutes
+    },
+    headers={"X-Api-Key": API_SECRET}
+)
+```
 
-checkpoint_mgr = CheckpointManager(offline_queue)
+---
 
-# Get checkpoint for job
-checkpoint = await checkpoint_mgr.get_checkpoint(job_id)
+### Resource Allocation
 
-if checkpoint:
-    print(f"Checkpoint found at node: {checkpoint.current_node_id}")
-    print(f"Variables: {checkpoint.variables}")
+#### Robot Agent Resources
 
-    # Resume execution
-    await job_executor.submit_job(
-        job_id,
-        workflow_json,
-        resume_from_checkpoint=True
-    )
+```yaml
+# Kubernetes resource limits
+resources:
+  requests:
+    memory: "4Gi"
+    cpu: "1000m"
+  limits:
+    memory: "8Gi"
+    cpu: "2000m"
+```
+
+#### Orchestrator Resources
+
+```yaml
+# Scale based on connected robots
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "2000m"
+
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orchestrator-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orchestrator
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
 ```
 
 ---
 
 ## Monitoring
 
-### Health Check Endpoints
+### Key Metrics to Watch
 
-```python
-# Robot health
-robot_status = robot_agent.get_status()
-# Returns: {"running": true, "connection": {...}, "job_executor": {...}}
+#### Robot Agent Metrics
 
-# Orchestrator health
-orchestrator_health = engine.get_overall_health()
-# Returns: {"overall_status": "healthy", "robots": {...}, "queue": {...}}
-```
+| Metric | Description | Warning Threshold | Critical Threshold |
+|--------|-------------|-------------------|-------------------|
+| `jobs_completed` | Total completed jobs | - | - |
+| `jobs_failed` | Total failed jobs | >5% of completed | >10% of completed |
+| `active_jobs` | Currently executing | = max_concurrent | - |
+| `reconnect_count` | Connection reconnects | >3/hour | >10/hour |
+| `heartbeat_age` | Time since last heartbeat | >60s | >90s |
+| `memory_usage` | Process memory | >80% limit | >90% limit |
+| `cpu_usage` | Process CPU | >80% | >95% |
 
-### Key Metrics to Monitor
+#### Orchestrator Metrics
 
-| Metric | Warning | Critical | Action |
-|--------|---------|----------|--------|
-| Queue depth | > 50 | > 100 | Scale up robots |
-| Robot CPU | > 80% | > 95% | Check workflows |
-| Robot memory | > 80% | > 95% | Restart robot |
-| Job failure rate | > 10% | > 25% | Investigate errors |
-| Heartbeat missed | 1 | 3 | Check robot |
-| Connection failures | > 5/hour | > 20/hour | Check network |
-
-### Log Monitoring
-
-```powershell
-# Tail Orchestrator logs
-Get-Content "logs\orchestrator.log" -Wait -Tail 50
-
-# Search for errors
-Select-String -Path "logs\*.log" -Pattern "ERROR|CRITICAL"
-
-# Monitor robot logs
-Get-Content "logs\robot_*.log" -Wait -Tail 50
-```
-
-### Dashboard Metrics
-
-The Orchestrator UI provides:
-
-- Active robots and their status
-- Job queue depth by priority
-- Running jobs and progress
-- Historical success rates
-- Upcoming scheduled executions
+| Metric | Description | Warning Threshold | Critical Threshold |
+|--------|-------------|-------------------|-------------------|
+| `connected_robots` | Online robot count | <expected-1 | <expected/2 |
+| `pending_jobs` | Jobs waiting | >10 | >50 |
+| `websocket_connections` | Active connections | - | - |
+| `request_latency_p99` | API response time | >500ms | >2000ms |
+| `error_rate` | HTTP 5xx rate | >1% | >5% |
 
 ---
 
-## Maintenance Procedures
+### Alert Thresholds
 
-### Daily Maintenance
+#### PagerDuty/OpsGenie Configuration
 
-- [ ] Check system health dashboard
-- [ ] Review failed jobs
-- [ ] Verify scheduled jobs executed
-- [ ] Check disk space
+```yaml
+# Critical (Page immediately)
+- name: orchestrator_down
+  condition: up == 0
+  for: 1m
 
-### Weekly Maintenance
+- name: no_robots_available
+  condition: connected_robots == 0
+  for: 5m
 
-- [ ] Archive old logs
-- [ ] Review error patterns
-- [ ] Update workflows if needed
-- [ ] Test backup restoration
+- name: job_queue_stuck
+  condition: pending_jobs > 50 AND rate(jobs_completed[5m]) == 0
+  for: 10m
 
-### Monthly Maintenance
+# Warning (Ticket/Slack)
+- name: robot_disconnected
+  condition: delta(connected_robots[5m]) < 0
+  for: 0m
 
-- [ ] Update dependencies (`pip install -U -e .`)
-- [ ] Update Playwright browsers
-- [ ] Review security patches
-- [ ] Performance tuning
+- name: high_failure_rate
+  condition: rate(jobs_failed[1h]) / rate(jobs_completed[1h]) > 0.1
+  for: 15m
 
-### Log Rotation
+- name: slow_job_execution
+  condition: avg(job_duration_seconds) > 1800
+  for: 30m
+```
 
-Configure loguru for automatic rotation:
+---
+
+### Dashboard Configuration
+
+#### Grafana Dashboard Panels
+
+```json
+{
+  "panels": [
+    {
+      "title": "Robot Fleet Status",
+      "type": "stat",
+      "targets": [
+        {"expr": "casare_connected_robots", "legendFormat": "Connected"},
+        {"expr": "casare_robots_busy", "legendFormat": "Busy"},
+        {"expr": "casare_robots_idle", "legendFormat": "Idle"}
+      ]
+    },
+    {
+      "title": "Job Queue",
+      "type": "graph",
+      "targets": [
+        {"expr": "casare_pending_jobs", "legendFormat": "Pending"},
+        {"expr": "rate(casare_jobs_completed[5m])", "legendFormat": "Completed/min"}
+      ]
+    },
+    {
+      "title": "Error Rate",
+      "type": "graph",
+      "targets": [
+        {"expr": "rate(casare_jobs_failed[5m]) / rate(casare_jobs_completed[5m]) * 100"}
+      ],
+      "alert": {"threshold": 10}
+    }
+  ]
+}
+```
+
+---
+
+### Log Aggregation
+
+#### Loguru Configuration
 
 ```python
+# Configure JSON logging for aggregation
 from loguru import logger
+import sys
 
+logger.remove()
 logger.add(
-    "logs/orchestrator_{time}.log",
-    rotation="1 day",
-    retention="30 days",
-    compression="zip"
+    sys.stdout,
+    format='{"timestamp":"{time:YYYY-MM-DDTHH:mm:ss.SSSZ}","level":"{level}","message":"{message}","module":"{module}","function":"{function}"}',
+    serialize=True,
 )
 ```
 
-### Database Maintenance
+#### Loki/Promtail Configuration
 
-```sql
--- Clean up old completed jobs (keep 90 days)
-DELETE FROM jobs
-WHERE status IN ('completed', 'cancelled')
-AND completed_at < NOW() - INTERVAL '90 days';
-
--- Clean up old logs
-DELETE FROM job_logs
-WHERE created_at < NOW() - INTERVAL '30 days';
-
--- Vacuum database
-VACUUM ANALYZE;
+```yaml
+# promtail.yaml
+scrape_configs:
+  - job_name: casare_rpa
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: casare-rpa
+          __path__: /var/log/casare/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            module: module
+            job_id: job_id
+      - labels:
+          level:
+          module:
+          job_id:
 ```
 
 ---
 
-## Incident Response
+## Backup
 
-### Severity Levels
+### Workflow Backup
 
-| Level | Description | Response Time | Examples |
-|-------|-------------|---------------|----------|
-| P1 | Critical | 15 minutes | All robots offline, data loss |
-| P2 | High | 1 hour | Job failures > 50%, one robot down |
-| P3 | Medium | 4 hours | Degraded performance, minor errors |
-| P4 | Low | 24 hours | UI issues, documentation |
+Workflows are stored as JSON files. Back up these locations:
 
-### Incident Response Flowchart
+| Component | Location | Backup Frequency |
+|-----------|----------|------------------|
+| Projects | `%USERPROFILE%\Documents\CasareRPA\projects\` | Daily |
+| Workflows | `*.json` files in project folders | Daily |
+| Subflows | `subflows/` directory in projects | Daily |
+| Templates | `templates/` directory | Weekly |
 
-```mermaid
-flowchart TB
-    A[Incident Detected] --> B{Severity?}
-    B -->|P1/P2| C[Page On-Call]
-    B -->|P3/P4| D[Create Ticket]
-
-    C --> E[Acknowledge]
-    E --> F[Assess Impact]
-    F --> G[Mitigate]
-    G --> H{Resolved?}
-    H -->|No| I[Escalate]
-    H -->|Yes| J[Document]
-    I --> F
-    J --> K[Post-Mortem]
-```
-
-### Common Incidents
-
-#### All Robots Offline
-
-1. Check network connectivity
-2. Verify Orchestrator is running
-3. Check Supabase status
-4. Review robot logs for errors
-5. Restart Orchestrator if needed
-6. Restart robots one by one
-
-#### High Job Failure Rate
-
-1. Check recent workflow changes
-2. Review error messages
-3. Test target applications manually
-4. Check for selector changes
-5. Verify credentials
-6. Roll back recent changes if needed
-
-#### Orchestrator Unresponsive
-
-1. Check process status
-2. Review memory/CPU usage
-3. Check for deadlocks in logs
-4. Graceful restart if possible
-5. Force restart if necessary
-6. Verify job recovery from checkpoints
-
-### Escalation Contacts
-
-| Role | Contact | When to Contact |
-|------|---------|-----------------|
-| On-Call Engineer | [contact] | P1/P2 incidents |
-| Team Lead | [contact] | P1 incidents, escalations |
-| System Admin | [contact] | Infrastructure issues |
-
----
-
-## Quick Reference
-
-### Common Commands
+#### PowerShell Backup Script
 
 ```powershell
-# Start Orchestrator
-python -m casare_rpa.infrastructure.orchestrator.server
+# backup-workflows.ps1
+$backupDir = "D:\Backups\CasareRPA\$(Get-Date -Format 'yyyy-MM-dd')"
+$sourceDir = "$env:USERPROFILE\Documents\CasareRPA"
 
-# Start Robot
-python -m casare_rpa.robot.agent
+New-Item -ItemType Directory -Force -Path $backupDir
 
-# Start Canvas
-python run.py
+# Backup projects
+Copy-Item -Recurse "$sourceDir\projects" "$backupDir\projects"
 
-# Run tests
-pytest tests/ -v
+# Compress
+Compress-Archive -Path "$backupDir\*" -DestinationPath "$backupDir.zip"
+Remove-Item -Recurse -Force $backupDir
 
-# Check logs
-Get-Content logs\*.log -Tail 100
-
-# Check ports
-netstat -an | findstr "8765 8766"
+Write-Host "Backup completed: $backupDir.zip"
 ```
-
-### Important Paths
-
-| Path | Description |
-|------|-------------|
-| `workflows/` | Saved workflow files |
-| `logs/` | Application logs |
-| `checkpoints/` | Job checkpoints |
-| `robot_config.yaml` | Robot configuration |
-| `.env` | Environment variables |
-
-### Default Ports
-
-| Service | Port |
-|---------|------|
-| Orchestrator WebSocket | 8765 |
-| Trigger Webhooks | 8766 |
-| Supabase Realtime | 443 (cloud) |
 
 ---
 
-## Related Documentation
+### Database Backup
 
-- [Troubleshooting Guide](TROUBLESHOOTING.md)
-- [System Overview](../architecture/SYSTEM_OVERVIEW.md)
-- [API Reference](../api/REST_API_REFERENCE.md)
-- [Security Architecture](../security/SECURITY_ARCHITECTURE.md)
+If using PostgreSQL for Orchestrator:
+
+```bash
+#!/bin/bash
+# backup-database.sh
+BACKUP_DIR="/backups/casare/$(date +%Y-%m-%d)"
+mkdir -p $BACKUP_DIR
+
+pg_dump $DATABASE_URL > "$BACKUP_DIR/casare_db.sql"
+gzip "$BACKUP_DIR/casare_db.sql"
+
+# Upload to S3
+aws s3 cp "$BACKUP_DIR/casare_db.sql.gz" "s3://backups/casare/$(date +%Y-%m-%d)/"
+
+# Cleanup old backups (keep 30 days)
+find /backups/casare -mtime +30 -delete
+```
+
+---
+
+### Configuration Backup
+
+```powershell
+# backup-config.ps1
+$backupDir = "D:\Backups\CasareRPA\config"
+New-Item -ItemType Directory -Force -Path $backupDir
+
+# Application settings
+Copy-Item "$env:APPDATA\CasareRPA\settings.json" "$backupDir\"
+
+# Credentials (encrypted)
+Copy-Item "$env:APPDATA\CasareRPA\credentials.enc" "$backupDir\"
+
+# Environment templates
+Copy-Item "$env:USERPROFILE\Documents\CasareRPA\environments\*.json" "$backupDir\environments\"
+```
+
+---
+
+### Backup Schedule
+
+| Data | Frequency | Retention | Method |
+|------|-----------|-----------|--------|
+| Workflows | Daily | 30 days | File copy + compress |
+| Database | Daily | 30 days | pg_dump |
+| Configuration | Weekly | 90 days | File copy |
+| Logs | Hourly | 7 days | Log rotation |
+
+---
+
+## Recovery
+
+### Restore from Backup
+
+#### Workflow Restore
+
+```powershell
+# Restore specific workflow
+$backupZip = "D:\Backups\CasareRPA\2024-01-15.zip"
+$targetProject = "$env:USERPROFILE\Documents\CasareRPA\projects\my-project"
+
+Expand-Archive -Path $backupZip -DestinationPath "C:\Temp\restore"
+Copy-Item "C:\Temp\restore\projects\my-project\workflows\*.json" "$targetProject\workflows\"
+
+# Restart Canvas to reload
+```
+
+#### Database Restore
+
+```bash
+# Restore PostgreSQL database
+gunzip -c /backups/casare/2024-01-15/casare_db.sql.gz | psql $DATABASE_URL
+
+# Verify
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM jobs;"
+```
+
+---
+
+### Disaster Recovery
+
+#### Complete System Failure
+
+1. **Deploy Fresh Orchestrator**
+   ```bash
+   docker-compose up -d orchestrator
+   ```
+
+2. **Restore Database**
+   ```bash
+   gunzip -c /backups/latest/casare_db.sql.gz | psql $DATABASE_URL
+   ```
+
+3. **Deploy Robot Agents**
+   - Use same API keys (stored in backup)
+   - Robots will auto-reconnect
+
+4. **Verify Fleet Status**
+   ```bash
+   curl http://orchestrator:8000/health/ready
+   ```
+
+5. **Resume Operations**
+   - Pending jobs will be reprocessed
+   - Running jobs at failure time are lost
+
+---
+
+### Failover Procedures
+
+#### Orchestrator Failover
+
+For high availability, run multiple Orchestrator instances behind a load balancer:
+
+```yaml
+# Kubernetes deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+spec:
+  replicas: 3  # Multiple instances
+  selector:
+    matchLabels:
+      app: orchestrator
+  template:
+    spec:
+      containers:
+      - name: orchestrator
+        image: casare-rpa/orchestrator:latest
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+```
+
+> **Note:** When using multiple Orchestrator instances, ensure:
+> - Shared database for job queue
+> - Redis for session state (if needed)
+> - Sticky sessions for WebSocket connections
+
+#### Robot Failover
+
+Robots automatically reconnect with exponential backoff:
+
+```
+Initial: 1s -> 2s -> 4s -> 8s -> ... -> max 60s
+```
+
+Jobs assigned to disconnected robots are automatically requeued.
+
+---
+
+## Appendix: Quick Reference Commands
+
+### Status Checks
+
+```bash
+# Orchestrator status
+curl http://orchestrator:8000/health/ready
+
+# List all robots
+curl -H "X-Api-Key: $API_SECRET" http://orchestrator:8000/api/robots
+
+# List pending jobs
+curl -H "X-Api-Key: $API_SECRET" http://orchestrator:8000/api/jobs?status=pending
+
+# Robot details
+curl -H "X-Api-Key: $API_SECRET" http://orchestrator:8000/api/robots/{robot_id}
+```
+
+### Emergency Actions
+
+```bash
+# Cancel all pending jobs
+curl -X DELETE -H "X-Api-Key: $API_SECRET" \
+    http://orchestrator:8000/api/jobs/pending
+
+# Force disconnect robot
+curl -X DELETE -H "X-Api-Key: $API_SECRET" \
+    http://orchestrator:8000/api/robots/{robot_id}
+
+# Restart Orchestrator (Kubernetes)
+kubectl rollout restart deployment/orchestrator
+```

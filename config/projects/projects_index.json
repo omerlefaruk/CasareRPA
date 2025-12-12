@@ -2,6 +2,12 @@
   "$schema_version": "1.0.0",
   "projects": [
     {
+      "id": "proj_3eab9d55",
+      "last_opened": "2025-12-12T06:17:08.815360",
+      "name": "MonthlyMuhasebe",
+      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\Projects\\MonthlyMuhasebe"
+    },
+    {
       "id": "proj_9e826c07",
       "last_opened": "2025-12-09T04:38:07.386098",
       "name": "RPAChallenge",

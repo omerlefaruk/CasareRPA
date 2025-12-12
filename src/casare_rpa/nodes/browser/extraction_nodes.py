@@ -10,18 +10,18 @@ from typing import Tuple
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "min_width",
         PropertyType.INTEGER,
@@ -54,7 +54,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         placeholder="jpg,png,webp",
     ),
 )
-@executable_node
 class GetAllImagesNode(BaseNode):
     """
     Get all images from the current page.
@@ -79,8 +78,8 @@ class GetAllImagesNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_output_port("images", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("images", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Extract all image URLs from the page."""
@@ -215,7 +214,8 @@ class GetAllImagesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "save_path",
         PropertyType.FILE_PATH,
@@ -255,7 +255,6 @@ class GetAllImagesNode(BaseNode):
         tooltip="Verify SSL certificate when downloading. Disable only for trusted internal sites with self-signed certificates.",
     ),
 )
-@executable_node
 class DownloadFileNode(BaseNode):
     """
     Download a file from URL to local path.
@@ -286,12 +285,12 @@ class DownloadFileNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("filename", PortType.INPUT, DataType.STRING, required=False)
-        self.add_output_port("path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("url", DataType.STRING)
+        self.add_input_port("filename", DataType.STRING, required=False)
+        self.add_output_port("path", DataType.STRING)
+        self.add_output_port("attachment_file", DataType.LIST)
+        self.add_output_port("size", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Download file from URL."""

@@ -7,7 +7,7 @@ Supports filtering, sorting, copying values, and computed property display.
 
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QApplication,
@@ -92,6 +92,7 @@ class PropertyExplorerPanel(QFrame):
         self._all_properties: List[
             Dict[str, Any]
         ] = []  # Stores all properties for filtering
+        self._context_row: int = -1  # Context menu target row
 
         self._setup_ui()
         self._apply_styles()
@@ -554,23 +555,41 @@ class PropertyExplorerPanel(QFrame):
         if row < 0:
             return
 
+        # Store context row for slot methods
+        self._context_row = row
+
         menu = QMenu(self)
 
         # Copy value action
         copy_action = menu.addAction("Copy Value")
-        copy_action.triggered.connect(lambda: self._copy_value_at_row(row))
+        copy_action.triggered.connect(self._on_copy_value_action)
 
         # Copy name action
         copy_name_action = menu.addAction("Copy Property Name")
-        copy_name_action.triggered.connect(lambda: self._copy_name_at_row(row))
+        copy_name_action.triggered.connect(self._on_copy_name_action)
 
         menu.addSeparator()
 
         # Copy both action
         copy_both_action = menu.addAction("Copy Name = Value")
-        copy_both_action.triggered.connect(lambda: self._copy_both_at_row(row))
+        copy_both_action.triggered.connect(self._on_copy_both_action)
 
         menu.exec(self._table.viewport().mapToGlobal(position))
+
+    @Slot()
+    def _on_copy_value_action(self) -> None:
+        """Handle copy value context menu action."""
+        self._copy_value_at_row(self._context_row)
+
+    @Slot()
+    def _on_copy_name_action(self) -> None:
+        """Handle copy property name context menu action."""
+        self._copy_name_at_row(self._context_row)
+
+    @Slot()
+    def _on_copy_both_action(self) -> None:
+        """Handle copy name = value context menu action."""
+        self._copy_both_at_row(self._context_row)
 
     def _copy_name_at_row(self, row: int) -> None:
         """Copy the property name at the specified row."""

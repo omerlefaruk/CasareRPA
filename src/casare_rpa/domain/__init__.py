@@ -8,7 +8,8 @@ Entry Points:
     - entities.workflow.WorkflowSchema: Workflow definition and validation
     - protocols.ExecutionContextProtocol: Execution context interface
     - protocols.CredentialProviderProtocol: Credential resolution interface
-    - decorators.executable_node: Decorator to register node classes
+    - decorators.node: Decorator to register node classes
+    - decorators.properties: Decorator for property schemas
     - credentials.CredentialAwareMixin: Mixin for credential-aware nodes
     - value_objects.types: DataType, NodeStatus, PortDefinition
 
@@ -29,7 +30,7 @@ CRITICAL: This layer must have ZERO dependencies on infrastructure or presentati
 All domain logic should be framework-agnostic and testable in isolation.
 """
 
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.credentials import (
     CredentialAwareMixin,
     CREDENTIAL_NAME_PROP,
@@ -47,7 +48,8 @@ from casare_rpa.domain.protocols import (
 
 __all__ = [
     # Decorators
-    "executable_node",
+    "node",
+    "properties",
     # Credential mixin and props
     "CredentialAwareMixin",
     "CREDENTIAL_NAME_PROP",

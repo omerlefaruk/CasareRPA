@@ -11,9 +11,15 @@ from typing import Any, Dict, List, Optional, Set
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
-from casare_rpa.domain.events import EventBus
+from casare_rpa.domain.events import (
+    EventBus,
+    WorkflowStarted,
+    WorkflowCompleted,
+    WorkflowFailed,
+    WorkflowStopped,
+)
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
-from casare_rpa.domain.value_objects.types import EventType, NodeId
+from casare_rpa.domain.value_objects.types import NodeId, ExecutionMode
 from casare_rpa.domain.interfaces import IExecutionContext
 from casare_rpa.domain.errors import (
     Result,
@@ -208,8 +214,13 @@ class ExecuteWorkflowUseCase:
         )
 
         # 3. Start
-        self.state_manager.emit_event(
-            EventType.WORKFLOW_STARTED, {"name": self.workflow.metadata.name}
+        self.state_manager.publish_event(
+            WorkflowStarted(
+                workflow_id=self.workflow.metadata.id,
+                workflow_name=self.workflow.metadata.name,
+                execution_mode=ExecutionMode.NORMAL,
+                total_nodes=len(self.workflow.nodes),
+            )
         )
         get_metrics().record_workflow_start(self.workflow.metadata.name)
         logger.info(f"Start: {self.workflow.metadata.name}")
@@ -378,17 +389,33 @@ class ExecuteWorkflowUseCase:
         duration = self.state_manager.duration
         success = not self.state_manager.is_failed and not self.state_manager.is_stopped
 
-        evt = EventType.WORKFLOW_COMPLETED if success else EventType.WORKFLOW_ERROR
         if self.state_manager.is_stopped:
-            evt = EventType.WORKFLOW_STOPPED
+            self.state_manager.publish_event(
+                WorkflowStopped(
+                    workflow_id=self.workflow.metadata.id,
+                    stopped_at_node_id=self.current_node_id,
+                    reason="user_request",
+                )
+            )
+        elif success:
+            self.state_manager.publish_event(
+                WorkflowCompleted(
+                    workflow_id=self.workflow.metadata.id,
+                    workflow_name=self.workflow.metadata.name,
+                    execution_time_ms=duration * 1000,
+                    nodes_executed=len(self.executed_nodes),
+                )
+            )
+        else:
+            self.state_manager.publish_event(
+                WorkflowFailed(
+                    workflow_id=self.workflow.metadata.id,
+                    workflow_name=self.workflow.metadata.name,
+                    error_message=self.state_manager.execution_error or "Unknown error",
+                    execution_time_ms=duration * 1000,
+                )
+            )
 
-        data = {
-            "duration": duration,
-            "nodes": len(self.executed_nodes),
-            "error": self.state_manager.execution_error,
-        }
-
-        self.state_manager.emit_event(evt, data)
         get_metrics().record_workflow_complete(
             self.workflow.metadata.name, duration * 1000, success
         )
@@ -398,7 +425,14 @@ class ExecuteWorkflowUseCase:
     def _handle_workflow_exception(self, e: Exception) -> bool:
         self.state_manager.mark_completed()
         logger.exception("Workflow Error")
-        self.state_manager.emit_event(EventType.WORKFLOW_ERROR, {"error": str(e)})
+        self.state_manager.publish_event(
+            WorkflowFailed(
+                workflow_id=self.workflow.metadata.id,
+                workflow_name=self.workflow.metadata.name,
+                error_message=str(e),
+                execution_time_ms=self.state_manager.duration * 1000,
+            )
+        )
         get_metrics().record_workflow_complete(self.workflow.metadata.name, 0, False)
         return False
 

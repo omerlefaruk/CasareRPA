@@ -3,6 +3,7 @@ CasareRPA - Domain Entity: Workflow Metadata
 Represents workflow identity and versioning information.
 """
 
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -25,6 +26,7 @@ class WorkflowMetadata:
         author: str = "",
         version: str = "1.0.0",
         tags: Optional[List[str]] = None,
+        id: Optional[str] = None,
     ) -> None:
         """
         Initialize workflow metadata.
@@ -35,10 +37,12 @@ class WorkflowMetadata:
             author: Workflow creator
             version: Workflow version
             tags: List of tags for categorization
+            id: Optional workflow ID (auto-generated if not provided)
 
         Raises:
             ValueError: If name is empty or whitespace-only
         """
+        self.id = id or str(uuid.uuid4())
         self._validate_name(name)
         self.name = name
         self.description = description
@@ -69,6 +73,7 @@ class WorkflowMetadata:
             Dictionary representation of metadata
         """
         return {
+            "id": self.id,
             "name": self.name,
             "description": self.description,
             "author": self.author,
@@ -96,6 +101,7 @@ class WorkflowMetadata:
             author=data.get("author", ""),
             version=data.get("version", "1.0.0"),
             tags=data.get("tags", []),
+            id=data.get("id"),
         )
         metadata.created_at = data.get("created_at", metadata.created_at)
         metadata.modified_at = data.get("modified_at", metadata.modified_at)

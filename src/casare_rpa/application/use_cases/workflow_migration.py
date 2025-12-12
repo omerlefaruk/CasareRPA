@@ -31,8 +31,13 @@ from casare_rpa.domain.workflow.versioning import (
     VersionDiff,
     CompatibilityResult,
 )
-from casare_rpa.domain.events import EventBus, Event
-from casare_rpa.domain.value_objects.types import EventType
+from casare_rpa.domain.events import (
+    EventBus,
+    WorkflowStarted,
+    WorkflowCompleted,
+    WorkflowFailed,
+)
+from casare_rpa.domain.value_objects.types import ExecutionMode
 
 
 class MigrationStatus(Enum):
@@ -149,11 +154,54 @@ class WorkflowMigrationUseCase:
         self._migration_steps: List[MigrationStep] = []
         self._current_context: Optional[MigrationContext] = None
 
-    def _emit_event(self, event_type: EventType, data: Dict[str, JsonValue]) -> None:
-        """Emit migration event."""
+    def _publish_migration_started(
+        self,
+        workflow_id: str,
+        from_version: str,
+        to_version: str,
+        total_steps: int,
+    ) -> None:
+        """Publish migration started event."""
         if self.event_bus:
-            event = Event(event_type=event_type, data=data)
-            self.event_bus.publish(event)
+            self.event_bus.publish(
+                WorkflowStarted(
+                    workflow_id=workflow_id,
+                    workflow_name=f"migration_{from_version}_to_{to_version}",
+                    execution_mode=ExecutionMode.NORMAL,
+                    total_nodes=total_steps,
+                )
+            )
+
+    def _publish_migration_completed(
+        self,
+        workflow_id: str,
+        duration_ms: float,
+    ) -> None:
+        """Publish migration completed event."""
+        if self.event_bus:
+            self.event_bus.publish(
+                WorkflowCompleted(
+                    workflow_id=workflow_id,
+                    workflow_name="migration",
+                    execution_time_ms=duration_ms,
+                    nodes_executed=0,
+                )
+            )
+
+    def _publish_migration_failed(
+        self,
+        workflow_id: str,
+        error: str,
+    ) -> None:
+        """Publish migration failed event."""
+        if self.event_bus:
+            self.event_bus.publish(
+                WorkflowFailed(
+                    workflow_id=workflow_id,
+                    workflow_name="migration",
+                    error_message=error,
+                )
+            )
 
     def check_migration_feasibility(
         self, from_version: str, to_version: str
@@ -277,15 +325,11 @@ class WorkflowMigrationUseCase:
             result.total_steps = len(self._migration_steps)
 
             # Emit start event
-            self._emit_event(
-                EventType.WORKFLOW_STARTED,
-                {
-                    "operation": "migration",
-                    "workflow_id": workflow_id,
-                    "from_version": from_version,
-                    "to_version": to_version,
-                    "total_steps": result.total_steps,
-                },
+            self._publish_migration_started(
+                workflow_id=workflow_id,
+                from_version=from_version,
+                to_version=to_version,
+                total_steps=result.total_steps,
             )
 
             result.status = MigrationStatus.IN_PROGRESS
@@ -350,17 +394,18 @@ class WorkflowMigrationUseCase:
             ).total_seconds() * 1000
 
             # Emit completion event
-            self._emit_event(
-                EventType.WORKFLOW_COMPLETED
-                if result.success
-                else EventType.WORKFLOW_ERROR,
-                {
-                    "operation": "migration",
-                    "workflow_id": workflow_id,
-                    "success": result.success,
-                    "duration_ms": result.duration_ms,
-                },
-            )
+            if result.success:
+                self._publish_migration_completed(
+                    workflow_id=workflow_id,
+                    duration_ms=result.duration_ms,
+                )
+            else:
+                self._publish_migration_failed(
+                    workflow_id=workflow_id,
+                    error="; ".join(result.errors)
+                    if result.errors
+                    else "Unknown error",
+                )
 
             logger.info(
                 f"Migration {'completed' if result.success else 'failed'}: "

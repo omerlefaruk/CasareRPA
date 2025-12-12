@@ -21,11 +21,10 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -33,7 +32,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "passive",
         PropertyType.BOOLEAN,
@@ -73,7 +73,6 @@ from casare_rpa.utils import safe_int
         tooltip="Delay between retries in milliseconds",
     ),
 )
-@executable_node
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -107,12 +106,12 @@ class FTPConnectNode(BaseNode):
         self.node_type = "FTPConnectNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("host", PortType.INPUT, DataType.STRING)
-        self.add_input_port("port", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_output_port("connected", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("server_message", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("host", DataType.STRING)
+        self.add_input_port("port", DataType.INTEGER)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_output_port("connected", DataType.BOOLEAN)
+        self.add_output_port("server_message", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -203,7 +202,8 @@ class FTPConnectNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "binary_mode",
         PropertyType.BOOLEAN,
@@ -235,7 +235,6 @@ class FTPConnectNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
-@executable_node
 class FTPUploadNode(BaseNode):
     """
     Upload a file to FTP server.
@@ -266,10 +265,10 @@ class FTPUploadNode(BaseNode):
         self.node_type = "FTPUploadNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("local_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("uploaded", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("bytes_sent", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("local_path", DataType.STRING)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_output_port("uploaded", DataType.BOOLEAN)
+        self.add_output_port("bytes_sent", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -364,7 +363,8 @@ class FTPUploadNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "binary_mode",
         PropertyType.BOOLEAN,
@@ -396,7 +396,6 @@ class FTPUploadNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
-@executable_node
 class FTPDownloadNode(BaseNode):
     """
     Download a file from FTP server.
@@ -427,10 +426,10 @@ class FTPDownloadNode(BaseNode):
         self.node_type = "FTPDownloadNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("local_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("downloaded", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("bytes_received", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_input_port("local_path", DataType.STRING)
+        self.add_output_port("downloaded", DataType.BOOLEAN)
+        self.add_output_port("bytes_received", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -529,7 +528,8 @@ class FTPDownloadNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "detailed",
         PropertyType.BOOLEAN,
@@ -538,7 +538,6 @@ class FTPDownloadNode(BaseNode):
         tooltip="Get detailed file information instead of just names",
     ),
 )
-@executable_node
 class FTPListNode(BaseNode):
     """
     List contents of a directory on FTP server.
@@ -565,9 +564,9 @@ class FTPListNode(BaseNode):
         self.node_type = "FTPListNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("items", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_output_port("items", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -609,8 +608,8 @@ class FTPListNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="integration")
+@properties()  # Input port driven
 class FTPDeleteNode(BaseNode):
     """
     Delete a file on FTP server.
@@ -633,8 +632,8 @@ class FTPDeleteNode(BaseNode):
         self.node_type = "FTPDeleteNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("deleted", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_output_port("deleted", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -669,7 +668,8 @@ class FTPDeleteNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "parents",
         PropertyType.BOOLEAN,
@@ -678,7 +678,6 @@ class FTPDeleteNode(BaseNode):
         tooltip="Create parent directories if they don't exist",
     ),
 )
-@executable_node
 class FTPMakeDirNode(BaseNode):
     """
     Create a directory on FTP server.
@@ -704,8 +703,8 @@ class FTPMakeDirNode(BaseNode):
         self.node_type = "FTPMakeDirNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("created", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_output_port("created", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -756,8 +755,8 @@ class FTPMakeDirNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="integration")
+@properties()  # Input port driven
 class FTPRemoveDirNode(BaseNode):
     """
     Remove a directory on FTP server.
@@ -780,8 +779,8 @@ class FTPRemoveDirNode(BaseNode):
         self.node_type = "FTPRemoveDirNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("removed", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_output_port("removed", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -816,8 +815,8 @@ class FTPRemoveDirNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="integration")
+@properties()  # Input port driven
 class FTPRenameNode(BaseNode):
     """
     Rename a file or directory on FTP server.
@@ -841,9 +840,9 @@ class FTPRenameNode(BaseNode):
         self.node_type = "FTPRenameNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("old_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("new_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("renamed", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("old_path", DataType.STRING)
+        self.add_input_port("new_path", DataType.STRING)
+        self.add_output_port("renamed", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -879,8 +878,8 @@ class FTPRenameNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # No config
-@executable_node
+@node(category="integration")
+@properties()  # No config
 class FTPDisconnectNode(BaseNode):
     """
     Disconnect from FTP server.
@@ -900,7 +899,7 @@ class FTPDisconnectNode(BaseNode):
         self.node_type = "FTPDisconnectNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("disconnected", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("disconnected", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -932,8 +931,8 @@ class FTPDisconnectNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="integration")
+@properties()  # Input port driven
 class FTPGetSizeNode(BaseNode):
     """
     Get the size of a file on FTP server.
@@ -957,9 +956,9 @@ class FTPGetSizeNode(BaseNode):
         self.node_type = "FTPGetSizeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("remote_path", DataType.STRING)
+        self.add_output_port("size", DataType.INTEGER)
+        self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

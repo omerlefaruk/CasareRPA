@@ -10,12 +10,11 @@ from typing import Any, List
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import GoogleSheetsClient
@@ -86,7 +85,8 @@ SHEETS_VALUE_RENDER = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -103,7 +103,6 @@ SHEETS_VALUE_RENDER = PropertyDef(
     ),
     SHEETS_VALUE_RENDER,
 )
-@executable_node
 class SheetsGetCellNode(SheetsBaseNode):
     """
     Read a single cell value from Google Sheets.
@@ -136,16 +135,12 @@ class SheetsGetCellNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("cell", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "value_render_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("cell", DataType.STRING, required=True)
+        self.add_input_port("value_render_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
+        self.add_output_port("value", DataType.ANY)
 
     async def _execute_sheets(
         self,
@@ -198,7 +193,8 @@ class SheetsGetCellNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -223,7 +219,6 @@ class SheetsGetCellNode(SheetsBaseNode):
         tab="advanced",
     ),
 )
-@executable_node
 class SheetsGetRangeNode(SheetsBaseNode):
     """
     Read a range of values from Google Sheets.
@@ -257,18 +252,14 @@ class SheetsGetRangeNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port("range", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "value_render_option", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "major_dimension", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("range", DataType.STRING, required=True)
+        self.add_input_port("value_render_option", DataType.STRING, required=False)
+        self.add_input_port("major_dimension", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("column_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("values", DataType.LIST)
+        self.add_output_port("row_count", DataType.INTEGER)
+        self.add_output_port("column_count", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -315,7 +306,8 @@ class SheetsGetRangeNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -349,7 +341,6 @@ class SheetsGetRangeNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_RENDER,
 )
-@executable_node
 class SheetsGetRowNode(SheetsBaseNode):
     """
     Read an entire row from Google Sheets.
@@ -383,21 +374,15 @@ class SheetsGetRowNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("row_num", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port(
-            "start_col", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("end_col", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "value_render_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("row_num", DataType.INTEGER, required=True)
+        self.add_input_port("start_col", DataType.STRING, required=False)
+        self.add_input_port("end_col", DataType.STRING, required=False)
+        self.add_input_port("value_render_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("cell_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("values", DataType.LIST)
+        self.add_output_port("cell_count", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -456,7 +441,8 @@ class SheetsGetRowNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -491,7 +477,6 @@ class SheetsGetRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_RENDER,
 )
-@executable_node
 class SheetsGetColumnNode(SheetsBaseNode):
     """
     Read an entire column from Google Sheets.
@@ -525,21 +510,15 @@ class SheetsGetColumnNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("column", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "start_row", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port("end_row", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port(
-            "value_render_option", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("column", DataType.STRING, required=True)
+        self.add_input_port("start_row", DataType.INTEGER, required=False)
+        self.add_input_port("end_row", DataType.INTEGER, required=False)
+        self.add_input_port("value_render_option", DataType.STRING, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("cell_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("values", DataType.LIST)
+        self.add_output_port("cell_count", DataType.INTEGER)
 
     async def _execute_sheets(
         self,
@@ -601,7 +580,8 @@ class SheetsGetColumnNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
@@ -639,7 +619,6 @@ class SheetsGetColumnNode(SheetsBaseNode):
         tooltip="Only match if entire cell content equals search value",
     ),
 )
-@executable_node
 class SheetsSearchNode(SheetsBaseNode):
     """
     Search for values in Google Sheets.
@@ -674,26 +653,16 @@ class SheetsSearchNode(SheetsBaseNode):
         self._define_common_input_ports()
         self._define_spreadsheet_input_port()
 
-        self.add_input_port(
-            "search_value", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "sheet_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "search_range", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "match_case", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "match_entire_cell", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("search_value", DataType.STRING, required=True)
+        self.add_input_port("sheet_name", DataType.STRING, required=False)
+        self.add_input_port("search_range", DataType.STRING, required=False)
+        self.add_input_port("match_case", DataType.BOOLEAN, required=False)
+        self.add_input_port("match_entire_cell", DataType.BOOLEAN, required=False)
 
         self._define_common_output_ports()
-        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("match_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("first_match", PortType.OUTPUT, DataType.OBJECT)
+        self.add_output_port("results", DataType.LIST)
+        self.add_output_port("match_count", DataType.INTEGER)
+        self.add_output_port("first_match", DataType.OBJECT)
 
     async def _execute_sheets(
         self,
@@ -801,13 +770,13 @@ class SheetsSearchNode(SheetsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
     SHEETS_SPREADSHEET_ID,
 )
-@executable_node
 class SheetsGetSheetInfoNode(SheetsBaseNode):
     """
     Get spreadsheet metadata and sheet information.
@@ -842,10 +811,10 @@ class SheetsGetSheetInfoNode(SheetsBaseNode):
         self._define_spreadsheet_input_port()
 
         self._define_common_output_ports()
-        self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("sheets", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("sheet_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("locale", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("title", DataType.STRING)
+        self.add_output_port("sheets", DataType.LIST)
+        self.add_output_port("sheet_count", DataType.INTEGER)
+        self.add_output_port("locale", DataType.STRING)
 
     async def _execute_sheets(
         self,

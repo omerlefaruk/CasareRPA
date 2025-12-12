@@ -12,7 +12,7 @@ def _replace_widget(node: VisualNode, widget) -> None:
     """
     Replace auto-generated widget with custom widget.
 
-    If a property already exists (from @node_schema auto-generation),
+    If a property already exists (from @properties auto-generation),
     remove it first to avoid NodePropertyError conflicts.
 
     Args:
@@ -51,6 +51,7 @@ from casare_rpa.nodes.file import (
     WriteJSONFileNode,
     ZipFilesNode,
     UnzipFilesNode,
+    ImageConvertNode,
 )
 
 
@@ -416,7 +417,7 @@ class VisualListDirectoryNode(VisualNode):
             ),
         )
         # Note: pattern, recursive, files_only, dirs_only are auto-generated
-        # from @node_schema decorator on ListDirectoryNode - do not add manually
+        # from @properties decorator on ListDirectoryNode - do not add manually
 
     def get_node_class(self) -> type:
         return ListDirectoryNode
@@ -681,6 +682,53 @@ class VisualUnzipFileNode(VisualNode):
         self.add_typed_output("extract_to", DataType.STRING)
         self.add_typed_output("files", DataType.LIST)
         self.add_typed_output("file_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+# =============================================================================
+# Image Operations
+# =============================================================================
+
+
+class VisualImageConvertNode(VisualNode):
+    """Visual representation of ImageConvertNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Image Convert"
+    NODE_CATEGORY = "file_operations/image"
+    CASARE_NODE_CLASS = "ImageConvertNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="source_path",
+                label="Source Image",
+                file_filter="Image Files (*.png *.jpg *.jpeg *.webp *.bmp *.gif);;All Files (*.*)",
+                placeholder="Select image to convert...",
+            ),
+        )
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="output_path",
+                label="Output Path",
+                file_filter="Image Files (*.png *.jpg *.jpeg *.webp *.bmp *.gif);;All Files (*.*)",
+                placeholder="Optional - auto-generates if empty...",
+            ),
+        )
+        # Note: output_format is auto-generated from @properties decorator on ImageConvertNode
+
+    def get_node_class(self) -> type:
+        return ImageConvertNode
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("source_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("output_path", DataType.STRING)
+        self.add_typed_output("format", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 

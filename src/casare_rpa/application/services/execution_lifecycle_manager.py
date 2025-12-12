@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Optional, Set
 from loguru import logger
 
-from casare_rpa.domain.events import EventType, get_event_bus
+from casare_rpa.domain.events import get_event_bus, WorkflowStopped
 
 
 class ExecutionState(str, Enum):
@@ -424,12 +424,12 @@ class ExecutionLifecycleManager:
                 if task_was_cancelled:
                     try:
                         event_bus = get_event_bus()
-                        event_bus.emit(
-                            EventType.WORKFLOW_STOPPED,
-                            {
-                                "reason": "force_cancelled",
-                                "force": force,
-                            },
+                        event_bus.publish(
+                            WorkflowStopped(
+                                workflow_id="",
+                                reason="force_cancelled",
+                                stopped_at_node_id=None,
+                            )
                         )
                         logger.debug("Emitted WORKFLOW_STOPPED event for force cancel")
                     except Exception as e:

@@ -11,12 +11,11 @@ from typing import Any, List, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_calendar_client import (
@@ -99,7 +98,8 @@ def _parse_attendees(attendees_str: str) -> List[dict]:
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -135,7 +135,6 @@ def _parse_attendees(attendees_str: str) -> List[dict]:
         tooltip="Maximum number of events to return (1-2500)",
     ),
 )
-@executable_node
 class CalendarListEventsNode(CalendarBaseNode):
     """
     List events from a Google Calendar.
@@ -172,19 +171,15 @@ class CalendarListEventsNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("time_min", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("time_max", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("query", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "max_results", PortType.INPUT, DataType.INTEGER, required=False
-        )
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("time_min", DataType.STRING, required=False)
+        self.add_input_port("time_max", DataType.STRING, required=False)
+        self.add_input_port("query", DataType.STRING, required=False)
+        self.add_input_port("max_results", DataType.INTEGER, required=False)
 
-        self.add_output_port("events", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("event_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("next_page_token", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("events", DataType.LIST)
+        self.add_output_port("event_count", DataType.INTEGER)
+        self.add_output_port("next_page_token", DataType.STRING)
 
     async def _execute_calendar(
         self,
@@ -243,13 +238,13 @@ class CalendarListEventsNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
     EVENT_ID,
 )
-@executable_node
 class CalendarGetEventNode(CalendarBaseNode):
     """
     Get a single calendar event by ID.
@@ -284,15 +279,13 @@ class CalendarGetEventNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("event_id", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("event_id", DataType.STRING, required=True)
 
-        self.add_output_port("event", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("summary", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("start", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("end", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("event", DataType.DICT)
+        self.add_output_port("summary", DataType.STRING)
+        self.add_output_port("start", DataType.DICT)
+        self.add_output_port("end", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -336,7 +329,8 @@ class CalendarGetEventNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -408,7 +402,6 @@ class CalendarGetEventNode(CalendarBaseNode):
         tooltip="Who to notify about event changes",
     ),
 )
-@executable_node
 class CalendarCreateEventNode(CalendarBaseNode):
     """
     Create a new calendar event.
@@ -448,28 +441,18 @@ class CalendarCreateEventNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("summary", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "start_datetime", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "end_datetime", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("timezone", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("location", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "attendees", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("summary", DataType.STRING, required=True)
+        self.add_input_port("start_datetime", DataType.STRING, required=True)
+        self.add_input_port("end_datetime", DataType.STRING, required=True)
+        self.add_input_port("timezone", DataType.STRING, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
+        self.add_input_port("location", DataType.STRING, required=False)
+        self.add_input_port("attendees", DataType.STRING, required=False)
 
-        self.add_output_port("event_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("html_link", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("event", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("event_id", DataType.STRING)
+        self.add_output_port("html_link", DataType.STRING)
+        self.add_output_port("event", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -560,7 +543,8 @@ class CalendarCreateEventNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -612,7 +596,6 @@ class CalendarCreateEventNode(CalendarBaseNode):
         tooltip="Who to notify about event changes",
     ),
 )
-@executable_node
 class CalendarUpdateEventNode(CalendarBaseNode):
     """
     Update an existing calendar event.
@@ -650,24 +633,16 @@ class CalendarUpdateEventNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("event_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("summary", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "start_datetime", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "end_datetime", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("location", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("event_id", DataType.STRING, required=True)
+        self.add_input_port("summary", DataType.STRING, required=False)
+        self.add_input_port("start_datetime", DataType.STRING, required=False)
+        self.add_input_port("end_datetime", DataType.STRING, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
+        self.add_input_port("location", DataType.STRING, required=False)
 
-        self.add_output_port("event_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("event", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("event_id", DataType.STRING)
+        self.add_output_port("event", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -747,7 +722,8 @@ class CalendarUpdateEventNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -761,7 +737,6 @@ class CalendarUpdateEventNode(CalendarBaseNode):
         tooltip="Who to notify about event deletion",
     ),
 )
-@executable_node
 class CalendarDeleteEventNode(CalendarBaseNode):
     """
     Delete a calendar event.
@@ -794,12 +769,10 @@ class CalendarDeleteEventNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("event_id", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("event_id", DataType.STRING, required=True)
 
-        self.add_output_port("deleted_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("deleted_id", DataType.STRING)
 
     async def _execute_calendar(
         self,
@@ -845,7 +818,8 @@ class CalendarDeleteEventNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -867,7 +841,6 @@ class CalendarDeleteEventNode(CalendarBaseNode):
         tooltip="Who to notify about event creation",
     ),
 )
-@executable_node
 class CalendarQuickAddNode(CalendarBaseNode):
     """
     Create an event using natural language.
@@ -906,16 +879,14 @@ class CalendarQuickAddNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("text", DataType.STRING, required=True)
 
-        self.add_output_port("event_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("summary", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("start", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("end", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("event", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("event_id", DataType.STRING)
+        self.add_output_port("summary", DataType.STRING)
+        self.add_output_port("start", DataType.DICT)
+        self.add_output_port("end", DataType.DICT)
+        self.add_output_port("event", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -971,7 +942,8 @@ class CalendarQuickAddNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
@@ -994,7 +966,6 @@ class CalendarQuickAddNode(CalendarBaseNode):
         tooltip="Who to notify about event move",
     ),
 )
-@executable_node
 class CalendarMoveEventNode(CalendarBaseNode):
     """
     Move an event to another calendar.
@@ -1029,17 +1000,13 @@ class CalendarMoveEventNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("event_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "destination_calendar_id", PortType.INPUT, DataType.STRING, required=True
-        )
+        self.add_input_port("calendar_id", DataType.STRING, required=False)
+        self.add_input_port("event_id", DataType.STRING, required=True)
+        self.add_input_port("destination_calendar_id", DataType.STRING, required=True)
 
-        self.add_output_port("event_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("new_calendar_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("event", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("event_id", DataType.STRING)
+        self.add_output_port("new_calendar_id", DataType.STRING)
+        self.add_output_port("event", DataType.DICT)
 
     async def _execute_calendar(
         self,
@@ -1100,7 +1067,8 @@ class CalendarMoveEventNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     PropertyDef(
@@ -1131,7 +1099,6 @@ class CalendarMoveEventNode(CalendarBaseNode):
         tooltip="End of time range to check (ISO 8601)",
     ),
 )
-@executable_node
 class CalendarGetFreeBusyNode(CalendarBaseNode):
     """
     Query free/busy information for calendars.
@@ -1166,15 +1133,13 @@ class CalendarGetFreeBusyNode(CalendarBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        self.add_input_port(
-            "calendar_ids", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("time_min", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("time_max", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("calendar_ids", DataType.STRING, required=True)
+        self.add_input_port("time_min", DataType.STRING, required=True)
+        self.add_input_port("time_max", DataType.STRING, required=True)
 
-        self.add_output_port("free_busy", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("is_busy", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("busy_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("free_busy", DataType.DICT)
+        self.add_output_port("is_busy", DataType.BOOLEAN)
+        self.add_output_port("busy_count", DataType.INTEGER)
 
     async def _execute_calendar(
         self,

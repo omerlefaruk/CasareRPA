@@ -3,8 +3,13 @@ CasareRPA - Value Objects
 
 Value objects are immutable objects defined by their attributes rather than identity.
 Includes type definitions, ports, and other immutable domain concepts.
+
+NOTE: EventType enum is provided for backward compatibility. New code should prefer
+typed domain events from casare_rpa.domain.events (e.g., NodeStarted, NodeCompleted).
 """
 
+from casare_rpa.domain.value_objects.execution_metadata import ExecutionMetadata
+from casare_rpa.domain.value_objects.node_metadata import NodeMetadata
 from casare_rpa.domain.value_objects.log_entry import (
     LogLevel,
     LogEntry,
@@ -16,6 +21,7 @@ from casare_rpa.domain.value_objects.log_entry import (
     OFFLINE_BUFFER_SIZE,
 )
 from casare_rpa.domain.value_objects.port import Port
+from casare_rpa.domain.value_objects.position import Position
 from casare_rpa.domain.value_objects.types import (
     Connection,
     DataType,
@@ -26,6 +32,8 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
     NodeConfig,
     NodeId,
+    NodeResult,
+    NodeState,
     NodeStatus,
     PortDefinition,
     PortId,
@@ -52,6 +60,7 @@ __all__ = [
     "EventType",
     "ExecutionMode",
     "LogLevel",
+    "NodeState",
     "NodeStatus",
     "PortType",
     "TriggerType",
@@ -77,10 +86,14 @@ __all__ = [
     "MAX_RETRIES",
     "OFFLINE_BUFFER_SIZE",
     "SCHEMA_VERSION",
-    # Value objects
+    # Value objects / Dataclasses
+    "ExecutionMetadata",
     "LogBatch",
     "LogEntry",
     "LogQuery",
     "LogStats",
+    "NodeMetadata",
+    "NodeResult",
     "Port",
+    "Position",
 ]
