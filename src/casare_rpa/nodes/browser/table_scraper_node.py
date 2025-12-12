@@ -17,13 +17,12 @@ from typing import Any, Dict, List, Union
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
@@ -110,7 +109,8 @@ TABLE_EXTRACTION_JS = """
 """
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "table_selector",
         PropertyType.SELECTOR,
@@ -166,7 +166,6 @@ TABLE_EXTRACTION_JS = """
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
-@executable_node
 class TableScraperNode(BrowserBaseNode):
     """
     Table Scraper Node - extracts structured data from HTML tables.
@@ -174,7 +173,7 @@ class TableScraperNode(BrowserBaseNode):
     Finds a table element and extracts its rows and cells into
     structured data formats.
 
-    Config (via @node_schema):
+    Config (via @properties):
         table_selector: CSS or XPath selector for the table
         include_headers: Whether to include headers in output
         output_format: Output format (list_of_dicts, list_of_lists, csv_string)
@@ -216,9 +215,9 @@ class TableScraperNode(BrowserBaseNode):
         """Define node ports."""
         self.add_page_input_port()
         self.add_input_port("table_selector", DataType.STRING, required=False)
-        self.add_output_port("data", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("headers", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("data", DataType.ANY)
+        self.add_output_port("row_count", DataType.INTEGER)
+        self.add_output_port("headers", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute table extraction."""

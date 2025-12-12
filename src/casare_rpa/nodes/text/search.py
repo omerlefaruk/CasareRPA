@@ -13,7 +13,7 @@ import re
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -24,7 +24,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@executable_node
+@node(category="text")
 class TextSubstringNode(BaseNode):
     """
     Extract a substring from a string.
@@ -89,7 +89,8 @@ class TextSubstringNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "case_sensitive",
         PropertyType.BOOLEAN,
@@ -98,7 +99,6 @@ class TextSubstringNode(BaseNode):
         tooltip="Case-sensitive search",
     ),
 )
-@executable_node
 class TextContainsNode(BaseNode):
     """
     Check if a string contains a substring.
@@ -176,7 +176,8 @@ class TextContainsNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "case_sensitive",
         PropertyType.BOOLEAN,
@@ -185,7 +186,6 @@ class TextContainsNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
-@executable_node
 class TextStartsWithNode(BaseNode):
     """
     Check if a string starts with a prefix.
@@ -251,7 +251,8 @@ class TextStartsWithNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "case_sensitive",
         PropertyType.BOOLEAN,
@@ -260,7 +261,6 @@ class TextStartsWithNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
-@executable_node
 class TextEndsWithNode(BaseNode):
     """
     Check if a string ends with a suffix.
@@ -326,7 +326,8 @@ class TextEndsWithNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "all_matches",
         PropertyType.BOOLEAN,
@@ -356,7 +357,6 @@ class TextEndsWithNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
-@executable_node
 class TextExtractNode(BaseNode):
     """
     Extract text using regex with capture groups.

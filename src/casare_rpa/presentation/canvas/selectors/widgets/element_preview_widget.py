@@ -9,7 +9,7 @@ Shows the currently selected element with:
 
 from typing import Optional, Dict, Any, List
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QFont, QColor, QSyntaxHighlighter, QTextCharFormat
 from PySide6.QtWidgets import (
     QWidget,
@@ -162,7 +162,7 @@ class ElementPreviewWidget(QWidget):
             '<a href="#" style="color: #60a5fa;">Open in UI Explorer</a>'
         )
         explorer_link.setOpenExternalLinks(False)
-        explorer_link.linkActivated.connect(lambda: self.open_explorer_requested.emit())
+        explorer_link.linkActivated.connect(self._on_explorer_link_activated)
         explorer_link.setCursor(Qt.CursorShape.PointingHandCursor)
         explorer_link.setStyleSheet("font-size: 11px;")
         header.addWidget(explorer_link)
@@ -250,6 +250,11 @@ class ElementPreviewWidget(QWidget):
         """)
         self._empty_state.setVisible(True)
         layout.addWidget(self._empty_state)
+
+    @Slot(str)
+    def _on_explorer_link_activated(self, link: str) -> None:
+        """Handle explorer link activation."""
+        self.open_explorer_requested.emit()
 
     def update_from_state(self, state: ElementSelectorState) -> None:
         """Update widget from state."""

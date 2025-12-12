@@ -19,14 +19,13 @@ from casare_rpa.domain.credentials import (
     CREDENTIAL_NAME_PROP,
 )
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 
 
@@ -59,7 +58,8 @@ HTTP_PASSWORD_PROP = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="http")
+@properties(
     CREDENTIAL_NAME_PROP,
     PropertyDef(
         "auth_type",
@@ -80,7 +80,6 @@ HTTP_PASSWORD_PROP = PropertyDef(
         tooltip="Header name for API key authentication",
     ),
 )
-@executable_node
 class HttpAuthNode(BaseNode, CredentialAwareMixin):
     """
     Configure HTTP authentication headers.
@@ -95,7 +94,7 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
         2. Direct parameters (token, username, password)
         3. Environment variables (HTTP_TOKEN, HTTP_USERNAME, HTTP_PASSWORD)
 
-    Config (via @node_schema):
+    Config (via @properties):
         credential_name: Credential alias for vault lookup
         auth_type: Type of authentication (Bearer, Basic, ApiKey)
         token: Bearer token or API key
@@ -207,7 +206,8 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "client_id",
         PropertyType.STRING,
@@ -259,7 +259,6 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
         tooltip="Enable PKCE (Proof Key for Code Exchange) for enhanced security",
     ),
 )
-@executable_node
 class OAuth2AuthorizeNode(BaseNode):
     """
     Build OAuth 2.0 authorization URL for user authentication.
@@ -268,7 +267,7 @@ class OAuth2AuthorizeNode(BaseNode):
     Use this node to generate the URL that should be opened in a browser
     for the user to authenticate.
 
-    Config (via @node_schema):
+    Config (via @properties):
         client_id: OAuth 2.0 client ID
         auth_url: Authorization endpoint URL
         scope: Space-separated OAuth scopes
@@ -297,16 +296,16 @@ class OAuth2AuthorizeNode(BaseNode):
         self.node_type = "OAuth2AuthorizeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("client_id", PortType.INPUT, DataType.STRING)
-        self.add_input_port("auth_url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("scope", PortType.INPUT, DataType.STRING)
-        self.add_input_port("redirect_uri", PortType.INPUT, DataType.STRING)
-        self.add_input_port("extra_params", PortType.INPUT, DataType.DICT)
+        self.add_input_port("client_id", DataType.STRING)
+        self.add_input_port("auth_url", DataType.STRING)
+        self.add_input_port("scope", DataType.STRING)
+        self.add_input_port("redirect_uri", DataType.STRING)
+        self.add_input_port("extra_params", DataType.DICT)
 
-        self.add_output_port("auth_url", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("state", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("code_verifier", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("code_challenge", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("auth_url", DataType.STRING)
+        self.add_output_port("state", DataType.STRING)
+        self.add_output_port("code_verifier", DataType.STRING)
+        self.add_output_port("code_challenge", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import hashlib
@@ -394,7 +393,8 @@ class OAuth2AuthorizeNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "client_id",
         PropertyType.STRING,
@@ -437,7 +437,6 @@ class OAuth2AuthorizeNode(BaseNode):
         tooltip="OAuth 2.0 grant type",
     ),
 )
-@executable_node
 class OAuth2TokenExchangeNode(BaseNode):
     """
     Exchange OAuth 2.0 authorization code for access token.
@@ -448,7 +447,7 @@ class OAuth2TokenExchangeNode(BaseNode):
     - refresh_token: Refresh expired access token
     - password: Resource owner password credentials (legacy)
 
-    Config (via @node_schema):
+    Config (via @properties):
         client_id: OAuth 2.0 client ID
         client_secret: Client secret (optional for public clients)
         token_url: Token endpoint URL
@@ -486,20 +485,20 @@ class OAuth2TokenExchangeNode(BaseNode):
         self.node_type = "OAuth2TokenExchangeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", PortType.INPUT, DataType.STRING)
-        self.add_input_port("code_verifier", PortType.INPUT, DataType.STRING)
-        self.add_input_port("refresh_token", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("scope", PortType.INPUT, DataType.STRING)
+        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("code_verifier", DataType.STRING)
+        self.add_input_port("refresh_token", DataType.STRING)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("scope", DataType.STRING)
 
-        self.add_output_port("access_token", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("refresh_token", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("token_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("expires_in", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("scope", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("id_token", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("full_response", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("access_token", DataType.STRING)
+        self.add_output_port("refresh_token", DataType.STRING)
+        self.add_output_port("token_type", DataType.STRING)
+        self.add_output_port("expires_in", DataType.INTEGER)
+        self.add_output_port("scope", DataType.STRING)
+        self.add_output_port("id_token", DataType.STRING)
+        self.add_output_port("full_response", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import aiohttp
@@ -619,7 +618,8 @@ class OAuth2TokenExchangeNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "port",
         PropertyType.INTEGER,
@@ -646,7 +646,6 @@ class OAuth2TokenExchangeNode(BaseNode):
         tooltip="URL path for the callback",
     ),
 )
-@executable_node
 class OAuth2CallbackServerNode(BaseNode):
     """
     Start a local server to receive OAuth 2.0 callback.
@@ -654,7 +653,7 @@ class OAuth2CallbackServerNode(BaseNode):
     This node starts a temporary HTTP server that waits for the OAuth
     provider to redirect back with the authorization code or tokens.
 
-    Config (via @node_schema):
+    Config (via @properties):
         port: Local port for callback server (default: 8080)
         timeout: Maximum wait time in seconds (default: 120)
         path: Callback URL path (default: /callback)
@@ -683,13 +682,13 @@ class OAuth2CallbackServerNode(BaseNode):
         self.node_type = "OAuth2CallbackServerNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("expected_state", PortType.INPUT, DataType.STRING)
+        self.add_input_port("expected_state", DataType.STRING)
 
-        self.add_output_port("code", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("state", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("access_token", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("error_description", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("code", DataType.STRING)
+        self.add_output_port("state", DataType.STRING)
+        self.add_output_port("access_token", DataType.STRING)
+        self.add_output_port("error", DataType.STRING)
+        self.add_output_port("error_description", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import asyncio
@@ -825,7 +824,8 @@ class OAuth2CallbackServerNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node_schema(
+@node(category="http")
+@properties(
     PropertyDef(
         "introspection_url",
         PropertyType.STRING,
@@ -848,7 +848,6 @@ class OAuth2CallbackServerNode(BaseNode):
         tooltip="Client secret for introspection authentication",
     ),
 )
-@executable_node
 class OAuth2TokenValidateNode(BaseNode):
     """
     Validate an OAuth 2.0 access token using introspection endpoint.
@@ -856,7 +855,7 @@ class OAuth2TokenValidateNode(BaseNode):
     Implements RFC 7662 (Token Introspection) to check if a token
     is active and retrieve its metadata.
 
-    Config (via @node_schema):
+    Config (via @properties):
         introspection_url: Token introspection endpoint URL
         client_id: Client ID for authentication
         client_secret: Client secret for authentication
@@ -887,15 +886,15 @@ class OAuth2TokenValidateNode(BaseNode):
         self.node_type = "OAuth2TokenValidateNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("token", PortType.INPUT, DataType.STRING)
+        self.add_input_port("token", DataType.STRING)
 
-        self.add_output_port("active", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("client_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("username", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("scope", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("expires_at", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("token_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("full_response", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("active", DataType.BOOLEAN)
+        self.add_output_port("client_id", DataType.STRING)
+        self.add_output_port("username", DataType.STRING)
+        self.add_output_port("scope", DataType.STRING)
+        self.add_output_port("expires_at", DataType.INTEGER)
+        self.add_output_port("token_type", DataType.STRING)
+        self.add_output_port("full_response", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import aiohttp

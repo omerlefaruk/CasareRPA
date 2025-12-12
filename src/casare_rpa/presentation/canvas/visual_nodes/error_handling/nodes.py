@@ -12,7 +12,7 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 class VisualRetryNode(VisualNode):
     """Visual representation of RetryNode.
 
-    Widgets are auto-generated from RetryNode's @node_schema decorator.
+    Widgets are auto-generated from RetryNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"
@@ -59,7 +59,7 @@ class VisualRetryFailNode(VisualNode):
 class VisualThrowErrorNode(VisualNode):
     """Visual representation of ThrowErrorNode.
 
-    Widgets are auto-generated from ThrowErrorNode's @node_schema decorator.
+    Widgets are auto-generated from ThrowErrorNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"
@@ -76,7 +76,7 @@ class VisualThrowErrorNode(VisualNode):
 class VisualWebhookNotifyNode(VisualNode):
     """Visual representation of WebhookNotifyNode.
 
-    Widgets are auto-generated from WebhookNotifyNode's @node_schema decorator.
+    Widgets are auto-generated from WebhookNotifyNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"
@@ -116,7 +116,7 @@ class VisualOnErrorNode(VisualNode):
 class VisualErrorRecoveryNode(VisualNode):
     """Visual representation of ErrorRecoveryNode.
 
-    Widgets are auto-generated from ErrorRecoveryNode's @node_schema decorator.
+    Widgets are auto-generated from ErrorRecoveryNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"
@@ -135,7 +135,7 @@ class VisualErrorRecoveryNode(VisualNode):
 class VisualLogErrorNode(VisualNode):
     """Visual representation of LogErrorNode.
 
-    Widgets auto-generated from LogErrorNode's @node_schema decorator.
+    Widgets auto-generated from LogErrorNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"
@@ -161,7 +161,7 @@ class VisualLogErrorNode(VisualNode):
 class VisualAssertNode(VisualNode):
     """Visual representation of AssertNode.
 
-    Widgets are auto-generated from AssertNode's @node_schema decorator.
+    Widgets are auto-generated from AssertNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"
@@ -183,7 +183,7 @@ class VisualAIRecoveryNode(VisualNode):
     AI-powered error recovery analysis that recommends strategies
     based on error context and optional screenshots.
 
-    Widgets are auto-generated from AIRecoveryNode's @node_schema decorator.
+    Widgets are auto-generated from AIRecoveryNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.error_handling"

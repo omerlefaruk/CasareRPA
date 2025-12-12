@@ -1,1 +1,0 @@
-"""Canvas coordinators tests."""

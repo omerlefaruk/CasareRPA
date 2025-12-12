@@ -98,7 +98,7 @@ VisualNode (base_visual_node.py)
     +-- Key Methods:
         +-- setup_ports() - Define exec/data ports
         +-- setup_widgets() - Custom UI widgets
-        +-- _auto_create_widgets_from_schema() - Generate from @node_schema
+        +-- _auto_create_widgets_from_schema() - Generate from @properties
         +-- set_collapsed() / toggle_collapse() - Show/hide non-essential widgets
         +-- update_status() - Visual execution feedback
 ```

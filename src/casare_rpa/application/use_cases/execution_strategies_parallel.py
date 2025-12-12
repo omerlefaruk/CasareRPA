@@ -7,9 +7,9 @@ import asyncio
 from typing import Any, Dict, List, Optional, Set, Tuple, Callable
 from loguru import logger
 
-from casare_rpa.domain.value_objects.types import EventType, NodeId
+from casare_rpa.domain.value_objects.types import NodeId
 from casare_rpa.domain.interfaces import IExecutionContext
-from casare_rpa.domain.events import EventBus
+from casare_rpa.domain.events import EventBus, WorkflowProgress
 
 # Type aliases
 NodeInstanceGetter = Callable[[str], Any]
@@ -40,9 +40,14 @@ class ParallelExecutionStrategy:
         """Executes multiple workflows concurrently (Shift+F3 mode)."""
         logger.info(f"Starting {len(start_nodes)} parallel workflows")
 
-        self.state_manager.emit_event(
-            EventType.WORKFLOW_PROGRESS,
-            {"message": f"Starting {len(start_nodes)} parallel workflows"},
+        self.state_manager.publish_event(
+            WorkflowProgress(
+                workflow_id="",
+                current_node_id="",
+                completed_nodes=0,
+                total_nodes=len(start_nodes),
+                percentage=0.0,
+            )
         )
 
         async def _run_single(start_id: NodeId, idx: int) -> Tuple[str, bool]:

@@ -11,11 +11,10 @@ import subprocess
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -28,7 +27,8 @@ class SecurityError(Exception):
     pass
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "command",
         PropertyType.STRING,
@@ -81,12 +81,11 @@ class SecurityError(Exception):
         tooltip="Allow blocked commands and dangerous characters (NOT RECOMMENDED)",
     ),
 )
-@executable_node
 class RunCommandNode(BaseNode):
     """
     Run a terminal/CMD command.
 
-    Config (via @node_schema):
+    Config (via @properties):
         shell: Use shell execution (default: False for security)
         timeout: Command timeout in seconds (default: 60)
         working_dir: Working directory (default: current)
@@ -156,12 +155,12 @@ class RunCommandNode(BaseNode):
         self.node_type = "RunCommandNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("command", PortType.INPUT, DataType.STRING)
-        self.add_input_port("args", PortType.INPUT, DataType.ANY)
-        self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("command", DataType.STRING)
+        self.add_input_port("args", DataType.ANY)
+        self.add_output_port("stdout", DataType.STRING)
+        self.add_output_port("stderr", DataType.STRING)
+        self.add_output_port("return_code", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -294,7 +293,8 @@ class RunCommandNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "script",
         PropertyType.STRING,
@@ -334,12 +334,11 @@ class RunCommandNode(BaseNode):
         tooltip="Use PowerShell Constrained Language Mode for additional security",
     ),
 )
-@executable_node
 class RunPowerShellNode(BaseNode):
     """
     Run a PowerShell script or command.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Command timeout in seconds (default: 60)
         execution_policy: 'Bypass', 'Unrestricted', etc. (default: RemoteSigned)
         allow_dangerous: Allow dangerous commands (default: False)
@@ -411,11 +410,11 @@ class RunPowerShellNode(BaseNode):
         self.node_type = "RunPowerShellNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("script", PortType.INPUT, DataType.STRING)
-        self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("script", DataType.STRING)
+        self.add_output_port("stdout", DataType.STRING)
+        self.add_output_port("stderr", DataType.STRING)
+        self.add_output_port("return_code", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

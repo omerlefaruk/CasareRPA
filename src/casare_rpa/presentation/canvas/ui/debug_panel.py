@@ -369,11 +369,11 @@ class DebugPanel(QDockWidget):
 
         btn_expand_all = QPushButton("Expand All")
         btn_expand_all.setFixedWidth(80)
-        btn_expand_all.clicked.connect(lambda: self._var_tree.expandAll())
+        btn_expand_all.clicked.connect(self._expand_all_variables)
 
         btn_collapse_all = QPushButton("Collapse All")
         btn_collapse_all.setFixedWidth(80)
-        btn_collapse_all.clicked.connect(lambda: self._var_tree.collapseAll())
+        btn_collapse_all.clicked.connect(self._collapse_all_variables)
 
         toolbar.addWidget(self._var_search)
         toolbar.addWidget(btn_refresh)
@@ -1025,6 +1025,16 @@ class DebugPanel(QDockWidget):
                 if ctx and hasattr(ctx, "variables"):
                     self.update_variables(dict(ctx.variables))
 
+    @Slot()
+    def _expand_all_variables(self) -> None:
+        """Expand all items in the variable tree."""
+        self._var_tree.expandAll()
+
+    @Slot()
+    def _collapse_all_variables(self) -> None:
+        """Collapse all items in the variable tree."""
+        self._var_tree.collapseAll()
+
     def _show_variable_context_menu(self, pos) -> None:
         """Show context menu for variable tree."""
         item = self._var_tree.itemAt(pos)
@@ -1034,23 +1044,20 @@ class DebugPanel(QDockWidget):
         menu = QMenu(self)
 
         copy_name_action = QAction("Copy Name", self)
-        copy_name_action.triggered.connect(
-            lambda: self._copy_to_clipboard(item.text(0))
-        )
+        copy_name_action.setData({"type": "copy_name", "text": item.text(0)})
+        copy_name_action.triggered.connect(self._on_variable_context_action_triggered)
         menu.addAction(copy_name_action)
 
         copy_value_action = QAction("Copy Value", self)
-        copy_value_action.triggered.connect(
-            lambda: self._copy_to_clipboard(item.text(1))
-        )
+        copy_value_action.setData({"type": "copy_value", "text": item.text(1)})
+        copy_value_action.triggered.connect(self._on_variable_context_action_triggered)
         menu.addAction(copy_value_action)
 
         menu.addSeparator()
 
         add_watch_action = QAction("Add to Watch", self)
-        add_watch_action.triggered.connect(
-            lambda: self._add_watch_expression(item.text(0))
-        )
+        add_watch_action.setData({"type": "add_watch", "text": item.text(0)})
+        add_watch_action.triggered.connect(self._on_variable_context_action_triggered)
         menu.addAction(add_watch_action)
 
         menu.exec_(self._var_tree.viewport().mapToGlobal(pos))
@@ -1061,6 +1068,20 @@ class DebugPanel(QDockWidget):
 
         clipboard = QApplication.clipboard()
         clipboard.setText(text)
+
+    @Slot()
+    def _on_variable_context_action_triggered(self) -> None:
+        """Handle variable context menu action."""
+        action = self.sender()
+        if action:
+            data = action.data()
+            if data and isinstance(data, dict):
+                action_type = data.get("type")
+                text = data.get("text", "")
+                if action_type in ("copy_name", "copy_value"):
+                    self._copy_to_clipboard(text)
+                elif action_type == "add_watch":
+                    self._add_watch_expression(text)
 
     def _show_breakpoint_context_menu(self, pos) -> None:
         """Show context menu for breakpoint table."""
@@ -1079,15 +1100,17 @@ class DebugPanel(QDockWidget):
         menu = QMenu(self)
 
         edit_condition_action = QAction("Edit Condition...", self)
+        edit_condition_action.setData({"node_id": node_id, "row": row})
         edit_condition_action.triggered.connect(
-            lambda: self._edit_breakpoint_condition(node_id, row)
+            self._on_edit_condition_action_triggered
         )
         menu.addAction(edit_condition_action)
 
         menu.addSeparator()
 
         remove_action = QAction("Remove Breakpoint", self)
-        remove_action.triggered.connect(lambda: self._remove_breakpoint(node_id))
+        remove_action.setData(node_id)
+        remove_action.triggered.connect(self._on_remove_breakpoint_action_triggered)
         menu.addAction(remove_action)
 
         menu.exec_(self._bp_table.viewport().mapToGlobal(pos))
@@ -1111,6 +1134,27 @@ class DebugPanel(QDockWidget):
         """Remove a breakpoint."""
         self.remove_breakpoint_from_list(node_id)
         self.breakpoint_toggled.emit(node_id, False)
+
+    @Slot()
+    def _on_edit_condition_action_triggered(self) -> None:
+        """Handle edit condition action from context menu."""
+        action = self.sender()
+        if action:
+            data = action.data()
+            if data and isinstance(data, dict):
+                node_id = data.get("node_id")
+                row = data.get("row")
+                if node_id is not None and row is not None:
+                    self._edit_breakpoint_condition(node_id, row)
+
+    @Slot()
+    def _on_remove_breakpoint_action_triggered(self) -> None:
+        """Handle remove breakpoint action from context menu."""
+        action = self.sender()
+        if action:
+            node_id = action.data()
+            if node_id:
+                self._remove_breakpoint(node_id)
 
     def _add_watch_from_input(self) -> None:
         """Add watch expression from input field."""

@@ -112,18 +112,14 @@ class ExecutionContext:
         # Publish VARIABLE_SET event (skip internal variables starting with _)
         if not name.startswith("_"):
             try:
-                from casare_rpa.domain.events import get_event_bus, Event
-                from casare_rpa.domain.value_objects.types import EventType
+                from casare_rpa.domain.events import get_event_bus, VariableSet
 
                 event_bus = get_event_bus()
                 event_bus.publish(
-                    Event(
-                        event_type=EventType.VARIABLE_SET,
-                        data={
-                            "name": name,
-                            "value": value,
-                            "timestamp": datetime.now().isoformat(),
-                        },
+                    VariableSet(
+                        variable_name=name,
+                        value=value,
+                        workflow_id=self._state.workflow_name,
                     )
                 )
             except Exception:

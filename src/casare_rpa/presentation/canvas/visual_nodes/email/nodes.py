@@ -25,7 +25,7 @@ class VisualSendEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Send Email node."""
         super().__init__()
-        # Widgets auto-generated from @node_schema on SendEmailNode
+        # Widgets auto-generated from @properties on SendEmailNode
         # Add attachments widget manually (not in schema, supports {{variable}} syntax)
         self.add_text_input(
             "attachments",

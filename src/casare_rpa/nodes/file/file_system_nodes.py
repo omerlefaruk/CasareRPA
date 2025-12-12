@@ -15,11 +15,10 @@ import shutil
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -30,7 +29,8 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -54,12 +54,11 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class DeleteFileNode(BaseNode):
     """
     Delete a file.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path to delete (required)
         ignore_missing: Don't error if file doesn't exist (default: False)
         allow_dangerous_paths: Allow system paths (default: False)
@@ -83,9 +82,9 @@ class DeleteFileNode(BaseNode):
         self.node_type = "DeleteFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("deleted_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_output_port("deleted_path", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -150,7 +149,8 @@ class DeleteFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "source_path",
         PropertyType.STRING,
@@ -189,12 +189,11 @@ class DeleteFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class CopyFileNode(BaseNode):
     """
     Copy a file to a new location.
 
-    Config (via @node_schema):
+    Config (via @properties):
         source_path: Source file path (required)
         dest_path: Destination file path (required)
         overwrite: Overwrite if destination exists (default: False)
@@ -222,11 +221,11 @@ class CopyFileNode(BaseNode):
         self.node_type = "CopyFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("source_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("dest_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("dest_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("bytes_copied", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("source_path", DataType.STRING)
+        self.add_input_port("dest_path", DataType.STRING)
+        self.add_output_port("dest_path", DataType.STRING)
+        self.add_output_port("bytes_copied", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -290,7 +289,8 @@ class CopyFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "source_path",
         PropertyType.STRING,
@@ -329,12 +329,11 @@ class CopyFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
-@executable_node
 class MoveFileNode(BaseNode):
     """
     Move or rename a file.
 
-    Config (via @node_schema):
+    Config (via @properties):
         source_path: Source file path (required)
         dest_path: Destination file path (required)
         overwrite: Overwrite if destination exists (default: False)
@@ -361,10 +360,10 @@ class MoveFileNode(BaseNode):
         self.node_type = "MoveFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("source_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("dest_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("dest_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("source_path", DataType.STRING)
+        self.add_input_port("dest_path", DataType.STRING)
+        self.add_output_port("dest_path", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

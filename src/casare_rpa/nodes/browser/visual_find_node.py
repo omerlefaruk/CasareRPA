@@ -14,9 +14,9 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import DataType, PortType
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
@@ -84,7 +84,8 @@ CLICK_AFTER_FIND = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     ELEMENT_DESCRIPTION,
     VISION_MODEL,
     CONFIDENCE_THRESHOLD,
@@ -94,7 +95,6 @@ CLICK_AFTER_FIND = PropertyDef(
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
-@executable_node
 class VisualFindElementNode(BrowserBaseNode):
     """
     Find UI elements using AI vision models.
@@ -105,7 +105,7 @@ class VisualFindElementNode(BrowserBaseNode):
     - Need to find by visual appearance
     - Selectors keep breaking due to UI changes
 
-    Config (via @node_schema):
+    Config (via @properties):
         element_description: Natural language description (required)
         vision_model: AI model to use (default: gpt-4o)
         confidence_threshold: Min confidence (default: 0.6)
@@ -145,21 +145,19 @@ class VisualFindElementNode(BrowserBaseNode):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Inputs
-        self.add_input_port("exec_in", PortType.EXEC, DataType.EXEC)
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE, required=False)
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("exec_in", DataType.EXEC)
+        self.add_input_port("page", DataType.PAGE, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("exec_out", PortType.EXEC, DataType.EXEC)
-        self.add_output_port("x", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("y", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("width", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("height", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.NUMBER)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_output_port("exec_out", DataType.EXEC)
+        self.add_output_port("x", DataType.INTEGER)
+        self.add_output_port("y", DataType.INTEGER)
+        self.add_output_port("width", DataType.INTEGER)
+        self.add_output_port("height", DataType.INTEGER)
+        self.add_output_port("confidence", DataType.NUMBER)
+        self.add_output_port("found", DataType.BOOLEAN)
+        self.add_output_port("page", DataType.PAGE)
 
     def _get_vision_finder(self) -> Any:
         """Get or create vision element finder."""

@@ -30,7 +30,7 @@ class VisualSetVariableNode(VisualNode):
     def __init__(self) -> None:
         """Initialize set variable node."""
         super().__init__()
-        # Widgets auto-generated from @node_schema on SetVariableNode
+        # Widgets auto-generated from @properties on SetVariableNode
         # Add value widget manually using custom wrapper (PropertyType.ANY not auto-generated)
         self._setup_value_widget()
         # Don't collapse - users need to see the value input
@@ -169,7 +169,7 @@ class VisualGetVariableNode(VisualNode):
     def __init__(self) -> None:
         """Initialize get variable node."""
         super().__init__()
-        # Widgets auto-generated from @node_schema on GetVariableNode
+        # Widgets auto-generated from @properties on GetVariableNode
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -189,7 +189,7 @@ class VisualIncrementVariableNode(VisualNode):
     def __init__(self) -> None:
         """Initialize increment variable node."""
         super().__init__()
-        # Widgets auto-generated from @node_schema on IncrementVariableNode
+        # Widgets auto-generated from @properties on IncrementVariableNode
 
     def setup_ports(self) -> None:
         """Setup ports."""

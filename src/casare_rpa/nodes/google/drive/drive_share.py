@@ -15,7 +15,7 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -50,7 +50,8 @@ DRIVE_FILE_ID = PropertyDef(
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "email",
@@ -106,7 +107,6 @@ DRIVE_FILE_ID = PropertyDef(
         tooltip="Transfer ownership to this user (requires role=owner)",
     ),
 )
-@executable_node
 class DriveShareFileNode(DriveBaseNode):
     """
     Add a permission to a Google Drive file or folder.
@@ -244,7 +244,8 @@ class DriveShareFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "permission_id",
@@ -256,7 +257,6 @@ class DriveShareFileNode(DriveBaseNode):
         tooltip="ID of the permission to remove",
     ),
 )
-@executable_node
 class DriveRemoveShareNode(DriveBaseNode):
     """
     Remove a permission from a Google Drive file or folder.
@@ -344,7 +344,8 @@ class DriveRemoveShareNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "include_permissions_for_view",
@@ -354,7 +355,6 @@ class DriveRemoveShareNode(DriveBaseNode):
         tooltip="Include permissions for published files",
     ),
 )
-@executable_node
 class DriveGetPermissionsNode(DriveBaseNode):
     """
     List all permissions on a Google Drive file or folder.
@@ -455,7 +455,8 @@ class DriveGetPermissionsNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "access_type",
@@ -481,7 +482,6 @@ class DriveGetPermissionsNode(DriveBaseNode):
         tooltip="Allow file to appear in search results",
     ),
 )
-@executable_node
 class DriveCreateShareLinkNode(DriveBaseNode):
     """
     Create a shareable link for a Google Drive file or folder.

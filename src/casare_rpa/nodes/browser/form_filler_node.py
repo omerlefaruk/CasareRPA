@@ -9,14 +9,15 @@ from typing import Any, Dict
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "form_selector",
         PropertyType.STRING,
@@ -74,7 +75,6 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Timeout per field in milliseconds. Fast mode uses min(timeout, 500ms).",
     ),
 )
-@executable_node
 class FormFillerNode(BrowserBaseNode):
     """
     Fill form fields automatically.

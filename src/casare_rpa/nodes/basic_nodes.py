@@ -6,9 +6,9 @@ of any workflow: StartNode, EndNode, and CommentNode.
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import NodeStatus, PortType, ExecutionResult
+from casare_rpa.domain.value_objects.types import NodeStatus, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
@@ -39,7 +39,7 @@ class StartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports - only execution output."""
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_exec_output("exec_out")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -103,7 +103,7 @@ class EndNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports - only execution input."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_exec_input("exec_in")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -142,7 +142,7 @@ class EndNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@properties(
     PropertyDef(
         "comment",
         PropertyType.TEXT,

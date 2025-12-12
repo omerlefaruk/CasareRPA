@@ -18,7 +18,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
@@ -42,16 +41,16 @@ class EmbeddingNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("api_key", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("text", DataType.STRING)
+        self.add_input_port("model", DataType.STRING, required=False)
+        self.add_input_port("api_key", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("embedding", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("dimensions", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("embedding", DataType.LIST)
+        self.add_output_port("dimensions", DataType.INTEGER)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -130,17 +129,15 @@ class VectorStoreAddNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("documents", PortType.INPUT, DataType.LIST)
-        self.add_input_port(
-            "collection", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("embeddings", PortType.INPUT, DataType.LIST, required=False)
+        self.add_input_port("documents", DataType.LIST)
+        self.add_input_port("collection", DataType.STRING, required=False)
+        self.add_input_port("embeddings", DataType.LIST, required=False)
 
         # Outputs
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("collection_name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("collection_name", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -243,22 +240,18 @@ class VectorSearchNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("query", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "collection", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("top_k", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("filter", PortType.INPUT, DataType.DICT, required=False)
-        self.add_input_port(
-            "query_embedding", PortType.INPUT, DataType.LIST, required=False
-        )
+        self.add_input_port("query", DataType.STRING)
+        self.add_input_port("collection", DataType.STRING, required=False)
+        self.add_input_port("top_k", DataType.INTEGER, required=False)
+        self.add_input_port("filter", DataType.DICT, required=False)
+        self.add_input_port("query_embedding", DataType.LIST, required=False)
 
         # Outputs
-        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("top_result", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("result_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("results", DataType.LIST)
+        self.add_output_port("top_result", DataType.DICT)
+        self.add_output_port("result_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -363,23 +356,19 @@ Answer:"""
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("question", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "collection", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("top_k", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port(
-            "prompt_template", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("question", DataType.STRING)
+        self.add_input_port("collection", DataType.STRING, required=False)
+        self.add_input_port("top_k", DataType.INTEGER, required=False)
+        self.add_input_port("prompt_template", DataType.STRING, required=False)
         self._define_common_input_ports()
 
         # Outputs
-        self.add_output_port("answer", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("context", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("sources", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("answer", DataType.STRING)
+        self.add_output_port("context", DataType.STRING)
+        self.add_output_port("sources", DataType.LIST)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -509,15 +498,13 @@ class VectorStoreDeleteNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("document_ids", PortType.INPUT, DataType.LIST)
-        self.add_input_port(
-            "collection", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("document_ids", DataType.LIST)
+        self.add_input_port("collection", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("deleted_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("deleted_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,

@@ -11,7 +11,7 @@ import math
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -52,7 +52,8 @@ def _resolve_numeric_param(
     return float(param) if param is not None else default
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "operation",
         PropertyType.CHOICE,
@@ -113,7 +114,6 @@ def _resolve_numeric_param(
         tooltip="Variable name to store result (optional)",
     ),
 )
-@executable_node
 class MathOperationNode(BaseNode):
     """Node that performs math operations."""
 
@@ -210,7 +210,8 @@ class MathOperationNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "a",
         PropertyType.ANY,
@@ -247,7 +248,6 @@ class MathOperationNode(BaseNode):
         tooltip="Comparison operator to use",
     ),
 )
-@executable_node
 class ComparisonNode(BaseNode):
     """Node that compares two values."""
 

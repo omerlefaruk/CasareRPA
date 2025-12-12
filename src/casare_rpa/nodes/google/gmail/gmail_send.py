@@ -11,12 +11,11 @@ from typing import Any, Union
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.gmail_client import GmailClient
@@ -117,7 +116,8 @@ def _parse_email_list(email_string: str) -> list[str]:
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     GMAIL_TO,
@@ -127,7 +127,6 @@ def _parse_email_list(email_string: str) -> list[str]:
     GMAIL_BODY,
     GMAIL_BODY_TYPE,
 )
-@executable_node
 class GmailSendEmailNode(GmailBaseNode):
     """
     Send a plain text or HTML email via Gmail.
@@ -165,18 +164,16 @@ class GmailSendEmailNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Email-specific ports
-        self.add_input_port("to", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("cc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("bcc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("subject", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("body", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "body_type", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("to", DataType.STRING, required=True)
+        self.add_input_port("cc", DataType.STRING, required=False)
+        self.add_input_port("bcc", DataType.STRING, required=False)
+        self.add_input_port("subject", DataType.STRING, required=True)
+        self.add_input_port("body", DataType.STRING, required=True)
+        self.add_input_port("body_type", DataType.STRING, required=False)
 
         # Additional outputs
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("message_id", DataType.STRING)
+        self.add_output_port("thread_id", DataType.STRING)
 
     async def _execute_gmail(
         self,
@@ -259,7 +256,8 @@ class GmailSendEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     GMAIL_TO,
@@ -277,7 +275,6 @@ class GmailSendEmailNode(GmailBaseNode):
         tooltip="File paths to attach (comma-separated)",
     ),
 )
-@executable_node
 class GmailSendWithAttachmentNode(GmailBaseNode):
     """
     Send an email with file attachments via Gmail.
@@ -317,26 +314,20 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Email-specific ports
-        self.add_input_port("to", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("cc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("bcc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("subject", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("body", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "body_type", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "attachments", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("to", DataType.STRING, required=True)
+        self.add_input_port("cc", DataType.STRING, required=False)
+        self.add_input_port("bcc", DataType.STRING, required=False)
+        self.add_input_port("subject", DataType.STRING, required=True)
+        self.add_input_port("body", DataType.STRING, required=True)
+        self.add_input_port("body_type", DataType.STRING, required=False)
+        self.add_input_port("attachments", DataType.STRING, required=False)
         # Also accept attachments as array from port connection
-        self.add_input_port(
-            "attachment_list", PortType.INPUT, DataType.LIST, required=False
-        )
+        self.add_input_port("attachment_list", DataType.LIST, required=False)
 
         # Additional outputs
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("message_id", DataType.STRING)
+        self.add_output_port("thread_id", DataType.STRING)
+        self.add_output_port("attachment_count", DataType.INTEGER)
 
     async def _execute_gmail(
         self,
@@ -452,7 +443,8 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     PropertyDef(
@@ -486,7 +478,6 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
     GMAIL_CC,
     GMAIL_BCC,
 )
-@executable_node
 class GmailReplyToEmailNode(GmailBaseNode):
     """
     Reply to an existing email thread.
@@ -524,20 +515,16 @@ class GmailReplyToEmailNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Reply-specific ports
-        self.add_input_port("thread_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "message_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("body", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "body_type", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("cc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("bcc", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("thread_id", DataType.STRING, required=True)
+        self.add_input_port("message_id", DataType.STRING, required=True)
+        self.add_input_port("body", DataType.STRING, required=True)
+        self.add_input_port("body_type", DataType.STRING, required=False)
+        self.add_input_port("cc", DataType.STRING, required=False)
+        self.add_input_port("bcc", DataType.STRING, required=False)
 
         # Additional outputs
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("message_id", DataType.STRING)
+        self.add_output_port("thread_id", DataType.STRING)
 
     async def _execute_gmail(
         self,
@@ -627,7 +614,8 @@ class GmailReplyToEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     PropertyDef(
@@ -651,7 +639,6 @@ class GmailReplyToEmailNode(GmailBaseNode):
         tooltip="Optional text to add before the forwarded message",
     ),
 )
-@executable_node
 class GmailForwardEmailNode(GmailBaseNode):
     """
     Forward an existing email to new recipients.
@@ -688,19 +675,15 @@ class GmailForwardEmailNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Forward-specific ports
-        self.add_input_port(
-            "message_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("to", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("cc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("bcc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "additional_body", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("message_id", DataType.STRING, required=True)
+        self.add_input_port("to", DataType.STRING, required=True)
+        self.add_input_port("cc", DataType.STRING, required=False)
+        self.add_input_port("bcc", DataType.STRING, required=False)
+        self.add_input_port("additional_body", DataType.STRING, required=False)
 
         # Additional outputs
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("message_id", DataType.STRING)
+        self.add_output_port("thread_id", DataType.STRING)
 
     async def _execute_gmail(
         self,
@@ -780,7 +763,8 @@ class GmailForwardEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     GMAIL_TO,
@@ -798,7 +782,6 @@ class GmailForwardEmailNode(GmailBaseNode):
         tooltip="File paths to attach (comma-separated)",
     ),
 )
-@executable_node
 class GmailCreateDraftNode(GmailBaseNode):
     """
     Create a draft email (save without sending).
@@ -837,21 +820,17 @@ class GmailCreateDraftNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Draft-specific ports
-        self.add_input_port("to", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("cc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("bcc", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("subject", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("body", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "body_type", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "attachments", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("to", DataType.STRING, required=True)
+        self.add_input_port("cc", DataType.STRING, required=False)
+        self.add_input_port("bcc", DataType.STRING, required=False)
+        self.add_input_port("subject", DataType.STRING, required=True)
+        self.add_input_port("body", DataType.STRING, required=True)
+        self.add_input_port("body_type", DataType.STRING, required=False)
+        self.add_input_port("attachments", DataType.STRING, required=False)
 
         # Additional outputs
-        self.add_output_port("draft_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("draft_id", DataType.STRING)
+        self.add_output_port("message_id", DataType.STRING)
 
     async def _execute_gmail(
         self,

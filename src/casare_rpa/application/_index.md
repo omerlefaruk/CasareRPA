@@ -8,6 +8,7 @@ Quick reference for application layer. Use cases, services, and orchestration.
 |-----------|-------------|-------------|
 | `use_cases/` | Core business use cases | ExecuteWorkflowUseCase, NodeExecutor |
 | `services/` | Cross-cutting services | ExecutionLifecycleManager, BrowserRecordingService |
+| `queries/` | CQRS read-optimized queries | WorkflowQueryService, ExecutionQueryService |
 | `dependency_injection/` | DI container | DIContainer, Singleton |
 | `orchestrator/` | Job execution use cases | SubmitJobUseCase, ExecuteLocalUseCase |
 | `execution/` | Trigger execution | CanvasTriggerRunner |
@@ -26,6 +27,7 @@ Quick reference for application layer. Use cases, services, and orchestration.
 | `use_cases/generate_workflow.py` | AI workflow generation |
 | `use_cases/subflow_executor.py` | Subflow execution |
 | `services/__init__.py` | 9 exports |
+| `queries/__init__.py` | 6 exports |
 | `dependency_injection/__init__.py` | 9 exports |
 
 ## Entry Points
@@ -134,6 +136,16 @@ from casare_rpa.application.workflow import (
     WorkflowImporter,
     RecentFilesManager,
 )
+
+# CQRS Query Services (read-optimized)
+from casare_rpa.application.queries import (
+    WorkflowQueryService,
+    WorkflowListItemDTO,
+    WorkflowFilter,
+    ExecutionQueryService,
+    ExecutionLogDTO,
+    ExecutionFilter,
+)
 ```
 
 ## Use Cases Summary
@@ -190,13 +202,16 @@ from casare_rpa.application.workflow import (
 | `orchestrator/__init__.py` | 6 |
 | `execution/__init__.py` | 4 |
 | `workflow/__init__.py` | 2 |
+| `queries/__init__.py` | 6 |
 
 ## Key Patterns
 
-- **Use Cases**: Single-responsibility operations
+- **Use Cases**: Single-responsibility operations (Command side of CQRS)
+- **Query Services**: Read-optimized queries bypassing domain model (Query side of CQRS)
 - **Services**: Cross-cutting concerns (lifecycle, recording)
 - **DI Container**: Thread-safe dependency management
 - **Result Types**: Explicit success/failure returns
+- **DTOs**: Data Transfer Objects for read operations (WorkflowListItemDTO, ExecutionLogDTO)
 
 ## Related Indexes
 

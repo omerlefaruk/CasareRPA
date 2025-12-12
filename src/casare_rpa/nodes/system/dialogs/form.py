@@ -8,7 +8,7 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -21,7 +21,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -38,12 +39,11 @@ from .widgets import _create_styled_line_edit
         essential=True,
     ),
 )
-@executable_node
 class FormDialogNode(BaseNode):
     """
     Display a custom form dialog with dynamic fields.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Form')
         fields: JSON array defining fields (essential)
             Each field: {"name": "id", "type": "text|number|checkbox|select", "label": "...", "required": bool, "options": [...]}
@@ -220,7 +220,8 @@ class FormDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -244,12 +245,11 @@ class FormDialogNode(BaseNode):
         tooltip="Allow navigating to previous steps",
     ),
 )
-@executable_node
 class WizardDialogNode(BaseNode):
     """
     Display a multi-step wizard dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Wizard title (default: 'Wizard')
         steps: JSON array of steps (essential)
             Each step: {"title": "Step N", "description": "...", "fields": [...]}

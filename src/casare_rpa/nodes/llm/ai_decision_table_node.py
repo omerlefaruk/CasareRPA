@@ -15,7 +15,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
@@ -54,22 +53,22 @@ class AIDecisionTableNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_exec_input_port("exec_in")
+        self.add_exec_output_port("exec_out")
 
         # Data inputs
-        self.add_input_port("decision_table", PortType.INPUT, DataType.DICT)
-        self.add_input_port("context", PortType.INPUT, DataType.ANY)
+        self.add_input_port("decision_table", DataType.DICT)
+        self.add_input_port("context", DataType.ANY)
         self._define_common_input_ports()
 
         # Data outputs
-        self.add_output_port("matched_action", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("matched_rule_index", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("reasoning", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("all_matches", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("matched_action", DataType.STRING)
+        self.add_output_port("matched_rule_index", DataType.INTEGER)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("reasoning", DataType.STRING)
+        self.add_output_port("all_matches", DataType.LIST)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,

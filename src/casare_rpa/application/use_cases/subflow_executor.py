@@ -22,9 +22,14 @@ from typing import Any, Dict, List, Optional, Set
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
-from casare_rpa.domain.events import Event, EventBus
+from casare_rpa.domain.events import (
+    EventBus,
+    WorkflowStarted,
+    WorkflowCompleted,
+    WorkflowFailed,
+)
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
-from casare_rpa.domain.value_objects.types import EventType, NodeId
+from casare_rpa.domain.value_objects.types import NodeId, ExecutionMode
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.application.use_cases.node_executor import (
     NodeExecutor,
@@ -203,16 +208,64 @@ class SubflowExecutor:
         self._executed_nodes: Set[NodeId] = set()
         self._current_subflow: Optional[Subflow] = None
 
-    def _emit_event(
+    def _publish_workflow_started(
         self,
-        event_type: EventType,
-        data: Dict[str, Any],
-        node_id: Optional[str] = None,
+        subflow_name: str,
+        total_nodes: int,
+        inputs: List[str],
     ) -> None:
-        """Emit an event to the event bus."""
+        """Publish workflow started event for subflow."""
         if self.event_bus:
-            event = Event(event_type=event_type, data=data, node_id=node_id)
-            self.event_bus.publish(event)
+            from casare_rpa.domain.events import WorkflowStarted
+
+            self.event_bus.publish(
+                WorkflowStarted(
+                    workflow_id=f"subflow_{subflow_name}",
+                    workflow_name=subflow_name,
+                    execution_mode=ExecutionMode.NORMAL,
+                    total_nodes=total_nodes,
+                )
+            )
+
+    def _publish_workflow_completed(
+        self,
+        subflow_name: str,
+        nodes_executed: int,
+        duration: float,
+        outputs: List[str],
+    ) -> None:
+        """Publish workflow completed event for subflow."""
+        if self.event_bus:
+            from casare_rpa.domain.events import WorkflowCompleted
+
+            self.event_bus.publish(
+                WorkflowCompleted(
+                    workflow_id=f"subflow_{subflow_name}",
+                    workflow_name=subflow_name,
+                    execution_time_ms=duration * 1000,
+                    nodes_executed=nodes_executed,
+                )
+            )
+
+    def _publish_workflow_failed(
+        self,
+        subflow_name: str,
+        error: str,
+        nodes_executed: int,
+        error_node_id: Optional[str] = None,
+    ) -> None:
+        """Publish workflow failed event for subflow."""
+        if self.event_bus:
+            from casare_rpa.domain.events import WorkflowFailed
+
+            self.event_bus.publish(
+                WorkflowFailed(
+                    workflow_id=f"subflow_{subflow_name}",
+                    workflow_name=subflow_name,
+                    error_message=error,
+                    failed_node_id=error_node_id,
+                )
+            )
 
     async def execute(
         self,
@@ -239,13 +292,10 @@ class SubflowExecutor:
         self._executed_nodes.clear()
 
         logger.info(f"Starting subflow execution: {subflow.name}")
-        self._emit_event(
-            EventType.WORKFLOW_STARTED,
-            {
-                "subflow_name": subflow.name,
-                "total_nodes": len(subflow.workflow.nodes),
-                "inputs": list(inputs.keys()),
-            },
+        self._publish_workflow_started(
+            subflow_name=subflow.name,
+            total_nodes=len(subflow.workflow.nodes),
+            inputs=list(inputs.keys()),
         )
 
         try:
@@ -304,14 +354,11 @@ class SubflowExecutor:
 
             if execution_error:
                 execution_time = time.time() - start_time
-                self._emit_event(
-                    EventType.WORKFLOW_ERROR,
-                    {
-                        "subflow_name": subflow.name,
-                        "error": execution_error[0],
-                        "error_node_id": execution_error[1],
-                        "nodes_executed": len(self._executed_nodes),
-                    },
+                self._publish_workflow_failed(
+                    subflow_name=subflow.name,
+                    error=execution_error[0],
+                    nodes_executed=len(self._executed_nodes),
+                    error_node_id=execution_error[1],
                 )
                 return SubflowExecutionResult.error_result(
                     error=execution_error[0],
@@ -329,14 +376,11 @@ class SubflowExecutor:
                 f"({len(self._executed_nodes)} nodes)"
             )
 
-            self._emit_event(
-                EventType.WORKFLOW_COMPLETED,
-                {
-                    "subflow_name": subflow.name,
-                    "nodes_executed": len(self._executed_nodes),
-                    "duration": execution_time,
-                    "outputs": list(outputs.keys()),
-                },
+            self._publish_workflow_completed(
+                subflow_name=subflow.name,
+                nodes_executed=len(self._executed_nodes),
+                duration=execution_time,
+                outputs=list(outputs.keys()),
             )
 
             return SubflowExecutionResult.success_result(
@@ -350,13 +394,10 @@ class SubflowExecutor:
             error_msg = str(e)
             logger.exception(f"Subflow execution failed with exception: {subflow.name}")
 
-            self._emit_event(
-                EventType.WORKFLOW_ERROR,
-                {
-                    "subflow_name": subflow.name,
-                    "error": error_msg,
-                    "nodes_executed": len(self._executed_nodes),
-                },
+            self._publish_workflow_failed(
+                subflow_name=subflow.name,
+                error=error_msg,
+                nodes_executed=len(self._executed_nodes),
             )
 
             return SubflowExecutionResult.error_result(

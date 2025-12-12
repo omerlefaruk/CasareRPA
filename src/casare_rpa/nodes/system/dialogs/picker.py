@@ -8,7 +8,7 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -21,7 +21,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -51,12 +52,11 @@ from .widgets import _create_styled_line_edit
         tooltip="Initial directory",
     ),
 )
-@executable_node
 class FilePickerDialogNode(BaseNode):
     """
     Display a file picker dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Select File')
         filter: File filter (default: 'All Files (*.*)')
         multi_select: Allow multiple selection (default: False)
@@ -157,7 +157,8 @@ class FilePickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -173,12 +174,11 @@ class FilePickerDialogNode(BaseNode):
         tooltip="Initial directory",
     ),
 )
-@executable_node
 class FolderPickerDialogNode(BaseNode):
     """
     Display a folder picker dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Select Folder')
         start_directory: Initial directory (default: '')
 
@@ -268,7 +268,8 @@ class FolderPickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -291,12 +292,11 @@ class FolderPickerDialogNode(BaseNode):
         tooltip="Show alpha channel slider",
     ),
 )
-@executable_node
 class ColorPickerDialogNode(BaseNode):
     """
     Display a color picker dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Select Color')
         initial_color: Initial color hex (default: '#ffffff')
         show_alpha: Show alpha channel (default: False)
@@ -402,7 +402,8 @@ class ColorPickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -440,12 +441,11 @@ class ColorPickerDialogNode(BaseNode):
         tooltip="Maximum date (YYYY-MM-DD)",
     ),
 )
-@executable_node
 class DateTimePickerDialogNode(BaseNode):
     """
     Display a date/time picker dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Select Date/Time')
         mode: date, time, datetime (default: datetime)
         format: Output format (default: 'yyyy-MM-dd HH:mm:ss')
@@ -589,7 +589,8 @@ class DateTimePickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -627,12 +628,11 @@ class DateTimePickerDialogNode(BaseNode):
         tooltip="Default selected item(s)",
     ),
 )
-@executable_node
 class ListPickerDialogNode(BaseNode):
     """
     Display a list picker dialog for single/multi-select.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Select Item')
         items: Items to display, comma-separated or JSON array (essential)
         multi_select: Allow multiple selection (default: False)

@@ -14,7 +14,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
@@ -43,7 +42,7 @@ class LLMCompletionNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("prompt", PortType.INPUT, DataType.STRING)
+        self.add_input_port("prompt", DataType.STRING)
         self._define_common_input_ports()
 
         # Outputs
@@ -130,15 +129,13 @@ class LLMChatNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("message", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "conversation_id", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("message", DataType.STRING)
+        self.add_input_port("conversation_id", DataType.STRING, required=False)
         self._define_common_input_ports()
 
         # Outputs
         self._define_common_output_ports()
-        self.add_output_port("conversation_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("conversation_id", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -227,19 +224,17 @@ class LLMExtractDataNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("schema", PortType.INPUT, DataType.DICT)
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "temperature", PortType.INPUT, DataType.FLOAT, required=False
-        )
+        self.add_input_port("text", DataType.STRING)
+        self.add_input_port("schema", DataType.DICT)
+        self.add_input_port("model", DataType.STRING, required=False)
+        self.add_input_port("temperature", DataType.FLOAT, required=False)
 
         # Outputs
-        self.add_output_port("extracted_data", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("raw_response", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("extracted_data", DataType.DICT)
+        self.add_output_port("raw_response", DataType.STRING)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -342,23 +337,19 @@ class LLMSummarizeNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "max_length", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port("style", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "temperature", PortType.INPUT, DataType.FLOAT, required=False
-        )
+        self.add_input_port("text", DataType.STRING)
+        self.add_input_port("max_length", DataType.INTEGER, required=False)
+        self.add_input_port("style", DataType.STRING, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
+        self.add_input_port("temperature", DataType.FLOAT, required=False)
 
         # Outputs
-        self.add_output_port("summary", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("original_length", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("summary_length", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("summary", DataType.STRING)
+        self.add_output_port("original_length", DataType.INTEGER)
+        self.add_output_port("summary_length", DataType.INTEGER)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -461,23 +452,19 @@ class LLMClassifyNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("categories", PortType.INPUT, DataType.LIST)
-        self.add_input_port(
-            "multi_label", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "temperature", PortType.INPUT, DataType.FLOAT, required=False
-        )
+        self.add_input_port("text", DataType.STRING)
+        self.add_input_port("categories", DataType.LIST)
+        self.add_input_port("multi_label", DataType.BOOLEAN, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
+        self.add_input_port("temperature", DataType.FLOAT, required=False)
 
         # Outputs
-        self.add_output_port("classification", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("classifications", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("classification", DataType.STRING)
+        self.add_output_port("classifications", DataType.LIST)
+        self.add_output_port("confidence", DataType.DICT)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -621,22 +608,18 @@ class LLMTranslateNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("target_language", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "source_language", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "temperature", PortType.INPUT, DataType.FLOAT, required=False
-        )
+        self.add_input_port("text", DataType.STRING)
+        self.add_input_port("target_language", DataType.STRING)
+        self.add_input_port("source_language", DataType.STRING, required=False)
+        self.add_input_port("model", DataType.STRING, required=False)
+        self.add_input_port("temperature", DataType.FLOAT, required=False)
 
         # Outputs
-        self.add_output_port("translated_text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("detected_language", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("translated_text", DataType.STRING)
+        self.add_output_port("detected_language", DataType.STRING)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,

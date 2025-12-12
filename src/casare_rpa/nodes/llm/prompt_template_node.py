@@ -14,7 +14,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
@@ -39,19 +38,19 @@ class PromptTemplateNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("template_id", PortType.INPUT, DataType.STRING)
-        self.add_input_port("variables", PortType.INPUT, DataType.DICT)
-        self.add_input_port("execute", PortType.INPUT, DataType.BOOLEAN, required=False)
+        self.add_input_port("template_id", DataType.STRING)
+        self.add_input_port("variables", DataType.DICT)
+        self.add_input_port("execute", DataType.BOOLEAN, required=False)
         self._define_common_input_ports()
 
         # Outputs
-        self.add_output_port("rendered_prompt", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("system_prompt", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("response", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("parsed_response", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("rendered_prompt", DataType.STRING)
+        self.add_output_port("system_prompt", DataType.STRING)
+        self.add_output_port("response", DataType.STRING)
+        self.add_output_port("parsed_response", DataType.DICT)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -219,17 +218,15 @@ class ListTemplatesNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("category", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("search", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "include_builtin", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("category", DataType.STRING, required=False)
+        self.add_input_port("search", DataType.STRING, required=False)
+        self.add_input_port("include_builtin", DataType.BOOLEAN, required=False)
 
         # Outputs
-        self.add_output_port("templates", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("templates", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,
@@ -314,15 +311,15 @@ class GetTemplateInfoNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Inputs
-        self.add_input_port("template_id", PortType.INPUT, DataType.STRING)
+        self.add_input_port("template_id", DataType.STRING)
 
         # Outputs
-        self.add_output_port("template_info", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("variables", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("system_prompt", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("template_info", DataType.DICT)
+        self.add_output_port("variables", DataType.LIST)
+        self.add_output_port("system_prompt", DataType.STRING)
+        self.add_output_port("found", DataType.BOOLEAN)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,

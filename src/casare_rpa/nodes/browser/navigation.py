@@ -3,16 +3,20 @@ Navigation nodes for web page navigation.
 
 This module provides nodes for controlling page navigation:
 going to URLs, back/forward navigation, and page refresh.
+
+All navigation nodes extend BrowserBaseNode for:
+- Consistent page access via get_page()
+- Screenshot on failure support
+- Healing chain integration
 """
 
 import asyncio
 
-from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -23,7 +27,8 @@ from casare_rpa.utils import safe_int
 from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "url",
         PropertyType.STRING,
@@ -96,12 +101,12 @@ from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
         tooltip="Ignore HTTPS certificate errors",
     ),
 )
-@executable_node
-class GoToURLNode(BaseNode):
+class GoToURLNode(BrowserBaseNode):
     """
     Go to URL node - navigates to a specified URL.
 
     Loads a web page at the given URL with optional timeout configuration.
+    Extends BrowserBaseNode for consistent page access and error handling.
     """
 
     # @category: browser
@@ -126,10 +131,10 @@ class GoToURLNode(BaseNode):
             timeout: Page load timeout in milliseconds (ignored when config provided)
 
         Note:
-            The @node_schema decorator automatically handles default_config.
+            The @properties decorator automatically handles default_config.
             No manual config merging needed!
         """
-        # Config automatically populated by @node_schema decorator
+        # Config automatically populated by @properties decorator
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -137,13 +142,14 @@ class GoToURLNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
+        # Note: Port signature is (name, data_type, label=None, required=True)
         self.add_input_port(
-            "page", PortType.INPUT, DataType.PAGE, required=False
+            "page", DataType.PAGE, required=False
         )  # Optional: uses active page if not connected
         self.add_input_port(
-            "url", PortType.INPUT, DataType.STRING, required=False
+            "url", DataType.STRING, required=False
         )  # Optional: uses config value if not connected
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_output_port("page", DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -232,22 +238,23 @@ class GoToURLNode(BaseNode):
                     # Emit BROWSER_PAGE_READY event for UI to enable picker/recorder
                     # This is needed when browser was already open and user runs Navigate
                     try:
-                        from casare_rpa.domain.events import get_event_bus, Event
-                        from casare_rpa.domain.value_objects.types import EventType
+                        from casare_rpa.domain.events import (
+                            get_event_bus,
+                            BrowserPageReady,
+                        )
 
                         event_bus = get_event_bus()
                         event_bus.publish(
-                            Event(
-                                EventType.BROWSER_PAGE_READY,
-                                data={"page": page},
+                            BrowserPageReady(
+                                page=page,
                                 node_id=getattr(self, "node_id", None),
                             )
                         )
                         logger.debug(
-                            "BROWSER_PAGE_READY event published from GoToURLNode"
+                            "BrowserPageReady event published from GoToURLNode"
                         )
                     except Exception as e:
-                        logger.debug(f"Could not emit BROWSER_PAGE_READY event: {e}")
+                        logger.debug(f"Could not emit BrowserPageReady event: {e}")
 
                     self.status = NodeStatus.SUCCESS
                     logger.info(
@@ -307,7 +314,8 @@ class GoToURLNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -341,10 +349,11 @@ class GoToURLNode(BaseNode):
         min_value=0,
     ),
 )
-@executable_node
-class GoBackNode(BaseNode):
+class GoBackNode(BrowserBaseNode):
     """
     Go back node - navigates back in browser history.
+
+    Extends BrowserBaseNode for consistent page access and error handling.
     """
 
     # @category: browser
@@ -360,10 +369,10 @@ class GoBackNode(BaseNode):
             name: Display name for the node
 
         Note:
-            The @node_schema decorator automatically handles default_config.
+            The @properties decorator automatically handles default_config.
             No manual config merging needed!
         """
-        # Config automatically populated by @node_schema decorator
+        # Config automatically populated by @properties decorator
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -446,7 +455,8 @@ class GoBackNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -480,10 +490,11 @@ class GoBackNode(BaseNode):
         min_value=0,
     ),
 )
-@executable_node
-class GoForwardNode(BaseNode):
+class GoForwardNode(BrowserBaseNode):
     """
     Go forward node - navigates forward in browser history.
+
+    Extends BrowserBaseNode for consistent page access and error handling.
     """
 
     # @category: browser
@@ -499,10 +510,10 @@ class GoForwardNode(BaseNode):
             name: Display name for the node
 
         Note:
-            The @node_schema decorator automatically handles default_config.
+            The @properties decorator automatically handles default_config.
             No manual config merging needed!
         """
-        # Config automatically populated by @node_schema decorator
+        # Config automatically populated by @properties decorator
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -585,7 +596,8 @@ class GoForwardNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -619,10 +631,11 @@ class GoForwardNode(BaseNode):
         min_value=0,
     ),
 )
-@executable_node
-class RefreshPageNode(BaseNode):
+class RefreshPageNode(BrowserBaseNode):
     """
     Refresh page node - reloads the current page.
+
+    Extends BrowserBaseNode for consistent page access and error handling.
     """
 
     # @category: browser
@@ -638,10 +651,10 @@ class RefreshPageNode(BaseNode):
             name: Display name for the node
 
         Note:
-            The @node_schema decorator automatically handles default_config.
+            The @properties decorator automatically handles default_config.
             No manual config merging needed!
         """
-        # Config automatically populated by @node_schema decorator
+        # Config automatically populated by @properties decorator
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name

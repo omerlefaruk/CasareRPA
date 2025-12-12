@@ -20,11 +20,10 @@ from pathlib import Path
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -32,8 +31,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class ParseXMLNode(BaseNode):
     """
     Parse XML from a string.
@@ -60,11 +59,11 @@ class ParseXMLNode(BaseNode):
         self._xml_root = None
 
     def _define_ports(self) -> None:
-        self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("root_tag", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("root_text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("child_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("xml_string", DataType.STRING)
+        self.add_output_port("root_tag", DataType.STRING)
+        self.add_output_port("root_text", DataType.STRING)
+        self.add_output_port("child_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -111,7 +110,8 @@ class ParseXMLNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "encoding",
         PropertyType.STRING,
@@ -120,7 +120,6 @@ class ParseXMLNode(BaseNode):
         tooltip="File encoding (e.g., utf-8, latin-1)",
     ),
 )
-@executable_node
 class ReadXMLFileNode(BaseNode):
     """
     Read and parse an XML file.
@@ -148,10 +147,10 @@ class ReadXMLFileNode(BaseNode):
         self.node_type = "ReadXMLFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("root_tag", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("xml_string", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_output_port("root_tag", DataType.STRING)
+        self.add_output_port("xml_string", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -196,7 +195,8 @@ class ReadXMLFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "encoding",
         PropertyType.STRING,
@@ -219,7 +219,6 @@ class ReadXMLFileNode(BaseNode):
         tooltip="Include <?xml version...?> declaration",
     ),
 )
-@executable_node
 class WriteXMLFileNode(BaseNode):
     """
     Write XML to a file.
@@ -249,10 +248,10 @@ class WriteXMLFileNode(BaseNode):
         self.node_type = "WriteXMLFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_input_port("xml_string", DataType.STRING)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -311,8 +310,8 @@ class WriteXMLFileNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class XPathQueryNode(BaseNode):
     """
     Query XML using XPath.
@@ -339,12 +338,12 @@ class XPathQueryNode(BaseNode):
         self.node_type = "XPathQueryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_input_port("xpath", PortType.INPUT, DataType.STRING)
-        self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("first_text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("xml_string", DataType.STRING)
+        self.add_input_port("xpath", DataType.STRING)
+        self.add_output_port("results", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("first_text", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -407,8 +406,8 @@ class XPathQueryNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class GetXMLElementNode(BaseNode):
     """
     Get XML element by tag name.
@@ -437,14 +436,14 @@ class GetXMLElementNode(BaseNode):
         self.node_type = "GetXMLElementNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_input_port("tag_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("index", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("tag", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attributes", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("child_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("xml_string", DataType.STRING)
+        self.add_input_port("tag_name", DataType.STRING)
+        self.add_input_port("index", DataType.INTEGER)
+        self.add_output_port("tag", DataType.STRING)
+        self.add_output_port("text", DataType.STRING)
+        self.add_output_port("attributes", DataType.DICT)
+        self.add_output_port("child_count", DataType.INTEGER)
+        self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -498,8 +497,8 @@ class GetXMLElementNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="data")
+@properties()  # Input port driven
 class GetXMLAttributeNode(BaseNode):
     """
     Get an attribute value from an XML element.
@@ -525,11 +524,11 @@ class GetXMLAttributeNode(BaseNode):
         self.node_type = "GetXMLAttributeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_input_port("xpath", PortType.INPUT, DataType.STRING)
-        self.add_input_port("attribute_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("xml_string", DataType.STRING)
+        self.add_input_port("xpath", DataType.STRING)
+        self.add_input_port("attribute_name", DataType.STRING)
+        self.add_output_port("value", DataType.STRING)
+        self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -575,7 +574,8 @@ class GetXMLAttributeNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "include_attributes",
         PropertyType.BOOLEAN,
@@ -591,7 +591,6 @@ class GetXMLAttributeNode(BaseNode):
         tooltip="Key name for element text content in JSON",
     ),
 )
-@executable_node
 class XMLToJsonNode(BaseNode):
     """
     Convert XML to JSON.
@@ -620,10 +619,10 @@ class XMLToJsonNode(BaseNode):
         self.node_type = "XMLToJsonNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("json_data", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("json_string", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("xml_string", DataType.STRING)
+        self.add_output_port("json_data", DataType.DICT)
+        self.add_output_port("json_string", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -684,7 +683,8 @@ class XMLToJsonNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "root_tag",
         PropertyType.STRING,
@@ -700,7 +700,6 @@ class XMLToJsonNode(BaseNode):
         tooltip="Format XML output with indentation",
     ),
 )
-@executable_node
 class JsonToXMLNode(BaseNode):
     """
     Convert JSON to XML.
@@ -728,9 +727,9 @@ class JsonToXMLNode(BaseNode):
         self.node_type = "JsonToXMLNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("json_data", PortType.INPUT, DataType.ANY)
-        self.add_output_port("xml_string", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("json_data", DataType.ANY)
+        self.add_output_port("xml_string", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

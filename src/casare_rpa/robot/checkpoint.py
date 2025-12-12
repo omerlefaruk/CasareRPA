@@ -408,9 +408,9 @@ class ResumableRunner:
 
         # Subscribe to node completion events
         if hasattr(self.runner, "event_bus") and self.runner.event_bus:
-            from casare_rpa.domain.value_objects.types import EventType
+            from casare_rpa.domain.events import NodeCompleted
 
-            async def on_node_complete(event):
+            async def on_node_complete(event: NodeCompleted):
                 if event.node_id and hasattr(self.runner, "context"):
                     await self.checkpoint_manager.save_checkpoint(
                         event.node_id,
@@ -418,7 +418,7 @@ class ResumableRunner:
                     )
 
             self.runner.event_bus.subscribe(
-                EventType.NODE_COMPLETED,
+                NodeCompleted,
                 lambda e: asyncio.create_task(on_node_complete(e)),
             )
 

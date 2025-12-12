@@ -21,7 +21,7 @@ from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.entities.subflow import Subflow
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -36,7 +36,8 @@ if TYPE_CHECKING:
 MAX_CALL_DEPTH = 10
 
 
-@node_schema(
+@node(category="workflow")
+@properties(
     PropertyDef(
         "subworkflow_id",
         PropertyType.STRING,
@@ -78,7 +79,6 @@ MAX_CALL_DEPTH = 10
         max_value=60,
     ),
 )
-@executable_node
 class CallSubworkflowNode(BaseNode):
     """
     Calls a subworkflow by reference with sync or async execution.

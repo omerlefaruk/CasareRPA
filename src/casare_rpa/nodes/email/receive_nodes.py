@@ -17,21 +17,21 @@ from casare_rpa.domain.credentials import (
     IMAP_SERVER_PROP,
     CredentialAwareMixin,
 )
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP, parse_email_message
 
 
-@node_schema(
+@node(category="email")
+@properties(
     CREDENTIAL_NAME_PROP,
     IMAP_SERVER_PROP,
     IMAP_PORT_PROP,
@@ -111,7 +111,6 @@ from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP, parse_email_me
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
-@executable_node
 class ReadEmailsNode(CredentialAwareMixin, BaseNode):
     """
     Read emails from an IMAP server.
@@ -141,15 +140,15 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
-        self.add_input_port("imap_port", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("folder", PortType.INPUT, DataType.STRING)
-        self.add_input_port("limit", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("search_criteria", PortType.INPUT, DataType.STRING)
-        self.add_output_port("emails", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("imap_server", DataType.STRING)
+        self.add_input_port("imap_port", DataType.INTEGER)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("folder", DataType.STRING)
+        self.add_input_port("limit", DataType.INTEGER)
+        self.add_input_port("search_criteria", DataType.STRING)
+        self.add_output_port("emails", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Read emails from IMAP server."""
@@ -300,7 +299,7 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
+@node(category="email")
 class GetEmailContentNode(BaseNode):
     """
     Extract content from an email object.
@@ -320,14 +319,14 @@ class GetEmailContentNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("email", PortType.INPUT, DataType.DICT)
-        self.add_output_port("subject", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("from", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("to", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("date", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("body_text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("body_html", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachments", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("email", DataType.DICT)
+        self.add_output_port("subject", DataType.STRING)
+        self.add_output_port("from", DataType.STRING)
+        self.add_output_port("to", DataType.STRING)
+        self.add_output_port("date", DataType.STRING)
+        self.add_output_port("body_text", DataType.STRING)
+        self.add_output_port("body_html", DataType.STRING)
+        self.add_output_port("attachments", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Extract email content."""
@@ -364,7 +363,7 @@ class GetEmailContentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@executable_node
+@node(category="email")
 class FilterEmailsNode(BaseNode):
     """
     Filter a list of emails based on criteria.
@@ -384,12 +383,12 @@ class FilterEmailsNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("emails", PortType.INPUT, DataType.LIST)
-        self.add_input_port("subject_contains", PortType.INPUT, DataType.STRING)
-        self.add_input_port("from_contains", PortType.INPUT, DataType.STRING)
-        self.add_input_port("has_attachments", PortType.INPUT, DataType.BOOLEAN)
-        self.add_output_port("filtered", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("emails", DataType.LIST)
+        self.add_input_port("subject_contains", DataType.STRING)
+        self.add_input_port("from_contains", DataType.STRING)
+        self.add_input_port("has_attachments", DataType.BOOLEAN)
+        self.add_output_port("filtered", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Filter emails based on criteria."""

@@ -9,11 +9,11 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Type
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
     NodeConfig,
     NodeId,
-    PortType,
 )
 from casare_rpa.triggers.base import (
     BaseTrigger,
@@ -70,7 +70,7 @@ class BaseTriggerNode(BaseNode):
         - Payload output ports defined by subclass
         """
         # Only exec_out, no exec_in!
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_exec_output("exec_out")
 
         # Let subclass define payload ports
         self._define_payload_ports()
@@ -222,7 +222,7 @@ def trigger_node(cls: Type) -> Type:
     """
     Decorator to mark a class as a trigger node.
 
-    Unlike @executable_node, this only adds exec_out (no exec_in).
+    Unlike @node, this only adds exec_out (no exec_in).
     Trigger nodes start workflows, they don't receive execution flow.
 
     Usage:

@@ -19,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import (
@@ -65,29 +64,21 @@ class LLMBaseNode(CredentialAwareMixin, BaseNode):
     def _define_common_input_ports(self) -> None:
         """Define standard LLM input ports."""
         # Credential ports
-        self.add_input_port(
-            "credential_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("api_key", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("credential_name", DataType.STRING, required=False)
+        self.add_input_port("api_key", DataType.STRING, required=False)
         # Model config ports
-        self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "temperature", PortType.INPUT, DataType.FLOAT, required=False
-        )
-        self.add_input_port(
-            "max_tokens", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port(
-            "system_prompt", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("model", DataType.STRING, required=False)
+        self.add_input_port("temperature", DataType.FLOAT, required=False)
+        self.add_input_port("max_tokens", DataType.INTEGER, required=False)
+        self.add_input_port("system_prompt", DataType.STRING, required=False)
 
     def _define_common_output_ports(self) -> None:
         """Define standard LLM output ports."""
-        self.add_output_port("response", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("tokens_used", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("model_used", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("response", DataType.STRING)
+        self.add_output_port("tokens_used", DataType.INTEGER)
+        self.add_output_port("model_used", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _get_llm_manager(self, context: ExecutionContext) -> LLMResourceManager:
         """

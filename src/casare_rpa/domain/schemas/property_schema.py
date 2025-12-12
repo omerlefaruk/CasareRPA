@@ -3,15 +3,20 @@ Property schema system for declarative node configuration.
 
 Provides PropertyDef and NodeSchema for defining node properties
 once and auto-generating config, widgets, and validation.
+
+Note: Use the @properties decorator from casare_rpa.domain.decorators
+to apply PropertyDef definitions to node classes.
 """
 
+from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Type, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Tuple
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
-from casare_rpa.domain.schemas.property_types import PropertyType
+from casare_rpa.domain.schemas.property_types import PropertyType, PropertyVisibility
 
 
 # PERFORMANCE: Module-level type validators to avoid rebuilding on every call
@@ -46,7 +51,7 @@ class PropertyDef:
     """
     Definition of a single node property.
 
-    Used in @node_schema decorator to declaratively define
+    Used in @properties decorator to declaratively define
     node configuration properties.
     """
 
@@ -92,11 +97,50 @@ class PropertyDef:
     essential: bool = False
     """Whether this property is essential (visible when node is collapsed)."""
 
-    def __post_init__(self):
-        """Auto-generate label if not provided."""
+    # NEW fields for enhanced property system (backward compatible with defaults)
+    visibility: Literal["essential", "normal", "advanced", "internal"] = "normal"
+    """Property visibility level in UI."""
+
+    order: int = 0
+    """Sort order for property display (lower = first)."""
+
+    display_when: Optional[Dict[str, Any]] = None
+    """Conditional display: show only when other properties match these values."""
+
+    hidden_when: Optional[Dict[str, Any]] = None
+    """Conditional hiding: hide when other properties match these values."""
+
+    dynamic_choices: Optional[Callable[[Dict[str, Any]], List[str]]] = None
+    """Callable that returns choices based on current config state."""
+
+    dynamic_default: Optional[Callable[[Dict[str, Any]], Any]] = None
+    """Callable that returns default value based on current config state."""
+
+    group: Optional[str] = None
+    """Group name for organizing related properties together."""
+
+    group_collapsed: bool = True
+    """Whether the group starts collapsed in UI."""
+
+    pattern: Optional[str] = None
+    """Regex pattern for STRING validation."""
+
+    supports_expressions: bool = True
+    """Whether this property supports expression syntax (e.g., {{variable}})."""
+
+    def __post_init__(self) -> None:
+        """Auto-generate label and sync essential with visibility."""
         if self.label is None:
             # Convert snake_case to Title Case
             self.label = self.name.replace("_", " ").title()
+
+        # Map essential=True to visibility="essential" for backward compatibility
+        if self.essential and self.visibility == "normal":
+            self.visibility = "essential"
+
+        # Also sync the other way: visibility="essential" sets essential=True
+        if self.visibility == "essential" and not self.essential:
+            object.__setattr__(self, "essential", True)
 
 
 @dataclass
@@ -104,7 +148,7 @@ class NodeSchema:
     """
     Schema for a node's configuration properties.
 
-    Attached to node classes via @node_schema decorator.
+    Attached to node classes via @properties decorator.
     """
 
     properties: List[PropertyDef] = field(default_factory=list)
@@ -185,6 +229,17 @@ class NodeSchema:
                         errors.append(
                             f"{prop.label or prop.name} contains invalid choices: {', '.join(invalid)}"
                         )
+
+            # Pattern validation for STRING types
+            if (
+                prop.pattern
+                and prop.type == PropertyType.STRING
+                and isinstance(value, str)
+            ):
+                if not re.match(prop.pattern, value):
+                    errors.append(
+                        f"{prop.label or prop.name} does not match required pattern"
+                    )
 
         if errors:
             return False, "; ".join(errors)
@@ -292,3 +347,123 @@ class NodeSchema:
             List of property names NOT marked as essential
         """
         return [prop.name for prop in self.properties if not prop.essential]
+
+    def should_display(self, prop_name: str, current_config: Dict[str, Any]) -> bool:
+        """
+        Check if property should be displayed based on conditions.
+
+        Evaluates display_when and hidden_when conditions against the
+        current configuration state.
+
+        Args:
+            prop_name: Name of the property to check
+            current_config: Current configuration dictionary
+
+        Returns:
+            True if property should be displayed, False otherwise
+        """
+        prop = self.get_property(prop_name)
+        if not prop:
+            return False
+
+        # Internal properties are never displayed
+        if prop.visibility == "internal":
+            return False
+
+        # Check display_when conditions (all must match to display)
+        if prop.display_when:
+            for key, expected in prop.display_when.items():
+                if current_config.get(key) != expected:
+                    return False
+
+        # Check hidden_when conditions (any match hides the property)
+        if prop.hidden_when:
+            for key, expected in prop.hidden_when.items():
+                if current_config.get(key) == expected:
+                    return False
+
+        return True
+
+    def get_sorted_properties(self) -> List[PropertyDef]:
+        """
+        Get properties sorted by order field.
+
+        Returns:
+            List of PropertyDef sorted by order (ascending)
+        """
+        return sorted(self.properties, key=lambda p: p.order)
+
+    def get_properties_by_visibility(self, visibility: str) -> List[PropertyDef]:
+        """
+        Get properties filtered by visibility level.
+
+        Args:
+            visibility: One of "essential", "normal", "advanced", "internal"
+
+        Returns:
+            List of PropertyDef with matching visibility
+        """
+        return [p for p in self.properties if p.visibility == visibility]
+
+    def get_properties_by_group(self) -> Dict[Optional[str], List[PropertyDef]]:
+        """
+        Group properties by their group field.
+
+        Properties without a group are keyed under None.
+
+        Returns:
+            Dict mapping group names to lists of PropertyDef
+        """
+        groups: Dict[Optional[str], List[PropertyDef]] = defaultdict(list)
+        for prop in self.get_sorted_properties():
+            groups[prop.group].append(prop)
+        return dict(groups)
+
+    def get_dynamic_choices(
+        self, prop_name: str, current_config: Dict[str, Any]
+    ) -> Optional[List[str]]:
+        """
+        Get dynamic choices for a property based on current config.
+
+        Args:
+            prop_name: Name of the property
+            current_config: Current configuration dictionary
+
+        Returns:
+            List of choices if dynamic_choices is defined, None otherwise
+        """
+        prop = self.get_property(prop_name)
+        if not prop or not prop.dynamic_choices:
+            return None
+
+        try:
+            return prop.dynamic_choices(current_config)
+        except Exception as e:
+            logger.warning(f"Error getting dynamic choices for {prop_name}: {e}")
+            return prop.choices  # Fall back to static choices
+
+    def get_dynamic_default(
+        self, prop_name: str, current_config: Dict[str, Any]
+    ) -> Any:
+        """
+        Get dynamic default value for a property based on current config.
+
+        Args:
+            prop_name: Name of the property
+            current_config: Current configuration dictionary
+
+        Returns:
+            Dynamic default if defined, otherwise static default
+        """
+        prop = self.get_property(prop_name)
+        if not prop:
+            return None
+
+        if not prop.dynamic_default:
+            return prop.default
+
+        try:
+            return prop.dynamic_default(current_config)
+        except Exception as e:
+            logger.warning(f"Error getting dynamic default for {prop_name}: {e}")
+            return prop.default

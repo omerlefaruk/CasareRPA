@@ -10,18 +10,18 @@ from typing import Tuple
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="browser")
+@properties(
     PropertyDef(
         "tab_name",
         PropertyType.STRING,
@@ -88,7 +88,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         placeholder="screenshots/error.png",
     ),
 )
-@executable_node
 class NewTabNode(BaseNode):
     """
     New tab node - creates a new browser tab/page.
@@ -115,8 +114,8 @@ class NewTabNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER, required=False)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_input_port("browser", DataType.BROWSER, required=False)
+        self.add_output_port("page", DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

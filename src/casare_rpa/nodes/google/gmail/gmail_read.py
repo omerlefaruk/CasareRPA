@@ -11,12 +11,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.gmail_client import GmailClient
@@ -72,13 +71,13 @@ GMAIL_FORMAT = PropertyDef(
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     GMAIL_MESSAGE_ID,
     GMAIL_FORMAT,
 )
-@executable_node
 class GmailGetEmailNode(GmailBaseNode):
     """
     Get a single email by message ID.
@@ -123,27 +122,25 @@ class GmailGetEmailNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Get email-specific inputs
-        self.add_input_port(
-            "message_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("format", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("message_id", DataType.STRING, required=True)
+        self.add_input_port("format", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("subject", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("from_address", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("to_addresses", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("cc_addresses", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("date", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("snippet", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("body_plain", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("body_html", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("label_ids", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("has_attachments", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("attachment_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("attachments", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("raw_message", PortType.OUTPUT, DataType.OBJECT)
+        self.add_output_port("message_id", DataType.STRING)
+        self.add_output_port("thread_id", DataType.STRING)
+        self.add_output_port("subject", DataType.STRING)
+        self.add_output_port("from_address", DataType.STRING)
+        self.add_output_port("to_addresses", DataType.LIST)
+        self.add_output_port("cc_addresses", DataType.LIST)
+        self.add_output_port("date", DataType.STRING)
+        self.add_output_port("snippet", DataType.STRING)
+        self.add_output_port("body_plain", DataType.STRING)
+        self.add_output_port("body_html", DataType.STRING)
+        self.add_output_port("label_ids", DataType.LIST)
+        self.add_output_port("has_attachments", DataType.BOOLEAN)
+        self.add_output_port("attachment_count", DataType.INTEGER)
+        self.add_output_port("attachments", DataType.LIST)
+        self.add_output_port("raw_message", DataType.OBJECT)
 
     async def _execute_gmail(
         self,
@@ -207,7 +204,8 @@ class GmailGetEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     PropertyDef(
@@ -243,7 +241,6 @@ class GmailGetEmailNode(GmailBaseNode):
         tooltip="Include messages from spam and trash folders",
     ),
 )
-@executable_node
 class GmailSearchEmailsNode(GmailBaseNode):
     """
     Search for emails using Gmail query syntax.
@@ -289,25 +286,17 @@ class GmailSearchEmailsNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Search-specific inputs
-        self.add_input_port("query", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "max_results", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port(
-            "label_ids", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "include_spam_trash", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "page_token", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("query", DataType.STRING, required=False)
+        self.add_input_port("max_results", DataType.INTEGER, required=False)
+        self.add_input_port("label_ids", DataType.STRING, required=False)
+        self.add_input_port("include_spam_trash", DataType.BOOLEAN, required=False)
+        self.add_input_port("page_token", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("messages", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("message_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("message_ids", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("next_page_token", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("messages", DataType.LIST)
+        self.add_output_port("message_count", DataType.INTEGER)
+        self.add_output_port("message_ids", DataType.LIST)
+        self.add_output_port("next_page_token", DataType.STRING)
 
     async def _execute_gmail(
         self,
@@ -392,7 +381,8 @@ class GmailSearchEmailsNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     PropertyDef(
@@ -406,7 +396,6 @@ class GmailSearchEmailsNode(GmailBaseNode):
     ),
     GMAIL_FORMAT,
 )
-@executable_node
 class GmailGetThreadNode(GmailBaseNode):
     """
     Get a conversation thread with all messages.
@@ -445,17 +434,17 @@ class GmailGetThreadNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Thread-specific inputs
-        self.add_input_port("thread_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("format", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("thread_id", DataType.STRING, required=True)
+        self.add_input_port("format", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("thread_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("snippet", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("messages", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("message_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("first_message", PortType.OUTPUT, DataType.OBJECT)
-        self.add_output_port("last_message", PortType.OUTPUT, DataType.OBJECT)
-        self.add_output_port("participants", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("thread_id", DataType.STRING)
+        self.add_output_port("snippet", DataType.STRING)
+        self.add_output_port("messages", DataType.LIST)
+        self.add_output_port("message_count", DataType.INTEGER)
+        self.add_output_port("first_message", DataType.OBJECT)
+        self.add_output_port("last_message", DataType.OBJECT)
+        self.add_output_port("participants", DataType.LIST)
 
     async def _execute_gmail(
         self,
@@ -540,7 +529,8 @@ class GmailGetThreadNode(GmailBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     GMAIL_MESSAGE_ID,
@@ -570,7 +560,6 @@ class GmailGetThreadNode(GmailBaseNode):
         tooltip="Filename for the attachment (used if no save path specified)",
     ),
 )
-@executable_node
 class GmailGetAttachmentNode(GmailBaseNode):
     """
     Download an email attachment.
@@ -609,23 +598,17 @@ class GmailGetAttachmentNode(GmailBaseNode):
         self._define_common_output_ports()
 
         # Attachment-specific inputs
-        self.add_input_port(
-            "message_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "attachment_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "save_path", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("filename", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("message_id", DataType.STRING, required=True)
+        self.add_input_port("attachment_id", DataType.STRING, required=True)
+        self.add_input_port("save_path", DataType.STRING, required=False)
+        self.add_input_port("filename", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("attachment_data", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("save_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("filename", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("saved", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("attachment_data", DataType.STRING)
+        self.add_output_port("save_path", DataType.STRING)
+        self.add_output_port("filename", DataType.STRING)
+        self.add_output_port("size", DataType.INTEGER)
+        self.add_output_port("saved", DataType.BOOLEAN)
 
     async def _execute_gmail(
         self,

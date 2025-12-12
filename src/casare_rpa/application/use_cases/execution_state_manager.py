@@ -17,9 +17,14 @@ from typing import Any, Dict, Optional, Set
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
-from casare_rpa.domain.events import Event, EventBus
+from casare_rpa.domain.events import (
+    EventBus,
+    DomainEvent,
+    WorkflowPaused,
+    WorkflowResumed,
+)
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
-from casare_rpa.domain.value_objects.types import EventType, NodeId
+from casare_rpa.domain.value_objects.types import NodeId
 
 
 class ExecutionSettings:
@@ -250,26 +255,14 @@ class ExecutionStateManager:
             return 0.0
         return (len(self.executed_nodes) / total) * 100
 
-    def emit_event(
-        self,
-        event_type: EventType,
-        data: Dict[str, Any],
-        node_id: Optional[NodeId] = None,
-    ) -> None:
+    def publish_event(self, event: DomainEvent) -> None:
         """
-        Emit an event to the event bus.
+        Publish a typed domain event to the event bus.
 
         Args:
-            event_type: Type of event
-            data: Event data payload
-            node_id: Optional node ID associated with event
+            event: Typed DomainEvent to publish
         """
         if self.event_bus:
-            event = Event(
-                event_type=event_type,
-                data=data,
-                node_id=node_id or self.current_node_id,
-            )
             self.event_bus.publish(event)
 
     async def pause_checkpoint(self) -> None:
@@ -281,13 +274,20 @@ class ExecutionStateManager:
         """
         if not self.pause_event.is_set():
             logger.info("Workflow paused at checkpoint")
-            self.emit_event(
-                EventType.WORKFLOW_PAUSED, {"current_node": self.current_node_id}
+            self.publish_event(
+                WorkflowPaused(
+                    workflow_id=self.workflow.metadata.id,
+                    paused_at_node_id=self.current_node_id or "",
+                    reason="checkpoint",
+                )
             )
             await self.pause_event.wait()  # Block until resumed
             logger.info("Workflow resumed from pause")
-            self.emit_event(
-                EventType.WORKFLOW_RESUMED, {"current_node": self.current_node_id}
+            self.publish_event(
+                WorkflowResumed(
+                    workflow_id=self.workflow.metadata.id,
+                    resume_from_node_id=self.current_node_id or "",
+                )
             )
 
     def get_execution_summary(self) -> Dict[str, Any]:

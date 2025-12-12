@@ -10,18 +10,17 @@ This module provides nodes for clipboard operations:
 import sys
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="system")
+@properties()  # Input port driven
 class ClipboardCopyNode(BaseNode):
     """
     Copy text to the clipboard.
@@ -44,8 +43,8 @@ class ClipboardCopyNode(BaseNode):
         self.node_type = "ClipboardCopyNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("text", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -104,8 +103,8 @@ class ClipboardCopyNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # No config - output only
-@executable_node
+@node(category="system")
+@properties()  # No config - output only
 class ClipboardPasteNode(BaseNode):
     """
     Get text from the clipboard.
@@ -126,8 +125,8 @@ class ClipboardPasteNode(BaseNode):
         self.node_type = "ClipboardPasteNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("text", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -184,8 +183,8 @@ class ClipboardPasteNode(BaseNode):
         return True, ""
 
 
-@node_schema()  # No config
-@executable_node
+@node(category="system")
+@properties()  # No config
 class ClipboardClearNode(BaseNode):
     """
     Clear the clipboard.
@@ -205,7 +204,7 @@ class ClipboardClearNode(BaseNode):
         self.node_type = "ClipboardClearNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

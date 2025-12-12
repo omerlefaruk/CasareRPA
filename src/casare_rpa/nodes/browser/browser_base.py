@@ -18,8 +18,8 @@ PERFORMANCE: Browser pool integration provides:
 Usage:
     from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
-    @node_schema(BROWSER_SELECTOR, BROWSER_TIMEOUT, ...)
-    @executable_node
+    @properties(BROWSER_SELECTOR, BROWSER_TIMEOUT, ...)
+    @node(category="browser")
     class MyBrowserNode(BrowserBaseNode):
         async def execute(self, context: ExecutionContext) -> ExecutionResult:
             page = self.get_page(context)
@@ -36,6 +36,7 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar, TYPE_CHECKING
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -222,7 +223,7 @@ class PageNotAvailableError(PlaywrightError):
 
 
 async def get_page_from_context(
-    node: "BrowserBaseNode",
+    browser_node: "BrowserBaseNode",
     context: "ExecutionContext",
     port_name: str = "page",
 ) -> Any:
@@ -232,7 +233,7 @@ async def get_page_from_context(
     Standard pattern for all browser nodes to access the active page.
 
     Args:
-        node: The browser node instance
+        browser_node: The browser node instance
         context: Execution context
         port_name: Name of the page input port (default: "page")
 
@@ -242,7 +243,7 @@ async def get_page_from_context(
     Raises:
         PageNotAvailableError: If no page is available
     """
-    page = node.get_input_value(port_name)
+    page = browser_node.get_input_value(port_name)
     if page is None:
         page = context.get_active_page()
 
@@ -341,7 +342,7 @@ class BrowserBaseNode(BaseNode, ABC):
     Subclasses should:
     1. Define ports in _define_ports()
     2. Implement execute() using helper methods
-    3. Use @node_schema with property constants
+    3. Use @properties with property constants
     """
 
     # @category: browser
@@ -356,7 +357,7 @@ class BrowserBaseNode(BaseNode, ABC):
 
         Args:
             node_id: Unique identifier for this node
-            config: Node configuration (from @node_schema defaults + user config)
+            config: Node configuration (from @properties defaults + user config)
             **kwargs: Additional arguments (name, etc.)
         """
         super().__init__(node_id, config or {})

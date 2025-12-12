@@ -7,7 +7,7 @@ Workflow starts when an event matches the filters (upcoming, created, updated).
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -17,7 +17,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     # Connection settings
     PropertyDef(
         "credential_name",
@@ -86,7 +87,6 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Also trigger on all-day events",
     ),
 )
-@trigger_node
 class CalendarTriggerNode(BaseTriggerNode):
     """
     Google Calendar trigger node that listens for calendar events.

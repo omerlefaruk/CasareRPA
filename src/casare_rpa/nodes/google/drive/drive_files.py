@@ -12,12 +12,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import (
@@ -59,7 +58,8 @@ DRIVE_FOLDER_ID = PropertyDef(
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -95,7 +95,6 @@ DRIVE_FOLDER_ID = PropertyDef(
         tooltip="File description in Drive",
     ),
 )
-@executable_node
 class DriveUploadFileNode(DriveBaseNode):
     """
     Upload a file to Google Drive.
@@ -133,24 +132,16 @@ class DriveUploadFileNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Upload-specific inputs
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "folder_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "file_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "mime_type", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("file_path", DataType.STRING, required=True)
+        self.add_input_port("folder_id", DataType.STRING, required=False)
+        self.add_input_port("file_name", DataType.STRING, required=False)
+        self.add_input_port("mime_type", DataType.STRING, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
 
         # Upload-specific outputs
-        self.add_output_port("file_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("web_view_link", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("file_id", DataType.STRING)
+        self.add_output_port("name", DataType.STRING)
+        self.add_output_port("web_view_link", DataType.STRING)
 
     async def _execute_drive(
         self,
@@ -213,39 +204,73 @@ class DriveUploadFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
-    DRIVE_FILE_ID,
+@node(category="integration")
+@properties(
+    PropertyDef(
+        "file_id",
+        PropertyType.STRING,
+        default="",
+        label="File ID",
+        placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+        tooltip="Single Google Drive file ID to download",
+    ),
+    PropertyDef(
+        "source_folder_id",
+        PropertyType.STRING,
+        default="",
+        label="Source Folder ID",
+        placeholder="14gesKQIyRcs98J4v3NOOQccUgRI1kMHy",
+        tooltip="Google Drive folder ID - downloads ALL files from this folder",
+    ),
     PropertyDef(
         "destination_path",
         PropertyType.STRING,
         default="",
-        required=True,
         label="Destination Path",
         placeholder="C:\\Downloads\\report.pdf",
-        tooltip="Local path to save the downloaded file",
+        tooltip="Local path to save a single file (for single file download)",
+    ),
+    PropertyDef(
+        "destination_folder",
+        PropertyType.STRING,
+        default="",
+        label="Destination Folder",
+        placeholder="C:\\Downloads\\",
+        tooltip="Local folder to save files (for batch/folder downloads)",
     ),
 )
-@executable_node
 class DriveDownloadFileNode(DriveBaseNode):
     """
-    Download a file from Google Drive.
+    Download files from Google Drive.
+
+    Supports multiple input modes:
+    1. Single file by ID: Use file_id parameter + destination_path
+    2. Folder download: Use source_folder_id parameter + destination_folder (downloads ALL files)
+    3. Single file object: Use file input port (from ForEach loop) + destination_folder
+    4. Batch download: Use files input port (list of file objects) + destination_folder
 
     Note: Google Workspace files (Docs, Sheets, Slides) cannot be downloaded
     directly. Use Drive Export File node to export them to a standard format.
 
     Inputs:
-        - file_id: Google Drive file ID
-        - destination_path: Local path to save the file
+        - file_id: Google Drive file ID (string)
+        - source_folder_id: Drive folder ID to download all files from
+        - file: Single file object with 'id' and 'name' fields (from loop)
+        - files: List of file objects to download (for batch operations)
+        - destination_path: Local path for single file download
+        - destination_folder: Local folder for batch/folder downloads
 
     Outputs:
-        - file_path: Path to the downloaded file
+        - file_path: Path to the downloaded file (single file mode)
+        - file_paths: List of downloaded file paths (batch mode)
+        - downloaded_count: Number of files successfully downloaded
         - success: Boolean
         - error: Error message if failed
     """
 
     # @category: google
     # @requires: none
-    # @ports: file_id, destination_path -> file_path
+    # @ports: file_id, source_folder_id, file, files, destination_path, destination_folder -> file_path, file_paths, downloaded_count
 
     NODE_TYPE = "drive_download_file"
     NODE_CATEGORY = "google_drive"
@@ -260,57 +285,233 @@ class DriveDownloadFileNode(DriveBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        # Download-specific inputs
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING, required=True)
+        # Download inputs - multiple modes supported
+        self.add_input_port("file_id", DataType.STRING, required=False)
         self.add_input_port(
-            "destination_path", PortType.INPUT, DataType.STRING, required=True
+            "source_folder_id",
+            DataType.STRING,
+            label="Source Folder ID",
+            required=False,
         )
+        self.add_input_port("file", DataType.DICT, label="File Object", required=False)
+        self.add_input_port("files", DataType.LIST, label="Files List", required=False)
+        self.add_input_port("destination_path", DataType.STRING, required=False)
+        self.add_input_port("destination_folder", DataType.STRING, required=False)
 
-        # Download-specific outputs
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
+        # Download outputs
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("file_paths", DataType.LIST)
+        self.add_output_port("downloaded_count", DataType.INTEGER)
 
     async def _execute_drive(
         self,
         context: ExecutionContext,
         client: GoogleDriveClient,
     ) -> ExecutionResult:
-        """Download a file from Google Drive."""
-        file_id = self._resolve_value(context, self.get_parameter("file_id"))
-        destination_path = self._resolve_value(
-            context, self.get_parameter("destination_path")
+        """Download files from Google Drive."""
+        # Get all possible inputs - try multiple sources
+        file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
+        source_folder_id = self.get_parameter(
+            "source_folder_id"
+        ) or self.get_input_value("source_folder_id")
+        file_obj = self.get_input_value("file")
+        files_list = self.get_input_value("files")
+        destination_path = self.get_parameter(
+            "destination_path"
+        ) or self.get_input_value("destination_path")
+        destination_folder = self.get_parameter(
+            "destination_folder"
+        ) or self.get_input_value("destination_folder")
+
+        # Debug logging to trace parameter values
+        logger.debug(
+            f"DriveDownloadFile params - file_id: {file_id}, source_folder_id: {source_folder_id}"
         )
+        logger.debug(f"DriveDownloadFile config: {self.config}")
 
-        if not file_id:
-            self._set_error_outputs("File ID is required")
-            return {"success": False, "error": "File ID is required", "next_nodes": []}
+        # Resolve variable references
+        if file_id:
+            file_id = self._resolve_value(context, file_id)
+        if source_folder_id:
+            source_folder_id = self._resolve_value(context, source_folder_id)
+        if destination_path:
+            destination_path = self._resolve_value(context, destination_path)
+        if destination_folder:
+            destination_folder = self._resolve_value(context, destination_folder)
 
-        if not destination_path:
-            self._set_error_outputs("Destination path is required")
+        # Determine download mode and collect files to download
+        files_to_download: list[dict] = []
+
+        # Priority 1: source_folder_id - list and download all files from folder
+        if source_folder_id:
+            logger.debug(f"Folder mode: listing files from folder {source_folder_id}")
+            try:
+                files, _ = await client.list_files(
+                    folder_id=source_folder_id,
+                    page_size=1000,  # Get up to 1000 files
+                    include_trashed=False,
+                )
+                for f in files:
+                    # Skip folders (only download files)
+                    if f.mime_type != "application/vnd.google-apps.folder":
+                        files_to_download.append(
+                            {
+                                "id": f.id,
+                                "name": f.name,
+                            }
+                        )
+                logger.info(
+                    f"Folder mode: found {len(files_to_download)} files to download from folder"
+                )
+            except Exception as e:
+                self._set_error_outputs(f"Failed to list files from folder: {e}")
+                return {
+                    "success": False,
+                    "error": f"Failed to list files from folder: {e}",
+                    "next_nodes": [],
+                }
+
+        # Priority 2: files_list from input port
+        elif files_list and isinstance(files_list, list):
+            # Batch mode: download all files in list
+            for f in files_list:
+                if isinstance(f, dict) and f.get("id"):
+                    files_to_download.append(
+                        {
+                            "id": f["id"],
+                            "name": f.get("name", f["id"]),
+                        }
+                    )
+            logger.debug(f"Batch mode: {len(files_to_download)} files to download")
+
+        # Priority 3: file_obj from input port
+        elif file_obj and isinstance(file_obj, dict) and file_obj.get("id"):
+            # Single file object mode (from ForEach loop)
+            files_to_download.append(
+                {
+                    "id": file_obj["id"],
+                    "name": file_obj.get("name", file_obj["id"]),
+                }
+            )
+            logger.debug(f"File object mode: downloading {file_obj.get('name')}")
+
+        # Priority 4: file_id parameter/port
+        elif file_id:
+            # Single file ID mode (original behavior)
+            files_to_download.append(
+                {
+                    "id": file_id,
+                    "name": None,  # Will use destination_path directly
+                }
+            )
+            logger.debug(f"File ID mode: downloading {file_id}")
+
+        else:
+            self._set_error_outputs(
+                "No file specified. Provide file_id, source_folder_id, file, or files input."
+            )
             return {
                 "success": False,
-                "error": "Destination path is required",
+                "error": "No file specified. Provide file_id, source_folder_id, file, or files input.",
                 "next_nodes": [],
             }
 
-        logger.debug(f"Downloading file from Drive: {file_id}")
+        # Validate destination
+        if len(files_to_download) == 1 and files_to_download[0]["name"] is None:
+            # Single file ID mode - need exact destination_path
+            if not destination_path:
+                self._set_error_outputs(
+                    "Destination path is required for single file download"
+                )
+                return {
+                    "success": False,
+                    "error": "Destination path is required for single file download",
+                    "next_nodes": [],
+                }
+        else:
+            # Batch or file object mode - need destination_folder
+            if not destination_folder:
+                destination_folder = (
+                    destination_path  # Fall back to destination_path as folder
+                )
+            if not destination_folder:
+                self._set_error_outputs(
+                    "Destination folder is required for batch download"
+                )
+                return {
+                    "success": False,
+                    "error": "Destination folder is required for batch download",
+                    "next_nodes": [],
+                }
 
-        # Download file
-        downloaded_path = await client.download_file(
-            file_id=file_id,
-            destination_path=destination_path,
-        )
+        # Create destination folder if needed
+        if destination_folder:
+            folder_path = Path(destination_folder)
+            folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Download files
+        downloaded_paths: list[str] = []
+        errors: list[str] = []
+
+        for file_info in files_to_download:
+            try:
+                fid = file_info["id"]
+                fname = file_info["name"]
+
+                # Determine destination path
+                if fname:
+                    dest = Path(destination_folder) / fname
+                else:
+                    dest = Path(destination_path)
+
+                logger.debug(f"Downloading file from Drive: {fid} -> {dest}")
+
+                downloaded_path = await client.download_file(
+                    file_id=fid,
+                    destination_path=str(dest),
+                )
+                downloaded_paths.append(str(downloaded_path))
+                logger.info(f"Downloaded file from Drive to: {downloaded_path}")
+
+            except Exception as e:
+                error_msg = (
+                    f"Failed to download {file_info.get('name', file_info['id'])}: {e}"
+                )
+                logger.error(error_msg)
+                errors.append(error_msg)
 
         # Set outputs
-        self._set_success_outputs()
-        self.set_output_value("file_path", str(downloaded_path))
+        if downloaded_paths:
+            self._set_success_outputs()
+            self.set_output_value(
+                "file_path", downloaded_paths[0] if downloaded_paths else ""
+            )
+            self.set_output_value("file_paths", downloaded_paths)
+            self.set_output_value("downloaded_count", len(downloaded_paths))
 
-        logger.info(f"Downloaded file from Drive to: {downloaded_path}")
+            result_msg = f"Downloaded {len(downloaded_paths)} file(s)"
+            if errors:
+                result_msg += f", {len(errors)} failed"
+            logger.info(result_msg)
 
-        return {
-            "success": True,
-            "file_path": str(downloaded_path),
-            "next_nodes": [],
-        }
+            return {
+                "success": True,
+                "file_path": downloaded_paths[0] if downloaded_paths else "",
+                "file_paths": downloaded_paths,
+                "downloaded_count": len(downloaded_paths),
+                "errors": errors if errors else None,
+                "next_nodes": [],
+            }
+        else:
+            error_msg = "; ".join(errors) if errors else "No files downloaded"
+            self._set_error_outputs(error_msg)
+            self.set_output_value("file_paths", [])
+            self.set_output_value("downloaded_count", 0)
+            return {
+                "success": False,
+                "error": error_msg,
+                "next_nodes": [],
+            }
 
 
 # ============================================================================
@@ -318,7 +519,8 @@ class DriveDownloadFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "new_name",
@@ -330,7 +532,6 @@ class DriveDownloadFileNode(DriveBaseNode):
     ),
     DRIVE_FOLDER_ID,
 )
-@executable_node
 class DriveCopyFileNode(DriveBaseNode):
     """
     Create a copy of a file in Google Drive.
@@ -365,15 +566,13 @@ class DriveCopyFileNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Copy-specific inputs
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("new_name", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "folder_id", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("new_name", DataType.STRING, required=False)
+        self.add_input_port("folder_id", DataType.STRING, required=False)
 
         # Copy-specific outputs
-        self.add_output_port("new_file_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("name", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("new_file_id", DataType.STRING)
+        self.add_output_port("name", DataType.STRING)
 
     async def _execute_drive(
         self,
@@ -418,7 +617,8 @@ class DriveCopyFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "folder_id",
@@ -430,7 +630,6 @@ class DriveCopyFileNode(DriveBaseNode):
         tooltip="ID of the destination folder",
     ),
 )
-@executable_node
 class DriveMoveFileNode(DriveBaseNode):
     """
     Move a file to a different folder in Google Drive.
@@ -464,12 +663,12 @@ class DriveMoveFileNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Move-specific inputs
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("folder_id", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("folder_id", DataType.STRING, required=True)
 
         # Move-specific outputs
-        self.add_output_port("file_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("new_parents", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("file_id", DataType.STRING)
+        self.add_output_port("new_parents", DataType.LIST)
 
     async def _execute_drive(
         self,
@@ -520,7 +719,8 @@ class DriveMoveFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "permanent",
@@ -530,7 +730,6 @@ class DriveMoveFileNode(DriveBaseNode):
         tooltip="If True, permanently delete. If False, move to trash.",
     ),
 )
-@executable_node
 class DriveDeleteFileNode(DriveBaseNode):
     """
     Delete or trash a file in Google Drive.
@@ -563,13 +762,11 @@ class DriveDeleteFileNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Delete-specific inputs
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "permanent", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("permanent", DataType.BOOLEAN, required=False)
 
         # Delete-specific outputs
-        self.add_output_port("file_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("file_id", DataType.STRING)
 
     async def _execute_drive(
         self,
@@ -614,7 +811,8 @@ class DriveDeleteFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
     PropertyDef(
         "new_name",
@@ -626,7 +824,6 @@ class DriveDeleteFileNode(DriveBaseNode):
         tooltip="New name for the file",
     ),
 )
-@executable_node
 class DriveRenameFileNode(DriveBaseNode):
     """
     Rename a file or folder in Google Drive.
@@ -660,12 +857,12 @@ class DriveRenameFileNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Rename-specific inputs
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("new_name", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("new_name", DataType.STRING, required=True)
 
         # Rename-specific outputs
-        self.add_output_port("file_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("name", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("file_id", DataType.STRING)
+        self.add_output_port("name", DataType.STRING)
 
     async def _execute_drive(
         self,
@@ -712,10 +909,10 @@ class DriveRenameFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FILE_ID,
 )
-@executable_node
 class DriveGetFileNode(DriveBaseNode):
     """
     Get file metadata from Google Drive.
@@ -757,22 +954,22 @@ class DriveGetFileNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Get file inputs
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("file_id", DataType.STRING, required=True)
 
         # Get file outputs - comprehensive metadata
-        self.add_output_port("file_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("mime_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("created_time", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("modified_time", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("web_view_link", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("web_content_link", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("parents", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("description", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("starred", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("trashed", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("shared", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("file_id", DataType.STRING)
+        self.add_output_port("name", DataType.STRING)
+        self.add_output_port("mime_type", DataType.STRING)
+        self.add_output_port("size", DataType.INTEGER)
+        self.add_output_port("created_time", DataType.STRING)
+        self.add_output_port("modified_time", DataType.STRING)
+        self.add_output_port("web_view_link", DataType.STRING)
+        self.add_output_port("web_content_link", DataType.STRING)
+        self.add_output_port("parents", DataType.LIST)
+        self.add_output_port("description", DataType.STRING)
+        self.add_output_port("starred", DataType.BOOLEAN)
+        self.add_output_port("trashed", DataType.BOOLEAN)
+        self.add_output_port("shared", DataType.BOOLEAN)
 
     async def _execute_drive(
         self,

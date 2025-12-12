@@ -13,11 +13,10 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
-    PortType,
     DataType,
     NodeStatus,
     ExecutionResult,
@@ -25,7 +24,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "mode",
         PropertyType.CHOICE,
@@ -71,7 +71,6 @@ from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
         tooltip="Step value for range iteration (when mode='range')",
     ),
 )
-@executable_node
 class ForLoopStartNode(BaseNode):
     """
     Start node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -107,14 +106,14 @@ class ForLoopStartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("items", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("end", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_output_port("body", PortType.EXEC_OUTPUT)
-        self.add_output_port("completed", PortType.EXEC_OUTPUT)
-        self.add_output_port("current_item", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("current_index", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("current_key", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("exec_in")
+        self.add_input_port("items", DataType.ANY, required=False)
+        self.add_input_port("end", DataType.INTEGER, required=False)
+        self.add_output_port("body")
+        self.add_output_port("completed")
+        self.add_output_port("current_item", DataType.ANY)
+        self.add_output_port("current_index", DataType.INTEGER)
+        self.add_output_port("current_key", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -260,7 +259,8 @@ class ForLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "paired_start_id",
         PropertyType.STRING,
@@ -269,7 +269,6 @@ class ForLoopStartNode(BaseNode):
         tooltip="ID of the paired ForLoopStartNode (set automatically)",
     ),
 )
-@executable_node
 class ForLoopEndNode(BaseNode):
     """
     End node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -296,7 +295,7 @@ class ForLoopEndNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        pass  # exec_in and exec_out added by @executable_node decorator
+        pass  # exec_in and exec_out added by @node decorator
 
     def set_paired_start(self, start_node_id: str) -> None:
         """Set the paired ForLoopStart node ID."""
@@ -343,7 +342,8 @@ class ForLoopEndNode(BaseNode):
         }
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "expression",
         PropertyType.STRING,
@@ -361,7 +361,6 @@ class ForLoopEndNode(BaseNode):
         tooltip="Maximum iterations to prevent infinite loops",
     ),
 )
-@executable_node
 class WhileLoopStartNode(BaseNode):
     """
     Start node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -390,13 +389,11 @@ class WhileLoopStartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port(
-            "condition", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_output_port("body", PortType.EXEC_OUTPUT)
-        self.add_output_port("completed", PortType.EXEC_OUTPUT)
-        self.add_output_port("current_iteration", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("exec_in")
+        self.add_input_port("condition", DataType.BOOLEAN, required=False)
+        self.add_output_port("body")
+        self.add_output_port("completed")
+        self.add_output_port("current_iteration", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute while loop start - evaluates condition and manages iteration."""
@@ -495,7 +492,8 @@ class WhileLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "paired_start_id",
         PropertyType.STRING,
@@ -504,7 +502,6 @@ class WhileLoopStartNode(BaseNode):
         tooltip="ID of the paired WhileLoopStartNode (set automatically)",
     ),
 )
-@executable_node
 class WhileLoopEndNode(BaseNode):
     """
     End node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -530,7 +527,7 @@ class WhileLoopEndNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        pass  # exec_in and exec_out added by @executable_node decorator
+        pass  # exec_in and exec_out added by @node decorator
 
     def set_paired_start(self, start_node_id: str) -> None:
         """Set the paired WhileLoopStart node ID."""
@@ -565,7 +562,8 @@ class WhileLoopEndNode(BaseNode):
         }
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "paired_loop_start_id",
         PropertyType.STRING,
@@ -574,7 +572,6 @@ class WhileLoopEndNode(BaseNode):
         tooltip="ID of the parent loop's start node (set automatically)",
     ),
 )
-@executable_node
 class BreakNode(BaseNode):
     """
     Loop control node that exits from the current loop.
@@ -597,7 +594,7 @@ class BreakNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        pass  # exec_in and exec_out added by @executable_node decorator
+        pass  # exec_in and exec_out added by @node decorator
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -651,7 +648,8 @@ class BreakNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "paired_loop_start_id",
         PropertyType.STRING,
@@ -660,7 +658,6 @@ class BreakNode(BaseNode):
         tooltip="ID of the parent loop's start node (set automatically)",
     ),
 )
-@executable_node
 class ContinueNode(BaseNode):
     """
     Loop control node that skips to next iteration.
@@ -684,7 +681,7 @@ class ContinueNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        pass  # exec_in and exec_out added by @executable_node decorator
+        pass  # exec_in and exec_out added by @node decorator
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

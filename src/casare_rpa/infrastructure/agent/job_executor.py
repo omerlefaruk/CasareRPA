@@ -141,21 +141,21 @@ class JobExecutor:
                 ExecuteWorkflowUseCase,
                 ExecutionSettings,
             )
-            from casare_rpa.domain.events import EventBus
-            from casare_rpa.domain.value_objects.types import EventType
+            from casare_rpa.domain.events import (
+                EventBus,
+                NodeStarted,
+                NodeCompleted,
+                NodeFailed,
+            )
 
             # Create a local event bus for this execution
             event_bus = EventBus()
 
             # Track progress through events
             progress_tracker = _ProgressTracker(job_id, self.progress_callback)
-            event_bus.subscribe(
-                EventType.NODE_STARTED, progress_tracker.on_node_started
-            )
-            event_bus.subscribe(
-                EventType.NODE_COMPLETED, progress_tracker.on_node_completed
-            )
-            event_bus.subscribe(EventType.NODE_ERROR, progress_tracker.on_node_error)
+            event_bus.subscribe(NodeStarted, progress_tracker.on_node_started)
+            event_bus.subscribe(NodeCompleted, progress_tracker.on_node_completed)
+            event_bus.subscribe(NodeFailed, progress_tracker.on_node_error)
 
             settings = ExecutionSettings(
                 continue_on_error=self.continue_on_error,
@@ -304,8 +304,7 @@ class _ProgressTracker:
     def on_node_started(self, event: Any) -> None:
         """Handle node started event."""
         self.nodes_started += 1
-        data = event.data if hasattr(event, "data") else {}
-        self.current_node = data.get("node_id", "unknown")
+        self.current_node = event.node_id if hasattr(event, "node_id") else "unknown"
 
         if self.callback:
             progress = min(
@@ -325,8 +324,7 @@ class _ProgressTracker:
     def on_node_completed(self, event: Any) -> None:
         """Handle node completed event."""
         self.nodes_completed += 1
-        data = event.data if hasattr(event, "data") else {}
-        node_id = data.get("node_id", "unknown")
+        node_id = event.node_id if hasattr(event, "node_id") else "unknown"
 
         if self.callback:
             progress = min(
@@ -345,9 +343,10 @@ class _ProgressTracker:
 
     def on_node_error(self, event: Any) -> None:
         """Handle node error event."""
-        data = event.data if hasattr(event, "data") else {}
-        node_id = data.get("node_id", "unknown")
-        error = data.get("error", "Unknown error")
+        node_id = event.node_id if hasattr(event, "node_id") else "unknown"
+        error = (
+            event.error_message if hasattr(event, "error_message") else "Unknown error"
+        )
 
         if self.callback:
             try:

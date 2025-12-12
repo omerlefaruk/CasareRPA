@@ -21,6 +21,7 @@ from typing import Any, List, Optional
 from loguru import logger
 
 from casare_rpa.domain.credentials import CredentialAwareMixin
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -107,7 +108,7 @@ GOOGLE_MAX_RETRIES = PropertyDef(
     required=False,
 )
 
-# All credential-related properties as a tuple for use in @node_schema
+# All credential-related properties as a tuple for use in @properties
 GOOGLE_CREDENTIAL_PROPERTIES = (
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_ACCESS_TOKEN,
@@ -274,6 +275,13 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         Raises:
             GoogleAuthError: If no credentials found
         """
+        # DEBUG: Log credential_id from config (using INFO so it shows in logs)
+        cred_id_from_config = self.config.get("credential_id")
+        cred_id_from_param = self.get_parameter("credential_id")
+        logger.info(
+            f"Google credential lookup - config: {cred_id_from_config}, param: {cred_id_from_param}"
+        )
+
         # Try vault/credential resolution first using CredentialAwareMixin
         # The credential_id is set by NodeGoogleCredentialWidget in the visual layer
         access_token = await self.resolve_credential(
@@ -374,13 +382,17 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             )
 
             store = get_credential_store()
-            cred_id = self.get_parameter("credential_id")
+            # Use get_parameter first, then fallback to config.get directly
+            # (get_parameter may return None due to MRO issues with CredentialAwareMixin)
+            cred_id = self.get_parameter("credential_id") or self.config.get(
+                "credential_id"
+            )
             if cred_id:
                 cred_id = context.resolve_value(cred_id)
                 # Get decrypted credential data by ID
                 data = store.get_credential(cred_id)
                 if data and data.get("access_token"):
-                    logger.debug(f"Using credential from store: {cred_id}")
+                    logger.info(f"Using credential from store: {cred_id}")
 
                     # Parse expiry timestamp
                     expiry = None

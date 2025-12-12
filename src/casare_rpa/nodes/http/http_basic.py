@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import DataType, PortType
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.http.http_base import HttpBaseNode
 
 
@@ -94,7 +94,8 @@ PARAMS_PROPERTY = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="http")
+@properties(
     URL_PROPERTY,
     PropertyDef(
         "method",
@@ -142,12 +143,11 @@ PARAMS_PROPERTY = PropertyDef(
         tooltip="Force specific response encoding (optional)",
     ),
 )
-@executable_node
 class HttpRequestNode(HttpBaseNode):
     """
     Generic HTTP request node supporting all HTTP methods.
 
-    Config (via @node_schema):
+    Config (via @properties):
         url: Target URL (required)
         method: HTTP method (default: GET)
         headers: Request headers as dict
@@ -182,12 +182,12 @@ class HttpRequestNode(HttpBaseNode):
         return self._get_http_method() in ("POST", "PUT", "PATCH")
 
     def _define_ports(self) -> None:
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("method", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers", PortType.INPUT, DataType.DICT)
-        self.add_input_port("body", PortType.INPUT, DataType.ANY)
-        self.add_input_port("params", PortType.INPUT, DataType.DICT)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("url", DataType.STRING)
+        self.add_input_port("method", DataType.STRING)
+        self.add_input_port("headers", DataType.DICT)
+        self.add_input_port("body", DataType.ANY)
+        self.add_input_port("params", DataType.DICT)
+        self.add_input_port("timeout", DataType.FLOAT)
         self._define_common_output_ports()
 
 

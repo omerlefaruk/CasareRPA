@@ -28,11 +28,9 @@ from casare_rpa.infrastructure.persistence.project_storage import ProjectStorage
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
 from casare_rpa.infrastructure.persistence.template_storage import TemplateStorage
 from casare_rpa.infrastructure.persistence.environment_storage import EnvironmentStorage
-from casare_rpa.infrastructure.persistence.repositories import (
-    JobRepository,
-    NodeOverrideRepository,
-    RobotRepository,
-    WorkflowAssignmentRepository,
+from casare_rpa.infrastructure.persistence.unit_of_work import (
+    JsonUnitOfWork,
+    DomainEventCollector,
 )
 
 __all__ = [
@@ -42,9 +40,7 @@ __all__ = [
     "FolderStorage",
     "TemplateStorage",
     "EnvironmentStorage",
-    # Robot orchestration repositories
-    "JobRepository",
-    "NodeOverrideRepository",
-    "RobotRepository",
-    "WorkflowAssignmentRepository",
+    # Unit of Work
+    "JsonUnitOfWork",
+    "DomainEventCollector",
 ]

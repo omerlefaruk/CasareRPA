@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import NodeStatus, PortType, DataType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import NodeStatus, DataType
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
@@ -28,7 +28,8 @@ from casare_rpa.nodes.desktop_nodes.properties import (
 )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     APPLICATION_PATH_PROP,
     ARGUMENTS_PROP,
     WORKING_DIRECTORY_PROP,
@@ -37,14 +38,13 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     WINDOW_STATE_PROP,
     KEEP_OPEN_PROP,
 )
-@executable_node
 class LaunchApplicationNode(DesktopNodeBase):
     """
     Launch a Windows desktop application.
 
     Launches an application and returns its main window for further automation.
 
-    Config (via @node_schema):
+    Config (via @properties):
         application_path: Full path to the executable (required)
         arguments: Command line arguments (default: "")
         working_directory: Starting directory (default: "")
@@ -76,17 +76,13 @@ class LaunchApplicationNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("application_path", PortType.INPUT, DataType.STRING)
+        self.add_input_port("application_path", DataType.STRING)
         # arguments and working_directory are optional
-        self.add_input_port(
-            "arguments", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "working_directory", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("process_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("window_title", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("arguments", DataType.STRING, required=False)
+        self.add_input_port("working_directory", DataType.STRING, required=False)
+        self.add_output_port("window", DataType.ANY)
+        self.add_output_port("process_id", DataType.INTEGER)
+        self.add_output_port("window_title", DataType.STRING)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - launch application."""
@@ -190,18 +186,18 @@ class LaunchApplicationNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     FORCE_CLOSE_PROP,
     TIMEOUT_PROP,
 )
-@executable_node
 class CloseApplicationNode(DesktopNodeBase):
     """
     Close a Windows desktop application.
 
     Closes an application gracefully or forcefully.
 
-    Config (via @node_schema):
+    Config (via @properties):
         force_close: Forcefully terminate if graceful close fails (default: False)
         timeout: Maximum time to wait for close (default: 5.0 seconds)
 
@@ -232,14 +228,10 @@ class CloseApplicationNode(DesktopNodeBase):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Can identify app by window, process_id, or window_title - any one is sufficient
-        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port(
-            "process_id", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port(
-            "window_title", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY, required=False)
+        self.add_input_port("process_id", DataType.INTEGER, required=False)
+        self.add_input_port("window_title", DataType.STRING, required=False)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - close application."""
@@ -274,18 +266,18 @@ class CloseApplicationNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     MATCH_PARTIAL_PROP,
     TIMEOUT_PROP,
 )
-@executable_node
 class ActivateWindowNode(DesktopNodeBase):
     """
     Activate (bring to foreground) a Windows desktop window.
 
     Makes a window active and brings it to the foreground.
 
-    Config (via @node_schema):
+    Config (via @properties):
         match_partial: Allow partial title matching (default: True)
         timeout: Maximum time to wait for window (default: 5.0 seconds)
 
@@ -316,12 +308,10 @@ class ActivateWindowNode(DesktopNodeBase):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Can identify window by either window handle or title - one is required
-        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port(
-            "window_title", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("window", DataType.ANY, required=False)
+        self.add_input_port("window_title", DataType.STRING, required=False)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("window", DataType.ANY)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - activate window."""
@@ -367,18 +357,18 @@ class ActivateWindowNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     INCLUDE_INVISIBLE_PROP,
     FILTER_TITLE_PROP,
 )
-@executable_node
 class GetWindowListNode(DesktopNodeBase):
     """
     Get a list of all open Windows desktop windows.
 
     Returns information about all currently open windows.
 
-    Config (via @node_schema):
+    Config (via @properties):
         include_invisible: Include invisible windows (default: False)
         filter_title: Filter windows by title (default: "")
 
@@ -404,8 +394,8 @@ class GetWindowListNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_output_port("window_list", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("window_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("window_list", DataType.LIST)
+        self.add_output_port("window_count", DataType.INTEGER)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - get window list."""

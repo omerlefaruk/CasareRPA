@@ -6,7 +6,7 @@ Trigger node that fires on a schedule (cron, interval, once).
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -16,7 +16,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     PropertyDef(
         "frequency",
         PropertyType.CHOICE,
@@ -98,7 +99,6 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="When to start (for once mode)",
     ),
 )
-@trigger_node
 class ScheduleTriggerNode(BaseTriggerNode):
     """
     Schedule trigger node that fires on a time-based schedule.

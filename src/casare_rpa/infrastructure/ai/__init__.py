@@ -113,6 +113,20 @@ from casare_rpa.infrastructure.ai.prompt_template_manager import (
     get_prompt_template_manager,
 )
 
+from casare_rpa.infrastructure.ai.playwright_mcp import (
+    PlaywrightMCPClient,
+    MCPToolResult,
+    fetch_page_context,
+)
+
+from casare_rpa.infrastructure.ai.page_analyzer import (
+    PageAnalyzer,
+    PageContext,
+    FormInfo,
+    FormField,
+    analyze_page,
+)
+
 __all__ = [
     # Registry dumper
     "dump_node_manifest",
@@ -172,4 +186,14 @@ __all__ = [
     # Prompt Template Manager
     "PromptTemplateManager",
     "get_prompt_template_manager",
+    # Playwright MCP
+    "PlaywrightMCPClient",
+    "MCPToolResult",
+    "fetch_page_context",
+    # Page Analyzer
+    "PageAnalyzer",
+    "PageContext",
+    "FormInfo",
+    "FormField",
+    "analyze_page",
 ]

@@ -12,11 +12,10 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
-    PortType,
     DataType,
     NodeStatus,
     ExecutionResult,
@@ -24,7 +23,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "expression",
         PropertyType.STRING,
@@ -34,7 +34,6 @@ from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
         placeholder="{{variable}} > 10",
     ),
 )
-@executable_node
 class IfNode(BaseNode):
     """
     Conditional node that executes different paths based on condition.
@@ -55,10 +54,10 @@ class IfNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("condition", PortType.INPUT, DataType.ANY, required=False)
-        self.add_output_port("true", PortType.EXEC_OUTPUT)
-        self.add_output_port("false", PortType.EXEC_OUTPUT)
+        self.add_input_port("exec_in")
+        self.add_input_port("condition", DataType.ANY, required=False)
+        self.add_output_port("true")
+        self.add_output_port("false")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -120,7 +119,8 @@ class IfNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "cases",
         PropertyType.LIST,
@@ -137,7 +137,6 @@ class IfNode(BaseNode):
         placeholder="{{status}}",
     ),
 )
-@executable_node
 class SwitchNode(BaseNode):
     """
     Multi-way branching node based on value matching.
@@ -158,15 +157,15 @@ class SwitchNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("exec_in")
+        self.add_input_port("value", DataType.ANY, required=False)
 
         # Get cases from config (e.g., ["success", "error", "pending"])
         cases = self.get_parameter("cases", [])
         for case in cases:
-            self.add_output_port(f"case_{case}", PortType.EXEC_OUTPUT)
+            self.add_output_port(f"case_{case}")
 
-        self.add_output_port("default", PortType.EXEC_OUTPUT)
+        self.add_output_port("default")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -232,8 +231,8 @@ class SwitchNode(BaseNode):
             }
 
 
-@node_schema()  # Pass-through node
-@executable_node
+@node(category="control_flow")
+@properties()  # Pass-through node
 class MergeNode(BaseNode):
     """
     Merge node that allows multiple execution paths to converge.
@@ -259,7 +258,7 @@ class MergeNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # exec_in and exec_out added by @executable_node decorator
+        # exec_in and exec_out added by @node decorator
         pass
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

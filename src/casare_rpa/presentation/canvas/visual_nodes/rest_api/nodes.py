@@ -8,7 +8,7 @@ from casare_rpa.domain.value_objects.types import DataType
 class VisualHttpRequestNode(VisualNode):
     """Visual representation of HttpRequestNode.
 
-    Widgets are auto-generated from HttpRequestNode's @node_schema decorator.
+    Widgets are auto-generated from HttpRequestNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"
@@ -35,7 +35,7 @@ class VisualHttpRequestNode(VisualNode):
 class VisualSetHttpHeadersNode(VisualNode):
     """Visual representation of SetHttpHeadersNode.
 
-    Widgets are auto-generated from SetHttpHeadersNode's @node_schema decorator.
+    Widgets are auto-generated from SetHttpHeadersNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"
@@ -56,7 +56,7 @@ class VisualSetHttpHeadersNode(VisualNode):
 class VisualHttpAuthNode(VisualNode):
     """Visual representation of HttpAuthNode.
 
-    Widgets are auto-generated from HttpAuthNode's @node_schema decorator.
+    Widgets are auto-generated from HttpAuthNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"
@@ -78,7 +78,7 @@ class VisualHttpAuthNode(VisualNode):
 class VisualParseJsonResponseNode(VisualNode):
     """Visual representation of ParseJsonResponseNode.
 
-    Widgets are auto-generated from ParseJsonResponseNode's @node_schema decorator.
+    Widgets are auto-generated from ParseJsonResponseNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"
@@ -101,7 +101,7 @@ class VisualParseJsonResponseNode(VisualNode):
 class VisualHttpDownloadFileNode(VisualNode):
     """Visual representation of HttpDownloadFileNode.
 
-    Widgets are auto-generated from HttpDownloadFileNode's @node_schema decorator.
+    Widgets are auto-generated from HttpDownloadFileNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"
@@ -125,7 +125,7 @@ class VisualHttpDownloadFileNode(VisualNode):
 class VisualHttpUploadFileNode(VisualNode):
     """Visual representation of HttpUploadFileNode.
 
-    Widgets are auto-generated from HttpUploadFileNode's @node_schema decorator.
+    Widgets are auto-generated from HttpUploadFileNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"
@@ -151,7 +151,7 @@ class VisualHttpUploadFileNode(VisualNode):
 class VisualBuildUrlNode(VisualNode):
     """Visual representation of BuildUrlNode.
 
-    Widgets are auto-generated from BuildUrlNode's @node_schema decorator.
+    Widgets are auto-generated from BuildUrlNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.http"

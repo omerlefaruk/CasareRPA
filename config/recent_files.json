@@ -1,14 +1,14 @@
 {
   "files": [
     {
+      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\Projects\\MonthlyMuhasebe\\scenarios\\v001.json",
+      "name": "v001.json",
+      "last_opened": "2025-12-12T07:14:16.483326"
+    },
+    {
       "path": "C:\\Users\\Rau\\Desktop\\1.json",
       "name": "1.json",
       "last_opened": "2025-12-08T04:53:40.228821"
-    },
-    {
-      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\workflows\\RPAChallenge\\scenarios\\v001.json",
-      "name": "v001.json",
-      "last_opened": "2025-12-05T19:39:13.673195"
     }
   ]
 }

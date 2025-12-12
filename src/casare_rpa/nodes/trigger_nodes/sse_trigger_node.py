@@ -6,7 +6,7 @@ Trigger node that listens to a Server-Sent Events stream.
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -16,7 +16,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     PropertyDef(
         "sse_url",
         PropertyType.STRING,
@@ -63,7 +64,6 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Connection timeout (0 = no timeout)",
     ),
 )
-@trigger_node
 class SSETriggerNode(BaseTriggerNode):
     """
     SSE trigger node that listens to Server-Sent Events.

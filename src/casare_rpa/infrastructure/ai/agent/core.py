@@ -45,6 +45,7 @@ from casare_rpa.infrastructure.ai.agent.prompts import (
     APPEND_SYSTEM_PROMPT,
     MULTI_TURN_SYSTEM_PROMPT,
     REFINE_SYSTEM_PROMPT,
+    PAGE_CONTEXT_TEMPLATE,
 )
 
 if TYPE_CHECKING:
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
         ConversationManager,
         UserIntent,
     )
+    from casare_rpa.infrastructure.ai.page_analyzer import PageContext
 
 
 class SmartWorkflowAgent:
@@ -86,6 +88,10 @@ class SmartWorkflowAgent:
     RAG_TOP_K = 15  # Number of relevant nodes to retrieve
     RAG_COLLECTION = "casare_nodes"  # Vector store collection name
     CORE_NODE_CATEGORIES = frozenset({"control_flow", "data"})  # Always include these
+
+    # URL Detection Pattern
+    URL_PATTERN = re.compile(r'https?://[^\s<>"\')\]]+', re.IGNORECASE)
+    MAX_URLS_TO_ANALYZE = 3  # Limit URLs to analyze per request
 
     def __init__(
         self,
@@ -122,6 +128,10 @@ class SmartWorkflowAgent:
         self._rag_initialized: bool = False
         self._rag_available: bool = False
         self._nodes_indexed: bool = False
+
+        # Page context (Playwright MCP integration)
+        self._page_context_cache: Dict[str, "PageContext"] = {}
+        self._mcp_available: Optional[bool] = None  # Lazy check
 
         logger.info(
             f"SmartWorkflowAgent initialized: max_retries={self.max_retries}, "
@@ -297,6 +307,149 @@ class SmartWorkflowAgent:
         except Exception as e:
             logger.error(f"RAG retrieval failed: {e}. Falling back to full manifest.")
             return self._get_node_manifest()
+
+    def _detect_urls(self, prompt: str) -> List[str]:
+        """
+        Extract URLs from user prompt.
+
+        Args:
+            prompt: User prompt text
+
+        Returns:
+            List of detected URLs (limited to MAX_URLS_TO_ANALYZE)
+        """
+        urls = self.URL_PATTERN.findall(prompt)
+        # Clean up URLs (remove trailing punctuation)
+        cleaned = []
+        for url in urls:
+            url = url.rstrip(".,;:!?")
+            if url not in cleaned:
+                cleaned.append(url)
+        return cleaned[: self.MAX_URLS_TO_ANALYZE]
+
+    async def _check_mcp_available(self) -> bool:
+        """Check if Playwright MCP is available."""
+        if self._mcp_available is not None:
+            return self._mcp_available
+
+        try:
+            from casare_rpa.infrastructure.ai.playwright_mcp import PlaywrightMCPClient
+
+            # Quick check - can we import and find npx?
+            client = PlaywrightMCPClient(headless=True)
+            self._mcp_available = client._npx_path is not None
+            logger.debug(f"Playwright MCP available: {self._mcp_available}")
+        except ImportError:
+            logger.debug("Playwright MCP not available (import failed)")
+            self._mcp_available = False
+        except Exception as e:
+            logger.debug(f"Playwright MCP not available: {e}")
+            self._mcp_available = False
+
+        return self._mcp_available
+
+    async def _fetch_page_context(self, url: str) -> Optional["PageContext"]:
+        """
+        Fetch page context for a URL using Playwright MCP.
+
+        Args:
+            url: URL to analyze
+
+        Returns:
+            PageContext with extracted page elements, or None on failure
+        """
+        # Check cache first
+        if url in self._page_context_cache:
+            logger.debug(f"Using cached page context for {url}")
+            return self._page_context_cache[url]
+
+        # Check if MCP is available
+        if not await self._check_mcp_available():
+            logger.debug("Skipping page context - MCP not available")
+            return None
+
+        try:
+            from casare_rpa.infrastructure.ai.playwright_mcp import PlaywrightMCPClient
+            from casare_rpa.infrastructure.ai.page_analyzer import PageAnalyzer
+
+            logger.info(f"Fetching page context for: {url}")
+
+            async with PlaywrightMCPClient(headless=True) as client:
+                # Navigate to URL
+                nav_result = await client.navigate(url)
+                if not nav_result.success:
+                    logger.warning(f"Failed to navigate to {url}: {nav_result.error}")
+                    return None
+
+                # Wait for page to stabilize
+                await client.wait_for(time_seconds=2.0)
+
+                # Get accessibility snapshot
+                snapshot_result = await client.get_snapshot()
+                if not snapshot_result.success:
+                    logger.warning(f"Failed to get snapshot: {snapshot_result.error}")
+                    return None
+
+                # Get page title
+                title_result = await client.evaluate("() => document.title")
+                title = title_result.get_text() if title_result.success else ""
+
+                # Analyze snapshot
+                analyzer = PageAnalyzer()
+                context = analyzer.analyze_snapshot(
+                    snapshot=snapshot_result.get_text(),
+                    url=url,
+                    title=title,
+                )
+
+                # Cache result
+                self._page_context_cache[url] = context
+
+                logger.info(
+                    f"Page context extracted: {len(context.forms)} forms, "
+                    f"{len(context.buttons)} buttons, {len(context.inputs)} inputs"
+                )
+                return context
+
+        except Exception as e:
+            logger.error(f"Failed to fetch page context for {url}: {e}")
+            logger.debug(traceback.format_exc())
+            return None
+
+    async def _fetch_page_contexts(self, urls: List[str]) -> List["PageContext"]:
+        """
+        Fetch page contexts for multiple URLs.
+
+        Args:
+            urls: List of URLs to analyze
+
+        Returns:
+            List of PageContext objects (may be shorter than input if some fail)
+        """
+        contexts = []
+        for url in urls:
+            context = await self._fetch_page_context(url)
+            if context and not context.is_empty():
+                contexts.append(context)
+        return contexts
+
+    def _format_page_contexts(self, contexts: List["PageContext"]) -> str:
+        """
+        Format page contexts for injection into system prompt.
+
+        Args:
+            contexts: List of PageContext objects
+
+        Returns:
+            Formatted string for prompt injection
+        """
+        if not contexts:
+            return ""
+
+        context_strs = [ctx.to_prompt_context() for ctx in contexts]
+        combined = "\n\n---\n\n".join(context_strs)
+
+        return PAGE_CONTEXT_TEMPLATE.format(page_contexts=combined)
 
     def _build_system_prompt(self, node_manifest: Optional[str] = None) -> str:
         """Build system prompt with node manifest and config options."""
@@ -918,6 +1071,26 @@ class SmartWorkflowAgent:
             manifest_context = await self._get_relevant_manifest(user_prompt)
             base_instructions = self._build_system_prompt(manifest_context)
 
+            # Detect URLs and fetch page context for browser workflows
+            page_context_str = ""
+            detected_urls = self._detect_urls(user_prompt)
+            if detected_urls:
+                logger.info(
+                    f"Detected {len(detected_urls)} URLs in prompt: {detected_urls}"
+                )
+                try:
+                    page_contexts = await self._fetch_page_contexts(detected_urls)
+                    if page_contexts:
+                        page_context_str = self._format_page_contexts(page_contexts)
+                        logger.info(f"Added page context for {len(page_contexts)} URLs")
+                except Exception as e:
+                    # Page context is optional - continue without it
+                    logger.warning(f"Failed to fetch page contexts: {e}")
+
+            # Append page context to base instructions if available
+            if page_context_str:
+                base_instructions = base_instructions + "\n\n" + page_context_str
+
             if is_edit and canvas_state:
                 logger.debug("Using EDIT mode")
                 system_prompt = EDIT_SYSTEM_PROMPT.format(
@@ -1227,6 +1400,7 @@ class SmartWorkflowAgent:
         """Clear all cached data."""
         self._system_prompt_cache = None
         self._manifest_cache = None
+        self._page_context_cache.clear()
         logger.debug("Agent caches cleared")
 
     async def generate_with_conversation(

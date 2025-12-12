@@ -2,7 +2,7 @@
 Schema system for CasareRPA.
 
 Provides:
-- Property definitions for nodes via @node_schema decorator
+- Property definitions for nodes via @properties decorator
 - AI workflow generation schemas with security validation
 """
 

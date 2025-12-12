@@ -11,19 +11,19 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="error_handling")
+@properties(
     PropertyDef(
         "model",
         PropertyType.STRING,
@@ -56,7 +56,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Minimum confidence threshold to accept AI recommendation",
     ),
 )
-@executable_node
 class AIRecoveryNode(BaseNode):
     """
     AI-powered error recovery analysis node.
@@ -94,29 +93,21 @@ class AIRecoveryNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Input ports
-        self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
-        self.add_input_port("error_type", PortType.INPUT, DataType.STRING)
-        self.add_input_port("error_node", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "stack_trace", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "screenshot", PortType.INPUT, DataType.BYTES, required=False
-        )
-        self.add_input_port(
-            "execution_history", PortType.INPUT, DataType.LIST, required=False
-        )
-        self.add_input_port(
-            "node_context", PortType.INPUT, DataType.DICT, required=False
-        )
+        self.add_input_port("error_message", DataType.STRING)
+        self.add_input_port("error_type", DataType.STRING)
+        self.add_input_port("error_node", DataType.STRING)
+        self.add_input_port("stack_trace", DataType.STRING, required=False)
+        self.add_input_port("screenshot", DataType.BYTES, required=False)
+        self.add_input_port("execution_history", DataType.LIST, required=False)
+        self.add_input_port("node_context", DataType.DICT, required=False)
 
         # Output ports
-        self.add_output_port("strategy", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confidence", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("reasoning", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("suggested_fix", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("retry_modifications", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("alternatives", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("strategy", DataType.STRING)
+        self.add_output_port("confidence", DataType.FLOAT)
+        self.add_output_port("reasoning", DataType.STRING)
+        self.add_output_port("suggested_fix", DataType.STRING)
+        self.add_output_port("retry_modifications", DataType.DICT)
+        self.add_output_port("alternatives", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

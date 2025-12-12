@@ -10,12 +10,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.telegram_client import TelegramClient
@@ -75,7 +74,8 @@ TELEGRAM_DISABLE_NOTIFICATION = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -98,7 +98,6 @@ TELEGRAM_DISABLE_NOTIFICATION = PropertyDef(
         tooltip="Message ID to reply to (0 for no reply)",
     ),
 )
-@executable_node
 class TelegramSendMessageNode(TelegramBaseNode):
     """
     Send a text message via Telegram.
@@ -135,19 +134,13 @@ class TelegramSendMessageNode(TelegramBaseNode):
         self._define_common_output_ports()
 
         # Message-specific ports
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "parse_mode", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "disable_notification", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "reply_to_message_id", PortType.INPUT, DataType.INTEGER, required=False
-        )
+        self.add_input_port("text", DataType.STRING, required=True)
+        self.add_input_port("parse_mode", DataType.STRING, required=False)
+        self.add_input_port("disable_notification", DataType.BOOLEAN, required=False)
+        self.add_input_port("reply_to_message_id", DataType.INTEGER, required=False)
 
         # Additional output
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("text", DataType.STRING)
 
     async def _execute_telegram(
         self,
@@ -203,7 +196,8 @@ class TelegramSendMessageNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -227,7 +221,6 @@ class TelegramSendMessageNode(TelegramBaseNode):
     TELEGRAM_PARSE_MODE,
     TELEGRAM_DISABLE_NOTIFICATION,
 )
-@executable_node
 class TelegramSendPhotoNode(TelegramBaseNode):
     """
     Send a photo via Telegram.
@@ -263,17 +256,13 @@ class TelegramSendPhotoNode(TelegramBaseNode):
         self._define_common_output_ports()
 
         # Photo-specific ports
-        self.add_input_port("photo", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("caption", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "parse_mode", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "disable_notification", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("photo", DataType.STRING, required=True)
+        self.add_input_port("caption", DataType.STRING, required=False)
+        self.add_input_port("parse_mode", DataType.STRING, required=False)
+        self.add_input_port("disable_notification", DataType.BOOLEAN, required=False)
 
         # Additional output
-        self.add_output_port("photo_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("photo_path", DataType.STRING)
 
     async def _execute_telegram(
         self,
@@ -328,7 +317,8 @@ class TelegramSendPhotoNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -360,7 +350,6 @@ class TelegramSendPhotoNode(TelegramBaseNode):
     TELEGRAM_PARSE_MODE,
     TELEGRAM_DISABLE_NOTIFICATION,
 )
-@executable_node
 class TelegramSendDocumentNode(TelegramBaseNode):
     """
     Send a document/file via Telegram.
@@ -396,18 +385,14 @@ class TelegramSendDocumentNode(TelegramBaseNode):
         self._define_common_output_ports()
 
         # Document-specific ports
-        self.add_input_port("document", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("filename", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("caption", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "parse_mode", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "disable_notification", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("document", DataType.STRING, required=True)
+        self.add_input_port("filename", DataType.STRING, required=False)
+        self.add_input_port("caption", DataType.STRING, required=False)
+        self.add_input_port("parse_mode", DataType.STRING, required=False)
+        self.add_input_port("disable_notification", DataType.BOOLEAN, required=False)
 
         # Additional output
-        self.add_output_port("document_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("document_path", DataType.STRING)
 
     async def _execute_telegram(
         self,
@@ -467,7 +452,8 @@ class TelegramSendDocumentNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -495,7 +481,6 @@ class TelegramSendDocumentNode(TelegramBaseNode):
     ),
     TELEGRAM_DISABLE_NOTIFICATION,
 )
-@executable_node
 class TelegramSendLocationNode(TelegramBaseNode):
     """
     Send a location via Telegram.
@@ -530,15 +515,13 @@ class TelegramSendLocationNode(TelegramBaseNode):
         self._define_common_output_ports()
 
         # Location-specific ports
-        self.add_input_port("latitude", PortType.INPUT, DataType.FLOAT, required=True)
-        self.add_input_port("longitude", PortType.INPUT, DataType.FLOAT, required=True)
-        self.add_input_port(
-            "disable_notification", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("latitude", DataType.FLOAT, required=True)
+        self.add_input_port("longitude", DataType.FLOAT, required=True)
+        self.add_input_port("disable_notification", DataType.BOOLEAN, required=False)
 
         # Additional outputs
-        self.add_output_port("latitude", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("longitude", PortType.OUTPUT, DataType.FLOAT)
+        self.add_output_port("latitude", DataType.FLOAT)
+        self.add_output_port("longitude", DataType.FLOAT)
 
     async def _execute_telegram(
         self,

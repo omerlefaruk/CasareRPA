@@ -13,7 +13,7 @@ from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -106,7 +106,8 @@ def _resolve_dict_param(
     return param if isinstance(param, dict) else default
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "separator",
         PropertyType.STRING,
@@ -115,7 +116,6 @@ def _resolve_dict_param(
         tooltip="Separator to insert between strings",
     ),
 )
-@executable_node
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
 
@@ -150,8 +150,8 @@ class ConcatenateNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema()  # Input port driven
-@executable_node
+@node(category="text")
+@properties()  # Input port driven
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
 
@@ -185,7 +185,8 @@ class FormatStringNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "ignore_case",
         PropertyType.BOOLEAN,
@@ -208,7 +209,6 @@ class FormatStringNode(BaseNode):
         tooltip=". matches newline characters",
     ),
 )
-@executable_node
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
 
@@ -277,7 +277,8 @@ class RegexMatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="text")
+@properties(
     PropertyDef(
         "ignore_case",
         PropertyType.BOOLEAN,
@@ -308,7 +309,6 @@ class RegexMatchNode(BaseNode):
         tooltip="Maximum number of replacements (0 = unlimited)",
     ),
 )
-@executable_node
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
 

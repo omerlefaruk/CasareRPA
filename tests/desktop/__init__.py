@@ -1,3 +1,0 @@
-"""
-Desktop automation tests package.
-"""

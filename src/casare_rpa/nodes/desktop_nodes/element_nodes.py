@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import NodeStatus, PortType, DataType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import NodeStatus, DataType
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import (
     DesktopNodeBase,
@@ -42,19 +42,19 @@ PROPERTY_NAME_PROP = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     SELECTOR_PROP,
     TIMEOUT_PROP,
     THROW_ON_NOT_FOUND_PROP,
 )
-@executable_node
 class FindElementNode(DesktopNodeBase):
     """
     Find a desktop UI element within a window.
 
     Uses selector to locate an element for further automation.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: Element selector dictionary (can also be input port)
         timeout: Maximum time to wait for element (default: 5.0 seconds)
         throw_on_not_found: Raise error if not found (default: True)
@@ -85,10 +85,10 @@ class FindElementNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
-        self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_input_port("selector", DataType.ANY)
+        self.add_output_port("element", DataType.ANY)
+        self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - find element."""
@@ -135,21 +135,21 @@ class FindElementNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     SELECTOR_PROP,
     SIMULATE_PROP,
     X_OFFSET_PROP,
     Y_OFFSET_PROP,
     TIMEOUT_PROP,
 )
-@executable_node
 class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Click a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: Element selector (if element not provided)
         simulate: Use simulated click (default: False)
         x_offset: Horizontal offset from center (default: 0)
@@ -183,10 +183,10 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Can target by element directly OR by window+selector - all optional but one path needed
-        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY, required=False)
+        self.add_input_port("window", DataType.ANY, required=False)
+        self.add_input_port("selector", DataType.ANY, required=False)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - click element."""
@@ -222,21 +222,21 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     TEXT_PROP,
     SELECTOR_PROP,
     CLEAR_FIRST_PROP,
     INTERVAL_PROP,
     TIMEOUT_PROP,
 )
-@executable_node
 class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Type text into a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
 
-    Config (via @node_schema):
+    Config (via @properties):
         text: Text to type (can also be input port)
         selector: Element selector (if element not provided)
         clear_first: Clear existing text (default: False)
@@ -271,11 +271,11 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Can target by element directly OR by window+selector - all optional but one path needed
-        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("element", DataType.ANY, required=False)
+        self.add_input_port("window", DataType.ANY, required=False)
+        self.add_input_port("selector", DataType.ANY, required=False)
+        self.add_input_port("text", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - type text."""
@@ -314,19 +314,19 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     SELECTOR_PROP,
     VARIABLE_NAME_PROP,
     TIMEOUT_PROP,
 )
-@executable_node
 class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get text content from a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: Element selector (if element not provided)
         variable_name: Store text in this variable (default: "")
         timeout: Wait time for element (default: 5.0 seconds)
@@ -359,11 +359,11 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Can target by element directly OR by window+selector - all optional but one path needed
-        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
-        self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("element", DataType.ANY, required=False)
+        self.add_input_port("window", DataType.ANY, required=False)
+        self.add_input_port("selector", DataType.ANY, required=False)
+        self.add_output_port("text", DataType.STRING)
+        self.add_output_port("element", DataType.ANY)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - get element text."""
@@ -401,19 +401,19 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     PROPERTY_NAME_PROP,
     SELECTOR_PROP,
     TIMEOUT_PROP,
 )
-@executable_node
 class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get a property value from a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
 
-    Config (via @node_schema):
+    Config (via @properties):
         property_name: Name of the property to get (default: "Name")
         selector: Element selector (if element not provided)
         timeout: Wait time for element (default: 5.0 seconds)
@@ -447,12 +447,12 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Can target by element directly OR by window+selector - all optional but one path needed
-        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("property_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("element", DataType.ANY, required=False)
+        self.add_input_port("window", DataType.ANY, required=False)
+        self.add_input_port("selector", DataType.ANY, required=False)
+        self.add_input_port("property_name", DataType.STRING)
+        self.add_output_port("value", DataType.ANY)
+        self.add_output_port("element", DataType.ANY)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - get element property."""

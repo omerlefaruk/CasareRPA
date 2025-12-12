@@ -80,6 +80,9 @@ from casare_rpa.nodes.file.structured_data import (
     ZipFilesNode,
 )
 
+# Image operations
+from casare_rpa.nodes.file.image_nodes import ImageConvertNode
+
 __all__ = [
     # Security utilities
     "PathSecurityError",
@@ -110,4 +113,6 @@ __all__ = [
     "WriteJSONFileNode",
     "ZipFilesNode",
     "UnzipFilesNode",
+    # Image operations
+    "ImageConvertNode",
 ]

@@ -11,7 +11,7 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -64,7 +64,8 @@ DRIVE_MAX_RESULTS = PropertyDef(
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "folder_name",
         PropertyType.STRING,
@@ -91,7 +92,6 @@ DRIVE_MAX_RESULTS = PropertyDef(
         tooltip="Folder description",
     ),
 )
-@executable_node
 class DriveCreateFolderNode(DriveBaseNode):
     """
     Create a new folder in Google Drive.
@@ -185,7 +185,8 @@ class DriveCreateFolderNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     DRIVE_FOLDER_ID,
     DRIVE_QUERY,
     PropertyDef(
@@ -230,7 +231,6 @@ class DriveCreateFolderNode(DriveBaseNode):
         tooltip="Include files in trash",
     ),
 )
-@executable_node
 class DriveListFilesNode(DriveBaseNode):
     """
     List files in a Google Drive folder.
@@ -247,6 +247,7 @@ class DriveListFilesNode(DriveBaseNode):
         - files: Array of file objects with id, name, mimeType, size, etc.
         - file_count: Number of files returned
         - has_more: Whether there are more results available
+        - folder_id: The folder ID being listed (passthrough for downstream nodes)
         - success: Boolean
         - error: Error message if failed
 
@@ -285,6 +286,7 @@ class DriveListFilesNode(DriveBaseNode):
         self.add_output_port("files", DataType.LIST)
         self.add_output_port("file_count", DataType.INTEGER)
         self.add_output_port("has_more", DataType.BOOLEAN)
+        self.add_output_port("folder_id", DataType.STRING)
 
     async def _execute_drive(
         self,
@@ -336,6 +338,7 @@ class DriveListFilesNode(DriveBaseNode):
         self.set_output_value("files", files_data)
         self.set_output_value("file_count", len(files_data))
         self.set_output_value("has_more", next_page_token is not None)
+        self.set_output_value("folder_id", folder_id or "")
 
         logger.info(f"Listed {len(files_data)} files from Drive")
 
@@ -344,7 +347,7 @@ class DriveListFilesNode(DriveBaseNode):
             "files": files_data,
             "file_count": len(files_data),
             "has_more": next_page_token is not None,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -353,7 +356,8 @@ class DriveListFilesNode(DriveBaseNode):
 # ============================================================================
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     PropertyDef(
         "query",
         PropertyType.TEXT,
@@ -390,7 +394,6 @@ class DriveListFilesNode(DriveBaseNode):
         tooltip="Include files in trash",
     ),
 )
-@executable_node
 class DriveSearchFilesNode(DriveBaseNode):
     """
     Search for files in Google Drive using query syntax.

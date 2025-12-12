@@ -234,19 +234,14 @@ class UILoguruSink:
             # Publish LOG_MESSAGE event for WARNING and above (level_value >= 3)
             if level_value >= 3:
                 try:
-                    from casare_rpa.domain.events import get_event_bus, Event
-                    from casare_rpa.domain.value_objects.types import EventType
+                    from casare_rpa.domain.events import get_event_bus, LogMessage
 
                     event_bus = get_event_bus()
                     event_bus.publish(
-                        Event(
-                            event_type=EventType.LOG_MESSAGE,
-                            data={
-                                "level": level,
-                                "message": text,
-                                "module": module,
-                                "timestamp": timestamp,
-                            },
+                        LogMessage(
+                            level=level,
+                            message=text,
+                            source=module,
                         )
                     )
                 except Exception:

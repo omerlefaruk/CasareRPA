@@ -6,6 +6,11 @@ Resource managers for external infrastructure (browser, desktop, LLM, etc.).
 from casare_rpa.infrastructure.resources.browser_resource_manager import (
     BrowserResourceManager,
 )
+from casare_rpa.infrastructure.resources.resource_registry import (
+    ResourceRegistry,
+    get_resource_registry,
+    reset_resource_registry,
+)
 from casare_rpa.infrastructure.resources.document_ai_manager import (
     DocumentAIManager,
     DocumentClassification,
@@ -63,6 +68,11 @@ from casare_rpa.infrastructure.resources.whatsapp_client import (
 )
 
 __all__ = [
+    # Resource Registry
+    "ResourceRegistry",
+    "get_resource_registry",
+    "reset_resource_registry",
+    # Resource Managers
     "BrowserResourceManager",
     "LLMResourceManager",
     "LLMConfig",

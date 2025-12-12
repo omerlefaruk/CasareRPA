@@ -14,18 +14,18 @@ import string
 import uuid
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "integer_only",
         PropertyType.BOOLEAN,
@@ -34,12 +34,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Generate integers only (default: False)",
     )
 )
-@executable_node
 class RandomNumberNode(BaseNode):
     """
     Generate a random number within a specified range.
 
-    Config (via @node_schema):
+    Config (via @properties):
         integer_only: Generate integers only (default: False)
 
     Inputs:
@@ -62,9 +61,9 @@ class RandomNumberNode(BaseNode):
 
     def _define_ports(self) -> None:
         # min/max have defaults 0 and 100
-        self.add_input_port("min_value", PortType.INPUT, DataType.FLOAT, required=False)
-        self.add_input_port("max_value", PortType.INPUT, DataType.FLOAT, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.FLOAT)
+        self.add_input_port("min_value", DataType.FLOAT, required=False)
+        self.add_input_port("max_value", DataType.FLOAT, required=False)
+        self.add_output_port("result", DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -102,7 +101,8 @@ class RandomNumberNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "count",
         PropertyType.INTEGER,
@@ -119,12 +119,11 @@ class RandomNumberNode(BaseNode):
         tooltip="Allow same item multiple times (default: False)",
     ),
 )
-@executable_node
 class RandomChoiceNode(BaseNode):
     """
     Select a random item from a list.
 
-    Config (via @node_schema):
+    Config (via @properties):
         count: Number of items to select (default: 1)
         allow_duplicates: Allow same item multiple times (default: False)
 
@@ -147,9 +146,9 @@ class RandomChoiceNode(BaseNode):
         self.node_type = "RandomChoiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("items", PortType.INPUT, DataType.LIST)
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("index", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("items", DataType.LIST)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("index", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -197,7 +196,8 @@ class RandomChoiceNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "include_uppercase",
         PropertyType.BOOLEAN,
@@ -234,12 +234,11 @@ class RandomChoiceNode(BaseNode):
         tooltip="Custom character set to use (overrides above)",
     ),
 )
-@executable_node
 class RandomStringNode(BaseNode):
     """
     Generate a random string.
 
-    Config (via @node_schema):
+    Config (via @properties):
         include_uppercase: Include A-Z (default: True)
         include_lowercase: Include a-z (default: True)
         include_digits: Include 0-9 (default: True)
@@ -265,8 +264,8 @@ class RandomStringNode(BaseNode):
 
     def _define_ports(self) -> None:
         # length has default 8
-        self.add_input_port("length", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("length", DataType.INTEGER, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -310,7 +309,8 @@ class RandomStringNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="data")
+@properties(
     PropertyDef(
         "version",
         PropertyType.INTEGER,
@@ -328,12 +328,11 @@ class RandomStringNode(BaseNode):
         tooltip="Output format - 'standard', 'hex', 'urn' (default: standard)",
     ),
 )
-@executable_node
 class RandomUUIDNode(BaseNode):
     """
     Generate a random UUID.
 
-    Config (via @node_schema):
+    Config (via @properties):
         version: UUID version (4 for random, 1 for time-based) (default: 4)
         format: Output format - 'standard', 'hex', 'urn' (default: standard)
 
@@ -352,7 +351,7 @@ class RandomUUIDNode(BaseNode):
         self.node_type = "RandomUUIDNode"
 
     def _define_ports(self) -> None:
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -390,7 +389,7 @@ class RandomUUIDNode(BaseNode):
         return True, ""
 
 
-@executable_node
+@node(category="data")
 class ShuffleListNode(BaseNode):
     """
     Shuffle a list randomly.
@@ -413,8 +412,8 @@ class ShuffleListNode(BaseNode):
         self.node_type = "ShuffleListNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("items", PortType.INPUT, DataType.LIST)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("items", DataType.LIST)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

@@ -201,6 +201,7 @@ class MainWindow(QMainWindow):
         """Update execution status indicator."""
         self._status_bar_manager.set_execution_status(status)
 
+    @Slot(str)
     def _toggle_panel_tab(self, tab_name: str) -> None:
         """Toggle bottom panel to specific tab."""
         self._panel_manager.toggle_panel_tab(tab_name)
@@ -289,14 +290,17 @@ class MainWindow(QMainWindow):
 
     # ==================== Panel Toggle Handlers (delegated) ====================
 
+    @Slot()
     def _on_focus_view(self) -> None:
         """Focus view: zoom to selected node and center it (F)."""
         self._signal_coordinator.on_focus_view()
 
+    @Slot()
     def _on_home_all(self) -> None:
         """Home all: fit all nodes in view (G)."""
         self._signal_coordinator.on_home_all()
 
+    @Slot(bool)
     def _on_toggle_minimap(self, checked: bool) -> None:
         """Handle minimap toggle."""
         self._signal_coordinator.on_toggle_minimap(checked)
@@ -361,6 +365,7 @@ class MainWindow(QMainWindow):
 
     # ==================== Property Change Handler ====================
 
+    @Slot(str, str, object)
     def _on_property_panel_changed(self, node_id: str, prop_name: str, value) -> None:
         self._signal_coordinator.on_property_panel_changed(node_id, prop_name, value)
 
@@ -374,10 +379,12 @@ class MainWindow(QMainWindow):
 
     # ==================== Navigation ====================
 
+    @Slot(str)
     def _on_navigate_to_node(self, node_id: str) -> None:
         logger.info(f"MainWindow._on_navigate_to_node received: {node_id}")
         self._signal_coordinator.on_navigate_to_node(node_id)
 
+    @Slot(dict)
     def _on_panel_variables_changed(self, variables: dict) -> None:
         self._signal_coordinator.on_panel_variables_changed(variables)
 
@@ -386,12 +393,15 @@ class MainWindow(QMainWindow):
 
     # ==================== Validation ====================
 
+    @Slot()
     def _on_validate_workflow(self) -> None:
         self._signal_coordinator.on_validate_workflow()
 
+    @Slot(str)
     def _on_validation_issue_clicked(self, location: str) -> None:
         self._signal_coordinator.on_validation_issue_clicked(location)
 
+    @Slot()
     def _on_repair_workflow(self) -> None:
         """Repair workflow issues detected by validation."""
         from casare_rpa.utils.id_generator import generate_node_id
@@ -780,144 +790,190 @@ class MainWindow(QMainWindow):
 
     # ==================== Action Handlers (delegated to SignalCoordinator) ====================
 
+    @Slot()
     def _on_new_workflow(self) -> None:
         self._signal_coordinator.on_new_workflow()
 
+    @Slot()
     def _on_open_workflow(self) -> None:
         self._signal_coordinator.on_open_workflow()
 
+    @Slot()
     def _on_import_workflow(self) -> None:
         self._signal_coordinator.on_import_workflow()
 
+    @Slot()
     def _on_export_selected(self) -> None:
         self._signal_coordinator.on_export_selected()
 
+    @Slot()
     def _on_paste_workflow(self) -> None:
         self._signal_coordinator.on_paste_workflow()
 
+    @Slot()
     def _on_preferences(self) -> None:
         self._signal_coordinator.on_preferences()
 
+    @Slot()
     def _on_save_workflow(self) -> None:
         self._signal_coordinator.on_save_workflow()
 
+    @Slot()
     def _on_save_as_workflow(self) -> None:
         self._signal_coordinator.on_save_as_workflow()
 
+    @Slot()
     def _on_save_as_scenario(self) -> None:
         self._signal_coordinator.on_save_as_scenario()
 
+    @Slot()
     def _on_run_workflow(self) -> None:
         self._signal_coordinator.on_run_workflow()
 
+    @Slot()
     def _on_run_to_node(self) -> None:
         self._signal_coordinator.on_run_to_node()
 
+    @Slot()
     def _on_run_single_node(self) -> None:
         self._signal_coordinator.on_run_single_node()
 
+    @Slot()
     def _on_run_all_workflows(self) -> None:
         self._signal_coordinator.on_run_all_workflows()
 
+    @Slot()
     def _on_run_local(self) -> None:
         self._signal_coordinator.on_run_local()
 
+    @Slot()
     def _on_run_on_robot(self) -> None:
         self._signal_coordinator.on_run_on_robot()
 
+    @Slot()
     def _on_submit(self) -> None:
         self._signal_coordinator.on_submit()
 
+    @Slot(bool)
     def _on_pause_workflow(self, checked: bool) -> None:
         self._signal_coordinator.on_pause_workflow(checked)
 
+    @Slot()
     def _on_stop_workflow(self) -> None:
         self._signal_coordinator.on_stop_workflow()
 
+    @Slot()
     def _on_restart_workflow(self) -> None:
         self._signal_coordinator.on_restart_workflow()
 
+    @Slot()
     def _on_start_listening(self) -> None:
         self._signal_coordinator.on_start_listening()
 
+    @Slot()
     def _on_stop_listening(self) -> None:
         self._signal_coordinator.on_stop_listening()
 
+    @Slot()
     def _on_debug_workflow(self) -> None:
         self._signal_coordinator.on_debug_workflow()
 
+    @Slot(bool)
     def _on_debug_mode_toggled(self, enabled: bool) -> None:
         self._signal_coordinator.on_debug_mode_toggled(enabled)
 
+    @Slot()
     def _on_debug_step_over(self) -> None:
         self._signal_coordinator.on_debug_step_over()
 
+    @Slot()
     def _on_debug_step_into(self) -> None:
         self._signal_coordinator.on_debug_step_into()
 
+    @Slot()
     def _on_debug_step_out(self) -> None:
         self._signal_coordinator.on_debug_step_out()
 
+    @Slot()
     def _on_debug_continue(self) -> None:
         self._signal_coordinator.on_debug_continue()
 
+    @Slot()
     def _on_toggle_breakpoint(self) -> None:
         self._signal_coordinator.on_toggle_breakpoint()
 
+    @Slot()
     def _on_clear_breakpoints(self) -> None:
         self._signal_coordinator.on_clear_breakpoints()
 
+    @Slot()
     def _on_select_nearest_node(self) -> None:
         self._signal_coordinator.on_select_nearest_node()
 
+    @Slot()
     def _on_toggle_collapse_nearest(self) -> None:
         self._signal_coordinator.on_toggle_collapse_nearest()
 
+    @Slot()
     def _on_toggle_disable_node(self) -> None:
         self._signal_coordinator.on_toggle_disable_node()
 
+    @Slot()
     def _on_disable_all_selected(self) -> None:
         self._signal_coordinator.on_disable_all_selected()
 
+    @Slot()
     def _on_rename_node(self) -> None:
         self._signal_coordinator.on_rename_node()
 
+    @Slot(bool)
     def _on_toggle_panel(self, checked: bool) -> None:
         self._panel_manager.toggle_bottom_panel(checked)
 
+    @Slot()
     def _on_get_exec_out(self) -> None:
         self._signal_coordinator.on_get_exec_out()
 
+    @Slot()
     def _on_open_hotkey_manager(self) -> None:
         self._signal_coordinator.on_open_hotkey_manager()
 
+    @Slot(bool)
     def _on_toggle_auto_connect(self, checked: bool) -> None:
         self._signal_coordinator.on_toggle_auto_connect(checked)
 
+    @Slot(bool)
     def _on_toggle_high_performance_mode(self, checked: bool) -> None:
         self._signal_coordinator.on_toggle_high_performance_mode(checked)
 
+    @Slot(bool)
     def _on_toggle_quick_node_mode(self, checked: bool) -> None:
         self._signal_coordinator.on_toggle_quick_node_mode(checked)
 
     def get_quick_node_manager(self) -> "QuickNodeManager":
         return self._quick_node_manager
 
+    @Slot()
     def _on_open_quick_node_config(self) -> None:
         self._signal_coordinator.on_open_quick_node_config()
 
+    @Slot()
     def _on_open_performance_dashboard(self) -> None:
         self._signal_coordinator.on_open_performance_dashboard()
 
+    @Slot()
     def _on_open_command_palette(self) -> None:
         self._signal_coordinator.on_open_command_palette()
 
+    @Slot()
     def _on_find_node(self) -> None:
         self._signal_coordinator.on_find_node()
 
+    @Slot(str)
     def _on_open_recent_file(self, path: str) -> None:
         self._signal_coordinator.on_open_recent_file(path)
 
+    @Slot()
     def _on_clear_recent_files(self) -> None:
         self._signal_coordinator.on_clear_recent_files()
 
@@ -925,36 +981,47 @@ class MainWindow(QMainWindow):
         if self._menu_controller:
             self._menu_controller.add_recent_file(file_path)
 
+    @Slot()
     def _on_about(self) -> None:
         self._signal_coordinator.on_about()
 
+    @Slot()
     def _on_show_documentation(self) -> None:
         self._signal_coordinator.on_show_documentation()
 
+    @Slot()
     def _on_show_keyboard_shortcuts(self) -> None:
         self._signal_coordinator.on_show_keyboard_shortcuts()
 
+    @Slot()
     def _on_check_updates(self) -> None:
         self._signal_coordinator.on_check_updates()
 
+    @Slot()
     def _on_save_ui_layout(self) -> None:
         self._signal_coordinator.on_save_ui_layout()
 
+    @Slot()
     def _on_pick_selector(self) -> None:
         self._signal_coordinator.on_pick_selector()
 
+    @Slot()
     def _on_pick_element(self) -> None:
         self._signal_coordinator.on_pick_element()
 
+    @Slot()
     def _on_pick_element_desktop(self) -> None:
         self._signal_coordinator.on_pick_element_desktop()
 
+    @Slot(bool)
     def _on_toggle_browser_recording(self, checked: bool) -> None:
         self._signal_coordinator.on_toggle_browser_recording(checked)
 
+    @Slot()
     def _on_open_desktop_selector_builder(self) -> None:
         self._signal_coordinator.on_open_desktop_selector_builder()
 
+    @Slot()
     def _on_create_frame(self) -> None:
         self._signal_coordinator.on_create_frame()
 
@@ -963,27 +1030,34 @@ class MainWindow(QMainWindow):
 
     # ==================== Project Management (delegated) ====================
 
+    @Slot()
     def _on_project_manager(self) -> None:
         self._signal_coordinator.on_project_manager()
 
+    @Slot(str)
     def _on_project_opened(self, project_id: str) -> None:
         self._signal_coordinator.on_project_opened(project_id)
 
+    @Slot(str)
     def _on_project_selected(self, project_id: str) -> None:
         self._signal_coordinator.on_project_selected(project_id)
 
+    @Slot(str)
     def _on_credential_updated(self, credential_id: str) -> None:
         self._signal_coordinator.on_credential_updated(credential_id)
 
+    @Slot()
     def _on_open_credential_manager(self) -> None:
         """Open the Credential Manager dialog."""
         self._signal_coordinator.on_open_credential_manager()
 
     # ==================== Fleet Dashboard ====================
 
+    @Slot()
     def _on_fleet_dashboard(self) -> None:
         self._signal_coordinator.on_fleet_dashboard()
 
+    @Slot(bool)
     def _on_toggle_ai_assistant(self, checked: bool) -> None:
         """Toggle AI Assistant panel visibility."""
         if self._ai_assistant_panel is None:
@@ -1020,6 +1094,10 @@ class MainWindow(QMainWindow):
         """Clean up all controllers via registrar."""
         self._controller_registrar.cleanup_all()
 
+        # Clean up signal coordinator (disconnect tracked signals)
+        if self._signal_coordinator:
+            self._signal_coordinator.cleanup()
+
         if self._ui_initializer:
             self._ui_initializer.cleanup()
 
@@ -1029,40 +1107,10 @@ class MainWindow(QMainWindow):
         ComponentFactory.clear()
 
     def _get_message_box_style(self) -> str:
-        """Get standard QMessageBox stylesheet matching UI Explorer."""
-        return """
-            QMessageBox {
-                background: #252526;
-            }
-            QMessageBox QLabel {
-                color: #D4D4D4;
-                font-size: 12px;
-            }
-            QPushButton {
-                background: #2D2D30;
-                border: 1px solid #454545;
-                border-radius: 4px;
-                padding: 0 16px;
-                color: #D4D4D4;
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #2A2D2E;
-                border-color: #007ACC;
-                color: white;
-            }
-            QPushButton:default {
-                background: #007ACC;
-                border-color: #007ACC;
-                color: white;
-            }
-            QPushButton:default:hover {
-                background: #1177BB;
-            }
-        """
+        """Get standard QMessageBox stylesheet from Theme."""
+        from casare_rpa.presentation.canvas.ui.theme import Theme
+
+        return Theme.message_box_style()
 
     # ==================== UI State ====================
 
@@ -1100,14 +1148,17 @@ class MainWindow(QMainWindow):
 
     # ==================== Layout and Alignment Actions ====================
 
+    @Slot()
     def _on_auto_layout(self) -> None:
         """Handle auto-layout action."""
         self._signal_coordinator.on_auto_layout()
 
+    @Slot()
     def _on_layout_selection(self) -> None:
         """Handle layout selection action."""
         self._signal_coordinator.on_layout_selection()
 
+    @Slot(bool)
     def _on_toggle_grid_snap(self, checked: bool) -> None:
         """Handle toggle grid snap action."""
         self._signal_coordinator.on_toggle_grid_snap(checked)

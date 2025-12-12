@@ -15,7 +15,6 @@ from loguru import logger
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
@@ -59,30 +58,26 @@ class AIAgentNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-        self.add_output_port("exec_error", PortType.EXEC_OUTPUT)
+        self.add_exec_input_port("exec_in")
+        self.add_exec_output_port("exec_out")
+        self.add_exec_output_port("exec_error")
 
         # Data inputs
-        self.add_input_port("goal", PortType.INPUT, DataType.STRING)
-        self.add_input_port("context", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port(
-            "available_tools", PortType.INPUT, DataType.LIST, required=False
-        )
-        self.add_input_port(
-            "max_steps", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT, required=False)
+        self.add_input_port("goal", DataType.STRING)
+        self.add_input_port("context", DataType.ANY, required=False)
+        self.add_input_port("available_tools", DataType.LIST, required=False)
+        self.add_input_port("max_steps", DataType.INTEGER, required=False)
+        self.add_input_port("timeout", DataType.FLOAT, required=False)
         self._define_common_input_ports()
 
         # Data outputs
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("steps_taken", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("step_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("total_tokens", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("execution_time", PortType.OUTPUT, DataType.FLOAT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("steps_taken", DataType.LIST)
+        self.add_output_port("step_count", DataType.INTEGER)
+        self.add_output_port("total_tokens", DataType.INTEGER)
+        self.add_output_port("execution_time", DataType.FLOAT)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_llm(
         self,

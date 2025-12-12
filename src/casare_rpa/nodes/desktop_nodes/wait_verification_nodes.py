@@ -12,8 +12,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import DataType, NodeStatus, PortType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
@@ -25,17 +25,17 @@ from casare_rpa.nodes.desktop_nodes.properties import (
 )
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
 )
-@executable_node
 class WaitForElementNode(DesktopNodeBase):
     """
     Wait for an element to reach a specific state.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Maximum wait time in seconds (default: 10.0)
         state: State to wait for - visible/hidden/enabled/disabled (default: "visible")
         poll_interval: Interval between checks (default: 0.5)
@@ -66,10 +66,10 @@ class WaitForElementNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("selector", DataType.ANY)
+        self.add_input_port("timeout", DataType.FLOAT)
+        self.add_output_port("element", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute wait for element."""
@@ -106,17 +106,17 @@ class WaitForElementNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
-@node_schema(
+@node(category="desktop")
+@properties(
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
 )
-@executable_node
 class WaitForWindowNode(DesktopNodeBase):
     """
     Wait for a window to reach a specific state.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Maximum wait time in seconds (default: 10.0)
         state: State to wait for - visible/hidden (default: "visible")
         poll_interval: Interval between checks (default: 0.5)
@@ -149,12 +149,12 @@ class WaitForWindowNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("title", PortType.INPUT, DataType.STRING)
-        self.add_input_port("title_regex", PortType.INPUT, DataType.STRING)
-        self.add_input_port("class_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("title", DataType.STRING)
+        self.add_input_port("title_regex", DataType.STRING)
+        self.add_input_port("class_name", DataType.STRING)
+        self.add_input_port("timeout", DataType.FLOAT)
+        self.add_output_port("window", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute wait for window."""
@@ -199,13 +199,13 @@ class WaitForWindowNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
-@node_schema(TIMEOUT_PROP)
-@executable_node
+@node(category="desktop")
+@properties(TIMEOUT_PROP)
 class VerifyElementExistsNode(DesktopNodeBase):
     """
     Verify if an element exists.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Maximum time to search (default: 0.0 for immediate)
 
     Inputs:
@@ -238,10 +238,10 @@ class VerifyElementExistsNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
-        self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("selector", DataType.ANY)
+        self.add_input_port("timeout", DataType.FLOAT)
+        self.add_output_port("exists", DataType.BOOLEAN)
+        self.add_output_port("element", DataType.ANY)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute element exists check."""
@@ -273,13 +273,13 @@ class VerifyElementExistsNode(DesktopNodeBase):
         return self.success_result(exists=exists, element=element)
 
 
-@node_schema(COMPARISON_PROP)
-@executable_node
+@node(category="desktop")
+@properties(COMPARISON_PROP)
 class VerifyElementPropertyNode(DesktopNodeBase):
     """
     Verify an element property has an expected value.
 
-    Config (via @node_schema):
+    Config (via @properties):
         comparison: Comparison type (default: "equals")
             Options: equals, contains, startswith, endswith, regex
 
@@ -310,11 +310,11 @@ class VerifyElementPropertyNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_input_port("property_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("expected_value", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("actual_value", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("element", DataType.ANY)
+        self.add_input_port("property_name", DataType.STRING)
+        self.add_input_port("expected_value", DataType.ANY)
+        self.add_output_port("result", DataType.BOOLEAN)
+        self.add_output_port("actual_value", DataType.ANY)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute property verification."""

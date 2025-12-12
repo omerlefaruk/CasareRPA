@@ -15,7 +15,7 @@ Quick reference for automation nodes. 413+ nodes across 18 categories.
 | `document/` | PDF, Office | PDFReaderNode |
 | `email/` | Email automation | SendEmailNode, IMAPNode |
 | `error_handling/` | Error recovery | TryCatchNode, RetryNode |
-| `file/` | File I/O | ReadFileNode, WriteFileNode |
+| `file/` | File I/O | ReadFileNode, WriteFileNode, ImageConvertNode |
 | `google/` | Google services | SheetsNode, DriveNode, DocsNode |
 | `http/` | HTTP requests | HttpRequestNode |
 | `llm/` | AI/LLM nodes | LLMNode, PromptNode |
@@ -65,7 +65,7 @@ _NODE_REGISTRY = {
 
 See `agent-rules/rules/10-node-workflow.md` for full protocol:
 1. Check existing nodes first
-2. Create node file with `@executable_node` decorator
+2. Create node file with `@node` decorator
 3. Add to `_NODE_REGISTRY`
 4. Create tests in `tests/nodes/`
 
@@ -74,3 +74,5 @@ See `agent-rules/rules/10-node-workflow.md` for full protocol:
 - [browser/_index.md](browser/_index.md) - Browser automation base
 - [control_flow/_index.md](control_flow/_index.md) - Control flow nodes
 - [desktop_nodes/_index.md](desktop_nodes/_index.md) - Desktop automation
+- [file/_index.md](file/_index.md) - File I/O and image processing
+- [google/_index.md](google/_index.md) - Google services (Drive, Sheets, Docs, Gmail)

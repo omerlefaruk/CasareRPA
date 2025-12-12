@@ -6,7 +6,7 @@ for backward compatibility with existing imports in google/__init__.py.
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
+from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 # Import implemented nodes from drive/ subpackage
@@ -59,8 +59,8 @@ class _NotImplementedDriveNode(BaseNode):
         super().__init__(node_id, kwargs.get("config", {}))
 
     def _define_ports(self) -> None:
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         return {

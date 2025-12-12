@@ -11,12 +11,11 @@ import json
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.telegram_client import TelegramClient
@@ -32,7 +31,8 @@ from casare_rpa.nodes.messaging.telegram.telegram_send import (
 )
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -56,7 +56,6 @@ from casare_rpa.nodes.messaging.telegram.telegram_send import (
     ),
     TELEGRAM_PARSE_MODE,
 )
-@executable_node
 class TelegramEditMessageNode(TelegramBaseNode):
     """
     Edit a sent text message via Telegram.
@@ -92,13 +91,9 @@ class TelegramEditMessageNode(TelegramBaseNode):
         self._define_common_output_ports()
 
         # Edit-specific ports
-        self.add_input_port(
-            "message_id", PortType.INPUT, DataType.INTEGER, required=True
-        )
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "parse_mode", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("message_id", DataType.INTEGER, required=True)
+        self.add_input_port("text", DataType.STRING, required=True)
+        self.add_input_port("parse_mode", DataType.STRING, required=False)
 
     async def _execute_telegram(
         self,
@@ -155,7 +150,8 @@ class TelegramEditMessageNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -169,7 +165,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
         tooltip="ID of the message to delete",
     ),
 )
-@executable_node
 class TelegramDeleteMessageNode(TelegramBaseNode):
     """
     Delete a message via Telegram.
@@ -200,13 +195,11 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
         self._define_common_input_ports()
 
         # Delete-specific ports
-        self.add_input_port(
-            "message_id", PortType.INPUT, DataType.INTEGER, required=True
-        )
+        self.add_input_port("message_id", DataType.INTEGER, required=True)
 
         # Output ports
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_telegram(
         self,
@@ -245,7 +238,8 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
@@ -260,7 +254,6 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
     ),
     TELEGRAM_DISABLE_NOTIFICATION,
 )
-@executable_node
 class TelegramSendMediaGroupNode(TelegramBaseNode):
     """
     Send a media group (album) via Telegram.
@@ -293,18 +286,14 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         self._define_common_input_ports()
 
         # Media group-specific ports
-        self.add_input_port(
-            "media_json", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port(
-            "disable_notification", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("media_json", DataType.STRING, required=True)
+        self.add_input_port("disable_notification", DataType.BOOLEAN, required=False)
 
         # Output ports
-        self.add_output_port("message_ids", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("message_ids", DataType.STRING)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_telegram(
         self,
@@ -376,7 +365,8 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     PropertyDef(
@@ -413,7 +403,6 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         tab="advanced",
     ),
 )
-@executable_node
 class TelegramAnswerCallbackNode(TelegramBaseNode):
     """
     Answer a callback query from an inline keyboard.
@@ -444,24 +433,16 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Callback-specific input ports (no common ports needed)
-        self.add_input_port(
-            "bot_token", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "credential_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "callback_query_id", PortType.INPUT, DataType.STRING, required=True
-        )
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "show_alert", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port("url", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("bot_token", DataType.STRING, required=False)
+        self.add_input_port("credential_name", DataType.STRING, required=False)
+        self.add_input_port("callback_query_id", DataType.STRING, required=True)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("show_alert", DataType.BOOLEAN, required=False)
+        self.add_input_port("url", DataType.STRING, required=False)
 
         # Output ports
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_telegram(
         self,
@@ -516,7 +497,8 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         }
 
 
-@node_schema(
+@node(category="messaging")
+@properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     PropertyDef(
@@ -546,7 +528,6 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         max_value=120,
     ),
 )
-@executable_node
 class TelegramGetUpdatesNode(TelegramBaseNode):
     """
     Get updates via Telegram's getUpdates API.
@@ -581,22 +562,18 @@ class TelegramGetUpdatesNode(TelegramBaseNode):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Input ports (no chat_id needed)
-        self.add_input_port(
-            "bot_token", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "credential_name", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("offset", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("limit", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("timeout", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("bot_token", DataType.STRING, required=False)
+        self.add_input_port("credential_name", DataType.STRING, required=False)
+        self.add_input_port("offset", DataType.INTEGER, required=False)
+        self.add_input_port("limit", DataType.INTEGER, required=False)
+        self.add_input_port("timeout", DataType.INTEGER, required=False)
 
         # Output ports
-        self.add_output_port("updates_json", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("last_update_id", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("updates_json", DataType.STRING)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("last_update_id", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_telegram(
         self,

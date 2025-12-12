@@ -12,7 +12,7 @@ from casare_rpa.domain.value_objects.types import DataType
 class VisualRandomNumberNode(VisualNode):
     """Visual representation of RandomNumberNode.
 
-    Widgets are auto-generated from RandomNumberNode's @node_schema decorator.
+    Widgets are auto-generated from RandomNumberNode's @properties decorator.
     min_value/max_value are input ports, not schema properties.
     """
 
@@ -38,7 +38,7 @@ class VisualRandomNumberNode(VisualNode):
 class VisualRandomChoiceNode(VisualNode):
     """Visual representation of RandomChoiceNode.
 
-    Widgets are auto-generated from RandomChoiceNode's @node_schema decorator.
+    Widgets are auto-generated from RandomChoiceNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.utility"
@@ -56,7 +56,7 @@ class VisualRandomChoiceNode(VisualNode):
 class VisualRandomStringNode(VisualNode):
     """Visual representation of RandomStringNode.
 
-    Widgets are auto-generated from RandomStringNode's @node_schema decorator.
+    Widgets are auto-generated from RandomStringNode's @properties decorator.
     length is an input port, not a schema property.
     """
 
@@ -274,7 +274,7 @@ class VisualGetTimestampNode(VisualNode):
 class VisualTextSplitNode(VisualNode):
     """Visual representation of TextSplitNode.
 
-    Widgets are auto-generated from TextSplitNode's @node_schema decorator.
+    Widgets are auto-generated from TextSplitNode's @properties decorator.
     max_split property is defined in schema.
     """
 
@@ -294,7 +294,7 @@ class VisualTextSplitNode(VisualNode):
 class VisualTextReplaceNode(VisualNode):
     """Visual representation of TextReplaceNode.
 
-    Widgets are auto-generated from TextReplaceNode's @node_schema decorator.
+    Widgets are auto-generated from TextReplaceNode's @properties decorator.
     use_regex, ignore_case, multiline, dotall properties are defined in schema.
     """
 
@@ -315,7 +315,7 @@ class VisualTextReplaceNode(VisualNode):
 class VisualTextTrimNode(VisualNode):
     """Visual representation of TextTrimNode.
 
-    Widgets are auto-generated from TextTrimNode's @node_schema decorator.
+    Widgets are auto-generated from TextTrimNode's @properties decorator.
     mode and characters properties are defined in schema.
     """
 
@@ -333,7 +333,7 @@ class VisualTextTrimNode(VisualNode):
 class VisualTextCaseNode(VisualNode):
     """Visual representation of TextCaseNode.
 
-    Widgets are auto-generated from TextCaseNode's @node_schema decorator.
+    Widgets are auto-generated from TextCaseNode's @properties decorator.
     case property is defined in schema.
     """
 
@@ -351,7 +351,7 @@ class VisualTextCaseNode(VisualNode):
 class VisualTextPadNode(VisualNode):
     """Visual representation of TextPadNode.
 
-    Widgets are auto-generated from TextPadNode's @node_schema decorator.
+    Widgets are auto-generated from TextPadNode's @properties decorator.
     mode and fill_char properties are defined in schema.
     """
 
@@ -387,7 +387,7 @@ class VisualTextSubstringNode(VisualNode):
 class VisualTextContainsNode(VisualNode):
     """Visual representation of TextContainsNode.
 
-    Widgets are auto-generated from TextContainsNode's @node_schema decorator.
+    Widgets are auto-generated from TextContainsNode's @properties decorator.
     case_sensitive property is defined in schema.
     """
 
@@ -408,7 +408,7 @@ class VisualTextContainsNode(VisualNode):
 class VisualTextStartsWithNode(VisualNode):
     """Visual representation of TextStartsWithNode.
 
-    Widgets are auto-generated from TextStartsWithNode's @node_schema decorator.
+    Widgets are auto-generated from TextStartsWithNode's @properties decorator.
     case_sensitive property is defined in schema.
     """
 
@@ -427,7 +427,7 @@ class VisualTextStartsWithNode(VisualNode):
 class VisualTextEndsWithNode(VisualNode):
     """Visual representation of TextEndsWithNode.
 
-    Widgets are auto-generated from TextEndsWithNode's @node_schema decorator.
+    Widgets are auto-generated from TextEndsWithNode's @properties decorator.
     case_sensitive property is defined in schema.
     """
 
@@ -446,7 +446,7 @@ class VisualTextEndsWithNode(VisualNode):
 class VisualTextLinesNode(VisualNode):
     """Visual representation of TextLinesNode.
 
-    Widgets are auto-generated from TextLinesNode's @node_schema decorator.
+    Widgets are auto-generated from TextLinesNode's @properties decorator.
     mode, line_separator, and keep_ends properties are defined in schema.
     """
 
@@ -479,7 +479,7 @@ class VisualTextReverseNode(VisualNode):
 class VisualTextCountNode(VisualNode):
     """Visual representation of TextCountNode.
 
-    Widgets are auto-generated from TextCountNode's @node_schema decorator.
+    Widgets are auto-generated from TextCountNode's @properties decorator.
     mode and exclude_whitespace properties are defined in schema.
     """
 
@@ -515,7 +515,7 @@ class VisualTextJoinNode(VisualNode):
 class VisualTextExtractNode(VisualNode):
     """Visual representation of TextExtractNode.
 
-    Widgets are auto-generated from TextExtractNode's @node_schema decorator.
+    Widgets are auto-generated from TextExtractNode's @properties decorator.
     all_matches, ignore_case, multiline properties are defined in schema.
     """
 

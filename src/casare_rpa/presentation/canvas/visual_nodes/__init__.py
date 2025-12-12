@@ -214,6 +214,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualFTPRenameNode": "file_operations.nodes",
     "VisualFTPDisconnectNode": "file_operations.nodes",
     "VisualFTPGetSizeNode": "file_operations.nodes",
+    "VisualImageConvertNode": "file_operations.nodes",
     # Scripts (5 nodes)
     "VisualRunPythonScriptNode": "scripts.nodes",
     "VisualRunPythonFileNode": "scripts.nodes",

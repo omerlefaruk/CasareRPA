@@ -6,7 +6,7 @@ Trigger node that fires when files change in a watched directory.
 
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
@@ -16,7 +16,8 @@ from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
 from casare_rpa.triggers.base import TriggerType
 
 
-@node_schema(
+@trigger_node
+@properties(
     PropertyDef(
         "watch_path",
         PropertyType.DIRECTORY_PATH,
@@ -71,7 +72,6 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Include hidden files and directories",
     ),
 )
-@trigger_node
 class FileWatchTriggerNode(BaseTriggerNode):
     """
     File watch trigger node that fires when files change.

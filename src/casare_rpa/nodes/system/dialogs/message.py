@@ -9,18 +9,18 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -89,12 +89,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Auto-dismiss after X seconds, 0 to disable",
     ),
 )
-@executable_node
 class MessageBoxNode(BaseNode):
     """
     Display a message box dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Message')
         message: Message to display (default: '')
         detailed_text: Expandable details section (default: '')
@@ -121,9 +120,9 @@ class MessageBoxNode(BaseNode):
         self.node_type = "MessageBoxNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("accepted", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("message", DataType.STRING)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("accepted", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -421,7 +420,8 @@ class MessageBoxNode(BaseNode):
             return result, result in ("ok", "yes")
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -467,12 +467,11 @@ class MessageBoxNode(BaseNode):
         tooltip="Text for No button",
     ),
 )
-@executable_node
 class ConfirmDialogNode(BaseNode):
     """
     Display a Yes/No confirmation dialog.
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Dialog title (default: 'Confirm')
         message: Confirmation message (essential - shows widget)
         icon_type: question, warning, info (default: question)

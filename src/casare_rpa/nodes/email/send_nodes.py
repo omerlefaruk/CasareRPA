@@ -21,21 +21,21 @@ from casare_rpa.domain.credentials import (
     SMTP_SERVER_PROP,
     CredentialAwareMixin,
 )
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP
 
 
-@node_schema(
+@node(category="email")
+@properties(
     CREDENTIAL_NAME_PROP,
     SMTP_SERVER_PROP,
     SMTP_PORT_PROP,
@@ -157,7 +157,6 @@ from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
-@executable_node
 class SendEmailNode(CredentialAwareMixin, BaseNode):
     """
     Send an email via SMTP.
@@ -187,21 +186,19 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("smtp_server", PortType.INPUT, DataType.STRING)
-        self.add_input_port("smtp_port", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("from_email", PortType.INPUT, DataType.STRING)
-        self.add_input_port("to_email", PortType.INPUT, DataType.STRING)
-        self.add_input_port("subject", PortType.INPUT, DataType.STRING)
-        self.add_input_port("body", PortType.INPUT, DataType.STRING)
-        self.add_input_port("cc", PortType.INPUT, DataType.STRING)
-        self.add_input_port("bcc", PortType.INPUT, DataType.STRING)
-        self.add_input_port(
-            "attachments", PortType.INPUT, DataType.LIST, required=False
-        )
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("smtp_server", DataType.STRING)
+        self.add_input_port("smtp_port", DataType.INTEGER)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("from_email", DataType.STRING)
+        self.add_input_port("to_email", DataType.STRING)
+        self.add_input_port("subject", DataType.STRING)
+        self.add_input_port("body", DataType.STRING)
+        self.add_input_port("cc", DataType.STRING)
+        self.add_input_port("bcc", DataType.STRING)
+        self.add_input_port("attachments", DataType.LIST, required=False)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("message_id", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Send email via SMTP."""

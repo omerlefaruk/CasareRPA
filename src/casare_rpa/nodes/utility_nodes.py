@@ -15,11 +15,10 @@ import aiohttp
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -38,7 +37,7 @@ class HttpMethod(str, Enum):
     OPTIONS = "OPTIONS"
 
 
-@executable_node
+@node(category="utility")
 class HttpRequestNode(BaseNode):
     """
     HTTP Request node - makes HTTP/HTTPS requests to APIs and web services.
@@ -88,14 +87,14 @@ class HttpRequestNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers", PortType.INPUT, DataType.ANY)
-        self.add_input_port("body", PortType.INPUT, DataType.STRING)
-        self.add_output_port("response_body", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("status_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("headers", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("url", DataType.STRING)
+        self.add_input_port("headers", DataType.ANY)
+        self.add_input_port("body", DataType.STRING)
+        self.add_output_port("response_body", DataType.STRING)
+        self.add_output_port("status_code", DataType.INTEGER)
+        self.add_output_port("headers", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -249,7 +248,8 @@ class ValidationType(str, Enum):
     CUSTOM = "custom"
 
 
-@node_schema(
+@node(category="utility")
+@properties(
     PropertyDef(
         "validation_type",
         PropertyType.CHOICE,
@@ -290,14 +290,13 @@ class ValidationType(str, Enum):
         tooltip="Custom error message on validation failure",
     ),
 )
-@executable_node
 class ValidateNode(BaseNode):
     """
     Validate node - validates data against rules.
 
     Routes to different outputs based on validation success/failure.
 
-    Config (via @node_schema):
+    Config (via @properties):
         validation_type: Type of validation to perform
         validation_param: Parameter for validation
         error_message: Custom error message
@@ -320,12 +319,12 @@ class ValidateNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("value", PortType.INPUT, DataType.ANY)
+        self.add_input_port("value", DataType.ANY)
 
-        self.add_output_port("valid", PortType.EXEC_OUTPUT)  # Route when valid
-        self.add_output_port("invalid", PortType.EXEC_OUTPUT)  # Route when invalid
-        self.add_output_port("is_valid", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error_message", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("valid", DataType.EXECUTION)  # Route when valid
+        self.add_output_port("invalid", DataType.EXECUTION)  # Route when invalid
+        self.add_output_port("is_valid", DataType.BOOLEAN)
+        self.add_output_port("error_message", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -509,7 +508,8 @@ class TransformType(str, Enum):
     FILTER_VALUES = "filter_values"
 
 
-@node_schema(
+@node(category="utility")
+@properties(
     PropertyDef(
         "transform_type",
         PropertyType.CHOICE,
@@ -552,14 +552,13 @@ class TransformType(str, Enum):
         tooltip="Name of variable to store result",
     ),
 )
-@executable_node
 class TransformNode(BaseNode):
     """
     Transform node - transforms data from one format to another.
 
     Supports type conversions, string operations, and collection transformations.
 
-    Config (via @node_schema):
+    Config (via @properties):
         transform_type: Type of transformation to perform
         transform_param: Parameter for transformation
         variable_name: Variable name for result
@@ -582,11 +581,11 @@ class TransformNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("value", PortType.INPUT, DataType.ANY)
-        self.add_input_port("param", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("value", DataType.ANY)
+        self.add_input_port("param", DataType.ANY)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -742,7 +741,8 @@ class LogLevel(str, Enum):
     CRITICAL = "critical"
 
 
-@node_schema(
+@node(category="utility")
+@properties(
     PropertyDef(
         "message",
         PropertyType.STRING,
@@ -773,7 +773,6 @@ class LogLevel(str, Enum):
         tooltip="Include node ID in log message",
     ),
 )
-@executable_node
 class LogNode(BaseNode):
     """
     Log node - explicit logging within workflows.
@@ -781,7 +780,7 @@ class LogNode(BaseNode):
     Outputs messages to the log with configurable level and formatting.
     Useful for debugging and audit trails.
 
-    Config (via @node_schema):
+    Config (via @properties):
         message: Message to log
         level: Log level
         include_timestamp: Include timestamp
@@ -805,8 +804,8 @@ class LogNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("message", PortType.INPUT, DataType.STRING)
-        self.add_input_port("data", PortType.INPUT, DataType.ANY)
+        self.add_input_port("message", DataType.STRING)
+        self.add_input_port("data", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -873,7 +872,7 @@ class LogNode(BaseNode):
             return {"success": False, "error": error_msg}
 
 
-@executable_node
+@node(category="utility")
 class RerouteNode(BaseNode):
     """
     Reroute Node - Houdini-style passthrough dot for organizing connections.

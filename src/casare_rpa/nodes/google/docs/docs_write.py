@@ -10,12 +10,11 @@ from typing import Any
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_docs_client import (
@@ -60,7 +59,8 @@ GOOGLE_DOCUMENT_ID = PropertyDef(
 )
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     PropertyDef(
@@ -81,7 +81,6 @@ GOOGLE_DOCUMENT_ID = PropertyDef(
         tooltip="Optional initial text content for the document",
     ),
 )
-@executable_node
 class DocsCreateDocumentNode(DocsBaseNode):
     """
     Create a new Google Docs document.
@@ -115,22 +114,18 @@ class DocsCreateDocumentNode(DocsBaseNode):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Connection ports (no document_id needed for create)
-        self.add_input_port(
-            "access_token", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "credential_name", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("access_token", DataType.STRING, required=False)
+        self.add_input_port("credential_name", DataType.STRING, required=False)
 
         # Create-specific ports
-        self.add_input_port("title", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("content", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("title", DataType.STRING, required=True)
+        self.add_input_port("content", DataType.STRING, required=False)
 
         # Output ports
-        self.add_output_port("document_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("document_id", DataType.STRING)
+        self.add_output_port("title", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def _execute_docs(
         self,
@@ -175,7 +170,8 @@ class DocsCreateDocumentNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -197,7 +193,6 @@ class DocsCreateDocumentNode(DocsBaseNode):
         tooltip="Character index position (1-based) where text will be inserted",
     ),
 )
-@executable_node
 class DocsInsertTextNode(DocsBaseNode):
     """
     Insert text at a specific position in a Google Doc.
@@ -234,8 +229,8 @@ class DocsInsertTextNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Insert-specific ports
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("index", PortType.INPUT, DataType.INTEGER, required=True)
+        self.add_input_port("text", DataType.STRING, required=True)
+        self.add_input_port("index", DataType.INTEGER, required=True)
 
     async def _execute_docs(
         self,
@@ -298,7 +293,8 @@ class DocsInsertTextNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -312,7 +308,6 @@ class DocsInsertTextNode(DocsBaseNode):
         tooltip="Text content to append to the end of the document",
     ),
 )
-@executable_node
 class DocsAppendTextNode(DocsBaseNode):
     """
     Append text to the end of a Google Doc.
@@ -348,7 +343,7 @@ class DocsAppendTextNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Append-specific ports
-        self.add_input_port("text", PortType.INPUT, DataType.STRING, required=True)
+        self.add_input_port("text", DataType.STRING, required=True)
 
     async def _execute_docs(
         self,
@@ -397,7 +392,8 @@ class DocsAppendTextNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -427,7 +423,6 @@ class DocsAppendTextNode(DocsBaseNode):
         tooltip="Whether to match case when searching",
     ),
 )
-@executable_node
 class DocsReplaceTextNode(DocsBaseNode):
     """
     Find and replace text in a Google Doc.
@@ -466,14 +461,12 @@ class DocsReplaceTextNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Replace-specific ports
-        self.add_input_port("search", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("replace", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "match_case", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("search", DataType.STRING, required=True)
+        self.add_input_port("replace", DataType.STRING, required=True)
+        self.add_input_port("match_case", DataType.BOOLEAN, required=False)
 
         # Additional output
-        self.add_output_port("replacements_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("replacements_count", DataType.INTEGER)
 
     async def _execute_docs(
         self,
@@ -547,7 +540,8 @@ class DocsReplaceTextNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -576,7 +570,6 @@ class DocsReplaceTextNode(DocsBaseNode):
         tooltip="Character index position (1-based) where table will be inserted",
     ),
 )
-@executable_node
 class DocsInsertTableNode(DocsBaseNode):
     """
     Insert a table into a Google Doc.
@@ -614,9 +607,9 @@ class DocsInsertTableNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Table-specific ports
-        self.add_input_port("rows", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("columns", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("index", PortType.INPUT, DataType.INTEGER, required=True)
+        self.add_input_port("rows", DataType.INTEGER, required=True)
+        self.add_input_port("columns", DataType.INTEGER, required=True)
+        self.add_input_port("index", DataType.INTEGER, required=True)
 
     async def _execute_docs(
         self,
@@ -692,7 +685,8 @@ class DocsInsertTableNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -728,7 +722,6 @@ class DocsInsertTableNode(DocsBaseNode):
         tooltip="Optional height in points (0 for auto)",
     ),
 )
-@executable_node
 class DocsInsertImageNode(DocsBaseNode):
     """
     Insert an image into a Google Doc.
@@ -860,7 +853,8 @@ class DocsInsertImageNode(DocsBaseNode):
         }
 
 
-@node_schema(
+@node(category="integration")
+@properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
@@ -924,7 +918,6 @@ class DocsInsertImageNode(DocsBaseNode):
         tooltip="Font family name (empty to keep current)",
     ),
 )
-@executable_node
 class DocsApplyStyleNode(DocsBaseNode):
     """
     Apply text formatting/styling to a range in a Google Doc.
@@ -968,26 +961,14 @@ class DocsApplyStyleNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Style-specific ports
-        self.add_input_port(
-            "start_index", PortType.INPUT, DataType.INTEGER, required=True
-        )
-        self.add_input_port(
-            "end_index", PortType.INPUT, DataType.INTEGER, required=True
-        )
-        self.add_input_port("bold", PortType.INPUT, DataType.BOOLEAN, required=False)
-        self.add_input_port("italic", PortType.INPUT, DataType.BOOLEAN, required=False)
-        self.add_input_port(
-            "underline", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "strikethrough", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
-        self.add_input_port(
-            "font_size", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port(
-            "font_family", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("start_index", DataType.INTEGER, required=True)
+        self.add_input_port("end_index", DataType.INTEGER, required=True)
+        self.add_input_port("bold", DataType.BOOLEAN, required=False)
+        self.add_input_port("italic", DataType.BOOLEAN, required=False)
+        self.add_input_port("underline", DataType.BOOLEAN, required=False)
+        self.add_input_port("strikethrough", DataType.BOOLEAN, required=False)
+        self.add_input_port("font_size", DataType.INTEGER, required=False)
+        self.add_input_port("font_family", DataType.STRING, required=False)
 
     async def _execute_docs(
         self,

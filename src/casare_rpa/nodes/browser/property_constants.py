@@ -11,18 +11,19 @@ Usage:
         BROWSER_SELECTOR,
     )
 
-    @node_schema(
+    @properties(
         BROWSER_SELECTOR,
         BROWSER_TIMEOUT,
         BROWSER_RETRY_COUNT,
         PropertyDef("custom_prop", PropertyType.STRING, default=""),
     )
-    @executable_node
+    @node(category="browser")
     class MyBrowserNode(BrowserBaseNode):
         ...
 """
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.config import DEFAULT_NODE_TIMEOUT, DEFAULT_PAGE_LOAD_TIMEOUT
 
 

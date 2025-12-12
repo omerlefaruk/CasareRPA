@@ -15,13 +15,17 @@
       }
     },
     "qdrant": {
-      "command": "uvx",
-      "args": ["mcp-server-qdrant"],
+      "command": "C:\\Users\\Rau\\Desktop\\CasareRPA\\.venv\\Scripts\\mcp-server-qdrant.exe",
+      "args": [],
       "env": {
-        "QDRANT_LOCAL_PATH": "C:\\Users\\Rau\\Desktop\\CasareRPA\\.qdrant",
+        "QDRANT_LOCAL_PATH": "C:/Users/Rau/Desktop/CasareRPA/.qdrant",
         "COLLECTION_NAME": "casare_codebase",
         "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2"
       }
+    },
+    "playwright": {
+      "command": "C:\\nvm4w\\nodejs\\npx.cmd",
+      "args": ["-y", "@playwright/mcp@latest"]
     }
   }
 }

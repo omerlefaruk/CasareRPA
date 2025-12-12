@@ -16,13 +16,12 @@ import asyncio
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
@@ -46,7 +45,8 @@ from casare_rpa.utils import safe_int
 # =============================================================================
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "duration",
         PropertyType.FLOAT,
@@ -55,7 +55,6 @@ from casare_rpa.utils import safe_int
         tooltip="Wait duration in seconds",
     )
 )
-@executable_node
 class WaitNode(BaseNode):
     """
     Wait node - pauses execution for a specified duration.
@@ -79,7 +78,7 @@ class WaitNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("duration", PortType.INPUT, DataType.FLOAT)
+        self.add_input_port("duration", DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute wait."""
@@ -126,7 +125,8 @@ class WaitNode(BaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "selector",
         PropertyType.SELECTOR,
@@ -152,7 +152,6 @@ class WaitNode(BaseNode):
     ),
     BROWSER_ANCHOR_CONFIG,
 )
-@executable_node
 class WaitForElementNode(BrowserBaseNode):
     """
     Wait for element node - waits for an element to appear.
@@ -160,7 +159,7 @@ class WaitForElementNode(BrowserBaseNode):
     Waits until an element matching the selector is in the specified state.
     Extends BrowserBaseNode for shared page/selector/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS or XPath selector
         timeout: Timeout in milliseconds
         state: Element state to wait for (visible, hidden, attached, detached)
@@ -199,7 +198,7 @@ class WaitForElementNode(BrowserBaseNode):
         """Define node ports."""
         self.add_page_passthrough_ports()
         self.add_selector_input_port()
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute wait for element."""
@@ -291,7 +290,8 @@ class WaitForElementNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     BROWSER_TIMEOUT,
     BROWSER_WAIT_UNTIL,
     BROWSER_RETRY_COUNT,
@@ -299,7 +299,6 @@ class WaitForElementNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
-@executable_node
 class WaitForNavigationNode(BrowserBaseNode):
     """
     Wait for navigation node - waits for page navigation to complete.
@@ -307,7 +306,7 @@ class WaitForNavigationNode(BrowserBaseNode):
     Waits for the page to navigate to a new URL or reload.
     Extends BrowserBaseNode for shared page/retry patterns.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Timeout in milliseconds
         wait_until: Event to wait for (load, domcontentloaded, networkidle, commit)
         retry_count: Retry attempts

@@ -412,3 +412,28 @@ Based on the user's request, improve the workflow by:
 4. Output the COMPLETE improved workflow
 
 {base_instructions}"""
+
+
+PAGE_CONTEXT_TEMPLATE = """
+## Live Page Analysis
+
+The following page(s) were analyzed in real-time using browser automation.
+Use these EXACT selectors - they are confirmed to exist on the page.
+
+{page_contexts}
+
+### IMPORTANT - Using Page Context
+1. **Use provided selectors**: The selectors above were extracted from the live page.
+2. **Prefer ref-based selectors**: If a `ref` value is provided, use it for most reliable targeting.
+3. **Form fields are mapped**: Use the exact field selectors from the form analysis.
+4. **Button text matters**: Click buttons using their exact text or provided selector.
+
+### Selector Priority (most reliable first)
+1. `[data-ref="..."]` - MCP element reference (most reliable)
+2. `input[name="..."]` - Named form inputs
+3. `button:has-text("...")` - Buttons by visible text
+4. CSS selectors with IDs/classes from the analysis
+
+When the page context provides a `ref` value, you can use it directly with browser automation
+nodes that support ref-based targeting, or construct a selector from the provided information.
+"""

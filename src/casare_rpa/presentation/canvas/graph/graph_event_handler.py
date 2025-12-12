@@ -235,10 +235,17 @@ class GraphEventHandler(QObject):
             return False
 
         # Delete or X - delete selection
-        if (
-            key == Qt.Key.Key_Delete
-            or key == Qt.Key.Key_X
-            or event.text().lower() == "x"
+        # Skip X key if focus is on a text input widget (allow typing 'x')
+        focus_widget = QApplication.focusWidget()
+        text_has_focus = isinstance(focus_widget, (QLineEdit, QTextEdit))
+
+        if key == Qt.Key.Key_Delete:
+            if self._on_delete_frames and self._on_delete_frames():
+                return True
+            if self._selection_handler.delete_selected_nodes():
+                return True
+        elif not text_has_focus and (
+            key == Qt.Key.Key_X or event.text().lower() == "x"
         ):
             if self._on_delete_frames and self._on_delete_frames():
                 return True

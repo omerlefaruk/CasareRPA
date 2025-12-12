@@ -56,7 +56,7 @@ class ErrorTrigger(BaseTrigger):
     async def start(self) -> bool:
         """Start the error trigger."""
         try:
-            from casare_rpa.domain.events import get_event_bus, EventType
+            from casare_rpa.domain.events import get_event_bus, WorkflowFailed
 
             event_bus = get_event_bus()
 
@@ -66,7 +66,7 @@ class ErrorTrigger(BaseTrigger):
             )
 
             # Subscribe to workflow error events
-            event_bus.subscribe(EventType.WORKFLOW_ERROR, self._event_handler)
+            event_bus.subscribe(WorkflowFailed, self._event_handler)
 
             self._status = TriggerStatus.ACTIVE
             logger.info(f"Error trigger started: {self.config.name}")
@@ -81,11 +81,11 @@ class ErrorTrigger(BaseTrigger):
     async def stop(self) -> bool:
         """Stop the error trigger."""
         try:
-            from casare_rpa.domain.events import get_event_bus, EventType
+            from casare_rpa.domain.events import get_event_bus, WorkflowFailed
 
             if self._event_handler:
                 event_bus = get_event_bus()
-                event_bus.unsubscribe(EventType.WORKFLOW_ERROR, self._event_handler)
+                event_bus.unsubscribe(WorkflowFailed, self._event_handler)
                 self._event_handler = None
 
         except Exception as e:
@@ -96,17 +96,16 @@ class ErrorTrigger(BaseTrigger):
         return True
 
     async def _on_workflow_error(self, event) -> None:
-        """Handle workflow error event."""
+        """Handle workflow error event (WorkflowFailed typed event)."""
         config = self.config.config
 
-        # Extract error details from event
-        error_data = event.data or {}
-        error_message = error_data.get("error", str(error_data))
-        error_type = error_data.get("error_type", "unknown")
-        scenario_id = error_data.get("scenario_id", "")
-        workflow_id = error_data.get("workflow_id", "")
-        node_id = event.node_id or error_data.get("node_id", "")
-        stack_trace = error_data.get("stack_trace", "")
+        # Extract error details from typed WorkflowFailed event
+        error_message = getattr(event, "error_message", "Unknown error")
+        error_type = "workflow_failed"
+        scenario_id = ""  # Not available in typed event
+        workflow_id = getattr(event, "workflow_id", "")
+        node_id = getattr(event, "failed_node_id", "") or ""
+        stack_trace = getattr(event, "stack_trace", "") or ""
 
         # Check if we should exclude self
         if config.get("exclude_self", True):

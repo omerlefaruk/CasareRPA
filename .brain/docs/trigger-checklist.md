@@ -6,7 +6,7 @@
 
 ```python
 # Domain layer
-from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.decorators import properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.trigger_types import TriggerType
 
@@ -15,7 +15,7 @@ from casare_rpa.nodes.trigger_nodes import trigger_node, BaseTriggerNode
 ```
 
 ## Key Differences from Executable Nodes
-- Use `@trigger_node` decorator (NOT `@executable_node`)
+- Use `@trigger_node` decorator (NOT `@node`)
 - Extend `BaseTriggerNode` (NOT `BaseNode`)
 - NO exec_in port (triggers START workflows)
 - Only exec_out port + payload ports
@@ -28,11 +28,11 @@ from casare_rpa.nodes.trigger_nodes import trigger_node, BaseTriggerNode
 from casare_rpa.nodes.trigger_nodes import trigger_node
 ```
 
-### 2. @node_schema decorator
+### 2. @properties decorator
 Same as executable nodes. Tab "connection" for API tokens/credentials.
 
 ```python
-@node_schema(
+@properties(
     PropertyDef("bot_token", PropertyType.STRING, tab="connection", ...),
     PropertyDef("filter_chat_ids", PropertyType.STRING, ...),
 )

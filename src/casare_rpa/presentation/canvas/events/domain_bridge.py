@@ -24,10 +24,24 @@ from typing import Optional
 
 from loguru import logger
 
-from casare_rpa.domain.events import Event as DomainEvent
-from casare_rpa.domain.events import EventBus as DomainEventBus
-from casare_rpa.domain.events import get_event_bus as get_domain_event_bus
-from casare_rpa.domain.value_objects.types import EventType as DomainEventType
+from casare_rpa.domain.events import (
+    DomainEvent,
+    EventBus as DomainEventBus,
+    get_event_bus as get_domain_event_bus,
+    NodeStarted,
+    NodeCompleted,
+    NodeFailed,
+    NodeSkipped,
+    WorkflowStarted,
+    WorkflowCompleted,
+    WorkflowFailed,
+    WorkflowPaused,
+    WorkflowResumed,
+    WorkflowStopped,
+    VariableSet,
+    LogMessage,
+)
+from typing import Type
 
 from casare_rpa.presentation.canvas.events.event import Event as PresentationEvent
 from casare_rpa.presentation.canvas.events.event import EventPriority
@@ -38,20 +52,20 @@ from casare_rpa.presentation.canvas.events.event_types import (
     EventType as PresentationEventType,
 )
 
-# Mapping from domain event types to presentation event types
-DOMAIN_TO_PRESENTATION_MAP: dict[DomainEventType, PresentationEventType] = {
-    DomainEventType.NODE_STARTED: PresentationEventType.NODE_EXECUTION_STARTED,
-    DomainEventType.NODE_COMPLETED: PresentationEventType.NODE_EXECUTION_COMPLETED,
-    DomainEventType.NODE_ERROR: PresentationEventType.NODE_EXECUTION_FAILED,
-    DomainEventType.NODE_SKIPPED: PresentationEventType.NODE_EXECUTION_SKIPPED,
-    DomainEventType.WORKFLOW_STARTED: PresentationEventType.EXECUTION_STARTED,
-    DomainEventType.WORKFLOW_COMPLETED: PresentationEventType.EXECUTION_COMPLETED,
-    DomainEventType.WORKFLOW_ERROR: PresentationEventType.EXECUTION_FAILED,
-    DomainEventType.WORKFLOW_PAUSED: PresentationEventType.EXECUTION_PAUSED,
-    DomainEventType.WORKFLOW_RESUMED: PresentationEventType.EXECUTION_RESUMED,
-    DomainEventType.WORKFLOW_STOPPED: PresentationEventType.EXECUTION_STOPPED,
-    DomainEventType.VARIABLE_SET: PresentationEventType.VARIABLE_SET,
-    DomainEventType.LOG_MESSAGE: PresentationEventType.LOG_MESSAGE,
+# Mapping from typed domain event classes to presentation event types
+DOMAIN_TO_PRESENTATION_MAP: dict[Type[DomainEvent], PresentationEventType] = {
+    NodeStarted: PresentationEventType.NODE_EXECUTION_STARTED,
+    NodeCompleted: PresentationEventType.NODE_EXECUTION_COMPLETED,
+    NodeFailed: PresentationEventType.NODE_EXECUTION_FAILED,
+    NodeSkipped: PresentationEventType.NODE_EXECUTION_SKIPPED,
+    WorkflowStarted: PresentationEventType.EXECUTION_STARTED,
+    WorkflowCompleted: PresentationEventType.EXECUTION_COMPLETED,
+    WorkflowFailed: PresentationEventType.EXECUTION_FAILED,
+    WorkflowPaused: PresentationEventType.EXECUTION_PAUSED,
+    WorkflowResumed: PresentationEventType.EXECUTION_RESUMED,
+    WorkflowStopped: PresentationEventType.EXECUTION_STOPPED,
+    VariableSet: PresentationEventType.VARIABLE_SET,
+    LogMessage: PresentationEventType.LOG_MESSAGE,
 }
 
 
@@ -122,8 +136,8 @@ class DomainEventBridge:
             logger.warning("DomainEventBridge already running")
             return
 
-        for domain_event_type in DOMAIN_TO_PRESENTATION_MAP.keys():
-            self._domain_bus.subscribe(domain_event_type, self._on_domain_event)
+        for domain_event_class in DOMAIN_TO_PRESENTATION_MAP.keys():
+            self._domain_bus.subscribe(domain_event_class, self._on_domain_event)
 
         self._running = True
         event_count = len(DOMAIN_TO_PRESENTATION_MAP)
@@ -138,8 +152,8 @@ class DomainEventBridge:
         if not self._running:
             return
 
-        for domain_event_type in DOMAIN_TO_PRESENTATION_MAP.keys():
-            self._domain_bus.unsubscribe(domain_event_type, self._on_domain_event)
+        for domain_event_class in DOMAIN_TO_PRESENTATION_MAP.keys():
+            self._domain_bus.unsubscribe(domain_event_class, self._on_domain_event)
 
         self._running = False
         logger.info("DomainEventBridge stopped")
@@ -151,16 +165,20 @@ class DomainEventBridge:
         Args:
             event: Domain event to forward
         """
-        presentation_type = DOMAIN_TO_PRESENTATION_MAP.get(event.event_type)
+        event_class = type(event)
+        presentation_type = DOMAIN_TO_PRESENTATION_MAP.get(event_class)
         if presentation_type is None:
-            logger.warning(f"No mapping for domain event type: {event.event_type}")
+            logger.warning(f"No mapping for domain event type: {event_class.__name__}")
             return
 
         # Determine priority based on event type
-        priority = self._get_priority(event.event_type)
+        priority = self._get_priority(event_class)
 
         # Transform data if needed
         data = self._transform_data(event)
+
+        # Get node_id from typed event if available
+        node_id = getattr(event, "node_id", None)
 
         # Create presentation event
         presentation_event = PresentationEvent(
@@ -168,33 +186,26 @@ class DomainEventBridge:
             source="DomainEventBridge",
             data=data,
             priority=priority,
-            correlation_id=event.node_id,
+            correlation_id=node_id,
         )
 
         # Publish to presentation bus
         self._presentation_bus.publish(presentation_event)
 
-    def _get_priority(self, event_type: DomainEventType) -> EventPriority:
+    def _get_priority(self, event_class: Type[DomainEvent]) -> EventPriority:
         """
         Determine event priority based on type.
 
         Args:
-            event_type: Domain event type
+            event_class: Domain event class
 
         Returns:
             Appropriate EventPriority
         """
-        if event_type in (
-            DomainEventType.NODE_ERROR,
-            DomainEventType.WORKFLOW_ERROR,
-        ):
+        if event_class in (NodeFailed, WorkflowFailed):
             return EventPriority.HIGH
 
-        if event_type in (
-            DomainEventType.WORKFLOW_STARTED,
-            DomainEventType.WORKFLOW_COMPLETED,
-            DomainEventType.WORKFLOW_STOPPED,
-        ):
+        if event_class in (WorkflowStarted, WorkflowCompleted, WorkflowStopped):
             return EventPriority.HIGH
 
         return EventPriority.NORMAL
@@ -209,14 +220,31 @@ class DomainEventBridge:
         Returns:
             Transformed data dict for presentation event
         """
-        data = dict(event.data) if event.data else {}
+        # Convert typed event attributes to dict
+        data = {}
 
-        # Add node_id to data if present
-        if event.node_id and "node_id" not in data:
-            data["node_id"] = event.node_id
+        # Extract common attributes from typed events
+        for attr in [
+            "node_id",
+            "node_type",
+            "workflow_id",
+            "workflow_name",
+            "error_message",
+            "execution_time_ms",
+            "output_data",
+            "variable_name",
+            "value",
+            "message",
+            "level",
+            "source",
+        ]:
+            if hasattr(event, attr):
+                val = getattr(event, attr)
+                if val is not None:
+                    data[attr] = val
 
-        # Add timestamp as ISO string if not present
-        if "timestamp" not in data:
+        # Add timestamp as ISO string
+        if hasattr(event, "timestamp") and event.timestamp:
             data["timestamp"] = event.timestamp.isoformat()
 
         return data

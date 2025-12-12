@@ -746,7 +746,11 @@ class NodeGraphWidget(QWidget):
                 if self._selection_handler.delete_selected_nodes():
                     return True
 
-            if key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x":
+            # Check if text widget has focus - don't delete nodes when typing
+            focus_widget = QApplication.focusWidget()
+            if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+                pass  # Let the text widget handle the key
+            elif key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x":
                 if self._delete_selected_frames():
                     return True
                 if self._selection_handler.delete_selected_nodes():

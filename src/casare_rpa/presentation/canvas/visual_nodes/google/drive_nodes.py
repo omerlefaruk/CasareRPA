@@ -106,16 +106,44 @@ class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("destination", DataType.STRING)
+        # Single file inputs
+        self.add_typed_input("file_id", DataType.STRING)
+        self.add_typed_input("destination_path", DataType.STRING)
+        # Folder download mode
+        self.add_typed_input("source_folder_id", DataType.STRING)
+        # Batch/loop inputs
+        self.add_typed_input("file", DataType.DICT)  # From ForEach loop
+        self.add_typed_input("files", DataType.LIST)  # From DriveListFiles
+        self.add_typed_input("destination_folder", DataType.STRING)
+        # Outputs
         self.add_exec_output("exec_out")
         self.add_typed_output("file_path", DataType.STRING)
-        self.add_typed_output("file_size", DataType.INTEGER)
+        self.add_typed_output("file_paths", DataType.LIST)
+        self.add_typed_output("downloaded_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
     def setup_widgets(self) -> None:
         super().setup_widgets()
+        # Drive file picker for selecting single file from Drive
         self.setup_file_widget()
+        # Drive folder picker for downloading entire folder
+        self.setup_folder_widget(label="Source Folder", name="source_folder_id")
+        # Local destination inputs (text fields for file system paths)
+        self.add_text_input(
+            "destination_path",
+            "Destination Path",
+            text="",
+            placeholder_text="C:\\Downloads\\file.pdf",
+            tab="config",
+        )
+        self.add_text_input(
+            "destination_folder",
+            "Destination Folder",
+            text="",
+            placeholder_text="C:\\Downloads\\",
+            tab="config",
+        )
 
 
 class VisualDriveDeleteFileNode(VisualGoogleDriveBaseNode):
@@ -270,11 +298,15 @@ class VisualDriveListFilesNode(VisualGoogleDriveBaseNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("page_size", DataType.INTEGER)
+        self.add_typed_input("folder_id", DataType.STRING)
+        self.add_typed_input("max_results", DataType.INTEGER)
         self.add_exec_output("exec_out")
         self.add_typed_output("files", DataType.LIST)
-        self.add_typed_output("count", DataType.INTEGER)
-        self.add_typed_output("next_page_token", DataType.STRING)
+        self.add_typed_output("file_count", DataType.INTEGER)
+        self.add_typed_output(
+            "folder_id", DataType.STRING
+        )  # Passthrough for downstream
+        self.add_typed_output("has_more", DataType.BOOLEAN)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 

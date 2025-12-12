@@ -20,7 +20,7 @@ from loguru import logger
 from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -62,7 +62,8 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
     return target_path
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -98,7 +99,6 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
         tab="advanced",
     ),
 )
-@executable_node
 class ReadCSVNode(BaseNode):
     """
     Read and parse a CSV file.
@@ -204,7 +204,8 @@ class ReadCSVNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -218,7 +219,6 @@ class ReadCSVNode(BaseNode):
     ),
     PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
 )
-@executable_node
 class WriteCSVNode(BaseNode):
     """
     Write data to a CSV file.
@@ -313,7 +313,8 @@ class WriteCSVNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -323,7 +324,6 @@ class WriteCSVNode(BaseNode):
     ),
     PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
 )
-@executable_node
 class ReadJSONFileNode(BaseNode):
     """
     Read and parse a JSON file.
@@ -407,7 +407,8 @@ class ReadJSONFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -421,7 +422,6 @@ class ReadJSONFileNode(BaseNode):
         "ensure_ascii", PropertyType.BOOLEAN, default=False, label="Ensure ASCII"
     ),
 )
-@executable_node
 class WriteJSONFileNode(BaseNode):
     """
     Write data to a JSON file.
@@ -508,7 +508,8 @@ class WriteJSONFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "zip_path",
         PropertyType.STRING,
@@ -540,7 +541,6 @@ class WriteJSONFileNode(BaseNode):
         label="Compression",
     ),
 )
-@executable_node
 class ZipFilesNode(BaseNode):
     """
     Create a ZIP archive from files.
@@ -724,7 +724,8 @@ class ZipFilesNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "zip_path",
         PropertyType.STRING,
@@ -740,7 +741,6 @@ class ZipFilesNode(BaseNode):
         placeholder="C:\\output\\extracted",
     ),
 )
-@executable_node
 class UnzipFilesNode(BaseNode):
     """
     Extract files from a ZIP archive.

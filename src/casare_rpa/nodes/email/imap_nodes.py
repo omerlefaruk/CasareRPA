@@ -17,21 +17,21 @@ from typing import Optional
 
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 from .email_base import decode_header_value
 
 
-@node_schema(
+@node(category="email")
+@properties(
     PropertyDef(
         "imap_server",
         PropertyType.STRING,
@@ -75,7 +75,6 @@ from .email_base import decode_header_value
         tooltip="Directory path to save attachments",
     ),
 )
-@executable_node
 class SaveAttachmentNode(BaseNode):
     """
     Save email attachments to disk.
@@ -95,14 +94,14 @@ class SaveAttachmentNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
-        self.add_input_port("save_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("folder", PortType.INPUT, DataType.STRING)
-        self.add_output_port("saved_files", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("imap_server", DataType.STRING)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("email_uid", DataType.STRING)
+        self.add_input_port("save_path", DataType.STRING)
+        self.add_input_port("folder", DataType.STRING)
+        self.add_output_port("saved_files", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Save email attachments."""
@@ -213,7 +212,8 @@ class SaveAttachmentNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="email")
+@properties(
     PropertyDef(
         "imap_server",
         PropertyType.STRING,
@@ -258,7 +258,6 @@ class SaveAttachmentNode(BaseNode):
         tooltip="Flag to set on the email",
     ),
 )
-@executable_node
 class MarkEmailNode(BaseNode):
     """
     Mark an email as read, unread, or flagged.
@@ -278,13 +277,13 @@ class MarkEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
-        self.add_input_port("folder", PortType.INPUT, DataType.STRING)
-        self.add_input_port("mark_as", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("imap_server", DataType.STRING)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("email_uid", DataType.STRING)
+        self.add_input_port("folder", DataType.STRING)
+        self.add_input_port("mark_as", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Mark email with specified flag."""
@@ -358,7 +357,8 @@ class MarkEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="email")
+@properties(
     PropertyDef(
         "imap_server",
         PropertyType.STRING,
@@ -402,7 +402,6 @@ class MarkEmailNode(BaseNode):
         tooltip="Permanently delete (expunge) instead of just marking deleted",
     ),
 )
-@executable_node
 class DeleteEmailNode(BaseNode):
     """
     Delete an email from the mailbox.
@@ -422,12 +421,12 @@ class DeleteEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
-        self.add_input_port("folder", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("imap_server", DataType.STRING)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("email_uid", DataType.STRING)
+        self.add_input_port("folder", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Delete email from mailbox."""
@@ -492,7 +491,8 @@ class DeleteEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="email")
+@properties(
     PropertyDef(
         "imap_server",
         PropertyType.STRING,
@@ -536,7 +536,6 @@ class DeleteEmailNode(BaseNode):
         tooltip="Target mailbox folder",
     ),
 )
-@executable_node
 class MoveEmailNode(BaseNode):
     """
     Move an email to a different folder.
@@ -556,13 +555,13 @@ class MoveEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
-        self.add_input_port("source_folder", PortType.INPUT, DataType.STRING)
-        self.add_input_port("target_folder", PortType.INPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("imap_server", DataType.STRING)
+        self.add_input_port("username", DataType.STRING)
+        self.add_input_port("password", DataType.STRING)
+        self.add_input_port("email_uid", DataType.STRING)
+        self.add_input_port("source_folder", DataType.STRING)
+        self.add_input_port("target_folder", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Move email to different folder."""

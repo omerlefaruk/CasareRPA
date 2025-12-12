@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QMessageBox,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QBrush, QFont
 
 from loguru import logger
@@ -338,6 +338,7 @@ class VariableEditDialog(QDialog):
             # Default for new variable
             self._on_type_changed("String")
 
+    @Slot(str)
     def _on_type_changed(self, var_type: str) -> None:
         """Handle type change - switch value editor."""
         self._current_type = var_type
@@ -420,6 +421,7 @@ class VariableEditDialog(QDialog):
             except json_module.JSONDecodeError as e:
                 raise ValueError(f"Invalid JSON: {e}")
 
+    @Slot()
     def _on_accept(self) -> None:
         """Validate and accept the dialog."""
         name = self._name_edit.text().strip()
@@ -980,6 +982,7 @@ class VariablesPanel(QDockWidget):
 
         return None
 
+    @Slot(object)
     def _on_context_menu(self, pos) -> None:
         """Show context menu for variable entry."""
         item = self._tree.itemAt(pos)
@@ -993,6 +996,11 @@ class VariablesPanel(QDockWidget):
         var_name = data.get("name", "")
         scope = data.get("scope", "")
         variable = data.get("variable")
+
+        # Store context menu data for slot methods
+        self._context_var_name = var_name
+        self._context_scope = scope
+        self._context_variable = variable
 
         menu = QMenu(self)
         menu.setStyleSheet(f"""
@@ -1020,35 +1028,62 @@ class VariablesPanel(QDockWidget):
 
         # Edit variable
         edit_action = menu.addAction("Edit Variable")
-        edit_action.triggered.connect(lambda: self._edit_variable(var_name, scope))
+        edit_action.triggered.connect(self._on_context_edit_variable)
 
         menu.addSeparator()
 
         # Copy name
         copy_name = menu.addAction("Copy Name")
-        copy_name.triggered.connect(lambda: QApplication.clipboard().setText(var_name))
+        copy_name.triggered.connect(self._on_context_copy_name)
 
         # Copy value (only if not sensitive)
         if variable and not variable.sensitive:
             copy_value = menu.addAction("Copy Value")
-            copy_value.triggered.connect(
-                lambda: QApplication.clipboard().setText(str(variable.default_value))
-            )
+            copy_value.triggered.connect(self._on_context_copy_value)
 
         # Copy insertion text
         copy_insert = menu.addAction("Copy {{variable}}")
-        copy_insert.triggered.connect(
-            lambda: QApplication.clipboard().setText(f"{{{{{var_name}}}}}")
-        )
+        copy_insert.triggered.connect(self._on_context_copy_insertion)
 
         menu.addSeparator()
 
         # Delete variable
         delete_action = menu.addAction("Delete Variable")
-        delete_action.triggered.connect(lambda: self.remove_variable(var_name, scope))
+        delete_action.triggered.connect(self._on_context_delete_variable)
 
         menu.exec_(self._tree.mapToGlobal(pos))
 
+    @Slot()
+    def _on_context_edit_variable(self) -> None:
+        """Edit variable from context menu."""
+        if hasattr(self, "_context_var_name") and hasattr(self, "_context_scope"):
+            self._edit_variable(self._context_var_name, self._context_scope)
+
+    @Slot()
+    def _on_context_copy_name(self) -> None:
+        """Copy variable name from context menu."""
+        if hasattr(self, "_context_var_name"):
+            QApplication.clipboard().setText(self._context_var_name)
+
+    @Slot()
+    def _on_context_copy_value(self) -> None:
+        """Copy variable value from context menu."""
+        if hasattr(self, "_context_variable") and self._context_variable:
+            QApplication.clipboard().setText(str(self._context_variable.default_value))
+
+    @Slot()
+    def _on_context_copy_insertion(self) -> None:
+        """Copy variable insertion text from context menu."""
+        if hasattr(self, "_context_var_name"):
+            QApplication.clipboard().setText(f"{{{{{self._context_var_name}}}}}")
+
+    @Slot()
+    def _on_context_delete_variable(self) -> None:
+        """Delete variable from context menu."""
+        if hasattr(self, "_context_var_name") and hasattr(self, "_context_scope"):
+            self.remove_variable(self._context_var_name, self._context_scope)
+
+    @Slot(QTreeWidgetItem, int)
     def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
         """Handle double-click on tree item."""
         data = item.data(0, Qt.ItemDataRole.UserRole)
@@ -1344,6 +1379,7 @@ class VariablesPanel(QDockWidget):
         self._update_display()
         logger.debug(f"Variables cleared: {scope or 'all scopes'}")
 
+    @Slot()
     def _on_add_variable(self) -> None:
         """Handle add variable button click."""
         if self._is_runtime_mode:
@@ -1368,6 +1404,7 @@ class VariablesPanel(QDockWidget):
                 sensitive=variable.sensitive,
             )
 
+    @Slot()
     def _on_edit_variable(self) -> None:
         """Handle edit button click."""
         current = self._tree.currentItem()
@@ -1380,6 +1417,7 @@ class VariablesPanel(QDockWidget):
 
         self._edit_variable(data.get("name", ""), data.get("scope", ""))
 
+    @Slot()
     def _on_remove_variable(self) -> None:
         """Handle remove variable button click."""
         current = self._tree.currentItem()
@@ -1392,6 +1430,7 @@ class VariablesPanel(QDockWidget):
 
         self.remove_variable(data.get("name", ""), data.get("scope", ""))
 
+    @Slot()
     def _on_clear_all(self) -> None:
         """Handle clear all button click."""
         if self._is_runtime_mode:
@@ -1425,6 +1464,7 @@ class VariablesPanel(QDockWidget):
         if msg.exec() == QMessageBox.StandardButton.Yes:
             self.clear_variables()
 
+    @Slot(str)
     def _on_scope_filter_changed(self, scope: str) -> None:
         """
         Handle scope filter dropdown change.

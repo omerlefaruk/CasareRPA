@@ -13,11 +13,10 @@ import os
 from datetime import datetime
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -25,7 +24,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.file.file_security import validate_path_security_readonly
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "path",
         PropertyType.STRING,
@@ -50,12 +50,11 @@ from casare_rpa.nodes.file.file_security import validate_path_security_readonly
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
-@executable_node
 class FileExistsNode(BaseNode):
     """
     Check if a file or directory exists.
 
-    Config (via @node_schema):
+    Config (via @properties):
         path: Path to check (required)
         check_type: "file", "directory", or "any" (default: any)
         allow_dangerous_paths: Allow system paths (default: False)
@@ -80,10 +79,10 @@ class FileExistsNode(BaseNode):
         self.node_type = "FileExistsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("is_file", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("is_dir", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("path", DataType.STRING)
+        self.add_output_port("exists", DataType.BOOLEAN)
+        self.add_output_port("is_file", DataType.BOOLEAN)
+        self.add_output_port("is_dir", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -137,7 +136,8 @@ class FileExistsNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -154,12 +154,11 @@ class FileExistsNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
-@executable_node
 class GetFileSizeNode(BaseNode):
     """
     Get the size of a file in bytes.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path to the file (required)
         allow_dangerous_paths: Allow system paths (default: False)
 
@@ -182,9 +181,9 @@ class GetFileSizeNode(BaseNode):
         self.node_type = "GetFileSizeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_output_port("size", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -222,7 +221,8 @@ class GetFileSizeNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="file")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -239,12 +239,11 @@ class GetFileSizeNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
-@executable_node
 class GetFileInfoNode(BaseNode):
     """
     Get detailed information about a file.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path to the file (required)
         allow_dangerous_paths: Allow system paths (default: False)
 
@@ -272,14 +271,14 @@ class GetFileInfoNode(BaseNode):
         self.node_type = "GetFileInfoNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("created", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("modified", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("extension", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("parent", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_output_port("size", DataType.INTEGER)
+        self.add_output_port("created", DataType.STRING)
+        self.add_output_port("modified", DataType.STRING)
+        self.add_output_port("extension", DataType.STRING)
+        self.add_output_port("name", DataType.STRING)
+        self.add_output_port("parent", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

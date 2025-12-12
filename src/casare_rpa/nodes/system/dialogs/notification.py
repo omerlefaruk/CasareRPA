@@ -9,7 +9,7 @@ import asyncio
 from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
@@ -20,7 +20,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "message",
         PropertyType.STRING,
@@ -99,12 +100,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Enable fade in/out animation",
     ),
 )
-@executable_node
 class TooltipNode(BaseNode):
     """
     Display a tooltip at a specified position.
 
-    Config (via @node_schema):
+    Config (via @properties):
         message: Message to display (essential - shows widget)
         duration: Duration in milliseconds (default: 3000)
         bg_color: Background color hex (default: #ffffff)
@@ -390,7 +390,8 @@ class TooltipNode(BaseNode):
         await asyncio.sleep(0.1)
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "title",
         PropertyType.STRING,
@@ -447,12 +448,11 @@ class TooltipNode(BaseNode):
         tooltip="Notification priority",
     ),
 )
-@executable_node
 class SystemNotificationNode(BaseNode):
     """
     Display a Windows system notification (toast).
 
-    Config (via @node_schema):
+    Config (via @properties):
         title: Notification title (essential - shows widget)
         message: Notification message (essential - shows widget)
         duration: Duration in seconds (default: 5)
@@ -611,7 +611,8 @@ class SystemNotificationNode(BaseNode):
         return False, False
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "message",
         PropertyType.STRING,
@@ -652,12 +653,11 @@ class SystemNotificationNode(BaseNode):
         tooltip="Background color (hex)",
     ),
 )
-@executable_node
 class SnackbarNode(BaseNode):
     """
     Display a Material-style snackbar notification.
 
-    Config (via @node_schema):
+    Config (via @properties):
         message: Snackbar message (essential - shows widget)
         duration: Display duration in ms (default: 3000)
         position: bottom_left, bottom_center, bottom_right (default: bottom_center)
@@ -853,7 +853,8 @@ class SnackbarNode(BaseNode):
         return await future
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "message",
         PropertyType.STRING,
@@ -901,12 +902,11 @@ class SnackbarNode(BaseNode):
         tooltip="Balloon icon type",
     ),
 )
-@executable_node
 class BalloonTipNode(BaseNode):
     """
     Display a balloon tooltip at a screen position.
 
-    Config (via @node_schema):
+    Config (via @properties):
         message: Balloon message (essential - shows widget)
         title: Balloon title (default: '')
         x: X position (0 = cursor) (default: 0)
@@ -1111,7 +1111,8 @@ class BalloonTipNode(BaseNode):
         await asyncio.sleep(0.1)
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "file_path",
         PropertyType.FILE_PATH,
@@ -1152,12 +1153,11 @@ class BalloonTipNode(BaseNode):
         tooltip="Loop audio playback",
     ),
 )
-@executable_node
 class AudioAlertNode(BaseNode):
     """
     Play an audio file or system beep.
 
-    Config (via @node_schema):
+    Config (via @properties):
         file_path: Path to audio file (default: '')
         use_beep: Use system beep instead (default: False)
         frequency: Beep frequency Hz (default: 440)

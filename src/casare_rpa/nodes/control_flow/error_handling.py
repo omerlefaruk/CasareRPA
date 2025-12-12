@@ -11,19 +11,18 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
-    PortType,
     DataType,
     NodeStatus,
     ExecutionResult,
 )
 
 
-@node_schema()  # No config - paired with Catch/Finally
-@executable_node
+@node(category="control_flow")
+@properties()  # No config - paired with Catch/Finally
 class TryNode(BaseNode):
     """
     Try block for error handling.
@@ -54,9 +53,9 @@ class TryNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)  # Main flow (top)
-        self.add_output_port("try_body", PortType.EXEC_OUTPUT)  # Try body (below)
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")  # Main flow (top)
+        self.add_exec_output("try_body")  # Try body (below)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute try - initializes error capture state."""
@@ -89,7 +88,8 @@ class TryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "paired_try_id",
         PropertyType.STRING,
@@ -105,7 +105,6 @@ class TryNode(BaseNode):
         tooltip="Comma-separated error types to catch (empty = catch all). E.g., 'ValueError,KeyError'",
     ),
 )
-@executable_node
 class CatchNode(BaseNode):
     """
     Catch block for handling errors from the Try block.
@@ -137,11 +136,11 @@ class CatchNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("catch_body", PortType.EXEC_OUTPUT)
-        self.add_output_port("error_message", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("error_type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("stack_trace", PortType.OUTPUT, DataType.STRING)
+        self.add_exec_input("exec_in")
+        self.add_exec_output("catch_body")
+        self.add_output_port("error_message", DataType.STRING)
+        self.add_output_port("error_type", DataType.STRING)
+        self.add_output_port("stack_trace", DataType.STRING)
 
     def set_paired_try(self, try_node_id: str) -> None:
         """Set the paired Try node ID (called automatically)."""
@@ -208,7 +207,8 @@ class CatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node_schema(
+@node(category="control_flow")
+@properties(
     PropertyDef(
         "paired_try_id",
         PropertyType.STRING,
@@ -217,7 +217,6 @@ class CatchNode(BaseNode):
         tooltip="ID of the paired TryNode (set automatically)",
     ),
 )
-@executable_node
 class FinallyNode(BaseNode):
     """
     Finally block - always executes after Try/Catch regardless of errors.
@@ -244,9 +243,9 @@ class FinallyNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("finally_body", PortType.EXEC_OUTPUT)
-        self.add_output_port("had_error", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_exec_input("exec_in")
+        self.add_exec_output("finally_body")
+        self.add_output_port("had_error", DataType.BOOLEAN)
 
     def set_paired_try(self, try_node_id: str) -> None:
         """Set the paired Try node ID (called automatically)."""

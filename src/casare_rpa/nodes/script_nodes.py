@@ -19,18 +19,18 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -47,12 +47,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Run in isolated subprocess (default: False)",
     ),
 )
-@executable_node
 class RunPythonScriptNode(BaseNode):
     """
     Execute Python code inline.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Execution timeout in seconds (default: 60)
         isolated: Run in isolated subprocess (default: False)
 
@@ -78,12 +77,12 @@ class RunPythonScriptNode(BaseNode):
         self.node_type = "RunPythonScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", PortType.INPUT, DataType.STRING)
-        self.add_input_port("variables", PortType.INPUT, DataType.DICT)
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("output", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("variables", DataType.DICT)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("output", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -219,7 +218,8 @@ print("__RESULT__:" + json.dumps(result, default=str))
         return True, ""
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -259,12 +259,11 @@ print("__RESULT__:" + json.dumps(result, default=str))
         tooltip="Retry if return code is non-zero (default: False)",
     ),
 )
-@executable_node
 class RunPythonFileNode(BaseNode):
     """
     Execute a Python file.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Execution timeout in seconds (default: 60)
         python_path: Python interpreter path (default: current)
         retry_count: Number of retries on failure (default: 0)
@@ -294,13 +293,13 @@ class RunPythonFileNode(BaseNode):
         self.node_type = "RunPythonFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("args", PortType.INPUT, DataType.ANY)
-        self.add_input_port("working_dir", PortType.INPUT, DataType.STRING)
-        self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING)
+        self.add_input_port("args", DataType.ANY)
+        self.add_input_port("working_dir", DataType.STRING)
+        self.add_output_port("stdout", DataType.STRING)
+        self.add_output_port("stderr", DataType.STRING)
+        self.add_output_port("return_code", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -433,7 +432,8 @@ class RunPythonFileNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "expression",
         PropertyType.STRING,
@@ -442,12 +442,11 @@ class RunPythonFileNode(BaseNode):
         tooltip="Python expression to evaluate (e.g., '{{num1}} + {{num2}}')",
     ),
 )
-@executable_node
 class EvalExpressionNode(BaseNode):
     """
     Evaluate a Python expression and return the result.
 
-    Config (via @node_schema):
+    Config (via @properties):
         expression: Python expression to evaluate (supports {{variable}} syntax)
 
     Outputs:
@@ -469,10 +468,10 @@ class EvalExpressionNode(BaseNode):
 
     def _define_ports(self) -> None:
         # expression is now a PropertyDef, not an input port
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("type", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("type", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -557,7 +556,8 @@ class EvalExpressionNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -590,12 +590,11 @@ class EvalExpressionNode(BaseNode):
         tooltip="Retry if return code is non-zero (default: False)",
     ),
 )
-@executable_node
 class RunBatchScriptNode(BaseNode):
     """
     Execute a batch script (Windows) or shell script (Unix).
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Execution timeout in seconds (default: 60)
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries in ms (default: 1000)
@@ -623,12 +622,12 @@ class RunBatchScriptNode(BaseNode):
         self.node_type = "RunBatchScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("script", PortType.INPUT, DataType.STRING)
-        self.add_input_port("working_dir", PortType.INPUT, DataType.STRING)
-        self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("script", DataType.STRING)
+        self.add_input_port("working_dir", DataType.STRING)
+        self.add_output_port("stdout", DataType.STRING)
+        self.add_output_port("stderr", DataType.STRING)
+        self.add_output_port("return_code", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -778,7 +777,8 @@ class RunBatchScriptNode(BaseNode):
         return True, ""
 
 
-@node_schema(
+@node(category="system")
+@properties(
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -795,12 +795,11 @@ class RunBatchScriptNode(BaseNode):
         tooltip="Path to Node.js executable (default: 'node')",
     ),
 )
-@executable_node
 class RunJavaScriptNode(BaseNode):
     """
     Execute JavaScript code using Node.js.
 
-    Config (via @node_schema):
+    Config (via @properties):
         timeout: Execution timeout in seconds (default: 60)
         node_path: Path to Node.js executable (default: 'node')
 
@@ -825,11 +824,11 @@ class RunJavaScriptNode(BaseNode):
         self.node_type = "RunJavaScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", PortType.INPUT, DataType.STRING)
-        self.add_input_port("input_data", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("input_data", DataType.ANY)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

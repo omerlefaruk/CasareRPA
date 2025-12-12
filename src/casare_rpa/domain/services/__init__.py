@@ -13,6 +13,13 @@ from casare_rpa.domain.services.variable_resolver import (
     extract_variable_names,
     has_variables,
 )
+from casare_rpa.domain.services.expression_evaluator import (
+    ExpressionEvaluator,
+    ExpressionError,
+    get_expression_evaluator,
+    evaluate_expression,
+    has_expressions,
+)
 from casare_rpa.domain.services.headless_validator import (
     HeadlessWorkflowSandbox,
     WorkflowValidationResult,
@@ -50,6 +57,12 @@ __all__ = [
     "resolve_dict_variables",
     "extract_variable_names",
     "has_variables",
+    # Expression evaluator (Power Automate style)
+    "ExpressionEvaluator",
+    "ExpressionError",
+    "get_expression_evaluator",
+    "evaluate_expression",
+    "has_expressions",
     # Headless workflow validation
     "HeadlessWorkflowSandbox",
     "WorkflowValidationResult",

@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QProgressBar,
 )
-from PySide6.QtCore import Qt, Signal, QDateTime
+from PySide6.QtCore import Qt, Signal, QDateTime, Slot
 from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
@@ -295,6 +295,7 @@ class AuditPanel(QDockWidget):
         self._events: List[Dict[str, Any]] = []
         self._statistics: Dict[str, Any] = {}
         self._is_loading = False
+        self._context_event: Optional[Dict[str, Any]] = None  # Context menu target
 
         self._setup_dock()
         self._setup_ui()
@@ -760,12 +761,22 @@ class AuditPanel(QDockWidget):
         """)
 
         csv_action = menu.addAction("Export to CSV")
-        csv_action.triggered.connect(lambda: self._export_to_format("csv"))
+        csv_action.triggered.connect(self._on_export_csv)
 
         json_action = menu.addAction("Export to JSON")
-        json_action.triggered.connect(lambda: self._export_to_format("json"))
+        json_action.triggered.connect(self._on_export_json)
 
         menu.exec_(self.cursor().pos())
+
+    @Slot()
+    def _on_export_csv(self) -> None:
+        """Handle export to CSV action."""
+        self._export_to_format("csv")
+
+    @Slot()
+    def _on_export_json(self) -> None:
+        """Handle export to JSON action."""
+        self._export_to_format("json")
 
     def _export_to_format(self, format_type: str) -> None:
         """Export events to specified format."""
@@ -823,6 +834,9 @@ class AuditPanel(QDockWidget):
         if not event_data:
             return
 
+        # Store context event for slot methods
+        self._context_event = event_data
+
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
@@ -843,24 +857,39 @@ class AuditPanel(QDockWidget):
         """)
 
         view_action = menu.addAction("View Details")
-        view_action.triggered.connect(lambda: self._show_event_details(event_data))
+        view_action.triggered.connect(self._on_context_view_details)
 
         menu.addSeparator()
 
         copy_id_action = menu.addAction("Copy Event ID")
-        copy_id_action.triggered.connect(
-            lambda: self._copy_to_clipboard(event_data.get("event_id", ""))
-        )
+        copy_id_action.triggered.connect(self._on_context_copy_event_id)
 
         if event_data.get("path") or event_data.get("resource"):
             copy_resource_action = menu.addAction("Copy Resource Path")
-            copy_resource_action.triggered.connect(
-                lambda: self._copy_to_clipboard(
-                    event_data.get("path") or event_data.get("resource", "")
-                )
-            )
+            copy_resource_action.triggered.connect(self._on_context_copy_resource)
 
         menu.exec_(self._table.mapToGlobal(pos))
+
+    @Slot()
+    def _on_context_view_details(self) -> None:
+        """Handle view details context menu action."""
+        if self._context_event:
+            self._show_event_details(self._context_event)
+
+    @Slot()
+    def _on_context_copy_event_id(self) -> None:
+        """Handle copy event ID context menu action."""
+        if self._context_event:
+            self._copy_to_clipboard(self._context_event.get("event_id", ""))
+
+    @Slot()
+    def _on_context_copy_resource(self) -> None:
+        """Handle copy resource path context menu action."""
+        if self._context_event:
+            self._copy_to_clipboard(
+                self._context_event.get("path")
+                or self._context_event.get("resource", "")
+            )
 
     def _on_row_double_clicked(self, row: int, col: int) -> None:
         """Handle double-click on table row."""

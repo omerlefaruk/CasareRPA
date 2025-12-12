@@ -52,7 +52,7 @@ from casare_rpa.nodes.data_operation_nodes import (
 class VisualConcatenateNode(VisualNode):
     """Visual representation of ConcatenateNode.
 
-    Widgets are auto-generated from ConcatenateNode's @node_schema decorator.
+    Widgets are auto-generated from ConcatenateNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -128,7 +128,7 @@ class VisualRegexReplaceNode(VisualNode):
 class VisualMathOperationNode(VisualNode):
     """Visual representation of MathOperationNode.
 
-    Widgets are auto-generated from MathOperationNode's @node_schema decorator.
+    Widgets are auto-generated from MathOperationNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -150,7 +150,7 @@ class VisualMathOperationNode(VisualNode):
 class VisualComparisonNode(VisualNode):
     """Visual representation of ComparisonNode.
 
-    Widgets are auto-generated from ComparisonNode's @node_schema decorator.
+    Widgets are auto-generated from ComparisonNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -328,7 +328,7 @@ class VisualListSliceNode(VisualNode):
 class VisualListJoinNode(VisualNode):
     """Visual representation of ListJoinNode.
 
-    Widgets are auto-generated from ListJoinNode's @node_schema decorator.
+    Widgets are auto-generated from ListJoinNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -350,7 +350,7 @@ class VisualListJoinNode(VisualNode):
 class VisualListSortNode(VisualNode):
     """Visual representation of ListSortNode.
 
-    Widgets are auto-generated from ListSortNode's @node_schema decorator.
+    Widgets are auto-generated from ListSortNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -408,7 +408,7 @@ class VisualListUniqueNode(VisualNode):
 class VisualListFilterNode(VisualNode):
     """Visual representation of ListFilterNode.
 
-    Widgets are auto-generated from ListFilterNode's @node_schema decorator.
+    Widgets are auto-generated from ListFilterNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -433,7 +433,7 @@ class VisualListFilterNode(VisualNode):
 class VisualListMapNode(VisualNode):
     """Visual representation of ListMapNode.
 
-    Widgets are auto-generated from ListMapNode's @node_schema decorator.
+    Widgets are auto-generated from ListMapNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -456,7 +456,7 @@ class VisualListMapNode(VisualNode):
 class VisualListReduceNode(VisualNode):
     """Visual representation of ListReduceNode.
 
-    Widgets are auto-generated from ListReduceNode's @node_schema decorator.
+    Widgets are auto-generated from ListReduceNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -479,7 +479,7 @@ class VisualListReduceNode(VisualNode):
 class VisualListFlattenNode(VisualNode):
     """Visual representation of ListFlattenNode.
 
-    Widgets are auto-generated from ListFlattenNode's @node_schema decorator.
+    Widgets are auto-generated from ListFlattenNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -681,7 +681,7 @@ class VisualCreateDictNode(VisualNode):
 class VisualDictToJsonNode(VisualNode):
     """Visual representation of DictToJsonNode.
 
-    Widgets are auto-generated from DictToJsonNode's @node_schema decorator.
+    Widgets are auto-generated from DictToJsonNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
@@ -727,7 +727,7 @@ class VisualDataCompareNode(VisualNode):
     """Visual representation of DataCompareNode.
 
     Compares two datasets (lists of dicts) and reports differences.
-    Widgets are auto-generated from DataCompareNode's @node_schema decorator.
+    Widgets are auto-generated from DataCompareNode's @properties decorator.
     """
 
     __identifier__ = "casare_rpa.data_operations"
