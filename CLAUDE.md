@@ -48,11 +48,12 @@ Grep: "def execute"         # Find method definitions
 2. **PARALLEL**: Launch independent agents/reads in ONE message block
 3. **SEARCH BEFORE CREATE**: Check existing code before writing new
 4. **NO SILENT FAILURES**: Wrap external calls in try/except, use loguru
-5. **THEME.* ONLY**: No hardcoded colors - use `presentation/canvas/ui/theme.py`
+5. **THEME.* ONLY**: No hardcoded colors - use `THEME.bg_darkest`, `THEME.text_primary`, etc.
 6. **UnifiedHttpClient**: No raw httpx/aiohttp
 7. **@Slot ALWAYS**: All signal handlers need `@Slot(types)` decorator - see `.claude/rules/ui/signal-slot-rules.md`
 8. **NO LAMBDAS**: Use named methods or `functools.partial` for signal connections
 9. **TYPED EVENTS**: Use typed domain events - see DDD 2025 section
+10. **EXEC PORTS**: Use `add_exec_input()`/`add_exec_output()` - NEVER `add_input_port(name, PortType.EXEC_*)`
 
 ## DDD 2025 Architecture
 
