@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from casare_rpa.domain.value_objects.log_entry import LogLevel, LogQuery
 from casare_rpa.infrastructure.orchestrator.server_auth import verify_admin_api_key
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
+    get_job_producer,
     get_log_cleanup_job,
     get_log_repository,
     get_log_streaming_service,
@@ -168,7 +169,43 @@ async def submit_job(
     submission: JobSubmission,
     _: str = Depends(verify_admin_api_key),
 ):
-    """Submit a job for execution. Requires admin API key."""
+    """Submit a job for execution. Requires admin API key.
+
+    Uses durable PostgreSQL queue when available, falls back to in-memory
+    job assignment for backward compatibility.
+    """
+    import orjson
+
+    producer = get_job_producer()
+
+    if producer is not None and producer.is_connected:
+        # Use durable PostgreSQL queue (DDD 2025 - recommended path)
+        try:
+            workflow_json = orjson.dumps(submission.workflow_data).decode("utf-8")
+            workflow_name = submission.workflow_data.get("name", submission.workflow_id)
+
+            enqueued_job = await producer.enqueue_job(
+                workflow_id=submission.workflow_id,
+                workflow_name=workflow_name,
+                workflow_json=workflow_json,
+                priority=submission.priority,
+                variables=submission.variables,
+            )
+
+            logger.info(f"Job {enqueued_job.job_id} enqueued to durable queue")
+
+            return JobResponse(
+                job_id=enqueued_job.job_id,
+                status="pending",  # Job is queued, not yet assigned
+                workflow_id=enqueued_job.workflow_id,
+                robot_id=None,  # Robot will claim via SKIP LOCKED
+                created_at=enqueued_job.created_at,
+            )
+        except Exception as e:
+            logger.warning(f"Durable queue submission failed, falling back: {e}")
+            # Fall through to in-memory fallback
+
+    # Fallback: Use in-memory RobotManager (legacy path)
     manager = get_robot_manager()
     job = await manager.submit_job(
         workflow_id=submission.workflow_id,

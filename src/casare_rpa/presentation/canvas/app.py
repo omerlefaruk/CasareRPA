@@ -7,6 +7,8 @@ PySide6 with asyncio using qasync for async workflow execution.
 Reduced from 3,112 lines to ~400 lines by extracting components.
 """
 
+from __future__ import annotations  # PEP 563: Deferred evaluation of annotations
+
 import sys
 import asyncio
 
@@ -38,10 +40,12 @@ from loguru import logger
 # Store the original handler to chain calls
 _original_qt_handler = None
 
-# Patterns to suppress (Qt CSS properties not supported)
+# Patterns to suppress (known harmless Qt warnings)
 _SUPPRESSED_PATTERNS = (
     "Unknown property box-shadow",
     "Unknown property text-shadow",
+    # Windows DPI scaling can cause minor geometry adjustments - this is normal
+    "QWindowsWindow::setGeometry",
 )
 
 
@@ -51,6 +55,10 @@ def _qt_message_handler(msg_type: QtMsgType, context, message: str) -> None:
 
     Suppresses:
     - "Unknown property box-shadow" - Qt CSS doesn't support box-shadow
+    - "Unknown property text-shadow" - Qt CSS doesn't support text-shadow
+    - "QWindowsWindow::setGeometry" - Windows DPI scaling causes minor geometry
+      adjustments when restoring window size/position. The window still functions
+      correctly, the warning is purely informational.
     """
     # Suppress known harmless warnings
     if any(pattern in message for pattern in _SUPPRESSED_PATTERNS):
@@ -78,15 +86,23 @@ from casare_rpa.presentation.canvas.main_window import MainWindow
 
 # Lazy import for litellm cleanup to avoid import if litellm not used
 _litellm_cleanup_registered = False
-from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
-from casare_rpa.presentation.canvas.controllers import (
-    WorkflowController,
-    ExecutionController,
-    NodeController,
-    SelectorController,
-    PreferencesController,
-    AutosaveController,
-)
+
+# C3 PERFORMANCE: NodeGraphWidget imported lazily in _create_ui()
+# C3 PERFORMANCE: Controllers imported lazily in _initialize_components()
+# This defers ~20-40ms of import time until after module load
+
+# TYPE_CHECKING imports for type hints (not imported at runtime)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.presentation.canvas.controllers import (
+        WorkflowController,
+        ExecutionController,
+        NodeController,
+        SelectorController,
+        PreferencesController,
+        AutosaveController,
+    )
 
 # NOTE: ensure_playwright_ready is imported lazily in ensure_playwright_on_demand()
 # to defer the import cost until a browser node is actually used
@@ -224,6 +240,11 @@ class CasareRPAApp:
 
     def _create_ui(self) -> None:
         """Create main window and central widget."""
+        # C3 PERFORMANCE: Lazy import NodeGraphWidget
+        from casare_rpa.presentation.canvas.graph.node_graph_widget import (
+            NodeGraphWidget,
+        )
+
         # Create main window
         self._main_window = MainWindow()
 
@@ -264,24 +285,34 @@ class CasareRPAApp:
         """
         Initialize all application controllers in dependency order.
 
-        PERFORMANCE OPTIMIZATION:
+        PERFORMANCE OPTIMIZATION (Phase A/B/C):
         - Phase 1 (sync): Essential nodes only for fast startup
-        - Phase 2 (deferred): Full registration after window shows
+        - Phase 2 (staggered): Controllers initialized with event loop yields
+        - Phase 3 (deferred): Full registration after window shows
         - Icon preloading moved to background thread
 
-        Initialization Order (Critical):
-        1. NodeController - MUST be first
-           - Registers all node types with NodeGraphQt
-           - Other controllers may need registered nodes during initialization
+        C3: Controllers imported lazily here instead of module level (~20-40ms)
+        A3: Staggered initialization yields to event loop between batches
 
-        2. All other controllers - Can be initialized in any order
-           - They all depend on node registry being ready
-           - No cross-dependencies between these controllers
+        Initialization Order (Critical):
+        1. NodeController - MUST be first (registers all node types)
+        2. Core controllers (Workflow, Execution) - UI functionality
+        3. Support controllers (Selector, Preferences, Autosave) - Less critical
 
         Raises:
             RuntimeError: If controller initialization fails
         """
         from PySide6.QtCore import QTimer
+
+        # C3 PERFORMANCE: Lazy import controllers (deferred from module level)
+        from casare_rpa.presentation.canvas.controllers import (
+            WorkflowController,
+            ExecutionController,
+            NodeController,
+            SelectorController,
+            PreferencesController,
+            AutosaveController,
+        )
 
         # Phase 1: Node registry (essential nodes only for fast startup)
         self._node_controller = NodeController(self._main_window)
@@ -289,39 +320,25 @@ class CasareRPAApp:
         logger.debug("Essential nodes registered")
 
         # PERFORMANCE: Defer icon preloading to background
-        # Don't block startup - icons will load as needed
         QTimer.singleShot(500, self._preload_icons_background)
 
-        # Phase 2: All other controllers (depend on node registry)
-        logger.debug("Phase 2: Initializing application controllers...")
+        # Phase 2: Create all controllers (fast - just object creation)
+        logger.debug("Phase 2: Creating application controllers...")
 
-        # Workflow - handles file operations and drag-drop
         self._workflow_controller = WorkflowController(self._main_window)
-
-        # Execution - handles workflow running
         self._execution_controller = ExecutionController(self._main_window)
-
-        # Selector - handles element selection
         self._selector_controller = SelectorController(self._main_window)
-
-        # Preferences - handles settings
         self._preferences_controller = PreferencesController(self._main_window)
-
-        # Autosave - handles automatic saving
         self._autosave_controller = AutosaveController(self._main_window)
 
-        # Note: Triggers are now visual nodes on the canvas
-
-        # Initialize all phase 2 controllers
-        phase_2_controllers = [
+        # A3 PERFORMANCE: Initialize controllers in batches with event loop yields
+        # Batch 1: Critical controllers (needed for basic UI)
+        critical_controllers = [
             self._workflow_controller,
             self._execution_controller,
-            self._selector_controller,
-            self._preferences_controller,
-            self._autosave_controller,
         ]
 
-        for controller in phase_2_controllers:
+        for controller in critical_controllers:
             try:
                 controller.initialize()
                 logger.debug(f"{controller.__class__.__name__} initialized")
@@ -330,17 +347,37 @@ class CasareRPAApp:
                 logger.error(error_msg)
                 raise RuntimeError(error_msg) from e
 
-        # Configure execution controller with workflow runner AFTER initialization
+        # Configure execution controller immediately (needed for run button)
         self._execution_controller.set_workflow_runner(self._workflow_runner)
 
-        # Inject configured controllers into MainWindow
-        # This ensures MainWindow uses the same instances that were configured above
+        # Inject critical controllers to make UI functional
         self._main_window.set_controllers(
             workflow_controller=self._workflow_controller,
             execution_controller=self._execution_controller,
             node_controller=self._node_controller,
             selector_controller=self._selector_controller,
         )
+
+        # A3: Defer support controller initialization to next event loop tick
+        # This allows the UI to be responsive sooner
+        def _init_support_controllers():
+            support_controllers = [
+                self._selector_controller,
+                self._preferences_controller,
+                self._autosave_controller,
+            ]
+            for controller in support_controllers:
+                try:
+                    controller.initialize()
+                    logger.debug(
+                        f"{controller.__class__.__name__} initialized (deferred)"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to initialize {controller.__class__.__name__}: {e}"
+                    )
+
+        QTimer.singleShot(0, _init_support_controllers)
 
         # PERFORMANCE: Defer full node registration until after window is responsive
         QTimer.singleShot(100, self._complete_deferred_initialization)

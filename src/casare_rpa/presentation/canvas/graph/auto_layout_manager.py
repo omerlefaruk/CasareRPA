@@ -11,7 +11,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple, Any
 
 from PySide6.QtCore import QObject, QPointF, QPropertyAnimation, QEasingCurve, Signal
-from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject
 
 from loguru import logger
 
@@ -637,14 +637,21 @@ class AutoLayoutManager(QObject):
                 # Get view item for animation
                 view_item = item.view if hasattr(item, "view") else item
 
-                if not isinstance(view_item, QGraphicsItem):
-                    # Can't animate non-graphics items
+                # QPropertyAnimation requires QGraphicsObject (inherits QObject + QGraphicsItem)
+                # Plain QGraphicsItem doesn't support property animations
+                if not isinstance(view_item, QGraphicsObject):
+                    # Fall back to immediate positioning for non-animatable items
                     if hasattr(item, "set_pos"):
                         item.set_pos(target_pos.x(), target_pos.y())
+                    elif hasattr(view_item, "setPos"):
+                        view_item.setPos(target_pos)
                     self._pending_animations -= 1
+                    self.node_position_changed.emit(
+                        node_id, target_pos.x(), target_pos.y()
+                    )
                     continue
 
-                # Create position animation
+                # Create position animation (only for QGraphicsObject)
                 animation = QPropertyAnimation(view_item, b"pos")
                 animation.setDuration(self._options.animation_duration)
                 animation.setStartValue(view_item.pos())

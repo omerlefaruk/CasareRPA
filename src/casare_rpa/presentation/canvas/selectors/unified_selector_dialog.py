@@ -21,9 +21,10 @@ This module serves as the main orchestrator, delegating to specialized component
 - SelectorHistoryManager: History management
 """
 
+from functools import partial
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QFont, QImage, QPixmap, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -415,9 +416,7 @@ class SelectorTypeRow(QWidget):
             self._accuracy_value.setStyleSheet(
                 "color: #e0e0e0; font-size: 11px; min-width: 32px;"
             )
-            self._accuracy_slider.valueChanged.connect(
-                lambda v: self._accuracy_value.setText(f"{v/100:.2f}")
-            )
+            self._accuracy_slider.valueChanged.connect(self._update_accuracy_label)
             accuracy_layout.addWidget(self._accuracy_value)
 
             accuracy_layout.addStretch()
@@ -429,6 +428,13 @@ class SelectorTypeRow(QWidget):
         # Initially disabled appearance
         self._update_enabled_state(False)
 
+    @Slot(int)
+    def _update_accuracy_label(self, value: int) -> None:
+        """Update accuracy label when slider changes."""
+        if self._accuracy_value:
+            self._accuracy_value.setText(f"{value/100:.2f}")
+
+    @Slot(bool)
     def _on_enabled_changed(self, enabled: bool) -> None:
         """Handle checkbox toggle."""
         self._update_enabled_state(enabled)
@@ -1515,18 +1521,16 @@ class UnifiedSelectorDialog(QDialog):
         # Mode button group
         self._mode_group.idClicked.connect(self._on_mode_changed)
 
-        # Selector row pick buttons
+        # Selector row pick buttons - using named methods instead of lambdas
         self._strict_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking(self._current_mode)
+            self._on_strict_pick_clicked
         )
         self._fuzzy_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking(self._current_mode)
+            self._on_fuzzy_pick_clicked
         )
-        self._cv_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking("ocr")
-        )
+        self._cv_selector.get_pick_button().clicked.connect(self._on_cv_pick_clicked)
         self._image_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking("image")
+            self._on_image_pick_clicked
         )
 
         # Image buttons
@@ -1589,6 +1593,7 @@ class UnifiedSelectorDialog(QDialog):
     # Event Handlers
     # =========================================================================
 
+    @Slot(int)
     def _on_mode_changed(self, mode_id: int) -> None:
         """Handle mode button change."""
         mode_map = {0: "browser", 1: "desktop", 2: "image", 3: "ocr"}
@@ -1602,6 +1607,27 @@ class UnifiedSelectorDialog(QDialog):
 
         logger.debug(f"Mode changed to: {mode}")
 
+    @Slot()
+    def _on_strict_pick_clicked(self) -> None:
+        """Handle strict selector pick button click."""
+        self._start_picking(self._current_mode)
+
+    @Slot()
+    def _on_fuzzy_pick_clicked(self) -> None:
+        """Handle fuzzy selector pick button click."""
+        self._start_picking(self._current_mode)
+
+    @Slot()
+    def _on_cv_pick_clicked(self) -> None:
+        """Handle CV selector pick button click."""
+        self._start_picking("ocr")
+
+    @Slot()
+    def _on_image_pick_clicked(self) -> None:
+        """Handle image selector pick button click."""
+        self._start_picking("image")
+
+    @Slot()
     def _on_open_explorer(self) -> None:
         """Open the UI Explorer dialog."""
         from casare_rpa.presentation.canvas.selectors.ui_explorer import (
@@ -1627,6 +1653,7 @@ class UnifiedSelectorDialog(QDialog):
         logger.info(f"Opening UI Explorer (mode={self._current_mode})")
         dialog.exec()
 
+    @Slot(str)
     def _on_explorer_selector_confirmed(self, selector: str) -> None:
         """Handle selector confirmed from UI Explorer."""
         if selector:
@@ -1639,6 +1666,7 @@ class UnifiedSelectorDialog(QDialog):
             )
             logger.info(f"Imported selector from UI Explorer: {selector[:50]}...")
 
+    @Slot(str)
     def _on_history_selected(self, selector: str) -> None:
         """Apply selected history item to selector input."""
         if selector:
@@ -1651,6 +1679,7 @@ class UnifiedSelectorDialog(QDialog):
             )
             logger.info(f"Loaded selector from history: {selector[:50]}...")
 
+    @Slot()
     def _on_generate_wildcard(self) -> None:
         """Generate wildcard version of current selector."""
         current = self._strict_selector.get_selector()
@@ -1699,6 +1728,7 @@ class UnifiedSelectorDialog(QDialog):
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet("color: #ef4444; font-size: 11px;")
 
+    @Slot(list)
     def _on_strategies_generated(self, strategies: List[SelectorStrategy]) -> None:
         """Handle strategies generated from picker."""
         logger.info(f"Dialog received {len(strategies)} strategies")
@@ -1717,6 +1747,7 @@ class UnifiedSelectorDialog(QDialog):
         else:
             self._confirm_btn.setEnabled(False)
 
+    @Slot(object)
     def _on_strategy_selected(self, strategy: SelectorStrategy) -> None:
         """Handle strategy selection from preview."""
         self._strict_selector.set_selector(strategy.value)
@@ -1724,6 +1755,7 @@ class UnifiedSelectorDialog(QDialog):
         self._picker.update_result_from_strategy(strategy)
         self._current_result = self._picker.current_result
 
+    @Slot(str)
     def _on_status_changed(self, message: str) -> None:
         """Handle status message from picker."""
         self._status_label.setText(message)

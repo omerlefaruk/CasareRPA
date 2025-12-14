@@ -52,6 +52,11 @@ from casare_rpa.domain.value_objects.trigger_types import (
     TriggerStatus,
     TriggerPriority,
 )
+from casare_rpa.domain.value_objects.dynamic_port_config import (
+    PortDef,
+    ActionPortConfig,
+    DynamicPortSchema,
+)
 
 __all__ = [
     # Enums
@@ -96,4 +101,8 @@ __all__ = [
     "NodeResult",
     "Port",
     "Position",
+    # Dynamic port configuration (Super Nodes)
+    "PortDef",
+    "ActionPortConfig",
+    "DynamicPortSchema",
 ]

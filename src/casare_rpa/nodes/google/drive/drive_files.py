@@ -26,6 +26,118 @@ from casare_rpa.nodes.google.google_base import DriveBaseNode
 
 
 # ============================================================================
+# MIME Type to Extension Mapping (for files without extensions)
+# ============================================================================
+
+MIME_TO_EXTENSION = {
+    # Images
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "image/bmp": ".bmp",
+    "image/tiff": ".tiff",
+    "image/heic": ".heic",
+    "image/heif": ".heif",
+    "image/svg+xml": ".svg",
+    "image/x-icon": ".ico",
+    # Videos
+    "video/mp4": ".mp4",
+    "video/quicktime": ".mov",
+    "video/x-msvideo": ".avi",
+    "video/x-matroska": ".mkv",
+    "video/webm": ".webm",
+    "video/mpeg": ".mpeg",
+    "video/3gpp": ".3gp",
+    # Audio
+    "audio/mpeg": ".mp3",
+    "audio/wav": ".wav",
+    "audio/ogg": ".ogg",
+    "audio/flac": ".flac",
+    "audio/aac": ".aac",
+    "audio/x-m4a": ".m4a",
+    # Documents
+    "application/pdf": ".pdf",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.ms-excel": ".xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "application/vnd.ms-powerpoint": ".ppt",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+    "text/plain": ".txt",
+    "text/csv": ".csv",
+    "text/html": ".html",
+    "application/json": ".json",
+    "application/xml": ".xml",
+    "text/xml": ".xml",
+    # Archives
+    "application/zip": ".zip",
+    "application/x-rar-compressed": ".rar",
+    "application/x-7z-compressed": ".7z",
+    "application/gzip": ".gz",
+    "application/x-tar": ".tar",
+}
+
+
+def _ensure_file_extension(filename: str, mime_type: str) -> str:
+    """
+    Ensure filename has an appropriate extension based on MIME type.
+
+    Google Photos files often have names like "December 1, 2025 at 1013PM"
+    without extensions. This function adds the proper extension based on
+    the file's MIME type.
+
+    Args:
+        filename: Original filename (may or may not have extension)
+        mime_type: MIME type of the file
+
+    Returns:
+        Filename with extension (unchanged if already has one)
+    """
+    if not filename or not mime_type:
+        return filename
+
+    # Check if filename already has a recognized extension
+    path = Path(filename)
+    if path.suffix.lower() in {ext.lower() for ext in MIME_TO_EXTENSION.values()}:
+        return filename
+
+    # Also check common extensions not in the mapping
+    common_extensions = {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".mp4",
+        ".pdf",
+        ".doc",
+        ".docx",
+    }
+    if path.suffix.lower() in common_extensions:
+        return filename
+
+    # Add extension based on MIME type
+    extension = MIME_TO_EXTENSION.get(mime_type.lower(), "")
+    if extension:
+        logger.debug(
+            f"Adding extension '{extension}' to filename '{filename}' (MIME: {mime_type})"
+        )
+        return filename + extension
+
+    # Fallback: try to get extension from mimetypes module
+    import mimetypes
+
+    ext = mimetypes.guess_extension(mime_type)
+    if ext:
+        logger.debug(
+            f"Adding extension '{ext}' to filename '{filename}' (MIME: {mime_type})"
+        )
+        return filename + ext
+
+    return filename
+
+
+# ============================================================================
 # Reusable Property Definitions for Drive Nodes
 # ============================================================================
 
@@ -200,7 +312,7 @@ class DriveUploadFileNode(DriveBaseNode):
 
 
 # ============================================================================
-# Drive Download File Node
+# Drive Download File Node (Simplified - Single File Only)
 # ============================================================================
 
 
@@ -210,67 +322,45 @@ class DriveUploadFileNode(DriveBaseNode):
         "file_id",
         PropertyType.STRING,
         default="",
+        required=True,
         label="File ID",
         placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-        tooltip="Single Google Drive file ID to download",
-    ),
-    PropertyDef(
-        "source_folder_id",
-        PropertyType.STRING,
-        default="",
-        label="Source Folder ID",
-        placeholder="14gesKQIyRcs98J4v3NOOQccUgRI1kMHy",
-        tooltip="Google Drive folder ID - downloads ALL files from this folder",
+        tooltip="Google Drive file ID to download",
     ),
     PropertyDef(
         "destination_path",
         PropertyType.STRING,
         default="",
+        required=True,
         label="Destination Path",
         placeholder="C:\\Downloads\\report.pdf",
-        tooltip="Local path to save a single file (for single file download)",
-    ),
-    PropertyDef(
-        "destination_folder",
-        PropertyType.STRING,
-        default="",
-        label="Destination Folder",
-        placeholder="C:\\Downloads\\",
-        tooltip="Local folder to save files (for batch/folder downloads)",
+        tooltip="Local path to save the downloaded file",
     ),
 )
 class DriveDownloadFileNode(DriveBaseNode):
     """
-    Download files from Google Drive.
+    Download a single file from Google Drive by file ID.
 
-    Supports multiple input modes:
-    1. Single file by ID: Use file_id parameter + destination_path
-    2. Folder download: Use source_folder_id parameter + destination_folder (downloads ALL files)
-    3. Single file object: Use file input port (from ForEach loop) + destination_folder
-    4. Batch download: Use files input port (list of file objects) + destination_folder
+    For downloading multiple files, use:
+    - DriveDownloadFolderNode: Download all files from a folder
+    - DriveBatchDownloadNode: Download a list of files (for use with loops)
 
     Note: Google Workspace files (Docs, Sheets, Slides) cannot be downloaded
     directly. Use Drive Export File node to export them to a standard format.
 
     Inputs:
-        - file_id: Google Drive file ID (string)
-        - source_folder_id: Drive folder ID to download all files from
-        - file: Single file object with 'id' and 'name' fields (from loop)
-        - files: List of file objects to download (for batch operations)
-        - destination_path: Local path for single file download
-        - destination_folder: Local folder for batch/folder downloads
+        - file_id: Google Drive file ID (required)
+        - destination_path: Local path to save the file (required)
 
     Outputs:
-        - file_path: Path to the downloaded file (single file mode)
-        - file_paths: List of downloaded file paths (batch mode)
-        - downloaded_count: Number of files successfully downloaded
+        - file_path: Path to the downloaded file
         - success: Boolean
         - error: Error message if failed
     """
 
     # @category: google
     # @requires: none
-    # @ports: file_id, source_folder_id, file, files, destination_path, destination_folder -> file_path, file_paths, downloaded_count
+    # @ports: file_id, destination_path -> file_path
 
     NODE_TYPE = "drive_download_file"
     NODE_CATEGORY = "google_drive"
@@ -285,21 +375,147 @@ class DriveDownloadFileNode(DriveBaseNode):
         self._define_common_input_ports()
         self._define_common_output_ports()
 
-        # Download inputs - multiple modes supported
-        self.add_input_port("file_id", DataType.STRING, required=False)
-        self.add_input_port(
-            "source_folder_id",
-            DataType.STRING,
-            label="Source Folder ID",
-            required=False,
-        )
-        self.add_input_port("file", DataType.DICT, label="File Object", required=False)
-        self.add_input_port("files", DataType.LIST, label="Files List", required=False)
-        self.add_input_port("destination_path", DataType.STRING, required=False)
-        self.add_input_port("destination_folder", DataType.STRING, required=False)
+        # Single file download inputs
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("destination_path", DataType.STRING, required=True)
 
-        # Download outputs
+        # Single file output
         self.add_output_port("file_path", DataType.STRING)
+
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Download a single file from Google Drive."""
+        # Get parameters
+        file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
+        destination_path = self.get_parameter(
+            "destination_path"
+        ) or self.get_input_value("destination_path")
+
+        # Resolve variable references
+        if file_id:
+            file_id = self._resolve_value(context, file_id)
+        if destination_path:
+            destination_path = self._resolve_value(context, destination_path)
+
+        # Validate inputs
+        if not file_id:
+            self._set_error_outputs("File ID is required")
+            return {"success": False, "error": "File ID is required", "next_nodes": []}
+
+        if not destination_path:
+            self._set_error_outputs("Destination path is required")
+            return {
+                "success": False,
+                "error": "Destination path is required",
+                "next_nodes": [],
+            }
+
+        logger.debug(f"Downloading file from Drive: {file_id} -> {destination_path}")
+
+        # Get file info to check MIME type
+        file_info = await client.get_file(file_id)
+
+        # Ensure parent directory exists
+        dest_path = Path(destination_path)
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Ensure filename has proper extension (Google Photos files often lack them)
+        dest_filename = _ensure_file_extension(
+            dest_path.name, file_info.mime_type or ""
+        )
+        dest_path = dest_path.parent / dest_filename
+
+        # Download file
+        downloaded_path = await client.download_file(
+            file_id=file_id,
+            destination_path=str(dest_path),
+        )
+
+        # Set outputs
+        self._set_success_outputs()
+        self.set_output_value("file_path", str(downloaded_path))
+
+        logger.info(f"Downloaded file from Drive to: {downloaded_path}")
+
+        return {
+            "success": True,
+            "file_path": str(downloaded_path),
+            "next_nodes": [],
+        }
+
+
+# ============================================================================
+# Drive Download Folder Node (NEW - Downloads all files from a folder)
+# ============================================================================
+
+
+@node(category="integration")
+@properties(
+    PropertyDef(
+        "folder_id",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Folder ID",
+        placeholder="14gesKQIyRcs98J4v3NOOQccUgRI1kMHy",
+        tooltip="Google Drive folder ID to download files from",
+    ),
+    PropertyDef(
+        "destination_folder",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Destination Folder",
+        placeholder="C:\\Downloads\\",
+        tooltip="Local folder to save downloaded files",
+    ),
+)
+class DriveDownloadFolderNode(DriveBaseNode):
+    """
+    Download all files from a Google Drive folder.
+
+    Downloads all files (not subfolders) from the specified Drive folder
+    to a local destination folder, preserving original filenames.
+
+    Note: Google Workspace files (Docs, Sheets, Slides) are skipped.
+    Use Drive Export File node to export them to a standard format.
+
+    Inputs:
+        - folder_id: Google Drive folder ID (required)
+        - destination_folder: Local folder to save files (required)
+
+    Outputs:
+        - file_paths: List of downloaded file paths
+        - downloaded_count: Number of files successfully downloaded
+        - success: Boolean
+        - error: Error message if failed
+    """
+
+    # @category: google
+    # @requires: none
+    # @ports: folder_id, destination_folder -> file_paths, downloaded_count
+
+    NODE_TYPE = "drive_download_folder"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Download Folder"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Download Folder", **kwargs)
+        self._define_ports()
+
+    def _define_ports(self) -> None:
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
+
+        # Folder download inputs
+        self.add_input_port("folder_id", DataType.STRING, required=True)
+        self.add_input_port("destination_folder", DataType.STRING, required=True)
+
+        # Folder download outputs
         self.add_output_port("file_paths", DataType.LIST)
         self.add_output_port("downloaded_count", DataType.INTEGER)
 
@@ -308,146 +524,74 @@ class DriveDownloadFileNode(DriveBaseNode):
         context: ExecutionContext,
         client: GoogleDriveClient,
     ) -> ExecutionResult:
-        """Download files from Google Drive."""
-        # Get all possible inputs - try multiple sources
-        file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
-        source_folder_id = self.get_parameter(
-            "source_folder_id"
-        ) or self.get_input_value("source_folder_id")
-        file_obj = self.get_input_value("file")
-        files_list = self.get_input_value("files")
-        destination_path = self.get_parameter(
-            "destination_path"
-        ) or self.get_input_value("destination_path")
+        """Download all files from a Google Drive folder."""
+        # Get parameters
+        folder_id = self.get_parameter("folder_id") or self.get_input_value("folder_id")
         destination_folder = self.get_parameter(
             "destination_folder"
         ) or self.get_input_value("destination_folder")
 
-        # Debug logging to trace parameter values
-        logger.debug(
-            f"DriveDownloadFile params - file_id: {file_id}, source_folder_id: {source_folder_id}"
-        )
-        logger.debug(f"DriveDownloadFile config: {self.config}")
-
         # Resolve variable references
-        if file_id:
-            file_id = self._resolve_value(context, file_id)
-        if source_folder_id:
-            source_folder_id = self._resolve_value(context, source_folder_id)
-        if destination_path:
-            destination_path = self._resolve_value(context, destination_path)
+        if folder_id:
+            folder_id = self._resolve_value(context, folder_id)
         if destination_folder:
             destination_folder = self._resolve_value(context, destination_folder)
 
-        # Determine download mode and collect files to download
-        files_to_download: list[dict] = []
-
-        # Priority 1: source_folder_id - list and download all files from folder
-        if source_folder_id:
-            logger.debug(f"Folder mode: listing files from folder {source_folder_id}")
-            try:
-                files, _ = await client.list_files(
-                    folder_id=source_folder_id,
-                    page_size=1000,  # Get up to 1000 files
-                    include_trashed=False,
-                )
-                for f in files:
-                    # Skip folders (only download files)
-                    if f.mime_type != "application/vnd.google-apps.folder":
-                        files_to_download.append(
-                            {
-                                "id": f.id,
-                                "name": f.name,
-                            }
-                        )
-                logger.info(
-                    f"Folder mode: found {len(files_to_download)} files to download from folder"
-                )
-            except Exception as e:
-                self._set_error_outputs(f"Failed to list files from folder: {e}")
-                return {
-                    "success": False,
-                    "error": f"Failed to list files from folder: {e}",
-                    "next_nodes": [],
-                }
-
-        # Priority 2: files_list from input port
-        elif files_list and isinstance(files_list, list):
-            # Batch mode: download all files in list
-            for f in files_list:
-                if isinstance(f, dict) and f.get("id"):
-                    files_to_download.append(
-                        {
-                            "id": f["id"],
-                            "name": f.get("name", f["id"]),
-                        }
-                    )
-            logger.debug(f"Batch mode: {len(files_to_download)} files to download")
-
-        # Priority 3: file_obj from input port
-        elif file_obj and isinstance(file_obj, dict) and file_obj.get("id"):
-            # Single file object mode (from ForEach loop)
-            files_to_download.append(
-                {
-                    "id": file_obj["id"],
-                    "name": file_obj.get("name", file_obj["id"]),
-                }
-            )
-            logger.debug(f"File object mode: downloading {file_obj.get('name')}")
-
-        # Priority 4: file_id parameter/port
-        elif file_id:
-            # Single file ID mode (original behavior)
-            files_to_download.append(
-                {
-                    "id": file_id,
-                    "name": None,  # Will use destination_path directly
-                }
-            )
-            logger.debug(f"File ID mode: downloading {file_id}")
-
-        else:
-            self._set_error_outputs(
-                "No file specified. Provide file_id, source_folder_id, file, or files input."
-            )
+        # Validate inputs
+        if not folder_id:
+            self._set_error_outputs("Folder ID is required")
             return {
                 "success": False,
-                "error": "No file specified. Provide file_id, source_folder_id, file, or files input.",
+                "error": "Folder ID is required",
                 "next_nodes": [],
             }
 
-        # Validate destination
-        if len(files_to_download) == 1 and files_to_download[0]["name"] is None:
-            # Single file ID mode - need exact destination_path
-            if not destination_path:
-                self._set_error_outputs(
-                    "Destination path is required for single file download"
-                )
-                return {
-                    "success": False,
-                    "error": "Destination path is required for single file download",
-                    "next_nodes": [],
-                }
-        else:
-            # Batch or file object mode - need destination_folder
-            if not destination_folder:
-                destination_folder = (
-                    destination_path  # Fall back to destination_path as folder
-                )
-            if not destination_folder:
-                self._set_error_outputs(
-                    "Destination folder is required for batch download"
-                )
-                return {
-                    "success": False,
-                    "error": "Destination folder is required for batch download",
-                    "next_nodes": [],
-                }
+        if not destination_folder:
+            self._set_error_outputs("Destination folder is required")
+            return {
+                "success": False,
+                "error": "Destination folder is required",
+                "next_nodes": [],
+            }
 
-        # Create destination folder if needed
-        if destination_folder:
-            folder_path = Path(destination_folder)
-            folder_path.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Listing files from Drive folder: {folder_id}")
+
+        # List files in folder
+        try:
+            files, _ = await client.list_files(
+                folder_id=folder_id,
+                page_size=1000,
+                include_trashed=False,
+            )
+        except Exception as e:
+            error_msg = f"Failed to list files from folder: {e}"
+            self._set_error_outputs(error_msg)
+            return {"success": False, "error": error_msg, "next_nodes": []}
+
+        # Filter out folders and Google Workspace files
+        files_to_download = [
+            f
+            for f in files
+            if not f.mime_type.startswith("application/vnd.google-apps.")
+        ]
+
+        if not files_to_download:
+            self._set_success_outputs()
+            self.set_output_value("file_paths", [])
+            self.set_output_value("downloaded_count", 0)
+            logger.info("No downloadable files found in folder")
+            return {
+                "success": True,
+                "file_paths": [],
+                "downloaded_count": 0,
+                "next_nodes": [],
+            }
+
+        logger.info(f"Found {len(files_to_download)} files to download from folder")
+
+        # Create destination folder
+        dest_folder = Path(destination_folder)
+        dest_folder.mkdir(parents=True, exist_ok=True)
 
         # Download files
         downloaded_paths: list[str] = []
@@ -455,63 +599,233 @@ class DriveDownloadFileNode(DriveBaseNode):
 
         for file_info in files_to_download:
             try:
-                fid = file_info["id"]
-                fname = file_info["name"]
-
-                # Determine destination path
-                if fname:
-                    dest = Path(destination_folder) / fname
-                else:
-                    dest = Path(destination_path)
-
-                logger.debug(f"Downloading file from Drive: {fid} -> {dest}")
+                # Ensure filename has proper extension (Google Photos often lacks them)
+                filename = _ensure_file_extension(
+                    file_info.name, file_info.mime_type or ""
+                )
+                dest_path = dest_folder / filename
+                logger.debug(
+                    f"Downloading file from Drive: {file_info.id} -> {dest_path}"
+                )
 
                 downloaded_path = await client.download_file(
-                    file_id=fid,
-                    destination_path=str(dest),
+                    file_id=file_info.id,
+                    destination_path=str(dest_path),
                 )
                 downloaded_paths.append(str(downloaded_path))
-                logger.info(f"Downloaded file from Drive to: {downloaded_path}")
+                logger.info(f"Downloaded: {file_info.name}")
 
             except Exception as e:
-                error_msg = (
-                    f"Failed to download {file_info.get('name', file_info['id'])}: {e}"
-                )
+                error_msg = f"Failed to download {file_info.name}: {e}"
                 logger.error(error_msg)
                 errors.append(error_msg)
 
         # Set outputs
-        if downloaded_paths:
-            self._set_success_outputs()
-            self.set_output_value(
-                "file_path", downloaded_paths[0] if downloaded_paths else ""
-            )
-            self.set_output_value("file_paths", downloaded_paths)
-            self.set_output_value("downloaded_count", len(downloaded_paths))
+        self._set_success_outputs()
+        self.set_output_value("file_paths", downloaded_paths)
+        self.set_output_value("downloaded_count", len(downloaded_paths))
 
-            result_msg = f"Downloaded {len(downloaded_paths)} file(s)"
-            if errors:
-                result_msg += f", {len(errors)} failed"
-            logger.info(result_msg)
+        result_msg = f"Downloaded {len(downloaded_paths)} file(s)"
+        if errors:
+            result_msg += f", {len(errors)} failed"
+        logger.info(result_msg)
 
-            return {
-                "success": True,
-                "file_path": downloaded_paths[0] if downloaded_paths else "",
-                "file_paths": downloaded_paths,
-                "downloaded_count": len(downloaded_paths),
-                "errors": errors if errors else None,
-                "next_nodes": [],
-            }
-        else:
-            error_msg = "; ".join(errors) if errors else "No files downloaded"
-            self._set_error_outputs(error_msg)
-            self.set_output_value("file_paths", [])
-            self.set_output_value("downloaded_count", 0)
+        return {
+            "success": True,
+            "file_paths": downloaded_paths,
+            "downloaded_count": len(downloaded_paths),
+            "errors": errors if errors else None,
+            "next_nodes": [],
+        }
+
+
+# ============================================================================
+# Drive Batch Download Node (NEW - Downloads a list of files)
+# ============================================================================
+
+
+@node(category="integration")
+@properties(
+    PropertyDef(
+        "destination_folder",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Destination Folder",
+        placeholder="C:\\Downloads\\",
+        tooltip="Local folder to save downloaded files",
+    ),
+)
+class DriveBatchDownloadNode(DriveBaseNode):
+    """
+    Download a list of files from Google Drive.
+
+    Use this node with DriveListFilesNode or DriveSearchFilesNode
+    to download multiple files. Each file object in the input list
+    must have 'id' and 'name' fields.
+
+    Note: Google Workspace files (Docs, Sheets, Slides) are skipped.
+    Use Drive Export File node to export them to a standard format.
+
+    Inputs:
+        - files: List of file objects with 'id' and 'name' fields (required)
+        - destination_folder: Local folder to save files (required)
+
+    Outputs:
+        - file_paths: List of downloaded file paths
+        - downloaded_count: Number of files successfully downloaded
+        - failed_count: Number of files that failed to download
+        - success: Boolean
+        - error: Error message if failed
+    """
+
+    # @category: google
+    # @requires: none
+    # @ports: files, destination_folder -> file_paths, downloaded_count, failed_count
+
+    NODE_TYPE = "drive_batch_download"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Batch Download"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Batch Download", **kwargs)
+        self._define_ports()
+
+    def _define_ports(self) -> None:
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
+
+        # Batch download inputs
+        self.add_input_port("files", DataType.LIST, required=True)
+        self.add_input_port("destination_folder", DataType.STRING, required=True)
+
+        # Batch download outputs
+        self.add_output_port("file_paths", DataType.LIST)
+        self.add_output_port("downloaded_count", DataType.INTEGER)
+        self.add_output_port("failed_count", DataType.INTEGER)
+
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Download a list of files from Google Drive."""
+        # Get parameters
+        files_list = self.get_input_value("files")
+        destination_folder = self.get_parameter(
+            "destination_folder"
+        ) or self.get_input_value("destination_folder")
+
+        # Resolve variable references
+        if destination_folder:
+            destination_folder = self._resolve_value(context, destination_folder)
+
+        # Validate inputs
+        if not files_list or not isinstance(files_list, list):
+            self._set_error_outputs("Files list is required")
             return {
                 "success": False,
-                "error": error_msg,
+                "error": "Files list is required",
                 "next_nodes": [],
             }
+
+        if not destination_folder:
+            self._set_error_outputs("Destination folder is required")
+            return {
+                "success": False,
+                "error": "Destination folder is required",
+                "next_nodes": [],
+            }
+
+        # Extract file info from list
+        # Support both camelCase (from DriveListFilesNode) and snake_case
+        files_to_download: list[dict[str, str]] = []
+        for f in files_list:
+            if isinstance(f, dict) and f.get("id"):
+                # Support both mimeType (camelCase) and mime_type (snake_case)
+                mime_type = f.get("mimeType") or f.get("mime_type", "")
+                files_to_download.append(
+                    {
+                        "id": f["id"],
+                        "name": f.get("name", f["id"]),
+                        "mime_type": mime_type,
+                    }
+                )
+
+        if not files_to_download:
+            self._set_success_outputs()
+            self.set_output_value("file_paths", [])
+            self.set_output_value("downloaded_count", 0)
+            self.set_output_value("failed_count", 0)
+            logger.info("No valid file objects in input list")
+            return {
+                "success": True,
+                "file_paths": [],
+                "downloaded_count": 0,
+                "failed_count": 0,
+                "next_nodes": [],
+            }
+
+        logger.info(f"Batch downloading {len(files_to_download)} files")
+
+        # Create destination folder
+        dest_folder = Path(destination_folder)
+        dest_folder.mkdir(parents=True, exist_ok=True)
+
+        # Download files
+        downloaded_paths: list[str] = []
+        errors: list[str] = []
+
+        for file_info in files_to_download:
+            # Skip Google Workspace files
+            if file_info.get("mime_type", "").startswith(
+                "application/vnd.google-apps."
+            ):
+                logger.debug(f"Skipping Google Workspace file: {file_info['name']}")
+                continue
+
+            try:
+                # Ensure filename has proper extension (Google Photos often lacks them)
+                filename = _ensure_file_extension(
+                    file_info["name"], file_info.get("mime_type", "")
+                )
+                dest_path = dest_folder / filename
+                logger.debug(
+                    f"Downloading file from Drive: {file_info['id']} -> {dest_path}"
+                )
+
+                downloaded_path = await client.download_file(
+                    file_id=file_info["id"],
+                    destination_path=str(dest_path),
+                )
+                downloaded_paths.append(str(downloaded_path))
+                logger.info(f"Downloaded: {file_info['name']}")
+
+            except Exception as e:
+                error_msg = f"Failed to download {file_info['name']}: {e}"
+                logger.error(error_msg)
+                errors.append(error_msg)
+
+        # Set outputs
+        self._set_success_outputs()
+        self.set_output_value("file_paths", downloaded_paths)
+        self.set_output_value("downloaded_count", len(downloaded_paths))
+        self.set_output_value("failed_count", len(errors))
+
+        result_msg = f"Downloaded {len(downloaded_paths)} file(s)"
+        if errors:
+            result_msg += f", {len(errors)} failed"
+        logger.info(result_msg)
+
+        return {
+            "success": True,
+            "file_paths": downloaded_paths,
+            "downloaded_count": len(downloaded_paths),
+            "failed_count": len(errors),
+            "errors": errors if errors else None,
+            "next_nodes": [],
+        }
 
 
 # ============================================================================
@@ -1016,12 +1330,310 @@ class DriveGetFileNode(DriveBaseNode):
         }
 
 
+# ============================================================================
+# Drive Export File Node (Export Google Workspace files to standard formats)
+# ============================================================================
+
+
+# Export format choices for Google Workspace files
+GOOGLE_WORKSPACE_EXPORT_FORMATS = {
+    # Google Docs export formats
+    "application/vnd.google-apps.document": [
+        ("pdf", "application/pdf"),
+        (
+            "docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ),
+        ("odt", "application/vnd.oasis.opendocument.text"),
+        ("txt", "text/plain"),
+        ("html", "text/html"),
+        ("rtf", "application/rtf"),
+        ("epub", "application/epub+zip"),
+    ],
+    # Google Sheets export formats
+    "application/vnd.google-apps.spreadsheet": [
+        ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        ("pdf", "application/pdf"),
+        ("ods", "application/vnd.oasis.opendocument.spreadsheet"),
+        ("csv", "text/csv"),
+        ("tsv", "text/tab-separated-values"),
+        ("html", "text/html"),
+    ],
+    # Google Slides export formats
+    "application/vnd.google-apps.presentation": [
+        (
+            "pptx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ),
+        ("pdf", "application/pdf"),
+        ("odp", "application/vnd.oasis.opendocument.presentation"),
+        ("txt", "text/plain"),
+    ],
+    # Google Drawings export formats
+    "application/vnd.google-apps.drawing": [
+        ("png", "image/png"),
+        ("pdf", "application/pdf"),
+        ("svg", "image/svg+xml"),
+        ("jpg", "image/jpeg"),
+    ],
+}
+
+# Default export format per Google Workspace type
+DEFAULT_EXPORT_FORMAT = {
+    "application/vnd.google-apps.document": "pdf",
+    "application/vnd.google-apps.spreadsheet": "xlsx",
+    "application/vnd.google-apps.presentation": "pptx",
+    "application/vnd.google-apps.drawing": "png",
+}
+
+# Format to MIME type mapping
+FORMAT_TO_MIME = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "odt": "application/vnd.oasis.opendocument.text",
+    "ods": "application/vnd.oasis.opendocument.spreadsheet",
+    "odp": "application/vnd.oasis.opendocument.presentation",
+    "txt": "text/plain",
+    "html": "text/html",
+    "csv": "text/csv",
+    "tsv": "text/tab-separated-values",
+    "rtf": "application/rtf",
+    "epub": "application/epub+zip",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "svg": "image/svg+xml",
+}
+
+
+@node(category="integration")
+@properties(
+    PropertyDef(
+        "file_id",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="File ID",
+        placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+        tooltip="Google Drive file ID of Google Workspace file (Doc, Sheet, Slide)",
+    ),
+    PropertyDef(
+        "destination_path",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Destination Path",
+        placeholder="C:\\Documents\\report.pdf",
+        tooltip="Local path to save the exported file",
+    ),
+    PropertyDef(
+        "export_format",
+        PropertyType.CHOICE,
+        default="pdf",
+        label="Export Format",
+        tooltip="Format to export the file as",
+        choices=[
+            "pdf",
+            "docx",
+            "xlsx",
+            "pptx",
+            "csv",
+            "txt",
+            "html",
+            "odt",
+            "ods",
+            "odp",
+            "rtf",
+            "epub",
+            "png",
+            "jpg",
+            "svg",
+            "tsv",
+        ],
+    ),
+)
+class DriveExportFileNode(DriveBaseNode):
+    """
+    Export a Google Workspace file (Doc, Sheet, Slide) to a standard format.
+
+    Google Workspace files cannot be downloaded directly - they must be
+    exported to a standard format like PDF, DOCX, XLSX, etc.
+
+    Supported file types and their export formats:
+    - Google Docs: pdf, docx, odt, txt, html, rtf, epub
+    - Google Sheets: xlsx, pdf, ods, csv, tsv, html
+    - Google Slides: pptx, pdf, odp, txt
+    - Google Drawings: png, pdf, svg, jpg
+
+    Inputs:
+        - file_id: Google Drive file ID (required)
+        - destination_path: Local path to save the exported file (required)
+        - export_format: Format to export as (default: pdf)
+
+    Outputs:
+        - file_path: Path to the exported file
+        - original_name: Original file name in Drive
+        - original_type: Original Google Workspace type
+        - success: Boolean
+        - error: Error message if failed
+    """
+
+    # @category: google
+    # @requires: none
+    # @ports: file_id, destination_path, export_format -> file_path, original_name, original_type
+
+    NODE_TYPE = "drive_export_file"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Export File"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Export File", **kwargs)
+        self._define_ports()
+
+    def _define_ports(self) -> None:
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
+
+        # Export-specific inputs
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("destination_path", DataType.STRING, required=True)
+        self.add_input_port("export_format", DataType.STRING, required=False)
+
+        # Export-specific outputs
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("original_name", DataType.STRING)
+        self.add_output_port("original_type", DataType.STRING)
+
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Export a Google Workspace file to a standard format."""
+        # Get parameters
+        file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
+        destination_path = self.get_parameter(
+            "destination_path"
+        ) or self.get_input_value("destination_path")
+        export_format = (
+            self.get_parameter("export_format")
+            or self.get_input_value("export_format")
+            or "pdf"
+        )
+
+        # Resolve variable references
+        if file_id:
+            file_id = self._resolve_value(context, file_id)
+        if destination_path:
+            destination_path = self._resolve_value(context, destination_path)
+        if export_format:
+            export_format = self._resolve_value(context, export_format)
+
+        # Validate inputs
+        if not file_id:
+            self._set_error_outputs("File ID is required")
+            return {"success": False, "error": "File ID is required", "next_nodes": []}
+
+        if not destination_path:
+            self._set_error_outputs("Destination path is required")
+            return {
+                "success": False,
+                "error": "Destination path is required",
+                "next_nodes": [],
+            }
+
+        export_format = export_format.lower().strip()
+
+        logger.debug(f"Exporting file from Drive: {file_id} as {export_format}")
+
+        # Get file info to check type
+        file_info = await client.get_file(file_id)
+
+        # Validate it's a Google Workspace file
+        if not file_info.is_google_doc:
+            error_msg = (
+                f"File is not a Google Workspace file. "
+                f"MIME type: {file_info.mime_type}. "
+                f"Use 'Drive Download File' node instead for regular files."
+            )
+            self._set_error_outputs(error_msg)
+            return {"success": False, "error": error_msg, "next_nodes": []}
+
+        # Check if the export format is supported for this file type
+        supported_formats = GOOGLE_WORKSPACE_EXPORT_FORMATS.get(file_info.mime_type, [])
+        supported_format_names = [f[0] for f in supported_formats]
+
+        if export_format not in supported_format_names:
+            # Try to use default format for this type
+            default_format = DEFAULT_EXPORT_FORMAT.get(file_info.mime_type)
+            if default_format:
+                logger.warning(
+                    f"Format '{export_format}' not supported for {file_info.mime_type}. "
+                    f"Using default format: {default_format}"
+                )
+                export_format = default_format
+            else:
+                error_msg = (
+                    f"Export format '{export_format}' is not supported for this file type. "
+                    f"Supported formats: {', '.join(supported_format_names)}"
+                )
+                self._set_error_outputs(error_msg)
+                return {"success": False, "error": error_msg, "next_nodes": []}
+
+        # Get MIME type for export format
+        export_mime_type = FORMAT_TO_MIME.get(export_format)
+        if not export_mime_type:
+            error_msg = f"Unknown export format: {export_format}"
+            self._set_error_outputs(error_msg)
+            return {"success": False, "error": error_msg, "next_nodes": []}
+
+        # Ensure destination path has the correct extension
+        dest_path = Path(destination_path)
+        if not dest_path.suffix or dest_path.suffix.lower() != f".{export_format}":
+            dest_path = dest_path.with_suffix(f".{export_format}")
+
+        # Create parent directory
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.debug(
+            f"Exporting {file_info.name} ({file_info.mime_type}) -> {dest_path}"
+        )
+
+        # Export file
+        exported_path = await client.export_file(
+            file_id=file_id,
+            destination_path=str(dest_path),
+            export_mime_type=export_mime_type,
+        )
+
+        # Set outputs
+        self._set_success_outputs()
+        self.set_output_value("file_path", str(exported_path))
+        self.set_output_value("original_name", file_info.name)
+        self.set_output_value("original_type", file_info.mime_type)
+
+        logger.info(f"Exported {file_info.name} to {exported_path}")
+
+        return {
+            "success": True,
+            "file_path": str(exported_path),
+            "original_name": file_info.name,
+            "original_type": file_info.mime_type,
+            "next_nodes": [],
+        }
+
+
 __all__ = [
     "DriveUploadFileNode",
     "DriveDownloadFileNode",
+    "DriveDownloadFolderNode",
+    "DriveBatchDownloadNode",
     "DriveCopyFileNode",
     "DriveMoveFileNode",
     "DriveDeleteFileNode",
     "DriveRenameFileNode",
     "DriveGetFileNode",
+    "DriveExportFileNode",
 ]

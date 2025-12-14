@@ -99,7 +99,7 @@ from casare_rpa.presentation.canvas.visual_nodes.google.docs_nodes import (
 )
 
 from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
-    # File operations
+    # File operations - Single file
     VisualDriveUploadFileNode,
     VisualDriveDownloadFileNode,
     VisualDriveDeleteFileNode,
@@ -107,6 +107,9 @@ from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
     VisualDriveMoveFileNode,
     VisualDriveRenameFileNode,
     VisualDriveGetFileNode,
+    # File operations - Bulk download
+    VisualDriveDownloadFolderNode,
+    VisualDriveBatchDownloadNode,
     # Folder operations
     VisualDriveCreateFolderNode,
     VisualDriveListFilesNode,
@@ -115,6 +118,7 @@ from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
     VisualDriveShareFileNode,
     VisualDriveRemoveShareNode,
     VisualDriveGetPermissionsNode,
+    VisualDriveCreateShareLinkNode,
     # Export
     VisualDriveExportFileNode,
     # Batch operations
@@ -200,7 +204,7 @@ __all__ = [
     "VisualDocsInsertTableNode",
     "VisualDocsInsertImageNode",
     "VisualDocsUpdateStyleNode",
-    # Drive - File operations (7)
+    # Drive - File operations - Single file (7)
     "VisualDriveUploadFileNode",
     "VisualDriveDownloadFileNode",
     "VisualDriveDeleteFileNode",
@@ -208,14 +212,18 @@ __all__ = [
     "VisualDriveMoveFileNode",
     "VisualDriveRenameFileNode",
     "VisualDriveGetFileNode",
+    # Drive - File operations - Bulk download (2)
+    "VisualDriveDownloadFolderNode",
+    "VisualDriveBatchDownloadNode",
     # Drive - Folder operations (3)
     "VisualDriveCreateFolderNode",
     "VisualDriveListFilesNode",
     "VisualDriveSearchFilesNode",
-    # Drive - Permissions (3)
+    # Drive - Permissions (4)
     "VisualDriveShareFileNode",
     "VisualDriveRemoveShareNode",
     "VisualDriveGetPermissionsNode",
+    "VisualDriveCreateShareLinkNode",
     # Drive - Export (1)
     "VisualDriveExportFileNode",
     # Drive - Batch operations (3)

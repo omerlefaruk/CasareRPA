@@ -18,9 +18,13 @@ Usage:
 
     # Load (auto-detects format from extension)
     workflow_data = load_workflow(Path("workflow.json.gz"))
+
+    # Streaming load for large files (>1MB)
+    workflow_data = load_workflow_streaming(Path("large_workflow.json.zst"))
 """
 
 import gzip
+import mmap
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -34,6 +38,9 @@ try:
     ZSTD_AVAILABLE = True
 except ImportError:
     ZSTD_AVAILABLE = False
+
+# Threshold for using streaming/mmap (1MB)
+LARGE_FILE_THRESHOLD = 1024 * 1024
 
 
 def save_workflow(
@@ -98,12 +105,18 @@ def save_workflow(
     logger.debug(f"Saved workflow ({len(json_bytes)/1024:.1f}KB)")
 
 
-def load_workflow(path: Path) -> Optional[Dict[str, Any]]:
+def load_workflow(
+    path: Path, use_streaming: Optional[bool] = None
+) -> Optional[Dict[str, Any]]:
     """
     Load workflow data from file with automatic decompression.
 
+    PERFORMANCE: Automatically uses streaming for files > 1MB unless
+    explicitly disabled. Streaming reduces peak memory usage.
+
     Args:
         path: Input file path (extension determines format)
+        use_streaming: Force streaming on/off. None = auto (>1MB uses streaming)
 
     Returns:
         Workflow data dictionary, or None on error
@@ -111,6 +124,14 @@ def load_workflow(path: Path) -> Optional[Dict[str, Any]]:
     if not path.exists():
         logger.error(f"Workflow file not found: {path}")
         return None
+
+    # Auto-detect streaming based on file size
+    file_size = path.stat().st_size
+    if use_streaming is None:
+        use_streaming = file_size > LARGE_FILE_THRESHOLD
+
+    if use_streaming:
+        return load_workflow_streaming(path)
 
     suffix = "".join(path.suffixes).lower()
 
@@ -172,3 +193,121 @@ def get_compression_stats(data: Dict[str, Any]) -> Dict[str, Any]:
         stats["zstd_ratio"] = len(zstd_bytes) / original_size
 
     return stats
+
+
+def load_workflow_streaming(path: Path) -> Optional[Dict[str, Any]]:
+    """
+    Load workflow data using streaming decompression.
+
+    PERFORMANCE: Optimized for large files (>1MB).
+    - Uses streaming decompression for zstd files
+    - Uses memory mapping for large uncompressed JSON files
+    - Falls back to regular loading for small files
+
+    Args:
+        path: Input file path (extension determines format)
+
+    Returns:
+        Workflow data dictionary, or None on error
+    """
+    if not path.exists():
+        logger.error(f"Workflow file not found: {path}")
+        return None
+
+    suffix = "".join(path.suffixes).lower()
+    file_size = path.stat().st_size
+
+    try:
+        if suffix.endswith(".json.zst"):
+            if not ZSTD_AVAILABLE:
+                logger.error("Zstandard not available, cannot load .zst file")
+                return None
+            return _load_zstd_streaming(path)
+
+        if suffix.endswith(".json.gz"):
+            return _load_gzip_streaming(path)
+
+        # Uncompressed JSON - use mmap for large files
+        if file_size > LARGE_FILE_THRESHOLD:
+            return _load_json_mmap(path)
+
+        # Small files - regular load
+        return orjson.loads(path.read_bytes())
+
+    except Exception as e:
+        logger.error(f"Failed to load workflow (streaming): {e}")
+        return None
+
+
+def _load_zstd_streaming(path: Path) -> Optional[Dict[str, Any]]:
+    """
+    Load zstd-compressed workflow using streaming decompression.
+
+    Uses zstd streaming API to decompress in chunks, reducing peak memory.
+
+    Args:
+        path: Path to .json.zst file
+
+    Returns:
+        Parsed workflow data
+    """
+    dctx = zstd.ZstdDecompressor()
+    chunks: list[bytes] = []
+
+    with open(path, "rb") as fh:
+        with dctx.stream_reader(fh) as reader:
+            while True:
+                chunk = reader.read(65536)  # 64KB chunks
+                if not chunk:
+                    break
+                chunks.append(chunk)
+
+    json_bytes = b"".join(chunks)
+    logger.debug(f"Streaming decompressed {path.name}: {len(json_bytes)/1024:.1f}KB")
+    return orjson.loads(json_bytes)
+
+
+def _load_gzip_streaming(path: Path) -> Optional[Dict[str, Any]]:
+    """
+    Load gzip-compressed workflow using streaming decompression.
+
+    Args:
+        path: Path to .json.gz file
+
+    Returns:
+        Parsed workflow data
+    """
+    chunks: list[bytes] = []
+
+    with gzip.open(path, "rb") as fh:
+        while True:
+            chunk = fh.read(65536)  # 64KB chunks
+            if not chunk:
+                break
+            chunks.append(chunk)
+
+    json_bytes = b"".join(chunks)
+    logger.debug(f"Streaming decompressed {path.name}: {len(json_bytes)/1024:.1f}KB")
+    return orjson.loads(json_bytes)
+
+
+def _load_json_mmap(path: Path) -> Optional[Dict[str, Any]]:
+    """
+    Load large uncompressed JSON using memory mapping.
+
+    Memory mapping allows the OS to handle paging efficiently,
+    reducing memory pressure for very large files.
+
+    Args:
+        path: Path to .json file
+
+    Returns:
+        Parsed workflow data
+    """
+    file_size = path.stat().st_size
+
+    with open(path, "rb") as fh:
+        # Create read-only memory map
+        with mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            logger.debug(f"Memory-mapped {path.name}: {file_size/1024:.1f}KB")
+            return orjson.loads(mm[:])

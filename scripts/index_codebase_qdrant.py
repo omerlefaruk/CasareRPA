@@ -7,7 +7,11 @@ Usage:
 This script:
 1. Walks through the src/ directory
 2. Chunks Python files intelligently (by class/function)
-3. Stores embeddings in Qdrant for semantic search via MCP
+3. Extracts rich metadata for better AI retrieval
+4. Stores embeddings in Qdrant for semantic search via MCP
+
+AI-HINT: This script creates the semantic search index used by qdrant-find.
+AI-CONTEXT: Run after significant code changes to update the index.
 """
 
 import os
@@ -31,7 +35,7 @@ except ImportError:
 
 
 # Configuration
-QDRANT_PATH = Path(__file__).parent.parent / ".qdrant"
+QDRANT_PATH = Path(__file__).parent.parent / ".qdrant_new"
 COLLECTION_NAME = "casare_codebase"
 # Must match fastembed model naming for MCP server compatibility
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -45,13 +49,89 @@ EXCLUDE_DIRS = {"__pycache__", ".git", "venv", ".venv", "node_modules", ".qdrant
 EXCLUDE_FILES = {"__init__.py"}  # Usually just imports
 
 
+def _detect_layer(filepath: Path) -> str:
+    """Detect which DDD layer a file belongs to."""
+    path_str = str(filepath).lower()
+    if "/domain/" in path_str or "\\domain\\" in path_str:
+        return "domain"
+    elif "/application/" in path_str or "\\application\\" in path_str:
+        return "application"
+    elif "/infrastructure/" in path_str or "\\infrastructure\\" in path_str:
+        return "infrastructure"
+    elif "/presentation/" in path_str or "\\presentation\\" in path_str:
+        return "presentation"
+    elif "/nodes/" in path_str or "\\nodes\\" in path_str:
+        return "nodes"
+    return "other"
+
+
+def _detect_category(filepath: Path, class_name: str = "") -> str:
+    """Detect the category/purpose of a file or class."""
+    path_str = str(filepath).lower()
+    name_lower = class_name.lower()
+
+    # Node categories
+    if "browser" in path_str or "browser" in name_lower:
+        return "browser"
+    elif "desktop" in path_str or "desktop" in name_lower:
+        return "desktop"
+    elif "http" in path_str or "http" in name_lower:
+        return "http"
+    elif "control_flow" in path_str or "if" in name_lower or "loop" in name_lower:
+        return "control_flow"
+    elif "event" in path_str or "event" in name_lower:
+        return "events"
+    elif "visual" in path_str:
+        return "visual_nodes"
+    elif "canvas" in path_str:
+        return "canvas"
+    elif "ui" in path_str:
+        return "ui"
+    elif "test" in path_str:
+        return "tests"
+    return "general"
+
+
+def _extract_base_classes(node: ast.ClassDef) -> list[str]:
+    """Extract base class names from a class definition."""
+    bases = []
+    for base in node.bases:
+        if isinstance(base, ast.Name):
+            bases.append(base.id)
+        elif isinstance(base, ast.Attribute):
+            bases.append(base.attr)
+    return bases
+
+
+def _extract_decorators(node) -> list[str]:
+    """Extract decorator names from a class or function."""
+    decorators = []
+    for dec in node.decorator_list:
+        if isinstance(dec, ast.Name):
+            decorators.append(dec.id)
+        elif isinstance(dec, ast.Call):
+            if isinstance(dec.func, ast.Name):
+                decorators.append(dec.func.id)
+            elif isinstance(dec.func, ast.Attribute):
+                decorators.append(dec.func.attr)
+    return decorators
+
+
+def _has_ai_hint(content: str) -> bool:
+    """Check if content contains AI-HINT comment."""
+    return "AI-HINT" in content or "AI-CONTEXT" in content or "AI-WARNING" in content
+
+
 def extract_code_chunks(filepath: Path) -> Generator[dict, None, None]:
-    """Extract meaningful chunks from a Python file."""
+    """Extract meaningful chunks from a Python file with rich metadata."""
     try:
         content = filepath.read_text(encoding="utf-8")
     except Exception as e:
         print(f"  Skipping {filepath}: {e}")
         return
+
+    layer = _detect_layer(filepath)
+    rel_path = str(filepath.relative_to(SRC_DIR.parent))
 
     try:
         tree = ast.parse(content)
@@ -60,24 +140,33 @@ def extract_code_chunks(filepath: Path) -> Generator[dict, None, None]:
         yield {
             "type": "file",
             "name": filepath.stem,
-            "path": str(filepath.relative_to(SRC_DIR.parent)),
+            "path": rel_path,
             "content": content[:2000],  # Limit size
             "line_start": 1,
             "line_end": len(content.splitlines()),
+            "layer": layer,
+            "category": _detect_category(filepath),
+            "has_ai_hint": _has_ai_hint(content[:2000]),
+            "exported": False,
         }
         return
 
     lines = content.splitlines()
 
     # Extract module docstring
-    if ast.get_docstring(tree):
+    module_docstring = ast.get_docstring(tree)
+    if module_docstring:
         yield {
             "type": "module",
             "name": filepath.stem,
-            "path": str(filepath.relative_to(SRC_DIR.parent)),
-            "content": ast.get_docstring(tree),
+            "path": rel_path,
+            "content": module_docstring,
             "line_start": 1,
             "line_end": 10,
+            "layer": layer,
+            "category": _detect_category(filepath),
+            "has_ai_hint": _has_ai_hint(module_docstring),
+            "exported": False,
         }
 
     # Extract classes and functions
@@ -89,23 +178,42 @@ def extract_code_chunks(filepath: Path) -> Generator[dict, None, None]:
             chunk_content = "\n".join(lines[start:end])
 
             docstring = ast.get_docstring(node) or ""
+            base_classes = _extract_base_classes(node)
+            decorators = _extract_decorators(node)
+
+            # Determine if it's a node class
+            is_node = (
+                any(
+                    b in ["BaseNode", "BrowserBaseNode", "VisualNodeBase"]
+                    for b in base_classes
+                )
+                or "node" in decorators
+            )
 
             yield {
                 "type": "class",
                 "name": node.name,
-                "path": str(filepath.relative_to(SRC_DIR.parent)),
+                "path": rel_path,
                 "content": f"class {node.name}\n\n{docstring}\n\n{chunk_content}",
                 "line_start": node.lineno,
                 "line_end": end + 1,
+                "layer": layer,
+                "category": _detect_category(filepath, node.name),
+                "base_classes": base_classes,
+                "decorators": decorators,
+                "is_node": is_node,
+                "has_ai_hint": _has_ai_hint(chunk_content),
+                "exported": not node.name.startswith("_"),
             }
 
         elif isinstance(node, ast.FunctionDef) or isinstance(
             node, ast.AsyncFunctionDef
         ):
-            # Skip private methods except execute
+            # Skip private methods except key ones
             if node.name.startswith("_") and node.name not in (
                 "__init__",
                 "_define_ports",
+                "__call__",
             ):
                 continue
 
@@ -115,14 +223,21 @@ def extract_code_chunks(filepath: Path) -> Generator[dict, None, None]:
 
             docstring = ast.get_docstring(node) or ""
             func_type = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
+            decorators = _extract_decorators(node)
 
             yield {
                 "type": "function",
                 "name": node.name,
-                "path": str(filepath.relative_to(SRC_DIR.parent)),
+                "path": rel_path,
                 "content": f"{func_type} {node.name}\n\n{docstring}\n\n{chunk_content}",
                 "line_start": node.lineno,
                 "line_end": end + 1,
+                "layer": layer,
+                "category": _detect_category(filepath),
+                "is_async": isinstance(node, ast.AsyncFunctionDef),
+                "decorators": decorators,
+                "has_ai_hint": _has_ai_hint(chunk_content),
+                "exported": not node.name.startswith("_"),
             }
 
 
@@ -199,32 +314,65 @@ def main():
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
 
-        # Create text for embedding (combine type, name, and content)
-        texts = [
-            f"{c['type']} {c['name']} in {c['path']}: {c['content'][:500]}"
-            for c in batch
-        ]
+        # Create text for embedding (combine type, name, layer, and content)
+        texts = []
+        for c in batch:
+            # Build rich embedding text for better semantic search
+            parts = [
+                f"{c['type']} {c['name']}",
+                f"in {c['path']}",
+                f"layer: {c.get('layer', 'unknown')}",
+                f"category: {c.get('category', 'general')}",
+            ]
+            if c.get("base_classes"):
+                parts.append(f"extends: {', '.join(c['base_classes'])}")
+            if c.get("decorators"):
+                parts.append(f"decorators: {', '.join(c['decorators'])}")
+            if c.get("is_node"):
+                parts.append("(automation node)")
+            if c.get("is_async"):
+                parts.append("(async)")
+            parts.append(c["content"][:500])
+            texts.append(" | ".join(parts))
 
         # Generate embeddings
         embeddings = list(embedding_model.embed(texts))
 
         # Create points with named vector for mcp-server-qdrant compatibility
-        points = [
-            PointStruct(
-                id=i + j,
-                vector={VECTOR_NAME: embeddings[j].tolist()},
-                payload={
-                    # MCP server expects "document" field for content
-                    "document": batch[j]["content"],
-                    "type": batch[j]["type"],
-                    "name": batch[j]["name"],
-                    "path": batch[j]["path"],
-                    "line_start": batch[j]["line_start"],
-                    "line_end": batch[j]["line_end"],
-                },
+        points = []
+        for j in range(len(batch)):
+            chunk = batch[j]
+            payload = {
+                # MCP server expects "document" field for content
+                "document": chunk["content"],
+                "type": chunk["type"],
+                "name": chunk["name"],
+                "path": chunk["path"],
+                "line_start": chunk["line_start"],
+                "line_end": chunk["line_end"],
+                # New rich metadata for AI retrieval
+                "layer": chunk.get("layer", "unknown"),
+                "category": chunk.get("category", "general"),
+                "exported": chunk.get("exported", True),
+                "has_ai_hint": chunk.get("has_ai_hint", False),
+            }
+            # Add optional fields if present
+            if chunk.get("base_classes"):
+                payload["base_classes"] = chunk["base_classes"]
+            if chunk.get("decorators"):
+                payload["decorators"] = chunk["decorators"]
+            if chunk.get("is_node"):
+                payload["is_node"] = chunk["is_node"]
+            if chunk.get("is_async"):
+                payload["is_async"] = chunk["is_async"]
+
+            points.append(
+                PointStruct(
+                    id=i + j,
+                    vector={VECTOR_NAME: embeddings[j].tolist()},
+                    payload=payload,
+                )
             )
-            for j in range(len(batch))
-        ]
 
         # Upsert to Qdrant
         client.upsert(collection_name=COLLECTION_NAME, points=points)

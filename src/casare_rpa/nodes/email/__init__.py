@@ -34,6 +34,12 @@ from .receive_nodes import (
 )
 from .send_nodes import SendEmailNode
 
+# Re-export from email_super_node
+from .email_super_node import (
+    EmailSuperNode,
+    EmailAction,
+)
+
 __all__ = [
     # Send nodes
     "SendEmailNode",
@@ -56,4 +62,7 @@ __all__ = [
     "SMTP_PORT_DEFAULT",
     "IMAP_SERVER_DEFAULT",
     "IMAP_PORT_DEFAULT",
+    # Super node
+    "EmailSuperNode",
+    "EmailAction",
 ]

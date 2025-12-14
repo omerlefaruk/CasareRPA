@@ -53,6 +53,8 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualSmartSelectorNode": "browser.nodes",
     "VisualSmartSelectorOptionsNode": "browser.nodes",
     "VisualRefineSelectorNode": "browser.nodes",
+    # Browser Evaluate (JavaScript execution)
+    "VisualBrowserEvaluateNode": "browser.evaluate_node",
     # Control Flow (16 nodes)
     "VisualIfNode": "control_flow.nodes",
     "VisualForLoopNode": "control_flow.nodes",
@@ -171,25 +173,14 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualLogErrorNode": "error_handling.nodes",
     "VisualAssertNode": "error_handling.nodes",
     "VisualAIRecoveryNode": "error_handling.nodes",
-    # File Operations (42 nodes)
-    "VisualReadFileNode": "file_operations.nodes",
-    "VisualWriteFileNode": "file_operations.nodes",
-    "VisualAppendFileNode": "file_operations.nodes",
-    "VisualDeleteFileNode": "file_operations.nodes",
-    "VisualCopyFileNode": "file_operations.nodes",
-    "VisualMoveFileNode": "file_operations.nodes",
-    "VisualFileExistsNode": "file_operations.nodes",
-    "VisualGetFileSizeNode": "file_operations.nodes",
-    "VisualGetFileInfoNode": "file_operations.nodes",
-    "VisualListFilesNode": "file_operations.nodes",
-    "VisualListDirectoryNode": "file_operations.nodes",
-    "VisualCreateDirectoryNode": "file_operations.nodes",
-    "VisualReadCsvNode": "file_operations.nodes",
-    "VisualWriteCsvNode": "file_operations.nodes",
-    "VisualReadJsonNode": "file_operations.nodes",
-    "VisualWriteJsonNode": "file_operations.nodes",
-    "VisualZipFilesNode": "file_operations.nodes",
-    "VisualUnzipFileNode": "file_operations.nodes",
+    # File Operations - Super Nodes
+    "VisualFileSystemSuperNode": "file_operations.super_nodes",
+    "VisualStructuredDataSuperNode": "file_operations.super_nodes",
+    # Text Operations - Super Nodes
+    "VisualTextSuperNode": "text.super_nodes",
+    # Desktop Automation - Super Nodes
+    "VisualWindowManagementSuperNode": "desktop_automation.super_nodes",
+    # File Operations - XML, PDF, FTP (legacy nodes removed, now using super nodes)
     "VisualParseXMLNode": "file_operations.nodes",
     "VisualReadXMLFileNode": "file_operations.nodes",
     "VisualWriteXMLFileNode": "file_operations.nodes",
@@ -214,7 +205,6 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualFTPRenameNode": "file_operations.nodes",
     "VisualFTPDisconnectNode": "file_operations.nodes",
     "VisualFTPGetSizeNode": "file_operations.nodes",
-    "VisualImageConvertNode": "file_operations.nodes",
     # Scripts (5 nodes)
     "VisualRunPythonScriptNode": "scripts.nodes",
     "VisualRunPythonFileNode": "scripts.nodes",
@@ -318,7 +308,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualOutlookSendEmailNode": "office_automation.nodes",
     "VisualOutlookReadEmailsNode": "office_automation.nodes",
     "VisualOutlookGetInboxCountNode": "office_automation.nodes",
-    # REST API (7 nodes)
+    # REST API (8 nodes)
     "VisualHttpRequestNode": "rest_api.nodes",
     "VisualSetHttpHeadersNode": "rest_api.nodes",
     "VisualHttpAuthNode": "rest_api.nodes",
@@ -326,6 +316,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualHttpDownloadFileNode": "rest_api.nodes",
     "VisualHttpUploadFileNode": "rest_api.nodes",
     "VisualBuildUrlNode": "rest_api.nodes",
+    "VisualHttpSuperNode": "rest_api.nodes",
     # Variable (3 nodes)
     "VisualSetVariableNode": "variable.nodes",
     "VisualGetVariableNode": "variable.nodes",
@@ -452,9 +443,11 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualDocsInsertTableNode": "google",
     "VisualDocsInsertImageNode": "google",
     "VisualDocsUpdateStyleNode": "google",
-    # Google Drive (17 nodes)
+    # Google Drive (21 nodes)
     "VisualDriveUploadFileNode": "google",
     "VisualDriveDownloadFileNode": "google",
+    "VisualDriveDownloadFolderNode": "google",
+    "VisualDriveBatchDownloadNode": "google",
     "VisualDriveDeleteFileNode": "google",
     "VisualDriveCopyFileNode": "google",
     "VisualDriveMoveFileNode": "google",
@@ -466,6 +459,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualDriveShareFileNode": "google",
     "VisualDriveRemoveShareNode": "google",
     "VisualDriveGetPermissionsNode": "google",
+    "VisualDriveCreateShareLinkNode": "google",
     "VisualDriveExportFileNode": "google",
     "VisualDriveBatchDeleteNode": "google",
     "VisualDriveBatchMoveNode": "google",

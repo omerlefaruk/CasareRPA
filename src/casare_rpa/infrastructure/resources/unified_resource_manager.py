@@ -638,9 +638,10 @@ class DatabasePool:
 
 class HTTPPool:
     """
-    Pool of HTTP client sessions using httpx.
+    Pool of HTTP client sessions using UnifiedHttpClient.
 
     Manages persistent HTTP sessions for efficiency with LRU eviction support.
+    Uses UnifiedHttpClient for consistent resilience patterns across the platform.
     """
 
     def __init__(self, max_size: int = 20) -> None:
@@ -650,12 +651,22 @@ class HTTPPool:
         Args:
             max_size: Maximum number of concurrent sessions
         """
+        from casare_rpa.infrastructure.http import (
+            UnifiedHttpClient,
+            UnifiedHttpClientConfig,
+        )
+
         self.max_size = max_size
-        self._sessions: Dict[str, Any] = {}  # job_id -> client
-        self._available_sessions: LRUResourceCache[Any] = LRUResourceCache(max_size)
+        self._sessions: Dict[str, UnifiedHttpClient] = {}  # job_id -> client
+        self._available_sessions: LRUResourceCache[UnifiedHttpClient] = (
+            LRUResourceCache(max_size)
+        )
         self._lock = asyncio.Lock()
         self._started = False
         self._stats = PoolStatistics()
+        # Store references for creating clients
+        self._client_class = UnifiedHttpClient
+        self._config_class = UnifiedHttpClientConfig
 
     async def start(self) -> None:
         """Start the HTTP pool."""
@@ -668,7 +679,7 @@ class HTTPPool:
             # Close in-use sessions
             for job_id, client in list(self._sessions.items()):
                 try:
-                    await client.aclose()
+                    await client.close()
                     self._stats.resources_destroyed += 1
                 except Exception as e:
                     logger.warning(f"Error closing HTTP client for job {job_id}: {e}")
@@ -679,7 +690,7 @@ class HTTPPool:
             cached_sessions = await self._available_sessions.clear()
             for client in cached_sessions:
                 try:
-                    await client.aclose()
+                    await client.close()
                     self._stats.resources_destroyed += 1
                 except Exception as e:
                     logger.warning(f"Error closing cached HTTP client: {e}")
@@ -696,7 +707,7 @@ class HTTPPool:
             timeout: Maximum time to wait for a client
 
         Returns:
-            HTTPX AsyncClient or None
+            UnifiedHttpClient or None
         """
         if not self._started:
             return None
@@ -722,19 +733,20 @@ class HTTPPool:
                 total_sessions = self._available_sessions.size + len(self._sessions)
                 if total_sessions < self.max_size:
                     try:
-                        import httpx
-
-                        client = httpx.AsyncClient(
-                            timeout=30.0,
-                            follow_redirects=True,
+                        # Create UnifiedHttpClient with default config
+                        config = self._config_class(
+                            default_timeout=30.0,
+                            max_retries=3,
                         )
+                        client = self._client_class(config)
+                        await client.start()
                         self._sessions[job_id] = client
                         self._stats.resources_created += 1
                         self._stats.leases_granted += 1
                         logger.debug(f"Created HTTP client for job {job_id[:8]}")
                         return client
                     except ImportError:
-                        logger.warning("httpx not available, HTTP pool disabled")
+                        logger.warning("aiohttp not available, HTTP pool disabled")
                         self._stats.degradations += 1
                         return None
                     except Exception as e:
@@ -766,12 +778,12 @@ class HTTPPool:
             if client is None:
                 return False
 
-            # Add to LRU cache for reuse (httpx clients can be reused)
+            # Add to LRU cache for reuse (UnifiedHttpClient can be reused)
             cache_key = f"http_{id(client)}_{time.time()}"
             evicted = await self._available_sessions.put(cache_key, client)
             if evicted:
                 try:
-                    await evicted.aclose()
+                    await evicted.close()
                     self._stats.evictions += 1
                 except Exception:
                     pass

@@ -21,6 +21,10 @@ if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
 
 
+# A4: Module-level cache for node type map (persists across deserializer instances)
+_NODE_TYPE_MAP_CACHE: Optional[Dict[str, str]] = None
+
+
 class WorkflowDeserializer:
     """
     Deserializes workflow JSON back into NodeGraphQt visual graph.
@@ -52,11 +56,26 @@ class WorkflowDeserializer:
         """
         Get node type map, building it lazily on first use.
 
+        A4 Optimization: Uses module-level cache that persists across
+        deserializer instances, avoiding repeated enumeration of registered nodes.
+
         Returns:
             Dict mapping node_type to NodeGraphQt identifier
         """
-        if self._node_type_map is None:
-            self._node_type_map = self._build_node_type_map()
+        global _NODE_TYPE_MAP_CACHE
+
+        # First check instance cache (for dynamic additions during session)
+        if self._node_type_map is not None:
+            return self._node_type_map
+
+        # Check module-level cache (persists across instances)
+        if _NODE_TYPE_MAP_CACHE is not None:
+            self._node_type_map = _NODE_TYPE_MAP_CACHE.copy()
+            return self._node_type_map
+
+        # Build and cache at both levels
+        self._node_type_map = self._build_node_type_map()
+        _NODE_TYPE_MAP_CACHE = self._node_type_map.copy()
         return self._node_type_map
 
     def _build_node_type_map(self) -> Dict[str, str]:
@@ -139,15 +158,23 @@ class WorkflowDeserializer:
         try:
             # SECURITY: Validate workflow JSON against schema before processing
             # This prevents code injection and resource exhaustion attacks
-            try:
-                validate_workflow_json(workflow_data)
-                logger.debug("Workflow schema validation passed")
-            except ValidationError as e:
-                logger.error(f"Workflow schema validation failed: {e}")
-                return False
-            except Exception as e:
-                logger.warning(f"Schema validation skipped (non-standard format): {e}")
-                # Continue anyway for backwards compatibility with older formats
+            # A1 Optimization: Skip validation if already validated upstream
+            if not workflow_data.get("__validated__"):
+                try:
+                    validate_workflow_json(workflow_data)
+                    logger.debug("Workflow schema validation passed")
+                except ValidationError as e:
+                    logger.error(f"Workflow schema validation failed: {e}")
+                    return False
+                except Exception as e:
+                    logger.warning(
+                        f"Schema validation skipped (non-standard format): {e}"
+                    )
+                    # Continue anyway for backwards compatibility with older formats
+            else:
+                logger.debug(
+                    "Workflow already validated upstream, skipping re-validation"
+                )
 
             # Clear existing graph
             self._graph.clear_session()

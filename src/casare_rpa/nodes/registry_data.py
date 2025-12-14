@@ -38,6 +38,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "ScreenshotNode": "data_nodes",
     # Table scraping nodes
     "TableScraperNode": "browser.table_scraper_node",
+    # Browser evaluate node
+    "BrowserEvaluateNode": "browser.evaluate_node",
     # Form nodes
     "FormFieldNode": "browser.form_field_node",
     "FormFillerNode": "browser.form_filler_node",
@@ -121,7 +123,10 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "ValidateNode": "utility_nodes",
     "TransformNode": "utility_nodes",
     "LogNode": "utility_nodes",
-    # File system nodes - read operations
+    # File system nodes - Super Nodes (consolidated)
+    "FileSystemSuperNode": "file.super_node",
+    "StructuredDataSuperNode": "file.super_node",
+    # File system nodes - read operations (legacy)
     "ReadFileNode": "file.file_read_nodes",
     # File system nodes - write operations
     "WriteFileNode": "file.file_write_nodes",
@@ -169,6 +174,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "BuildUrlNode": "http.http_advanced",
     # HTTP/REST API nodes - authentication
     "HttpAuthNode": "http.http_auth",
+    # HTTP/REST API nodes - Super Node (consolidated)
+    "HttpSuperNode": "http.http_super_node",
     # Database nodes - SQL operations
     "DatabaseConnectNode": "database.sql_nodes",
     "ExecuteQueryNode": "database.sql_nodes",
@@ -195,6 +202,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "DateTimeDiffNode": "datetime_nodes",
     "DateTimeCompareNode": "datetime_nodes",
     "GetTimestampNode": "datetime_nodes",
+    # Text nodes - Super Nodes (consolidated)
+    "TextSuperNode": "text.super_node",
     # Text nodes (Refactored)
     "TextSplitNode": "text.manipulation",
     "TextReplaceNode": "text.manipulation",
@@ -440,6 +449,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     # Drive nodes (from google.drive_nodes)
     "DriveUploadFileNode": "google.drive_nodes",
     "DriveDownloadFileNode": "google.drive_nodes",
+    "DriveDownloadFolderNode": "google.drive_nodes",
+    "DriveBatchDownloadNode": "google.drive_nodes",
     "DriveDeleteFileNode": "google.drive_nodes",
     "DriveCopyFileNode": "google.drive_nodes",
     "DriveMoveFileNode": "google.drive_nodes",
@@ -468,6 +479,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "OutlookSendEmailNode": "desktop_nodes.office_nodes",
     "OutlookReadEmailsNode": "desktop_nodes.office_nodes",
     "OutlookGetInboxCountNode": "desktop_nodes.office_nodes",
+    # Desktop Automation Nodes - Super Nodes (consolidated)
+    "WindowManagementSuperNode": "desktop_nodes.window_super_node",
     # Desktop Automation Nodes - Application
     "LaunchApplicationNode": "desktop_nodes",
     "CloseApplicationNode": "desktop_nodes",

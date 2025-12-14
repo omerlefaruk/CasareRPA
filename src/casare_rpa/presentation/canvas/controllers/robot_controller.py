@@ -9,7 +9,7 @@ Connects to remote orchestrator API for real robot fleet management.
 import os
 from typing import Optional, List, Dict, TYPE_CHECKING
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 
 from loguru import logger
 
@@ -41,12 +41,24 @@ class RobotController(BaseController):
         connection_status_changed: Emitted when orchestrator connection changes (connected: bool)
     """
 
+    # Core state signals
     robots_updated = Signal(list)
     robot_selected = Signal(str)
     execution_mode_changed = Signal(str)
+    connection_status_changed = Signal(bool)
+
+    # Job submission signals
     job_submitted = Signal(str)
     job_submission_failed = Signal(str)
-    connection_status_changed = Signal(bool)
+
+    # UI state signals (for clean controller/panel decoupling)
+    refreshing_changed = Signal(bool)  # True when refreshing robot list
+    submission_state_changed = Signal(
+        str, str
+    )  # (state, message) where state is 'idle'|'submitting'|'success'|'error'
+    connection_status_detailed = Signal(
+        str, str, str
+    )  # (status, message, url) for detailed connection indicator
 
     def __init__(self, main_window: "MainWindow") -> None:
         """
@@ -259,6 +271,8 @@ class RobotController(BaseController):
         # Try each URL until one works
         for try_url in urls_to_try:
             logger.info(f"Trying orchestrator at {try_url}...")
+            # Emit connecting status
+            self.connection_status_detailed.emit("connecting", "", try_url)
 
             ws_url = try_url.replace("http://", "ws://").replace("https://", "wss://")
             api_key = self._get_api_key_from_config() or os.getenv(
@@ -277,6 +291,7 @@ class RobotController(BaseController):
                     self._orchestrator_url = try_url
                     self._connected = True
                     self.connection_status_changed.emit(True)
+                    self.connection_status_detailed.emit("connected", "", try_url)
                     logger.info(f"Connected to orchestrator at {try_url}")
 
                     # Start WebSocket subscriptions for real-time updates
@@ -291,6 +306,9 @@ class RobotController(BaseController):
         logger.error("Failed to connect to any orchestrator URL")
         self._connected = False
         self.connection_status_changed.emit(False)
+        self.connection_status_detailed.emit(
+            "disconnected", "All connection attempts failed", ""
+        )
         return False
 
     async def disconnect_from_orchestrator(self) -> None:
@@ -354,17 +372,27 @@ class RobotController(BaseController):
         """
         self._panel = panel
 
-        # Connect signals
+        # Connect panel signals -> controller handlers
         panel.robot_selected.connect(self._on_panel_robot_selected)
         panel.execution_mode_changed.connect(self._on_panel_mode_changed)
         panel.refresh_requested.connect(self._on_panel_refresh_requested)
         panel.submit_to_cloud_requested.connect(self._on_submit_to_cloud_requested)
 
-        # Keep panel updated on connection status
+        # Connect controller signals -> panel handlers (clean decoupling)
         self.connection_status_changed.connect(panel.set_connected)
+        self.robots_updated.connect(panel.update_robots)
+        self.refreshing_changed.connect(panel.set_refreshing)
+        self.submission_state_changed.connect(panel._on_submission_state_changed)
+        self.connection_status_detailed.connect(panel.set_connection_status)
 
-        # Set initial connection status
+        # Set initial state
         panel.set_connected(self._connected)
+        if self._orchestrator_url:
+            panel.set_connection_status(
+                "connected" if self._connected else "disconnected",
+                "",
+                self._orchestrator_url,
+            )
 
         logger.debug("RobotPickerPanel connected to controller")
 
@@ -380,20 +408,24 @@ class RobotController(BaseController):
 
     # ==================== Panel Signal Handlers ====================
 
+    @Slot(str)
     def _on_panel_robot_selected(self, robot_id: str) -> None:
         """Handle robot selection from panel."""
         self.select_robot(robot_id)
 
+    @Slot(str)
     def _on_panel_mode_changed(self, mode: str) -> None:
         """Handle execution mode change from panel."""
         self.set_execution_mode(mode)
 
+    @Slot()
     def _on_panel_refresh_requested(self) -> None:
         """Handle refresh request from panel."""
         import asyncio
 
         asyncio.create_task(self.refresh_robots())
 
+    @Slot()
     def _on_submit_to_cloud_requested(self) -> None:
         """
         Handle submit to cloud request from panel.
@@ -409,24 +441,22 @@ class RobotController(BaseController):
         Submit the current workflow to the selected robot.
 
         Gets workflow data from the main window and calls submit_job.
-        Updates panel with submission status.
+        Emits submission_state_changed signal for UI updates.
         """
-        if not self._panel:
-            return
-
         if not self._selected_robot_id:
-            self._panel.show_submit_result(False, "No robot selected")
+            self.submission_state_changed.emit("error", "No robot selected")
             return
 
-        # Show submitting state
-        self._panel.set_submitting(True)
+        # Emit submitting state
+        self.submission_state_changed.emit("submitting", "")
 
         try:
             # Get workflow data from main window
             workflow_data = self._get_workflow_data()
             if not workflow_data:
-                self._panel.set_submitting(False)
-                self._panel.show_submit_result(False, "No workflow data available")
+                self.submission_state_changed.emit(
+                    "error", "No workflow data available"
+                )
                 return
 
             # Get variables if available
@@ -439,18 +469,15 @@ class RobotController(BaseController):
                 robot_id=self._selected_robot_id,
             )
 
-            self._panel.set_submitting(False)
-
             if job_id:
-                self._panel.show_submit_result(True, job_id)
+                self.submission_state_changed.emit("success", job_id)
                 logger.info(f"Workflow submitted to cloud: job_id={job_id}")
             else:
-                self._panel.show_submit_result(False, "Submission failed")
+                self.submission_state_changed.emit("error", "Submission failed")
 
         except Exception as e:
             logger.error(f"Failed to submit workflow: {e}")
-            self._panel.set_submitting(False)
-            self._panel.show_submit_result(False, str(e))
+            self.submission_state_changed.emit("error", str(e))
 
     def _get_workflow_data(self) -> Optional[dict]:
         """
@@ -514,10 +541,11 @@ class RobotController(BaseController):
         Uses OrchestratorClient to fetch from remote API.
         Falls back to local storage if not connected.
 
-        Emits robots_updated signal when complete.
+        Emits:
+            refreshing_changed: (True) when starting, (False) when complete
+            robots_updated: With the robot list when complete
         """
-        if self._panel:
-            self._panel.set_refreshing(True)
+        self.refreshing_changed.emit(True)
 
         try:
             robots = []
@@ -546,22 +574,16 @@ class RobotController(BaseController):
 
             self._current_robots = robots
 
-            # Update panel
-            if self._panel:
-                self._panel.update_robots(self._current_robots)
-
-            # Emit signal
+            # Emit signal (panel subscribes to this)
             self.robots_updated.emit(self._current_robots)
 
         except Exception as e:
             logger.error(f"Failed to refresh robots: {e}")
             self._current_robots = []
-            if self._panel:
-                self._panel.update_robots([])
+            self.robots_updated.emit([])
 
         finally:
-            if self._panel:
-                self._panel.set_refreshing(False)
+            self.refreshing_changed.emit(False)
 
     def _convert_robot_data(self, robot_data_list: list) -> list:
         """

@@ -12,9 +12,12 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 # Import implemented nodes from drive/ subpackage
 from casare_rpa.nodes.google.google_base import DriveBaseNode
 from casare_rpa.nodes.google.drive.drive_files import (
+    DriveBatchDownloadNode,
     DriveCopyFileNode,
     DriveDeleteFileNode,
     DriveDownloadFileNode,
+    DriveDownloadFolderNode,
+    DriveExportFileNode,
     DriveGetFileNode,
     DriveMoveFileNode,
     DriveRenameFileNode,
@@ -41,50 +44,10 @@ from casare_rpa.nodes.google.drive.drive_batch import (
 DriveRemovePermissionNode = DriveRemoveShareNode
 
 
-# ============================================================================
-# Placeholder nodes for future implementation
-# ============================================================================
-
-
-class _NotImplementedDriveNode(BaseNode):
-    """Base class for not-yet-implemented Drive nodes."""
-
-    # @category: google
-    # @requires: none
-    # @ports: none -> success, error
-
-    NODE_CATEGORY = "google_drive"
-
-    def __init__(self, node_id: str, **kwargs):
-        super().__init__(node_id, kwargs.get("config", {}))
-
-    def _define_ports(self) -> None:
-        self.add_output_port("success", DataType.BOOLEAN)
-        self.add_output_port("error", DataType.STRING)
-
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        return {
-            "success": False,
-            "error": f"{self.__class__.__name__} is not yet implemented",
-            "next_nodes": [],
-        }
-
-
-class DriveExportFileNode(_NotImplementedDriveNode):
-    """Placeholder: Export a Google Workspace file to a standard format."""
-
-    # @category: google
-    # @requires: none
-    # @ports: none -> none
-
-    NODE_TYPE = "drive_export_file"
-    NODE_DISPLAY_NAME = "Drive: Export File"
-
-
 __all__ = [
     # Base
     "DriveBaseNode",
-    # File operations
+    # File operations - Single file
     "DriveUploadFileNode",
     "DriveDownloadFileNode",
     "DriveCopyFileNode",
@@ -92,6 +55,9 @@ __all__ = [
     "DriveDeleteFileNode",
     "DriveRenameFileNode",
     "DriveGetFileNode",
+    # File operations - Bulk download
+    "DriveDownloadFolderNode",
+    "DriveBatchDownloadNode",
     # Folder operations
     "DriveCreateFolderNode",
     "DriveListFilesNode",
@@ -102,7 +68,7 @@ __all__ = [
     "DriveRemovePermissionNode",
     "DriveGetPermissionsNode",
     "DriveCreateShareLinkNode",
-    # Export (placeholder)
+    # Export
     "DriveExportFileNode",
     # Batch operations
     "DriveBatchDeleteNode",

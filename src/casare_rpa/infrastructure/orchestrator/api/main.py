@@ -57,6 +57,7 @@ from casare_rpa.infrastructure.orchestrator.api.responses import (
 from casare_rpa.infrastructure.orchestrator.api.routers import (
     analytics,
     auth,
+    dlq,
     jobs,
     metrics,
     robots,
@@ -470,6 +471,11 @@ app.include_router(
     analytics.router,
     prefix="/api/v1",
     tags=["Analytics"],
+)
+app.include_router(
+    dlq.router,
+    prefix="/api/v1",
+    tags=["Dead Letter Queue"],
 )
 
 # WebSocket router (no version prefix for WS)

@@ -158,7 +158,7 @@ from casare_rpa.nodes.google.docs import (
 )
 
 from casare_rpa.nodes.google.drive_nodes import (
-    # File operations
+    # File operations - Single file
     DriveUploadFileNode,
     DriveDownloadFileNode,
     DriveDeleteFileNode,
@@ -166,6 +166,9 @@ from casare_rpa.nodes.google.drive_nodes import (
     DriveMoveFileNode,
     DriveRenameFileNode,
     DriveGetFileNode,
+    # File operations - Bulk download
+    DriveDownloadFolderNode,
+    DriveBatchDownloadNode,
     # Folder operations
     DriveCreateFolderNode,
     DriveListFilesNode,
@@ -321,7 +324,7 @@ __all__ = [
     "DocsInsertTableStandaloneNode",
     "DocsInsertImageStandaloneNode",
     "DocsApplyStyleNode",
-    # Drive - File operations (7)
+    # Drive - File operations - Single file (7)
     "DriveUploadFileNode",
     "DriveDownloadFileNode",
     "DriveDeleteFileNode",
@@ -329,6 +332,9 @@ __all__ = [
     "DriveMoveFileNode",
     "DriveRenameFileNode",
     "DriveGetFileNode",
+    # Drive - File operations - Bulk download (2)
+    "DriveDownloadFolderNode",
+    "DriveBatchDownloadNode",
     # Drive - Folder operations (3)
     "DriveCreateFolderNode",
     "DriveListFilesNode",

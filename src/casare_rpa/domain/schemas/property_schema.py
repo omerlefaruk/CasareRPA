@@ -373,13 +373,23 @@ class NodeSchema:
         # Check display_when conditions (all must match to display)
         if prop.display_when:
             for key, expected in prop.display_when.items():
-                if current_config.get(key) != expected:
+                actual = current_config.get(key)
+                # Support both single value and list of allowed values
+                if isinstance(expected, (list, tuple)):
+                    if actual not in expected:
+                        return False
+                elif actual != expected:
                     return False
 
         # Check hidden_when conditions (any match hides the property)
         if prop.hidden_when:
             for key, expected in prop.hidden_when.items():
-                if current_config.get(key) == expected:
+                actual = current_config.get(key)
+                # Support both single value and list of values that trigger hiding
+                if isinstance(expected, (list, tuple)):
+                    if actual in expected:
+                        return False
+                elif actual == expected:
                     return False
 
         return True

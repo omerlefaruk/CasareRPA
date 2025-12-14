@@ -888,6 +888,34 @@ class DLQManager:
             logger.error(f"Failed to purge DLQ entries: {e}")
             raise
 
+    async def delete_dlq_entry(self, entry_id: str) -> bool:
+        """
+        Delete a DLQ entry permanently.
+
+        Args:
+            entry_id: DLQ entry UUID to delete
+
+        Returns:
+            True if entry was deleted, False if not found
+        """
+        pool = self._get_pool()
+
+        try:
+            async with pool.acquire() as conn:
+                result = await conn.execute(
+                    f"DELETE FROM {self._config.dlq_table} WHERE id = $1",
+                    uuid.UUID(entry_id),
+                )
+
+            deleted = result != "DELETE 0"
+            if deleted:
+                logger.info(f"Deleted DLQ entry {entry_id}")
+            return deleted
+
+        except Exception as e:
+            logger.error(f"Failed to delete DLQ entry {entry_id}: {e}")
+            raise
+
     async def __aenter__(self) -> "DLQManager":
         """Async context manager entry."""
         await self.start()

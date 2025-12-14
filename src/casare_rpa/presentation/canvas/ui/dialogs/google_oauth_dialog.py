@@ -120,25 +120,13 @@ class OAuthWorker(QObject):
 
     def run(self) -> None:
         """Exchange authorization code for tokens."""
+        import asyncio
+
         try:
             self.progress.emit("Exchanging authorization code for tokens...")
 
-            import httpx
-
-            data = {
-                "grant_type": "authorization_code",
-                "code": self.auth_code,
-                "redirect_uri": self.redirect_uri,
-                "client_id": self.client_id,
-                "client_secret": self.client_secret,
-            }
-
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(
-                    "https://oauth2.googleapis.com/token",
-                    data=data,
-                )
-                result = response.json()
+            # Run async token exchange in sync context
+            result, user_email = asyncio.run(self._exchange_token_async())
 
             if "error" in result:
                 error_desc = result.get("error_description", result["error"])
@@ -156,25 +144,61 @@ class OAuthWorker(QObject):
                 "scopes": self.scopes,
             }
 
-            # Try to get user info
-            self.progress.emit("Fetching user information...")
-            try:
-                headers = {"Authorization": f"Bearer {result['access_token']}"}
-                user_response = client.get(
-                    "https://www.googleapis.com/oauth2/v3/userinfo",
-                    headers=headers,
-                )
-                if user_response.status_code == 200:
-                    user_info = user_response.json()
-                    token_data["user_email"] = user_info.get("email", "")
-            except Exception as e:
-                logger.debug(f"Could not fetch user info: {e}")
+            if user_email:
+                token_data["user_email"] = user_email
 
             self.finished.emit(True, "Authorization successful!", token_data)
 
         except Exception as e:
             logger.error(f"OAuth token exchange error: {e}")
             self.finished.emit(False, f"Error: {str(e)}", None)
+
+    async def _exchange_token_async(self) -> tuple[Dict[str, Any], Optional[str]]:
+        """Async token exchange using UnifiedHttpClient."""
+        from casare_rpa.infrastructure.http import (
+            UnifiedHttpClient,
+            UnifiedHttpClientConfig,
+        )
+
+        config = UnifiedHttpClientConfig(
+            default_timeout=30.0,
+            max_retries=2,
+        )
+
+        async with UnifiedHttpClient(config) as client:
+            # Exchange authorization code for tokens
+            data = {
+                "grant_type": "authorization_code",
+                "code": self.auth_code,
+                "redirect_uri": self.redirect_uri,
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+            }
+
+            response = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data=data,
+            )
+            result = await response.json()
+
+            if "error" in result:
+                return result, None
+
+            # Try to get user info
+            user_email: Optional[str] = None
+            try:
+                headers = {"Authorization": f"Bearer {result['access_token']}"}
+                user_response = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers=headers,
+                )
+                if user_response.status == 200:
+                    user_info = await user_response.json()
+                    user_email = user_info.get("email", "")
+            except Exception as e:
+                logger.debug(f"Could not fetch user info: {e}")
+
+            return result, user_email
 
 
 class OAuthThread(QThread):

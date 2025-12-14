@@ -7,7 +7,7 @@ Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 Architectur
 python run.py                              # Run app
 pytest tests/ -v                           # Tests
 pip install -e .                           # Dev install
-python scripts/index_codebase_qdrant.py    # Re-index for semantic search
+python scripts/index_codebase_qdrant.py    # Re-index (stored in .qdrant_new/)
 ```
 
 ## Search Strategy (Qdrant vs Grep)
@@ -69,7 +69,7 @@ Grep: "def execute"         # Find method definitions
 | Pattern | Location | Usage |
 |---------|----------|-------|
 | **Typed Events** | `domain/events/` | `NodeCompleted`, `WorkflowStarted` (frozen dataclasses) |
-| **EventBus** | `domain/events.py` | `get_event_bus()` singleton |
+| **EventBus** | `domain/events/__init__.py` | `get_event_bus()` singleton |
 | **Aggregates** | `domain/aggregates/` | `Workflow` aggregate root |
 | **Unit of Work** | `infrastructure/persistence/unit_of_work.py` | Transaction + event publishing |
 | **CQRS Queries** | `application/queries/` | Read-optimized DTOs |
@@ -135,3 +135,116 @@ class MyNode(BaseNode):
 - `.brain/docs/node-checklist.md` - Node implementation steps
 - `.brain/projectRules.md` - Full coding standards
 - `.brain/systemPatterns.md` - Architecture patterns
+
+## AI-Optimized Documentation
+
+### Quick Lookup Files
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| `.brain/symbols.md` | Symbol registry with paths | Find class/function locations |
+| `.brain/decisions/` | Decision trees | "How do I add/fix/modify X?" |
+| `.brain/errors.md` | Error catalog | Debug error codes |
+| `.brain/dependencies.md` | Dependency graph | Understand import rules |
+
+### Decision Trees
+- `.brain/decisions/add-node.md` - Creating new nodes
+- `.brain/decisions/add-feature.md` - Adding UI/API/logic
+- `.brain/decisions/fix-bug.md` - Debugging guide
+- `.brain/decisions/modify-execution.md` - Changing execution flow
+
+## Anti-Patterns (What NOT to Do)
+
+### Import Violations
+```python
+# Application importing Infrastructure
+from casare_rpa.infrastructure.execution import ExecutionContext  # Use domain.interfaces.IExecutionContext
+
+# Domain importing anything external
+from casare_rpa.infrastructure import *  # Domain must have ZERO external deps
+from PySide6 import *                    # Domain must be framework-agnostic
+```
+
+### UI/Signal Mistakes
+```python
+# Lambda in signal connection
+button.clicked.connect(lambda: self.do_thing(arg))  # Use functools.partial
+
+# Missing @Slot decorator
+def on_clicked(self):  # Add @Slot() decorator
+    pass
+
+# Hardcoded colors
+widget.setStyleSheet("background: #1a1a2e")  # Use THEME['bg_primary']
+```
+
+### Node Development
+```python
+# Wrong exec port method
+self.add_input_port("exec_in", PortType.EXEC_INPUT)  # Use add_exec_input()
+
+# Raw HTTP client
+response = await httpx.get(url)  # Use UnifiedHttpClient
+
+# Silent failures
+try:
+    result = do_thing()
+except:
+    pass  # Always log, use loguru
+```
+
+### Event Handling
+```python
+# Creating untyped events
+bus.publish({"type": "node_done"})  # Use typed: NodeCompleted(...)
+
+# UI update from wrong thread
+def background_task(self):
+    self.label.setText(result)  # Use signal to marshal to main thread
+```
+
+## Change Impact Matrix
+
+When modifying these files, also update related files:
+
+| If you change... | Also update... |
+|------------------|----------------|
+| `BaseNode` signature | All 400+ node subclasses |
+| `DataType` enum | Serialization, port compatibility, visual nodes |
+| `PropertyDef` structure | Node schemas, visual node widgets, properties panel |
+| Event class definition | Event handlers, event_bridge.py |
+| `THEME` colors/keys | All styled widgets |
+| Port types | Connection validation, visual wires |
+| `_NODE_REGISTRY` | Visual node registry, workflow_loader |
+| `WorkflowSchema` | Serializer, loader, executor |
+
+## Quick Debugging Reference
+
+| Symptom | Check First |
+|---------|-------------|
+| "Element not found" | Selector valid? Page loaded? Add wait |
+| "Connection refused" | Host reachable? UnifiedHttpClient logs |
+| UI freezes | Blocking main thread? Move to QThread |
+| Event not received | Subscribed? Event type match? |
+| Node not found | Registered in `_NODE_REGISTRY`? |
+| Port type mismatch | Check `DataType` compatibility |
+| Credential error | Credential exists? Name spelled correctly? |
+
+## Search Strategy Summary
+
+```
+1. Know what you're looking for?
+   → Check .brain/symbols.md first
+   → Then Grep for exact match
+
+2. Exploring unfamiliar area?
+   → qdrant-find for semantic search
+   → Read relevant _index.md
+
+3. Adding/fixing/modifying?
+   → Read .brain/decisions/{task}.md
+   → Follow decision tree
+
+4. Debugging error?
+   → Look up code in .brain/errors.md
+   → Check .brain/dependencies.md for impact
+```

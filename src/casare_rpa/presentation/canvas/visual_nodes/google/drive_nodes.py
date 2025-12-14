@@ -96,7 +96,7 @@ class VisualDriveUploadFileNode(VisualGoogleDriveBaseNode):
 
 
 class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
-    """Visual representation of DriveDownloadFileNode."""
+    """Visual representation of DriveDownloadFileNode (single file download)."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Download File"
@@ -106,30 +106,16 @@ class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        # Single file inputs
         self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("destination_path", DataType.STRING)
-        # Folder download mode
-        self.add_typed_input("source_folder_id", DataType.STRING)
-        # Batch/loop inputs
-        self.add_typed_input("file", DataType.DICT)  # From ForEach loop
-        self.add_typed_input("files", DataType.LIST)  # From DriveListFiles
-        self.add_typed_input("destination_folder", DataType.STRING)
-        # Outputs
         self.add_exec_output("exec_out")
         self.add_typed_output("file_path", DataType.STRING)
-        self.add_typed_output("file_paths", DataType.LIST)
-        self.add_typed_output("downloaded_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
     def setup_widgets(self) -> None:
         super().setup_widgets()
-        # Drive file picker for selecting single file from Drive
         self.setup_file_widget()
-        # Drive folder picker for downloading entire folder
-        self.setup_folder_widget(label="Source Folder", name="source_folder_id")
-        # Local destination inputs (text fields for file system paths)
         self.add_text_input(
             "destination_path",
             "Destination Path",
@@ -137,6 +123,61 @@ class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
             placeholder_text="C:\\Downloads\\file.pdf",
             tab="config",
         )
+
+
+class VisualDriveDownloadFolderNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveDownloadFolderNode (download all files from folder)."""
+
+    __identifier__ = "casare_rpa.google"
+    NODE_NAME = "Drive: Download Folder"
+    NODE_CATEGORY = "google/drive"
+    CASARE_NODE_CLASS = "DriveDownloadFolderNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("folder_id", DataType.STRING)
+        self.add_typed_input("destination_folder", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("file_paths", DataType.LIST)
+        self.add_typed_output("downloaded_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_folder_widget(label="Source Folder", name="folder_id")
+        self.add_text_input(
+            "destination_folder",
+            "Destination Folder",
+            text="",
+            placeholder_text="C:\\Downloads\\",
+            tab="config",
+        )
+
+
+class VisualDriveBatchDownloadNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveBatchDownloadNode (download list of files)."""
+
+    __identifier__ = "casare_rpa.google"
+    NODE_NAME = "Drive: Batch Download"
+    NODE_CATEGORY = "google/drive"
+    CASARE_NODE_CLASS = "DriveBatchDownloadNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("files", DataType.LIST)
+        self.add_typed_input("destination_folder", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("file_paths", DataType.LIST)
+        self.add_typed_output("downloaded_count", DataType.INTEGER)
+        self.add_typed_output("failed_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
         self.add_text_input(
             "destination_folder",
             "Destination Folder",
@@ -227,8 +268,15 @@ class VisualDriveRenameFileNode(VisualGoogleDriveBaseNode):
         self.add_typed_output("error", DataType.STRING)
 
     def setup_widgets(self) -> None:
-        super().setup_widgets()
+        super().setup_widgets()  # credential picker
         self.setup_file_widget()
+        self.add_text_input(
+            "new_name",
+            "New Name",
+            text="",
+            placeholder_text="Enter new filename",
+            tab="config",
+        )
 
 
 class VisualDriveGetFileNode(VisualGoogleDriveBaseNode):
@@ -335,6 +383,16 @@ class VisualDriveSearchFilesNode(VisualGoogleDriveBaseNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()  # credential picker
+        self.add_text_input(
+            "query",
+            "Search Query",
+            text="",
+            placeholder_text="name contains 'report'",
+            tab="config",
+        )
+
 
 # =============================================================================
 # Permissions
@@ -362,6 +420,25 @@ class VisualDriveShareFileNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
+        self.add_text_input(
+            "email",
+            "Email",
+            text="",
+            placeholder_text="user@example.com",
+            tab="config",
+        )
+        self.add_combo_menu(
+            "role",
+            "Role",
+            items=["reader", "writer", "commenter", "owner"],
+            tab="config",
+        )
+        self.add_combo_menu(
+            "permission_type",
+            "Type",
+            items=["user", "group", "domain", "anyone"],
+            tab="config",
+        )
 
 
 class VisualDriveRemoveShareNode(VisualGoogleDriveBaseNode):
@@ -383,6 +460,13 @@ class VisualDriveRemoveShareNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
+        self.add_text_input(
+            "permission_id",
+            "Permission ID",
+            text="",
+            placeholder_text="Permission ID to remove",
+            tab="config",
+        )
 
 
 class VisualDriveGetPermissionsNode(VisualGoogleDriveBaseNode):
@@ -405,6 +489,40 @@ class VisualDriveGetPermissionsNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
+
+
+class VisualDriveCreateShareLinkNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveCreateShareLinkNode."""
+
+    __identifier__ = "casare_rpa.google"
+    NODE_NAME = "Drive: Create Share Link"
+    NODE_CATEGORY = "google/drive"
+    CASARE_NODE_CLASS = "DriveCreateShareLinkNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_typed_output("share_link", DataType.STRING)
+        self.add_typed_output("permission_id", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
+        self.add_combo_menu(
+            "access_type",
+            "Link Access",
+            items=["anyone", "anyoneWithLink"],
+            tab="config",
+        )
+        self.add_combo_menu(
+            "link_role",
+            "Link Role",
+            items=["reader", "writer", "commenter"],
+            tab="config",
+        )
 
 
 # =============================================================================
@@ -458,6 +576,9 @@ class VisualDriveBatchDeleteNode(VisualGoogleDriveBaseNode):
         self.add_typed_output("results", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()  # credential picker
 
 
 class VisualDriveBatchMoveNode(VisualGoogleDriveBaseNode):

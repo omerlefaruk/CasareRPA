@@ -2,6 +2,19 @@
 
 Quick reference for application layer. Use cases, services, and orchestration.
 
+## AI Quick Reference
+
+**Purpose**: Orchestrates domain operations via use cases. No direct infrastructure access.
+
+**Dependencies**: Domain only. Never import from Infrastructure or Presentation.
+
+**Common Tasks**:
+- "Execute a workflow" → `ExecuteWorkflowUseCase`
+- "Add project CRUD" → See Project use cases pattern
+- "Add job orchestration" → `orchestrator/` directory
+
+**Patterns Used**: CQRS, Use Cases, Repository (via domain interfaces)
+
 ## Directory Structure
 
 | Directory | Description | Key Exports |

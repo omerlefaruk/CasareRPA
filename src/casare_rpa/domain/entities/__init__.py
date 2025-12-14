@@ -1,7 +1,16 @@
 """
 CasareRPA - Domain Entities
 
+AI-HINT: Core domain entities with identity that persist over time.
+AI-CONTEXT: All nodes inherit from BaseNode. Projects contain Scenarios.
+
 Domain entities are objects with identity that persist over time.
+
+PUBLIC API - Safe to import:
+    BaseNode, WorkflowSchema, Variable, Project, Scenario, Subflow
+
+INTERNAL - Avoid direct import:
+    ExecutionState (use IExecutionContext interface)
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode

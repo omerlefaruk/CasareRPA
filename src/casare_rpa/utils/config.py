@@ -88,7 +88,7 @@ MIN_WINDOW_HEIGHT: Final[int] = 768
 
 # Aliases for backward compatibility and convenience
 GUI_WINDOW_WIDTH: Final[int] = 1280
-GUI_WINDOW_HEIGHT: Final[int] = 768
+GUI_WINDOW_HEIGHT: Final[int] = 720
 GUI_THEME: Final[str] = "dark"
 
 # ============================================================================

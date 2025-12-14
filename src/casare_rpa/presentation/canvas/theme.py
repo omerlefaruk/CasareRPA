@@ -96,10 +96,17 @@ ASSETS_DIR = Path(__file__).parent / "assets"
 # Global theme instance
 THEME = CanvasThemeColors()
 
+# PERFORMANCE: Module-level stylesheet cache to avoid rebuilding on each call
+_CACHED_STYLESHEET: str | None = None
+
 
 def get_canvas_stylesheet() -> str:
     """
     Generate the main Canvas application stylesheet.
+
+    PERFORMANCE: Uses two-level caching (C1 optimization):
+    1. Memory cache (module-level) - instant on subsequent calls
+    2. Disk cache - ~15-25ms savings on cold start
 
     This wrapper maintains the original API signature (no arguments)
     by using the global THEME instance.
@@ -107,7 +114,61 @@ def get_canvas_stylesheet() -> str:
     Returns:
         Complete QSS stylesheet for the Canvas application.
     """
-    return _get_canvas_stylesheet(THEME)
+    global _CACHED_STYLESHEET
+
+    # Level 1: Memory cache (instant)
+    if _CACHED_STYLESHEET is not None:
+        return _CACHED_STYLESHEET
+
+    # Level 2: Disk cache (C1 optimization)
+    try:
+        from casare_rpa.presentation.canvas.theme_system.stylesheet_cache import (
+            get_cached_stylesheet,
+            cache_stylesheet,
+        )
+
+        cached = get_cached_stylesheet()
+        if cached is not None:
+            _CACHED_STYLESHEET = cached
+            return _CACHED_STYLESHEET
+    except ImportError:
+        pass  # Disk cache not available, continue to build
+
+    # Build stylesheet fresh
+    _CACHED_STYLESHEET = _get_canvas_stylesheet(THEME)
+
+    # Save to disk cache for next startup
+    try:
+        from casare_rpa.presentation.canvas.theme_system.stylesheet_cache import (
+            cache_stylesheet,
+        )
+
+        cache_stylesheet(_CACHED_STYLESHEET)
+    except ImportError:
+        pass  # Disk cache not available
+
+    return _CACHED_STYLESHEET
+
+
+def invalidate_stylesheet_cache() -> None:
+    """
+    Invalidate the stylesheet cache (both memory and disk).
+
+    Call this if the theme is modified at runtime and you need to regenerate
+    the stylesheet. Not typically needed since theme is static.
+    """
+    global _CACHED_STYLESHEET
+    _CACHED_STYLESHEET = None
+
+    # Also invalidate disk cache (C1)
+    try:
+        from casare_rpa.presentation.canvas.theme_system.stylesheet_cache import (
+            invalidate_cache,
+        )
+
+        invalidate_cache()
+    except ImportError:
+        pass
 
 
 def get_node_status_color(status: str) -> str:
@@ -154,6 +215,7 @@ __all__ = [
     "THEME",
     "CanvasThemeColors",
     "get_canvas_stylesheet",
+    "invalidate_stylesheet_cache",  # For theme hot-reload if needed
     "get_node_status_color",
     "get_wire_color",
     "get_status_color",

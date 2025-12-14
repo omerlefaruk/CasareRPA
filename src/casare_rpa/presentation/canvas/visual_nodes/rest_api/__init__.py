@@ -10,6 +10,7 @@ from casare_rpa.presentation.canvas.visual_nodes.rest_api.nodes import (
     VisualHttpDownloadFileNode,
     VisualHttpUploadFileNode,
     VisualBuildUrlNode,
+    VisualHttpSuperNode,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "VisualHttpDownloadFileNode",
     "VisualHttpUploadFileNode",
     "VisualBuildUrlNode",
+    "VisualHttpSuperNode",
 ]

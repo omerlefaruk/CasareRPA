@@ -16,7 +16,7 @@ Quick reference for visual node implementations. Use for fast discovery.
 | `document/` | Document AI | 5 | ClassifyDocument, ExtractForm, ExtractInvoice, ExtractTable |
 | `email/` | Email operations | 8 | SendEmail, ReadEmails, GetEmailContent, FilterEmails |
 | `error_handling/` | Error recovery | 9 | Retry, ThrowError, OnError, ErrorRecovery, Assert |
-| `file_operations/` | File I/O | 40 | ReadFile, WriteFile, CSV, JSON, XML, PDF, FTP |
+| `file_operations/` | File I/O, **Super Nodes** | 42 | ReadFile, WriteFile, CSV, JSON, XML, PDF, FTP, **VisualFileSystemSuperNode**, **VisualStructuredDataSuperNode** |
 | `google/` | Google services | 79 | Calendar (12), Gmail (21), Sheets (21), Docs (8), Drive (17) |
 | `messaging/` | Chat platforms | 16 | Telegram (9), WhatsApp (7) |
 | `office_automation/` | MS Office | 12 | Excel, Word, Outlook |
@@ -28,7 +28,23 @@ Quick reference for visual node implementations. Use for fast discovery.
 | `utility/` | Helpers | 27 | Random, DateTime, Text operations, Reroute |
 | `variable/` | Variable management | 3 | SetVariable, GetVariable, IncrementVariable |
 
-**Total: 405 visual nodes across 21 categories**
+**Total: 407 visual nodes across 21 categories**
+
+## Super Nodes (Mixins)
+
+Super Nodes use the `SuperNodeMixin` to provide dynamic port management based on action selection.
+
+| Mixin/File | Purpose |
+|------------|---------|
+| `mixins/super_node_mixin.py` | Base mixin for dynamic ports and conditional widget visibility |
+| `file_operations/super_nodes.py` | Visual implementations for FileSystemSuperNode, StructuredDataSuperNode |
+
+**Super Node Features:**
+- Dynamic port creation/deletion based on action dropdown
+- Conditional widget visibility via `display_when`/`hidden_when`
+- Port schema defined in domain layer (`DynamicPortSchema`)
+
+See [Super Node Pattern Documentation](../../../../../.brain/docs/super-node-pattern.md) for implementation guide.
 
 ## Key Files
 

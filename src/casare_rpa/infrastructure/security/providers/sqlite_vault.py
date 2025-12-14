@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from casare_rpa.config.security_config import get_crypto_security_config
 from casare_rpa.infrastructure.security.vault_client import (
     VaultProvider,
     VaultConfig,
@@ -153,11 +154,12 @@ class EncryptedSQLiteProvider(VaultProvider):
             password = machine_id.encode()
 
         # Derive a proper key using PBKDF2
+        crypto_config = get_crypto_security_config()
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=self.DEFAULT_SALT,
-            iterations=480000,  # OWASP recommended minimum
+            iterations=crypto_config.pbkdf2_owasp_iterations,
         )
 
         key = base64.urlsafe_b64encode(kdf.derive(password))

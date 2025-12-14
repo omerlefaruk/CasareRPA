@@ -28,6 +28,8 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 # Import variable picker components
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
@@ -155,30 +157,30 @@ class CasareCheckBox:
         # Dark blue checkbox styling with white checkmark - smaller indicator for 8pt font
         checkbox_style = f"""
             QCheckBox {{
-                color: #a1a1aa;
+                color: {THEME.text_secondary};
                 spacing: 6px;
             }}
             QCheckBox::indicator {{
                 width: 14px;
                 height: 14px;
-                border: 1px solid #52525b;
+                border: 1px solid {THEME.border_light};
                 border-radius: 3px;
-                background-color: #18181b;
+                background-color: {THEME.bg_darkest};
             }}
 
             QCheckBox::indicator:unchecked:hover {{
-                border-color: #6366f1;
+                border-color: {THEME.accent_primary};
             }}
 
             QCheckBox::indicator:checked {{
-                background-color: #6366f1;
-                border-color: #6366f1;
+                background-color: {THEME.accent_primary};
+                border-color: {THEME.accent_primary};
                 image: url({checkmark_path});
             }}
 
             QCheckBox::indicator:checked:hover {{
-                background-color: #4f46e5;
-                border-color: #4f46e5;
+                background-color: {THEME.accent_hover};
+                border-color: {THEME.accent_hover};
             }}
         """
 
@@ -938,6 +940,7 @@ def create_variable_text_widget(
     text: str = "",
     placeholder_text: str = "",
     tooltip: str = "",
+    show_expand_button: bool = True,
 ):
     """
     Factory function to create a variable-aware text input widget.
@@ -952,6 +955,7 @@ def create_variable_text_widget(
         text: Initial text value
         placeholder_text: Placeholder text when empty
         tooltip: Tooltip text for the widget
+        show_expand_button: Whether to show expand button for expression editor
 
     Returns:
         NodeBaseWidget with VariableAwareLineEdit, or None if unavailable
@@ -965,25 +969,27 @@ def create_variable_text_widget(
         logger.error("NodeGraphQt or variable picker not available")
         return None
 
-    # Create VariableAwareLineEdit directly
-    line_edit = VariableAwareLineEdit()
+    # Create VariableAwareLineEdit directly with expand button option
+    line_edit = VariableAwareLineEdit(show_expand_button=show_expand_button)
     line_edit.setText(text)
     line_edit.setPlaceholderText(placeholder_text)
 
-    # Apply standard styling with padding for {x} button
-    line_edit.setStyleSheet("""
-        QLineEdit {
+    # Apply standard styling with padding for both {x} and ... buttons
+    # Extra padding on right: variable button (16px) + expand button (16px) + spacing (6px) + margin (4px) = 42px
+    right_padding = 46 if show_expand_button else 28
+    line_edit.setStyleSheet(f"""
+        QLineEdit {{
             background: rgb(60, 60, 80);
             border: 1px solid rgb(80, 80, 100);
             border-radius: 3px;
             color: rgba(230, 230, 230, 255);
-            padding: 2px 28px 2px 4px;
+            padding: 2px {right_padding}px 2px 4px;
             selection-background-color: rgba(100, 150, 200, 150);
-        }
-        QLineEdit:focus {
+        }}
+        QLineEdit:focus {{
             background: rgb(70, 70, 90);
             border: 1px solid rgb(100, 150, 200);
-        }
+        }}
     """)
 
     if tooltip:

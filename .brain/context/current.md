@@ -1,15 +1,174 @@
 # Current Context
 
-**Updated**: 2025-12-11 | **Branch**: main
+**Updated**: 2025-12-14 | **Branch**: main
 
 ## Active Work
-- **Focus**: AI Assistant Brain Context Documentation (COMPLETE)
-- **Status**: DONE
-- **File**: `docs/ai_context/workflow_standards.md`
+- **Focus**: Expression Editor Feature - IMPLEMENTED
+- **Status**: COMPLETE
+- **Plan**: `.brain/plans/expression-editor.md`
+- **Index**: `presentation/canvas/ui/widgets/expression_editor/_index.md`
 
 ## Completed This Session
 
-### AI Assistant Workflow Standards Documentation
+### Expression Editor Feature Implementation
+
+Enhanced text editing for node properties with syntax highlighting, variable support, and multiple editor modes.
+
+#### Files Created (~2,500 lines)
+
+```
+src/casare_rpa/presentation/canvas/ui/widgets/expression_editor/
+├── __init__.py                    # Public exports
+├── base_editor.py                 # EditorType enum, BaseExpressionEditor ABC
+├── expression_editor_popup.py     # Main popup container (642 lines)
+├── editor_factory.py              # Factory for creating editors
+├── code_editor.py                 # Code editor with line numbers (368 lines)
+├── markdown_editor.py             # Markdown editor with preview (471 lines)
+├── rich_text_editor.py            # Rich text with variables (374 lines)
+├── syntax/
+│   ├── __init__.py
+│   ├── python_highlighter.py      # Python syntax (VSCode Dark+)
+│   ├── javascript_highlighter.py  # JavaScript syntax
+│   └── markdown_highlighter.py    # Markdown syntax
+└── widgets/
+    ├── __init__.py
+    ├── expand_button.py           # Trigger button (84 lines)
+    ├── toolbar.py                 # Formatting toolbar
+    └── variable_autocomplete.py   # Variable autocomplete
+```
+
+#### Key Classes
+
+| Class | Purpose |
+|-------|---------|
+| `EditorType` | Enum: CODE_PYTHON, CODE_JAVASCRIPT, CODE_CMD, MARKDOWN, RICH_TEXT |
+| `ExpressionEditorPopup` | Main popup following NodeOutputPopup pattern |
+| `EditorFactory` | Factory for creating editors with property type mapping |
+| `CodeExpressionEditor` | Code with line numbers and syntax highlighting |
+| `MarkdownEditor` | Markdown with toolbar and live preview |
+| `RichTextEditor` | Text with {{ variable autocomplete |
+| `ExpandButton` | Small [...] button to trigger popup |
+
+#### Integration Points
+
+Modified `base_visual_node.py`:
+- `_open_expression_editor()` - Opens popup for property
+- `_get_editor_type_for_property()` - Maps property to editor type
+- `_on_expression_editor_accepted()` - Handles accepted value
+
+Node-specific overrides:
+```python
+{
+    "EmailSendNode": {"body": EditorType.MARKDOWN},
+    "BrowserEvaluateNode": {"script": EditorType.CODE_JAVASCRIPT},
+    "RunPythonNode": {"code": EditorType.CODE_PYTHON},
+    "CommandNode": {"command": EditorType.CODE_CMD},
+}
+```
+
+#### Features
+
+- **Popup Window**: Tool-style frameless, draggable, resizable, fade-in animation
+- **Code Editor**: Line numbers, syntax highlighting, tab-to-spaces
+- **Markdown Editor**: Toolbar (Bold/Italic/Heading/Link/Lists/Code), live preview
+- **Rich Text Editor**: Variable autocomplete on {{ trigger, validation status
+- **Keyboard Shortcuts**: Escape (cancel), Ctrl+Enter (accept), Ctrl+B/I/K (formatting)
+
+#### Documentation Created
+
+- `expression_editor/_index.md` - Package documentation
+- `widgets/_index.md` - Widget catalog (created)
+
+### Previous: Workflow Loading Performance Optimization (All Phases Complete)
+
+### Workflow Loading Performance Optimization (All Phases A, B, C)
+Implemented comprehensive performance optimizations for workflow loading:
+
+#### Phase A: Quick Wins
+1. **A1: Single-pass validation** - Added `__validated__` marker to skip redundant validation
+2. **A3: Improved NODE_TYPE_MAP proxy** - Track accessed names, avoid loading all 400+ nodes
+3. **A4: Module-level cache in deserializer** - `_NODE_TYPE_MAP_CACHE` for persistent caching
+
+#### Phase B: Medium Effort
+1. **B1: Workflow schema caching (LRU)** - Created `infrastructure/caching/workflow_cache.py`
+   - Content fingerprinting (SHA-256) for cache keys
+   - LRU eviction with configurable max size
+   - Thread-safe with RLock
+   - 12x faster repeated loads (0.07ms vs 0.87ms)
+2. **B3: Streaming decompression** - Updated `compressed_io.py`
+   - 64KB chunk streaming for gzip/zstd
+   - Memory-mapped I/O for large JSON files
+   - Auto-detection based on 1MB threshold
+
+#### Phase C: Advanced (Previously Completed)
+
+1. **Created**: `src/casare_rpa/utils/workflow/incremental_loader.py` (~400 lines)
+   - `WorkflowSkeleton` dataclass for lightweight previews
+   - `IncrementalLoader` class for skeleton-first loading
+   - 20-50x faster for preview scenarios (~5-10ms vs 200-500ms)
+   - `load_skeleton()` - Fast metadata extraction
+   - `load_full()` - Deferred full loading
+   - `scan_directory()` - Workflow browser support
+
+2. **Modified**: `src/casare_rpa/utils/performance/object_pool.py`
+   - Added `NodeInstancePool` class for node reuse
+   - Thread-safe acquire/release with statistics
+   - `get_node_instance_pool()` singleton
+
+3. **Modified**: `src/casare_rpa/utils/workflow/workflow_loader.py`
+   - Added `_batch_resolve_node_types()` - Single-pass alias resolution
+   - Added `_preload_workflow_node_types()` - Batch preloading
+   - Added `_instantiate_nodes_parallel()` - ThreadPoolExecutor for 50+ nodes
+   - Added `use_parallel` and `use_pooling` parameters to `load_workflow_from_dict()`
+
+4. **Created Tests**: `tests/performance/test_workflow_loading.py`
+   - 70 comprehensive tests
+   - Unit, integration, and performance benchmarks
+   - All tests passing
+
+### Key Performance Gains
+| Optimization | Estimated Gain |
+|--------------|----------------|
+| Skeleton loading | 200ms+ (preview scenarios) |
+| Parallel instantiation | 50-100ms (50+ nodes) |
+| Node pooling | 30-50ms (repeated loads) |
+
+### Previous Session: Super Node Documentation
+
+### Super Node Feature Documentation
+Created comprehensive documentation for the Super Node pattern:
+
+1. **Created**: `.brain/docs/super-node-pattern.md` - Full implementation guide
+   - What are Super Nodes (consolidated action-based nodes)
+   - DynamicPortSchema for defining action-based ports
+   - PropertyDef display_when/hidden_when for conditional widgets
+   - SuperNodeMixin usage pattern
+   - Step-by-step guide for creating new Super Nodes
+   - Best practices and troubleshooting
+
+2. **Updated**: `src/casare_rpa/nodes/_index.md`
+   - Added Super Nodes section
+   - Documented FileSystemSuperNode (12 actions)
+   - Documented StructuredDataSuperNode (7 actions)
+   - Added link to pattern documentation
+
+3. **Updated**: `src/casare_rpa/presentation/canvas/visual_nodes/_index.md`
+   - Added Super Nodes (Mixins) section
+   - Documented mixins/super_node_mixin.py
+   - Documented file_operations/super_nodes.py
+   - Updated node count (405 -> 407)
+
+### Key Files Documented
+
+| File | Purpose |
+|------|---------|
+| `nodes/file/super_node.py` | FileSystemSuperNode, StructuredDataSuperNode implementations |
+| `visual_nodes/mixins/super_node_mixin.py` | Mixin for dynamic port/widget management |
+| `visual_nodes/file_operations/super_nodes.py` | Visual node implementations |
+| `domain/value_objects/dynamic_port_config.py` | PortDef, ActionPortConfig, DynamicPortSchema |
+| `domain/schemas/property_schema.py` | PropertyDef with display_when/hidden_when |
+
+### Previous Session: AI Assistant Brain Context Documentation
 Created comprehensive brain context file for CasareRPA Genius AI Assistant:
 1. **Workflow JSON Schema**: Complete structure with security constraints
 2. **Node Registry Reference**: All categories, port types, data types
@@ -21,39 +180,13 @@ Created comprehensive brain context file for CasareRPA Genius AI Assistant:
 
 **Key File**: `docs/ai_context/workflow_standards.md` (1179 lines)
 
-**Source Analysis**:
-- `infrastructure/ai/registry_dumper.py` - Manifest generation patterns
-- `domain/schemas/workflow_ai.py` - Schema validation and security
-- `nodes/control_flow_nodes.py` - Node implementations
-- `nodes/__init__.py` - Complete node registry (~250 nodes)
-
-### Previous: PySide6 Animation Research
-Comprehensive research on Qt6 animation best practices:
-1. QPropertyAnimation patterns for fade, slide, opacity
-2. Animation group patterns (parallel/sequential)
-3. QEasingCurve selection guide (OutCubic for UI, InOutQuad for toggles)
-4. Duration guidelines: 150-300ms micro-interactions, 300-500ms transitions
-5. Canvas animation techniques (smooth zoom, node selection glow)
-6. Performance optimization (reuse animations, batch updates, 60fps target)
-7. Accessibility: prefers-reduced-motion detection and fallbacks
-8. Implementation recommendations for CasareRPA
-
-**Key Files**:
-- Research: `.brain/plans/pyside6-animation-patterns.md`
-- Existing animation: `presentation/canvas/ui/widgets/node_output_popup.py` (fade-in)
-- Theme animations: `presentation/canvas/ui/theme.py` (Animations dataclass)
-
-### Previous: GPU Acceleration (Phase 1)
-- OpenGL viewport enabled in `node_graph_widget.py:714-735`
-- GPU utility module: `utils/gpu/gpu_utils.py`
-- Integrated in `screen_capture.py` and `cv_healer.py`
-
 ## Quick References
 - **Context**: `.brain/context/current.md` (this file)
 - **Patterns**: `.brain/systemPatterns.md`
 - **Rules**: `.brain/projectRules.md`
 - **Nodes Index**: `src/casare_rpa/nodes/_index.md`
-- **UI Index**: `src/casare_rpa/presentation/canvas/_index.md`
+- **Visual Nodes Index**: `src/casare_rpa/presentation/canvas/visual_nodes/_index.md`
+- **Super Node Pattern**: `.brain/docs/super-node-pattern.md`
 
 ## Notes
 <!-- Add session-specific notes here. Clear after session. -->

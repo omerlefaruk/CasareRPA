@@ -15,7 +15,7 @@ Quick reference for automation nodes. 413+ nodes across 18 categories.
 | `document/` | PDF, Office | PDFReaderNode |
 | `email/` | Email automation | SendEmailNode, IMAPNode |
 | `error_handling/` | Error recovery | TryCatchNode, RetryNode |
-| `file/` | File I/O | ReadFileNode, WriteFileNode, ImageConvertNode |
+| `file/` | File I/O, **Super Nodes** | ReadFileNode, WriteFileNode, **FileSystemSuperNode**, **StructuredDataSuperNode** |
 | `google/` | Google services | SheetsNode, DriveNode, DocsNode |
 | `http/` | HTTP requests | HttpRequestNode |
 | `llm/` | AI/LLM nodes | LLMNode, PromptNode |
@@ -23,6 +23,17 @@ Quick reference for automation nodes. 413+ nodes across 18 categories.
 | `system/` | System operations | RunProcessNode |
 | `trigger_nodes/` | Workflow triggers | ScheduleNode, WebhookNode |
 | `workflow/` | Subflows | SubflowNode |
+
+## Super Nodes
+
+Super Nodes are consolidated action-based nodes that replace multiple atomic nodes with a single configurable node. They use dynamic ports and conditional widget visibility.
+
+| Super Node | Actions | File |
+|------------|---------|------|
+| `FileSystemSuperNode` | Read/Write/Append/Delete/Copy/Move File, File Exists, Get File Size/Info, Create Directory, List Files/Directory (12 actions) | `file/super_node.py` |
+| `StructuredDataSuperNode` | Read/Write CSV, Read/Write JSON, Zip/Unzip Files, Image Convert (7 actions) | `file/super_node.py` |
+
+See [Super Node Pattern Documentation](../../../../.brain/docs/super-node-pattern.md) for implementation guide.
 
 ## Key Files (Root)
 

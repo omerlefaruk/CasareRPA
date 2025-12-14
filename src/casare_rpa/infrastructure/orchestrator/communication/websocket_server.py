@@ -1,6 +1,20 @@
 """
 WebSocket Server for CasareRPA Orchestrator.
 Handles robot connections and message routing.
+
+DEPRECATED: This standalone websockets server is deprecated in favor of the
+FastAPI WebSocket handlers in `websocket_handlers.py`. The FastAPI handlers
+provide the same functionality on the main API server (port 8000) at:
+- /ws/robot/{robot_id} - Robot registration, heartbeats, job updates
+- /ws/admin - Admin dashboard updates
+- /ws/logs/{robot_id} - Log streaming
+
+Migration:
+1. Update robot client to connect to ws://host:8000/ws/robot/{robot_id}
+2. Remove OrchestratorEngine.start_server() calls
+3. Use the FastAPI app with websocket_handlers router instead
+
+This module will be removed in v3.0.
 """
 
 import asyncio
@@ -85,6 +99,9 @@ class OrchestratorServer:
     """
     WebSocket server for robot communication.
 
+    DEPRECATED: Use FastAPI WebSocket handlers instead.
+    See module docstring for migration instructions.
+
     Handles:
     - Robot registration and authentication
     - Job distribution
@@ -102,12 +119,24 @@ class OrchestratorServer:
         """
         Initialize orchestrator server.
 
+        DEPRECATED: This standalone server is deprecated. Use FastAPI WebSocket
+        handlers at /ws/robot/{robot_id} instead. This class will be removed in v3.0.
+
         Args:
             host: Server bind address
             port: Server port
             heartbeat_timeout: Seconds before marking robot offline
             auth_token: Optional authentication token
         """
+        import warnings
+
+        warnings.warn(
+            "OrchestratorServer is deprecated. Use FastAPI WebSocket handlers at "
+            "/ws/robot/{robot_id} instead. This class will be removed in v3.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if not HAS_WEBSOCKETS:
             raise ImportError(
                 "websockets package required. Install with: pip install websockets"

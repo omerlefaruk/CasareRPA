@@ -105,6 +105,12 @@ from casare_rpa.infrastructure.http import (
     close_unified_http_client,
 )
 
+# Caching exports
+from casare_rpa.infrastructure.caching import (
+    WorkflowCache,
+    get_workflow_cache,
+)
+
 __all__ = [
     # Agent
     "RobotConfig",
@@ -152,4 +158,7 @@ __all__ = [
     "RequestStats",
     "get_unified_http_client",
     "close_unified_http_client",
+    # Caching
+    "WorkflowCache",
+    "get_workflow_cache",
 ]

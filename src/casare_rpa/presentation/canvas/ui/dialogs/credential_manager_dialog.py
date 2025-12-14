@@ -51,15 +51,24 @@ class ApiKeyTestWorker(QObject):
 
     def run(self) -> None:
         """Test the API key by making a minimal API call."""
+        import asyncio
+
         try:
-            success, message = self._test_provider(self.provider, self.api_key)
+            success, message = asyncio.run(
+                self._test_provider_async(self.provider, self.api_key)
+            )
             self.finished.emit(success, message)
         except Exception as e:
             self.finished.emit(False, f"Test failed: {str(e)}")
 
-    def _test_provider(self, provider: str, api_key: str) -> tuple[bool, str]:
-        """Test API key for specific provider."""
-        import httpx
+    async def _test_provider_async(
+        self, provider: str, api_key: str
+    ) -> tuple[bool, str]:
+        """Test API key for specific provider using UnifiedHttpClient."""
+        from casare_rpa.infrastructure.http import (
+            UnifiedHttpClient,
+            UnifiedHttpClientConfig,
+        )
 
         # Provider-specific test endpoints and headers
         test_configs = {
@@ -146,44 +155,53 @@ class ApiKeyTestWorker(QObject):
                 )
             return False, "API key appears to be invalid (too short)."
 
+        client_config = UnifiedHttpClientConfig(
+            default_timeout=15.0,
+            max_retries=1,  # Don't retry for test - we want fast feedback
+        )
+
         try:
-            with httpx.Client(timeout=15.0) as client:
+            async with UnifiedHttpClient(client_config) as client:
                 if config["method"] == "GET":
-                    response = client.get(config["url"], headers=config["headers"])
+                    response = await client.get(
+                        config["url"], headers=config["headers"]
+                    )
                 else:
-                    response = client.post(
+                    response = await client.post(
                         config["url"],
                         headers=config["headers"],
                         json=config.get("body", {}),
                     )
 
-                if response.status_code == 200:
+                status_code = response.status
+                if status_code == 200:
                     return True, "Connection successful! API key is valid."
-                elif response.status_code == 401:
+                elif status_code == 401:
                     return False, "Authentication failed. Invalid API key."
-                elif response.status_code == 403:
+                elif status_code == 403:
                     return False, "Access forbidden. Check API key permissions."
-                elif response.status_code == 429:
+                elif status_code == 429:
                     return True, "API key valid (rate limited - try again later)."
                 else:
                     # Some APIs return 400 for minimal requests but key is still valid
-                    error_text = response.text[:200] if response.text else ""
+                    response_text = await response.text()
+                    error_text = response_text[:200] if response_text else ""
                     if (
                         "invalid" in error_text.lower()
                         or "unauthorized" in error_text.lower()
                     ):
                         return (
                             False,
-                            f"API error ({response.status_code}): {error_text}",
+                            f"API error ({status_code}): {error_text}",
                         )
                     return (
                         True,
-                        f"API key appears valid (status: {response.status_code}).",
+                        f"API key appears valid (status: {status_code}).",
                     )
 
-        except httpx.ConnectError:
+        except ConnectionError:
             return False, "Connection failed. Check your internet connection."
-        except httpx.TimeoutException:
+        except TimeoutError:
             return False, "Connection timed out. The API server may be slow."
         except Exception as e:
             return False, f"Test error: {str(e)}"

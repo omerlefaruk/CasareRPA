@@ -14,37 +14,44 @@ from PySide6.QtWidgets import QWidget, QLabel, QLineEdit
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 # =============================================================================
 # Promoted Parameter Widget with Variable Picker + Editable Label
 # =============================================================================
 
-PROMOTED_PARAM_STYLE = """
-QLineEdit {
-    background: #3c3c50;
-    border: 1px solid #505064;
+
+def _get_promoted_param_style() -> str:
+    """Get the styled stylesheet for promoted parameter inputs."""
+    return f"""
+QLineEdit {{
+    background: {THEME.bg_medium};
+    border: 1px solid {THEME.border_light};
     border-radius: 3px;
-    color: rgba(230, 230, 230, 255);
+    color: {THEME.text_primary};
     padding: 2px 28px 2px 4px;
-    selection-background-color: rgba(100, 150, 200, 150);
-}
-QLineEdit:focus {
-    background: #484860;
-    border: 1px solid #0078d4;
-}
+    selection-background-color: {THEME.accent_primary}99;
+}}
+QLineEdit:focus {{
+    background: {THEME.bg_lighter};
+    border: 1px solid {THEME.accent_primary};
+}}
 """
 
-EDITABLE_LABEL_STYLE = """
-QLabel {
-    color: #cccccc;
+
+def _get_editable_label_style() -> str:
+    """Get the styled stylesheet for editable labels."""
+    return f"""
+QLabel {{
+    color: {THEME.text_secondary};
     font-size: 11px;
     padding: 2px 0px;
-}
-QLabel:hover {
-    color: #ffffff;
+}}
+QLabel:hover {{
+    color: {THEME.text_primary};
     text-decoration: underline;
-}
+}}
 """
 
 
@@ -62,7 +69,7 @@ class EditableLabel(QLabel):
         self._param_name = param_name
         self._editing = False
         self._line_edit: Optional[QLineEdit] = None
-        self.setStyleSheet(EDITABLE_LABEL_STYLE)
+        self.setStyleSheet(_get_editable_label_style())
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("Double-click to rename")
 

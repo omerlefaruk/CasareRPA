@@ -32,6 +32,25 @@ from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
     validate_path_security,
 )
+from casare_rpa.nodes.file.property_constants import (
+    FILE_PATH_INPUT,
+    FILE_PATH_OUTPUT,
+    FILE_ENCODING,
+    CSV_DELIMITER,
+    CSV_HAS_HEADER,
+    CSV_WRITE_HEADER,
+    CSV_QUOTECHAR,
+    CSV_SKIP_ROWS,
+    CSV_MAX_ROWS,
+    CSV_STRICT,
+    JSON_INDENT,
+    JSON_ENSURE_ASCII,
+    ZIP_PATH,
+    ZIP_SOURCE_PATH,
+    ZIP_BASE_DIR,
+    ZIP_COMPRESSION,
+    ZIP_EXTRACT_TO,
+)
 
 
 def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
@@ -64,40 +83,14 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
 
 @node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\file.csv",
-    ),
-    PropertyDef("delimiter", PropertyType.STRING, default=",", label="Delimiter"),
-    PropertyDef("has_header", PropertyType.BOOLEAN, default=True, label="Has Header"),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
-    PropertyDef(
-        "quotechar",
-        PropertyType.STRING,
-        default='"',
-        label="Quote Char",
-        tab="advanced",
-    ),
-    PropertyDef(
-        "skip_rows", PropertyType.INTEGER, default=0, label="Skip Rows", tab="advanced"
-    ),
-    PropertyDef(
-        "max_rows",
-        PropertyType.INTEGER,
-        default=0,
-        label="Max Rows (0=unlimited)",
-        tab="advanced",
-    ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict Mode",
-        tab="advanced",
-    ),
+    FILE_PATH_INPUT,
+    CSV_DELIMITER,
+    CSV_HAS_HEADER,
+    FILE_ENCODING,
+    CSV_QUOTECHAR,
+    CSV_SKIP_ROWS,
+    CSV_MAX_ROWS,
+    CSV_STRICT,
 )
 class ReadCSVNode(BaseNode):
     """
@@ -206,18 +199,10 @@ class ReadCSVNode(BaseNode):
 
 @node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\output.csv",
-    ),
-    PropertyDef("delimiter", PropertyType.STRING, default=",", label="Delimiter"),
-    PropertyDef(
-        "write_header", PropertyType.BOOLEAN, default=True, label="Write Header"
-    ),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+    FILE_PATH_OUTPUT,
+    CSV_DELIMITER,
+    CSV_WRITE_HEADER,
+    FILE_ENCODING,
 )
 class WriteCSVNode(BaseNode):
     """
@@ -315,14 +300,8 @@ class WriteCSVNode(BaseNode):
 
 @node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\file.json",
-    ),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+    FILE_PATH_INPUT,
+    FILE_ENCODING,
 )
 class ReadJSONFileNode(BaseNode):
     """
@@ -409,18 +388,10 @@ class ReadJSONFileNode(BaseNode):
 
 @node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\output.json",
-    ),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
-    PropertyDef("indent", PropertyType.INTEGER, default=2, label="Indent"),
-    PropertyDef(
-        "ensure_ascii", PropertyType.BOOLEAN, default=False, label="Ensure ASCII"
-    ),
+    FILE_PATH_OUTPUT,
+    FILE_ENCODING,
+    JSON_INDENT,
+    JSON_ENSURE_ASCII,
 )
 class WriteJSONFileNode(BaseNode):
     """
@@ -510,36 +481,10 @@ class WriteJSONFileNode(BaseNode):
 
 @node(category="file")
 @properties(
-    PropertyDef(
-        "zip_path",
-        PropertyType.STRING,
-        required=True,
-        label="ZIP Path",
-        placeholder="C:\\output\\archive.zip",
-    ),
-    PropertyDef(
-        "source_path",
-        PropertyType.STRING,
-        default="",
-        label="Source Path",
-        placeholder="C:\\folder\\to\\zip or C:\\folder\\*.txt",
-        tooltip="Folder path (zips entire folder) or glob pattern (e.g., *.txt)",
-    ),
-    PropertyDef(
-        "base_dir",
-        PropertyType.STRING,
-        default="",
-        label="Base Directory",
-        placeholder="C:\\source\\folder",
-        tooltip="Base directory for relative paths in archive (auto-set if source_path is folder)",
-    ),
-    PropertyDef(
-        "compression",
-        PropertyType.CHOICE,
-        default="ZIP_DEFLATED",
-        choices=["ZIP_STORED", "ZIP_DEFLATED"],
-        label="Compression",
-    ),
+    ZIP_PATH,
+    ZIP_SOURCE_PATH,
+    ZIP_BASE_DIR,
+    ZIP_COMPRESSION,
 )
 class ZipFilesNode(BaseNode):
     """
@@ -726,20 +671,8 @@ class ZipFilesNode(BaseNode):
 
 @node(category="file")
 @properties(
-    PropertyDef(
-        "zip_path",
-        PropertyType.STRING,
-        required=True,
-        label="ZIP Path",
-        placeholder="C:\\input\\archive.zip",
-    ),
-    PropertyDef(
-        "extract_to",
-        PropertyType.STRING,
-        required=True,
-        label="Extract To",
-        placeholder="C:\\output\\extracted",
-    ),
+    ZIP_PATH,
+    ZIP_EXTRACT_TO,
 )
 class UnzipFilesNode(BaseNode):
     """

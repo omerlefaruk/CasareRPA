@@ -254,10 +254,13 @@ class CredentialAwareMixin:
             logger.warning(f"Vault resolution error: {e}")
             return None
 
-    # Protocol Stub (Dynamic Mixin)
+    # Protocol Stub - MUST delegate to base class via super()
+    # This stub is for type checkers but MUST NOT shadow BaseNode.get_parameter!
+    # Using NotImplementedError ensures we detect if MRO is wrong
     def get_parameter(self, name: str, default: Any = None) -> Any:
-        """Stub for type checkers; implemented by Host Node."""
-        ...
+        """Delegate to actual implementation in Host Node (BaseNode)."""
+        # Use super() to call the next class in MRO (BaseNode.get_parameter)
+        return super().get_parameter(name, default)  # type: ignore[misc]
 
 
 async def resolve_node_credential(

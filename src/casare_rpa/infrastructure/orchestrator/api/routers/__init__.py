@@ -3,6 +3,7 @@
 from casare_rpa.infrastructure.orchestrator.api.routers import (
     analytics,
     auth,
+    dlq,
     jobs,
     metrics,
     robots,
@@ -14,6 +15,7 @@ from casare_rpa.infrastructure.orchestrator.api.routers import (
 __all__ = [
     "analytics",
     "auth",
+    "dlq",
     "jobs",
     "metrics",
     "robots",

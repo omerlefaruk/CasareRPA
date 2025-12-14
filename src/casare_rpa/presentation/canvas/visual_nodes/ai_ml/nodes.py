@@ -758,3 +758,359 @@ class VisualAIAgentNode(VisualNode, LLMVisualNodeMixin):
         self.add_typed_output("execution_time", DataType.FLOAT)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+
+class VisualEmbeddingNode(VisualNode):
+    """Visual representation of EmbeddingNode.
+
+    Generate text embeddings for semantic operations.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "Embedding"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize embedding node."""
+        super().__init__()
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        self.add_text_input("text", "Text", placeholder_text="Text to embed...")
+        self.add_combo_menu(
+            "model",
+            "Model",
+            items=[
+                "text-embedding-3-small",
+                "text-embedding-3-large",
+                "text-embedding-ada-002",
+            ],
+        )
+        self.set_property("model", "text-embedding-3-small")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("model", DataType.STRING)
+        self.add_typed_input("api_key", DataType.STRING)
+
+        # Data outputs
+        self.add_typed_output("embedding", DataType.LIST)
+        self.add_typed_output("dimensions", DataType.INTEGER)
+        self.add_typed_output("tokens_used", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualVectorStoreAddNode(VisualNode):
+    """Visual representation of VectorStoreAddNode.
+
+    Add documents to vector store for semantic search.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "Vector Store Add"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize vector store add node."""
+        super().__init__()
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        self.add_text_input("collection", "Collection", placeholder_text="default")
+        self.set_property("collection", "default")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("documents", DataType.LIST)
+        self.add_typed_input("collection", DataType.STRING)
+        self.add_typed_input("embeddings", DataType.LIST)
+
+        # Data outputs
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("collection_name", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualVectorSearchNode(VisualNode):
+    """Visual representation of VectorSearchNode.
+
+    Semantic search in vector store.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "Vector Search"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize vector search node."""
+        super().__init__()
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        self.add_text_input("query", "Query", placeholder_text="Search query...")
+        self.add_text_input("collection", "Collection", placeholder_text="default")
+        self.set_property("collection", "default")
+        self.add_text_input("top_k", "Top K", text="5")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("query", DataType.STRING)
+        self.add_typed_input("collection", DataType.STRING)
+        self.add_typed_input("top_k", DataType.INTEGER)
+        self.add_typed_input("filter", DataType.DICT)
+        self.add_typed_input("query_embedding", DataType.LIST)
+
+        # Data outputs
+        self.add_typed_output("results", DataType.LIST)
+        self.add_typed_output("top_result", DataType.DICT)
+        self.add_typed_output("result_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualRAGNode(VisualNode, LLMVisualNodeMixin):
+    """Visual representation of RAGNode.
+
+    Retrieval-Augmented Generation: search context then generate.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "RAG"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize RAG node."""
+        super().__init__()
+        self._create_widgets()
+        self._setup_credential_model_link()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        cred_items = [name for _, name in get_llm_credentials()]
+        self.add_combo_menu("credential", "API Key", items=cred_items)
+
+        self.add_text_input(
+            "question", "Question", placeholder_text="Ask a question..."
+        )
+        self.add_text_input("collection", "Collection", placeholder_text="default")
+        self.set_property("collection", "default")
+        self.add_text_input("top_k", "Context Docs", text="3")
+        self.add_combo_menu("model", "Model", items=ALL_MODELS)
+        self.set_property("model", "gpt-4o-mini")
+        self.add_text_input("temperature", "Temperature", text="0.7")
+        self.add_text_input("max_tokens", "Max Tokens", text="1000")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("question", DataType.STRING)
+        self.add_typed_input("collection", DataType.STRING)
+        self.add_typed_input("top_k", DataType.INTEGER)
+        self.add_typed_input("prompt_template", DataType.STRING)
+        self.add_typed_input("model", DataType.STRING)
+        self.add_typed_input("system_prompt", DataType.STRING)
+        self.add_typed_input("temperature", DataType.FLOAT)
+        self.add_typed_input("max_tokens", DataType.INTEGER)
+
+        # Data outputs
+        self.add_typed_output("answer", DataType.STRING)
+        self.add_typed_output("context", DataType.STRING)
+        self.add_typed_output("sources", DataType.LIST)
+        self.add_typed_output("tokens_used", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualVectorStoreDeleteNode(VisualNode):
+    """Visual representation of VectorStoreDeleteNode.
+
+    Delete documents from vector store.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "Vector Store Delete"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize vector store delete node."""
+        super().__init__()
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        self.add_text_input("collection", "Collection", placeholder_text="default")
+        self.set_property("collection", "default")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("document_ids", DataType.LIST)
+        self.add_typed_input("collection", DataType.STRING)
+
+        # Data outputs
+        self.add_typed_output("deleted_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualPromptTemplateNode(VisualNode, LLMVisualNodeMixin):
+    """Visual representation of PromptTemplateNode.
+
+    Execute reusable prompt templates for AI tasks.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "Prompt Template"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize prompt template node."""
+        super().__init__()
+        self._create_widgets()
+        self._setup_credential_model_link()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        cred_items = [name for _, name in get_llm_credentials()]
+        self.add_combo_menu("credential", "API Key", items=cred_items)
+
+        self.add_text_input(
+            "template_id", "Template ID", placeholder_text="my_template"
+        )
+        self.add_checkbox("execute", "Execute with LLM", state=True)
+        self.add_combo_menu("model", "Model", items=ALL_MODELS)
+        self.set_property("model", "gpt-4o-mini")
+        self.add_text_input("temperature", "Temperature", text="0.7")
+        self.add_text_input("max_tokens", "Max Tokens", text="1000")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("template_id", DataType.STRING)
+        self.add_typed_input("variables", DataType.DICT)
+        self.add_typed_input("execute", DataType.BOOLEAN)
+        self.add_typed_input("model", DataType.STRING)
+        self.add_typed_input("temperature", DataType.FLOAT)
+        self.add_typed_input("max_tokens", DataType.INTEGER)
+
+        # Data outputs
+        self.add_typed_output("rendered_prompt", DataType.STRING)
+        self.add_typed_output("system_prompt", DataType.STRING)
+        self.add_typed_output("response", DataType.STRING)
+        self.add_typed_output("parsed_response", DataType.DICT)
+        self.add_typed_output("tokens_used", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualListTemplatesNode(VisualNode):
+    """Visual representation of ListTemplatesNode.
+
+    List available prompt templates.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "List Templates"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize list templates node."""
+        super().__init__()
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        self.add_text_input(
+            "category", "Category", placeholder_text="extraction, generation..."
+        )
+        self.add_text_input("search", "Search", placeholder_text="Search term...")
+        self.add_checkbox("include_builtin", "Include Built-in", state=True)
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("category", DataType.STRING)
+        self.add_typed_input("search", DataType.STRING)
+        self.add_typed_input("include_builtin", DataType.BOOLEAN)
+
+        # Data outputs
+        self.add_typed_output("templates", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+
+class VisualGetTemplateInfoNode(VisualNode):
+    """Visual representation of GetTemplateInfoNode.
+
+    Get details about a prompt template.
+    """
+
+    __identifier__ = "casare_rpa.ai_ml"
+    NODE_NAME = "Get Template Info"
+    NODE_CATEGORY = "ai_ml"
+
+    def __init__(self) -> None:
+        """Initialize get template info node."""
+        super().__init__()
+        self._create_widgets()
+
+    def _create_widgets(self) -> None:
+        """Create node widgets for configuration."""
+        self.add_text_input(
+            "template_id", "Template ID", placeholder_text="my_template"
+        )
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # Execution flow
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+        # Data inputs
+        self.add_typed_input("template_id", DataType.STRING)
+
+        # Data outputs
+        self.add_typed_output("template_info", DataType.DICT)
+        self.add_typed_output("variables", DataType.LIST)
+        self.add_typed_output("system_prompt", DataType.STRING)
+        self.add_typed_output("found", DataType.BOOLEAN)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)

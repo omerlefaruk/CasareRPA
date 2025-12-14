@@ -28,6 +28,9 @@ from casare_rpa.presentation.canvas.visual_nodes.browser.nodes import (
     VisualFormFillerNode,
     VisualDetectFormsNode,
 )
+from casare_rpa.presentation.canvas.visual_nodes.browser.evaluate_node import (
+    VisualBrowserEvaluateNode,
+)
 
 __all__ = [
     "VisualLaunchBrowserNode",
@@ -54,4 +57,5 @@ __all__ = [
     "VisualFormFieldNode",
     "VisualFormFillerNode",
     "VisualDetectFormsNode",
+    "VisualBrowserEvaluateNode",
 ]

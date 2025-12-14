@@ -2,6 +2,11 @@
 Server Lifecycle Management for Cloud Orchestrator.
 
 Handles application state, configuration, startup/shutdown, and lifespan.
+
+DDD 2025 Architecture:
+- Initializes PostgreSQL robot repository for persistent state
+- Injects repository into RobotManager for durability
+- Falls back to in-memory mode if database unavailable
 """
 
 import os
@@ -71,6 +76,9 @@ class OrchestratorState:
 
     config: Optional[OrchestratorConfig] = None
     robot_manager: Optional[RobotManager] = None
+    robot_repository: Any = None  # PgRobotRepository
+    job_producer: Any = None  # PgQueuerProducer
+    dlq_manager: Any = None  # DLQManager
     db_pool: Any = None  # asyncpg.Pool
     log_streaming_service: Any = None
     log_repository: Any = None
@@ -106,7 +114,11 @@ def get_config() -> OrchestratorConfig:
 
 
 def get_robot_manager() -> RobotManager:
-    """Get robot manager instance."""
+    """Get robot manager instance.
+
+    Returns RobotManager with repository if database is configured,
+    otherwise returns in-memory-only manager.
+    """
     state = _get_state()
     if state.robot_manager is not None:
         return state.robot_manager
@@ -114,10 +126,37 @@ def get_robot_manager() -> RobotManager:
     with _state_lock:
         if _orchestrator_state.robot_manager is None:
             config = get_config()
+            # Robot manager will be re-initialized with repository in lifespan
+            # This is a fallback for early access before database init
             _orchestrator_state.robot_manager = RobotManager(
-                job_timeout_default=config.job_timeout_default
+                job_timeout_default=config.job_timeout_default,
+                robot_repository=_orchestrator_state.robot_repository,
             )
         return _orchestrator_state.robot_manager
+
+
+def get_robot_repository() -> Any:
+    """Get robot repository if available."""
+    return _get_state().robot_repository
+
+
+def get_job_producer() -> Any:
+    """Get job producer for durable job enqueuing.
+
+    Returns PgQueuerProducer if database is configured, None otherwise.
+    When available, use this for job submission instead of RobotManager.submit_job()
+    to ensure jobs survive orchestrator restarts.
+    """
+    return _get_state().job_producer
+
+
+def get_dlq_manager() -> Any:
+    """Get Dead Letter Queue manager if available.
+
+    Returns DLQManager if database is configured, None otherwise.
+    Use for handling failed jobs with exponential backoff retry.
+    """
+    return _get_state().dlq_manager
 
 
 def get_db_pool() -> Any:
@@ -151,6 +190,7 @@ def reset_orchestrator_state() -> None:
 async def _init_database(config: OrchestratorConfig) -> None:
     """Initialize database pool and related services."""
     if not config.database_url:
+        logger.info("No DATABASE_URL configured - using in-memory mode")
         return
 
     try:
@@ -164,11 +204,121 @@ async def _init_database(config: OrchestratorConfig) -> None:
         _set_state_field("db_pool", db_pool)
         logger.info("Database pool initialized")
 
+        # Initialize robot repository for persistent state
+        await _init_robot_repository(db_pool, config)
+
+        # Initialize job producer for durable job enqueuing
+        await _init_job_producer(config)
+
+        # Initialize DLQ manager for failed job handling
+        await _init_dlq_manager(config)
+
         # Initialize log repository and streaming service
         await _init_log_services(db_pool)
 
     except Exception as e:
         logger.warning(f"Database connection failed: {e}")
+
+
+async def _init_robot_repository(db_pool: Any, config: OrchestratorConfig) -> None:
+    """Initialize robot repository for persistent robot state."""
+    try:
+        from casare_rpa.infrastructure.orchestrator.persistence import (
+            PgRobotRepository,
+            CREATE_ROBOTS_TABLE_SQL,
+        )
+
+        # Ensure robots table exists
+        async with db_pool.acquire() as conn:
+            await conn.execute(CREATE_ROBOTS_TABLE_SQL)
+        logger.info("Robots table verified/created")
+
+        # Create repository
+        robot_repository = PgRobotRepository(
+            db_pool=db_pool,
+            heartbeat_timeout_seconds=config.robot_heartbeat_timeout,
+        )
+        _set_state_field("robot_repository", robot_repository)
+
+        # Reinitialize robot manager with repository
+        robot_manager = RobotManager(
+            job_timeout_default=config.job_timeout_default,
+            robot_repository=robot_repository,
+        )
+        _set_state_field("robot_manager", robot_manager)
+
+        logger.info("Robot repository initialized - persistent mode enabled")
+
+    except Exception as e:
+        logger.warning(f"Robot repository initialization failed: {e}")
+        logger.warning("Falling back to in-memory mode for robot state")
+
+
+async def _init_job_producer(config: OrchestratorConfig) -> None:
+    """Initialize job producer for durable job enqueuing."""
+    if not config.database_url:
+        return
+
+    try:
+        from casare_rpa.infrastructure.queue import (
+            PgQueuerProducer,
+            ProducerConfig,
+        )
+
+        producer_config = ProducerConfig(
+            postgres_url=config.database_url,
+            default_environment="default",
+            default_priority=10,
+            default_max_retries=3,
+            pool_min_size=2,
+            pool_max_size=5,
+        )
+
+        producer = PgQueuerProducer(producer_config)
+        success = await producer.start()
+
+        if success:
+            _set_state_field("job_producer", producer)
+            logger.info("Job producer initialized - durable job queue enabled")
+        else:
+            logger.warning("Job producer failed to start")
+
+    except ImportError as e:
+        logger.warning(f"Job producer dependencies not available: {e}")
+    except Exception as e:
+        logger.warning(f"Job producer initialization failed: {e}")
+        logger.warning("Falling back to in-memory job queue")
+
+
+async def _init_dlq_manager(config: OrchestratorConfig) -> None:
+    """Initialize Dead Letter Queue manager for failed job handling."""
+    if not config.database_url:
+        return
+
+    try:
+        from casare_rpa.infrastructure.queue import (
+            DLQManager,
+            DLQManagerConfig,
+        )
+
+        dlq_config = DLQManagerConfig(
+            postgres_url=config.database_url,
+            job_queue_table="job_queue",
+            dlq_table="job_queue_dlq",
+            pool_min_size=1,
+            pool_max_size=3,
+        )
+
+        dlq_manager = DLQManager(dlq_config)
+        await dlq_manager.start()
+
+        _set_state_field("dlq_manager", dlq_manager)
+        logger.info("DLQ manager initialized - failed job handling enabled")
+
+    except ImportError as e:
+        logger.warning(f"DLQ manager dependencies not available: {e}")
+    except Exception as e:
+        logger.warning(f"DLQ manager initialization failed: {e}")
 
 
 async def _init_log_services(db_pool: Any) -> None:
@@ -216,6 +366,20 @@ async def _cleanup_services() -> None:
     if state.log_streaming_service:
         await state.log_streaming_service.stop()
         logger.info("Log streaming service stopped")
+
+    if state.job_producer:
+        try:
+            await state.job_producer.stop()
+            logger.info("Job producer stopped")
+        except Exception as e:
+            logger.warning(f"Error stopping job producer: {e}")
+
+    if state.dlq_manager:
+        try:
+            await state.dlq_manager.stop()
+            logger.info("DLQ manager stopped")
+        except Exception as e:
+            logger.warning(f"Error stopping DLQ manager: {e}")
 
     if state.db_pool:
         await state.db_pool.close()

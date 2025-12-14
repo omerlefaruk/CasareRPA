@@ -15,6 +15,8 @@ from typing import Any, List
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -23,6 +25,25 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        label="Text",
+        placeholder="Text to embed...",
+        tooltip="Text to convert to embeddings",
+        essential=True,
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="text-embedding-3-small",
+        label="Model",
+        tooltip="Embedding model to use",
+    ),
+)
 class EmbeddingNode(LLMBaseNode):
     """
     Generate embeddings for text using LLM embedding models.
@@ -111,6 +132,17 @@ class EmbeddingNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "collection",
+        PropertyType.STRING,
+        default="default",
+        label="Collection",
+        placeholder="my_collection",
+        tooltip="Vector store collection name",
+    ),
+)
 class VectorStoreAddNode(LLMBaseNode):
     """
     Add documents to a vector store collection.
@@ -222,6 +254,34 @@ class VectorStoreAddNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "query",
+        PropertyType.TEXT,
+        default="",
+        label="Query",
+        placeholder="Search query...",
+        tooltip="Semantic search query",
+        essential=True,
+    ),
+    PropertyDef(
+        "collection",
+        PropertyType.STRING,
+        default="default",
+        label="Collection",
+        tooltip="Vector store collection to search",
+    ),
+    PropertyDef(
+        "top_k",
+        PropertyType.INTEGER,
+        default=5,
+        min_value=1,
+        max_value=100,
+        label="Top K",
+        tooltip="Number of results to return",
+    ),
+)
 class VectorSearchNode(LLMBaseNode):
     """
     Perform semantic search in a vector store.
@@ -329,6 +389,58 @@ class VectorSearchNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "question",
+        PropertyType.TEXT,
+        default="",
+        label="Question",
+        placeholder="Ask a question...",
+        tooltip="Question to answer using RAG",
+        essential=True,
+    ),
+    PropertyDef(
+        "collection",
+        PropertyType.STRING,
+        default="default",
+        label="Collection",
+        tooltip="Vector store collection for context",
+    ),
+    PropertyDef(
+        "top_k",
+        PropertyType.INTEGER,
+        default=3,
+        min_value=1,
+        max_value=20,
+        label="Context Documents",
+        tooltip="Number of context documents to retrieve",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model for generation",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.7,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Creativity/randomness (0-2)",
+    ),
+    PropertyDef(
+        "max_tokens",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=1,
+        label="Max Tokens",
+        tooltip="Maximum response length",
+    ),
+)
 class RAGNode(LLMBaseNode):
     """
     Full RAG (Retrieval-Augmented Generation) pipeline.
@@ -482,6 +594,16 @@ Answer:"""
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "collection",
+        PropertyType.STRING,
+        default="default",
+        label="Collection",
+        tooltip="Vector store collection to delete from",
+    ),
+)
 class VectorStoreDeleteNode(LLMBaseNode):
     """
     Delete documents from a vector store collection.

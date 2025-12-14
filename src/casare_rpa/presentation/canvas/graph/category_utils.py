@@ -272,6 +272,8 @@ CATEGORY_DISPLAY_NAMES = {
     "conditional": "Conditional",
     "loop": "Loop",
     "flow": "Flow",
+    # SuperNode subcategory
+    "super": "Super Nodes",
 }
 
 
@@ -468,6 +470,7 @@ CATEGORY_ORDER = [
     "control_flow",
     "data_operations",
     "database",
+    "desktop",  # SuperNode category (distinct from desktop_automation)
     "desktop_automation",
     "document",
     "email",
@@ -479,6 +482,7 @@ CATEGORY_ORDER = [
     "rest_api",
     "scripts",
     "system",
+    "text",  # SuperNode category for text operations
     "triggers",
     "utility",
     "variable",

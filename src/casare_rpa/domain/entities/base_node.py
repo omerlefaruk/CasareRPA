@@ -45,10 +45,18 @@ class BaseNode(ABC):
     """
     Abstract base class for all automation nodes.
 
+    AI-HINT: This is the inheritance root for ALL 400+ automation nodes.
+    AI-CONTEXT: Subclass this for any new node. Use @node decorator for registration.
+    AI-WARNING: Changes here affect the entire node system. Test thoroughly.
+
     All nodes must implement:
     - execute(): Core execution logic
-    - validate(): Input validation
     - _define_ports(): Port definitions
+
+    Key patterns:
+    - Use add_exec_input()/add_exec_output() for execution ports
+    - Use get_parameter() for dual-source config (port OR config)
+    - Return ExecutionResult dict from execute(), don't raise exceptions
     """
 
     def __init__(self, node_id: NodeId, config: Optional[NodeConfig] = None) -> None:

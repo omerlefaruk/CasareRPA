@@ -247,17 +247,23 @@ class UIStateController(BaseController):
             logger.warning(f"Failed to save window geometry: {e}")
 
     def restore_window_geometry(self) -> None:
-        """Restore window size and position from settings."""
+        """Restore dock/toolbar layout from settings (not window size/position).
+
+        Note: Window geometry (size, position, maximized state) is intentionally
+        NOT restored to avoid slow startup from auto-maximize behavior.
+        Window always starts at default size (1280x720) for faster startup.
+        """
         if not self._settings:
             return
 
         try:
-            # Restore geometry
-            geometry = self._settings.value(self._KEY_GEOMETRY)
-            if geometry and isinstance(geometry, QByteArray):
-                self.main_window.restoreGeometry(geometry)
+            # NOTE: Geometry restore disabled - window starts at default size
+            # Users can maximize manually if desired
+            # geometry = self._settings.value(self._KEY_GEOMETRY)
+            # if geometry and isinstance(geometry, QByteArray):
+            #     self.main_window.restoreGeometry(geometry)
 
-            # Restore window state (dock positions, toolbars, etc.)
+            # Restore window state (dock positions, toolbars, etc.) - keep this
             state = self._settings.value(self._KEY_WINDOW_STATE)
             if state and isinstance(state, QByteArray):
                 if not self.main_window.restoreState(state):

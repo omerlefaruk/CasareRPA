@@ -71,6 +71,7 @@ from casare_rpa.nodes.browser.extraction_nodes import (
     GetAllImagesNode,
     DownloadFileNode,
 )
+from casare_rpa.nodes.browser.evaluate_node import BrowserEvaluateNode
 
 __all__ = [
     # Base class
@@ -113,4 +114,6 @@ __all__ = [
     # Extraction
     "GetAllImagesNode",
     "DownloadFileNode",
+    # Evaluate
+    "BrowserEvaluateNode",
 ]

@@ -12,6 +12,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -21,6 +23,50 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "goal",
+        PropertyType.TEXT,
+        default="",
+        label="Goal",
+        placeholder="Find the order status for customer 12345...",
+        tooltip="The goal for the AI agent to accomplish",
+        essential=True,
+    ),
+    PropertyDef(
+        "available_tools",
+        PropertyType.STRING,
+        default="",
+        label="Available Tools",
+        placeholder="read_file, http_request, calculate",
+        tooltip="Comma-separated list of tools the agent can use",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model for the agent",
+    ),
+    PropertyDef(
+        "max_steps",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=1,
+        max_value=50,
+        label="Max Steps",
+        tooltip="Maximum reasoning steps",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=300.0,
+        min_value=10.0,
+        label="Timeout (sec)",
+        tooltip="Maximum execution time in seconds",
+    ),
+)
 class AIAgentNode(LLMBaseNode):
     """
     Autonomous AI agent with multi-step reasoning.

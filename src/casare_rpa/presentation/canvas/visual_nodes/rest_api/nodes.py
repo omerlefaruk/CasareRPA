@@ -169,6 +169,49 @@ class VisualBuildUrlNode(VisualNode):
         self.add_typed_output("url", DataType.STRING)
 
 
+class VisualHttpSuperNode(VisualNode):
+    """Visual representation of HttpSuperNode.
+
+    Unified HTTP operations node with action-based dynamic ports.
+    Supports GET, POST, PUT, PATCH, DELETE, Download, Upload, and Auth Config.
+    """
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP"
+    NODE_CATEGORY = "rest_api/basic"
+    CASARE_NODE_CLASS = "HttpSuperNode"
+
+    # Enable action-based port schema
+    DYNAMIC_PORTS = True
+
+    def setup_ports(self) -> None:
+        """Setup default ports (GET Request action)."""
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_typed_input("params", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("response_headers", DataType.DICT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
+
+    def get_dynamic_port_schema(self):
+        """Get the dynamic port schema for action-based port visibility."""
+        try:
+            from casare_rpa.nodes.http.http_super_node import HTTP_PORT_SCHEMA
+
+            return HTTP_PORT_SCHEMA
+        except ImportError:
+            return None
+
+    def get_action_property_name(self) -> str:
+        """Return the property name that controls action selection."""
+        return "action"
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""

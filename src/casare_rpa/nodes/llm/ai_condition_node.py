@@ -12,6 +12,8 @@ from typing import Any
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -21,6 +23,34 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@node(category="llm")
+@properties(
+    PropertyDef(
+        "condition",
+        PropertyType.TEXT,
+        default="",
+        label="Condition",
+        placeholder="Is the email about a complaint?",
+        tooltip="Natural language condition to evaluate",
+        essential=True,
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model for condition evaluation",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.0,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature for consistent evaluation",
+    ),
+)
 class AIConditionNode(LLMBaseNode):
     """
     Evaluate a condition using natural language with AI.

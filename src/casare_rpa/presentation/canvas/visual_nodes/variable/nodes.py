@@ -3,6 +3,7 @@
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.ui.theme import TYPE_COLORS
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 # Map variable_type choices to TYPE_COLORS keys
@@ -134,15 +135,15 @@ class VisualSetVariableNode(VisualNode):
                 # Apply type-colored border with theme-consistent styling
                 custom_widget.setStyleSheet(f"""
                     QLineEdit {{
-                        background: #18181b; /* Zinc 900 */
+                        background: {THEME.bg_darkest};
                         border: 2px solid {color_hex};
                         border-radius: 4px;
-                        color: #f4f4f5; /* Zinc 100 */
+                        color: {THEME.text_primary};
                         padding: 4px 28px 4px 8px;
-                        selection-background-color: #4338ca; /* Indigo 700 */
+                        selection-background-color: {THEME.accent_hover};
                     }}
                     QLineEdit:focus {{
-                        background: #27272a; /* Zinc 800 */
+                        background: {THEME.bg_darker};
                         border: 2px solid {color_hex};
                         box-shadow: 0 0 0 2px {color_hex}40;
                     }}

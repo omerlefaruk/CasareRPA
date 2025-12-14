@@ -15,7 +15,7 @@
       }
     },
     "qdrant": {
-      "command": "C:\\Users\\Rau\\Desktop\\CasareRPA\\.venv\\Scripts\\mcp-server-qdrant.exe",
+      "command": "C:\\Users\\Rau\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\mcp-server-qdrant.exe",
       "args": [],
       "env": {
         "QDRANT_LOCAL_PATH": "C:/Users/Rau/Desktop/CasareRPA/.qdrant",

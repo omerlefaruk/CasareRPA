@@ -159,7 +159,11 @@ class WorkflowSerializer:
         # values to the config dict that will be serialized and executed.
         #
         # This ensures: User inputs → Visual node properties → Config dict → Execution
-        for prop_name in visual_node.model.custom_properties:
+        # DEBUG: Log all custom properties (trace level to avoid console spam)
+        logger.trace(
+            f"[SERIALIZER] Node {node_id} custom_properties: {dict(visual_node.model.custom_properties)}"
+        )
+        for prop_name, prop_value in visual_node.model.custom_properties.items():
             # Skip internal properties
             if prop_name.startswith("_") or prop_name in (
                 "node_id",
@@ -174,9 +178,33 @@ class WorkflowSerializer:
             ):
                 continue
 
-            prop_value = visual_node.get_property(prop_name)
-            if prop_value is not None:
+            # Use value directly from model dict (more reliable than get_property)
+            if prop_value is not None and prop_value != "":
                 config[prop_name] = prop_value
+            elif prop_name not in config:
+                # Fall back to get_property if model value is empty
+                prop_value = visual_node.get_property(prop_name)
+                if prop_value is not None:
+                    config[prop_name] = prop_value
+
+        # ADDITIONAL FIX: Also check widget values directly
+        # Some custom widgets (like GoogleDriveFolderNavigator) may store values
+        # that aren't properly synced to model properties. Get live widget values.
+        # This ALWAYS overrides config with actual widget values (widget is source of truth).
+        try:
+            for widget in visual_node.view.widgets.values():
+                if hasattr(widget, "get_name") and hasattr(widget, "get_value"):
+                    widget_name = widget.get_name()
+                    if widget_name:
+                        widget_value = widget.get_value()
+                        # ALWAYS use widget value if it's not empty
+                        if widget_value is not None and widget_value != "":
+                            config[widget_name] = widget_value
+                            logger.trace(
+                                f"[SERIALIZER] Widget sync: {widget_name}={widget_value}"
+                            )
+        except Exception as e:
+            logger.warning(f"Widget value sync failed: {e}")
 
         # Check if node is disabled - from casare_node.config (set by toggle_disable_node)
         # Note: _disabled should already be in config from casare_node.config.copy() above
@@ -203,6 +231,10 @@ class WorkflowSerializer:
                         config[internal_prop] = val
                 except Exception:
                     pass
+
+        # DEBUG: Log config to trace serialization issues
+        if config:
+            logger.trace(f"Serializing {node_type} ({node_id}) with config: {config}")
 
         node_dict = {
             "node_id": node_id,

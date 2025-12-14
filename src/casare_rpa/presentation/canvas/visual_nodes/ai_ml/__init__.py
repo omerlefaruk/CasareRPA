@@ -5,6 +5,8 @@ Includes:
 - Basic LLM nodes (completion, chat, extract, summarize, classify, translate)
 - AI condition nodes for natural language workflow control
 - AI agent node for autonomous multi-step reasoning
+- RAG nodes (embedding, vector store, semantic search)
+- Prompt template nodes
 """
 
 from casare_rpa.presentation.canvas.visual_nodes.ai_ml.nodes import (
@@ -21,6 +23,16 @@ from casare_rpa.presentation.canvas.visual_nodes.ai_ml.nodes import (
     VisualAIDecisionTableNode,
     # AI Agent
     VisualAIAgentNode,
+    # RAG nodes
+    VisualEmbeddingNode,
+    VisualVectorStoreAddNode,
+    VisualVectorSearchNode,
+    VisualRAGNode,
+    VisualVectorStoreDeleteNode,
+    # Prompt Template nodes
+    VisualPromptTemplateNode,
+    VisualListTemplatesNode,
+    VisualGetTemplateInfoNode,
 )
 
 __all__ = [
@@ -37,4 +49,14 @@ __all__ = [
     "VisualAIDecisionTableNode",
     # AI Agent
     "VisualAIAgentNode",
+    # RAG nodes
+    "VisualEmbeddingNode",
+    "VisualVectorStoreAddNode",
+    "VisualVectorSearchNode",
+    "VisualRAGNode",
+    "VisualVectorStoreDeleteNode",
+    # Prompt Template nodes
+    "VisualPromptTemplateNode",
+    "VisualListTemplatesNode",
+    "VisualGetTemplateInfoNode",
 ]

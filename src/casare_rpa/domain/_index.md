@@ -13,7 +13,7 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 | `events/` | Typed domain events | DomainEvent, NodeAdded, WorkflowStarted, etc. |
 | `value_objects/` | Immutable types | DataType, NodeStatus, PortType, Port, LogEntry, Connection, Position |
 | `services/` | Domain services | ExecutionOrchestrator, ProjectContext, resolve_variables, WorkflowValidator |
-| `schemas/` | Property/validation schemas | PropertyDef, NodeSchema, PropertyType, WorkflowAISchema |
+| `schemas/` | Property/validation schemas | PropertyDef, NodeSchema, PropertyType, PROP_* constants, WorkflowAISchema |
 | `protocols/` | Interface contracts | CredentialProviderProtocol, ExecutionContextProtocol |
 | `interfaces/` | Core protocols | INode, IExecutionContext, IFolderStorage, AbstractUnitOfWork |
 | `ai/` | AI/LLM domain config | Prompt templates, AI configuration |
@@ -29,7 +29,7 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 | File | Contains | Lines |
 |------|----------|-------|
 | `__init__.py` | Domain exports: node, CredentialAwareMixin, protocols | ~64 |
-| `decorators.py` | `@node`, `@properties` decorators | ~145 |
+| `decorators.py` | `@node`, `@properties`, `@handle_errors`, `@validate_required`, `@with_timeout` decorators | ~470 |
 | `credentials.py` | CredentialAwareMixin, credential property helpers | Variable |
 | `port_type_system.py` | Port type compatibility and validation | Variable |
 | `variable_resolver.py` | Variable pattern resolution utilities | Variable |
@@ -41,9 +41,10 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 | `value_objects/__init__.py` | Type exports: DataType, NodeStatus, Port, LogEntry | ~87 |
 | `value_objects/types.py` | Core type definitions and enums | Variable |
 | `services/__init__.py` | Service exports: ExecutionOrchestrator, validators | ~78 |
-| `schemas/__init__.py` | Schema exports: PropertyDef, NodeSchema, AI schemas | ~50 |
+| `schemas/__init__.py` | Schema exports: PropertyDef, NodeSchema, PROP_* constants, AI schemas | ~120 |
 | `schemas/property_schema.py` | PropertyDef, NodeSchema for declarative config | ~295 |
 | `schemas/property_types.py` | PropertyType enum | Variable |
+| `schemas/common_properties.py` | PROP_TIMEOUT, PROP_ENCODING, PROP_FILE_PATH, etc. - reusable constants | ~250 |
 | `protocols/__init__.py` | Protocol exports for dependency inversion | ~25 |
 | `interfaces/__init__.py` | INode, IExecutionContext, AbstractUnitOfWork interfaces | ~55 |
 | `interfaces/unit_of_work.py` | AbstractUnitOfWork - Unit of Work pattern interface | ~105 |
@@ -52,15 +53,20 @@ Pure business logic with zero external dependencies. Framework-agnostic and test
 
 ```python
 # Node decorators - auto-add exec ports and schema
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.decorators import node, properties, handle_errors, validate_required
+from casare_rpa.domain.schemas import PropertyDef, PropertyType, PROP_TIMEOUT, PROP_URL
 
 @properties(
-    PropertyDef("url", PropertyType.STRING, default="", essential=True),
-    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+    PROP_URL,  # Use pre-defined constants
+    PROP_TIMEOUT,
+    PropertyDef("custom", PropertyType.STRING, default=""),  # Or custom definitions
 )
 @node
 class MyNode(BaseNode):
+    @handle_errors(retries=3)  # Standardized error handling
+    @validate_required("url")  # Parameter validation
+    async def execute(self, context):
+        ...
     pass
 
 # Base node class
