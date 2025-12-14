@@ -70,6 +70,20 @@ from casare_rpa.nodes.dict_nodes import (
     DictItemsNode,
 )
 
+# Collection Utilities (shared helpers for list/dict nodes)
+from casare_rpa.nodes.data.collection_utils import (
+    strip_var_wrapper,
+    resolve_param,
+    resolve_list,
+    resolve_dict,
+    validate_list,
+    validate_dict,
+    get_nested_value,
+    node_execute_wrapper,
+    success_result,
+    error_result,
+)
+
 __all__ = [
     # String Operations
     "ConcatenateNode",

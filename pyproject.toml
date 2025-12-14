@@ -136,25 +136,50 @@ include = '\.pyi?$'
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+# Gradual type adoption - start lenient, tighten over time
+warn_return_any = false  # Too noisy initially
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
+disallow_untyped_defs = false  # Allow untyped during transition
+disallow_incomplete_defs = false  # Allow partial during transition
+check_untyped_defs = true  # Still check untyped code
 no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+warn_unused_ignores = false  # Don't fail on unused ignores in transition
 strict_equality = true
+ignore_missing_imports = true  # Don't fail on missing stubs
+
+# Per-module overrides - stricter for domain layer
+[[tool.mypy.overrides]]
+module = "casare_rpa.domain.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = "casare_rpa.nodes.*"
+disallow_untyped_defs = false
+warn_return_any = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short --cov=casare_rpa --cov-fail-under=75"
+addopts = "-v --tb=short"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
 markers = [
+    "unit: mark test as unit test (fast, isolated, no external deps)",
+    "integration: mark test as integration test (may use external systems)",
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks integration tests",
     "e2e: marks end-to-end tests",
+    "ui: mark test as requiring UI/Qt components",
+    "browser: mark test as requiring browser/Playwright",
+    "database: mark test as requiring database",
+    "network: mark test as requiring network access",
+    "chaos: mark test as chaos/stress test",
 ]

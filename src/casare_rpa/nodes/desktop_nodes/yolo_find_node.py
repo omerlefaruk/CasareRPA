@@ -194,11 +194,11 @@ class YOLOFindElementNode(DesktopNodeBase):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Inputs
-        self.add_input_port("exec_in", DataType.EXEC)
+        self.add_exec_input("exec_in")
         self.add_input_port("window_handle", DataType.INTEGER, required=False)
 
         # Outputs
-        self.add_output_port("exec_out", DataType.EXEC)
+        self.add_exec_output("exec_out")
         self.add_output_port("x", DataType.INTEGER)
         self.add_output_port("y", DataType.INTEGER)
         self.add_output_port("width", DataType.INTEGER)

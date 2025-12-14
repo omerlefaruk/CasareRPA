@@ -423,7 +423,7 @@ class WorkflowExecutionError(WorkflowError):
 
 def wrap_exception(
     error: Exception,
-    error_class: type = DomainError,
+    error_class: type[DomainError] = DomainError,
     context: Optional[ErrorContext] = None,
     **kwargs: Any,
 ) -> DomainError:
