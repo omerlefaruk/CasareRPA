@@ -16,6 +16,7 @@ Run: pytest tests/nodes/file/test_structured_data_super_node.py -v
 """
 
 import json
+import os
 import zipfile
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -88,6 +89,16 @@ class TestStructuredDataSuperNodeInstantiation:
         assert "headers" in node.output_ports
         assert "row_count" in node.output_ports
         assert "success" in node.output_ports
+
+    def test_node_ports_for_image_convert_init(self) -> None:
+        """Test initializing node with Image Convert action sets correct ports."""
+        node = StructuredDataSuperNode(
+            "test_convert", config={"action": StructuredDataAction.IMAGE_CONVERT.value}
+        )
+        assert "source_path" in node.input_ports
+        assert "output_path" in node.output_ports
+        # Should NOT have Read CSV ports
+        assert "data" not in node.output_ports
 
 
 # =============================================================================
@@ -625,6 +636,37 @@ class TestImageConvertAction:
         assert node.get_output_value("format") == "JPEG"
 
     @pytest.mark.asyncio
+    async def test_image_convert_scale_percent(
+        self, execution_context, tmp_path: Path
+    ) -> None:
+        """SUCCESS: scale_percent resizes output dimensions."""
+        from PIL import Image
+
+        source_file = tmp_path / "big.png"
+        Image.new("RGB", (40, 20), color="red").save(source_file, "PNG")
+        output_file = tmp_path / "small.jpg"
+
+        node = StructuredDataSuperNode(
+            "test_convert",
+            config={
+                "action": StructuredDataAction.IMAGE_CONVERT.value,
+                "source_path": str(source_file),
+                "output_path": str(output_file),
+                "output_format": "JPEG",
+                "scale_percent": "50%",
+                "overwrite": True,
+                "allow_dangerous_paths": True,
+            },
+        )
+        setup_action_ports(node, StructuredDataAction.IMAGE_CONVERT.value)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        with Image.open(output_file) as img:
+            assert img.size == (20, 10)
+
+    @pytest.mark.asyncio
     async def test_image_convert_auto_output_path(
         self, execution_context, temp_image_file: Path
     ) -> None:
@@ -645,6 +687,65 @@ class TestImageConvertAction:
         assert result["success"] is True
         output_path = node.get_output_value("output_path")
         assert output_path.endswith(".webp")
+
+    @pytest.mark.asyncio
+    async def test_image_convert_output_directory(
+        self, execution_context, temp_image_file: Path, tmp_path: Path
+    ) -> None:
+        """SUCCESS: output_path can be a directory (with trailing separator)."""
+        output_dir = tmp_path / "converted_images"
+
+        node = StructuredDataSuperNode(
+            "test_convert",
+            config={
+                "action": StructuredDataAction.IMAGE_CONVERT.value,
+                "source_path": str(temp_image_file),
+                "output_path": f"{output_dir}{os.sep}",
+                "output_format": "JPEG",
+                "overwrite": True,
+                "allow_dangerous_paths": True,
+            },
+        )
+        setup_action_ports(node, StructuredDataAction.IMAGE_CONVERT.value)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        expected = output_dir / f"{temp_image_file.stem}.jpg"
+        assert expected.exists()
+        assert node.get_output_value("output_path") == str(expected)
+
+    @pytest.mark.asyncio
+    async def test_image_convert_batch_folder(
+        self, execution_context, tmp_path: Path
+    ) -> None:
+        """SUCCESS: Convert all images in a folder."""
+        from PIL import Image
+
+        source_dir = tmp_path / "images"
+        source_dir.mkdir()
+        Image.new("RGB", (10, 10), color="red").save(source_dir / "a.png", "PNG")
+        Image.new("RGB", (10, 10), color="blue").save(source_dir / "b.png", "PNG")
+
+        node = StructuredDataSuperNode(
+            "test_convert",
+            config={
+                "action": StructuredDataAction.IMAGE_CONVERT.value,
+                "source_path": str(source_dir),
+                "output_format": "JPEG",
+                "overwrite": True,
+                "allow_dangerous_paths": True,
+            },
+        )
+        setup_action_ports(node, StructuredDataAction.IMAGE_CONVERT.value)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert node.get_output_value("file_count") == 2
+        files = node.get_output_value("files")
+        assert isinstance(files, list)
+        assert len(files) == 2
 
     @pytest.mark.asyncio
     async def test_image_convert_unsupported_format(
@@ -763,5 +864,7 @@ class TestStructuredDataPortSchema:
 
         assert "source_path" in input_names
         assert "output_path" in output_names
+        assert "files" in output_names
+        assert "file_count" in output_names
         assert "format" in output_names
         assert "success" in output_names

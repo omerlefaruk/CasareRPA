@@ -49,6 +49,11 @@ def node(
     category: str = "General",
     icon: str = "",
     description: str = "",
+    # Execution port configuration (non-standard nodes)
+    # - Normal nodes default to exec_in + exec_out
+    # - Control-flow/trigger/super nodes can override to explicit branch outputs
+    exec_inputs: Optional[List[str]] = None,
+    exec_outputs: Optional[List[str]] = None,
     # Retry configuration
     retries: int = 0,
     retry_delay: float = 1.0,
@@ -69,7 +74,7 @@ def node(
     Unified node decorator with rich metadata and automatic exec ports.
 
     This decorator:
-    - Automatically adds exec_in/exec_out ports
+    - Automatically adds execution ports (configurable for non-standard nodes)
     - Attaches NodeMetadata for runtime behavior (retries, hooks)
     - Sets node identity (name, category, icon)
 
@@ -94,6 +99,10 @@ def node(
         category: Node category for grouping
         icon: Icon identifier for UI
         description: Human-readable description
+        exec_inputs: List of execution input port names to enforce.
+            Default: ["exec_in"]. Use [] for trigger-like entry nodes.
+        exec_outputs: List of execution output port names to enforce.
+            Default: ["exec_out"]. Use ["true", "false"] etc. for branching nodes.
         retries: Number of retry attempts on failure
         retry_delay: Initial delay between retries (seconds)
         retry_backoff: Multiplier for exponential backoff
@@ -139,15 +148,52 @@ def node(
         # Also set category on class for compatibility with existing code
         cls.category = category
 
-        # Wrap _define_ports to add exec ports
+        # Wrap _define_ports to enforce exec ports
         if hasattr(cls, "_define_ports"):
             original_define = cls._define_ports
 
             def wrapped_define(self) -> None:
-                """Wrapped _define_ports that adds exec ports first."""
-                self.add_exec_input("exec_in")
-                self.add_exec_output("exec_out")
+                """Wrapped _define_ports that enforces configured execution ports."""
+                from casare_rpa.domain.value_objects.types import DataType
+
+                desired_exec_inputs = (
+                    exec_inputs if exec_inputs is not None else ["exec_in"]
+                )
+                desired_exec_outputs = (
+                    exec_outputs if exec_outputs is not None else ["exec_out"]
+                )
+
+                # Let the node define its data ports first.
                 original_define(self)
+
+                # Remove any legacy/incorrect exec ports not in the desired set.
+                # (Legacy nodes often add DataType.EXEC via add_input_port/add_output_port)
+                for port_name, port in list(self.input_ports.items()):
+                    if (
+                        port.data_type == DataType.EXEC
+                        and port_name not in desired_exec_inputs
+                    ):
+                        logger.warning(
+                            f"[{self.node_type}] Removing unconfigured execution input port '{port_name}'. "
+                            f"Add '{port_name}' to @node(exec_inputs=[...]) to preserve it."
+                        )
+                        self.input_ports.pop(port_name, None)
+                for port_name, port in list(self.output_ports.items()):
+                    if (
+                        port.data_type == DataType.EXEC
+                        and port_name not in desired_exec_outputs
+                    ):
+                        logger.warning(
+                            f"[{self.node_type}] Removing unconfigured execution output port '{port_name}'. "
+                            f"Add '{port_name}' to @node(exec_outputs=[...]) to preserve it."
+                        )
+                        self.output_ports.pop(port_name, None)
+
+                # Ensure desired exec ports exist with correct PortType/typing.
+                for port_name in desired_exec_inputs:
+                    self.add_exec_input(port_name)
+                for port_name in desired_exec_outputs:
+                    self.add_exec_output(port_name)
 
             cls._define_ports = wrapped_define
 
