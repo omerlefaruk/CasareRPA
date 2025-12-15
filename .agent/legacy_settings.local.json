@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr:*)",
+      "Bash(git log:*)",
+      "Bash(ls -la \"c:\\Users\\Rau\\Desktop\\CasareRPA\\.claude\\agents\"\" && echo \"---\" && ls -la \"c:UsersRauDesktopCasareRPA.claudeskills\"\")",
+      "Bash(xargs:*)",
+      "Bash(done)",
+      "Bash(findstr:*)",
+      "Bash(cloudflared service install eyJhIjoiZDEwZGE5ODgyMzMzNzRiZjgwNjdhMGZiZWI1ZDY3NDMiLCJ0IjoiOGQ3NjE5MjAtOGExYi00Nzg3LTk1MmYtZDE2MjhmMDQwYzY1IiwicyI6Ik9ETXhOekZrWmpRdE5HVmxOeTAwWWpNNUxUaGhNR0l0TnpBd05EUTROalEzTURJMSJ9)",
+      "Bash(timeout 8 python:*)",
+      "Bash(ls -la \"c:\\Users\\Rau\\Desktop\\CasareRPA\\src\\casare_rpa\\infrastructure\"\" 2>/dev/null || dir \"c:UsersRauDesktopCasareRPAsrccasare_rpainfrastructure\"\")",
+      "Bash(if not exist \"c:\\Users\\Rau\\Desktop\\CasareRPA\\tests\\infrastructure\\auth\" mkdir \"c:\\Users\\Rau\\Desktop\\CasareRPA\\tests\\infrastructure\\auth\")",
+      "Bash(pushd:*)",
+      "Bash(popd)",
+      "Bash(Get-ChildItem -Path \"c:\\Users\\Rau\\Desktop\\CasareRPA\\src\\casare_rpa\\orchestrator\" -Recurse)",
+      "Bash(ForEach-Object { $_ullName })",
+      "Bash(set)",
+      "Bash(set:*)",
+      "Bash(set REF:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "disabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": false
+}
