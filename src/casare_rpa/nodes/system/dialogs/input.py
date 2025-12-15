@@ -20,7 +20,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit, _create_styled_text_edit
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -51,6 +50,7 @@ from .widgets import _create_styled_line_edit, _create_styled_text_edit
         tooltip="Hide input characters",
     ),
 )
+@node(category="system")
 class InputDialogNode(BaseNode):
     """
     Display an input dialog to get user input.
@@ -154,7 +154,6 @@ class InputDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -186,6 +185,7 @@ class InputDialogNode(BaseNode):
         tooltip="Maximum character limit (0 = unlimited)",
     ),
 )
+@node(category="system")
 class MultilineInputDialogNode(BaseNode):
     """
     Display a multi-line text input dialog.
@@ -323,7 +323,6 @@ class MultilineInputDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -361,6 +360,7 @@ class MultilineInputDialogNode(BaseNode):
         tooltip="Hide password characters",
     ),
 )
+@node(category="system")
 class CredentialDialogNode(BaseNode):
     """
     Display a username/password credential dialog.

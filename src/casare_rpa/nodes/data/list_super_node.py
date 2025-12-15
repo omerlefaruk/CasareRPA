@@ -297,7 +297,6 @@ EXPRESSION_ACTIONS = [
 ]
 
 
-@node(category="data")
 @properties(
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
@@ -439,6 +438,7 @@ EXPRESSION_ACTIONS = [
         display_when={"action": [ListAction.APPEND.value]},
     ),
 )
+@node(category="data")
 class ListSuperNode(BaseNode):
     """
     Unified list operations node.

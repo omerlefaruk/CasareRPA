@@ -29,7 +29,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "timeout",
@@ -47,6 +46,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Run in isolated subprocess (default: False)",
     ),
 )
+@node(category="scripts")
 class RunPythonScriptNode(BaseNode):
     """
     Execute Python code inline.
@@ -218,7 +218,6 @@ print("__RESULT__:" + json.dumps(result, default=str))
         return True, ""
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "timeout",
@@ -259,6 +258,7 @@ print("__RESULT__:" + json.dumps(result, default=str))
         tooltip="Retry if return code is non-zero (default: False)",
     ),
 )
+@node(category="scripts")
 class RunPythonFileNode(BaseNode):
     """
     Execute a Python file.
@@ -432,7 +432,6 @@ class RunPythonFileNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "expression",
@@ -442,6 +441,7 @@ class RunPythonFileNode(BaseNode):
         tooltip="Python expression to evaluate (e.g., '{{num1}} + {{num2}}')",
     ),
 )
+@node(category="scripts")
 class EvalExpressionNode(BaseNode):
     """
     Evaluate a Python expression and return the result.
@@ -556,7 +556,6 @@ class EvalExpressionNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "timeout",
@@ -590,6 +589,7 @@ class EvalExpressionNode(BaseNode):
         tooltip="Retry if return code is non-zero (default: False)",
     ),
 )
+@node(category="scripts")
 class RunBatchScriptNode(BaseNode):
     """
     Execute a batch script (Windows) or shell script (Unix).
@@ -777,7 +777,6 @@ class RunBatchScriptNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "timeout",
@@ -795,6 +794,7 @@ class RunBatchScriptNode(BaseNode):
         tooltip="Path to Node.js executable (default: 'node')",
     ),
 )
+@node(category="scripts")
 class RunJavaScriptNode(BaseNode):
     """
     Execute JavaScript code using Node.js.

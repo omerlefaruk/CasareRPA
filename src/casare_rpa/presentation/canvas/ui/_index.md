@@ -111,7 +111,6 @@ Quick reference for Canvas UI components. Use for fast discovery.
 | `ProjectManagerDialog` | Project management |
 | `CredentialManagerDialog` | Credential CRUD |
 | `FleetDashboardDialog` | Fleet management |
-| `MigrationDialog` | Schema migration |
 | `QuickNodeConfigDialog` | Quick node setup |
 | `ParameterPromotionDialog` | Promote to variable |
 | `GoogleOAuthDialog` | Google OAuth flow |

@@ -51,7 +51,6 @@ class EmailAction(str, Enum):
     SAVE_ATTACHMENT = "Save Attachment"
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "action",
@@ -336,6 +335,7 @@ class EmailAction(str, Enum):
         tab="advanced",
     ),
 )
+@node(category="email")
 class EmailSuperNode(CredentialAwareMixin, BaseNode):
     """
     Unified email operations node.

@@ -116,7 +116,8 @@ def _create_message_with_attachment(
 # =============================================================================
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailSendEmailNode(BaseNode):
     """Send an email via Gmail."""
 
@@ -178,7 +179,8 @@ class GmailSendEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailSendWithAttachmentNode(BaseNode):
     """Send an email with attachments via Gmail."""
 
@@ -244,7 +246,8 @@ class GmailSendWithAttachmentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailCreateDraftNode(BaseNode):
     """Create a draft email in Gmail."""
 
@@ -304,7 +307,8 @@ class GmailCreateDraftNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailSendDraftNode(BaseNode):
     """Send an existing draft from Gmail."""
 
@@ -362,7 +366,8 @@ class GmailSendDraftNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailGetEmailNode(BaseNode):
     """Get a specific email by ID from Gmail."""
 
@@ -466,7 +471,8 @@ class GmailGetEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailListEmailsNode(BaseNode):
     """List emails from Gmail inbox."""
 
@@ -525,7 +531,8 @@ class GmailListEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailSearchEmailsNode(BaseNode):
     """Search emails in Gmail using query."""
 
@@ -585,7 +592,8 @@ class GmailSearchEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailGetThreadNode(BaseNode):
     """Get a complete email thread from Gmail."""
 
@@ -648,7 +656,8 @@ class GmailGetThreadNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailModifyLabelsNode(BaseNode):
     """Modify labels on a Gmail message."""
 
@@ -708,7 +717,8 @@ class GmailModifyLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailMoveToTrashNode(BaseNode):
     """Move a Gmail message to trash."""
 
@@ -750,7 +760,8 @@ class GmailMoveToTrashNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailMarkAsReadNode(BaseNode):
     """Mark a Gmail message as read."""
 
@@ -794,7 +805,8 @@ class GmailMarkAsReadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailMarkAsUnreadNode(BaseNode):
     """Mark a Gmail message as unread."""
 
@@ -838,7 +850,8 @@ class GmailMarkAsUnreadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailStarEmailNode(BaseNode):
     """Star or unstar a Gmail message."""
 
@@ -891,7 +904,8 @@ class GmailStarEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailArchiveEmailNode(BaseNode):
     """Archive a Gmail message (remove from inbox)."""
 
@@ -935,7 +949,8 @@ class GmailArchiveEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailDeleteEmailNode(BaseNode):
     """Permanently delete a Gmail message."""
 
@@ -982,7 +997,8 @@ class GmailDeleteEmailNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailBatchSendNode(BaseNode):
     """Send multiple emails in batch."""
 
@@ -1075,7 +1091,8 @@ class GmailBatchSendNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailBatchModifyNode(BaseNode):
     """Modify multiple Gmail messages in batch."""
 
@@ -1128,7 +1145,8 @@ class GmailBatchModifyNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailBatchDeleteNode(BaseNode):
     """Delete multiple Gmail messages in batch."""
 
@@ -1178,7 +1196,8 @@ class GmailBatchDeleteNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailAddLabelNode(BaseNode):
     """Add label(s) to a Gmail message."""
 
@@ -1243,7 +1262,8 @@ class GmailAddLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailRemoveLabelNode(BaseNode):
     """Remove label(s) from a Gmail message."""
 
@@ -1308,7 +1328,8 @@ class GmailRemoveLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailGetLabelsNode(BaseNode):
     """Get all labels from Gmail account."""
 
@@ -1368,7 +1389,8 @@ class GmailGetLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailTrashEmailNode(BaseNode):
     """Move a Gmail message to trash (alias for MoveToTrash with clearer name)."""
 

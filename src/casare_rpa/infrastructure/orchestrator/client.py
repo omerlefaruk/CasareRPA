@@ -234,12 +234,24 @@ class OrchestratorClient:
                 async with self._session.request(
                     method, url, params=params, json=json_data
                 ) as resp:
-                    if resp.status == 200:
-                        return await resp.json()
+                    if 200 <= resp.status < 300:
+                        # Handle 204 No Content
+                        if resp.status == 204:
+                            return {}
+                        # Try to parse JSON, fallback to empty dict if not JSON
+                        try:
+                            json_resp = await resp.json()
+                            return json_resp if json_resp is not None else {}
+                        except Exception:
+                            return {}
+
                     elif resp.status == 404:
                         return None
                     else:
-                        logger.warning(f"API request failed: {resp.status} {url}")
+                        resp_text = await resp.text()
+                        logger.error(
+                            f"API request failed: {resp.status} {url} | Body: {resp_text[:200]}"
+                        )
                         if attempt < self.config.retry_attempts - 1:
                             await asyncio.sleep(self.config.retry_delay * (attempt + 1))
 
@@ -247,6 +259,10 @@ class OrchestratorClient:
                 logger.error(
                     f"Request error ({attempt + 1}/{self.config.retry_attempts}): {e}"
                 )
+                if attempt < self.config.retry_attempts - 1:
+                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+            except Exception as e:
+                logger.error(f"Unexpected request error: {e}")
                 if attempt < self.config.retry_attempts - 1:
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
 
@@ -329,8 +345,28 @@ class OrchestratorClient:
 
     async def delete_robot(self, robot_id: str) -> bool:
         """Delete/deregister a robot."""
-        data = await self._request("DELETE", f"/api/v1/robots/{robot_id}")
-        return data is not None
+        if not self._session:
+            await self.connect()
+        if not self._session:
+            return False
+
+        url = urljoin(self.config.base_url, f"/api/v1/robots/{robot_id}")
+        try:
+            async with self._session.delete(url) as resp:
+                if 200 <= resp.status < 300:
+                    return True
+                if resp.status == 404:
+                    logger.info(
+                        f"Robot {robot_id} not found (404) during deletion, treating as success"
+                    )
+                    return True
+
+                text = await resp.text()
+                logger.warning(f"Delete robot failed: {resp.status} - {text[:200]}")
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting robot: {e}")
+            return False
 
     # ==================== JOB ENDPOINTS ====================
 

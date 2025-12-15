@@ -71,13 +71,13 @@ GMAIL_FORMAT = PropertyDef(
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
     GMAIL_MESSAGE_ID,
     GMAIL_FORMAT,
 )
+@node(category="google")
 class GmailGetEmailNode(GmailBaseNode):
     """
     Get a single email by message ID.
@@ -114,7 +114,7 @@ class GmailGetEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Get Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -158,7 +158,7 @@ class GmailGetEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Message ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get format
@@ -195,7 +195,7 @@ class GmailGetEmailNode(GmailBaseNode):
             "success": True,
             "message_id": message.id,
             "subject": message.subject,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -204,7 +204,6 @@ class GmailGetEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -241,6 +240,7 @@ class GmailGetEmailNode(GmailBaseNode):
         tooltip="Include messages from spam and trash folders",
     ),
 )
+@node(category="google")
 class GmailSearchEmailsNode(GmailBaseNode):
     """
     Search for emails using Gmail query syntax.
@@ -278,7 +278,7 @@ class GmailSearchEmailsNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Search Emails", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -372,7 +372,7 @@ class GmailSearchEmailsNode(GmailBaseNode):
             "success": True,
             "message_count": len(message_list),
             "next_page_token": next_token,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -381,7 +381,6 @@ class GmailSearchEmailsNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -396,6 +395,7 @@ class GmailSearchEmailsNode(GmailBaseNode):
     ),
     GMAIL_FORMAT,
 )
+@node(category="google")
 class GmailGetThreadNode(GmailBaseNode):
     """
     Get a conversation thread with all messages.
@@ -426,7 +426,7 @@ class GmailGetThreadNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Get Thread", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -462,7 +462,7 @@ class GmailGetThreadNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Thread ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get format
@@ -520,7 +520,7 @@ class GmailGetThreadNode(GmailBaseNode):
             "success": True,
             "thread_id": thread.id,
             "message_count": len(message_list),
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -529,7 +529,6 @@ class GmailGetThreadNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -560,6 +559,7 @@ class GmailGetThreadNode(GmailBaseNode):
         tooltip="Filename for the attachment (used if no save path specified)",
     ),
 )
+@node(category="google")
 class GmailGetAttachmentNode(GmailBaseNode):
     """
     Download an email attachment.
@@ -590,7 +590,7 @@ class GmailGetAttachmentNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Get Attachment", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -628,7 +628,7 @@ class GmailGetAttachmentNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Message ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         if not attachment_id:
@@ -636,7 +636,7 @@ class GmailGetAttachmentNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Attachment ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional save path and filename
@@ -698,7 +698,7 @@ class GmailGetAttachmentNode(GmailBaseNode):
             "size": size,
             "saved": saved,
             "save_path": final_path,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 

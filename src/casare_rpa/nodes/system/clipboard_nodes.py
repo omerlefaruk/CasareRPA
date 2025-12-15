@@ -19,8 +19,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties()  # Input port driven
+@node(category="system")
 class ClipboardCopyNode(BaseNode):
     """
     Copy text to the clipboard.
@@ -103,8 +103,8 @@ class ClipboardCopyNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties()  # No config - output only
+@node(category="system")
 class ClipboardPasteNode(BaseNode):
     """
     Get text from the clipboard.
@@ -183,8 +183,8 @@ class ClipboardPasteNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties()  # No config
+@node(category="system")
 class ClipboardClearNode(BaseNode):
     """
     Clear the clipboard.

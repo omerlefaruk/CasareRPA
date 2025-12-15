@@ -64,7 +64,6 @@ DRIVE_MAX_RESULTS = PropertyDef(
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "folder_name",
@@ -92,6 +91,7 @@ DRIVE_MAX_RESULTS = PropertyDef(
         tooltip="Folder description",
     ),
 )
+@node(category="google")
 class DriveCreateFolderNode(DriveBaseNode):
     """
     Create a new folder in Google Drive.
@@ -119,7 +119,7 @@ class DriveCreateFolderNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Create Folder", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -185,7 +185,6 @@ class DriveCreateFolderNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FOLDER_ID,
     DRIVE_QUERY,
@@ -231,6 +230,7 @@ class DriveCreateFolderNode(DriveBaseNode):
         tooltip="Include files in trash",
     ),
 )
+@node(category="google")
 class DriveListFilesNode(DriveBaseNode):
     """
     List files in a Google Drive folder.
@@ -267,7 +267,7 @@ class DriveListFilesNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive List Files", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -356,7 +356,6 @@ class DriveListFilesNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "query",
@@ -394,6 +393,7 @@ class DriveListFilesNode(DriveBaseNode):
         tooltip="Include files in trash",
     ),
 )
+@node(category="google")
 class DriveSearchFilesNode(DriveBaseNode):
     """
     Search for files in Google Drive using query syntax.
@@ -432,7 +432,7 @@ class DriveSearchFilesNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Search Files", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

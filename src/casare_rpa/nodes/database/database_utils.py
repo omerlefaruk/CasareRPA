@@ -104,8 +104,8 @@ if AIOMYSQL_AVAILABLE:
     import aiomysql
 
 
-@node(category="database")
 @properties()  # Input port driven
+@node(category="database")
 class TableExistsNode(BaseNode):
     """
     Check if a table exists in the database.
@@ -230,8 +230,8 @@ class TableExistsNode(BaseNode):
         return row is not None
 
 
-@node(category="database")
 @properties()  # Input port driven
+@node(category="database")
 class GetTableColumnsNode(BaseNode):
     """
     Get column information for a table.

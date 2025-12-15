@@ -124,7 +124,6 @@ class InfrastructureProvider(BaseProvider):
     Manages:
     - update_manager: UpdateManager (singleton)
     - recovery_strategy_registry: RecoveryStrategyRegistry (singleton)
-    - migration_rule_registry: MigrationRuleRegistry (singleton)
     - metrics_exporter: MetricsExporter (singleton)
     - output_capture: OutputCapture controller (singleton)
     - ui_log_controller: UI log sink controller (singleton)
@@ -146,13 +145,6 @@ class InfrastructureProvider(BaseProvider):
             )
 
             return RecoveryStrategyRegistry()
-
-        def migration_registry_factory() -> Any:
-            from casare_rpa.application.use_cases.workflow_migration import (
-                MigrationRuleRegistry,
-            )
-
-            return MigrationRuleRegistry()
 
         def healing_telemetry_factory() -> Any:
             from casare_rpa.infrastructure.browser.healing.telemetry import (
@@ -190,9 +182,6 @@ class InfrastructureProvider(BaseProvider):
 
         container.register_singleton(
             "recovery_strategy_registry", factory=recovery_registry_factory
-        )
-        container.register_singleton(
-            "migration_rule_registry", factory=migration_registry_factory
         )
         container.register_singleton(
             "healing_telemetry", factory=healing_telemetry_factory

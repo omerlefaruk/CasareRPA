@@ -81,7 +81,6 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
     return target_path
 
 
-@node(category="file")
 @properties(
     FILE_PATH_INPUT,
     CSV_DELIMITER,
@@ -92,6 +91,7 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
     CSV_MAX_ROWS,
     CSV_STRICT,
 )
+@node(category="file")
 class ReadCSVNode(BaseNode):
     """
     Read and parse a CSV file.
@@ -197,13 +197,13 @@ class ReadCSVNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     FILE_PATH_OUTPUT,
     CSV_DELIMITER,
     CSV_WRITE_HEADER,
     FILE_ENCODING,
 )
+@node(category="file")
 class WriteCSVNode(BaseNode):
     """
     Write data to a CSV file.
@@ -298,11 +298,11 @@ class WriteCSVNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     FILE_PATH_INPUT,
     FILE_ENCODING,
 )
+@node(category="file")
 class ReadJSONFileNode(BaseNode):
     """
     Read and parse a JSON file.
@@ -386,13 +386,13 @@ class ReadJSONFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     FILE_PATH_OUTPUT,
     FILE_ENCODING,
     JSON_INDENT,
     JSON_ENSURE_ASCII,
 )
+@node(category="file")
 class WriteJSONFileNode(BaseNode):
     """
     Write data to a JSON file.
@@ -479,13 +479,13 @@ class WriteJSONFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     ZIP_PATH,
     ZIP_SOURCE_PATH,
     ZIP_BASE_DIR,
     ZIP_COMPRESSION,
 )
+@node(category="file")
 class ZipFilesNode(BaseNode):
     """
     Create a ZIP archive from files.
@@ -669,11 +669,11 @@ class ZipFilesNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     ZIP_PATH,
     ZIP_EXTRACT_TO,
 )
+@node(category="file")
 class UnzipFilesNode(BaseNode):
     """
     Extract files from a ZIP archive.

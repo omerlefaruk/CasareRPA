@@ -525,7 +525,13 @@ class ExecutionController(BaseController):
         Updates visual node status to 'running' and starts pipe flow animation.
         """
         # Extract data from Event object
-        event_data = event.data if hasattr(event, "data") else event
+        # Support both: typed DomainEvent (has to_dict) and legacy dict events
+        if hasattr(event, "to_dict") and callable(event.to_dict):
+            event_data = event.to_dict()
+        elif hasattr(event, "data"):
+            event_data = event.data
+        else:
+            event_data = event if isinstance(event, dict) else {}
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
@@ -548,16 +554,28 @@ class ExecutionController(BaseController):
         and History Tab.
         """
         # Extract data from Event object
-        event_data = event.data if hasattr(event, "data") else event
+        # Support both: typed DomainEvent (has to_dict) and legacy dict events
+        if hasattr(event, "to_dict") and callable(event.to_dict):
+            event_data = event.to_dict()
+        elif hasattr(event, "data"):
+            event_data = event.data
+        else:
+            event_data = event if isinstance(event, dict) else {}
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
 
             # Extract execution time early (before visual_node check)
-            # Support both 'execution_time' (seconds) and 'duration_ms' (milliseconds)
+            # Support 'execution_time_ms' (from NodeCompleted event),
+            # 'execution_time' (seconds), and 'duration_ms' (milliseconds)
             execution_time_sec = None
             if isinstance(event_data, dict):
-                if "execution_time" in event_data:
+                if "execution_time_ms" in event_data:
+                    # execution_time_ms is in milliseconds (from NodeCompleted event)
+                    execution_time_ms = event_data.get("execution_time_ms")
+                    if execution_time_ms is not None:
+                        execution_time_sec = execution_time_ms / 1000.0
+                elif "execution_time" in event_data:
                     # execution_time is in seconds
                     execution_time_sec = event_data.get("execution_time")
                 elif "duration_ms" in event_data:
@@ -626,12 +644,18 @@ class ExecutionController(BaseController):
         Also stops pipe animation and adds failed entry to History Tab.
         """
         # Extract data from Event object
-        event_data = event.data if hasattr(event, "data") else event
+        # Support both: typed DomainEvent (has to_dict) and legacy dict events
+        if hasattr(event, "to_dict") and callable(event.to_dict):
+            event_data = event.to_dict()
+        elif hasattr(event, "data"):
+            event_data = event.data
+        else:
+            event_data = event if isinstance(event, dict) else {}
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         error = (
-            event_data.get("error", "Unknown error")
-            if isinstance(event_data, dict)
-            else "Unknown error"
+            event_data.get("error_message")
+            or event_data.get("error")
+            or "Unknown error"
         )
         if node_id:
             visual_node = self._find_visual_node(node_id)

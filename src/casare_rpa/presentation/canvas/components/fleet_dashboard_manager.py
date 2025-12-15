@@ -129,9 +129,22 @@ class FleetDashboardManager:
     async def _get_robots(self) -> List[Any]:
         """Get robots from robot controller or local repository."""
         if self._robot_controller:
-            await self._robot_controller.refresh_robots()
+            # Force refresh from orchestrator to clear any deleted items from cache
+            if self._robot_controller.is_connected:
+                # Clear the controller's internal cache first to ensure we don't return stale data
+                self._robot_controller._current_robots = []
+                await self._robot_controller.refresh_robots()
             return self._robot_controller.robots
-        return []
+
+        # Fallback to local storage
+        from casare_rpa.infrastructure.orchestrator.persistence import (
+            LocalRobotRepository,
+            LocalStorageRepository,
+        )
+
+        storage = LocalStorageRepository()
+        repo = LocalRobotRepository(storage)
+        return await repo.get_all()
 
     async def _get_jobs(self) -> List[Dict[str, Any]]:
         """Get jobs from orchestrator API or local storage."""
@@ -235,7 +248,21 @@ class FleetDashboardManager:
                         "queue_depth": fleet_metrics.get("queue_depth", 0),
                     }
                 except Exception as e:
-                    logger.warning(f"Failed to get analytics from API: {e}")
+                    # Log rate limit/API errors as debug to reduce noise, return empty analytics
+                    logger.debug(
+                        f"Failed to get analytics from API (likely rate limit): {e}"
+                    )
+                    return {
+                        "total_robots": len(robots),
+                        "robots_by_status": {},
+                        "total_jobs": len(jobs),
+                        "jobs_by_status": {},
+                        "jobs_completed_today": 0,
+                        "jobs_failed_today": 0,
+                        "success_rate": 0,
+                        "avg_duration_ms": 0,
+                        "queue_depth": 0,
+                    }
 
         robot_statuses = Counter(
             r.status.value if hasattr(r.status, "value") else str(r.status)
@@ -258,8 +285,15 @@ class FleetDashboardManager:
         """Handle fleet dashboard refresh request."""
         import asyncio
 
+        if hasattr(self, "_is_refreshing") and self._is_refreshing:
+            logger.debug("Refresh already in progress, skipping")
+            return
+
+        self._is_refreshing = True
         logger.debug("Fleet dashboard refresh requested")
-        asyncio.create_task(self._refresh_all_data())
+
+        task = asyncio.create_task(self._refresh_all_data())
+        task.add_done_callback(lambda _: setattr(self, "_is_refreshing", False))
 
     def _on_robot_edited(self, robot_id: str, robot_data: dict) -> None:
         """Handle robot edit from fleet dashboard."""
@@ -316,16 +350,50 @@ class FleetDashboardManager:
         """Handle robot deletion from fleet dashboard."""
         import asyncio
 
+        if hasattr(self, "_is_deleting") and self._is_deleting:
+            logger.warning("Deletion already in progress, ignoring request")
+            return
+
+        self._is_deleting = True
         logger.info(f"Robot deleted: {robot_id}")
-        asyncio.create_task(self._delete_robot(robot_id))
+
+        task = asyncio.create_task(self._delete_robot(robot_id))
+        task.add_done_callback(lambda _: setattr(self, "_is_deleting", False))
 
     async def _delete_robot(self, robot_id: str) -> None:
         """Delete robot via orchestrator API or local service."""
         from PySide6.QtWidgets import QMessageBox
 
         try:
-            import httpx
+            # 1. Try using the active OrchestratorClient if connected
+            if self._robot_controller and self._robot_controller.is_connected:
+                client = self._robot_controller._orchestrator_client
+                if client:
+                    try:
+                        success = await client.delete_robot(robot_id)
+                        if success:
+                            # Mark as deleted in controller to prevent reappearing
+                            self._robot_controller.mark_robot_deleted(robot_id)
+                            logger.info(
+                                f"Robot {robot_id} deleted via active OrchestratorClient"
+                            )
+                            self._main_window.show_status(
+                                "Robot deleted successfully", 3000
+                            )
+                            await self._refresh_all_data()
+                            return
+                        else:
+                            logger.warning(
+                                f"Failed to delete robot {robot_id} via API (success=False)"
+                            )
+                    except Exception as e:
+                        logger.warning(
+                            f"Error deleting robot via OrchestratorClient: {e}"
+                        )
+                        # Fall through to other methods
 
+            # 2. Try manual API call if client not available but config exists
+            import httpx
             from casare_rpa.presentation.setup.config_manager import ClientConfigManager
 
             config_manager = ClientConfigManager()
@@ -337,25 +405,42 @@ class FleetDashboardManager:
                     ).replace("wss://", "https://")
                     base_url = base_url.rstrip("/ws").rstrip("/")
 
-                    async with httpx.AsyncClient(timeout=30.0) as client:
-                        response = await client.delete(
-                            f"{base_url}/robots/{robot_id}",
-                            headers={
-                                "Authorization": f"Bearer {config.orchestrator.api_key}"
-                            },
+                    try:
+                        async with httpx.AsyncClient(timeout=30.0) as client:
+                            response = await client.delete(
+                                f"{base_url}/robots/{robot_id}",
+                                headers={
+                                    "Authorization": f"Bearer {config.orchestrator.api_key}"
+                                },
+                            )
+                            response.raise_for_status()
+
+                        logger.info(f"Robot {robot_id} deleted via manual API call")
+                        self._main_window.show_status(
+                            "Robot deleted successfully", 3000
                         )
-                        response.raise_for_status()
+                        await self._refresh_all_data()
+                        return
+                    except Exception as e:
+                        logger.warning(
+                            f"Manual API deletion failed, falling back to local: {e}"
+                        )
+                        # Fall through to local deletion
 
-                    logger.info(f"Robot {robot_id} deleted via API")
-                    self._main_window.show_status("Robot deleted successfully", 3000)
-                    await self._refresh_all_data()
-                    return
-
-            QMessageBox.information(
-                self._main_window,
-                "Local Mode",
-                "Robot deletion requires orchestrator connection",
+            # 3. Local deletion fallback
+            from casare_rpa.infrastructure.orchestrator.persistence import (
+                LocalRobotRepository,
+                LocalStorageRepository,
             )
+
+            storage = LocalStorageRepository()
+            repo = LocalRobotRepository(storage)
+            await repo.delete(robot_id)
+
+            logger.info(f"Robot {robot_id} deleted from local storage")
+            self._main_window.show_status("Robot deleted from local storage", 3000)
+            await self._refresh_all_data()
+
         except Exception as e:
             logger.error(f"Failed to delete robot: {e}")
             QMessageBox.warning(

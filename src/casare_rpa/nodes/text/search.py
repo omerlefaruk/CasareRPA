@@ -24,6 +24,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
+@properties()
 @node(category="text")
 class TextSubstringNode(BaseNode):
     """
@@ -89,7 +90,6 @@ class TextSubstringNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case_sensitive",
@@ -99,6 +99,7 @@ class TextSubstringNode(BaseNode):
         tooltip="Case-sensitive search",
     ),
 )
+@node(category="text")
 class TextContainsNode(BaseNode):
     """
     Check if a string contains a substring.
@@ -176,7 +177,6 @@ class TextContainsNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case_sensitive",
@@ -186,6 +186,7 @@ class TextContainsNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
+@node(category="text")
 class TextStartsWithNode(BaseNode):
     """
     Check if a string starts with a prefix.
@@ -251,7 +252,6 @@ class TextStartsWithNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case_sensitive",
@@ -261,6 +261,7 @@ class TextStartsWithNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
+@node(category="text")
 class TextEndsWithNode(BaseNode):
     """
     Check if a string ends with a suffix.
@@ -326,7 +327,6 @@ class TextEndsWithNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "all_matches",
@@ -357,6 +357,7 @@ class TextEndsWithNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
+@node(category="text")
 class TextExtractNode(BaseNode):
     """
     Extract text using regex with capture groups.

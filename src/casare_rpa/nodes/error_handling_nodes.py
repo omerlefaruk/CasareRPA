@@ -22,8 +22,8 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@node(category="error_handling")
 @properties()  # No config - paired with catch/finally
+@node(category="error_handling", exec_outputs=["try_body", "success", "catch"])
 class TryNode(BaseNode):
     """
     Try block node for error handling.
@@ -117,7 +117,6 @@ class TryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "max_attempts",
@@ -144,6 +143,7 @@ class TryNode(BaseNode):
         tooltip="Exponential backoff multiplier for retry delays",
     ),
 )
+@node(category="error_handling", exec_outputs=["retry_body", "success", "failed"])
 class RetryNode(BaseNode):
     """
     Retry node for automatic retry with backoff.
@@ -255,8 +255,8 @@ class RetryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties()  # No config - signal node
+@node(category="error_handling")
 class RetrySuccessNode(BaseNode):
     """
     Marks successful completion of retry body.
@@ -307,8 +307,8 @@ class RetrySuccessNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties()  # Input port driven
+@node(category="error_handling")
 class RetryFailNode(BaseNode):
     """
     Marks failed attempt in retry body.
@@ -361,7 +361,6 @@ class RetryFailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "error_message",
@@ -372,6 +371,7 @@ class RetryFailNode(BaseNode):
         placeholder="Something went wrong",
     ),
 )
+@node(category="error_handling")
 class ThrowErrorNode(BaseNode):
     """
     Throws a custom error to trigger error handling.
@@ -425,7 +425,6 @@ class ThrowErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "webhook_url",
@@ -475,6 +474,7 @@ class ThrowErrorNode(BaseNode):
         tooltip="Delay between retries",
     ),
 )
+@node(category="error_handling")
 class WebhookNotifyNode(BaseNode):
     """
     Send error notifications via webhook.
@@ -668,8 +668,8 @@ class WebhookNotifyNode(BaseNode):
             }
 
 
-@node(category="error_handling")
 @properties()  # No config - routing node
+@node(category="error_handling", exec_outputs=["protected_body", "on_error", "finally"])
 class OnErrorNode(BaseNode):
     """
     Global error handler node.
@@ -781,7 +781,6 @@ class OnErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "strategy",
@@ -800,6 +799,7 @@ class OnErrorNode(BaseNode):
         tooltip="Maximum retries for 'retry' strategy",
     ),
 )
+@node(category="error_handling", exec_outputs=["exec_out", "fallback"])
 class ErrorRecoveryNode(BaseNode):
     """
     Configure error recovery strategy for workflow.
@@ -872,7 +872,6 @@ class ErrorRecoveryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "level",
@@ -890,6 +889,7 @@ class ErrorRecoveryNode(BaseNode):
         tooltip="Include stack trace in log output",
     ),
 )
+@node(category="error_handling")
 class LogErrorNode(BaseNode):
     """
     Log error details with structured information.
@@ -982,7 +982,6 @@ class LogErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "condition",
@@ -1000,6 +999,7 @@ class LogErrorNode(BaseNode):
         placeholder="Expected value to be greater than 0",
     ),
 )
+@node(category="error_handling")
 class AssertNode(BaseNode):
     """
     Assert a condition and throw error if false.

@@ -4,6 +4,8 @@ CasareRPA - Document Processing Nodes
 Nodes for intelligent document processing using LLM vision models.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 import json
 from abc import abstractmethod
 from typing import Any, Optional
@@ -24,6 +26,8 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import (
 )
 
 
+@properties()
+@node(category="document")
 class DocumentBaseNode(BaseNode):
     """Base class for document processing nodes."""
 
@@ -135,6 +139,8 @@ class DocumentBaseNode(BaseNode):
         pass
 
 
+@properties()
+@node(category="document")
 class ClassifyDocumentNode(DocumentBaseNode):
     """Node that classifies documents into predefined categories."""
 
@@ -218,6 +224,8 @@ class ClassifyDocumentNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties()
+@node(category="document")
 class ExtractInvoiceNode(DocumentBaseNode):
     """Node that extracts structured data from invoices."""
 
@@ -321,6 +329,8 @@ class ExtractInvoiceNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties()
+@node(category="document")
 class ExtractFormNode(DocumentBaseNode):
     """Node that extracts fields from form documents."""
 
@@ -424,6 +434,8 @@ class ExtractFormNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties()
+@node(category="document")
 class ExtractTableNode(DocumentBaseNode):
     """Node that extracts table data from documents."""
 
@@ -504,6 +516,8 @@ class ExtractTableNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties()
+@node(category="document")
 class ValidateExtractionNode(BaseNode):
     """Node that validates extracted document data."""
 

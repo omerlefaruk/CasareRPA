@@ -116,7 +116,6 @@ def _parse_email_list(email_string: str) -> list[str]:
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -127,6 +126,7 @@ def _parse_email_list(email_string: str) -> list[str]:
     GMAIL_BODY,
     GMAIL_BODY_TYPE,
 )
+@node(category="google")
 class GmailSendEmailNode(GmailBaseNode):
     """
     Send a plain text or HTML email via Gmail.
@@ -156,7 +156,7 @@ class GmailSendEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Send Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -192,7 +192,7 @@ class GmailSendEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
@@ -213,11 +213,19 @@ class GmailSendEmailNode(GmailBaseNode):
 
         if not subject:
             self._set_error_outputs("Subject is required")
-            return {"success": False, "error": "Subject is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Subject is required",
+                "next_nodes": ["exec_out"],
+            }
 
         if not body:
             self._set_error_outputs("Body is required")
-            return {"success": False, "error": "Body is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Body is required",
+                "next_nodes": ["exec_out"],
+            }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
@@ -247,7 +255,7 @@ class GmailSendEmailNode(GmailBaseNode):
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -256,7 +264,6 @@ class GmailSendEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -275,6 +282,7 @@ class GmailSendEmailNode(GmailBaseNode):
         tooltip="File paths to attach (comma-separated)",
     ),
 )
+@node(category="google")
 class GmailSendWithAttachmentNode(GmailBaseNode):
     """
     Send an email with file attachments via Gmail.
@@ -306,7 +314,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Send with Attachment", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -346,7 +354,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
@@ -367,11 +375,19 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 
         if not subject:
             self._set_error_outputs("Subject is required")
-            return {"success": False, "error": "Subject is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Subject is required",
+                "next_nodes": ["exec_out"],
+            }
 
         if not body:
             self._set_error_outputs("Body is required")
-            return {"success": False, "error": "Body is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Body is required",
+                "next_nodes": ["exec_out"],
+            }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
@@ -388,10 +404,14 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         # Parse attachment paths
         attachment_paths: list[Union[str, Path]] = []
         if attachments_str:
-            for path_str in attachments_str.split(","):
-                path = path_str.strip()
-                if path:
-                    attachment_paths.append(path)
+            # Handle both string (comma-separated) and list inputs
+            if isinstance(attachments_str, str):
+                for path_str in attachments_str.split(","):
+                    path = path_str.strip()
+                    if path:
+                        attachment_paths.append(path)
+            elif isinstance(attachments_str, list):
+                attachment_paths.extend(attachments_str)
         if attachment_list:
             attachment_paths.extend(attachment_list)
 
@@ -434,7 +454,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
             "message_id": result.id,
             "thread_id": result.thread_id,
             "attachment_count": len(valid_attachments),
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -443,7 +463,6 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -478,6 +497,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
     GMAIL_CC,
     GMAIL_BCC,
 )
+@node(category="google")
 class GmailReplyToEmailNode(GmailBaseNode):
     """
     Reply to an existing email thread.
@@ -507,7 +527,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Reply to Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -544,7 +564,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Thread ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         if not message_id:
@@ -552,7 +572,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Message ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get body
@@ -565,7 +585,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Reply body is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get body type
@@ -605,7 +625,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -614,7 +634,6 @@ class GmailReplyToEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -639,6 +658,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
         tooltip="Optional text to add before the forwarded message",
     ),
 )
+@node(category="google")
 class GmailForwardEmailNode(GmailBaseNode):
     """
     Forward an existing email to new recipients.
@@ -667,7 +687,7 @@ class GmailForwardEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Forward Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -701,7 +721,7 @@ class GmailForwardEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Message ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get recipients
@@ -715,7 +735,7 @@ class GmailForwardEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
@@ -754,7 +774,7 @@ class GmailForwardEmailNode(GmailBaseNode):
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -763,7 +783,6 @@ class GmailForwardEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -782,6 +801,7 @@ class GmailForwardEmailNode(GmailBaseNode):
         tooltip="File paths to attach (comma-separated)",
     ),
 )
+@node(category="google")
 class GmailCreateDraftNode(GmailBaseNode):
     """
     Create a draft email (save without sending).
@@ -812,7 +832,7 @@ class GmailCreateDraftNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Create Draft", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -849,7 +869,7 @@ class GmailCreateDraftNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
@@ -870,11 +890,19 @@ class GmailCreateDraftNode(GmailBaseNode):
 
         if not subject:
             self._set_error_outputs("Subject is required")
-            return {"success": False, "error": "Subject is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Subject is required",
+                "next_nodes": ["exec_out"],
+            }
 
         if not body:
             self._set_error_outputs("Body is required")
-            return {"success": False, "error": "Body is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Body is required",
+                "next_nodes": ["exec_out"],
+            }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
@@ -920,7 +948,7 @@ class GmailCreateDraftNode(GmailBaseNode):
             "success": True,
             "draft_id": result.id,
             "message_id": message_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 

@@ -58,7 +58,6 @@ HTTP_PASSWORD_PROP = PropertyDef(
 )
 
 
-@node(category="http")
 @properties(
     CREDENTIAL_NAME_PROP,
     PropertyDef(
@@ -80,6 +79,7 @@ HTTP_PASSWORD_PROP = PropertyDef(
         tooltip="Header name for API key authentication",
     ),
 )
+@node(category="http")
 class HttpAuthNode(BaseNode, CredentialAwareMixin):
     """
     Configure HTTP authentication headers.
@@ -206,7 +206,6 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "client_id",
@@ -259,6 +258,7 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
         tooltip="Enable PKCE (Proof Key for Code Exchange) for enhanced security",
     ),
 )
+@node(category="http")
 class OAuth2AuthorizeNode(BaseNode):
     """
     Build OAuth 2.0 authorization URL for user authentication.
@@ -393,7 +393,6 @@ class OAuth2AuthorizeNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "client_id",
@@ -437,6 +436,7 @@ class OAuth2AuthorizeNode(BaseNode):
         tooltip="OAuth 2.0 grant type",
     ),
 )
+@node(category="http")
 class OAuth2TokenExchangeNode(BaseNode):
     """
     Exchange OAuth 2.0 authorization code for access token.
@@ -618,7 +618,6 @@ class OAuth2TokenExchangeNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "port",
@@ -646,6 +645,7 @@ class OAuth2TokenExchangeNode(BaseNode):
         tooltip="URL path for the callback",
     ),
 )
+@node(category="http")
 class OAuth2CallbackServerNode(BaseNode):
     """
     Start a local server to receive OAuth 2.0 callback.
@@ -824,7 +824,6 @@ class OAuth2CallbackServerNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "introspection_url",
@@ -848,6 +847,7 @@ class OAuth2CallbackServerNode(BaseNode):
         tooltip="Client secret for introspection authentication",
     ),
 )
+@node(category="http")
 class OAuth2TokenValidateNode(BaseNode):
     """
     Validate an OAuth 2.0 access token using introspection endpoint.

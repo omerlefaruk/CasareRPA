@@ -302,7 +302,6 @@ REGEX_ACTIONS = [
 ]
 
 
-@node(category="text")
 @properties(
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
@@ -504,6 +503,7 @@ REGEX_ACTIONS = [
         display_when={"action": [TextAction.JOIN.value]},
     ),
 )
+@node(category="text")
 class TextSuperNode(BaseNode):
     """
     Unified text operations node.

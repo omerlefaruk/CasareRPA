@@ -21,7 +21,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -39,6 +38,7 @@ from .widgets import _create_styled_line_edit
         essential=True,
     ),
 )
+@node(category="system")
 class FormDialogNode(BaseNode):
     """
     Display a custom form dialog with dynamic fields.
@@ -220,7 +220,6 @@ class FormDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -245,6 +244,7 @@ class FormDialogNode(BaseNode):
         tooltip="Allow navigating to previous steps",
     ),
 )
+@node(category="system")
 class WizardDialogNode(BaseNode):
     """
     Display a multi-step wizard dialog.

@@ -5,6 +5,8 @@ Reusable property definitions for desktop automation nodes.
 Import these constants to maintain consistency across nodes.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 

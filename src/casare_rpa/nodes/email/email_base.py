@@ -6,6 +6,8 @@ plus shared PropertyDef constants for email-related nodes.
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 from email.header import decode_header
 from email.message import Message as EmailMessage

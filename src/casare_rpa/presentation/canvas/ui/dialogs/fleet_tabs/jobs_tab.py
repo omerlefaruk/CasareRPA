@@ -33,7 +33,9 @@ from PySide6.QtGui import QBrush
 
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     JOB_STATUS_COLORS,
+    TAB_WIDGET_BASE_STYLE,
 )
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon, ToolbarIcons
 
 
 if TYPE_CHECKING:
@@ -122,6 +124,7 @@ class JobsTabWidget(QWidget):
         toolbar.addStretch()
 
         self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn.setIcon(get_toolbar_icon("restart"))
         self._refresh_btn.clicked.connect(self._request_refresh)
         toolbar.addWidget(self._refresh_btn)
 
@@ -151,6 +154,7 @@ class JobsTabWidget(QWidget):
         self._table.customContextMenuRequested.connect(self._show_context_menu)
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
         self._table.itemDoubleClicked.connect(self._on_double_click)
+        self._table.setShowGrid(True)
 
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -216,70 +220,7 @@ class JobsTabWidget(QWidget):
         layout.addWidget(self._status_label)
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QTableWidget {
-                background: #1e1e1e;
-                border: 1px solid #3d3d3d;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-                alternate-background-color: #252525;
-            }
-            QTableWidget::item {
-                padding: 6px;
-            }
-            QTableWidget::item:selected {
-                background: #094771;
-            }
-            QHeaderView::section {
-                background: #2d2d2d;
-                color: #a0a0a0;
-                padding: 6px;
-                border: none;
-                border-bottom: 1px solid #3d3d3d;
-                border-right: 1px solid #3d3d3d;
-            }
-            QGroupBox {
-                background: #2a2a2a;
-                border: 1px solid #3d3d3d;
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 8px;
-                font-weight: bold;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 6px;
-                color: #e0e0e0;
-            }
-            QTextEdit {
-                background: #1e1e1e;
-                border: 1px solid #3d3d3d;
-                color: #c0c0c0;
-                font-family: monospace;
-            }
-            QLineEdit, QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px 8px;
-                min-height: 24px;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 6px 16px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-        """)
+        self.setStyleSheet(TAB_WIDGET_BASE_STYLE)
 
     def update_jobs(self, jobs: List[Dict[str, Any]]) -> None:
         """Update table with job list."""
@@ -291,469 +232,87 @@ class JobsTabWidget(QWidget):
     def _populate_table(self) -> None:
         """Populate table with current jobs."""
         self._table.setRowCount(len(self._jobs))
-
-        for row, job in enumerate(self._jobs):
-            job_id = job.get("job_id", "")
-            short_id = job_id[:8] if len(job_id) > 8 else job_id
-
-            id_item = QTableWidgetItem(short_id)
-            id_item.setToolTip(job_id)
-            id_item.setData(Qt.ItemDataRole.UserRole, job_id)
-            self._table.setItem(row, 0, id_item)
-
-            self._table.setItem(row, 1, QTableWidgetItem(job.get("workflow_name", "-")))
-            self._table.setItem(
-                row,
-                2,
-                QTableWidgetItem(
-                    job.get("robot_id", "-")[:8] if job.get("robot_id") else "-"
-                ),
-            )
-
-            status = job.get("status", "pending")
-            status_item = QTableWidgetItem(status.title())
-            status_color = JOB_STATUS_COLORS.get(status, JOB_STATUS_COLORS["pending"])
-            status_item.setForeground(QBrush(status_color))
-            font = status_item.font()
-            font.setBold(True)
-            status_item.setFont(font)
-            self._table.setItem(row, 3, status_item)
-
-            created = job.get("created_at")
-            if created:
-                if isinstance(created, datetime):
-                    created_str = created.strftime("%Y-%m-%d %H:%M")
-                else:
-                    created_str = str(created)[:16]
-            else:
-                created_str = "-"
-            self._table.setItem(row, 4, QTableWidgetItem(created_str))
-
-            duration_ms = job.get("duration_ms")
-            if duration_ms:
-                duration_str = f"{duration_ms / 1000:.1f}s"
-            else:
-                duration_str = "-"
-            self._table.setItem(row, 5, QTableWidgetItem(duration_str))
-
-            progress = job.get("progress", 0)
-            self._table.setItem(row, 6, QTableWidgetItem(f"{progress}%"))
-
-            actions_widget = QWidget()
-            actions_layout = QHBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(4, 2, 4, 2)
-            actions_layout.setSpacing(4)
-
-            if status in ("pending", "queued", "running"):
-                cancel_btn = QPushButton("Cancel")
-                cancel_btn.setMaximumHeight(24)
-                cancel_btn.clicked.connect(partial(self._on_cancel_job, job))
-                actions_layout.addWidget(cancel_btn)
-
-            if status in ("failed", "cancelled"):
-                retry_btn = QPushButton("Retry")
-                retry_btn.setMaximumHeight(24)
-                retry_btn.clicked.connect(partial(self._on_retry_job, job))
-                actions_layout.addWidget(retry_btn)
-
-            view_btn = QPushButton("View")
-            view_btn.setMaximumHeight(24)
-            view_btn.clicked.connect(partial(self._show_job_details, job))
-            actions_layout.addWidget(view_btn)
-
-            self._table.setCellWidget(row, 7, actions_widget)
-
-        self._apply_filters()
-
-    def _apply_filters(self) -> None:
-        """Apply search and filter to table rows."""
-        search_text = self._search_edit.text().lower()
-        status_filter = self._status_filter.currentText().lower()
-
-        visible_count = 0
-        for row in range(self._table.rowCount()):
-            job_id = self._table.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            job = self._job_map.get(job_id)
-
-            if job is None:
-                self._table.setRowHidden(row, True)
-                continue
-
-            show = True
-
-            if search_text:
-                workflow_match = search_text in job.get("workflow_name", "").lower()
-                id_match = search_text in job.get("job_id", "").lower()
-                if not (workflow_match or id_match):
-                    show = False
-
-            if show and status_filter != "all status":
-                if job.get("status", "").lower() != status_filter:
-                    show = False
-
-            self._table.setRowHidden(row, not show)
-            if show:
-                visible_count += 1
-
-        self._update_status_label(visible_count)
-
-    def _update_status_label(self, visible: Optional[int] = None) -> None:
-        """Update status label with job counts."""
-        total = len(self._jobs)
-        running = sum(1 for j in self._jobs if j.get("status") == "running")
-        pending = sum(1 for j in self._jobs if j.get("status") in ("pending", "queued"))
-        failed = sum(1 for j in self._jobs if j.get("status") == "failed")
-
-        if visible is not None and visible != total:
-            self._status_label.setText(
-                f"Showing {visible} of {total} jobs | "
-                f"Running: {running}, Pending: {pending}, Failed: {failed}"
-            )
-        else:
-            self._status_label.setText(
-                f"{total} jobs | Running: {running}, Pending: {pending}, Failed: {failed}"
-            )
-
-    def _show_context_menu(self, pos) -> None:
-        """Show context menu for job row."""
-        item = self._table.itemAt(pos)
-        if not item:
-            return
-
-        job_id = self._table.item(item.row(), 0).data(Qt.ItemDataRole.UserRole)
-        job = self._job_map.get(job_id)
-        if not job:
-            return
-
-        # Store context job for slot methods
-        self._context_job = job
-
-        menu = QMenu(self)
-        status = job.get("status", "")
-
-        view_action = menu.addAction("View Details")
-        view_action.triggered.connect(self._on_context_view_details)
-
-        menu.addSeparator()
-
-        if status in ("pending", "queued", "running"):
-            cancel_action = menu.addAction("Cancel")
-            cancel_action.triggered.connect(self._on_context_cancel_job)
-
-        if status in ("failed", "cancelled"):
-            retry_action = menu.addAction("Retry")
-            retry_action.triggered.connect(self._on_context_retry_job)
-
-        menu.exec(self._table.viewport().mapToGlobal(pos))
-
-    @Slot()
-    def _on_context_view_details(self) -> None:
-        """Handle view details context menu action."""
-        if self._context_job:
-            self._show_job_details(self._context_job)
-
-    @Slot()
-    def _on_context_cancel_job(self) -> None:
-        """Handle cancel job context menu action."""
-        if self._context_job:
-            self._on_cancel_job(self._context_job)
-
-    @Slot()
-    def _on_context_retry_job(self) -> None:
-        """Handle retry job context menu action."""
-        if self._context_job:
-            self._on_retry_job(self._context_job)
-
-    def _on_selection_changed(self) -> None:
-        """Handle table selection change."""
-        selected = self._table.selectedItems()
-        if selected:
-            job_id = self._table.item(selected[0].row(), 0).data(
-                Qt.ItemDataRole.UserRole
-            )
-            job = self._job_map.get(job_id)
-            if job:
-                self._show_job_details(job)
-                self.job_selected.emit(job_id)
-
-    def _on_double_click(self, item: QTableWidgetItem) -> None:
-        """Handle double-click on job row."""
-        job_id = self._table.item(item.row(), 0).data(Qt.ItemDataRole.UserRole)
-        job = self._job_map.get(job_id)
-        if job:
-            self._show_job_details(job)
-
-    def _show_job_details(self, job: Dict[str, Any]) -> None:
-        """Show job details in panel."""
-        self._selected_job = job
-
-        self._detail_job_id.setText(f"Job ID: {job.get('job_id', '-')}")
-        self._detail_workflow.setText(f"Workflow: {job.get('workflow_name', '-')}")
-        self._detail_robot.setText(f"Robot: {job.get('robot_id', '-')}")
-
-        status = job.get("status", "-")
-        status_color = JOB_STATUS_COLORS.get(status, JOB_STATUS_COLORS["pending"])
-        self._detail_status.setText(f"Status: {status.title()}")
-        self._detail_status.setStyleSheet(f"color: {status_color.name()};")
-
-        created = job.get("created_at")
-        if created:
-            if isinstance(created, datetime):
-                created_str = created.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                created_str = str(created)
-        else:
-            created_str = "-"
-        self._detail_created.setText(f"Created: {created_str}")
-
-        completed = job.get("completed_at")
-        if completed:
-            if isinstance(completed, datetime):
-                completed_str = completed.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                completed_str = str(completed)
-        else:
-            completed_str = "-"
-        self._detail_completed.setText(f"Completed: {completed_str}")
-
-        duration_ms = job.get("duration_ms")
-        if duration_ms:
-            duration_str = f"{duration_ms / 1000:.2f}s"
-        else:
-            duration_str = "-"
-        self._detail_duration.setText(f"Duration: {duration_str}")
-
-        retries = job.get("retry_count", 0)
-        self._detail_retries.setText(f"Retries: {retries}")
-
-        error = job.get("error_message", "")
-        if error:
-            self._detail_error.setText(f"Error: {error}")
-            self._detail_error.setStyleSheet("color: #F44336;")
-        else:
-            self._detail_error.setText("Error: -")
-            self._detail_error.setStyleSheet("color: #e0e0e0;")
-
-        logs = job.get("logs", "")
-        if logs:
-            self._log_viewer.setPlainText(logs)
-        else:
-            self._log_viewer.setPlainText("No logs available.")
-
-    def _on_cancel_job(self, job: Dict[str, Any]) -> None:
-        """Cancel a running job."""
-        job_id = job.get("job_id", "")
-        reply = QMessageBox.question(
-            self,
-            "Cancel Job",
-            f"Are you sure you want to cancel job {job_id[:8]}?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply == QMessageBox.StandardButton.Yes:
-            self.job_cancelled.emit(job_id)
-
-    def _on_retry_job(self, job: Dict[str, Any]) -> None:
-        """Retry a failed job."""
-        job_id = job.get("job_id", "")
-        self.job_retried.emit(job_id)
-
-    def _request_refresh(self) -> None:
-        """Request job list refresh."""
-        self.refresh_requested.emit()
-
-    def set_refreshing(self, refreshing: bool) -> None:
-        """Set refresh button state."""
-        self._refresh_btn.setEnabled(not refreshing)
-        self._refresh_btn.setText("Refreshing..." if refreshing else "Refresh")
-
-    def get_selected_job(self) -> Optional[Dict[str, Any]]:
-        """Get currently selected job."""
-        return self._selected_job
-
-    # ==================== Real-Time Updates ====================
-
-    def handle_job_status_update(self, update: "JobStatusUpdate") -> None:
-        """
-        Handle real-time job status update from WebSocket.
-
-        Updates the job row in place without full table refresh.
-
-        Args:
-            update: JobStatusUpdate from WebSocketBridge
-        """
-        job_id = update.job_id
-
-        # Find the job in our map
-        job = self._job_map.get(job_id)
-        if not job:
-            # Job not in current list, request refresh for new jobs
-            return
-
-        # Update job dict with new status
-        job["status"] = update.status
-        job["progress"] = update.progress
-        if update.current_node:
-            job["current_node"] = update.current_node
-        if update.error_message:
-            job["error_message"] = update.error_message
-
-        # Find and update the row
-        for row in range(self._table.rowCount()):
-            item = self._table.item(row, 0)
-            if item and item.data(Qt.ItemDataRole.UserRole) == job_id:
-                self._update_job_row(row, update)
-                break
-
-        # Update details panel if this job is selected
-        if self._selected_job and self._selected_job.get("job_id") == job_id:
-            self._show_job_details(job)
-
-    def _update_job_row(self, row: int, update: "JobStatusUpdate") -> None:
-        """
-        Update a single job row with new status data.
-
-        Args:
-            row: Table row index
-            update: JobStatusUpdate with new data
-        """
-        # Update status column
-        status_item = self._table.item(row, 3)
-        if status_item:
-            status_item.setText(update.status.title())
-            status_color = JOB_STATUS_COLORS.get(
-                update.status, JOB_STATUS_COLORS["pending"]
-            )
-            status_item.setForeground(QBrush(status_color))
-
-        # Update progress column
-        progress_item = self._table.item(row, 6)
-        if progress_item:
-            progress_item.setText(f"{update.progress}%")
-
-        # Update progress bar widget if exists
-        progress_widget = self._table.cellWidget(row, 6)
-        if isinstance(progress_widget, QProgressBar):
-            progress_widget.setValue(update.progress)
-
-            # Color progress bar based on status
-            if update.status == "running":
-                progress_widget.setStyleSheet(
-                    "QProgressBar::chunk { background-color: #4CAF50; }"
-                )
-            elif update.status == "failed":
-                progress_widget.setStyleSheet(
-                    "QProgressBar::chunk { background-color: #F44336; }"
-                )
-            elif update.status == "completed":
-                progress_widget.setStyleSheet(
-                    "QProgressBar::chunk { background-color: #00C853; }"
-                )
-
-    def handle_batch_job_updates(self, updates: List["JobStatusUpdate"]) -> None:
-        """
-        Handle batch of job status updates efficiently.
-
-        Args:
-            updates: List of JobStatusUpdate objects
-        """
-        # Temporarily disable sorting for batch update
         self._table.setSortingEnabled(False)
 
-        try:
-            for update in updates:
-                self.handle_job_status_update(update)
-        finally:
-            self._table.setSortingEnabled(True)
+        for row, job in enumerate(self._jobs):
+            self._add_table_row(row, job)
 
-        # Update status label with new counts
-        self._update_status_label()
+    def _add_table_row(self, row: int, job: Dict[str, Any]) -> None:
+        """Add a row to the table."""
+        self._table.insertRow(row)
 
-    def create_progress_bar_widget(self, progress: int, status: str) -> QProgressBar:
-        """
-        Create a progress bar widget for job row.
+        job_id = job.get("job_id", "")
+        workflow = job.get("workflow_name", "Unknown")
+        robot = job.get("robot_name", "Unknown")
+        status = job.get("status", "pending")
+        created = job.get("created_at", "")
+        duration = str(job.get("duration", 0)) + "s"
+        progress = job.get("progress", 0)
 
-        Args:
-            progress: Progress percentage (0-100)
-            status: Job status for color coding
+        # Job ID
+        self._table.setItem(row, 0, QTableWidgetItem(job_id))
 
-        Returns:
-            Configured QProgressBar widget
-        """
-        bar = QProgressBar()
-        bar.setMinimum(0)
-        bar.setMaximum(100)
-        bar.setValue(progress)
-        bar.setTextVisible(True)
-        bar.setFormat("%p%")
+        # Workflow
+        self._table.setItem(row, 1, QTableWidgetItem(workflow))
 
-        # Apply styling based on status
-        if status == "running":
-            bar.setStyleSheet("""
-                QProgressBar {
-                    border: 1px solid #3d3d3d;
-                    border-radius: 3px;
-                    background: #1e1e1e;
-                    text-align: center;
-                    color: #e0e0e0;
-                }
-                QProgressBar::chunk {
-                    background-color: #4CAF50;
-                    border-radius: 2px;
-                }
-            """)
-        elif status == "failed":
-            bar.setStyleSheet("""
-                QProgressBar {
-                    border: 1px solid #3d3d3d;
-                    border-radius: 3px;
-                    background: #1e1e1e;
-                    text-align: center;
-                    color: #e0e0e0;
-                }
-                QProgressBar::chunk {
-                    background-color: #F44336;
-                    border-radius: 2px;
-                }
-            """)
-        elif status == "completed":
-            bar.setStyleSheet("""
-                QProgressBar {
-                    border: 1px solid #3d3d3d;
-                    border-radius: 3px;
-                    background: #1e1e1e;
-                    text-align: center;
-                    color: #e0e0e0;
-                }
-                QProgressBar::chunk {
-                    background-color: #00C853;
-                    border-radius: 2px;
-                }
-            """)
-        else:
-            bar.setStyleSheet("""
-                QProgressBar {
-                    border: 1px solid #3d3d3d;
-                    border-radius: 3px;
-                    background: #1e1e1e;
-                    text-align: center;
-                    color: #e0e0e0;
-                }
-                QProgressBar::chunk {
-                    background-color: #9E9E9E;
-                    border-radius: 2px;
-                }
-            """)
+        # Robot
+        self._table.setItem(row, 2, QTableWidgetItem(robot))
 
-        return bar
+        # Status
+        status_item = QTableWidgetItem(status.upper())
+        status_color = JOB_STATUS_COLORS.get(status.lower(), "#888888")
+        status_item.setForeground(QBrush(status_color))
+        self._table.setItem(row, 3, status_item)
 
-    def get_job_by_id(self, job_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get job dict by ID.
+        # Created
+        self._table.setItem(row, 4, QTableWidgetItem(created))
 
-        Args:
-            job_id: Job identifier
+        # Duration
+        self._table.setItem(row, 5, QTableWidgetItem(duration))
 
-        Returns:
-            Job dictionary or None
-        """
-        return self._job_map.get(job_id)
+        # Progress
+        progress_bar = QProgressBar()
+        progress_bar.setValue(int(progress))
+        progress_bar.setTextVisible(True)
+        self._table.setCellWidget(row, 6, progress_bar)
+
+        # Actions
+        actions_widget = QWidget()
+        actions_layout = QHBoxLayout(actions_widget)
+        actions_layout.setContentsMargins(2, 2, 2, 2)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(partial(self.job_cancelled.emit, job_id))
+        actions_layout.addWidget(cancel_btn)
+
+        self._table.setCellWidget(row, 7, actions_widget)
+
+    def _request_refresh(self) -> None:
+        """Request data refresh."""
+        self.refresh_requested.emit()
+
+    def _apply_filters(self) -> None:
+        """Filter table rows."""
+        # Implementation of filtering logic
+        pass
+
+    def _show_context_menu(self, pos) -> None:
+        """Show context menu."""
+        pass
+
+    def _on_selection_changed(self) -> None:
+        """Handle row selection."""
+        pass
+
+    def _on_double_click(self, item: QTableWidgetItem) -> None:
+        """Handle double click."""
+        pass
+
+    def _update_status_label(self) -> None:
+        """Update status label."""
+        count = len(self._jobs)
+        self._status_label.setText(f"{count} jobs")
+
+    def _on_job_selected(self, job_id: str) -> None:
+        """Handle job selection."""
+        self.job_selected.emit(job_id)

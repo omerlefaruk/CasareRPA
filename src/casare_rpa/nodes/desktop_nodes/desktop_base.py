@@ -8,6 +8,8 @@ Provides shared functionality for all desktop automation nodes:
 - Common patterns
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 import asyncio
 import uuid
 from typing import Any, Dict, Optional, TypeVar

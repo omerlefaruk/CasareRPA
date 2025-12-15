@@ -29,7 +29,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -54,6 +53,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class DeleteFileNode(BaseNode):
     """
     Delete a file.
@@ -149,7 +149,6 @@ class DeleteFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "source_path",
@@ -189,6 +188,7 @@ class DeleteFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class CopyFileNode(BaseNode):
     """
     Copy a file to a new location.
@@ -289,7 +289,6 @@ class CopyFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "source_path",
@@ -329,6 +328,7 @@ class CopyFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class MoveFileNode(BaseNode):
     """
     Move or rename a file.

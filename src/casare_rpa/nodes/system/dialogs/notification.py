@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -100,6 +99,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Enable fade in/out animation",
     ),
 )
+@node(category="system")
 class TooltipNode(BaseNode):
     """
     Display a tooltip at a specified position.
@@ -390,7 +390,6 @@ class TooltipNode(BaseNode):
         await asyncio.sleep(0.1)
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -448,6 +447,7 @@ class TooltipNode(BaseNode):
         tooltip="Notification priority",
     ),
 )
+@node(category="system")
 class SystemNotificationNode(BaseNode):
     """
     Display a Windows system notification (toast).
@@ -611,7 +611,6 @@ class SystemNotificationNode(BaseNode):
         return False, False
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -653,6 +652,7 @@ class SystemNotificationNode(BaseNode):
         tooltip="Background color (hex)",
     ),
 )
+@node(category="system")
 class SnackbarNode(BaseNode):
     """
     Display a Material-style snackbar notification.
@@ -853,7 +853,6 @@ class SnackbarNode(BaseNode):
         return await future
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -902,6 +901,7 @@ class SnackbarNode(BaseNode):
         tooltip="Balloon icon type",
     ),
 )
+@node(category="system")
 class BalloonTipNode(BaseNode):
     """
     Display a balloon tooltip at a screen position.
@@ -1111,7 +1111,6 @@ class BalloonTipNode(BaseNode):
         await asyncio.sleep(0.1)
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "file_path",
@@ -1153,6 +1152,7 @@ class BalloonTipNode(BaseNode):
         tooltip="Loop audio playback",
     ),
 )
+@node(category="system")
 class AudioAlertNode(BaseNode):
     """
     Play an audio file or system beep.

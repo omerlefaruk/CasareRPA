@@ -24,7 +24,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "mode",
@@ -71,6 +70,7 @@ from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
         tooltip="Step value for range iteration (when mode='range')",
     ),
 )
+@node(category="control_flow", exec_outputs=["body", "completed"])
 class ForLoopStartNode(BaseNode):
     """
     Start node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -106,11 +106,11 @@ class ForLoopStartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in")
+        # Note: exec_in/exec_out are added by @node decorator
         self.add_input_port("items", DataType.ANY, required=False)
         self.add_input_port("end", DataType.INTEGER, required=False)
-        self.add_output_port("body")
-        self.add_output_port("completed")
+        self.add_exec_output("body")
+        self.add_exec_output("completed")
         self.add_output_port("current_item", DataType.ANY)
         self.add_output_port("current_index", DataType.INTEGER)
         self.add_output_port("current_key", DataType.ANY)
@@ -259,7 +259,6 @@ class ForLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_start_id",
@@ -269,6 +268,7 @@ class ForLoopStartNode(BaseNode):
         tooltip="ID of the paired ForLoopStartNode (set automatically)",
     ),
 )
+@node(category="control_flow")
 class ForLoopEndNode(BaseNode):
     """
     End node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -342,7 +342,6 @@ class ForLoopEndNode(BaseNode):
         }
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "expression",
@@ -361,6 +360,7 @@ class ForLoopEndNode(BaseNode):
         tooltip="Maximum iterations to prevent infinite loops",
     ),
 )
+@node(category="control_flow", exec_outputs=["body", "completed"])
 class WhileLoopStartNode(BaseNode):
     """
     Start node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -389,10 +389,10 @@ class WhileLoopStartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in")
+        # Note: exec_in/exec_out are added by @node decorator
         self.add_input_port("condition", DataType.BOOLEAN, required=False)
-        self.add_output_port("body")
-        self.add_output_port("completed")
+        self.add_exec_output("body")
+        self.add_exec_output("completed")
         self.add_output_port("current_iteration", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -492,7 +492,6 @@ class WhileLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_start_id",
@@ -502,6 +501,7 @@ class WhileLoopStartNode(BaseNode):
         tooltip="ID of the paired WhileLoopStartNode (set automatically)",
     ),
 )
+@node(category="control_flow")
 class WhileLoopEndNode(BaseNode):
     """
     End node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -562,7 +562,6 @@ class WhileLoopEndNode(BaseNode):
         }
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_loop_start_id",
@@ -572,6 +571,7 @@ class WhileLoopEndNode(BaseNode):
         tooltip="ID of the parent loop's start node (set automatically)",
     ),
 )
+@node(category="control_flow")
 class BreakNode(BaseNode):
     """
     Loop control node that exits from the current loop.
@@ -648,7 +648,6 @@ class BreakNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_loop_start_id",
@@ -658,6 +657,7 @@ class BreakNode(BaseNode):
         tooltip="ID of the parent loop's start node (set automatically)",
     ),
 )
+@node(category="control_flow")
 class ContinueNode(BaseNode):
     """
     Loop control node that skips to next iteration.

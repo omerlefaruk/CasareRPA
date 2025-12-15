@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "header_name",
@@ -61,6 +60,7 @@ if TYPE_CHECKING:
         tooltip="Multiple headers as JSON object",
     ),
 )
+@node(category="http")
 class SetHttpHeadersNode(BaseNode):
     """
     Configure HTTP headers for subsequent requests.
@@ -143,7 +143,6 @@ class SetHttpHeadersNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "path",
@@ -161,6 +160,7 @@ class SetHttpHeadersNode(BaseNode):
         tooltip="Default value if path not found",
     ),
 )
+@node(category="http")
 class ParseJsonResponseNode(BaseNode):
     """
     Parse JSON response and extract data using JSONPath-like expressions.
@@ -275,7 +275,6 @@ class ParseJsonResponseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "url",
@@ -354,6 +353,7 @@ class ParseJsonResponseNode(BaseNode):
         tooltip="Download chunk size in bytes",
     ),
 )
+@node(category="http")
 class HttpDownloadFileNode(BaseNode):
     """
     Download a file from a URL and save to disk.
@@ -496,7 +496,6 @@ class HttpDownloadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "url",
@@ -567,6 +566,7 @@ class HttpDownloadFileNode(BaseNode):
         tooltip="Delay between retry attempts",
     ),
 )
+@node(category="http")
 class HttpUploadFileNode(BaseNode):
     """
     Upload a file via HTTP POST multipart/form-data.
@@ -733,7 +733,6 @@ class HttpUploadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "base_url",
@@ -759,6 +758,7 @@ class HttpUploadFileNode(BaseNode):
         tooltip="Query parameters as JSON object",
     ),
 )
+@node(category="http")
 class BuildUrlNode(BaseNode):
     """
     Build a URL with query parameters.

@@ -31,8 +31,17 @@ class VisualGoogleDocsBaseNode(VisualNode):
     def __init__(self, qgraphics_item=None) -> None:
         super().__init__(qgraphics_item)
 
+    def _remove_property_if_exists(self, prop_name: str) -> None:
+        """Remove existing property if it was auto-generated from schema."""
+        if hasattr(self, "model") and prop_name in self.model.custom_properties:
+            del self.model.custom_properties[prop_name]
+            # Also remove from widgets dict if present
+            if hasattr(self, "_widgets") and prop_name in self._widgets:
+                del self._widgets[prop_name]
+
     def setup_widgets(self) -> None:
         """Setup credential picker widget."""
+        self._remove_property_if_exists("credential_id")
         self._cred_widget = NodeGoogleCredentialWidget(
             name="credential_id",
             label="Google Account",
@@ -44,6 +53,7 @@ class VisualGoogleDocsBaseNode(VisualNode):
 
     def setup_document_widget(self) -> None:
         """Setup Drive file picker widget filtered for Google Docs."""
+        self._remove_property_if_exists("document_id")
         self._document_widget = NodeGoogleDriveFileWidget(
             name="document_id",
             label="Document",

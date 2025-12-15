@@ -5,6 +5,8 @@ These factory functions create themed widgets for runtime dialogs,
 ensuring visual consistency with the CasareRPA theme.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from typing import Optional
 
 

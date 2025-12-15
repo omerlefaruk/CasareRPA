@@ -128,7 +128,6 @@ USE_GPU_PROP = PropertyDef(
 )
 
 
-@node(category="desktop")
 @properties(
     ELEMENT_TYPE_PROP,
     ELEMENT_INDEX_PROP,
@@ -143,6 +142,7 @@ USE_GPU_PROP = PropertyDef(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class YOLOFindElementNode(DesktopNodeBase):
     """
     Find UI elements using YOLO object detection.

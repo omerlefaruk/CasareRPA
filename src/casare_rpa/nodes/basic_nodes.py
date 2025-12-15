@@ -12,6 +12,8 @@ from casare_rpa.domain.value_objects.types import NodeStatus, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@properties()
+@node(category="basic")
 class StartNode(BaseNode):
     """
     Start node - entry point for workflow execution.
@@ -76,6 +78,8 @@ class StartNode(BaseNode):
         return True, ""
 
 
+@properties()
+@node(category="basic")
 class EndNode(BaseNode):
     """
     End node - exit point for workflow execution.
@@ -152,6 +156,7 @@ class EndNode(BaseNode):
         placeholder="Enter your comment here...",
     ),
 )
+@node(category="basic")
 class CommentNode(BaseNode):
     """
     Comment node - documentation and annotation for workflows.

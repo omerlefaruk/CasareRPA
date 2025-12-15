@@ -27,7 +27,6 @@ from casare_rpa.utils import safe_int
 from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "url",
@@ -101,6 +100,7 @@ from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
         tooltip="Ignore HTTPS certificate errors",
     ),
 )
+@node(category="browser")
 class GoToURLNode(BrowserBaseNode):
     """
     Go to URL node - navigates to a specified URL.
@@ -314,7 +314,6 @@ class GoToURLNode(BrowserBaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -349,6 +348,7 @@ class GoToURLNode(BrowserBaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class GoBackNode(BrowserBaseNode):
     """
     Go back node - navigates back in browser history.
@@ -455,7 +455,6 @@ class GoBackNode(BrowserBaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -490,6 +489,7 @@ class GoBackNode(BrowserBaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class GoForwardNode(BrowserBaseNode):
     """
     Go forward node - navigates forward in browser history.
@@ -596,7 +596,6 @@ class GoForwardNode(BrowserBaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -631,6 +630,7 @@ class GoForwardNode(BrowserBaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class RefreshPageNode(BrowserBaseNode):
     """
     Refresh page node - reloads the current page.

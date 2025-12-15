@@ -6,6 +6,8 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 from abc import abstractmethod
 from typing import Any, Optional
@@ -27,6 +29,8 @@ from casare_rpa.infrastructure.resources.whatsapp_client import (
 )
 
 
+@properties()
+@node(category="messaging")
 class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for WhatsApp nodes.

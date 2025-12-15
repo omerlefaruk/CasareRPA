@@ -3,26 +3,34 @@ Visual Nodes - File Operations
 
 Super Nodes (consolidated operations):
 - VisualFileSystemSuperNode: 12 file system operations in one node
-- VisualStructuredDataSuperNode: 7 structured data operations in one node
 
 Remaining atomic nodes (not yet consolidated):
+- Structured data operations (CSV, JSON, ZIP)
 - XML operations (8 nodes)
 - PDF operations (6 nodes)
 - FTP operations (10 nodes)
 
-NOTE: Legacy atomic nodes for basic file ops, CSV, JSON, ZIP, and Image
-have been removed. Old workflows will be automatically migrated to Super
-Nodes via NODE_TYPE_ALIASES in workflow_loader.
+NOTE: Structured data (CSV/JSON/ZIP) are available as atomic nodes for clarity.
 """
 
 # Super Nodes (consolidated operations)
 from casare_rpa.presentation.canvas.visual_nodes.file_operations.super_nodes import (
     VisualFileSystemSuperNode,
-    VisualStructuredDataSuperNode,
 )
 
-# XML operations (not yet consolidated)
+# Structured data operations
 from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualReadCSVNode,
+    VisualWriteCSVNode,
+    VisualReadJSONFileNode,
+    VisualWriteJSONFileNode,
+    VisualZipFilesNode,
+    VisualUnzipFilesNode,
+)
+
+# XML operations
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualImageConvertNode,
     VisualParseXMLNode,
     VisualReadXMLFileNode,
     VisualWriteXMLFileNode,
@@ -60,7 +68,15 @@ from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
 __all__ = [
     # Super Nodes (consolidated operations)
     "VisualFileSystemSuperNode",
-    "VisualStructuredDataSuperNode",
+    # Structured data
+    "VisualReadCSVNode",
+    "VisualWriteCSVNode",
+    "VisualReadJSONFileNode",
+    "VisualWriteJSONFileNode",
+    "VisualZipFilesNode",
+    "VisualUnzipFilesNode",
+    # Image operations
+    "VisualImageConvertNode",
     # XML operations
     "VisualParseXMLNode",
     "VisualReadXMLFileNode",

@@ -2,7 +2,7 @@
 """
 Generate Node Reference Documentation for CasareRPA.
 
-Extracts node information from @node_schema decorators and _define_ports() methods,
+Extracts node information from @properties decorators and _define_ports() methods,
 generating comprehensive Markdown documentation for each node.
 
 Output: Markdown files in docs/nodes/
@@ -75,15 +75,15 @@ class NodeInfo:
 
 
 class NodeSchemaExtractor(ast.NodeVisitor):
-    """Extract @node_schema PropertyDef arguments from AST."""
+    """Extract @properties PropertyDef arguments from AST."""
 
     def __init__(self):
         self.properties: List[PropertyInfo] = []
         self.in_node_schema = False
 
     def visit_Call(self, node: ast.Call) -> None:
-        # Check for @node_schema decorator
-        if isinstance(node.func, ast.Name) and node.func.id == "node_schema":
+        # Check for @properties decorator
+        if isinstance(node.func, ast.Name) and node.func.id == "properties":
             self.in_node_schema = True
             for arg in node.args:
                 if isinstance(arg, ast.Call) and isinstance(arg.func, ast.Name):
@@ -172,6 +172,36 @@ class PortExtractor(ast.NodeVisitor):
                 port = self._extract_port(node, "output")
                 if port:
                     self.output_ports.append(port)
+            elif method_name == "add_exec_input":
+                name = (
+                    node.args[0].value
+                    if node.args and isinstance(node.args[0], ast.Constant)
+                    else "exec_in"
+                )
+                self.input_ports.append(
+                    PortInfo(
+                        name=name,
+                        data_type="EXEC",
+                        description="Execution input",
+                        direction="input",
+                        is_exec=True,
+                    )
+                )
+            elif method_name == "add_exec_output":
+                name = (
+                    node.args[0].value
+                    if node.args and isinstance(node.args[0], ast.Constant)
+                    else "exec_out"
+                )
+                self.output_ports.append(
+                    PortInfo(
+                        name=name,
+                        data_type="EXEC",
+                        description="Execution output",
+                        direction="output",
+                        is_exec=True,
+                    )
+                )
         self.generic_visit(node)
 
     def _extract_port(self, call: ast.Call, direction: str) -> Optional[PortInfo]:
@@ -253,12 +283,9 @@ def extract_node_info(
     )
 
     # Check if trigger node
-    is_trigger = (
-        any(b in ("BaseTriggerNode", "TriggerNode") for b in bases)
-        or "trigger_node" in decorators
-    )
+    is_trigger = any(b in ("BaseTriggerNode", "TriggerNode") for b in bases)
 
-    # Extract properties from @node_schema
+    # Extract properties from @properties
     schema_extractor = NodeSchemaExtractor()
     for decorator in class_node.decorator_list:
         if isinstance(decorator, ast.Call):
@@ -271,26 +298,55 @@ def extract_node_info(
             if node.name in ("_define_ports", "_define_payload_ports"):
                 port_extractor.visit(node)
 
-    # Add exec ports if @executable_node decorator
-    if "executable_node" in decorators:
-        has_exec_in = any(p.name == "exec_in" for p in port_extractor.input_ports)
-        has_exec_out = any(p.name == "exec_out" for p in port_extractor.output_ports)
-        if not has_exec_in:
+    # Add/override exec ports from @node(...) configuration (runtime adds these).
+    desired_exec_inputs: Optional[List[str]] = None
+    desired_exec_outputs: Optional[List[str]] = None
+    for decorator in class_node.decorator_list:
+        if (
+            isinstance(decorator, ast.Call)
+            and isinstance(decorator.func, ast.Name)
+            and decorator.func.id == "node"
+        ):
+            for kw in decorator.keywords:
+                if kw.arg == "exec_inputs":
+                    desired_exec_inputs = schema_extractor._get_value(kw.value)
+                elif kw.arg == "exec_outputs":
+                    desired_exec_outputs = schema_extractor._get_value(kw.value)
+
+    if desired_exec_inputs is None:
+        desired_exec_inputs = ["exec_in"]
+    if desired_exec_outputs is None:
+        desired_exec_outputs = ["exec_out"]
+
+    # Normalize explicit None (treat as default).
+    if desired_exec_inputs is None:
+        desired_exec_inputs = ["exec_in"]
+    if desired_exec_outputs is None:
+        desired_exec_outputs = ["exec_out"]
+
+    # Inject exec ports (keep ordering stable: inputs then outputs).
+    existing_in = {p.name for p in port_extractor.input_ports if p.is_exec}
+    existing_out = {p.name for p in port_extractor.output_ports if p.is_exec}
+
+    for name in desired_exec_inputs:
+        if name not in existing_in:
             port_extractor.input_ports.insert(
                 0,
                 PortInfo(
-                    name="exec_in",
+                    name=name,
                     data_type="EXEC",
                     description="Execution input",
                     direction="input",
                     is_exec=True,
                 ),
             )
-        if not has_exec_out:
+
+    for name in reversed(desired_exec_outputs):
+        if name not in existing_out:
             port_extractor.output_ports.insert(
                 0,
                 PortInfo(
-                    name="exec_out",
+                    name=name,
                     data_type="EXEC",
                     description="Execution output",
                     direction="output",
@@ -352,15 +408,12 @@ def find_node_classes(file_path: Path) -> List[Tuple[ast.ClassDef, str]]:
                     if "Node" in base_name:
                         is_node = True
 
-            # Check for @executable_node or @trigger_node decorator
+            # Check for @node decorator
             for dec in node.decorator_list:
-                if isinstance(dec, ast.Name) and dec.id in (
-                    "executable_node",
-                    "trigger_node",
-                ):
+                if isinstance(dec, ast.Name) and dec.id == "node":
                     is_node = True
                 elif isinstance(dec, ast.Call) and isinstance(dec.func, ast.Name):
-                    if dec.func.id in ("executable_node", "trigger_node"):
+                    if dec.func.id == "node":
                         is_node = True
 
             if is_node and node.name.endswith("Node"):
@@ -390,8 +443,8 @@ def generate_node_markdown(node: NodeInfo) -> str:
         badges.append(":material-sync: Async")
     if node.is_trigger:
         badges.append(":material-bell: Trigger")
-    if "executable_node" in node.decorators:
-        badges.append(":material-play: Executable")
+    if "node" in node.decorators:
+        badges.append(":material-play: Node")
 
     if badges:
         lines.append(" ".join(f"`{b}`" for b in badges) + "\n")

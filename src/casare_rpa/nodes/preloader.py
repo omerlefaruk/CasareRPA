@@ -17,29 +17,6 @@ from typing import List, Optional
 
 from loguru import logger
 
-# Priority-ordered list of node categories to preload
-# Higher priority = loaded first
-PRELOAD_CATEGORIES: List[str] = [
-    # Control flow - used in almost every workflow
-    "control_flow_nodes",
-    # Basic - Start/End nodes
-    "basic_nodes",
-    # Variables - very commonly used
-    "variable_nodes",
-    # Browser automation - core RPA functionality
-    "browser_nodes",
-    "navigation_nodes",
-    "interaction_nodes",
-    "data_nodes",
-    # File operations
-    "file.file_read_nodes",
-    "file.file_write_nodes",
-    # Data operations
-    "data_operation_nodes",
-    # Wait nodes
-    "wait_nodes",
-]
-
 # Node names to preload (commonly used individual nodes)
 PRELOAD_NODES: List[str] = [
     # Basic

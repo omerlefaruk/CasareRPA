@@ -12,6 +12,9 @@ from casare_rpa.presentation.canvas.graph.node_widgets import (
     NodeGoogleCredentialWidget,
     NodeGoogleDriveFileWidget,
     NodeGoogleDriveFolderWidget,
+    NodeFilePathWidget,
+    NodeDirectoryPathWidget,
+    NodeTextWidget,
 )
 
 # Google Drive API scopes
@@ -39,8 +42,49 @@ class VisualGoogleDriveBaseNode(VisualNode):
             self.add_custom_widget(self._cred_widget)
             self._cred_widget.setParentItem(self.view)
 
+    def _remove_property_if_exists(self, prop_name: str) -> None:
+        """
+        Remove existing property and its widget to allow replacement.
+
+        Crucial for preventing 'zombie' widgets from lingering on the node
+        when switching from standard to custom widgets.
+        """
+        # 1. Remove from model to prevent schema conflicts
+        if hasattr(self, "model") and prop_name in self.model.custom_properties:
+            del self.model.custom_properties[prop_name]
+
+        # 2. Get reference to the widget wrapper
+        widget = None
+        if hasattr(self, "_widgets") and prop_name in self._widgets:
+            widget = self._widgets[prop_name]
+
+        if not widget and hasattr(self, "get_widget"):
+            widget = self.get_widget(prop_name)
+
+        if widget:
+            # 3. Detach from Qt Graphics Scene immediately
+            if hasattr(widget, "setParentItem"):
+                widget.setParentItem(None)
+
+            # 4. Remove from NodeGraphQt internal tracking
+            if hasattr(self, "view") and hasattr(self.view, "_widgets"):
+                if prop_name in self.view._widgets:
+                    del self.view._widgets[prop_name]
+
+            # 5. Remove from our local tracking
+            if hasattr(self, "_widgets") and prop_name in self._widgets:
+                del self._widgets[prop_name]
+
+            # 6. Force Qt deletion
+            if hasattr(widget, "deleteLater"):
+                widget.deleteLater()
+            elif hasattr(widget, "setParent"):
+                widget.setParent(None)
+
     def setup_file_widget(self, mime_types: list = None) -> None:
         """Setup Drive file picker widget (call from subclass if needed)."""
+        # Remove existing property to avoid NodePropertyError
+        self._remove_property_if_exists("file_id")
         self._file_widget = NodeGoogleDriveFileWidget(
             name="file_id",
             label="File",
@@ -55,6 +99,8 @@ class VisualGoogleDriveBaseNode(VisualNode):
         self, label: str = "Folder", name: str = "folder_id"
     ) -> None:
         """Setup Drive folder navigator widget (call from subclass if needed)."""
+        # Remove existing property to avoid NodePropertyError
+        self._remove_property_if_exists(name)
         self._folder_widget = NodeGoogleDriveFolderWidget(
             name=name,
             label=label,
@@ -106,7 +152,7 @@ class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
+        # file_id is provided by the file widget from setup_file_widget()
         self.add_typed_input("destination_path", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("file_path", DataType.STRING)
@@ -116,13 +162,15 @@ class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
-        self.add_text_input(
-            "destination_path",
-            "Destination Path",
+        self._remove_property_if_exists("destination_path")
+        widget = NodeFilePathWidget(
+            name="destination_path",
+            label="Destination Path",
             text="",
-            placeholder_text="C:\\Downloads\\file.pdf",
-            tab="config",
+            placeholder="C:\\Downloads\\file.pdf",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
 
 
 class VisualDriveDownloadFolderNode(VisualGoogleDriveBaseNode):
@@ -147,13 +195,15 @@ class VisualDriveDownloadFolderNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_folder_widget(label="Source Folder", name="folder_id")
-        self.add_text_input(
-            "destination_folder",
-            "Destination Folder",
+        self._remove_property_if_exists("destination_folder")
+        widget = NodeDirectoryPathWidget(
+            name="destination_folder",
+            label="Destination Folder",
             text="",
-            placeholder_text="C:\\Downloads\\",
-            tab="config",
+            placeholder="C:\\Downloads\\",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
 
 
 class VisualDriveBatchDownloadNode(VisualGoogleDriveBaseNode):
@@ -168,6 +218,7 @@ class VisualDriveBatchDownloadNode(VisualGoogleDriveBaseNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("files", DataType.LIST)
+        self.add_typed_input("folder_id", DataType.STRING)
         self.add_typed_input("destination_folder", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("file_paths", DataType.LIST)
@@ -178,13 +229,16 @@ class VisualDriveBatchDownloadNode(VisualGoogleDriveBaseNode):
 
     def setup_widgets(self) -> None:
         super().setup_widgets()
-        self.add_text_input(
-            "destination_folder",
-            "Destination Folder",
+        self.setup_folder_widget(label="Folder", name="folder_id")
+        self._remove_property_if_exists("destination_folder")
+        widget = NodeDirectoryPathWidget(
+            name="destination_folder",
+            label="Destination Folder",
             text="",
-            placeholder_text="C:\\Downloads\\",
-            tab="config",
+            placeholder="C:\\Downloads\\",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
 
 
 class VisualDriveDeleteFileNode(VisualGoogleDriveBaseNode):
@@ -270,13 +324,15 @@ class VisualDriveRenameFileNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()  # credential picker
         self.setup_file_widget()
-        self.add_text_input(
-            "new_name",
-            "New Name",
+        self._remove_property_if_exists("new_name")
+        widget = NodeTextWidget(
+            name="new_name",
+            label="New Name",
             text="",
             placeholder_text="Enter new filename",
-            tab="config",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
 
 
 class VisualDriveGetFileNode(VisualGoogleDriveBaseNode):
@@ -385,13 +441,15 @@ class VisualDriveSearchFilesNode(VisualGoogleDriveBaseNode):
 
     def setup_widgets(self) -> None:
         super().setup_widgets()  # credential picker
-        self.add_text_input(
-            "query",
-            "Search Query",
+        self._remove_property_if_exists("query")
+        widget = NodeTextWidget(
+            name="query",
+            label="Search Query",
             text="",
             placeholder_text="name contains 'report'",
-            tab="config",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
 
 
 # =============================================================================
@@ -420,19 +478,23 @@ class VisualDriveShareFileNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
-        self.add_text_input(
-            "email",
-            "Email",
+        self._remove_property_if_exists("email")
+        widget = NodeTextWidget(
+            name="email",
+            label="Email",
             text="",
             placeholder_text="user@example.com",
-            tab="config",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
+        self._remove_property_if_exists("role")
         self.add_combo_menu(
             "role",
             "Role",
             items=["reader", "writer", "commenter", "owner"],
             tab="config",
         )
+        self._remove_property_if_exists("permission_type")
         self.add_combo_menu(
             "permission_type",
             "Type",
@@ -460,13 +522,15 @@ class VisualDriveRemoveShareNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
-        self.add_text_input(
-            "permission_id",
-            "Permission ID",
+        self._remove_property_if_exists("permission_id")
+        widget = NodeTextWidget(
+            name="permission_id",
+            label="Permission ID",
             text="",
             placeholder_text="Permission ID to remove",
-            tab="config",
         )
+        self.add_custom_widget(widget)
+        widget.setParentItem(self.view)
 
 
 class VisualDriveGetPermissionsNode(VisualGoogleDriveBaseNode):
@@ -511,12 +575,14 @@ class VisualDriveCreateShareLinkNode(VisualGoogleDriveBaseNode):
     def setup_widgets(self) -> None:
         super().setup_widgets()
         self.setup_file_widget()
+        self._remove_property_if_exists("access_type")
         self.add_combo_menu(
             "access_type",
             "Link Access",
             items=["anyone", "anyoneWithLink"],
             tab="config",
         )
+        self._remove_property_if_exists("link_role")
         self.add_combo_menu(
             "link_role",
             "Link Role",

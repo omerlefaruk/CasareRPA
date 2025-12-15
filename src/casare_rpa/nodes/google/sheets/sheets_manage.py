@@ -12,6 +12,8 @@ Nodes for managing spreadsheets and worksheets:
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 from typing import Any, Dict
 
@@ -28,6 +30,8 @@ from casare_rpa.infrastructure.resources.google_sheets_client import (
 from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
+@properties()
+@node(category="google")
 class SheetsCreateSpreadsheetNode(SheetsBaseNode):
     """
     Create a new Google Spreadsheet.
@@ -131,6 +135,8 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsGetSpreadsheetNode(SheetsBaseNode):
     """
     Get spreadsheet metadata.
@@ -215,6 +221,8 @@ class SheetsGetSpreadsheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsAddSheetNode(SheetsBaseNode):
     """
     Add a new sheet (worksheet) to an existing spreadsheet.
@@ -316,6 +324,8 @@ class SheetsAddSheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsDeleteSheetNode(SheetsBaseNode):
     """
     Delete a sheet from a spreadsheet.
@@ -394,6 +404,8 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsCopySheetNode(SheetsBaseNode):
     """
     Copy a sheet to another spreadsheet.
@@ -504,6 +516,8 @@ class SheetsCopySheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsDuplicateSheetNode(SheetsBaseNode):
     """
     Duplicate a sheet within the same spreadsheet.
@@ -614,6 +628,8 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsRenameSheetNode(SheetsBaseNode):
     """
     Rename a sheet in a spreadsheet.

@@ -139,6 +139,22 @@ def get_all_node_classes() -> Dict[str, Type]:
     return result
 
 
+def get_node_class(name: str) -> Type:
+    """
+    Get a node class by class name via the lazy registry.
+
+    Args:
+        name: Node class name (e.g. "ClickElementNode")
+
+    Returns:
+        Node class
+
+    Raises:
+        AttributeError: If the class name is not registered.
+    """
+    return _lazy_import(name)
+
+
 def preload_nodes(node_names: List[str] = None) -> None:
     """
     Preload specific nodes or all nodes.
@@ -181,17 +197,9 @@ def wait_for_preload(timeout: float = 5.0) -> bool:
 __all__ = [
     "__version__",
     "get_all_node_classes",
+    "get_node_class",
     "preload_nodes",
     "start_node_preload",
     "is_preload_complete",
     "wait_for_preload",
 ] + list(NODE_REGISTRY.keys())
-
-# Backwards compatibility: some callers reference `_NODE_REGISTRY` on the
-# `casare_rpa.nodes` package. Provide a module-level alias to the internal
-# `NODE_REGISTRY` imported from `registry_data` so legacy code paths continue
-# to function.
-_NODE_REGISTRY = NODE_REGISTRY
-
-# Include the legacy name in the public exports
-__all__ += ["_NODE_REGISTRY"]

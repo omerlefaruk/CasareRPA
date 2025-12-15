@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 # =============================================================================
 _CACHE_DIR = Path.home() / ".casare_rpa" / "cache"
 _MAPPING_CACHE_FILE = _CACHE_DIR / "node_mapping_cache.json"
-_CACHE_VERSION = "1.0"  # Increment when node structure changes
+_CACHE_VERSION = "1.1"  # Increment when node structure changes
 
 
 # =============================================================================
@@ -171,36 +171,14 @@ def _build_casare_node_mapping_with_cache() -> Dict[Type, Type]:
 
                 visual_cls = visual_lazy_import(visual_name)
 
-                # Get casare class module info from visual class
-                casare_module = getattr(visual_cls, "CASARE_NODE_MODULE", None)
+                # Import from main nodes registry (uses lazy loading).
+                # This is the single source of truth for executable nodes.
+                from casare_rpa.nodes import get_node_class
 
-                # Look up the CasareRPA node class based on module
-                casare_class = None
-                if casare_module == "desktop":
-                    from casare_rpa.nodes import desktop_nodes
-
-                    casare_class = getattr(desktop_nodes, casare_name, None)
-                elif casare_module == "file":
-                    from casare_rpa.nodes import file_nodes
-
-                    casare_class = getattr(file_nodes, casare_name, None)
-                elif casare_module == "utility":
-                    from casare_rpa.nodes import utility_nodes
-
-                    casare_class = getattr(utility_nodes, casare_name, None)
-                elif casare_module == "office":
-                    from casare_rpa.nodes.desktop_nodes import office_nodes
-
-                    casare_class = getattr(office_nodes, casare_name, None)
-                else:
-                    # Import from main nodes module (uses lazy loading)
-                    from casare_rpa.nodes import (
-                        _lazy_import as nodes_lazy_import,
-                        _NODE_REGISTRY,
-                    )
-
-                    if casare_name in _NODE_REGISTRY:
-                        casare_class = nodes_lazy_import(casare_name)
+                try:
+                    casare_class = get_node_class(casare_name)
+                except AttributeError:
+                    casare_class = None
 
                 if casare_class is not None:
                     mapping[visual_cls] = casare_class
@@ -273,7 +251,6 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
 
         # Get the CasareRPA node class name from attribute or derive from class name
         casare_class_name = getattr(visual_class, "CASARE_NODE_CLASS", None)
-        casare_module = getattr(visual_class, "CASARE_NODE_MODULE", None)
 
         if casare_class_name is None:
             # Derive from visual node class name: VisualFooNode -> FooNode
@@ -284,36 +261,14 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
                 logger.warning(f"Cannot derive CasareRPA node name for {visual_name}")
                 continue
 
-        # Look up the CasareRPA node class
+        # Look up the CasareRPA node class (single source of truth: nodes registry).
         try:
-            if casare_module == "desktop":
-                # Import from desktop_nodes
-                from casare_rpa.nodes import desktop_nodes
+            from casare_rpa.nodes import get_node_class
 
-                casare_class = getattr(desktop_nodes, casare_class_name, None)
-            elif casare_module == "file":
-                # Import from file_nodes
-                from casare_rpa.nodes import file_nodes
-
-                casare_class = getattr(file_nodes, casare_class_name, None)
-            elif casare_module == "utility":
-                # Import from utility_nodes
-                from casare_rpa.nodes import utility_nodes
-
-                casare_class = getattr(utility_nodes, casare_class_name, None)
-            elif casare_module == "office":
-                # Import from desktop_nodes.office_nodes
-                from casare_rpa.nodes.desktop_nodes import office_nodes
-
-                casare_class = getattr(office_nodes, casare_class_name, None)
-            else:
-                # Import from main nodes module (uses lazy loading)
-                from casare_rpa.nodes import _lazy_import, _NODE_REGISTRY
-
-                if casare_class_name in _NODE_REGISTRY:
-                    casare_class = _lazy_import(casare_class_name)
-                else:
-                    casare_class = None
+            try:
+                casare_class = get_node_class(casare_class_name)
+            except AttributeError:
+                casare_class = None
 
             if casare_class is not None:
                 mapping[visual_class] = casare_class
@@ -350,10 +305,6 @@ def get_casare_node_mapping() -> Dict[Type, Type]:
     if _casare_node_mapping is None:
         _casare_node_mapping = _build_casare_node_mapping_with_cache()
     return _casare_node_mapping
-
-
-# Legacy alias for backwards compatibility
-CASARE_NODE_MAPPING = property(lambda self: get_casare_node_mapping())
 
 
 # =============================================================================
@@ -1982,9 +1933,12 @@ class NodeFactory:
         Returns:
             Created visual node instance
         """
-        # Create visual node
+        # Create visual node.
+        #
+        # NodeGraphQt registers nodes under: f"{__identifier__}.{__name__}"
+        # (NOT NODE_NAME, which is the display label).
         visual_node = graph.create_node(
-            f"{node_class.__identifier__}.{node_class.NODE_NAME}", pos=pos
+            f"{node_class.__identifier__}.{node_class.__name__}", pos=pos
         )
 
         # Setup ports

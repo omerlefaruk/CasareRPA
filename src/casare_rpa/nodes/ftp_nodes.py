@@ -32,7 +32,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "passive",
@@ -73,6 +72,7 @@ from casare_rpa.utils import safe_int
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@node(category="file")
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -202,7 +202,6 @@ class FTPConnectNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "binary_mode",
@@ -235,6 +234,7 @@ class FTPConnectNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@node(category="file")
 class FTPUploadNode(BaseNode):
     """
     Upload a file to FTP server.
@@ -363,7 +363,6 @@ class FTPUploadNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "binary_mode",
@@ -396,6 +395,7 @@ class FTPUploadNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@node(category="file")
 class FTPDownloadNode(BaseNode):
     """
     Download a file from FTP server.
@@ -528,7 +528,6 @@ class FTPDownloadNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "detailed",
@@ -538,6 +537,7 @@ class FTPDownloadNode(BaseNode):
         tooltip="Get detailed file information instead of just names",
     ),
 )
+@node(category="file")
 class FTPListNode(BaseNode):
     """
     List contents of a directory on FTP server.
@@ -608,8 +608,8 @@ class FTPListNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties()  # Input port driven
+@node(category="file")
 class FTPDeleteNode(BaseNode):
     """
     Delete a file on FTP server.
@@ -668,7 +668,6 @@ class FTPDeleteNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "parents",
@@ -678,6 +677,7 @@ class FTPDeleteNode(BaseNode):
         tooltip="Create parent directories if they don't exist",
     ),
 )
+@node(category="file")
 class FTPMakeDirNode(BaseNode):
     """
     Create a directory on FTP server.
@@ -755,8 +755,8 @@ class FTPMakeDirNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties()  # Input port driven
+@node(category="file")
 class FTPRemoveDirNode(BaseNode):
     """
     Remove a directory on FTP server.
@@ -815,8 +815,8 @@ class FTPRemoveDirNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties()  # Input port driven
+@node(category="file")
 class FTPRenameNode(BaseNode):
     """
     Rename a file or directory on FTP server.
@@ -878,8 +878,8 @@ class FTPRenameNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties()  # No config
+@node(category="file")
 class FTPDisconnectNode(BaseNode):
     """
     Disconnect from FTP server.
@@ -931,8 +931,8 @@ class FTPDisconnectNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties()  # Input port driven
+@node(category="file")
 class FTPGetSizeNode(BaseNode):
     """
     Get the size of a file on FTP server.

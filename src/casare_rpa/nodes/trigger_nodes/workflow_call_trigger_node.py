@@ -10,14 +10,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "call_alias",
@@ -58,6 +54,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Maximum time to wait for completion",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class WorkflowCallTriggerNode(BaseTriggerNode):
     """
     Workflow call trigger node for sub-workflow invocation.

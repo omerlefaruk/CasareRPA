@@ -29,7 +29,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "directory_path",
@@ -61,6 +60,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class CreateDirectoryNode(BaseNode):
     """
     Create a directory.
@@ -139,7 +139,6 @@ class CreateDirectoryNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "directory_path",
@@ -171,6 +170,7 @@ class CreateDirectoryNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class ListFilesNode(BaseNode):
     """
     List files in a directory.
@@ -264,7 +264,6 @@ class ListFilesNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "dir_path",
@@ -310,6 +309,7 @@ class ListFilesNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class ListDirectoryNode(BaseNode):
     """
     List files and directories in a folder.

@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "separator",
@@ -30,6 +29,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Separator to use (default: empty string)",
     ),
 )
+@node(category="text")
 class TextJoinNode(BaseNode):
     """
     Join a list of strings with a separator.

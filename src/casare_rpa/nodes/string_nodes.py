@@ -106,7 +106,6 @@ def _resolve_dict_param(
     return param if isinstance(param, dict) else default
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "separator",
@@ -116,6 +115,7 @@ def _resolve_dict_param(
         tooltip="Separator to insert between strings",
     ),
 )
+@node(category="data")
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
 
@@ -150,8 +150,8 @@ class ConcatenateNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="text")
 @properties()  # Input port driven
+@node(category="data")
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
 
@@ -185,7 +185,6 @@ class FormatStringNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "ignore_case",
@@ -209,6 +208,7 @@ class FormatStringNode(BaseNode):
         tooltip=". matches newline characters",
     ),
 )
+@node(category="data")
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
 
@@ -277,7 +277,6 @@ class RegexMatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "ignore_case",
@@ -309,6 +308,7 @@ class RegexMatchNode(BaseNode):
         tooltip="Maximum number of replacements (0 = unlimited)",
     ),
 )
+@node(category="data")
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
 

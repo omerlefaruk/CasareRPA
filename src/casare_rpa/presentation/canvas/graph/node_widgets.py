@@ -2375,3 +2375,24 @@ class NodeGoogleDriveFolderWidget:
         return create_google_drive_folder_widget(
             name, label, credential_widget, enhanced
         )
+
+
+class NodeTextWidget:
+    """
+    Text input widget for NodeGraphQt nodes.
+
+    Provides a variable-aware text input (with {x} button).
+
+    Usage:
+        widget = NodeTextWidget(name="my_prop", label="Label")
+        self.add_custom_widget(widget)
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        text: str = "",
+        placeholder_text: str = "",
+    ):
+        return create_variable_text_widget(name, label, text, placeholder_text)

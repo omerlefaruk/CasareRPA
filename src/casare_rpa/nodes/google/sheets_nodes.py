@@ -8,6 +8,8 @@ Provides nodes for interacting with Google Sheets API:
 - Formatting and batch operations
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from typing import Any, Dict
 
 from loguru import logger
@@ -39,6 +41,8 @@ def _parse_range(spreadsheet_id: str, range_notation: str) -> str:
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class SheetsGetCellNode(BaseNode):
     """Get value from a single cell."""
 
@@ -109,6 +113,8 @@ class SheetsGetCellNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsSetCellNode(BaseNode):
     """Set value in a single cell."""
 
@@ -176,6 +182,8 @@ class SheetsSetCellNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsGetRangeNode(BaseNode):
     """Get values from a range of cells."""
 
@@ -254,6 +262,8 @@ class SheetsGetRangeNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsWriteRangeNode(BaseNode):
     """Write values to a range of cells."""
 
@@ -333,6 +343,8 @@ class SheetsWriteRangeNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsClearRangeNode(BaseNode):
     """Clear values from a range of cells."""
 
@@ -399,6 +411,8 @@ class SheetsClearRangeNode(BaseNode):
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class SheetsCreateSpreadsheetNode(BaseNode):
     """Create a new Google Spreadsheet."""
 
@@ -453,6 +467,8 @@ class SheetsCreateSpreadsheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsGetSpreadsheetNode(BaseNode):
     """Get spreadsheet metadata."""
 
@@ -518,6 +534,8 @@ class SheetsGetSpreadsheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsAddSheetNode(BaseNode):
     """Add a new sheet to a spreadsheet."""
 
@@ -581,6 +599,8 @@ class SheetsAddSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsDeleteSheetNode(BaseNode):
     """Delete a sheet from a spreadsheet."""
 
@@ -632,6 +652,8 @@ class SheetsDeleteSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsDuplicateSheetNode(BaseNode):
     """Duplicate a sheet within a spreadsheet."""
 
@@ -708,6 +730,8 @@ class SheetsDuplicateSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsRenameSheetNode(BaseNode):
     """Rename a sheet in a spreadsheet."""
 
@@ -777,6 +801,8 @@ class SheetsRenameSheetNode(BaseNode):
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class SheetsAppendRowNode(BaseNode):
     """Append a row to a sheet."""
 
@@ -845,6 +871,8 @@ class SheetsAppendRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsInsertRowNode(BaseNode):
     """Insert a row at a specific position."""
 
@@ -918,6 +946,8 @@ class SheetsInsertRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsDeleteRowNode(BaseNode):
     """Delete rows from a sheet."""
 
@@ -990,6 +1020,8 @@ class SheetsDeleteRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsInsertColumnNode(BaseNode):
     """Insert columns at a specific position."""
 
@@ -1065,6 +1097,8 @@ class SheetsInsertColumnNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsDeleteColumnNode(BaseNode):
     """Delete columns from a sheet."""
 
@@ -1146,6 +1180,8 @@ class SheetsDeleteColumnNode(BaseNode):
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class SheetsFormatCellsNode(BaseNode):
     """Format cells in a range."""
 
@@ -1249,6 +1285,8 @@ class SheetsFormatCellsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsAutoResizeNode(BaseNode):
     """Auto-resize columns to fit content."""
 
@@ -1323,6 +1361,8 @@ class SheetsAutoResizeNode(BaseNode):
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class SheetsBatchUpdateNode(BaseNode):
     """Execute multiple updates in a single batch."""
 
@@ -1404,6 +1444,8 @@ class SheetsBatchUpdateNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsBatchGetNode(BaseNode):
     """Get values from multiple ranges in a single batch."""
 
@@ -1468,6 +1510,8 @@ class SheetsBatchGetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class SheetsBatchClearNode(BaseNode):
     """Clear multiple ranges in a single batch."""
 

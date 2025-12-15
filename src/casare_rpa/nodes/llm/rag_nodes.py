@@ -25,7 +25,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "text",
@@ -44,6 +43,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Embedding model to use",
     ),
 )
+@node(category="llm")
 class EmbeddingNode(LLMBaseNode):
     """
     Generate embeddings for text using LLM embedding models.
@@ -132,7 +132,6 @@ class EmbeddingNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "collection",
@@ -143,6 +142,7 @@ class EmbeddingNode(LLMBaseNode):
         tooltip="Vector store collection name",
     ),
 )
+@node(category="llm")
 class VectorStoreAddNode(LLMBaseNode):
     """
     Add documents to a vector store collection.
@@ -254,7 +254,6 @@ class VectorStoreAddNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "query",
@@ -282,6 +281,7 @@ class VectorStoreAddNode(LLMBaseNode):
         tooltip="Number of results to return",
     ),
 )
+@node(category="llm")
 class VectorSearchNode(LLMBaseNode):
     """
     Perform semantic search in a vector store.
@@ -389,7 +389,6 @@ class VectorSearchNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "question",
@@ -441,6 +440,7 @@ class VectorSearchNode(LLMBaseNode):
         tooltip="Maximum response length",
     ),
 )
+@node(category="llm")
 class RAGNode(LLMBaseNode):
     """
     Full RAG (Retrieval-Augmented Generation) pipeline.
@@ -594,7 +594,6 @@ Answer:"""
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "collection",
@@ -604,6 +603,7 @@ Answer:"""
         tooltip="Vector store collection to delete from",
     ),
 )
+@node(category="llm")
 class VectorStoreDeleteNode(LLMBaseNode):
     """
     Delete documents from a vector store collection.

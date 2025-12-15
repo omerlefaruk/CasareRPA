@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 MAX_CALL_DEPTH = 10
 
 
-@node(category="workflow")
 @properties(
     PropertyDef(
         "subworkflow_id",
@@ -79,6 +78,7 @@ MAX_CALL_DEPTH = 10
         max_value=60,
     ),
 )
+@node(category="workflow", exec_outputs=["exec_out", "error"])
 class CallSubworkflowNode(BaseNode):
     """
     Calls a subworkflow by reference with sync or async execution.

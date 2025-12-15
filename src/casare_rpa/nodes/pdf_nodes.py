@@ -25,7 +25,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "page_separator",
@@ -56,6 +55,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Try to preserve text layout (experimental)",
     ),
 )
+@node(category="document")
 class ReadPDFTextNode(BaseNode):
     """
     Extract text from a PDF file.
@@ -179,7 +179,8 @@ class ReadPDFTextNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties()
+@node(category="document")
 class GetPDFInfoNode(BaseNode):
     """
     Get metadata and information from a PDF file.
@@ -275,7 +276,8 @@ class GetPDFInfoNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties()
+@node(category="document")
 class MergePDFsNode(BaseNode):
     """
     Merge multiple PDF files into one.
@@ -366,7 +368,6 @@ class MergePDFsNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "filename_pattern",
@@ -376,6 +377,7 @@ class MergePDFsNode(BaseNode):
         tooltip="Pattern for output files (use {n} for page number)",
     ),
 )
+@node(category="document")
 class SplitPDFNode(BaseNode):
     """
     Split a PDF into separate files, one per page.
@@ -472,7 +474,8 @@ class SplitPDFNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties()
+@node(category="document")
 class ExtractPDFPagesNode(BaseNode):
     """
     Extract specific pages from a PDF.
@@ -569,7 +572,6 @@ class ExtractPDFPagesNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "dpi",
@@ -589,6 +591,7 @@ class ExtractPDFPagesNode(BaseNode):
         tooltip="Output image format",
     ),
 )
+@node(category="document")
 class PDFToImagesNode(BaseNode):
     """
     Convert PDF pages to images.

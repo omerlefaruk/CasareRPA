@@ -59,12 +59,12 @@ GOOGLE_DOCUMENT_ID = PropertyDef(
 )
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
 )
+@node(category="google")
 class DocsGetDocumentNode(DocsBaseNode):
     """
     Get full document content from Google Docs.
@@ -94,7 +94,7 @@ class DocsGetDocumentNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Get Document", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -142,12 +142,12 @@ class DocsGetDocumentNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
     GOOGLE_DOCUMENT_ID,
 )
+@node(category="google")
 class DocsGetTextNode(DocsBaseNode):
     """
     Extract plain text content from a Google Doc.
@@ -176,7 +176,7 @@ class DocsGetTextNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Get Text", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -222,7 +222,6 @@ class DocsGetTextNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -244,6 +243,7 @@ class DocsGetTextNode(DocsBaseNode):
         tooltip="File path to save exported document (optional, returns bytes if empty)",
     ),
 )
+@node(category="google")
 class DocsExportNode(DocsBaseNode):
     """
     Export a Google Doc to various formats.
@@ -285,7 +285,7 @@ class DocsExportNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Export", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

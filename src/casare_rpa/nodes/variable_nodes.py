@@ -17,7 +17,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from loguru import logger
 
 
-@node(category="variable")
 @properties(
     PropertyDef(
         "variable_name",
@@ -54,6 +53,7 @@ from loguru import logger
         tooltip="Type to convert value to",
     ),
 )
+@node(category="variable")
 class SetVariableNode(BaseNode):
     """
     Set variable node - stores a value in the execution context.
@@ -187,7 +187,6 @@ class SetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="variable")
 @properties(
     PropertyDef(
         "variable_name",
@@ -205,6 +204,7 @@ class SetVariableNode(BaseNode):
         tooltip="Default value if variable not found",
     ),
 )
+@node(category="variable")
 class GetVariableNode(BaseNode):
     """
     Get variable node - retrieves a value from the execution context.
@@ -283,7 +283,6 @@ class GetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="variable")
 @properties(
     PropertyDef(
         "variable_name",
@@ -301,6 +300,7 @@ class GetVariableNode(BaseNode):
         tooltip="Amount to increment by",
     ),
 )
+@node(category="variable")
 class IncrementVariableNode(BaseNode):
     """
     Increment variable node - increments a numeric variable.

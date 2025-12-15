@@ -16,6 +16,7 @@ from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.utils import safe_int
 
 
+@properties()
 @node(category="desktop")
 class CaptureScreenshotNode(BaseNode):
     """
@@ -92,6 +93,7 @@ class CaptureScreenshotNode(BaseNode):
         }
 
 
+@properties()
 @node(category="desktop")
 class CaptureElementImageNode(BaseNode):
     """
@@ -180,6 +182,7 @@ class CaptureElementImageNode(BaseNode):
         }
 
 
+@properties()
 @node(category="desktop")
 class OCRExtractTextNode(BaseNode):
     """
@@ -272,6 +275,7 @@ class OCRExtractTextNode(BaseNode):
         }
 
 
+@properties()
 @node(category="desktop")
 class CompareImagesNode(BaseNode):
     """

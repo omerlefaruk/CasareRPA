@@ -534,47 +534,55 @@ class RobotController(BaseController):
 
     # ==================== Public Methods ====================
 
+    def mark_robot_deleted(self, robot_id: str) -> None:
+        """Mark a robot as deleted to prevent it from reappearing due to eventual consistency."""
+        if not hasattr(self, "_deleted_robot_ids"):
+            self._deleted_robot_ids = set()
+        self._deleted_robot_ids.add(robot_id)
+        logger.debug(f"Marked robot {robot_id} as deleted (client-side override)")
+
     async def refresh_robots(self) -> None:
         """
         Fetch robots from orchestrator API and update UI.
-
-        Uses OrchestratorClient to fetch from remote API.
-        Falls back to local storage if not connected.
-
-        Emits:
-            refreshing_changed: (True) when starting, (False) when complete
-            robots_updated: With the robot list when complete
         """
         self.refreshing_changed.emit(True)
 
         try:
             robots = []
 
-            # Try orchestrator API first
+            # 1. Connected to Orchestrator: strictly use API data
             if self._orchestrator_client and self._connected:
+                logger.debug("Fetching robots from Orchestrator API...")
                 robot_data_list = await self._orchestrator_client.get_robots()
-                # Convert RobotData to Robot-like objects
                 robots = self._convert_robot_data(robot_data_list)
                 logger.debug(f"Fetched {len(robots)} robots from orchestrator API")
 
+            # 2. Not connected, try to connect if client exists
             elif self._orchestrator_client:
-                # Try to connect first
                 connected = await self.connect_to_orchestrator()
                 if connected:
+                    logger.debug("Connected to Orchestrator, fetching robots...")
                     robot_data_list = await self._orchestrator_client.get_robots()
                     robots = self._convert_robot_data(robot_data_list)
-                    logger.debug(f"Fetched {len(robots)} robots from orchestrator API")
                 else:
-                    # Fall back to local storage
+                    logger.debug("Connection failed, falling back to local storage")
                     robots = await self._get_local_robots()
 
+            # 3. No client configured, use local storage
             else:
-                # No orchestrator client, use local storage
+                logger.debug("No orchestrator client, using local storage")
                 robots = await self._get_local_robots()
 
-            self._current_robots = robots
+            # Filter out robots that were recently deleted in this session
+            if hasattr(self, "_deleted_robot_ids") and self._deleted_robot_ids:
+                original_count = len(robots)
+                robots = [r for r in robots if r.id not in self._deleted_robot_ids]
+                if len(robots) < original_count:
+                    logger.debug(
+                        f"Filtered {original_count - len(robots)} deleted robots from list"
+                    )
 
-            # Emit signal (panel subscribes to this)
+            self._current_robots = robots
             self.robots_updated.emit(self._current_robots)
 
         except Exception as e:

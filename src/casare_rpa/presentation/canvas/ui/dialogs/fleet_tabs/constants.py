@@ -2,10 +2,10 @@
 Fleet Dashboard Shared Constants.
 
 Eliminates duplicated color definitions and refresh intervals across tabs.
+Implements a "Thinkbox Deadline" inspired dark theme.
 """
 
 from PySide6.QtGui import QColor
-
 
 # Robot status colors - used by robots_tab and robot_picker_panel
 ROBOT_STATUS_COLORS = {
@@ -38,56 +38,123 @@ REFRESH_INTERVALS = {
     "api_keys": 60000,  # 60 seconds
 }
 
+# Deadline-inspired theme constants
+DEADLINE_COLORS = {
+    "bg_dark": "#222222",
+    "bg_panel": "#333333",
+    "bg_header": "#2A2A2A",
+    "border": "#111111",
+    "text_primary": "#E0E0E0",
+    "text_secondary": "#AAAAAA",
+    "selection": "#007ACC",  # Professional Blue
+    "selection_text": "#FFFFFF",
+    "hover": "#444444",
+}
+
 # Shared dark theme base stylesheet for tab widgets
-TAB_WIDGET_BASE_STYLE = """
-    QTableWidget {
-        background: #1e1e1e;
-        border: 1px solid #3d3d3d;
-        gridline-color: #3d3d3d;
-        color: #e0e0e0;
-        alternate-background-color: #252525;
-    }
-    QTableWidget::item {
-        padding: 6px;
-    }
-    QTableWidget::item:selected {
-        background: #094771;
-    }
-    QHeaderView::section {
-        background: #2d2d2d;
-        color: #a0a0a0;
+TAB_WIDGET_BASE_STYLE = f"""
+    QWidget {{
+        color: {DEADLINE_COLORS['text_primary']};
+        font-family: 'Segoe UI', 'Roboto', sans-serif;
+    }}
+
+    QTableWidget {{
+        background: {DEADLINE_COLORS['bg_dark']};
+        border: 1px solid {DEADLINE_COLORS['border']};
+        gridline-color: #444444;
+        selection-background-color: {DEADLINE_COLORS['selection']};
+        selection-color: {DEADLINE_COLORS['selection_text']};
+        alternate-background-color: #2A2A2A;
+    }}
+
+    QTableWidget::item {{
+        padding: 4px; /* Dense padding */
+        border-bottom: 1px solid #2A2A2A;
+    }}
+
+    QTableWidget::item:selected {{
+        background: {DEADLINE_COLORS['selection']};
+    }}
+
+    QHeaderView::section {{
+        background: {DEADLINE_COLORS['bg_header']};
+        color: {DEADLINE_COLORS['text_primary']};
         padding: 6px;
         border: none;
-        border-bottom: 1px solid #3d3d3d;
-        border-right: 1px solid #3d3d3d;
-    }
-    QLineEdit, QComboBox {
-        background: #3d3d3d;
-        border: 1px solid #4a4a4a;
-        border-radius: 3px;
-        color: #e0e0e0;
-        padding: 4px 8px;
-        min-height: 24px;
-    }
-    QPushButton {
-        background: #3d3d3d;
-        border: 1px solid #4a4a4a;
-        border-radius: 3px;
-        color: #e0e0e0;
-        padding: 6px 16px;
-    }
-    QPushButton:hover {
-        background: #4a4a4a;
-    }
-    QLabel {
-        color: #e0e0e0;
-    }
-"""
+        border-right: 1px solid {DEADLINE_COLORS['border']};
+        border-bottom: 1px solid {DEADLINE_COLORS['border']};
+        font-weight: bold;
+    }}
 
+    QLineEdit, QComboBox, QSpinBox {{
+        background: {DEADLINE_COLORS['bg_panel']};
+        border: 1px solid #555555;
+        border-radius: 2px;
+        padding: 4px;
+        selection-background-color: {DEADLINE_COLORS['selection']};
+    }}
+
+    QLineEdit:focus, QComboBox:focus {{
+        border: 1px solid {DEADLINE_COLORS['selection']};
+    }}
+
+    QPushButton {{
+        background: {DEADLINE_COLORS['bg_panel']};
+        border: 1px solid #555555;
+        border-radius: 3px;
+        padding: 5px 15px;
+        font-weight: bold;
+    }}
+
+    QPushButton:hover {{
+        background: {DEADLINE_COLORS['hover']};
+        border-color: #777777;
+    }}
+
+    QPushButton:pressed {{
+        background: #222222;
+    }}
+
+    QLabel {{
+        color: {DEADLINE_COLORS['text_primary']};
+    }}
+
+    QGroupBox {{
+        border: 1px solid #555555;
+        border-radius: 4px;
+        margin-top: 1em;
+        padding-top: 10px;
+    }}
+
+    QGroupBox::title {{
+        subcontrol-origin: margin;
+        subcontrol-position: top left;
+        padding: 0 5px;
+        color: {DEADLINE_COLORS['text_secondary']};
+    }}
+
+    QScrollBar:vertical {{
+        border: none;
+        background: {DEADLINE_COLORS['bg_dark']};
+        width: 12px;
+        margin: 0px;
+    }}
+
+    QScrollBar::handle:vertical {{
+        background: #555555;
+        min-height: 20px;
+        border-radius: 2px;
+    }}
+
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+        height: 0px;
+    }}
+"""
 
 __all__ = [
     "ROBOT_STATUS_COLORS",
     "JOB_STATUS_COLORS",
     "REFRESH_INTERVALS",
     "TAB_WIDGET_BASE_STYLE",
+    "DEADLINE_COLORS",
 ]

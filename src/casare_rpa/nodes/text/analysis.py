@@ -18,7 +18,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -36,6 +35,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Exclude whitespace from character count",
     ),
 )
+@node(category="text")
 class TextCountNode(BaseNode):
     """
     Count characters, words, or lines in text.

@@ -8,6 +8,8 @@ Nodes for efficient batch operations on spreadsheets:
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 import json
 from typing import Any, Dict, List
@@ -25,6 +27,8 @@ from casare_rpa.infrastructure.resources.google_sheets_client import (
 from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
+@properties()
+@node(category="google")
 class SheetsBatchUpdateNode(SheetsBaseNode):
     """
     Update multiple ranges in a single API call.
@@ -185,6 +189,8 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsBatchGetNode(SheetsBaseNode):
     """
     Read multiple ranges in a single API call.
@@ -299,6 +305,8 @@ class SheetsBatchGetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsBatchClearNode(SheetsBaseNode):
     """
     Clear multiple ranges in a single API call.

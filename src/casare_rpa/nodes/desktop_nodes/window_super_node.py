@@ -158,7 +158,6 @@ WINDOW_PORT_SCHEMA.register(
 )
 
 
-@node(category="desktop")
 @properties(
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
@@ -258,6 +257,7 @@ WINDOW_PORT_SCHEMA.register(
         tab="advanced",
     ),
 )
+@node(category="desktop")
 class WindowManagementSuperNode(DesktopNodeBase):
     """
     Unified window management node.

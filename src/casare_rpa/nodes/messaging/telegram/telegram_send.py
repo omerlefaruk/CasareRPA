@@ -74,7 +74,6 @@ TELEGRAM_DISABLE_NOTIFICATION = PropertyDef(
 )
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -98,6 +97,7 @@ TELEGRAM_DISABLE_NOTIFICATION = PropertyDef(
         tooltip="Message ID to reply to (0 for no reply)",
     ),
 )
+@node(category="messaging")
 class TelegramSendMessageNode(TelegramBaseNode):
     """
     Send a text message via Telegram.
@@ -196,7 +196,6 @@ class TelegramSendMessageNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -221,6 +220,7 @@ class TelegramSendMessageNode(TelegramBaseNode):
     TELEGRAM_PARSE_MODE,
     TELEGRAM_DISABLE_NOTIFICATION,
 )
+@node(category="messaging")
 class TelegramSendPhotoNode(TelegramBaseNode):
     """
     Send a photo via Telegram.
@@ -317,7 +317,6 @@ class TelegramSendPhotoNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -350,6 +349,7 @@ class TelegramSendPhotoNode(TelegramBaseNode):
     TELEGRAM_PARSE_MODE,
     TELEGRAM_DISABLE_NOTIFICATION,
 )
+@node(category="messaging")
 class TelegramSendDocumentNode(TelegramBaseNode):
     """
     Send a document/file via Telegram.
@@ -452,7 +452,6 @@ class TelegramSendDocumentNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -481,6 +480,7 @@ class TelegramSendDocumentNode(TelegramBaseNode):
     ),
     TELEGRAM_DISABLE_NOTIFICATION,
 )
+@node(category="messaging")
 class TelegramSendLocationNode(TelegramBaseNode):
     """
     Send a location via Telegram.

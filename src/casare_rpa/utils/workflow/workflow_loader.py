@@ -5,8 +5,8 @@ Deserializes workflow JSON into executable WorkflowSchema with node instances.
 SECURITY: All workflows are validated against a strict schema before execution.
 
 This module delegates to casare_rpa.nodes for node class resolution, which uses
-lazy loading from _NODE_REGISTRY. This eliminates duplicate registration and
-improves startup performance.
+lazy loading from the central node registry. This eliminates duplicate
+registration and improves startup performance.
 """
 
 from typing import Any, Dict, Type, Optional, List, Tuple
@@ -36,66 +36,6 @@ MAX_CONNECTIONS = 5000
 MAX_NODE_ID_LENGTH = 256
 MAX_CONFIG_DEPTH = 10
 MAX_STRING_LENGTH = 10000
-
-
-# =============================================================================
-# NODE TYPE MIGRATION ALIASES
-# =============================================================================
-# Maps deprecated atomic node types to their Super Node replacements.
-# Format: "OldNodeType": ("NewSuperNodeType", {"action": "Action Name"})
-# When loading old workflows, these aliases automatically migrate to Super Nodes.
-
-NODE_TYPE_ALIASES: Dict[str, tuple[str, Dict[str, Any]]] = {
-    # FileSystemSuperNode migrations (12 atomic nodes)
-    "ReadFileNode": ("FileSystemSuperNode", {"action": "Read File"}),
-    "WriteFileNode": ("FileSystemSuperNode", {"action": "Write File"}),
-    "AppendFileNode": ("FileSystemSuperNode", {"action": "Append File"}),
-    "DeleteFileNode": ("FileSystemSuperNode", {"action": "Delete File"}),
-    "CopyFileNode": ("FileSystemSuperNode", {"action": "Copy File"}),
-    "MoveFileNode": ("FileSystemSuperNode", {"action": "Move File"}),
-    "FileExistsNode": ("FileSystemSuperNode", {"action": "File Exists"}),
-    "GetFileSizeNode": ("FileSystemSuperNode", {"action": "Get File Size"}),
-    "GetFileInfoNode": ("FileSystemSuperNode", {"action": "Get File Info"}),
-    "CreateDirectoryNode": ("FileSystemSuperNode", {"action": "Create Directory"}),
-    "ListFilesNode": ("FileSystemSuperNode", {"action": "List Files"}),
-    "ListDirectoryNode": ("FileSystemSuperNode", {"action": "List Directory"}),
-    # StructuredDataSuperNode migrations (7 atomic nodes)
-    "ReadCSVNode": ("StructuredDataSuperNode", {"action": "Read CSV"}),
-    "WriteCSVNode": ("StructuredDataSuperNode", {"action": "Write CSV"}),
-    "ReadJSONFileNode": ("StructuredDataSuperNode", {"action": "Read JSON"}),
-    "WriteJSONFileNode": ("StructuredDataSuperNode", {"action": "Write JSON"}),
-    "ZipFilesNode": ("StructuredDataSuperNode", {"action": "Zip Files"}),
-    "UnzipFilesNode": ("StructuredDataSuperNode", {"action": "Unzip Files"}),
-    "ImageConvertNode": ("StructuredDataSuperNode", {"action": "Image Convert"}),
-}
-
-
-def _resolve_node_type_alias(
-    node_type: str, config: Dict[str, Any]
-) -> tuple[str, Dict[str, Any]]:
-    """
-    Resolve node type alias for backward compatibility.
-
-    If the node_type is a deprecated atomic node, converts it to the
-    appropriate Super Node with the correct action pre-set.
-
-    Args:
-        node_type: Original node type from workflow
-        config: Original node config
-
-    Returns:
-        Tuple of (resolved_node_type, merged_config)
-    """
-    if node_type in NODE_TYPE_ALIASES:
-        new_type, defaults = NODE_TYPE_ALIASES[node_type]
-        # Merge defaults with existing config (config takes precedence)
-        merged_config = {**defaults, **config}
-        logger.info(
-            f"Migrating deprecated node type '{node_type}' -> '{new_type}' "
-            f"with action='{defaults.get('action')}'"
-        )
-        return new_type, merged_config
-    return node_type, config
 
 
 def _validate_string(
@@ -280,7 +220,7 @@ def get_node_class(node_type: str) -> Optional[Type[BaseNode]]:
     """
     Get a node class by type name using lazy loading from nodes module.
 
-    This delegates to casare_rpa.nodes._NODE_REGISTRY which is the single
+    This delegates to casare_rpa.nodes.get_node_class which is the single
     source of truth for node class registration.
 
     Args:
@@ -290,107 +230,19 @@ def get_node_class(node_type: str) -> Optional[Type[BaseNode]]:
         The node class, or None if not found
     """
     try:
-        return getattr(nodes_module, node_type)
+        return nodes_module.get_node_class(node_type)
     except AttributeError:
         return None
 
 
 def is_valid_node_type(node_type: str) -> bool:
     """Check if a node type is registered."""
-    return node_type in nodes_module._NODE_REGISTRY
+    return node_type in nodes_module.NODE_REGISTRY
 
 
 def get_all_node_types() -> list:
     """Get all registered node type names."""
-    return list(nodes_module._NODE_REGISTRY.keys())
-
-
-# Legacy compatibility - NODE_TYPE_MAP is now generated from _NODE_REGISTRY
-# This allows existing code that imports NODE_TYPE_MAP to continue working
-def _build_node_type_map() -> Dict[str, Type]:
-    """Build NODE_TYPE_MAP from nodes module (lazy, on first access)."""
-    return nodes_module.get_all_node_classes()
-
-
-# Lazy-loaded NODE_TYPE_MAP for backward compatibility
-_node_type_map_cache: Optional[Dict[str, Type]] = None
-
-
-def _get_node_type_map() -> Dict[str, Type]:
-    """Get NODE_TYPE_MAP, building it lazily if needed."""
-    global _node_type_map_cache
-    if _node_type_map_cache is None:
-        _node_type_map_cache = _build_node_type_map()
-    return _node_type_map_cache
-
-
-# Backward compatibility: NODE_TYPE_MAP is now a lazy property
-# Code that accesses NODE_TYPE_MAP directly will trigger building the full map
-class _NodeTypeMapProxy:
-    """
-    Proxy class that builds NODE_TYPE_MAP lazily on first access.
-
-    A3 Optimization: Tracks accessed names so items()/values() only iterate
-    over previously accessed nodes instead of loading all 400+ nodes.
-    """
-
-    def __init__(self):
-        self._accessed_names: set = set()
-
-    def __contains__(self, key):
-        return is_valid_node_type(key)
-
-    def __getitem__(self, key):
-        node_class = get_node_class(key)
-        if node_class is None:
-            raise KeyError(key)
-        self._accessed_names.add(key)
-        return node_class
-
-    def get(self, key, default=None):
-        result = get_node_class(key)
-        if result is not None:
-            self._accessed_names.add(key)
-            return result
-        return default
-
-    def keys(self):
-        return get_all_node_types()
-
-    def __len__(self):
-        return len(nodes_module._NODE_REGISTRY)
-
-    def items(self):
-        """
-        A3 Optimization: Only iterate over previously accessed nodes.
-        Falls back to full iteration if nothing accessed yet.
-        """
-        if self._accessed_names:
-            for name in self._accessed_names:
-                node_class = get_node_class(name)
-                if node_class is not None:
-                    yield name, node_class
-        else:
-            # Fallback to full iteration if called before any access
-            yield from _get_node_type_map().items()
-
-    def values(self):
-        """
-        A3 Optimization: Only iterate over previously accessed nodes.
-        Falls back to full iteration if nothing accessed yet.
-        """
-        if self._accessed_names:
-            for name in self._accessed_names:
-                node_class = get_node_class(name)
-                if node_class is not None:
-                    yield node_class
-        else:
-            # Fallback to full iteration if called before any access
-            yield from _get_node_type_map().values()
-
-
-# Export NODE_TYPE_MAP as the proxy for backward compatibility
-NODE_TYPE_MAP = _NodeTypeMapProxy()
+    return list(nodes_module.NODE_REGISTRY.keys())
 
 
 # =============================================================================
@@ -406,24 +258,20 @@ def _batch_resolve_node_types(
     nodes_data: Dict[str, Dict],
 ) -> Dict[str, Tuple[str, Dict[str, Any]]]:
     """
-    Batch resolve all node type aliases for performance.
-
-    PERFORMANCE: Resolves all node types in a single pass instead of
-    per-node resolution during instantiation.
+    Batch extract node types/configs for performance.
 
     Args:
         nodes_data: Dict mapping node_id to node data
 
     Returns:
-        Dict mapping node_id to (resolved_type, merged_config)
+        Dict mapping node_id to (node_type, config)
     """
     resolved = {}
     for node_id, node_data in nodes_data.items():
         node_type = node_data.get("node_type")
         config = node_data.get("config", {})
         if node_type:
-            resolved_type, merged_config = _resolve_node_type_alias(node_type, config)
-            resolved[node_id] = (resolved_type, merged_config)
+            resolved[node_id] = (node_type, config)
     return resolved
 
 
@@ -598,7 +446,8 @@ def load_workflow_from_dict(
     cache_fingerprint = None
     if use_cache:
         cache = get_workflow_cache()
-        cache_fingerprint = cache.compute_fingerprint(workflow_data)
+        fingerprint_data = dict(workflow_data)
+        cache_fingerprint = cache.compute_fingerprint(fingerprint_data)
         cached_workflow = cache.get(cache_fingerprint)
         if cached_workflow is not None:
             load_elapsed = (time.perf_counter() - load_start) * 1000

@@ -17,9 +17,30 @@ class VisualGmailBaseNode(VisualNode):
     """Base class for Gmail visual nodes with credential picker integration."""
 
     REQUIRED_SCOPES = GMAIL_SCOPE
+    SKIP_SCHEMA_WIDGETS = True  # Use manual widgets, not schema-generated ones
 
     def __init__(self, qgraphics_item=None) -> None:
         super().__init__(qgraphics_item)
+
+    def _remove_property_if_exists(self, prop_name: str) -> None:
+        """Remove existing property if it was auto-generated from schema."""
+        if hasattr(self, "model") and prop_name in self.model.custom_properties:
+            del self.model.custom_properties[prop_name]
+            # Also remove from widgets dict if present
+            if hasattr(self, "_widgets") and prop_name in self._widgets:
+                del self._widgets[prop_name]
+
+    def _safe_add_text_input(self, name: str, label: str = "", **kwargs) -> None:
+        """Safely add a text input widget, removing any existing property first."""
+        self._remove_property_if_exists(name)
+        self.add_text_input(name, label, **kwargs)
+
+    def _safe_add_combo_menu(
+        self, name: str, label: str = "", items: list = None, **kwargs
+    ) -> None:
+        """Safely add a combo menu widget, removing any existing property first."""
+        self._remove_property_if_exists(name)
+        self.add_combo_menu(name, label, items=items or [], **kwargs)
 
     def setup_widgets(self) -> None:
         """Setup credential picker widget."""
@@ -49,13 +70,27 @@ class VisualGmailSendEmailNode(VisualGmailBaseNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("to", DataType.STRING)
+        self.add_typed_input("cc", DataType.STRING)
+        self.add_typed_input("bcc", DataType.STRING)
         self.add_typed_input("subject", DataType.STRING)
         self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("body_type", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("message_id", DataType.STRING)
         self.add_typed_output("thread_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self._safe_add_text_input("to", "To", placeholder_text="recipient@example.com")
+        self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
+        self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
+        self._safe_add_text_input(
+            "subject", "Subject", placeholder_text="Email subject"
+        )
+        self._safe_add_text_input("body", "Body", placeholder_text="Email body...")
+        self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
 
 
 class VisualGmailSendWithAttachmentNode(VisualGmailBaseNode):
@@ -69,14 +104,33 @@ class VisualGmailSendWithAttachmentNode(VisualGmailBaseNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("to", DataType.STRING)
+        self.add_typed_input("cc", DataType.STRING)
+        self.add_typed_input("bcc", DataType.STRING)
         self.add_typed_input("subject", DataType.STRING)
         self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("body_type", DataType.STRING)
         self.add_typed_input("attachments", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("message_id", DataType.STRING)
         self.add_typed_output("thread_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self._safe_add_text_input("to", "To", placeholder_text="recipient@example.com")
+        self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
+        self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
+        self._safe_add_text_input(
+            "subject", "Subject", placeholder_text="Email subject"
+        )
+        self._safe_add_text_input("body", "Body", placeholder_text="Email body...")
+        self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
+        self._safe_add_text_input(
+            "attachments",
+            "Attachments",
+            placeholder_text="C:\\file1.pdf, C:\\file2.pdf",
+        )
 
 
 class VisualGmailReplyToEmailNode(VisualGmailBaseNode):
@@ -89,13 +143,32 @@ class VisualGmailReplyToEmailNode(VisualGmailBaseNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
+        self.add_typed_input("thread_id", DataType.STRING)
         self.add_typed_input("message_id", DataType.STRING)
         self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("body_type", DataType.STRING)
+        self.add_typed_input("cc", DataType.STRING)
+        self.add_typed_input("bcc", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("new_message_id", DataType.STRING)
         self.add_typed_output("thread_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self._safe_add_text_input(
+            "thread_id", "Thread ID", placeholder_text="18a5b7c8d9e0f1g2"
+        )
+        self._safe_add_text_input(
+            "message_id", "Message ID", placeholder_text="18a5b7c8d9e0f1g2"
+        )
+        self._safe_add_text_input(
+            "body", "Reply Body", placeholder_text="Your reply..."
+        )
+        self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
+        self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
+        self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
 
 
 class VisualGmailForwardEmailNode(VisualGmailBaseNode):
@@ -110,10 +183,27 @@ class VisualGmailForwardEmailNode(VisualGmailBaseNode):
         self.add_exec_input("exec_in")
         self.add_typed_input("message_id", DataType.STRING)
         self.add_typed_input("to", DataType.STRING)
+        self.add_typed_input("cc", DataType.STRING)
+        self.add_typed_input("bcc", DataType.STRING)
+        self.add_typed_input("additional_body", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("new_message_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self._safe_add_text_input(
+            "message_id", "Message ID", placeholder_text="18a5b7c8d9e0f1g2"
+        )
+        self._safe_add_text_input("to", "To", placeholder_text="forward@example.com")
+        self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
+        self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
+        self._safe_add_text_input(
+            "additional_body",
+            "Additional Text",
+            placeholder_text="Adding my comments...",
+        )
 
 
 class VisualGmailCreateDraftNode(VisualGmailBaseNode):
@@ -127,13 +217,33 @@ class VisualGmailCreateDraftNode(VisualGmailBaseNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("to", DataType.STRING)
+        self.add_typed_input("cc", DataType.STRING)
+        self.add_typed_input("bcc", DataType.STRING)
         self.add_typed_input("subject", DataType.STRING)
         self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("body_type", DataType.STRING)
+        self.add_typed_input("attachments", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("draft_id", DataType.STRING)
         self.add_typed_output("message_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self._safe_add_text_input("to", "To", placeholder_text="recipient@example.com")
+        self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
+        self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
+        self._safe_add_text_input(
+            "subject", "Subject", placeholder_text="Email subject"
+        )
+        self._safe_add_text_input("body", "Body", placeholder_text="Email body...")
+        self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
+        self._safe_add_text_input(
+            "attachments",
+            "Attachments",
+            placeholder_text="C:\\file1.pdf, C:\\file2.pdf",
+        )
 
 
 class VisualGmailSendDraftNode(VisualGmailBaseNode):
@@ -152,6 +262,12 @@ class VisualGmailSendDraftNode(VisualGmailBaseNode):
         self.add_typed_output("thread_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self._safe_add_text_input(
+            "draft_id", "Draft ID", placeholder_text="r1234567890abcdef"
+        )
 
 
 # =============================================================================

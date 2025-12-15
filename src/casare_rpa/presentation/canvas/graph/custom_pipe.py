@@ -787,19 +787,9 @@ class CasarePipe(PipeItem):
         else:
             return
 
-        # Visibility check for connected pipe
-        if self.input_port and self.output_port:
-            is_visible = all(
-                [
-                    self._input_port.isVisible(),
-                    self._output_port.isVisible(),
-                    self._input_port.node.isVisible(),
-                    self._output_port.node.isVisible(),
-                ]
-            )
-            self.setVisible(is_visible)
-            if not is_visible:
-                return
+        # Visibility check removed: caused connected pipes to disappear
+        # This check was too aggressive and hid pipes when ports returned isVisible()=False
+        # which happens in some valid states. Standard NodeGraphQt handles visibility.
 
         # Use smart routing for completed connections (not live dragging)
         # and only when smart routing is globally enabled

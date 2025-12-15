@@ -23,7 +23,6 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "goal",
@@ -67,6 +66,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Maximum execution time in seconds",
     ),
 )
+@node(category="llm")
 class AIAgentNode(LLMBaseNode):
     """
     Autonomous AI agent with multi-step reasoning.

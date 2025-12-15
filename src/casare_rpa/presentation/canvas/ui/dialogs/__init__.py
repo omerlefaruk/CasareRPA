@@ -48,10 +48,6 @@ from casare_rpa.presentation.canvas.ui.dialogs.credential_manager_dialog import 
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_dashboard import (
     FleetDashboardDialog,
 )
-from casare_rpa.presentation.canvas.ui.dialogs.migration_dialog import (
-    MigrationDialog,
-    show_migration_dialog,
-)
 from casare_rpa.presentation.canvas.ui.dialogs.quick_node_config_dialog import (
     QuickNodeConfigDialog,
 )
@@ -101,8 +97,6 @@ __all__ = [
     "ProjectManagerDialog",
     "CredentialManagerDialog",
     "FleetDashboardDialog",
-    "MigrationDialog",
-    "show_migration_dialog",
     "QuickNodeConfigDialog",
     "ParameterPromotionDialog",
     "show_parameter_promotion_dialog",

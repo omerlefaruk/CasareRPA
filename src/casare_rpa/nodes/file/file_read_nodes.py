@@ -30,7 +30,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -84,6 +83,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class ReadFileNode(BaseNode):
     """
     Read content from a text or binary file.

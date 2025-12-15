@@ -22,8 +22,8 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties()  # Input port driven
+@node(category="system")
 class GetServiceStatusNode(BaseNode):
     """
     Get the status of a Windows service.
@@ -126,8 +126,8 @@ class GetServiceStatusNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties()  # Input port driven
+@node(category="system")
 class StartServiceNode(BaseNode):
     """
     Start a Windows service.
@@ -196,8 +196,8 @@ class StartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties()  # Input port driven
+@node(category="system")
 class StopServiceNode(BaseNode):
     """
     Stop a Windows service.
@@ -264,7 +264,6 @@ class StopServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "wait_time",
@@ -275,6 +274,7 @@ class StopServiceNode(BaseNode):
         tooltip="Seconds to wait between stop and start",
     ),
 )
+@node(category="system")
 class RestartServiceNode(BaseNode):
     """
     Restart a Windows service.
@@ -354,7 +354,6 @@ class RestartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "state_filter",
@@ -365,6 +364,7 @@ class RestartServiceNode(BaseNode):
         tooltip="Filter services by state",
     ),
 )
+@node(category="system")
 class ListServicesNode(BaseNode):
     """
     List all Windows services.

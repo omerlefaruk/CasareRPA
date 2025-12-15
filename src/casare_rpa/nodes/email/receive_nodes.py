@@ -30,7 +30,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP, parse_email_message
 
 
-@node(category="email")
 @properties(
     CREDENTIAL_NAME_PROP,
     IMAP_SERVER_PROP,
@@ -111,6 +110,7 @@ from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP, parse_email_me
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="email")
 class ReadEmailsNode(CredentialAwareMixin, BaseNode):
     """
     Read emails from an IMAP server.
@@ -299,6 +299,7 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties()
 @node(category="email")
 class GetEmailContentNode(BaseNode):
     """
@@ -363,6 +364,7 @@ class GetEmailContentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
 @node(category="email")
 class FilterEmailsNode(BaseNode):
     """

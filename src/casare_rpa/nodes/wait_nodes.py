@@ -45,7 +45,6 @@ from casare_rpa.utils import safe_int
 # =============================================================================
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "duration",
@@ -55,6 +54,7 @@ from casare_rpa.utils import safe_int
         tooltip="Wait duration in seconds",
     )
 )
+@node(category="browser")
 class WaitNode(BaseNode):
     """
     Wait node - pauses execution for a specified duration.
@@ -125,7 +125,6 @@ class WaitNode(BaseNode):
 # =============================================================================
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "selector",
@@ -152,6 +151,7 @@ class WaitNode(BaseNode):
     ),
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class WaitForElementNode(BrowserBaseNode):
     """
     Wait for element node - waits for an element to appear.
@@ -290,7 +290,6 @@ class WaitForElementNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="control_flow")
 @properties(
     BROWSER_TIMEOUT,
     BROWSER_WAIT_UNTIL,
@@ -299,6 +298,7 @@ class WaitForElementNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class WaitForNavigationNode(BrowserBaseNode):
     """
     Wait for navigation node - waits for page navigation to complete.

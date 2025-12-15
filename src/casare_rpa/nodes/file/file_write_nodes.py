@@ -31,7 +31,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -98,6 +97,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class WriteFileNode(BaseNode):
     """
     Write content to a file, creating or overwriting.
@@ -231,7 +231,6 @@ class WriteFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -270,6 +269,7 @@ class WriteFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class AppendFileNode(BaseNode):
     """
     Append content to an existing file.

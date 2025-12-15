@@ -37,7 +37,7 @@ def strip_var_wrapper(value: str) -> str:
 
 
 def resolve_param(
-    node: BaseNode,
+    node_instance: BaseNode,
     context: ExecutionContext,
     port_name: str,
     param_name: Optional[str] = None,
@@ -52,7 +52,7 @@ def resolve_param(
     3. Variable reference (string -> context.get_variable)
 
     Args:
-        node: The node instance
+        node_instance: The node instance
         context: Execution context
         port_name: Name of the input port
         param_name: Name of the parameter (defaults to port_name)
@@ -66,14 +66,14 @@ def resolve_param(
         param_name = port_name
 
     # Try input port first
-    value = node.get_input_value(port_name)
+    value = node_instance.get_input_value(port_name)
     if value is not None:
         if type_cast:
             return type_cast(value)
         return value
 
     # Try parameter
-    param = node.get_parameter(param_name, default)
+    param = node_instance.get_parameter(param_name, default)
 
     # If string, resolve as variable reference
     if isinstance(param, str) and param:
@@ -104,7 +104,7 @@ def resolve_param(
 
 
 def resolve_list(
-    node: BaseNode,
+    node_instance: BaseNode,
     context: ExecutionContext,
     port_name: str = "list",
     param_name: str = "list",
@@ -112,7 +112,7 @@ def resolve_list(
     """Resolve a list parameter.
 
     Args:
-        node: The node instance
+        node_instance: The node instance
         context: Execution context
         port_name: Name of the input port
         param_name: Name of the parameter
@@ -120,11 +120,11 @@ def resolve_list(
     Returns:
         Resolved list value (or empty list)
     """
-    return resolve_param(node, context, port_name, param_name, default=[])
+    return resolve_param(node_instance, context, port_name, param_name, default=[])
 
 
 def resolve_dict(
-    node: BaseNode,
+    node_instance: BaseNode,
     context: ExecutionContext,
     port_name: str = "dict",
     param_name: str = "dict",
@@ -132,7 +132,7 @@ def resolve_dict(
     """Resolve a dict parameter.
 
     Args:
-        node: The node instance
+        node_instance: The node instance
         context: Execution context
         port_name: Name of the input port
         param_name: Name of the parameter
@@ -140,7 +140,7 @@ def resolve_dict(
     Returns:
         Resolved dict value (or empty dict)
     """
-    return resolve_param(node, context, port_name, param_name, default={})
+    return resolve_param(node_instance, context, port_name, param_name, default={})
 
 
 def validate_list(value: Any) -> list:

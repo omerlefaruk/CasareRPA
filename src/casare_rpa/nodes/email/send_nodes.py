@@ -34,7 +34,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP
 
 
-@node(category="email")
 @properties(
     CREDENTIAL_NAME_PROP,
     SMTP_SERVER_PROP,
@@ -157,6 +156,7 @@ from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="email")
 class SendEmailNode(CredentialAwareMixin, BaseNode):
     """
     Send an email via SMTP.

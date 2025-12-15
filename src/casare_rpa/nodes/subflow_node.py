@@ -24,7 +24,6 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@node(category="workflow")
 @properties(
     PropertyDef(
         "subflow_id",
@@ -42,6 +41,7 @@ from casare_rpa.domain.value_objects.types import (
         placeholder="workflows/subflows/my_subflow.json",
     ),
 )
+@node(exec_outputs=["exec_out", "error"])
 class SubflowNode(BaseNode):
     """
     Executes a subflow (reusable workflow fragment).

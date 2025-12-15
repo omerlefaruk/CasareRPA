@@ -328,6 +328,8 @@ async def highlight_element(
         pass  # Ignore highlight errors
 
 
+@properties()
+@node(category="browser")
 class BrowserBaseNode(BaseNode, ABC):
     """
     Abstract base class for browser automation nodes.

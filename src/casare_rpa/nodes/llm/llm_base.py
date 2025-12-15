@@ -6,6 +6,8 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 import os
 from abc import abstractmethod
@@ -28,6 +30,8 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import (
 )
 
 
+@properties()
+@node(category="llm")
 class LLMBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for LLM nodes.

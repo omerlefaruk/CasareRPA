@@ -45,7 +45,6 @@ from casare_rpa.utils.resilience import retry_operation
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -134,6 +133,7 @@ from casare_rpa.utils.resilience import retry_operation
     ),
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class ClickElementNode(BrowserBaseNode):
     """
     Click element node - clicks on a page element.
@@ -343,7 +343,6 @@ class ClickElementNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -419,6 +418,7 @@ class ClickElementNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class TypeTextNode(BrowserBaseNode):
     """
     Type text node - types text into an input field.
@@ -636,7 +636,6 @@ class TypeTextNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -676,6 +675,7 @@ class TypeTextNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class SelectDropdownNode(BrowserBaseNode):
     """
     Select dropdown node - selects an option from a dropdown.
@@ -820,7 +820,6 @@ class SelectDropdownNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "image_template",
@@ -877,6 +876,7 @@ class SelectDropdownNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class ImageClickNode(BrowserBaseNode):
     """
     Image click node - clicks at a location found by image/template matching.
@@ -1098,7 +1098,6 @@ class ImageClickNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "key",
@@ -1122,6 +1121,7 @@ class ImageClickNode(BrowserBaseNode):
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
 )
+@node(category="browser")
 class PressKeyNode(BrowserBaseNode):
     """
     Press key node - presses a keyboard key on the browser page.

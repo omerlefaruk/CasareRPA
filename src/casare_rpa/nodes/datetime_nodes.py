@@ -31,7 +31,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "timezone",
@@ -50,6 +49,7 @@ from casare_rpa.utils import safe_int
         tooltip="Output format string (default: ISO format)",
     ),
 )
+@node(category="utility")
 class GetCurrentDateTimeNode(BaseNode):
     """
     Get the current date and time.
@@ -143,7 +143,6 @@ class GetCurrentDateTimeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "format",
@@ -154,6 +153,7 @@ class GetCurrentDateTimeNode(BaseNode):
         tooltip="strftime format string",
     ),
 )
+@node(category="utility")
 class FormatDateTimeNode(BaseNode):
     """
     Format a datetime to a string.
@@ -237,7 +237,6 @@ class FormatDateTimeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "format",
@@ -248,6 +247,7 @@ class FormatDateTimeNode(BaseNode):
         tooltip="Expected format string (optional, will try auto-detect)",
     ),
 )
+@node(category="utility")
 class ParseDateTimeNode(BaseNode):
     """
     Parse a datetime string into components.
@@ -350,8 +350,8 @@ class ParseDateTimeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="utility")
 class DateTimeAddNode(BaseNode):
     """
     Add or subtract time from a datetime.
@@ -445,8 +445,8 @@ class DateTimeAddNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="utility")
 class DateTimeDiffNode(BaseNode):
     """
     Calculate the difference between two datetimes.
@@ -550,8 +550,8 @@ class DateTimeDiffNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="utility")
 class DateTimeCompareNode(BaseNode):
     """
     Compare two datetimes.
@@ -633,7 +633,6 @@ class DateTimeCompareNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "milliseconds",
@@ -643,6 +642,7 @@ class DateTimeCompareNode(BaseNode):
         tooltip="Return milliseconds instead of seconds",
     ),
 )
+@node(category="utility")
 class GetTimestampNode(BaseNode):
     """
     Get current Unix timestamp.

@@ -16,7 +16,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "form_selector",
@@ -75,6 +74,7 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Timeout per field in milliseconds. Fast mode uses min(timeout, 500ms).",
     ),
 )
+@node(category="browser")
 class FormFillerNode(BrowserBaseNode):
     """
     Fill form fields automatically.

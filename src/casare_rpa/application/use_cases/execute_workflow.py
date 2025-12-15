@@ -31,7 +31,7 @@ from casare_rpa.domain.errors import (
 
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils.performance.performance_metrics import get_metrics
-from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP
+from casare_rpa.nodes import get_node_class
 
 # Strategies & Helpers
 from casare_rpa.application.use_cases.execution_state_manager import (
@@ -58,9 +58,10 @@ def _create_node_from_dict(node_data: dict) -> Any:
     node_id = node_data.get("node_id")
     config = node_data.get("config", {})
 
-    node_class = NODE_TYPE_MAP.get(node_type)
-    if not node_class:
-        raise ValueError(f"Unknown node type: {node_type}")
+    try:
+        node_class = get_node_class(node_type)
+    except AttributeError as e:
+        raise ValueError(f"Unknown node type: {node_type}") from e
 
     return node_class(node_id=node_id, config=config)
 

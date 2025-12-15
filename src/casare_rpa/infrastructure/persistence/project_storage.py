@@ -519,19 +519,10 @@ class ProjectStorage:
             FileNotFoundError: If file doesn't exist
         """
         from casare_rpa.domain.entities.workflow import WorkflowSchema
-        from casare_rpa.utils.workflow.workflow_migration import (
-            migrate_workflow_ids,
-            needs_migration,
-        )
 
         try:
             json_data = file_path.read_bytes()
             data = orjson.loads(json_data)
-
-            # Auto-migrate legacy node IDs
-            if needs_migration(data):
-                logger.info(f"Migrating legacy node IDs in {file_path}")
-                data, _ = migrate_workflow_ids(data)
 
             # Optionally validate
             if validate_on_load:

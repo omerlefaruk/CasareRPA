@@ -40,6 +40,10 @@ from casare_rpa.infrastructure.resources.google_client import (
     GoogleQuotaError,
     SCOPES,
 )
+from casare_rpa.infrastructure.resources.gmail_client import (
+    GmailClient,
+    GmailConfig,
+)
 
 
 # =============================================================================
@@ -124,6 +128,8 @@ GOOGLE_COMMON_PROPERTIES = (
 )
 
 
+@properties()
+@node(category="google")
 class GoogleBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for Google Workspace nodes.
@@ -588,16 +594,19 @@ def get_calendar_scopes(readonly: bool = False) -> List[str]:
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class GmailBaseNode(GoogleBaseNode):
     """
     Base class for Gmail nodes.
 
     Extends GoogleBaseNode with Gmail-specific functionality:
-    - Gmail API service access (gmail/v1)
-    - Gmail-specific scopes
+    - GmailClient for async email operations
+    - Gmail-specific scopes (gmail.modify)
     - Email message handling utilities
 
     Subclasses implement _execute_gmail() instead of _execute_google().
+    The _execute_gmail method receives a GmailClient instance.
     """
 
     # @category: google
@@ -614,24 +623,43 @@ class GmailBaseNode(GoogleBaseNode):
         context: ExecutionContext,
         client: GoogleAPIClient,
     ) -> ExecutionResult:
-        """Delegate to Gmail-specific execution."""
-        service = await client.get_service(self.SERVICE_NAME, self.SERVICE_VERSION)
-        return await self._execute_gmail(context, client, service)
+        """
+        Delegate to Gmail-specific execution with GmailClient.
+
+        Creates a GmailClient using the access token from credentials
+        and delegates to the _execute_gmail method.
+        """
+        # Get access token from the credentials in client config
+        access_token = client.config.credentials.access_token
+        if not access_token:
+            raise GoogleAuthError("No access token available for Gmail operations")
+
+        # Create GmailClient with the access token
+        gmail_config = GmailConfig(
+            access_token=access_token,
+            timeout=client.config.timeout or 30.0,
+        )
+        gmail_client = GmailClient(gmail_config)
+
+        try:
+            async with gmail_client:
+                return await self._execute_gmail(context, gmail_client)
+        finally:
+            # Ensure cleanup even if gmail client is already closed
+            pass
 
     @abstractmethod
     async def _execute_gmail(
         self,
         context: ExecutionContext,
-        client: GoogleAPIClient,
-        service: Any,
+        client: GmailClient,
     ) -> ExecutionResult:
         """
         Execute the Gmail operation.
 
         Args:
             context: Execution context
-            client: Google API client
-            service: Gmail API service object
+            client: GmailClient instance for async Gmail API operations
 
         Returns:
             Execution result dictionary
@@ -639,6 +667,8 @@ class GmailBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class DocsBaseNode(GoogleBaseNode):
     """
     Base class for Google Docs nodes.
@@ -705,6 +735,8 @@ class DocsBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class SheetsBaseNode(GoogleBaseNode):
     """
     Base class for Google Sheets nodes.
@@ -858,6 +890,8 @@ class SheetsBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class DriveBaseNode(GoogleBaseNode):
     """
     Base class for Google Drive nodes.
@@ -954,6 +988,8 @@ class DriveBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class CalendarBaseNode(GoogleBaseNode):
     """
     Base class for Google Calendar nodes.

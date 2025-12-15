@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "tab_name",
@@ -88,6 +87,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         placeholder="screenshots/error.png",
     ),
 )
+@node(category="browser")
 class NewTabNode(BaseNode):
     """
     New tab node - creates a new browser tab/page.

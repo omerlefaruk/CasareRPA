@@ -109,7 +109,6 @@ TABLE_EXTRACTION_JS = """
 """
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "table_selector",
@@ -166,6 +165,7 @@ TABLE_EXTRACTION_JS = """
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class TableScraperNode(BrowserBaseNode):
     """
     Table Scraper Node - extracts structured data from HTML tables.

@@ -5,6 +5,8 @@ This module re-exports Drive nodes from the drive/ subpackage
 for backward compatibility with existing imports in google/__init__.py.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext

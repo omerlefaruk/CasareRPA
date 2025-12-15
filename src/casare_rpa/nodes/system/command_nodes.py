@@ -27,7 +27,6 @@ class SecurityError(Exception):
     pass
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "command",
@@ -81,6 +80,7 @@ class SecurityError(Exception):
         tooltip="Allow blocked commands and dangerous characters (NOT RECOMMENDED)",
     ),
 )
+@node(category="system")
 class RunCommandNode(BaseNode):
     """
     Run a terminal/CMD command.
@@ -293,7 +293,6 @@ class RunCommandNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "script",
@@ -334,6 +333,7 @@ class RunCommandNode(BaseNode):
         tooltip="Use PowerShell Constrained Language Mode for additional security",
     ),
 )
+@node(category="system")
 class RunPowerShellNode(BaseNode):
     """
     Run a PowerShell script or command.

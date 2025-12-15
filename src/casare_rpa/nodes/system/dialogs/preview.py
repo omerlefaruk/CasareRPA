@@ -19,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "image_path",
@@ -53,6 +52,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Enable mouse wheel zoom",
     ),
 )
+@node(category="system")
 class ImagePreviewDialogNode(BaseNode):
     """
     Display an image preview dialog.
@@ -219,7 +219,6 @@ class ImagePreviewDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -251,6 +250,7 @@ class ImagePreviewDialogNode(BaseNode):
         tooltip="Allow row selection",
     ),
 )
+@node(category="system")
 class TableDialogNode(BaseNode):
     """
     Display tabular data in a dialog.

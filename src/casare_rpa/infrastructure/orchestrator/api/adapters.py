@@ -369,18 +369,18 @@ class MonitoringDataAdapter:
             """
             SELECT
                 id::text AS job_id,
-                payload->>'workflow_id' AS workflow_id,
-                payload->>'workflow_name' AS workflow_name,
-                claimed_by AS robot_id,
+                workflow_id,
+                workflow_name,
+                robot_id,
                 status,
                 created_at,
                 completed_at,
                 CASE
-                    WHEN completed_at IS NOT NULL AND claimed_at IS NOT NULL
-                    THEN EXTRACT(EPOCH FROM (completed_at - claimed_at))::integer * 1000
+                    WHEN completed_at IS NOT NULL AND started_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - started_at))::integer * 1000
                     ELSE NULL
                 END AS duration_ms
-            FROM pgqueuer_jobs
+            FROM job_queue
             WHERE 1=1
             """
         ]
@@ -394,12 +394,12 @@ class MonitoringDataAdapter:
             param_idx += 1
 
         if workflow_id:
-            query_parts.append(f"AND payload->>'workflow_id' = ${param_idx}")
+            query_parts.append(f"AND workflow_id = ${param_idx}")
             params.append(workflow_id)
             param_idx += 1
 
         if robot_id:
-            query_parts.append(f"AND claimed_by = ${param_idx}")
+            query_parts.append(f"AND robot_id = ${param_idx}")
             params.append(robot_id)
             param_idx += 1
 
@@ -532,43 +532,43 @@ class MonitoringDataAdapter:
         query = """
             SELECT
                 id::text AS job_id,
-                payload->>'workflow_id' AS workflow_id,
-                payload->>'workflow_name' AS workflow_name,
-                claimed_by AS robot_id,
+                workflow_id,
+                workflow_name,
+                robot_id,
                 status,
                 created_at,
-                claimed_at,
+                started_at AS claimed_at,
                 completed_at,
                 CASE
-                    WHEN completed_at IS NOT NULL AND claimed_at IS NOT NULL
-                    THEN EXTRACT(EPOCH FROM (completed_at - claimed_at))::integer * 1000
+                    WHEN completed_at IS NOT NULL AND started_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - started_at))::integer * 1000
                     ELSE NULL
                 END AS duration_ms,
-                payload->>'error_message' AS error_message,
+                error_message,
                 COALESCE(
                     SUBSTRING(
-                        payload->>'error_message'
+                        error_message
                         FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
                     ),
                     CASE
-                        WHEN payload->>'error_message' ILIKE '%%timeout%%'
+                        WHEN error_message ILIKE '%%timeout%%'
                             THEN 'TimeoutError'
-                        WHEN payload->>'error_message' ILIKE '%%connection%%'
+                        WHEN error_message ILIKE '%%connection%%'
                             THEN 'ConnectionError'
-                        WHEN payload->>'error_message' ILIKE '%%not found%%'
+                        WHEN error_message ILIKE '%%not found%%'
                             THEN 'NotFoundError'
-                        WHEN payload->>'error_message' ILIKE '%%permission%%'
+                        WHEN error_message ILIKE '%%permission%%'
                             THEN 'PermissionError'
-                        WHEN payload->>'error_message' ILIKE '%%validation%%'
+                        WHEN error_message ILIKE '%%validation%%'
                             THEN 'ValidationError'
-                        WHEN payload->>'error_message' IS NOT NULL
+                        WHEN error_message IS NOT NULL
                             THEN 'UnknownError'
                         ELSE NULL
                     END
                 ) AS error_type,
-                COALESCE((payload->>'retry_count')::integer, 0) AS retry_count,
-                payload->'node_executions' AS node_executions_json
-            FROM pgqueuer_jobs
+                retry_count,
+                result->'node_executions' AS node_executions_json
+            FROM job_queue
             WHERE id = $1::uuid
         """
 
@@ -723,26 +723,26 @@ class MonitoringDataAdapter:
                         COUNT(*) FILTER (WHERE status = 'completed') AS successful_jobs,
                         COUNT(*) FILTER (WHERE status = 'failed') AS failed_jobs,
                         AVG(
-                            EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS avg_duration_ms,
                         PERCENTILE_CONT(0.50) WITHIN GROUP (
-                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS p50_duration_ms,
                         PERCENTILE_CONT(0.90) WITHIN GROUP (
-                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS p90_duration_ms,
                         PERCENTILE_CONT(0.99) WITHIN GROUP (
-                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS p99_duration_ms
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
                 """
                 stats_row = await conn.fetchrow(stats_query, cutoff)
@@ -766,18 +766,18 @@ class MonitoringDataAdapter:
                 # Query 2: Slowest workflows (top 10 by avg duration)
                 slowest_query = """
                     SELECT
-                        payload->>'workflow_id' AS workflow_id,
-                        payload->>'workflow_name' AS workflow_name,
+                        workflow_id,
+                        workflow_name,
                         AVG(
-                            EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) AS average_duration_ms,
                         COUNT(*) AS execution_count
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
                       AND completed_at IS NOT NULL
-                      AND claimed_at IS NOT NULL
+                      AND started_at IS NOT NULL
                       AND status IN ('completed', 'failed')
-                    GROUP BY payload->>'workflow_id', payload->>'workflow_name'
+                    GROUP BY workflow_id, workflow_name
                     HAVING COUNT(*) >= 3
                     ORDER BY average_duration_ms DESC
                     LIMIT 10
@@ -800,29 +800,29 @@ class MonitoringDataAdapter:
                     SELECT
                         COALESCE(
                             SUBSTRING(
-                                payload->>'error_message'
+                                error_message
                                 FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
                             ),
                             CASE
-                                WHEN payload->>'error_message' ILIKE '%%timeout%%'
+                                WHEN error_message ILIKE '%%timeout%%'
                                     THEN 'TimeoutError'
-                                WHEN payload->>'error_message' ILIKE '%%connection%%'
+                                WHEN error_message ILIKE '%%connection%%'
                                     THEN 'ConnectionError'
-                                WHEN payload->>'error_message' ILIKE '%%not found%%'
+                                WHEN error_message ILIKE '%%not found%%'
                                     THEN 'NotFoundError'
-                                WHEN payload->>'error_message' ILIKE '%%permission%%'
+                                WHEN error_message ILIKE '%%permission%%'
                                     THEN 'PermissionError'
-                                WHEN payload->>'error_message' ILIKE '%%validation%%'
+                                WHEN error_message ILIKE '%%validation%%'
                                     THEN 'ValidationError'
                                 ELSE 'UnknownError'
                             END
                         ) AS error_type,
                         COUNT(*) AS count
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
                       AND status = 'failed'
-                      AND payload->>'error_message' IS NOT NULL
-                      AND payload->>'error_message' != ''
+                      AND error_message IS NOT NULL
+                      AND error_message != ''
                     GROUP BY error_type
                     ORDER BY count DESC
                     LIMIT 20
@@ -838,14 +838,14 @@ class MonitoringDataAdapter:
                 healing_query = """
                     SELECT
                         COALESCE(
-                            SUM((payload->>'healing_attempts')::int), 0
+                            SUM((metadata->>'healing_attempts')::int), 0
                         ) AS total_attempts,
                         COALESCE(
-                            SUM((payload->>'healing_successes')::int), 0
+                            SUM((metadata->>'healing_successes')::int), 0
                         ) AS total_successes
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
-                      AND payload ? 'healing_attempts'
+                      AND metadata ? 'healing_attempts'
                 """
                 healing_row = await conn.fetchrow(healing_query, cutoff)
 
@@ -980,14 +980,14 @@ class MonitoringDataAdapter:
             """
             SELECT
                 id::text AS job_id,
-                payload->>'workflow_id' AS workflow_id,
-                payload->>'workflow_name' AS workflow_name,
-                claimed_by AS robot_id,
+                workflow_id,
+                workflow_name,
+                robot_id,
                 status,
                 created_at,
-                claimed_at,
+                started_at AS claimed_at,
                 completed_at
-            FROM pgqueuer_jobs
+            FROM job_queue
             WHERE status IN ('claimed', 'completed', 'failed')
             """
         ]

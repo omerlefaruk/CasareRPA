@@ -62,7 +62,6 @@ DRIVE_FOLDER_ID = PropertyDef(
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_IDS,
     PropertyDef(
@@ -73,6 +72,7 @@ DRIVE_FOLDER_ID = PropertyDef(
         tooltip="Continue deleting remaining files if one fails",
     ),
 )
+@node(category="google")
 class DriveBatchDeleteNode(DriveBaseNode):
     """
     Delete multiple Google Drive files in a batch operation.
@@ -102,7 +102,7 @@ class DriveBatchDeleteNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Batch Delete", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -222,7 +222,6 @@ class DriveBatchDeleteNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_IDS,
     DRIVE_FOLDER_ID,
@@ -234,6 +233,7 @@ class DriveBatchDeleteNode(DriveBaseNode):
         tooltip="Continue moving remaining files if one fails",
     ),
 )
+@node(category="google")
 class DriveBatchMoveNode(DriveBaseNode):
     """
     Move multiple Google Drive files to a folder in a batch operation.
@@ -263,7 +263,7 @@ class DriveBatchMoveNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Batch Move", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -391,7 +391,6 @@ class DriveBatchMoveNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_IDS,
     DRIVE_FOLDER_ID,
@@ -410,6 +409,7 @@ class DriveBatchMoveNode(DriveBaseNode):
         tooltip="Keep original file names (otherwise appends ' - Copy')",
     ),
 )
+@node(category="google")
 class DriveBatchCopyNode(DriveBaseNode):
     """
     Copy multiple Google Drive files to a folder in a batch operation.
@@ -441,7 +441,7 @@ class DriveBatchCopyNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Batch Copy", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

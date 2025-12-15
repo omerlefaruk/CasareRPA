@@ -85,7 +85,6 @@ SHEETS_VALUE_INPUT_OPTION = PropertyDef(
 )
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -112,6 +111,7 @@ SHEETS_VALUE_INPUT_OPTION = PropertyDef(
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsWriteCellNode(SheetsBaseNode):
     """
     Write a single cell value to Google Sheets.
@@ -138,7 +138,7 @@ class SheetsWriteCellNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Write Cell", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -214,7 +214,6 @@ class SheetsWriteCellNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -240,6 +239,7 @@ class SheetsWriteCellNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsWriteRangeNode(SheetsBaseNode):
     """
     Write a range of values to Google Sheets.
@@ -267,7 +267,7 @@ class SheetsWriteRangeNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Write Range", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -357,7 +357,6 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -375,6 +374,7 @@ class SheetsWriteRangeNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsAppendRowNode(SheetsBaseNode):
     """
     Append a row to the end of data in a Google Sheet.
@@ -401,7 +401,7 @@ class SheetsAppendRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Append Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -486,7 +486,6 @@ class SheetsAppendRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -522,6 +521,7 @@ class SheetsAppendRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsUpdateRowNode(SheetsBaseNode):
     """
     Update an existing row in Google Sheets.
@@ -549,7 +549,7 @@ class SheetsUpdateRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Update Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -643,7 +643,6 @@ class SheetsUpdateRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -671,6 +670,7 @@ class SheetsUpdateRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsInsertRowNode(SheetsBaseNode):
     """
     Insert a new row at a specific position in Google Sheets.
@@ -699,7 +699,7 @@ class SheetsInsertRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Insert Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -801,7 +801,6 @@ class SheetsInsertRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -828,6 +827,7 @@ class SheetsInsertRowNode(SheetsBaseNode):
         min_value=1,
     ),
 )
+@node(category="google")
 class SheetsDeleteRowNode(SheetsBaseNode):
     """
     Delete one or more rows from Google Sheets.
@@ -854,7 +854,7 @@ class SheetsDeleteRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Delete Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -943,7 +943,6 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -959,6 +958,7 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         tooltip="Range in A1 notation to clear (e.g., 'Sheet1!A1:Z1000')",
     ),
 )
+@node(category="google")
 class SheetsClearRangeNode(SheetsBaseNode):
     """
     Clear values from a range in Google Sheets.
@@ -985,7 +985,7 @@ class SheetsClearRangeNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Clear Range", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

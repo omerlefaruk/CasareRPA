@@ -88,7 +88,6 @@ class WindowNodeBase(DesktopNodeBase):
         return window
 
 
-@node(category="desktop")
 @properties(
     WIDTH_PROP,
     HEIGHT_PROP,
@@ -96,6 +95,7 @@ class WindowNodeBase(DesktopNodeBase):
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
 )
+@node(category="desktop")
 class ResizeWindowNode(WindowNodeBase):
     """
     Resize a Windows desktop window.
@@ -166,7 +166,6 @@ class ResizeWindowNode(WindowNodeBase):
         )
 
 
-@node(category="desktop")
 @properties(
     POSITION_X_PROP,
     POSITION_Y_PROP,
@@ -174,6 +173,7 @@ class ResizeWindowNode(WindowNodeBase):
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
 )
+@node(category="desktop")
 class MoveWindowNode(WindowNodeBase):
     """
     Move a Windows desktop window.
@@ -244,11 +244,11 @@ class MoveWindowNode(WindowNodeBase):
         )
 
 
-@node(category="desktop")
 @properties(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class MaximizeWindowNode(WindowNodeBase):
     """
     Maximize a Windows desktop window.
@@ -303,11 +303,11 @@ class MaximizeWindowNode(WindowNodeBase):
         )
 
 
-@node(category="desktop")
 @properties(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class MinimizeWindowNode(WindowNodeBase):
     """
     Minimize a Windows desktop window.
@@ -362,11 +362,11 @@ class MinimizeWindowNode(WindowNodeBase):
         )
 
 
-@node(category="desktop")
 @properties(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class RestoreWindowNode(WindowNodeBase):
     """
     Restore a Windows desktop window.
@@ -421,6 +421,7 @@ class RestoreWindowNode(WindowNodeBase):
         )
 
 
+@properties()
 @node(category="desktop")
 class GetWindowPropertiesNode(WindowNodeBase):
     """
@@ -504,12 +505,12 @@ class GetWindowPropertiesNode(WindowNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     WINDOW_STATE_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class SetWindowStateNode(WindowNodeBase):
     """
     Set the state of a Windows desktop window.

@@ -784,7 +784,12 @@ class VisualNode(NodeGraphQtBaseNode):
         the config and UI generated automatically.
 
         Note: Widgets created in setup_widgets() take precedence over schema widgets.
+        Visual nodes can set SKIP_SCHEMA_WIDGETS = True to disable this entirely.
         """
+        # Allow visual nodes to opt-out of schema-based widget generation
+        if getattr(self, "SKIP_SCHEMA_WIDGETS", False):
+            return
+
         if not self._casare_node:
             return  # No casare node yet
 

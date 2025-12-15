@@ -45,7 +45,6 @@ from casare_rpa.utils.resilience import retry_operation
 # =============================================================================
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "selector",
@@ -85,6 +84,7 @@ from casare_rpa.utils.resilience import retry_operation
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class ExtractTextNode(BrowserBaseNode):
     """
     Extract text node - extracts text content from an element.
@@ -235,7 +235,6 @@ class ExtractTextNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "selector",
@@ -268,6 +267,7 @@ class ExtractTextNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class GetAttributeNode(BrowserBaseNode):
     """
     Get attribute node - retrieves an attribute value from an element.
@@ -430,7 +430,6 @@ class GetAttributeNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "file_path",
@@ -508,6 +507,7 @@ class GetAttributeNode(BrowserBaseNode):
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
 )
+@node(category="browser")
 class ScreenshotNode(BrowserBaseNode):
     """
     Screenshot node - captures a screenshot of the page or element.

@@ -24,7 +24,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.file.file_security import validate_path_security_readonly
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "path",
@@ -50,6 +49,7 @@ from casare_rpa.nodes.file.file_security import validate_path_security_readonly
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
+@node(category="file")
 class FileExistsNode(BaseNode):
     """
     Check if a file or directory exists.
@@ -136,7 +136,6 @@ class FileExistsNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -154,6 +153,7 @@ class FileExistsNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
+@node(category="file")
 class GetFileSizeNode(BaseNode):
     """
     Get the size of a file in bytes.
@@ -221,7 +221,6 @@ class GetFileSizeNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -239,6 +238,7 @@ class GetFileSizeNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
+@node(category="file")
 class GetFileInfoNode(BaseNode):
     """
     Get detailed information about a file.

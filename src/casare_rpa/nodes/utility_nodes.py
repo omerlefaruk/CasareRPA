@@ -1,7 +1,7 @@
 """
 Utility nodes for common operations.
 
-This module provides nodes for HTTP requests, data validation, data transformation,
+This module provides nodes for data validation, data transformation,
 and explicit logging within workflows.
 """
 
@@ -11,7 +11,6 @@ import asyncio
 from typing import Any, Dict, Optional
 from enum import Enum
 
-import aiohttp
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -23,208 +22,6 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-
-
-class HttpMethod(str, Enum):
-    """HTTP request methods."""
-
-    GET = "GET"
-    POST = "POST"
-    PUT = "PUT"
-    PATCH = "PATCH"
-    DELETE = "DELETE"
-    HEAD = "HEAD"
-    OPTIONS = "OPTIONS"
-
-
-@node(category="utility")
-class HttpRequestNode(BaseNode):
-    """
-    HTTP Request node - makes HTTP/HTTPS requests to APIs and web services.
-
-    Supports all common HTTP methods, headers, body, and authentication.
-    Uses aiohttp for async requests.
-    """
-
-    # @category: data
-    # @requires: requests
-    # @ports: url, headers, body -> response_body, status_code, headers, success, error
-
-    def __init__(
-        self,
-        node_id: str,
-        name: str = "HTTP Request",
-        url: str = "",
-        method: str = "GET",
-        headers: Optional[Dict[str, str]] = None,
-        body: str = "",
-        timeout: float = 30.0,
-        **kwargs,
-    ) -> None:
-        """
-        Initialize HTTP request node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            url: Request URL
-            method: HTTP method (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
-            headers: Request headers as dict
-            body: Request body (for POST, PUT, PATCH)
-            timeout: Request timeout in seconds
-        """
-        config = kwargs.get("config", {})
-        config.setdefault("url", url)
-        config.setdefault("method", method)
-        config.setdefault("headers", headers or {})
-        config.setdefault("body", body)
-        config.setdefault("timeout", timeout)
-        config.setdefault("verify_ssl", True)
-        config.setdefault("follow_redirects", True)
-        super().__init__(node_id, config)
-        self.name = name
-        self.node_type = "HttpRequestNode"
-
-    def _define_ports(self) -> None:
-        """Define node ports."""
-        self.add_input_port("url", DataType.STRING)
-        self.add_input_port("headers", DataType.ANY)
-        self.add_input_port("body", DataType.STRING)
-        self.add_output_port("response_body", DataType.STRING)
-        self.add_output_port("status_code", DataType.INTEGER)
-        self.add_output_port("headers", DataType.ANY)
-        self.add_output_port("success", DataType.BOOLEAN)
-        self.add_output_port("error", DataType.STRING)
-
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute HTTP request.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with response data
-        """
-        self.status = NodeStatus.RUNNING
-
-        try:
-            # Get URL from input or config
-            url = self.get_input_value("url") or self.config.get("url", "")
-            if not url:
-                raise ValueError("URL is required")
-
-            # Get method
-            method = self.config.get("method", "GET").upper()
-            if method not in [m.value for m in HttpMethod]:
-                raise ValueError(f"Invalid HTTP method: {method}")
-
-            # Get headers
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            if isinstance(headers, str):
-                try:
-                    headers = json.loads(headers)
-                except json.JSONDecodeError:
-                    headers = {}
-
-            # Get body
-            body = self.get_input_value("body") or self.config.get("body", "")
-
-            # Get timeout
-            timeout = aiohttp.ClientTimeout(total=self.config.get("timeout", 30.0))
-
-            # SSL verification
-            ssl_context = None if self.config.get("verify_ssl", True) else False
-
-            logger.info(f"Making {method} request to: {url}")
-
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                # Prepare request kwargs
-                request_kwargs = {
-                    "headers": headers,
-                    "ssl": ssl_context,
-                    "allow_redirects": self.config.get("follow_redirects", True),
-                }
-
-                # Add body for methods that support it
-                if method in ["POST", "PUT", "PATCH"] and body:
-                    # Try to parse as JSON
-                    try:
-                        json_body = json.loads(body)
-                        request_kwargs["json"] = json_body
-                    except json.JSONDecodeError:
-                        # Send as raw data
-                        request_kwargs["data"] = body
-
-                # Make request
-                async with session.request(method, url, **request_kwargs) as response:
-                    status_code = response.status
-                    response_headers = dict(response.headers)
-
-                    # Read response body
-                    try:
-                        response_body = await response.text()
-                    except Exception:
-                        response_body = ""
-
-                    # Determine success
-                    success = 200 <= status_code < 300
-
-                    logger.info(f"HTTP {method} {url} -> {status_code}")
-
-                    # Set outputs
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("headers", response_headers)
-                    self.set_output_value("success", success)
-                    self.set_output_value(
-                        "error", "" if success else f"HTTP {status_code}"
-                    )
-
-                    # Store in context variable
-                    variable_name = self.config.get("variable_name", "http_response")
-                    context.set_variable(
-                        variable_name,
-                        {
-                            "body": response_body,
-                            "status_code": status_code,
-                            "headers": response_headers,
-                            "success": success,
-                        },
-                    )
-
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "response_body": response_body,
-                        "status_code": status_code,
-                        "headers": response_headers,
-                        "next_nodes": ["exec_out"],
-                    }
-
-        except asyncio.TimeoutError:
-            error_msg = f"Request timed out after {self.config.get('timeout', 30.0)}s"
-            logger.error(error_msg)
-            self.set_output_value("success", False)
-            self.set_output_value("error", error_msg)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg}
-
-        except aiohttp.ClientError as e:
-            error_msg = f"HTTP request failed: {e}"
-            logger.error(error_msg)
-            self.set_output_value("success", False)
-            self.set_output_value("error", error_msg)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg}
-
-        except Exception as e:
-            error_msg = f"HTTP request error: {e}"
-            logger.exception(error_msg)
-            self.set_output_value("success", False)
-            self.set_output_value("error", error_msg)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg}
 
 
 class ValidationType(str, Enum):
@@ -248,7 +45,6 @@ class ValidationType(str, Enum):
     CUSTOM = "custom"
 
 
-@node(category="utility")
 @properties(
     PropertyDef(
         "validation_type",
@@ -290,6 +86,7 @@ class ValidationType(str, Enum):
         tooltip="Custom error message on validation failure",
     ),
 )
+@node(category="utility")
 class ValidateNode(BaseNode):
     """
     Validate node - validates data against rules.
@@ -508,7 +305,6 @@ class TransformType(str, Enum):
     FILTER_VALUES = "filter_values"
 
 
-@node(category="utility")
 @properties(
     PropertyDef(
         "transform_type",
@@ -552,6 +348,7 @@ class TransformType(str, Enum):
         tooltip="Name of variable to store result",
     ),
 )
+@node(category="utility")
 class TransformNode(BaseNode):
     """
     Transform node - transforms data from one format to another.
@@ -741,7 +538,6 @@ class LogLevel(str, Enum):
     CRITICAL = "critical"
 
 
-@node(category="utility")
 @properties(
     PropertyDef(
         "message",
@@ -773,6 +569,7 @@ class LogLevel(str, Enum):
         tooltip="Include node ID in log message",
     ),
 )
+@node(category="utility")
 class LogNode(BaseNode):
     """
     Log node - explicit logging within workflows.
@@ -872,6 +669,7 @@ class LogNode(BaseNode):
             return {"success": False, "error": error_msg}
 
 
+@properties()
 @node(category="utility")
 class RerouteNode(BaseNode):
     """
@@ -1003,8 +801,6 @@ class RerouteNode(BaseNode):
 
 # Export all nodes
 __all__ = [
-    "HttpMethod",
-    "HttpRequestNode",
     "ValidationType",
     "ValidateNode",
     "TransformType",

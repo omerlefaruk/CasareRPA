@@ -105,8 +105,8 @@ KEY_PROP = PropertyDef(
 )
 
 
-@node(category="desktop")
 @properties(DURATION_PROP, EASE_PROP, STEPS_PROP)
+@node(category="desktop")
 class MoveMouseNode(DesktopNodeBase):
     """
     Move the mouse cursor to a specific position.
@@ -187,7 +187,6 @@ class MoveMouseNode(DesktopNodeBase):
         return self.success_result(x=x, y=y, duration=duration, ease=ease)
 
 
-@node(category="desktop")
 @properties(
     MOUSE_BUTTON_PROP,
     CLICK_TYPE_PROP,
@@ -197,6 +196,7 @@ class MoveMouseNode(DesktopNodeBase):
     WITH_ALT_PROP,
     CLICK_DELAY_PROP,
 )
+@node(category="desktop")
 class MouseClickNode(DesktopNodeBase):
     """
     Perform mouse clicks at a position.
@@ -304,7 +304,6 @@ class MouseClickNode(DesktopNodeBase):
         )
 
 
-@node(category="desktop")
 @properties(
     KEYS_PROP,
     INTERVAL_PROP,
@@ -314,6 +313,7 @@ class MouseClickNode(DesktopNodeBase):
     PRESS_ENTER_AFTER_PROP,
     CLEAR_FIRST_PROP,
 )
+@node(category="desktop")
 class SendKeysNode(DesktopNodeBase):
     """
     Send keyboard input.
@@ -408,8 +408,8 @@ class SendKeysNode(DesktopNodeBase):
         return self.success_result(keys=keys, interval=interval, modifiers=modifiers)
 
 
-@node(category="desktop")
 @properties(HOTKEY_MODIFIER_PROP, KEY_PROP, KEYS_PROP, WAIT_TIME_PROP)
+@node(category="desktop")
 class SendHotKeyNode(DesktopNodeBase):
     """
     Send hotkey combinations (e.g., Ctrl+C, Alt+Tab, Enter).
@@ -487,6 +487,7 @@ class SendHotKeyNode(DesktopNodeBase):
         return self.success_result(keys=keys)
 
 
+@properties()
 @node(category="desktop")
 class GetMousePositionNode(DesktopNodeBase):
     """
@@ -530,8 +531,8 @@ class GetMousePositionNode(DesktopNodeBase):
         return self.success_result(x=x, y=y)
 
 
-@node(category="desktop")
 @properties(MOUSE_BUTTON_PROP, DURATION_PROP)
+@node(category="desktop")
 class DragMouseNode(DesktopNodeBase):
     """
     Drag the mouse from one position to another.

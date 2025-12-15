@@ -380,7 +380,11 @@ class SidePanelDock(QDockWidget):
 
     def set_analytics_api_url(self, url: str) -> None:
         """Set the API URL for analytics panel."""
-        if self._analytics_tab:
+        # Use the dock instance which is the actual AnalyticsPanel class
+        if hasattr(self, "_analytics_dock") and self._analytics_dock:
+            self._analytics_dock.set_api_url(url)
+        # Fallback to tab widget if dock is not available (e.g. legacy/embedded mode)
+        elif self._analytics_tab and hasattr(self._analytics_tab, "set_api_url"):
             self._analytics_tab.set_api_url(url)
 
     def get_profiling_tab(self) -> Optional["ProfilingTreeWidget"]:
@@ -476,6 +480,12 @@ class SidePanelDock(QDockWidget):
 
     def cleanup(self) -> None:
         """Clean up resources."""
-        if self._analytics_tab and hasattr(self._analytics_tab, "cleanup"):
+        if (
+            hasattr(self, "_analytics_dock")
+            and self._analytics_dock
+            and hasattr(self._analytics_dock, "cleanup")
+        ):
+            self._analytics_dock.cleanup()
+        elif self._analytics_tab and hasattr(self._analytics_tab, "cleanup"):
             self._analytics_tab.cleanup()
         logger.debug("SidePanelDock cleaned up")

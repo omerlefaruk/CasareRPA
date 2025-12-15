@@ -7,8 +7,11 @@ Nodes for file operations with Google Drive API v3:
 
 from __future__ import annotations
 
+import re
+import asyncio
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
@@ -77,6 +80,72 @@ MIME_TO_EXTENSION = {
     "application/gzip": ".gz",
     "application/x-tar": ".tar",
 }
+
+_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
+
+
+def _sanitize_fs_segment(name: str) -> str:
+    """
+    Sanitize a Drive name for safe use as a local filesystem segment.
+
+    Google Drive allows characters that are invalid on Windows filesystems.
+    """
+    if not name:
+        return "_"
+    invalid = '<>:"/\\\\|?*'
+    cleaned = "".join(
+        "_" if (ch in invalid or ord(ch) < 32) else ch for ch in str(name)
+    ).strip()
+    cleaned = cleaned.strip(". ")
+    return cleaned or "_"
+
+
+def _extract_drive_folder_id(value: str | None) -> str | None:
+    """
+    Extract a Drive folder ID from a raw ID or a share URL.
+
+    Supports:
+    - https://drive.google.com/drive/folders/<id>
+    - https://drive.google.com/drive/u/0/folders/<id>
+    - https://drive.google.com/open?id=<id>
+    - <id>
+    """
+    if not value:
+        return None
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    if re.fullmatch(r"[a-zA-Z0-9_-]{10,}", text):
+        return text
+
+    patterns = [
+        r"drive\\.google\\.com/drive/(?:u/\\d+/)?folders/([a-zA-Z0-9_-]+)",
+        r"drive\\.google\\.com/open\\?id=([a-zA-Z0-9_-]+)",
+        r"drive\\.google\\.com/folderview\\?id=([a-zA-Z0-9_-]+)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1)
+
+    try:
+        parsed = urlparse(text)
+        qs = parse_qs(parsed.query)
+        for key in ("id", "folderId", "folder_id"):
+            if key in qs and qs[key]:
+                candidate = qs[key][0].strip()
+                if re.fullmatch(r"[a-zA-Z0-9_-]{10,}", candidate):
+                    return candidate
+
+        match = re.search(r"/folders/([a-zA-Z0-9_-]+)", parsed.path)
+        if match:
+            return match.group(1)
+    except Exception:
+        return None
+
+    return None
 
 
 def _ensure_file_extension(filename: str, mime_type: str) -> str:
@@ -170,7 +239,6 @@ DRIVE_FOLDER_ID = PropertyDef(
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "file_path",
@@ -207,6 +275,7 @@ DRIVE_FOLDER_ID = PropertyDef(
         tooltip="File description in Drive",
     ),
 )
+@node(category="google")
 class DriveUploadFileNode(DriveBaseNode):
     """
     Upload a file to Google Drive.
@@ -236,7 +305,7 @@ class DriveUploadFileNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Upload File", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -316,7 +385,6 @@ class DriveUploadFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "file_id",
@@ -337,6 +405,7 @@ class DriveUploadFileNode(DriveBaseNode):
         tooltip="Local path to save the downloaded file",
     ),
 )
+@node(category="google")
 class DriveDownloadFileNode(DriveBaseNode):
     """
     Download a single file from Google Drive by file ID.
@@ -368,7 +437,7 @@ class DriveDownloadFileNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Download File", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -452,7 +521,6 @@ class DriveDownloadFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "folder_id",
@@ -473,6 +541,7 @@ class DriveDownloadFileNode(DriveBaseNode):
         tooltip="Local folder to save downloaded files",
     ),
 )
+@node(category="google")
 class DriveDownloadFolderNode(DriveBaseNode):
     """
     Download all files from a Google Drive folder.
@@ -504,7 +573,7 @@ class DriveDownloadFolderNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Download Folder", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -644,8 +713,15 @@ class DriveDownloadFolderNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
+    PropertyDef(
+        "folder_id",
+        PropertyType.STRING,
+        default="",
+        label="Folder ID / URL",
+        placeholder="https://drive.google.com/drive/folders/14gesKQIyRcs98J4v3NOOQccUgRI1kMHy",
+        tooltip="Optional: Paste a Google Drive folder URL or ID to download the entire folder",
+    ),
     PropertyDef(
         "destination_folder",
         PropertyType.STRING,
@@ -655,7 +731,16 @@ class DriveDownloadFolderNode(DriveBaseNode):
         placeholder="C:\\Downloads\\",
         tooltip="Local folder to save downloaded files",
     ),
+    PropertyDef(
+        "max_concurrent_downloads",
+        PropertyType.INTEGER,
+        default=8,
+        label="Parallel Downloads",
+        placeholder="8",
+        tooltip="How many files to download at once (higher can be faster but may hit Drive/API limits)",
+    ),
 )
+@node(category="google")
 class DriveBatchDownloadNode(DriveBaseNode):
     """
     Download a list of files from Google Drive.
@@ -668,8 +753,10 @@ class DriveBatchDownloadNode(DriveBaseNode):
     Use Drive Export File node to export them to a standard format.
 
     Inputs:
-        - files: List of file objects with 'id' and 'name' fields (required)
+        - files: List of file objects with 'id' and 'name' fields (optional)
+        - folder_id: Google Drive folder ID or share URL (optional; used if files not provided)
         - destination_folder: Local folder to save files (required)
+        - max_concurrent_downloads: Parallel download limit (default: 8)
 
     Outputs:
         - file_paths: List of downloaded file paths
@@ -681,7 +768,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
 
     # @category: google
     # @requires: none
-    # @ports: files, destination_folder -> file_paths, downloaded_count, failed_count
+    # @ports: files, folder_id, destination_folder -> file_paths, downloaded_count, failed_count
 
     NODE_TYPE = "drive_batch_download"
     NODE_CATEGORY = "google_drive"
@@ -689,7 +776,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Batch Download", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -697,7 +784,8 @@ class DriveBatchDownloadNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Batch download inputs
-        self.add_input_port("files", DataType.LIST, required=True)
+        self.add_input_port("files", DataType.LIST, required=False)
+        self.add_input_port("folder_id", DataType.STRING, required=False)
         self.add_input_port("destination_folder", DataType.STRING, required=True)
 
         # Batch download outputs
@@ -711,24 +799,18 @@ class DriveBatchDownloadNode(DriveBaseNode):
         client: GoogleDriveClient,
     ) -> ExecutionResult:
         """Download a list of files from Google Drive."""
-        # Get parameters
         files_list = self.get_input_value("files")
+        folder_id_or_url = self.get_parameter("folder_id") or self.get_input_value(
+            "folder_id"
+        )
         destination_folder = self.get_parameter(
             "destination_folder"
         ) or self.get_input_value("destination_folder")
 
-        # Resolve variable references
+        if folder_id_or_url:
+            folder_id_or_url = self._resolve_value(context, folder_id_or_url)
         if destination_folder:
             destination_folder = self._resolve_value(context, destination_folder)
-
-        # Validate inputs
-        if not files_list or not isinstance(files_list, list):
-            self._set_error_outputs("Files list is required")
-            return {
-                "success": False,
-                "error": "Files list is required",
-                "next_nodes": [],
-            }
 
         if not destination_folder:
             self._set_error_outputs("Destination folder is required")
@@ -738,27 +820,100 @@ class DriveBatchDownloadNode(DriveBaseNode):
                 "next_nodes": [],
             }
 
-        # Extract file info from list
-        # Support both camelCase (from DriveListFilesNode) and snake_case
+        dest_root = Path(destination_folder)
+        dest_root.mkdir(parents=True, exist_ok=True)
+
+        max_concurrent_downloads_raw = self.get_parameter("max_concurrent_downloads")
+        try:
+            max_concurrent_downloads = int(
+                max_concurrent_downloads_raw
+                if max_concurrent_downloads_raw is not None
+                else 8
+            )
+        except Exception:
+            max_concurrent_downloads = 8
+        max_concurrent_downloads = max(1, min(max_concurrent_downloads, 64))
+
         files_to_download: list[dict[str, str]] = []
-        for f in files_list:
-            if isinstance(f, dict) and f.get("id"):
-                # Support both mimeType (camelCase) and mime_type (snake_case)
-                mime_type = f.get("mimeType") or f.get("mime_type", "")
-                files_to_download.append(
-                    {
-                        "id": f["id"],
-                        "name": f.get("name", f["id"]),
-                        "mime_type": mime_type,
-                    }
-                )
+
+        # If we have an explicit files list, prefer it (backwards compatible).
+        if isinstance(files_list, list) and files_list:
+            for f in files_list:
+                if isinstance(f, dict) and f.get("id"):
+                    mime_type = f.get("mimeType") or f.get("mime_type", "")
+                    files_to_download.append(
+                        {
+                            "id": f["id"],
+                            "name": f.get("name", f["id"]),
+                            "mime_type": mime_type,
+                        }
+                    )
+        else:
+            folder_id = _extract_drive_folder_id(folder_id_or_url)
+            if not folder_id:
+                self._set_error_outputs("Files list or Folder ID/URL is required")
+                return {
+                    "success": False,
+                    "error": "Files list or Folder ID/URL is required",
+                    "next_nodes": [],
+                }
+
+            logger.info(f"Listing Drive folder for batch download: {folder_id}")
+
+            queue: list[tuple[str, Path]] = [(folder_id, Path())]
+            try:
+                while queue:
+                    current_folder_id, rel_path = queue.pop(0)
+                    page_token: str | None = None
+                    while True:
+                        children, page_token = await client.list_files(
+                            folder_id=current_folder_id,
+                            page_size=1000,
+                            include_trashed=False,
+                            page_token=page_token,
+                        )
+
+                        for child in children:
+                            child_id = getattr(child, "id", "") or ""
+                            if not child_id:
+                                continue
+
+                            child_name = getattr(child, "name", "") or child_id
+                            child_mime = getattr(child, "mime_type", "") or ""
+
+                            if child_mime == _DRIVE_FOLDER_MIME_TYPE:
+                                queue.append(
+                                    (
+                                        child_id,
+                                        rel_path / _sanitize_fs_segment(child_name),
+                                    )
+                                )
+                                continue
+
+                            files_to_download.append(
+                                {
+                                    "id": child_id,
+                                    "name": child_name,
+                                    "mime_type": child_mime,
+                                    "relative_dir": ""
+                                    if rel_path == Path()
+                                    else str(rel_path),
+                                }
+                            )
+
+                        if not page_token:
+                            break
+            except Exception as e:
+                error_msg = f"Failed to list files from folder: {e}"
+                self._set_error_outputs(error_msg)
+                return {"success": False, "error": error_msg, "next_nodes": []}
 
         if not files_to_download:
             self._set_success_outputs()
             self.set_output_value("file_paths", [])
             self.set_output_value("downloaded_count", 0)
             self.set_output_value("failed_count", 0)
-            logger.info("No valid file objects in input list")
+            logger.info("No downloadable files found")
             return {
                 "success": True,
                 "file_paths": [],
@@ -769,45 +924,75 @@ class DriveBatchDownloadNode(DriveBaseNode):
 
         logger.info(f"Batch downloading {len(files_to_download)} files")
 
-        # Create destination folder
-        dest_folder = Path(destination_folder)
-        dest_folder.mkdir(parents=True, exist_ok=True)
-
-        # Download files
         downloaded_paths: list[str] = []
         errors: list[str] = []
 
+        semaphore = asyncio.Semaphore(max_concurrent_downloads)
+        reserved: set[Path] = set()
+
+        def _reserve_destination(file_info: dict[str, str]) -> Path:
+            filename = _ensure_file_extension(
+                file_info["name"], file_info.get("mime_type", "")
+            )
+            filename = _sanitize_fs_segment(filename)
+
+            rel_dir = file_info.get("relative_dir", "")
+            dest_dir = dest_root / Path(rel_dir) if rel_dir else dest_root
+            dest_dir.mkdir(parents=True, exist_ok=True)
+
+            base = dest_dir / filename
+            if base not in reserved and not base.exists():
+                reserved.add(base)
+                return base
+
+            stem = base.stem or "file"
+            suffix = base.suffix
+            drive_id = file_info.get("id", "") or "id"
+
+            candidate = dest_dir / f"{stem}_{drive_id}{suffix}"
+            if candidate not in reserved and not candidate.exists():
+                reserved.add(candidate)
+                return candidate
+
+            counter = 2
+            while True:
+                candidate = dest_dir / f"{stem}_{drive_id}_{counter}{suffix}"
+                if candidate not in reserved and not candidate.exists():
+                    reserved.add(candidate)
+                    return candidate
+                counter += 1
+
+        async def _download_one(file_info: dict[str, str], dest_path: Path) -> None:
+            async with semaphore:
+                try:
+                    logger.debug(
+                        f"Downloading file from Drive: {file_info['id']} -> {dest_path}"
+                    )
+                    downloaded_path = await client.download_file(
+                        file_id=file_info["id"],
+                        destination_path=str(dest_path),
+                    )
+                    downloaded_paths.append(str(downloaded_path))
+                    logger.info(f"Downloaded: {file_info['name']}")
+                except Exception as e:
+                    error_msg = f"Failed to download {file_info['name']}: {e}"
+                    logger.error(error_msg)
+                    errors.append(error_msg)
+
+        tasks: list[asyncio.Task[None]] = []
         for file_info in files_to_download:
-            # Skip Google Workspace files
             if file_info.get("mime_type", "").startswith(
                 "application/vnd.google-apps."
             ):
                 logger.debug(f"Skipping Google Workspace file: {file_info['name']}")
                 continue
 
-            try:
-                # Ensure filename has proper extension (Google Photos often lacks them)
-                filename = _ensure_file_extension(
-                    file_info["name"], file_info.get("mime_type", "")
-                )
-                dest_path = dest_folder / filename
-                logger.debug(
-                    f"Downloading file from Drive: {file_info['id']} -> {dest_path}"
-                )
+            dest_path = _reserve_destination(file_info)
+            tasks.append(asyncio.create_task(_download_one(file_info, dest_path)))
 
-                downloaded_path = await client.download_file(
-                    file_id=file_info["id"],
-                    destination_path=str(dest_path),
-                )
-                downloaded_paths.append(str(downloaded_path))
-                logger.info(f"Downloaded: {file_info['name']}")
+        if tasks:
+            await asyncio.gather(*tasks)
 
-            except Exception as e:
-                error_msg = f"Failed to download {file_info['name']}: {e}"
-                logger.error(error_msg)
-                errors.append(error_msg)
-
-        # Set outputs
         self._set_success_outputs()
         self.set_output_value("file_paths", downloaded_paths)
         self.set_output_value("downloaded_count", len(downloaded_paths))
@@ -833,7 +1018,6 @@ class DriveBatchDownloadNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -846,6 +1030,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
     ),
     DRIVE_FOLDER_ID,
 )
+@node(category="google")
 class DriveCopyFileNode(DriveBaseNode):
     """
     Create a copy of a file in Google Drive.
@@ -931,7 +1116,6 @@ class DriveCopyFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -944,6 +1128,7 @@ class DriveCopyFileNode(DriveBaseNode):
         tooltip="ID of the destination folder",
     ),
 )
+@node(category="google")
 class DriveMoveFileNode(DriveBaseNode):
     """
     Move a file to a different folder in Google Drive.
@@ -1033,7 +1218,6 @@ class DriveMoveFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -1044,6 +1228,7 @@ class DriveMoveFileNode(DriveBaseNode):
         tooltip="If True, permanently delete. If False, move to trash.",
     ),
 )
+@node(category="google")
 class DriveDeleteFileNode(DriveBaseNode):
     """
     Delete or trash a file in Google Drive.
@@ -1125,7 +1310,6 @@ class DriveDeleteFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -1138,6 +1322,7 @@ class DriveDeleteFileNode(DriveBaseNode):
         tooltip="New name for the file",
     ),
 )
+@node(category="google")
 class DriveRenameFileNode(DriveBaseNode):
     """
     Rename a file or folder in Google Drive.
@@ -1223,10 +1408,10 @@ class DriveRenameFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
 )
+@node(category="google")
 class DriveGetFileNode(DriveBaseNode):
     """
     Get file metadata from Google Drive.
@@ -1407,7 +1592,6 @@ FORMAT_TO_MIME = {
 }
 
 
-@node(category="integration")
 @properties(
     PropertyDef(
         "file_id",
@@ -1453,6 +1637,7 @@ FORMAT_TO_MIME = {
         ],
     ),
 )
+@node(category="google")
 class DriveExportFileNode(DriveBaseNode):
     """
     Export a Google Workspace file (Doc, Sheet, Slide) to a standard format.

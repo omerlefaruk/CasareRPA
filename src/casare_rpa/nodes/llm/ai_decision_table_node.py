@@ -23,7 +23,6 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "decision_table",
@@ -51,6 +50,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Low temperature for consistent matching",
     ),
 )
+@node(category="llm")
 class AIDecisionTableNode(LLMBaseNode):
     """
     Evaluate a decision table using AI fuzzy matching.

@@ -31,7 +31,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "speech_text",
@@ -67,6 +66,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Wait for speech to complete before continuing",
     ),
 )
+@node(category="system")
 class TextToSpeechNode(BaseNode):
     """Read text aloud using text-to-speech."""
 
@@ -155,7 +155,6 @@ class TextToSpeechNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "pdf_path",
@@ -183,6 +182,7 @@ class TextToSpeechNode(BaseNode):
         tooltip="Zoom level (0.25 to 4.0)",
     ),
 )
+@node(category="system")
 class PDFPreviewDialogNode(BaseNode):
     """Preview a PDF file with page navigation."""
 
@@ -413,7 +413,6 @@ class PDFPreviewDialogNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "camera_id",
@@ -439,6 +438,7 @@ class PDFPreviewDialogNode(BaseNode):
         tooltip="Show preview window before capturing",
     ),
 )
+@node(category="system")
 class WebcamCaptureNode(BaseNode):
     """Capture an image from a webcam."""
 

@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -37,6 +36,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Display real-time coordinates while selecting",
     ),
 )
+@node(category="system")
 class ScreenRegionPickerNode(BaseNode):
     """
     Allow user to select a screen region using mouse.
@@ -240,7 +240,6 @@ class ScreenRegionPickerNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "action",
@@ -260,6 +259,7 @@ class ScreenRegionPickerNode(BaseNode):
         tooltip="Volume level (0-100) for set action",
     ),
 )
+@node(category="system")
 class VolumeControlNode(BaseNode):
     """
     Get or set system volume.
@@ -365,7 +365,6 @@ class VolumeControlNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "filter_name",
@@ -382,6 +381,7 @@ class VolumeControlNode(BaseNode):
         tooltip="Include CPU, memory, and other details",
     ),
 )
+@node(category="system")
 class ProcessListNode(BaseNode):
     """
     List running processes.
@@ -486,7 +486,6 @@ class ProcessListNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "pid_or_name",
@@ -513,6 +512,7 @@ class ProcessListNode(BaseNode):
         tooltip="Timeout in seconds for graceful termination",
     ),
 )
+@node(category="system")
 class ProcessKillNode(BaseNode):
     """
     Kill a process by PID or name.
@@ -631,7 +631,6 @@ class ProcessKillNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "action",
@@ -665,6 +664,7 @@ class ProcessKillNode(BaseNode):
         tooltip="Variable scope (process=current only, user/system=persistent)",
     ),
 )
+@node(category="system")
 class EnvironmentVariableNode(BaseNode):
     """
     Get or set environment variables.
@@ -808,7 +808,6 @@ class EnvironmentVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "info_type",
@@ -819,6 +818,7 @@ class EnvironmentVariableNode(BaseNode):
         tooltip="Type of system information to retrieve",
     ),
 )
+@node(category="system")
 class SystemInfoNode(BaseNode):
     """
     Get system information.

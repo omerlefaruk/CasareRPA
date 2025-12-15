@@ -25,12 +25,12 @@ from casare_rpa.nodes.desktop_nodes.properties import (
 )
 
 
-@node(category="desktop")
 @properties(
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
 )
+@node(category="desktop")
 class WaitForElementNode(DesktopNodeBase):
     """
     Wait for an element to reach a specific state.
@@ -106,12 +106,12 @@ class WaitForElementNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
-@node(category="desktop")
 @properties(
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
 )
+@node(category="desktop")
 class WaitForWindowNode(DesktopNodeBase):
     """
     Wait for a window to reach a specific state.
@@ -199,8 +199,8 @@ class WaitForWindowNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
-@node(category="desktop")
 @properties(TIMEOUT_PROP)
+@node(category="desktop")
 class VerifyElementExistsNode(DesktopNodeBase):
     """
     Verify if an element exists.
@@ -273,8 +273,8 @@ class VerifyElementExistsNode(DesktopNodeBase):
         return self.success_result(exists=exists, element=element)
 
 
-@node(category="desktop")
 @properties(COMPARISON_PROP)
+@node(category="desktop")
 class VerifyElementPropertyNode(DesktopNodeBase):
     """
     Verify an element property has an expected value.

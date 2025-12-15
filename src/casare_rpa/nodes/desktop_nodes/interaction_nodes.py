@@ -118,8 +118,8 @@ class InteractionNodeBase(DesktopNodeBase):
         return "Element"
 
 
-@node(category="desktop")
 @properties(BY_TEXT_PROP)
+@node(category="desktop")
 class SelectFromDropdownNode(InteractionNodeBase):
     """
     Select an item from a dropdown/combobox.
@@ -183,8 +183,8 @@ class SelectFromDropdownNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(CHECK_PROP)
+@node(category="desktop")
 class CheckCheckboxNode(InteractionNodeBase):
     """
     Check or uncheck a checkbox.
@@ -244,8 +244,8 @@ class CheckCheckboxNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties()
+@node(category="desktop")
 class SelectRadioButtonNode(InteractionNodeBase):
     """
     Select a radio button.
@@ -299,8 +299,8 @@ class SelectRadioButtonNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(TAB_NAME_PROP, TAB_INDEX_PROP)
+@node(category="desktop")
 class SelectTabNode(InteractionNodeBase):
     """
     Select a tab in a tab control.
@@ -374,8 +374,8 @@ class SelectTabNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(EXPAND_PROP)
+@node(category="desktop")
 class ExpandTreeItemNode(InteractionNodeBase):
     """
     Expand or collapse a tree item.
@@ -435,8 +435,8 @@ class ExpandTreeItemNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(SCROLL_DIRECTION_PROP, SCROLL_AMOUNT_PROP)
+@node(category="desktop")
 class ScrollElementNode(InteractionNodeBase):
     """
     Scroll an element (scrollbar, list, window, etc.).

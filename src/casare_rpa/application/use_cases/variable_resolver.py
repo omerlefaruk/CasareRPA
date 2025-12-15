@@ -98,6 +98,8 @@ class VariableResolver:
             "StartNode",
             "EndNode",
             "ParallelForEachNode",
+            "ControlFlowSuperNode",
+            "ExecuteScriptNode",
         }
     )
 
@@ -175,7 +177,12 @@ class VariableResolver:
         else:
             # WARNING: Missing data might indicate a bug in upstream node
             # Skip exec ports - they're flow control, not data
-            if "exec" not in connection.source_port.lower():
+            # Also skip 'true'/'false' ports from If/Branch nodes
+            source_port_lower = connection.source_port.lower()
+            if "exec" not in source_port_lower and source_port_lower not in (
+                "true",
+                "false",
+            ):
                 logger.warning(
                     f"Data transfer skipped: source node {source_node.node_id} "
                     f"({type(source_node).__name__}) port '{connection.source_port}' has no value"

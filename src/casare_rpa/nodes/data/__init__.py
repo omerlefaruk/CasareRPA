@@ -13,8 +13,8 @@ Note: The actual implementations are in separate files at the nodes/ level.
 This package serves as a facade for organized imports.
 
 Node Registry Entries:
-    All nodes in this package are registered in the _NODE_REGISTRY at:
-    src/casare_rpa/nodes/__init__.py
+    All nodes in this package are registered in `NODE_REGISTRY` at:
+    src/casare_rpa/nodes/registry_data.py
 
 Usage:
     from casare_rpa.nodes.data import ConcatenateNode, CreateListNode
@@ -122,44 +122,3 @@ __all__ = [
     "DictToJsonNode",
     "DictItemsNode",
 ]
-
-# Node Registry entries for lazy loading
-# These map node class names to their module paths
-_NODE_REGISTRY = {
-    # String Operations
-    "ConcatenateNode": "string_nodes",
-    "FormatStringNode": "string_nodes",
-    "RegexMatchNode": "string_nodes",
-    "RegexReplaceNode": "string_nodes",
-    # Math Operations
-    "MathOperationNode": "math_nodes",
-    "ComparisonNode": "math_nodes",
-    # List Operations
-    "CreateListNode": "list_nodes",
-    "ListGetItemNode": "list_nodes",
-    "ListLengthNode": "list_nodes",
-    "ListAppendNode": "list_nodes",
-    "ListContainsNode": "list_nodes",
-    "ListSliceNode": "list_nodes",
-    "ListJoinNode": "list_nodes",
-    "ListSortNode": "list_nodes",
-    "ListReverseNode": "list_nodes",
-    "ListUniqueNode": "list_nodes",
-    "ListFilterNode": "list_nodes",
-    "ListMapNode": "list_nodes",
-    "ListReduceNode": "list_nodes",
-    "ListFlattenNode": "list_nodes",
-    # Dictionary Operations
-    "JsonParseNode": "dict_nodes",
-    "GetPropertyNode": "dict_nodes",
-    "DictGetNode": "dict_nodes",
-    "DictSetNode": "dict_nodes",
-    "DictRemoveNode": "dict_nodes",
-    "DictMergeNode": "dict_nodes",
-    "DictKeysNode": "dict_nodes",
-    "DictValuesNode": "dict_nodes",
-    "DictHasKeyNode": "dict_nodes",
-    "CreateDictNode": "dict_nodes",
-    "DictToJsonNode": "dict_nodes",
-    "DictItemsNode": "dict_nodes",
-}

@@ -231,7 +231,6 @@ class DatabaseConnection:
             self.connection = None
 
 
-@node(category="database")
 @properties(
     CREDENTIAL_NAME_PROP,  # For vault credential lookup
     PropertyDef(
@@ -357,6 +356,7 @@ class DatabaseConnection:
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
     """
     Establish a database connection.
@@ -629,7 +629,6 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         )
 
 
-@node(category="database")
 @properties(
     PropertyDef(
         "query",
@@ -663,6 +662,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class ExecuteQueryNode(BaseNode):
     """
     Execute a SELECT query and return results.
@@ -871,7 +871,6 @@ class ExecuteQueryNode(BaseNode):
             await connection.release()
 
 
-@node(category="database")
 @properties(
     PropertyDef(
         "query",
@@ -905,6 +904,7 @@ class ExecuteQueryNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class ExecuteNonQueryNode(BaseNode):
     """
     Execute INSERT, UPDATE, DELETE, or DDL statements.
@@ -1105,8 +1105,8 @@ class ExecuteNonQueryNode(BaseNode):
                 await connection.release()
 
 
-@node(category="database")
 @properties()  # Input port driven
+@node(category="database")
 class BeginTransactionNode(BaseNode):
     """
     Begin a database transaction.
@@ -1190,8 +1190,8 @@ class BeginTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="database")
 @properties()  # Input port driven
+@node(category="database")
 class CommitTransactionNode(BaseNode):
     """
     Commit the current database transaction.
@@ -1276,8 +1276,8 @@ class CommitTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="database")
 @properties()  # Input port driven
+@node(category="database")
 class RollbackTransactionNode(BaseNode):
     """
     Rollback the current database transaction.
@@ -1362,8 +1362,8 @@ class RollbackTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="database")
 @properties()  # Input port driven
+@node(category="database")
 class CloseDatabaseNode(BaseNode):
     """
     Close a database connection.
@@ -1428,7 +1428,6 @@ class CloseDatabaseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="database")
 @properties(
     PropertyDef(
         "statements",
@@ -1461,6 +1460,7 @@ class CloseDatabaseNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class ExecuteBatchNode(BaseNode):
     """
     Execute multiple SQL statements as a batch.

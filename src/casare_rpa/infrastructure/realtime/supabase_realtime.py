@@ -33,10 +33,10 @@ Architecture:
 
 Database Schema (expected):
     -- Realtime requires replication enabled on tables
-    ALTER TABLE pgqueuer_jobs REPLICA IDENTITY FULL;
+    ALTER TABLE job_queue REPLICA IDENTITY FULL;
 
     -- Enable Realtime for the table
-    ALTER PUBLICATION supabase_realtime ADD TABLE pgqueuer_jobs;
+    ALTER PUBLICATION supabase_realtime ADD TABLE job_queue;
 """
 
 from __future__ import annotations

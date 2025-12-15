@@ -21,7 +21,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -52,6 +51,7 @@ from .widgets import _create_styled_line_edit
         tooltip="Initial directory",
     ),
 )
+@node(category="system")
 class FilePickerDialogNode(BaseNode):
     """
     Display a file picker dialog.
@@ -157,7 +157,6 @@ class FilePickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -174,6 +173,7 @@ class FilePickerDialogNode(BaseNode):
         tooltip="Initial directory",
     ),
 )
+@node(category="system")
 class FolderPickerDialogNode(BaseNode):
     """
     Display a folder picker dialog.
@@ -268,7 +268,6 @@ class FolderPickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -292,6 +291,7 @@ class FolderPickerDialogNode(BaseNode):
         tooltip="Show alpha channel slider",
     ),
 )
+@node(category="system")
 class ColorPickerDialogNode(BaseNode):
     """
     Display a color picker dialog.
@@ -402,7 +402,6 @@ class ColorPickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -441,6 +440,7 @@ class ColorPickerDialogNode(BaseNode):
         tooltip="Maximum date (YYYY-MM-DD)",
     ),
 )
+@node(category="system")
 class DateTimePickerDialogNode(BaseNode):
     """
     Display a date/time picker dialog.
@@ -589,7 +589,6 @@ class DateTimePickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -628,6 +627,7 @@ class DateTimePickerDialogNode(BaseNode):
         tooltip="Default selected item(s)",
     ),
 )
+@node(category="system")
 class ListPickerDialogNode(BaseNode):
     """
     Display a list picker dialog for single/multi-select.

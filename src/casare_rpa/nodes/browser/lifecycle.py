@@ -82,7 +82,6 @@ def _get_browser_profile_path(
     return profile_config.get(profile_mode, ("", ""))
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "url",
@@ -255,6 +254,7 @@ def _get_browser_profile_path(
         tab="advanced",
     ),
 )
+@node(category="browser")
 class LaunchBrowserNode(BaseNode):
     """
     Launch browser node - creates a new browser instance.
@@ -728,7 +728,6 @@ class LaunchBrowserNode(BaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -762,6 +761,7 @@ class LaunchBrowserNode(BaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class CloseBrowserNode(BaseNode):
     """
     Close browser node - closes the browser instance.

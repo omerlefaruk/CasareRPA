@@ -19,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -89,6 +88,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Auto-dismiss after X seconds, 0 to disable",
     ),
 )
+@node(category="system")
 class MessageBoxNode(BaseNode):
     """
     Display a message box dialog.
@@ -420,7 +420,6 @@ class MessageBoxNode(BaseNode):
             return result, result in ("ok", "yes")
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -467,6 +466,7 @@ class MessageBoxNode(BaseNode):
         tooltip="Text for No button",
     ),
 )
+@node(category="system")
 class ConfirmDialogNode(BaseNode):
     """
     Display a Yes/No confirmation dialog.

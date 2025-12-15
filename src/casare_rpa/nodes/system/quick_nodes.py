@@ -19,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "hotkey",
@@ -46,6 +45,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Prevent the key from reaching other applications",
     ),
 )
+@node(category="system")
 class HotkeyWaitNode(BaseNode):
     """
     Wait for a specific hotkey combination.
@@ -158,7 +158,6 @@ class HotkeyWaitNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "frequency",
@@ -179,6 +178,7 @@ class HotkeyWaitNode(BaseNode):
         tooltip="Beep duration in milliseconds",
     ),
 )
+@node(category="system")
 class BeepNode(BaseNode):
     """
     Play a simple system beep.
@@ -268,7 +268,6 @@ class BeepNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "timeout",
@@ -295,6 +294,7 @@ class BeepNode(BaseNode):
         tooltip="Type of clipboard content to monitor",
     ),
 )
+@node(category="system")
 class ClipboardMonitorNode(BaseNode):
     """
     Monitor clipboard for changes.

@@ -30,7 +30,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .email_base import decode_header_value
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -75,6 +74,7 @@ from .email_base import decode_header_value
         tooltip="Directory path to save attachments",
     ),
 )
+@node(category="email")
 class SaveAttachmentNode(BaseNode):
     """
     Save email attachments to disk.
@@ -212,7 +212,6 @@ class SaveAttachmentNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -258,6 +257,7 @@ class SaveAttachmentNode(BaseNode):
         tooltip="Flag to set on the email",
     ),
 )
+@node(category="email")
 class MarkEmailNode(BaseNode):
     """
     Mark an email as read, unread, or flagged.
@@ -357,7 +357,6 @@ class MarkEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -402,6 +401,7 @@ class MarkEmailNode(BaseNode):
         tooltip="Permanently delete (expunge) instead of just marking deleted",
     ),
 )
+@node(category="email")
 class DeleteEmailNode(BaseNode):
     """
     Delete an email from the mailbox.
@@ -491,7 +491,6 @@ class DeleteEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -536,6 +535,7 @@ class DeleteEmailNode(BaseNode):
         tooltip="Target mailbox folder",
     ),
 )
+@node(category="email")
 class MoveEmailNode(BaseNode):
     """
     Move an email to a different folder.

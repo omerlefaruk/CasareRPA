@@ -10,6 +10,8 @@ This module provides security validation for file paths to prevent:
 SECURITY: All file operations should validate paths before access.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from pathlib import Path
 
 from loguru import logger

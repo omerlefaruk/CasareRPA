@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "min_width",
@@ -54,6 +53,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         placeholder="jpg,png,webp",
     ),
 )
+@node(category="browser")
 class GetAllImagesNode(BaseNode):
     """
     Get all images from the current page.
@@ -214,7 +214,6 @@ class GetAllImagesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "save_path",
@@ -255,6 +254,7 @@ class GetAllImagesNode(BaseNode):
         tooltip="Verify SSL certificate when downloading. Disable only for trusted internal sites with self-signed certificates.",
     ),
 )
+@node(category="browser")
 class DownloadFileNode(BaseNode):
     """
     Download a file from URL to local path.

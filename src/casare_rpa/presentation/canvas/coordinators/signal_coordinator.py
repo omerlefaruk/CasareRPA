@@ -736,7 +736,7 @@ class SignalCoordinator:
         if not graph:
             return
 
-        NODE_TYPE_MAP = {
+        VISUAL_NODE_TYPE_MAP = {
             "ClickElementNode": "casare_rpa.interaction.VisualClickElementNode",
             "TypeTextNode": "casare_rpa.interaction.VisualTypeTextNode",
             "PressEnterNode": "casare_rpa.interaction.VisualTypeTextNode",
@@ -769,7 +769,7 @@ class SignalCoordinator:
 
         for node_data in nodes_data:
             node_type = node_data.get("type")
-            visual_type = NODE_TYPE_MAP.get(node_type)
+            visual_type = VISUAL_NODE_TYPE_MAP.get(node_type)
             if not visual_type:
                 continue
 

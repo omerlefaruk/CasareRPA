@@ -31,8 +31,8 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="document")
 class ParseXMLNode(BaseNode):
     """
     Parse XML from a string.
@@ -110,7 +110,6 @@ class ParseXMLNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "encoding",
@@ -120,6 +119,7 @@ class ParseXMLNode(BaseNode):
         tooltip="File encoding (e.g., utf-8, latin-1)",
     ),
 )
+@node(category="document")
 class ReadXMLFileNode(BaseNode):
     """
     Read and parse an XML file.
@@ -195,7 +195,6 @@ class ReadXMLFileNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "encoding",
@@ -219,6 +218,7 @@ class ReadXMLFileNode(BaseNode):
         tooltip="Include <?xml version...?> declaration",
     ),
 )
+@node(category="document")
 class WriteXMLFileNode(BaseNode):
     """
     Write XML to a file.
@@ -310,8 +310,8 @@ class WriteXMLFileNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="document")
 class XPathQueryNode(BaseNode):
     """
     Query XML using XPath.
@@ -406,8 +406,8 @@ class XPathQueryNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="document")
 class GetXMLElementNode(BaseNode):
     """
     Get XML element by tag name.
@@ -497,8 +497,8 @@ class GetXMLElementNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="document")
 class GetXMLAttributeNode(BaseNode):
     """
     Get an attribute value from an XML element.
@@ -574,7 +574,6 @@ class GetXMLAttributeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "include_attributes",
@@ -591,6 +590,7 @@ class GetXMLAttributeNode(BaseNode):
         tooltip="Key name for element text content in JSON",
     ),
 )
+@node(category="document")
 class XMLToJsonNode(BaseNode):
     """
     Convert XML to JSON.
@@ -683,7 +683,6 @@ class XMLToJsonNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "root_tag",
@@ -700,6 +699,7 @@ class XMLToJsonNode(BaseNode):
         tooltip="Format XML output with indentation",
     ),
 )
+@node(category="document")
 class JsonToXMLNode(BaseNode):
     """
     Convert JSON to XML.

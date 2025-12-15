@@ -19,7 +19,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -57,6 +56,7 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Clear existing value before filling (text inputs only)",
     ),
 )
+@node(category="browser")
 class FormFieldNode(BrowserBaseNode):
     """
     Define a form field for batch filling.

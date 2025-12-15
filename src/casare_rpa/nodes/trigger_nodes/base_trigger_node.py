@@ -6,7 +6,7 @@ that have NO exec_in port (they START workflows) and output trigger payload data
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
@@ -22,6 +22,8 @@ from casare_rpa.triggers.base import (
 )
 
 
+@properties()
+@node(category="triggers", exec_inputs=[])
 class BaseTriggerNode(BaseNode):
     """
     Abstract base class for all trigger nodes.
@@ -216,25 +218,3 @@ class BaseTriggerNode(BaseNode):
     def get_trigger_instance(self) -> Optional[BaseTrigger]:
         """Get the trigger instance if created."""
         return self._trigger_instance
-
-
-def trigger_node(cls: Type) -> Type:
-    """
-    Decorator to mark a class as a trigger node.
-
-    Unlike @node, this only adds exec_out (no exec_in).
-    Trigger nodes start workflows, they don't receive execution flow.
-
-    Usage:
-        @trigger_node
-        class WebhookTriggerNode(BaseTriggerNode):
-            def _define_payload_ports(self) -> None:
-                self.add_output_port("payload", DataType.DICT)
-    """
-    # Mark class as trigger node
-    cls.is_trigger_node = True
-
-    # Ensure _define_ports adds exec_out (already handled in BaseTriggerNode)
-    # This decorator mainly serves as documentation/validation
-
-    return cls

@@ -17,7 +17,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "container",
@@ -43,6 +42,7 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Variable name to store the detected forms (optional)",
     ),
 )
+@node(category="browser")
 class DetectFormsNode(BrowserBaseNode):
     """
     Detect all forms and form fields on a page.

@@ -58,7 +58,6 @@ def _resolve_string_param(
     return str(param) if param is not None else default
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "max_split",
@@ -68,6 +67,7 @@ def _resolve_string_param(
         tooltip="Maximum number of splits (-1 for unlimited)",
     ),
 )
+@node(category="text")
 class TextSplitNode(BaseNode):
     """
     Split a string into a list.
@@ -143,7 +143,6 @@ class TextSplitNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "count",
@@ -181,6 +180,7 @@ class TextSplitNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
+@node(category="text")
 class TextReplaceNode(BaseNode):
     """
     Replace occurrences in a string.
@@ -279,7 +279,6 @@ class TextReplaceNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -297,6 +296,7 @@ class TextReplaceNode(BaseNode):
         tooltip="Characters to trim (default: whitespace)",
     ),
 )
+@node(category="text")
 class TextTrimNode(BaseNode):
     """
     Trim whitespace from a string.
@@ -366,7 +366,6 @@ class TextTrimNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case",
@@ -377,6 +376,7 @@ class TextTrimNode(BaseNode):
         tooltip="Case transformation to apply",
     ),
 )
+@node(category="text")
 class TextCaseNode(BaseNode):
     """
     Change the case of a string.
@@ -442,7 +442,6 @@ class TextCaseNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -460,6 +459,7 @@ class TextCaseNode(BaseNode):
         tooltip="Character to use for padding",
     ),
 )
+@node(category="text")
 class TextPadNode(BaseNode):
     """
     Pad a string to a certain length.
@@ -531,6 +531,7 @@ class TextPadNode(BaseNode):
         return True, ""
 
 
+@properties()
 @node(category="text")
 class TextReverseNode(BaseNode):
     """
@@ -582,7 +583,6 @@ class TextReverseNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -608,6 +608,7 @@ class TextReverseNode(BaseNode):
         tooltip="Remove empty lines when splitting",
     ),
 )
+@node(category="text")
 class TextLinesNode(BaseNode):
     """
     Split text into lines or join lines into text.

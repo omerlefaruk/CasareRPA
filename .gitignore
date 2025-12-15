@@ -102,4 +102,4 @@ gha-creds-*.json
 site/
 .qdrant/
 .casare/
-.agent/
+# Note: .agent/ is tracked for Gemini/Antigravity AI rules

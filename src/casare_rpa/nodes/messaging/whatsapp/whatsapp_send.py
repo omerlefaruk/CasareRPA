@@ -68,7 +68,6 @@ WHATSAPP_TO = PropertyDef(
 )
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -91,6 +90,7 @@ WHATSAPP_TO = PropertyDef(
         tooltip="Enable URL preview in message",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendMessageNode(WhatsAppBaseNode):
     """
     Send a text message via WhatsApp.
@@ -179,7 +179,6 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -211,6 +210,7 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         tooltip="JSON array of template component parameters",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendTemplateNode(WhatsAppBaseNode):
     """
     Send a template message via WhatsApp.
@@ -321,7 +321,6 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -345,6 +344,7 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         tooltip="Optional caption for the image",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendImageNode(WhatsAppBaseNode):
     """
     Send an image via WhatsApp.
@@ -430,7 +430,6 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -462,6 +461,7 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         tooltip="Optional caption for the document",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendDocumentNode(WhatsAppBaseNode):
     """
     Send a document via WhatsApp.
@@ -554,7 +554,6 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -578,6 +577,7 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         tooltip="Optional caption for the video",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendVideoNode(WhatsAppBaseNode):
     """
     Send a video via WhatsApp.
@@ -663,7 +663,6 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -708,6 +707,7 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         tooltip="Address text for the location",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendLocationNode(WhatsAppBaseNode):
     """
     Send a location via WhatsApp.
@@ -832,7 +832,6 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID,
@@ -882,6 +881,7 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         tooltip="Optional footer text",
     ),
 )
+@node(category="messaging")
 class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
     """
     Send an interactive message (buttons, lists) via WhatsApp.

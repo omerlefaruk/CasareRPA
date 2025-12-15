@@ -2,12 +2,11 @@
 Browser automation nodes package.
 
 This package provides browser automation nodes built on Playwright:
-- Browser lifecycle (launch, close) - imported from browser_nodes
+- Browser lifecycle (launch, close)
 - Tab management (new tab, switch tab)
 - Navigation (goto, back, forward, refresh)
 - Interaction (click, type, select)
 - Data extraction (text, attributes, screenshots)
-- Wait operations (element, navigation)
 
 All nodes extend BrowserBaseNode for consistent:
 - Page access from context

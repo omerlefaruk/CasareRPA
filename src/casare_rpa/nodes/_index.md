@@ -40,12 +40,9 @@ See [Super Node Pattern Documentation](../../../../.brain/docs/super-node-patter
 | File | Contains | Lines |
 |------|----------|-------|
 | `__init__.py` | Lazy-load registry | ~1400 |
-| `browser_nodes.py` | Browser lifecycle | ~1540 |
-| `interaction_nodes.py` | Click, type, scroll | ~1200 |
-| `navigation_nodes.py` | Goto, back, forward | ~700 |
-| `text_nodes.py` | Text extraction | ~1200 |
-| `data_nodes.py` | Data transforms | ~700 |
-| `wait_nodes.py` | Wait operations | ~400 |
+| `registry_data.py` | `NODE_REGISTRY` (single source of truth) | ~25000 |
+| `data_nodes.py` | Browser extraction nodes (legacy file placement) | ~700 |
+| `wait_nodes.py` | Wait operations (legacy file placement) | ~400 |
 | `variable_nodes.py` | Variables | ~400 |
 
 ## Entry Points
@@ -63,21 +60,21 @@ from casare_rpa.nodes.control_flow import IfNode, ForLoopStartNode, BreakNode
 
 ## Node Registry
 
-Nodes are registered in `_NODE_REGISTRY` dict in `__init__.py`:
+Nodes are registered in `NODE_REGISTRY` in `registry_data.py` (single source of truth):
 ```python
-_NODE_REGISTRY = {
-    "LaunchBrowserNode": "browser_nodes",
-    "ClickElementNode": "interaction_nodes",
+NODE_REGISTRY = {
+    "LaunchBrowserNode": "browser.lifecycle",
+    "ClickElementNode": "browser.interaction",
     # ...
 }
 ```
 
 ## Creating New Nodes
 
-See `agent-rules/rules/10-node-workflow.md` for full protocol:
+See `.brain/docs/node-checklist.md` for the canonical checklist:
 1. Check existing nodes first
-2. Create node file with `@node` decorator
-3. Add to `_NODE_REGISTRY`
+2. Implement with `@properties(...)` + `@node(...)`
+3. Add to `src/casare_rpa/nodes/registry_data.py`
 4. Create tests in `tests/nodes/`
 
 ## Related Indexes

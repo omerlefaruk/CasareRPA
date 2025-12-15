@@ -62,8 +62,8 @@ def _resolve_list_param(
     return param
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
 
@@ -112,8 +112,8 @@ class CreateListNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
 
@@ -166,8 +166,8 @@ class ListGetItemNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
 
@@ -201,8 +201,8 @@ class ListLengthNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListAppendNode(BaseNode):
     """Node that appends an item to a list."""
 
@@ -249,8 +249,8 @@ class ListAppendNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListContainsNode(BaseNode):
     """Node that checks if a list contains an item."""
 
@@ -303,8 +303,8 @@ class ListContainsNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListSliceNode(BaseNode):
     """Node that gets a slice of a list."""
 
@@ -365,7 +365,6 @@ class ListSliceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "separator",
@@ -375,6 +374,7 @@ class ListSliceNode(BaseNode):
         tooltip="Separator to use when joining items",
     ),
 )
+@node(category="data")
 class ListJoinNode(BaseNode):
     """Node that joins a list into a string."""
 
@@ -422,7 +422,6 @@ class ListJoinNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "reverse",
@@ -439,6 +438,7 @@ class ListJoinNode(BaseNode):
         tooltip="Dot-separated path to sort by (for dict items)",
     ),
 )
+@node(category="data")
 class ListSortNode(BaseNode):
     """Node that sorts a list."""
 
@@ -511,8 +511,8 @@ class ListSortNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListReverseNode(BaseNode):
     """Node that reverses a list."""
 
@@ -547,8 +547,8 @@ class ListReverseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class ListUniqueNode(BaseNode):
     """Node that removes duplicates from a list."""
 
@@ -596,7 +596,6 @@ class ListUniqueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "condition",
@@ -626,6 +625,7 @@ class ListUniqueNode(BaseNode):
         tooltip="Dot-separated path to compare (for dict items)",
     ),
 )
+@node(category="data")
 class ListFilterNode(BaseNode):
     """Node that filters a list based on a condition."""
 
@@ -739,7 +739,6 @@ class ListFilterNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "transform",
@@ -766,6 +765,7 @@ class ListFilterNode(BaseNode):
         tooltip="Dot-separated path to extract (for dict items)",
     ),
 )
+@node(category="data")
 class ListMapNode(BaseNode):
     """Node that transforms each item in a list."""
 
@@ -852,7 +852,6 @@ class ListMapNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "operation",
@@ -880,6 +879,7 @@ class ListMapNode(BaseNode):
         tooltip="Dot-separated path to values (for dict items)",
     ),
 )
+@node(category="data")
 class ListReduceNode(BaseNode):
     """Node that reduces a list to a single value."""
 
@@ -994,7 +994,6 @@ class ListReduceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "depth",
@@ -1005,6 +1004,7 @@ class ListReduceNode(BaseNode):
         tooltip="How many levels to flatten",
     ),
 )
+@node(category="data")
 class ListFlattenNode(BaseNode):
     """Node that flattens a nested list."""
 

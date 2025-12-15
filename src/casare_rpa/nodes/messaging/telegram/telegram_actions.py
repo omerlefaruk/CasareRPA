@@ -31,7 +31,6 @@ from casare_rpa.nodes.messaging.telegram.telegram_send import (
 )
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -56,6 +55,7 @@ from casare_rpa.nodes.messaging.telegram.telegram_send import (
     ),
     TELEGRAM_PARSE_MODE,
 )
+@node(category="messaging")
 class TelegramEditMessageNode(TelegramBaseNode):
     """
     Edit a sent text message via Telegram.
@@ -150,7 +150,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -165,6 +164,7 @@ class TelegramEditMessageNode(TelegramBaseNode):
         tooltip="ID of the message to delete",
     ),
 )
+@node(category="messaging")
 class TelegramDeleteMessageNode(TelegramBaseNode):
     """
     Delete a message via Telegram.
@@ -238,7 +238,6 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -254,6 +253,7 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
     ),
     TELEGRAM_DISABLE_NOTIFICATION,
 )
+@node(category="messaging")
 class TelegramSendMediaGroupNode(TelegramBaseNode):
     """
     Send a media group (album) via Telegram.
@@ -365,7 +365,6 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -403,6 +402,7 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         tab="advanced",
     ),
 )
+@node(category="messaging")
 class TelegramAnswerCallbackNode(TelegramBaseNode):
     """
     Answer a callback query from an inline keyboard.
@@ -497,7 +497,6 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -528,6 +527,7 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         max_value=120,
     ),
 )
+@node(category="messaging")
 class TelegramGetUpdatesNode(TelegramBaseNode):
     """
     Get updates via Telegram's getUpdates API.

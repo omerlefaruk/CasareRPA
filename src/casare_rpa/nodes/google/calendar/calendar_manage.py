@@ -63,7 +63,6 @@ CALENDAR_ID = PropertyDef(
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
@@ -90,6 +89,7 @@ CALENDAR_ID = PropertyDef(
         tooltip="Filter calendars by minimum access level",
     ),
 )
+@node(category="google")
 class CalendarListCalendarsNode(CalendarBaseNode):
     """
     List all calendars accessible to the user.
@@ -117,7 +117,7 @@ class CalendarListCalendarsNode(CalendarBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Calendar List Calendars", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -184,12 +184,12 @@ class CalendarListCalendarsNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
     CALENDAR_ID,
 )
+@node(category="google")
 class CalendarGetCalendarNode(CalendarBaseNode):
     """
     Get calendar information by ID.
@@ -216,7 +216,7 @@ class CalendarGetCalendarNode(CalendarBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Calendar Get Calendar", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -276,7 +276,6 @@ class CalendarGetCalendarNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
@@ -314,6 +313,7 @@ class CalendarGetCalendarNode(CalendarBaseNode):
         tooltip="Timezone for the calendar (e.g., America/New_York)",
     ),
 )
+@node(category="google")
 class CalendarCreateCalendarNode(CalendarBaseNode):
     """
     Create a new Google Calendar.
@@ -341,7 +341,7 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Calendar Create Calendar", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -409,7 +409,6 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     CALENDAR_ACCESS_TOKEN,
     CALENDAR_CREDENTIAL_NAME,
@@ -423,6 +422,7 @@ class CalendarCreateCalendarNode(CalendarBaseNode):
         tooltip="Must be true to confirm calendar deletion (prevents accidental deletion)",
     ),
 )
+@node(category="google")
 class CalendarDeleteCalendarNode(CalendarBaseNode):
     """
     Delete a Google Calendar.
@@ -449,7 +449,7 @@ class CalendarDeleteCalendarNode(CalendarBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Calendar Delete Calendar", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

@@ -41,7 +41,6 @@ from casare_rpa.nodes.llm.property_constants import (
 )
 
 
-@node(category="llm")
 @properties(
     LLM_PROMPT,
     LLM_MODEL,
@@ -49,6 +48,7 @@ from casare_rpa.nodes.llm.property_constants import (
     LLM_TEMPERATURE,
     LLM_MAX_TOKENS,
 )
+@node(category="llm")
 class LLMCompletionNode(LLMBaseNode):
     """
     Generate text completion from a prompt.
@@ -136,7 +136,6 @@ class LLMCompletionNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "message",
@@ -186,6 +185,7 @@ class LLMCompletionNode(LLMBaseNode):
         tooltip="Maximum response length",
     ),
 )
+@node(category="llm")
 class LLMChatNode(LLMBaseNode):
     """
     Multi-turn chat conversation with an LLM.
@@ -277,7 +277,6 @@ class LLMChatNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "text",
@@ -314,6 +313,7 @@ class LLMChatNode(LLMBaseNode):
         tooltip="Low temperature recommended for extraction",
     ),
 )
+@node(category="llm")
 class LLMExtractDataNode(LLMBaseNode):
     """
     Extract structured data from text using JSON schema.
@@ -423,7 +423,6 @@ class LLMExtractDataNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "text",
@@ -467,6 +466,7 @@ class LLMExtractDataNode(LLMBaseNode):
         tooltip="Creativity/randomness (0-2)",
     ),
 )
+@node(category="llm")
 class LLMSummarizeNode(LLMBaseNode):
     """
     Summarize text using an LLM.
@@ -578,7 +578,6 @@ Text to summarize:
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "text",
@@ -622,6 +621,7 @@ Text to summarize:
         tooltip="Low temperature recommended for classification",
     ),
 )
+@node(category="llm")
 class LLMClassifyNode(LLMBaseNode):
     """
     Classify text into categories using an LLM.
@@ -774,7 +774,6 @@ Return ONLY the JSON, no other text."""
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "text",
@@ -819,6 +818,7 @@ Return ONLY the JSON, no other text."""
         tooltip="Low temperature for accurate translation",
     ),
 )
+@node(category="llm")
 class LLMTranslateNode(LLMBaseNode):
     """
     Translate text to another language using an LLM.

@@ -21,7 +21,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "template_id",
@@ -64,6 +63,7 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         tooltip="Maximum response length",
     ),
 )
+@node(category="llm")
 class PromptTemplateNode(LLMBaseNode):
     """
     Execute a prompt template with LLM.
@@ -245,7 +245,6 @@ class PromptTemplateNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "category",
@@ -271,6 +270,7 @@ class PromptTemplateNode(LLMBaseNode):
         tooltip="Include built-in templates in results",
     ),
 )
+@node(category="llm")
 class ListTemplatesNode(LLMBaseNode):
     """
     List available prompt templates.
@@ -364,7 +364,6 @@ class ListTemplatesNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="llm")
 @properties(
     PropertyDef(
         "template_id",
@@ -376,6 +375,7 @@ class ListTemplatesNode(LLMBaseNode):
         essential=True,
     ),
 )
+@node(category="llm")
 class GetTemplateInfoNode(LLMBaseNode):
     """
     Get detailed information about a prompt template.

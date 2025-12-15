@@ -59,7 +59,6 @@ GOOGLE_DOCUMENT_ID = PropertyDef(
 )
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -81,6 +80,7 @@ GOOGLE_DOCUMENT_ID = PropertyDef(
         tooltip="Optional initial text content for the document",
     ),
 )
+@node(category="google")
 class DocsCreateDocumentNode(DocsBaseNode):
     """
     Create a new Google Docs document.
@@ -109,7 +109,7 @@ class DocsCreateDocumentNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Create Document", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -170,7 +170,6 @@ class DocsCreateDocumentNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -193,6 +192,7 @@ class DocsCreateDocumentNode(DocsBaseNode):
         tooltip="Character index position (1-based) where text will be inserted",
     ),
 )
+@node(category="google")
 class DocsInsertTextNode(DocsBaseNode):
     """
     Insert text at a specific position in a Google Doc.
@@ -221,7 +221,7 @@ class DocsInsertTextNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Insert Text", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -293,7 +293,6 @@ class DocsInsertTextNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -308,6 +307,7 @@ class DocsInsertTextNode(DocsBaseNode):
         tooltip="Text content to append to the end of the document",
     ),
 )
+@node(category="google")
 class DocsAppendTextNode(DocsBaseNode):
     """
     Append text to the end of a Google Doc.
@@ -335,7 +335,7 @@ class DocsAppendTextNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Append Text", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -392,7 +392,6 @@ class DocsAppendTextNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -423,6 +422,7 @@ class DocsAppendTextNode(DocsBaseNode):
         tooltip="Whether to match case when searching",
     ),
 )
+@node(category="google")
 class DocsReplaceTextNode(DocsBaseNode):
     """
     Find and replace text in a Google Doc.
@@ -453,7 +453,7 @@ class DocsReplaceTextNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Replace Text", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -540,7 +540,6 @@ class DocsReplaceTextNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -570,6 +569,7 @@ class DocsReplaceTextNode(DocsBaseNode):
         tooltip="Character index position (1-based) where table will be inserted",
     ),
 )
+@node(category="google")
 class DocsInsertTableNode(DocsBaseNode):
     """
     Insert a table into a Google Doc.
@@ -599,7 +599,7 @@ class DocsInsertTableNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Insert Table", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -685,7 +685,6 @@ class DocsInsertTableNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -722,6 +721,7 @@ class DocsInsertTableNode(DocsBaseNode):
         tooltip="Optional height in points (0 for auto)",
     ),
 )
+@node(category="google")
 class DocsInsertImageNode(DocsBaseNode):
     """
     Insert an image into a Google Doc.
@@ -752,7 +752,7 @@ class DocsInsertImageNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Insert Image", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -853,7 +853,6 @@ class DocsInsertImageNode(DocsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     GOOGLE_ACCESS_TOKEN,
     GOOGLE_CREDENTIAL_NAME,
@@ -918,6 +917,7 @@ class DocsInsertImageNode(DocsBaseNode):
         tooltip="Font family name (empty to keep current)",
     ),
 )
+@node(category="google")
 class DocsApplyStyleNode(DocsBaseNode):
     """
     Apply text formatting/styling to a range in a Google Doc.
@@ -953,7 +953,7 @@ class DocsApplyStyleNode(DocsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Google Docs Apply Style", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

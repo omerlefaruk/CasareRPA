@@ -9,14 +9,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "watch_path",
@@ -72,6 +68,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Include hidden files and directories",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class FileWatchTriggerNode(BaseTriggerNode):
     """
     File watch trigger node that fires when files change.

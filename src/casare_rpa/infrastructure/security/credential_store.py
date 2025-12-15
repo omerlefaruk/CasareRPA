@@ -462,9 +462,12 @@ class CredentialStore:
         try:
             data = self._decrypt_data(credential.encrypted_data)
 
-            # Update last used
+            # Update last used timestamp in memory only (don't block with file I/O)
+            # The timestamp will be persisted on next explicit save operation
             credential.last_used = datetime.now(timezone.utc).isoformat()
-            self._save_store()
+            # NOTE: Removed _save_store() call here to prevent blocking the event loop
+            # during async workflow execution (e.g., Gmail sends). The last_used
+            # timestamp is informational and not critical for functionality.
 
             # Cache
             self._cache[credential_id] = data

@@ -1,10 +1,9 @@
 """Visual nodes for file_operations category.
 
-NOTE: Basic file operations, CSV, JSON, ZIP, and Image nodes have been
-consolidated into Super Nodes (FileSystemSuperNode, StructuredDataSuperNode).
-Old workflows will be automatically migrated via NODE_TYPE_ALIASES in workflow_loader.
-
-This file now contains only XML, PDF, and FTP visual nodes which are not yet consolidated.
+This file contains standalone (non-super) visual nodes:
+- Structured data (CSV, JSON, ZIP) atomic nodes (preferred for clarity)
+- XML/PDF/FTP operations (not consolidated)
+- Image Convert node for quick access from the Tab menu
 """
 
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
@@ -36,6 +35,262 @@ def _replace_widget(node: VisualNode, widget) -> None:
     # Now safely add our custom widget
     node.add_custom_widget(widget)
     widget.setParentItem(node.view)
+
+
+# =============================================================================
+# Structured Data Operations (CSV / JSON / ZIP)
+# =============================================================================
+
+
+class VisualReadCSVNode(VisualNode):
+    """Visual representation of ReadCSVNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Read CSV"
+    NODE_CATEGORY = "file_operations/csv"
+    CASARE_NODE_CLASS = "ReadCSVNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="file_path",
+                label="CSV File",
+                file_filter="CSV Files (*.csv);;All Files (*.*)",
+                placeholder="Select CSV file...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("data", DataType.LIST)
+        self.add_typed_output("headers", DataType.LIST)
+        self.add_typed_output("row_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualWriteCSVNode(VisualNode):
+    """Visual representation of WriteCSVNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Write CSV"
+    NODE_CATEGORY = "file_operations/csv"
+    CASARE_NODE_CLASS = "WriteCSVNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="file_path",
+                label="CSV File",
+                file_filter="CSV Files (*.csv);;All Files (*.*)",
+                placeholder="Select output CSV file...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_typed_input("data", DataType.LIST)
+        self.add_typed_input("headers", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("file_path", DataType.STRING)
+        self.add_typed_output("attachment_file", DataType.LIST)
+        self.add_typed_output("row_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualReadJSONFileNode(VisualNode):
+    """Visual representation of ReadJSONFileNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Read JSON File"
+    NODE_CATEGORY = "file_operations/json"
+    CASARE_NODE_CLASS = "ReadJSONFileNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="file_path",
+                label="JSON File",
+                file_filter="JSON Files (*.json);;All Files (*.*)",
+                placeholder="Select JSON file...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("data", DataType.ANY)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualWriteJSONFileNode(VisualNode):
+    """Visual representation of WriteJSONFileNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Write JSON File"
+    NODE_CATEGORY = "file_operations/json"
+    CASARE_NODE_CLASS = "WriteJSONFileNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="file_path",
+                label="JSON File",
+                file_filter="JSON Files (*.json);;All Files (*.*)",
+                placeholder="Select output JSON file...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_typed_input("data", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("file_path", DataType.STRING)
+        self.add_typed_output("attachment_file", DataType.LIST)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualZipFilesNode(VisualNode):
+    """Visual representation of ZipFilesNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Zip Files"
+    NODE_CATEGORY = "file_operations/zip"
+    CASARE_NODE_CLASS = "ZipFilesNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="zip_path",
+                label="ZIP File",
+                file_filter="Zip Archives (*.zip);;All Files (*.*)",
+                placeholder="Select output ZIP file...",
+            ),
+        )
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="source_path",
+                label="Source (Folder / Glob)",
+                placeholder="Select folder... or type glob pattern...",
+            ),
+        )
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="base_dir",
+                label="Base Directory",
+                placeholder="Optional: base directory for relative paths...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("zip_path", DataType.STRING)
+        self.add_typed_input("source_path", DataType.STRING)
+        self.add_typed_input("files", DataType.LIST)
+        self.add_typed_input("base_dir", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("zip_path", DataType.STRING)
+        self.add_typed_output("attachment_file", DataType.LIST)
+        self.add_typed_output("file_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualUnzipFilesNode(VisualNode):
+    """Visual representation of UnzipFilesNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Unzip Files"
+    NODE_CATEGORY = "file_operations/zip"
+    CASARE_NODE_CLASS = "UnzipFilesNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="zip_path",
+                label="ZIP File",
+                file_filter="Zip Archives (*.zip);;All Files (*.*)",
+                placeholder="Select ZIP file...",
+            ),
+        )
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="extract_to",
+                label="Extract To",
+                placeholder="Select output folder...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("zip_path", DataType.STRING)
+        self.add_typed_input("extract_to", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("extract_to", DataType.STRING)
+        self.add_typed_output("files", DataType.LIST)
+        self.add_typed_output("file_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+# =============================================================================
+# Image Operations
+# =============================================================================
+
+
+class VisualImageConvertNode(VisualNode):
+    """Visual representation of ImageConvertNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Image Convert"
+    NODE_CATEGORY = "file_operations/image"
+    CASARE_NODE_CLASS = "ImageConvertNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="source_path",
+                label="Source (File or Folder)",
+                placeholder="Select folder... or paste a file path...",
+            ),
+        )
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="output_path",
+                label="Output Folder / File",
+                placeholder="Optional: select folder or type full file path...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("source_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("output_path", DataType.STRING)
+        self.add_typed_output("files", DataType.LIST)
+        self.add_typed_output("file_count", DataType.INTEGER)
+        self.add_typed_output("format", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 # =============================================================================

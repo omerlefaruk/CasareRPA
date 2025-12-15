@@ -5,6 +5,8 @@ Re-exports list operation nodes from casare_rpa.nodes.list_nodes
 for consistent package organization.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from casare_rpa.nodes.list_nodes import (
     CreateListNode,
     ListGetItemNode,

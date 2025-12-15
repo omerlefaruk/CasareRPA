@@ -63,7 +63,6 @@ def _rows_equal(
     return len(different_columns) == 0, different_columns
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "key_columns",
@@ -87,6 +86,7 @@ def _rows_equal(
         tooltip="Case sensitivity for string comparison",
     ),
 )
+@node(category="data_operation")
 class DataCompareNode(BaseNode):
     """
     Compare two datasets and report differences.

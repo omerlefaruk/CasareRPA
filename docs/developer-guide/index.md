@@ -206,8 +206,8 @@ class HelloWorldNode(BaseNode):
 ```
 
 ```python
-# 5. Register in nodes/__init__.py
-_NODE_REGISTRY = {
+# 5. Register in src/casare_rpa/nodes/registry_data.py
+NODE_REGISTRY = {
     # ... existing nodes ...
     "HelloWorldNode": "custom_nodes",
 }

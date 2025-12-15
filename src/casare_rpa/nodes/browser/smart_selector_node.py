@@ -21,7 +21,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "description",
@@ -68,6 +67,7 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Fail if selector matches multiple elements",
     ),
 )
+@node(category="browser")
 class SmartSelectorNode(BrowserBaseNode):
     """
     AI-powered selector generation from natural language.
@@ -287,7 +287,6 @@ class SmartSelectorNode(BrowserBaseNode):
             )
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "description",
@@ -314,6 +313,7 @@ class SmartSelectorNode(BrowserBaseNode):
         tooltip="LLM model for selector generation",
     ),
 )
+@node(category="browser")
 class SmartSelectorOptionsNode(BrowserBaseNode):
     """
     Generate multiple selector options for user selection.
@@ -416,7 +416,6 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
             return self.error_result(str(e))
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "original_selector",
@@ -448,6 +447,7 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
         tooltip="LLM model for selector refinement",
     ),
 )
+@node(category="browser")
 class RefineSelectorNode(BrowserBaseNode):
     """
     Refine a problematic selector using AI.

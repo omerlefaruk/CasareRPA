@@ -383,6 +383,17 @@ class WorkflowDeserializer:
             except Exception as e:
                 logger.debug(f"Could not set property {key}={value}: {e}")
 
+        # CRITICAL: Refresh ports for SuperNodes after config is applied
+        # The 'action' property determines which ports should exist,
+        # but ports were created with the default action in __init__.
+        # Now we have the correct action, so refresh ports.
+        if hasattr(visual_node, "_apply_ports_for_action"):
+            try:
+                visual_node._apply_ports_for_action()
+                logger.debug("Refreshed ports for SuperNode after config applied")
+            except Exception as e:
+                logger.debug(f"Could not refresh ports: {e}")
+
     def _has_property(self, visual_node, prop_name: str) -> bool:
         """Check if visual node has a property."""
         try:

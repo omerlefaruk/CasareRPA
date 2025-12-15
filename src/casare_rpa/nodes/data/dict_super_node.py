@@ -264,7 +264,6 @@ JSON_ACTIONS = [
 ]
 
 
-@node(category="data")
 @properties(
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
@@ -366,6 +365,7 @@ JSON_ACTIONS = [
         display_when={"action": [DictAction.TO_JSON.value]},
     ),
 )
+@node(category="data")
 class DictSuperNode(BaseNode):
     """
     Unified dictionary operations node.

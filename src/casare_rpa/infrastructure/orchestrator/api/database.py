@@ -40,8 +40,8 @@ class MonitoringDatabase:
             active_jobs = await conn.fetchval(
                 """
                 SELECT COUNT(*)
-                FROM pgqueuer_jobs
-                WHERE status IN ('claimed', 'running')
+                FROM job_queue
+                WHERE status = 'running'
                 """
             )
 
@@ -49,7 +49,7 @@ class MonitoringDatabase:
             queue_depth = await conn.fetchval(
                 """
                 SELECT COUNT(*)
-                FROM pgqueuer_jobs
+                FROM job_queue
                 WHERE status = 'pending'
                 """
             )
@@ -144,8 +144,10 @@ class MonitoringDatabase:
                 SELECT
                     COUNT(*) FILTER (WHERE status = 'completed') as completed_today,
                     COUNT(*) FILTER (WHERE status = 'failed') as failed_today,
-                    AVG(duration_ms / 1000.0) FILTER (WHERE status IN ('completed', 'failed')) as avg_duration_seconds
-                FROM pgqueuer_jobs
+                    AVG(
+                        EXTRACT(EPOCH FROM (completed_at - started_at))
+                    ) FILTER (WHERE status IN ('completed', 'failed')) as avg_duration_seconds
+                FROM job_queue
                 WHERE robot_id = $1 AND created_at >= $2
                 """,
                 robot_id,
@@ -182,15 +184,19 @@ class MonitoringDatabase:
         """
         query = """
             SELECT
-                job_id,
+                id::text AS job_id,
                 workflow_id,
                 workflow_name,
                 robot_id,
                 status,
                 created_at,
                 completed_at,
-                duration_ms
-            FROM pgqueuer_jobs
+                CASE
+                    WHEN completed_at IS NOT NULL AND started_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - started_at))::integer * 1000
+                    ELSE NULL
+                END AS duration_ms
+            FROM job_queue
             WHERE 1=1
         """
 
@@ -234,20 +240,44 @@ class MonitoringDatabase:
             job = await conn.fetchrow(
                 """
                 SELECT
-                    job_id,
+                    id::text AS job_id,
                     workflow_id,
                     workflow_name,
                     robot_id,
                     status,
                     created_at,
-                    claimed_at,
+                    started_at AS claimed_at,
                     completed_at,
-                    duration_ms,
+                    CASE
+                        WHEN completed_at IS NOT NULL AND started_at IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (completed_at - started_at))::integer * 1000
+                        ELSE NULL
+                    END AS duration_ms,
                     error_message,
-                    error_type,
+                    COALESCE(
+                        SUBSTRING(
+                            error_message
+                            FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
+                        ),
+                        CASE
+                            WHEN error_message ILIKE '%%timeout%%'
+                                THEN 'TimeoutError'
+                            WHEN error_message ILIKE '%%connection%%'
+                                THEN 'ConnectionError'
+                            WHEN error_message ILIKE '%%not found%%'
+                                THEN 'NotFoundError'
+                            WHEN error_message ILIKE '%%permission%%'
+                                THEN 'PermissionError'
+                            WHEN error_message ILIKE '%%validation%%'
+                                THEN 'ValidationError'
+                            WHEN error_message IS NOT NULL
+                                THEN 'UnknownError'
+                            ELSE NULL
+                        END
+                    ) AS error_type,
                     retry_count
-                FROM pgqueuer_jobs
-                WHERE job_id = $1
+                FROM job_queue
+                WHERE id = $1
                 """,
                 job_id,
             )
@@ -295,11 +325,19 @@ class MonitoringDatabase:
                     COUNT(*) as total_jobs,
                     COUNT(*) FILTER (WHERE status = 'completed') as completed,
                     COUNT(*) FILTER (WHERE status = 'failed') as failed,
-                    AVG(duration_ms) FILTER (WHERE duration_ms IS NOT NULL) as avg_duration,
-                    PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY duration_ms) as p50,
-                    PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY duration_ms) as p90,
-                    PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration_ms) as p99
-                FROM pgqueuer_jobs
+                    AVG(
+                        EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+                    ) FILTER (WHERE completed_at IS NOT NULL AND started_at IS NOT NULL) as avg_duration,
+                    PERCENTILE_CONT(0.50) WITHIN GROUP (
+                        ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+                    ) as p50,
+                    PERCENTILE_CONT(0.90) WITHIN GROUP (
+                        ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+                    ) as p90,
+                    PERCENTILE_CONT(0.99) WITHIN GROUP (
+                        ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+                    ) as p99
+                FROM job_queue
                 WHERE created_at >= NOW() - INTERVAL '7 days'
                 """
             )
@@ -317,10 +355,12 @@ class MonitoringDatabase:
                 SELECT
                     workflow_id,
                     workflow_name,
-                    AVG(duration_ms) as average_duration_ms
-                FROM pgqueuer_jobs
+                    AVG(
+                        EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
+                    ) as average_duration_ms
+                FROM job_queue
                 WHERE status IN ('completed', 'failed')
-                  AND duration_ms IS NOT NULL
+                  AND completed_at IS NOT NULL AND started_at IS NOT NULL
                   AND created_at >= NOW() - INTERVAL '7 days'
                 GROUP BY workflow_id, workflow_name
                 ORDER BY average_duration_ms DESC
@@ -332,9 +372,27 @@ class MonitoringDatabase:
             error_distribution = await conn.fetch(
                 """
                 SELECT
-                    COALESCE(error_type, 'UnknownError') as error_type,
+                    COALESCE(
+                        SUBSTRING(
+                            error_message
+                            FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
+                        ),
+                        CASE
+                            WHEN error_message ILIKE '%%timeout%%'
+                                THEN 'TimeoutError'
+                            WHEN error_message ILIKE '%%connection%%'
+                                THEN 'ConnectionError'
+                            WHEN error_message ILIKE '%%not found%%'
+                                THEN 'NotFoundError'
+                            WHEN error_message ILIKE '%%permission%%'
+                                THEN 'PermissionError'
+                            WHEN error_message ILIKE '%%validation%%'
+                                THEN 'ValidationError'
+                            ELSE 'UnknownError'
+                        END
+                    ) as error_type,
                     COUNT(*) as count
-                FROM pgqueuer_jobs
+                FROM job_queue
                 WHERE status = 'failed'
                   AND created_at >= NOW() - INTERVAL '7 days'
                 GROUP BY error_type

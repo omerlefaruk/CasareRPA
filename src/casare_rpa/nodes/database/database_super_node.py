@@ -50,7 +50,6 @@ class DatabaseAction(str, Enum):
     BATCH = "Execute Batch"
 
 
-@node(category="database")
 @properties(
     PropertyDef(
         "action",
@@ -212,6 +211,7 @@ class DatabaseAction(str, Enum):
         tab="advanced",
     ),
 )
+@node(category="database")
 class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
     """
     Unified database operations node.

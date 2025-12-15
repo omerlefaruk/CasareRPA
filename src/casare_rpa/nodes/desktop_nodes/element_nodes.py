@@ -42,12 +42,12 @@ PROPERTY_NAME_PROP = PropertyDef(
 )
 
 
-@node(category="desktop")
 @properties(
     SELECTOR_PROP,
     TIMEOUT_PROP,
     THROW_ON_NOT_FOUND_PROP,
 )
+@node(category="desktop")
 class FindElementNode(DesktopNodeBase):
     """
     Find a desktop UI element within a window.
@@ -135,7 +135,6 @@ class FindElementNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     SELECTOR_PROP,
     SIMULATE_PROP,
@@ -143,6 +142,7 @@ class FindElementNode(DesktopNodeBase):
     Y_OFFSET_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Click a desktop UI element.
@@ -222,7 +222,6 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     TEXT_PROP,
     SELECTOR_PROP,
@@ -230,6 +229,7 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     INTERVAL_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Type text into a desktop UI element.
@@ -314,12 +314,12 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     SELECTOR_PROP,
     VARIABLE_NAME_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get text content from a desktop UI element.
@@ -401,12 +401,12 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     PROPERTY_NAME_PROP,
     SELECTOR_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get a property value from a desktop UI element.

@@ -19,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -58,6 +57,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Show indeterminate progress bar",
     ),
 )
+@node(category="system")
 class ProgressDialogNode(BaseNode):
     """
     Display a progress dialog.
@@ -173,7 +173,6 @@ class ProgressDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -207,6 +206,7 @@ class ProgressDialogNode(BaseNode):
         tooltip="Show progress bar",
     ),
 )
+@node(category="system")
 class SplashScreenNode(BaseNode):
     """
     Display a splash screen with optional progress.

@@ -24,7 +24,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "integer_only",
@@ -34,6 +33,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Generate integers only (default: False)",
     )
 )
+@node(category="utility")
 class RandomNumberNode(BaseNode):
     """
     Generate a random number within a specified range.
@@ -101,7 +101,6 @@ class RandomNumberNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "count",
@@ -119,6 +118,7 @@ class RandomNumberNode(BaseNode):
         tooltip="Allow same item multiple times (default: False)",
     ),
 )
+@node(category="utility")
 class RandomChoiceNode(BaseNode):
     """
     Select a random item from a list.
@@ -196,7 +196,6 @@ class RandomChoiceNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "include_uppercase",
@@ -234,6 +233,7 @@ class RandomChoiceNode(BaseNode):
         tooltip="Custom character set to use (overrides above)",
     ),
 )
+@node(category="utility")
 class RandomStringNode(BaseNode):
     """
     Generate a random string.
@@ -309,7 +309,6 @@ class RandomStringNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "version",
@@ -328,6 +327,7 @@ class RandomStringNode(BaseNode):
         tooltip="Output format - 'standard', 'hex', 'urn' (default: standard)",
     ),
 )
+@node(category="utility")
 class RandomUUIDNode(BaseNode):
     """
     Generate a random UUID.
@@ -389,7 +389,8 @@ class RandomUUIDNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties()
+@node(category="utility")
 class ShuffleListNode(BaseNode):
     """
     Shuffle a list randomly.

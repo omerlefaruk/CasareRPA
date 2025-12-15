@@ -207,7 +207,6 @@ BODY_ACTIONS = [
 ]
 
 
-@node(category="http")
 @properties(
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
@@ -417,6 +416,7 @@ BODY_ACTIONS = [
         display_when={"action": [HttpAction.AUTH.value]},
     ),
 )
+@node(category="http")
 class HttpSuperNode(BaseNode):
     """
     Unified HTTP operations node.

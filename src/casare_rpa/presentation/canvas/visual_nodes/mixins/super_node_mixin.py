@@ -65,24 +65,63 @@ class SuperNodeMixin:
         # Call parent implementation (creates widgets from schema)
         super().set_casare_node(node)
 
-        # Now filter widgets based on current action
-        # Use QTimer to defer until after widget creation is complete
+        # NOTE: Do NOT call _apply_ports_for_action() here!
+        # This method is called during __init__ BEFORE setup_ports() runs,
+        # so ports would be created too early and then setup_ports() would fail.
+        #
+        # Port refresh is handled by:
+        # 1. workflow_deserializer._apply_config() after action config is applied
+        # 2. _on_action_changed() when user changes the action dropdown
+
+        # Defer widget filtering only (can happen after connections)
         QTimer.singleShot(0, self._apply_initial_widget_filter)
 
+    def _apply_ports_for_action(self) -> None:
+        """Create ports for the current action SYNCHRONOUSLY."""
+        if not self.DYNAMIC_PORT_SCHEMA:
+            return
+
+        action = self.get_current_action()
+        if not action:
+            return
+
+        config = self.DYNAMIC_PORT_SCHEMA.get_config(action)
+        if not config:
+            return
+
+        # Clear existing data ports and create new ones
+        self._clear_dynamic_ports()
+        self._create_ports_from_config(config)
+
+        # Apply port colors
+        if hasattr(self, "_configure_port_colors"):
+            self._configure_port_colors()
+
+        logger.debug(
+            f"SuperNodeMixin: Created ports synchronously for action '{action}'"
+        )
+
     def _apply_initial_widget_filter(self) -> None:
-        """Apply widget filter after casare node is set and widgets exist."""
+        """Apply widget filter after casare node is set.
+
+        Note: Ports are created synchronously in _apply_ports_for_action(),
+        so this method only handles widget filtering.
+        """
         if getattr(self, "_super_node_widgets_filtered", False):
             return  # Already filtered
 
         action = self.get_current_action()
         if action:
-            logger.info(
-                f"SuperNodeMixin: Applying initial widget filter for action '{action}'"
+            logger.debug(
+                f"SuperNodeMixin: Applying widget filter for action '{action}'"
             )
 
             # Sync the combo widget to match the config action value
             # This is needed because the combo may still have the default value
             self._sync_action_combo_to_config(action)
+
+            # NOTE: Port creation is now done synchronously in _apply_ports_for_action()
+            # called from set_casare_node(). We only filter widgets here.
 
             self._filter_widgets_for_action(action)
             self._super_node_widgets_filtered = True
@@ -257,7 +296,7 @@ class SuperNodeMixin:
             logger.warning("SuperNodeMixin: No schema found for filtering widgets")
             return
 
-        logger.info(f"SuperNodeMixin: Filtering widgets for action '{action}'")
+        logger.debug(f"SuperNodeMixin: Filtering widgets for action '{action}'")
 
         # Ensure storage dicts exist
         if not hasattr(self, "_hidden_widgets"):
@@ -281,25 +320,11 @@ class SuperNodeMixin:
             logger.warning("SuperNodeMixin: view._widgets is None")
             return
 
-        logger.info(
-            f"  View widgets ({len(view_widgets)}): {list(view_widgets.keys())}"
-        )
-        logger.info(
-            f"  Hidden widgets ({len(self._hidden_widgets)}): {list(self._hidden_widgets.keys())}"
-        )
-        logger.info(
-            f"  Schema properties ({len(schema.properties)}): {[p.name for p in schema.properties]}"
-        )
-        logger.info(
-            f"  Collapse state: _collapsed={getattr(self, '_collapsed', 'NOT SET')}"
-        )
-
         # Pre-compute which properties should be visible for this action
         visible_props = ["action"]  # action is always visible
         for p in schema.properties:
             if p.name != "action" and schema.should_display(p.name, current_config):
                 visible_props.append(p.name)
-        logger.info(f"  Should be visible for '{action}': {visible_props}")
 
         for prop_def in schema.properties:
             prop_name = prop_def.name
@@ -312,41 +337,19 @@ class SuperNodeMixin:
             should_show_base = schema.should_display(prop_name, current_config)
             should_show = should_show_base
 
-            # Also check collapse state for non-essential properties
-            if should_show and hasattr(self, "_collapsed") and self._collapsed:
-                if not prop_def.essential:
-                    should_show = False
-                    logger.debug(
-                        f"  {prop_name}: hidden due to collapse (essential={prop_def.essential})"
-                    )
+            # NOTE: For SuperNodes, we do NOT hide action-visible widgets due to collapse state.
+            # If a widget is supposed to be visible for this action, it stays visible.
+            # The collapse logic was causing issues where essential action widgets were hidden.
 
             widget_in_view = prop_name in view_widgets
             widget_in_hidden = prop_name in self._hidden_widgets
-            widget_exists = widget_in_view or widget_in_hidden
-
-            # Log visibility decision for debugging
-            if not widget_exists:
-                logger.info(
-                    f"  {prop_name}: NOT IN VIEW OR HIDDEN (should_show_base={should_show_base}, should_show={should_show})"
-                )
-            elif should_show != widget_in_view:
-                # Log when visibility state needs to change
-                logger.info(
-                    f"  {prop_name}: in_view={widget_in_view}, in_hidden={widget_in_hidden}, should_show_base={should_show_base}, should_show={should_show} -> CHANGE NEEDED"
-                )
 
             if should_show and widget_in_hidden:
                 # Restore widget from hidden storage
-                logger.info(f"  -> Restoring widget '{prop_name}'")
                 self._restore_widget(prop_name)
             elif not should_show and widget_in_view:
                 # Hide widget by removing from view
-                logger.info(f"  -> Hiding widget '{prop_name}'")
                 self._hide_widget(prop_name)
-            elif should_show and widget_in_view:
-                logger.debug(f"  Widget '{prop_name}' already visible")
-            elif not should_show and widget_in_hidden:
-                logger.debug(f"  Widget '{prop_name}' already hidden")
 
         # Trigger layout recalculation
         if hasattr(self.view, "post_init"):
@@ -373,6 +376,15 @@ class SuperNodeMixin:
             try:
                 value = self.get_property(prop_name)
                 self._widget_values[prop_name] = value
+
+                # CRITICAL: Also sync to casare_node.config for execution!
+                # Hidden widgets still need their values available during execution.
+                if hasattr(self, "_casare_node") and self._casare_node is not None:
+                    if hasattr(self._casare_node, "config"):
+                        self._casare_node.config[prop_name] = value
+                        logger.debug(
+                            f"  Synced hidden widget value to config: {prop_name}={value}"
+                        )
             except Exception:
                 pass
 
@@ -432,6 +444,23 @@ class SuperNodeMixin:
         except Exception as e:
             logger.debug(f"SuperNodeMixin: Error restoring widget '{prop_name}': {e}")
 
+    def sync_hidden_widget_values(self) -> None:
+        """
+        Sync all hidden widget values to casare_node.config.
+
+        This is a safety net to ensure hidden widget values are available
+        during execution. Called before workflow execution starts.
+        """
+        if not hasattr(self, "_casare_node") or self._casare_node is None:
+            return
+        if not hasattr(self._casare_node, "config"):
+            return
+
+        for prop_name, value in self._widget_values.items():
+            if value is not None:
+                self._casare_node.config[prop_name] = value
+                logger.debug(f"SuperNodeMixin: Synced hidden value {prop_name}={value}")
+
     def _clear_dynamic_ports(self) -> None:
         """
         Remove all non-exec ports.
@@ -474,20 +503,29 @@ class SuperNodeMixin:
 
         Args:
             config: ActionPortConfig containing input and output port definitions
+
+        Note: Exec ports (exec_in, exec_out) are created by setup_ports() and
+        should NOT be touched here. We only create data ports.
         """
-        # Create input ports
+        # Create input data ports (exec_in already exists from setup_ports)
         for port_def in config.inputs:
+            # Skip if port already exists
+            if self.get_input(port_def.name):
+                continue
             try:
                 self.add_typed_input(port_def.name, port_def.data_type)
             except Exception as e:
-                logger.warning(f"Could not create input port {port_def.name}: {e}")
+                logger.debug(f"Could not create input port {port_def.name}: {e}")
 
-        # Create output ports
+        # Create output data ports (exec_out already exists from setup_ports)
         for port_def in config.outputs:
+            # Skip if port already exists
+            if self.get_output(port_def.name):
+                continue
             try:
                 self.add_typed_output(port_def.name, port_def.data_type)
             except Exception as e:
-                logger.warning(f"Could not create output port {port_def.name}: {e}")
+                logger.debug(f"Could not create output port {port_def.name}: {e}")
 
     def get_current_action(self) -> Optional[str]:
         """

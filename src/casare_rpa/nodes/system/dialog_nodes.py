@@ -4,6 +4,8 @@ Dialog nodes.
 This module re-exports dialog nodes from the `dialogs` subpackage for backward compatibility.
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from .dialogs.message import MessageBoxNode, ConfirmDialogNode
 from .dialogs.input import (
     InputDialogNode,

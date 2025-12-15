@@ -35,7 +35,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "watch_path",
@@ -70,6 +69,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Monitor subdirectories as well",
     ),
 )
+@node(category="system")
 class FileWatcherNode(BaseNode):
     """
     Monitor a file or folder for changes.
@@ -234,7 +234,6 @@ class FileWatcherNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "action",
@@ -276,6 +275,7 @@ class FileWatcherNode(BaseNode):
         tooltip="Size of the generated QR code in pixels",
     ),
 )
+@node(category="system")
 class QRCodeNode(BaseNode):
     """Generate or read QR codes."""
 
@@ -408,7 +408,6 @@ class QRCodeNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "action",
@@ -428,6 +427,7 @@ class QRCodeNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="system")
 class Base64Node(BaseNode):
     """Encode or decode base64 strings."""
 
@@ -501,7 +501,6 @@ class Base64Node(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "uuid_version",
@@ -521,6 +520,7 @@ class Base64Node(BaseNode):
         tooltip="Number of UUIDs to generate",
     ),
 )
+@node(category="system")
 class UUIDGeneratorNode(BaseNode):
     """Generate UUIDs."""
 
@@ -580,7 +580,6 @@ class UUIDGeneratorNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "condition",
@@ -605,6 +604,7 @@ class UUIDGeneratorNode(BaseNode):
         tooltip="If true, node fails when condition is false; if false, just outputs result",
     ),
 )
+@node(category="system")
 class AssertSystemNode(BaseNode):
     """Validate conditions and optionally fail the workflow."""
 
@@ -735,7 +735,6 @@ class AssertSystemNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "log_file_path",
@@ -776,6 +775,7 @@ class AssertSystemNode(BaseNode):
         tooltip="Add timestamp to log entries",
     ),
 )
+@node(category="system")
 class LogToFileNode(BaseNode):
     """Write messages to a custom log file."""
 

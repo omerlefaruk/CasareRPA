@@ -13,6 +13,8 @@ PERFORMANCE: Uses UnifiedHttpClient for:
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 import asyncio
 import json
@@ -133,6 +135,8 @@ async def close_shared_http_session() -> None:
     await close_unified_http_client()
 
 
+@properties()
+@node(category="http")
 class HttpBaseNode(BaseNode):
     """
     Abstract base class for HTTP request nodes.

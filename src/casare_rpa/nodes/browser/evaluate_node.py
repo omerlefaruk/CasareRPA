@@ -65,7 +65,6 @@ from casare_rpa.utils import safe_int
 from casare_rpa.utils.resilience import retry_operation
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "script",
@@ -106,6 +105,7 @@ from casare_rpa.utils.resilience import retry_operation
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class BrowserEvaluateNode(BrowserBaseNode):
     """
     Browser Evaluate Node - execute JavaScript code in browser page context.

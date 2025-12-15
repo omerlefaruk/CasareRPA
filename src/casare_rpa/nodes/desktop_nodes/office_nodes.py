@@ -31,7 +31,6 @@ except ImportError:
 # ============================================================================
 
 
-@node(category="desktop")
 @properties(
     PropertyDef(
         "file_path",
@@ -65,6 +64,7 @@ except ImportError:
         tooltip="Create new file if not found",
     ),
 )
+@node(category="desktop")
 class ExcelOpenNode(BaseNode):
     """
     Node to open an Excel workbook.
@@ -172,7 +172,6 @@ class ExcelOpenNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
     PropertyDef(
         "sheet",
@@ -194,6 +193,7 @@ class ExcelOpenNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="desktop")
 class ExcelReadCellNode(BaseNode):
     """
     Node to read a cell value from Excel.
@@ -273,7 +273,6 @@ class ExcelReadCellNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
     PropertyDef(
         "sheet",
@@ -303,6 +302,7 @@ class ExcelReadCellNode(BaseNode):
         tooltip="Value to write to the cell",
     ),
 )
+@node(category="desktop")
 class ExcelWriteCellNode(BaseNode):
     """
     Node to write a value to an Excel cell.
@@ -382,7 +382,6 @@ class ExcelWriteCellNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
     PropertyDef(
         "sheet",
@@ -404,6 +403,7 @@ class ExcelWriteCellNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="desktop")
 class ExcelGetRangeNode(BaseNode):
     """
     Node to read a range of cells from Excel.
@@ -501,7 +501,6 @@ class ExcelGetRangeNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
     PropertyDef(
         "save",
@@ -519,6 +518,7 @@ class ExcelGetRangeNode(BaseNode):
         tooltip="Quit the Excel application after closing workbook",
     ),
 )
+@node(category="desktop")
 class ExcelCloseNode(BaseNode):
     """
     Node to close an Excel workbook.
@@ -592,6 +592,7 @@ class ExcelCloseNode(BaseNode):
 # ============================================================================
 
 
+@properties()
 @node(category="desktop")
 class WordOpenNode(BaseNode):
     """
@@ -680,6 +681,7 @@ class WordOpenNode(BaseNode):
             raise
 
 
+@properties()
 @node(category="desktop")
 class WordGetTextNode(BaseNode):
     """
@@ -741,6 +743,7 @@ class WordGetTextNode(BaseNode):
             raise
 
 
+@properties()
 @node(category="desktop")
 class WordReplaceTextNode(BaseNode):
     """
@@ -837,6 +840,7 @@ class WordReplaceTextNode(BaseNode):
             raise
 
 
+@properties()
 @node(category="desktop")
 class WordCloseNode(BaseNode):
     """
@@ -911,6 +915,7 @@ class WordCloseNode(BaseNode):
 # ============================================================================
 
 
+@properties()
 @node(category="desktop")
 class OutlookSendEmailNode(BaseNode):
     """
@@ -1027,6 +1032,7 @@ class OutlookSendEmailNode(BaseNode):
             raise
 
 
+@properties()
 @node(category="desktop")
 class OutlookReadEmailsNode(BaseNode):
     """
@@ -1129,6 +1135,7 @@ class OutlookReadEmailsNode(BaseNode):
             raise
 
 
+@properties()
 @node(category="desktop")
 class OutlookGetInboxCountNode(BaseNode):
     """

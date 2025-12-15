@@ -8,6 +8,8 @@ Usage:
     from casare_rpa.nodes.file.filesystem import FileSystemSuperNode, FileSystemAction
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from casare_rpa.nodes.file.super_node import (
     FileSystemAction,
     FileSystemSuperNode,

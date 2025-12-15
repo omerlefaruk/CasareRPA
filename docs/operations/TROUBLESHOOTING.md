@@ -107,8 +107,8 @@ This guide provides solutions for common issues encountered when operating Casar
 
 1. **Check Node Registry**
    ```python
-   from casare_rpa.nodes import get_node_registry
-   registry = get_node_registry()
+   from casare_rpa.nodes.registry_data import NODE_REGISTRY
+   registry = set(NODE_REGISTRY.keys())
    print(f"Registered nodes: {len(registry)}")
    ```
 
@@ -262,8 +262,8 @@ This guide provides solutions for common issues encountered when operating Casar
    with open("workflow.json") as f:
        wf = json.load(f)
 
-   from casare_rpa.nodes import get_node_registry
-   registry = get_node_registry()
+   from casare_rpa.nodes.registry_data import NODE_REGISTRY
+   registry = set(NODE_REGISTRY.keys())
 
    for node in wf.get("nodes", []):
        if node["type"] not in registry:
@@ -275,13 +275,9 @@ This guide provides solutions for common issues encountered when operating Casar
    - Replace missing node with updated version
    - Save workflow
 
-3. **Run Migration**
-   ```python
-   from casare_rpa.application.use_cases.workflow_migration import WorkflowMigration
-
-   migrator = WorkflowMigration()
-   result = migrator.migrate("workflow.json")
-   ```
+3. **No Auto-Migration**
+   - Workflows are not auto-migrated.
+   - Replace removed/renamed nodes in Canvas and re-save.
 
 ---
 

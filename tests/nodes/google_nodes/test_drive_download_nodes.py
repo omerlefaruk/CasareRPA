@@ -359,8 +359,57 @@ class TestDriveBatchDownloadNode:
         result = await node._execute_drive(execution_context, mock_drive_client)
 
         # Assert
-        assert result["success"] is False  # Empty list is an error
-        assert "Files list is required" in result["error"]
+        assert result["success"] is False  # No source provided
+        assert "Files list or Folder ID/URL is required" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_batch_download_from_folder_url_recursive(
+        self,
+        node: DriveBatchDownloadNode,
+        execution_context: ExecutionContext,
+        mock_drive_client: MagicMock,
+        tmp_download_dir: Path,
+    ) -> None:
+        """Test batch download can download an entire folder from a pasted URL."""
+        # Arrange
+        node.set_input_value(
+            "folder_id",
+            "https://drive.google.com/drive/folders/folder_root?usp=sharing",
+        )
+        node.set_input_value("destination_folder", str(tmp_download_dir))
+
+        folder = MockDriveFile(
+            id="sub_001",
+            name="Sub:Folder",
+            mime_type="application/vnd.google-apps.folder",
+        )
+        file_1 = MockDriveFile(id="file_001", name="a.txt", mime_type="text/plain")
+        file_2 = MockDriveFile(id="file_002", name="b.txt", mime_type="text/plain")
+
+        async def list_files_side_effect(*, folder_id: str | None = None, **kwargs):
+            if folder_id == "folder_root":
+                return ([folder, file_1], None)
+            if folder_id == "sub_001":
+                return ([file_2], None)
+            return ([], None)
+
+        mock_drive_client.list_files = AsyncMock(side_effect=list_files_side_effect)
+
+        # Act
+        result = await node._execute_drive(execution_context, mock_drive_client)
+
+        # Assert
+        assert result["success"] is True
+        assert result["downloaded_count"] == 2
+        assert mock_drive_client.list_files.call_count == 2
+        assert mock_drive_client.download_file.call_count == 2
+
+        destination_paths = [
+            call.kwargs["destination_path"]
+            for call in mock_drive_client.download_file.call_args_list
+        ]
+        assert str(tmp_download_dir / "a.txt") in destination_paths
+        assert str(tmp_download_dir / "Sub_Folder" / "b.txt") in destination_paths
 
     @pytest.mark.asyncio
     async def test_batch_download_invalid_file_objects(

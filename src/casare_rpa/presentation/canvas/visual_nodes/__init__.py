@@ -175,7 +175,14 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualAIRecoveryNode": "error_handling.nodes",
     # File Operations - Super Nodes
     "VisualFileSystemSuperNode": "file_operations.super_nodes",
-    "VisualStructuredDataSuperNode": "file_operations.super_nodes",
+    # File Operations - Structured Data
+    "VisualReadCSVNode": "file_operations.nodes",
+    "VisualWriteCSVNode": "file_operations.nodes",
+    "VisualReadJSONFileNode": "file_operations.nodes",
+    "VisualWriteJSONFileNode": "file_operations.nodes",
+    "VisualZipFilesNode": "file_operations.nodes",
+    "VisualUnzipFilesNode": "file_operations.nodes",
+    "VisualImageConvertNode": "file_operations.nodes",
     # Text Operations - Super Nodes
     "VisualTextSuperNode": "text.super_nodes",
     # Desktop Automation - Super Nodes

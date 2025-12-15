@@ -7,6 +7,8 @@ Provides nodes for interacting with Google Docs API:
 - Formatting and structure operations
 """
 
+from casare_rpa.domain.decorators import node, properties
+
 from typing import Any, Dict
 
 from loguru import logger
@@ -31,6 +33,8 @@ async def _get_docs_service(context: ExecutionContext, credential_name: str) -> 
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class DocsCreateDocumentNode(BaseNode):
     """Create a new Google Document."""
 
@@ -81,6 +85,8 @@ class DocsCreateDocumentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsGetDocumentNode(BaseNode):
     """Get a Google Document's metadata."""
 
@@ -133,6 +139,8 @@ class DocsGetDocumentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsGetContentNode(BaseNode):
     """Get the text content of a Google Document."""
 
@@ -206,6 +214,8 @@ class DocsGetContentNode(BaseNode):
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class DocsInsertTextNode(BaseNode):
     """Insert text into a Google Document."""
 
@@ -261,6 +271,8 @@ class DocsInsertTextNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsDeleteContentNode(BaseNode):
     """Delete content from a Google Document."""
 
@@ -322,6 +334,8 @@ class DocsDeleteContentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsReplaceTextNode(BaseNode):
     """Replace text in a Google Document."""
 
@@ -409,6 +423,8 @@ class DocsReplaceTextNode(BaseNode):
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class DocsInsertTableNode(BaseNode):
     """Insert a table into a Google Document."""
 
@@ -476,6 +492,8 @@ class DocsInsertTableNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsInsertImageNode(BaseNode):
     """Insert an image into a Google Document."""
 
@@ -553,6 +571,8 @@ class DocsInsertImageNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsUpdateStyleNode(BaseNode):
     """Update text style in a range."""
 
@@ -640,6 +660,8 @@ class DocsUpdateStyleNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties()
+@node(category="google")
 class DocsBatchUpdateNode(BaseNode):
     """Execute multiple document updates in a single batch."""
 
