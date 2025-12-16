@@ -46,6 +46,8 @@ _SUPPRESSED_PATTERNS = (
     "Unknown property text-shadow",
     # Windows DPI scaling can cause minor geometry adjustments - this is normal
     "QWindowsWindow::setGeometry",
+    # Qt internal warning when font size is invalid (even if we patched Python side)
+    "QFont::setPointSize: Point size <= 0",
 )
 
 
@@ -59,6 +61,7 @@ def _qt_message_handler(msg_type: QtMsgType, context, message: str) -> None:
     - "QWindowsWindow::setGeometry" - Windows DPI scaling causes minor geometry
       adjustments when restoring window size/position. The window still functions
       correctly, the warning is purely informational.
+    - "QFont::setPointSize" - Internal Qt warning when font size is <= 0.
     """
     # Suppress known harmless warnings
     if any(pattern in message for pattern in _SUPPRESSED_PATTERNS):

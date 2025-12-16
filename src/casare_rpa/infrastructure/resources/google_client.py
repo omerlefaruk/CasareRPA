@@ -186,6 +186,7 @@ class GoogleConfig:
     """Configuration for Google API client."""
 
     credentials: Optional[GoogleCredentials] = None
+    credential_id: Optional[str] = None  # For OAuth auto-refresh via GoogleOAuthManager
     service_account_file: Optional[str] = None
     service_account_info: Optional[Dict[str, Any]] = None
     timeout: float = 30.0
@@ -402,11 +403,35 @@ class GoogleAPIClient:
 
     async def refresh_token(self) -> None:
         """
-        Refresh the OAuth2 access token.
+        Refresh the OAuth2 access token and persist to credential store.
+
+        Uses GoogleOAuthManager if credential_id is available for centralized
+        token management. Falls back to direct refresh if needed.
 
         Raises:
             GoogleAuthError: If token refresh fails or refresh_token not available
         """
+        # Try to use GoogleOAuthManager for centralized refresh (recommended path)
+        if self.config.credential_id:
+            try:
+                from casare_rpa.infrastructure.security.google_oauth import (
+                    get_google_access_token,
+                )
+
+                logger.debug(
+                    f"Using GoogleOAuthManager to refresh: {self.config.credential_id}"
+                )
+                new_token = await get_google_access_token(self.config.credential_id)
+                self._credentials.access_token = new_token
+                # The OAuth manager already persisted the refreshed tokens
+                logger.info("OAuth2 token refreshed via GoogleOAuthManager")
+                return
+            except ImportError:
+                logger.debug("GoogleOAuthManager not available, using direct refresh")
+            except Exception as e:
+                logger.warning(f"OAuth manager refresh failed, trying direct: {e}")
+
+        # Direct refresh (fallback)
         if not self._credentials:
             raise GoogleAuthError("No credentials available to refresh")
 
@@ -449,10 +474,60 @@ class GoogleAPIClient:
                     expires_in = result.get("expires_in", 3600)
                     self._credentials.expiry = time.time() + expires_in
 
-                    logger.info("OAuth2 token refreshed successfully")
+                    logger.info("OAuth2 token refreshed successfully (direct)")
+
+                    # Persist refreshed tokens to credential store if credential_id available
+                    if self.config.credential_id:
+                        await self._persist_refreshed_token(expires_in)
 
             except aiohttp.ClientError as e:
                 raise GoogleAuthError(f"Token refresh network error: {e}") from e
+
+    async def _persist_refreshed_token(self, expires_in: int) -> None:
+        """
+        Persist refreshed tokens back to the credential store.
+
+        Args:
+            expires_in: Token expiry time in seconds
+        """
+        try:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+                CredentialType,
+            )
+            from datetime import datetime, timezone, timedelta
+
+            store = get_credential_store()
+            info = store.get_credential_info(self.config.credential_id)
+
+            if info:
+                # Build updated credential data
+                token_expiry = datetime.now(timezone.utc) + timedelta(
+                    seconds=expires_in
+                )
+                data = {
+                    "client_id": self._credentials.client_id,
+                    "client_secret": self._credentials.client_secret,
+                    "access_token": self._credentials.access_token,
+                    "refresh_token": self._credentials.refresh_token,
+                    "token_expiry": token_expiry.isoformat(),
+                    "scopes": self._credentials.scopes,
+                }
+
+                store.save_credential(
+                    name=info["name"],
+                    credential_type=CredentialType.GOOGLE_OAUTH,
+                    category=info["category"],
+                    data=data,
+                    description=info.get("description", ""),
+                    tags=info.get("tags", []),
+                    credential_id=self.config.credential_id,
+                )
+                logger.debug(f"Persisted refreshed token: {self.config.credential_id}")
+
+        except Exception as e:
+            # Log but don't fail - the in-memory credentials have the new token
+            logger.warning(f"Failed to persist refreshed token: {e}")
 
     async def _ensure_valid_token(self) -> str:
         """Ensure we have a valid access token, refreshing if needed."""

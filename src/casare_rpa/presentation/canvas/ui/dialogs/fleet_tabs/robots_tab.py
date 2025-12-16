@@ -37,6 +37,9 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
 )
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon, ToolbarIcons
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
+
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -122,9 +125,18 @@ class RobotEditDialog(QDialog):
     def _on_save(self) -> None:
         name = self._name_edit.text().strip()
         if not name:
-            QMessageBox.warning(self, "Validation Error", "Robot name is required.")
+            self._notify_error("Robot name is required.")
             return
         self.accept()
+
+    def _notify_error(self, message: str) -> None:
+        window = self.window()
+        show_toast = getattr(window, "show_toast", None)
+        if callable(show_toast):
+            show_toast(message, level="error")
+            return
+
+        QMessageBox.warning(self, "Validation Error", message)
 
     def get_robot_data(self) -> Dict:
         """Get robot data from form."""
@@ -170,14 +182,6 @@ class RobotsTabWidget(QWidget):
     robot_deleted = Signal(str)
     refresh_requested = Signal()
 
-    # Quick action signals
-    robot_start_requested = Signal(str)  # robot_id
-    robot_stop_requested = Signal(str)  # robot_id
-    robot_pause_requested = Signal(str)  # robot_id
-    robot_resume_requested = Signal(str)  # robot_id
-    robot_restart_requested = Signal(str)  # robot_id
-    robot_force_stop_requested = Signal(str)  # robot_id
-
     # View signals
     robot_details_requested = Signal(str)  # robot_id
     robot_logs_requested = Signal(str)  # robot_id
@@ -188,6 +192,7 @@ class RobotsTabWidget(QWidget):
         super().__init__(parent)
         self._robots: List["Robot"] = []
         self._robot_map: Dict[str, "Robot"] = {}
+        self._identity_store = RobotIdentityStore()
         self._setup_ui()
         self._apply_styles()
 
@@ -243,11 +248,329 @@ class RobotsTabWidget(QWidget):
         toolbar.addWidget(self._add_btn)
 
         self._refresh_btn = QPushButton("Refresh")
-        self._refresh_btn.setIcon(get_toolbar_icon("restart"))
+        self._refresh_btn.setIcon(get_toolbar_icon("refresh"))
         self._refresh_btn.clicked.connect(self._request_refresh)
         toolbar.addWidget(self._refresh_btn)
 
         layout.addLayout(toolbar)
 
+        local_group = QGroupBox("Local Robot Link (This PC)")
+        local_layout = QVBoxLayout(local_group)
+
+        self._local_link_label = QLabel("")
+        self._local_link_label.setWordWrap(True)
+        self._local_link_label.setStyleSheet(f"color: {THEME.text_secondary};")
+        local_layout.addWidget(self._local_link_label)
+
+        local_btns = QHBoxLayout()
+        self._link_selected_btn = QPushButton("Link To Selected Robot")
+        self._link_selected_btn.clicked.connect(self._link_to_selected_robot)
+        local_btns.addWidget(self._link_selected_btn)
+
+        self._unlink_btn = QPushButton("Unlink")
+        self._unlink_btn.clicked.connect(self._unlink_from_fleet)
+        local_btns.addWidget(self._unlink_btn)
+
+        local_btns.addStretch()
+        local_layout.addLayout(local_btns)
+        layout.addWidget(local_group)
+
         self._table = QTableWidget()
-        self._table.setColum
+        self._table.setColumnCount(6)
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Name",
+                "Status",
+                "Environment",
+                "Jobs",
+                "Last Seen",
+                "Capabilities",
+            ]
+        )
+        self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self._table.setAlternatingRowColors(True)
+        self._table.verticalHeader().setVisible(False)
+        self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._table.customContextMenuRequested.connect(self._show_context_menu)
+        self._table.itemSelectionChanged.connect(self._on_selection_changed)
+        self._table.itemDoubleClicked.connect(self._on_double_click)
+
+        header = self._table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+
+        layout.addWidget(self._table)
+
+        self._status_label = QLabel("0 robots")
+        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
+        layout.addWidget(self._status_label)
+        self._refresh_local_link_ui()
+
+    def _apply_styles(self) -> None:
+        self.setStyleSheet(TAB_WIDGET_BASE_STYLE)
+
+    # =========================================================================
+    # Public API
+    # =========================================================================
+
+    def update_robots(self, robots: List["Robot"]) -> None:
+        self._robots = robots
+        self._robot_map = {r.id: r for r in robots}
+        self._apply_filters()
+
+    def set_refreshing(self, refreshing: bool) -> None:
+        self._refresh_btn.setEnabled(not refreshing)
+        self._refresh_btn.setText("Refreshing..." if refreshing else "Refresh")
+
+    # =========================================================================
+    # Internals
+    # =========================================================================
+
+    def _request_refresh(self) -> None:
+        self.refresh_requested.emit()
+
+    def _apply_filters(self) -> None:
+        search_text = self._search_edit.text().strip().lower()
+
+        selected_status = self._status_filter.currentText().strip().lower()
+        status_filter = "" if selected_status == "all status" else selected_status
+
+        capability_text = self._capability_filter.currentText().strip().lower()
+        capability_filter = ""
+        if capability_text == "browser":
+            capability_filter = "browser"
+        elif capability_text == "desktop":
+            capability_filter = "desktop"
+        elif capability_text == "gpu":
+            capability_filter = "gpu"
+        elif capability_text == "high memory":
+            capability_filter = "high_memory"
+
+        filtered: List["Robot"] = []
+        for robot in self._robots:
+            if search_text and search_text not in robot.name.lower():
+                continue
+
+            robot_status = getattr(robot.status, "value", str(robot.status)).lower()
+            if status_filter and robot_status != status_filter:
+                continue
+
+            if capability_filter:
+                caps = {c.value for c in robot.capabilities}
+                if capability_filter not in caps:
+                    continue
+
+            filtered.append(robot)
+
+        self._populate_table(filtered)
+
+        total = len(self._robots)
+        shown = len(filtered)
+        self._status_label.setText(
+            f"{shown} robots" if shown == total else f"{shown}/{total} robots"
+        )
+
+    def _populate_table(self, robots: List["Robot"]) -> None:
+        self._table.setSortingEnabled(False)
+        self._table.setRowCount(0)
+
+        for robot in robots:
+            row = self._table.rowCount()
+            self._table.insertRow(row)
+
+            name_item = QTableWidgetItem(robot.name)
+            name_item.setData(Qt.ItemDataRole.UserRole, robot.id)
+            self._table.setItem(row, 0, name_item)
+
+            status_value = getattr(robot.status, "value", str(robot.status)).lower()
+            status_item = QTableWidgetItem(status_value.upper())
+            status_color = ROBOT_STATUS_COLORS.get(
+                status_value, QColor(THEME.text_secondary)
+            )
+            status_item.setForeground(QBrush(status_color))
+            self._table.setItem(row, 1, status_item)
+
+            self._table.setItem(row, 2, QTableWidgetItem(robot.environment or "-"))
+
+            jobs_text = f"{robot.current_jobs}/{robot.max_concurrent_jobs}"
+            self._table.setItem(row, 3, QTableWidgetItem(jobs_text))
+
+            last_seen = robot.last_seen or robot.last_heartbeat
+            last_seen_text = "-"
+            if isinstance(last_seen, datetime):
+                last_seen_text = last_seen.strftime("%Y-%m-%d %H:%M")
+            self._table.setItem(row, 4, QTableWidgetItem(last_seen_text))
+
+            caps = sorted({c.value for c in robot.capabilities})
+            caps_text = ", ".join(caps) if caps else "-"
+            self._table.setItem(row, 5, QTableWidgetItem(caps_text))
+
+        self._table.setSortingEnabled(True)
+
+    def _get_selected_robot_id(self) -> Optional[str]:
+        selected = self._table.selectedItems()
+        if not selected:
+            return None
+        first = selected[0]
+        item = self._table.item(first.row(), 0)
+        if item is None:
+            return None
+        robot_id = item.data(Qt.ItemDataRole.UserRole)
+        return str(robot_id) if robot_id else None
+
+    def _on_selection_changed(self) -> None:
+        robot_id = self._get_selected_robot_id()
+        if robot_id:
+            self.robot_selected.emit(robot_id)
+        self._refresh_local_link_ui()
+
+    def _refresh_local_link_ui(self) -> None:
+        identity = self._identity_store.load()
+        if identity is None:
+            identity = self._identity_store.resolve()
+
+        if identity.fleet_linked:
+            self._local_link_label.setText(
+                "Linked to Fleet robot: "
+                f"{identity.fleet_robot_name} ({identity.fleet_robot_id}). "
+                "If you delete it from the Fleet dashboard, the local robot will keep executing but will stop reporting until you link again."
+            )
+        else:
+            reason = identity.fleet_unlinked_reason or "Not linked"
+            self._local_link_label.setText(
+                f"Not linked to Fleet (reason: {reason}). "
+                "The local robot keeps executing, but it will not appear in the Fleet dashboard until you link it again."
+            )
+
+        has_selection = bool(self._get_selected_robot_id())
+        self._link_selected_btn.setEnabled(has_selection)
+        self._unlink_btn.setEnabled(identity.fleet_linked)
+
+    def _link_to_selected_robot(self) -> None:
+        robot_id = self._get_selected_robot_id()
+        if not robot_id:
+            return
+        robot = self._robot_map.get(robot_id)
+        if robot is None:
+            return
+
+        from dataclasses import replace
+
+        identity = self._identity_store.load() or self._identity_store.resolve()
+        now = RobotIdentity.now_utc_iso()
+        updated = replace(
+            identity,
+            fleet_robot_id=robot.id,
+            fleet_robot_name=robot.name,
+            fleet_linked=True,
+            fleet_ever_registered=True,
+            fleet_unlinked_reason=None,
+            fleet_unlinked_at_utc=None,
+            updated_at_utc=now,
+        )
+        if not self._identity_store.save(updated):
+            QMessageBox.warning(
+                self,
+                "Link Failed",
+                "Failed to save local robot link settings. Check permissions for %APPDATA%/CasareRPA.",
+            )
+            return
+
+        window = self.window()
+        show_toast = getattr(window, "show_toast", None)
+        if callable(show_toast):
+            show_toast("Local robot linked to selected Fleet robot.", level="success")
+        self._refresh_local_link_ui()
+
+    def _unlink_from_fleet(self) -> None:
+        from dataclasses import replace
+
+        identity = self._identity_store.load() or self._identity_store.resolve()
+        if not identity.fleet_linked:
+            return
+
+        now = RobotIdentity.now_utc_iso()
+        updated = replace(
+            identity,
+            fleet_linked=False,
+            fleet_unlinked_reason="Manual unlink",
+            fleet_unlinked_at_utc=now,
+            updated_at_utc=now,
+        )
+        if not self._identity_store.save(updated):
+            QMessageBox.warning(
+                self,
+                "Unlink Failed",
+                "Failed to save local robot link settings. Check permissions for %APPDATA%/CasareRPA.",
+            )
+            return
+
+        window = self.window()
+        show_toast = getattr(window, "show_toast", None)
+        if callable(show_toast):
+            show_toast("Local robot unlinked from Fleet.", level="info")
+        self._refresh_local_link_ui()
+
+    def _on_double_click(self, item: QTableWidgetItem) -> None:
+        robot_id = self._get_selected_robot_id()
+        if robot_id:
+            self.robot_details_requested.emit(robot_id)
+
+    def _show_context_menu(self, pos) -> None:
+        robot_id = self._get_selected_robot_id()
+        if not robot_id:
+            return
+
+        robot = self._robot_map.get(robot_id)
+        if robot is None:
+            return
+
+        menu = QMenu(self)
+
+        details_action = menu.addAction("View Details")
+        details_action.triggered.connect(
+            lambda: self.robot_details_requested.emit(robot_id)
+        )
+
+        edit_action = menu.addAction("Edit")
+        edit_action.triggered.connect(lambda: self._on_edit_robot(robot_id))
+
+        delete_action = menu.addAction("Delete")
+        delete_action.triggered.connect(lambda: self._confirm_delete_robot(robot_id))
+
+        menu.exec(self._table.viewport().mapToGlobal(pos))
+
+    def _confirm_delete_robot(self, robot_id: str) -> None:
+        """Show confirmation dialog before deleting a robot."""
+        robot = self._robot_map.get(robot_id)
+        robot_name = robot.name if robot else robot_id
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            f"Are you sure you want to delete robot '{robot_name}'?\n\n"
+            "This will remove the robot from the orchestrator database.\n"
+            "A deleted robot will not automatically re-register.\n"
+            "To make a local robot appear again, create a new robot and use 'Link To Selected Robot'.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            self.robot_deleted.emit(robot_id)
+
+    def _on_add_robot(self) -> None:
+        dialog = RobotEditDialog(parent=self)
+        if dialog.exec():
+            self.robot_edited.emit("", dialog.get_robot_data())
+
+    def _on_edit_robot(self, robot_id: str) -> None:
+        robot = self._robot_map.get(robot_id)
+        dialog = RobotEditDialog(robot=robot, parent=self)
+        if dialog.exec():
+            self.robot_edited.emit(robot_id, dialog.get_robot_data())

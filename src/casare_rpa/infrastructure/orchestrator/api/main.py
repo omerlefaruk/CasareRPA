@@ -60,6 +60,7 @@ from casare_rpa.infrastructure.orchestrator.api.routers import (
     dlq,
     jobs,
     metrics,
+    robot_api_keys,
     robots,
     schedules,
     websockets,
@@ -118,6 +119,70 @@ async def _init_database_pool(app: FastAPI) -> Optional[DatabasePoolManager]:
         return None
 
 
+async def _ensure_core_tables(app: FastAPI) -> None:
+    """Best-effort schema compatibility for core Orchestrator tables.
+
+    This API server is often deployed without running migrations explicitly.
+    Some older databases can be missing columns used by the current API
+    endpoints (for example `max_concurrent_jobs` in `robots`).
+
+    We attempt to create/extend the schema safely using `IF NOT EXISTS`.
+    If this fails, we log loudly and continue; affected endpoints may 500.
+    """
+
+    pool = getattr(app.state, "db_pool", None)
+    if pool is None:
+        return
+
+    try:
+        from casare_rpa.infrastructure.orchestrator.persistence import (
+            CREATE_ROBOTS_TABLE_SQL,
+        )
+        from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_api_keys_schema import (
+            ensure_robot_api_key_tables,
+        )
+
+        async with pool.acquire() as conn:
+            await conn.execute(CREATE_ROBOTS_TABLE_SQL)
+
+            # Robots API router expects these columns to exist.
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS capabilities JSONB DEFAULT '[]'::jsonb"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS tags JSONB DEFAULT '[]'::jsonb"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS current_job_ids JSONB DEFAULT '[]'::jsonb"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS metrics JSONB DEFAULT '{}'::jsonb"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS max_concurrent_jobs INTEGER DEFAULT 1"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS registered_at TIMESTAMPTZ"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS last_heartbeat TIMESTAMPTZ"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ"
+            )
+
+            # Ensure API key tables exist when DB is enabled (robust against partial schemas).
+            await ensure_robot_api_key_tables(conn)
+
+        logger.info("Core tables verified/extended (robots, robot_api_keys)")
+
+    except Exception as e:
+        logger.error(f"Failed to ensure core tables exist: {e}")
+
+
 async def _shutdown_database_pool(app: FastAPI) -> None:
     """
     Gracefully shutdown database connection pool.
@@ -144,17 +209,27 @@ async def lifespan(app: FastAPI):
     # Initialize database connection pool
     await _init_database_pool(app)
 
+    # Best-effort schema compatibility for key tables.
+    await _ensure_core_tables(app)
+
     # Set database pool for routers that need direct DB access
     if app.state.db_pool:
         from .routers.workflows import set_db_pool as set_workflows_db_pool
         from .routers.schedules import set_db_pool as set_schedules_db_pool
         from .routers.robots import set_db_pool as set_robots_db_pool
         from .routers.jobs import set_db_pool as set_jobs_db_pool
+        from .routers.robot_api_keys import set_db_pool as set_robot_api_keys_db_pool
+        from .auth import configure_robot_authenticator
 
         set_workflows_db_pool(app.state.db_pool)
         set_schedules_db_pool(app.state.db_pool)
         set_robots_db_pool(app.state.db_pool)
         set_jobs_db_pool(app.state.db_pool)
+        set_robot_api_keys_db_pool(app.state.db_pool)
+
+        # Prefer DB-backed robot authentication when available.
+        # If the robot_api_keys table is missing, the authenticator will fall back safely.
+        configure_robot_authenticator(use_database=True, db_pool=app.state.db_pool)
         logger.info(
             "Database pool set for workflows, schedules, robots, and jobs routers"
         )
@@ -451,6 +526,11 @@ app.include_router(
     robots.router,
     prefix="/api/v1",
     tags=["Robots"],
+)
+app.include_router(
+    robot_api_keys.router,
+    prefix="/api/v1",
+    tags=["Robot API Keys"],
 )
 app.include_router(
     jobs.router,

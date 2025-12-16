@@ -29,6 +29,12 @@ class ApiKeysTabWidget(QWidget):
     key_generated = Signal(dict)
     key_revoked = Signal(str)
     key_rotated = Signal(str)
+
+    # FleetDashboardDialog expects these names
+    api_key_generated = Signal(dict)
+    api_key_revoked = Signal(str)
+    api_key_rotated = Signal(str)
+
     refresh_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -42,8 +48,14 @@ class ApiKeysTabWidget(QWidget):
 
         self._panel = ApiKeyPanel()
         self._panel.key_generated.connect(self.key_generated.emit)
+        self._panel.key_generated.connect(self.api_key_generated.emit)
+
         self._panel.key_revoked.connect(self.key_revoked.emit)
+        self._panel.key_revoked.connect(self.api_key_revoked.emit)
+
         self._panel.key_rotated.connect(self.key_rotated.emit)
+        self._panel.key_rotated.connect(self.api_key_rotated.emit)
+
         self._panel.refresh_requested.connect(self.refresh_requested.emit)
 
         layout.addWidget(self._panel)

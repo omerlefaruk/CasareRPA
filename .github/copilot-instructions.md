@@ -1,63 +1,42 @@
-# CasareRPA: AI Coding Agent Instructions
+# CasareRPA: GitHub Copilot Operating Guide
 
-## Project Overview
-- **CasareRPA** is a Windows RPA platform with a visual, node-based workflow editor.
-- Follows **Clean Architecture** (Domain-Driven Design):
-  - `domain/` (pure logic), `application/` (use cases), `infrastructure/` (adapters/resources), `presentation/` (UI), `nodes/` (automation logic).
-- Major components: Canvas Designer (UI), Robot Agent (execution), Orchestrator API (FastAPI), Monitoring Dashboard (React/Vite).
+GitHub Copilot must mirror the behaviour defined for our in-repo agents. Treat this file as the launch checklist and load the deeper rulebooks it references before editing.
 
-## Key Developer Workflows
-- **Run Canvas Designer:** `python manage.py canvas`
-- **Run Robot Agent:** `python manage.py robot start`
-- **Run Orchestrator API:** `python manage.py orchestrator start`
-- **Run All Tests:** `pytest tests/ -v`
-- **Build Installer:** `python installer/build_dev_installer.py`
-- **Dashboard Dev Server:** `python manage.py dashboard`
+## Canonical Guidance
+- Start with [AGENT.md](../AGENT.md) and [.github/copilot/AGENT.md](copilot/AGENT.md) for Copilot-specific expectations, identity, and workflow overview.
+- All binding rules live under [.agent/rules](../.agent/rules). Key documents:
+  - Role and workflow: [.agent/rules/00-role.md](../.agent/rules/00-role.md), [.agent/rules/01-workflow-default.md](../.agent/rules/01-workflow-default.md)
+  - Architecture and coding standards: [.agent/rules/02-architecture.md](../.agent/rules/02-architecture.md), [.agent/rules/02-coding-standards.md](../.agent/rules/02-coding-standards.md)
+  - Enforcement and tooling: [.agent/rules/06-enforcement.md](../.agent/rules/06-enforcement.md), [.agent/rules/07-tools.md](../.agent/rules/07-tools.md)
+  - Node and trigger playbooks: [.agent/rules/03-nodes.md](../.agent/rules/03-nodes.md), [.agent/rules/05-triggers.md](../.agent/rules/05-triggers.md), [.agent/rules/10-node-workflow.md](../.agent/rules/10-node-workflow.md)
+  - Brain protocol and lifecycle: [.agent/workflows/opencode_lifecycle.md](../.agent/workflows/opencode_lifecycle.md), [.agent/rules/09-brain-protocol.md](../.agent/rules/09-brain-protocol.md)
+- For task-specific briefs, reference [.agent/agents/_index.md](../.agent/agents/_index.md) and reuse the linked agent guides instead of creating new ones.
 
-## Project-Specific Conventions
-- **Type hints required**; all I/O is async/await.
-- **Ruff** for linting, **Black** for formatting.
-- **Test structure:**
-  - `tests/domain/`: pure logic, no mocks
-  - `tests/application/`: mock infra, real domain
-  - `tests/infrastructure/`: mock all external APIs
-  - `tests/presentation/`: pytest-qt for Qt widgets
-  - `tests/nodes/`: use category fixtures
-- **Node instantiation:** Application layer must convert workflow dicts to node objects before execution (see integration test README).
-- **UI:** All new components inherit from `BaseWidget` and use signal/slot patterns.
-- **EventBus:** Used for decoupled communication between layers.
+## Standard Workflow
+1. **Research:** Load the relevant `_index.md` summaries in `.agent/` and `.brain/`. Perform workspace searches before proposing new designs.
+2. **Plan:** Follow the five-phase lifecycle (research → plan → execute → validate → document). For substantial work, capture plans in `.brain/plans/` per the brain protocol.
+3. **Execute:** Apply Clean Architecture boundaries, strict typing, async patterns, logging, and security guidance exactly as described in the rulebook. Reuse existing patterns.
+4. **Validate:** Run or outline the documented tests (pytest suites, targeted checks). Honour enforcement rules: no silent failures, no hardcoded secrets, theme-only colours, typed events, etc.
+5. **Document:** Update affected indexes or `.brain` context when mandated. Surface open questions or follow-ups explicitly.
 
-## Integration & Data Flow
-- **Web automation:** Playwright; **Desktop:** UIAutomation.
-- **Orchestrator API:** FastAPI REST/WebSocket, serves dashboard static files.
-- **Dashboard:** Connects via REST/WebSocket to Orchestrator.
-- **Database:** PostgreSQL for job queue and persistence.
-- **Async:** All I/O is async-first (qasync for Qt).
+## Quick Operational Facts
+- Platform scope: Windows RPA suite (Canvas designer, Robot executor, Orchestrator API, Monitoring dashboard) built with Python 3.12, PySide6, Playwright, qasync, FastAPI.
+- Key commands:
+  - Run Canvas Designer: python manage.py canvas
+  - Run Robot Agent: python manage.py robot start
+  - Run Orchestrator API: python manage.py orchestrator start
+  - Start Dashboard Dev Server: python manage.py dashboard
+  - Execute full test suite: pytest tests/ -v
+  - Build development installer: python installer/build_dev_installer.py
+- Test boundaries: domain tests are pure logic, application tests mock infrastructure, infrastructure tests mock externals, presentation tests leverage pytest-qt, node tests use category fixtures.
+- UI standards: widgets extend BaseWidget, rely on signal/slot patterns with @Slot decorators, and use theme tokens from THEME (no hardcoded colours).
 
-## Patterns & Examples
-- **Controller pattern:** MainWindow delegates to controllers.
-- **Trigger system:** Registry-based (manual, scheduled, webhook, file, etc).
-- **Testing:**
-  - Mark async tests with `@pytest.mark.asyncio`.
-  - Use `AsyncMock` for async dependencies.
-  - Use fixtures from `tests/conftest.py` and category-specific conftests.
-- **Installer:** Built with PyInstaller + Inno Setup; see `installer/README.md`.
+## Reference Library
+- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) for Clean Architecture details.
+- [tests/integration/README.md](../tests/integration/README.md) for integration patterns.
+- [src/casare_rpa/presentation/canvas/ui/README.md](../src/casare_rpa/presentation/canvas/ui/README.md) for UI conventions.
+- [monitoring-dashboard/README.md](../monitoring-dashboard/README.md) for dashboard setup.
+- [installer/README.md](../installer/README.md) for installer workflow.
+- [GEMINI.md](../GEMINI.md) for full agent context and CLI reference.
 
-## References
-- [GEMINI.md](../GEMINI.md) — **Primary context for AI Agents** (Architecture & CLI)
-- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) — architecture details
-- [tests/integration/README.md](../tests/integration/README.md) — integration test patterns & known gaps
-- [src/casare_rpa/presentation/canvas/ui/README.md](../src/casare_rpa/presentation/canvas/ui/README.md) — UI component conventions
-- [monitoring-dashboard/README.md](../monitoring-dashboard/README.md) — dashboard setup & API
-- [installer/README.md](../installer/README.md) — installer build system
-- [CLAUDE.md](../CLAUDE.md) — agent workflow & rules
-
-## AI Agent Guidance
-- **Reuse, don't reinvent:** Extend existing patterns, especially in `.brain/` if present.
-- **Update `.brain/` and plans after major changes.**
-- **Follow agent workflow:** explore → plan → architect → quality → reviewer (see CLAUDE.md).
-- **Document unresolved questions at end of plans.**
-- **For new nodes/features:** Always create plan in `.brain/plans/`.
-
----
-For unclear or missing conventions, check referenced READMEs or ask for clarification.
+Always defer to the `.agent` canon when instructions conflict. If ambiguity remains, surface the question and pause for clarification instead of guessing.

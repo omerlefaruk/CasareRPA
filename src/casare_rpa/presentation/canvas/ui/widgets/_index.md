@@ -25,6 +25,7 @@
 |--------|------|-------------|
 | `NodeOutputPopup` | `node_output_popup.py` | Node execution output inspector |
 | `VariablePickerPopup` | `variable_picker.py` | Variable selection with upstream node detection |
+| `ToastNotification` | `toast.py` | Non-blocking toast notifications |
 
 ### Expression Editor
 

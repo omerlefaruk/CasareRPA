@@ -135,9 +135,7 @@ class GoToURLNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "GoToURLNode"
 
     def _define_ports(self) -> None:
@@ -373,9 +371,7 @@ class GoBackNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "GoBackNode"
 
     def _define_ports(self) -> None:
@@ -514,9 +510,7 @@ class GoForwardNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "GoForwardNode"
 
     def _define_ports(self) -> None:
@@ -655,9 +649,7 @@ class RefreshPageNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "RefreshPageNode"
 
     def _define_ports(self) -> None:

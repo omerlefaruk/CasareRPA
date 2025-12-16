@@ -240,12 +240,20 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             if "google_client" in context.resources:
                 return context.resources["google_client"]
 
-        # Get credentials
+        # Get credentials (with auto-refresh via GoogleOAuthManager)
         credentials = await self._get_credentials(context)
 
-        # Create client config
+        # Get credential_id for OAuth auto-refresh at client level
+        cred_id = self.get_parameter("credential_id") or self.config.get(
+            "credential_id"
+        )
+        if cred_id:
+            cred_id = context.resolve_value(cred_id)
+
+        # Create client config with credential_id for auto-refresh
         config = GoogleConfig(
             credentials=credentials,
+            credential_id=cred_id,  # Enable auto-refresh at client level
             timeout=30.0,
             max_retries=3,
         )
@@ -263,20 +271,25 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
 
     async def _get_credentials(self, context: ExecutionContext) -> GoogleCredentials:
         """
-        Get Google credentials from various sources using unified credential resolution.
+        Get Google credentials with automatic OAuth token refresh.
+
+        Uses GoogleOAuthManager for automatic token refresh when credentials
+        are stored in the credential store. Falls back to other sources if
+        credential_id is not available.
 
         Resolution order:
-        1. Vault lookup (via credential_id from picker widget)
-        2. Direct parameters (access_token, refresh_token) - for programmatic use
-        3. Service account JSON
-        4. Context variables (google_access_token, google_refresh_token)
-        5. Environment variables (GOOGLE_ACCESS_TOKEN, GOOGLE_APPLICATION_CREDENTIALS)
+        1. GoogleOAuthManager with auto-refresh (via credential_id from picker widget)
+        2. Vault lookup (via credential_id)
+        3. Direct parameters (access_token, refresh_token) - for programmatic use
+        4. Service account JSON
+        5. Context variables (google_access_token, google_refresh_token)
+        6. Environment variables (GOOGLE_ACCESS_TOKEN, GOOGLE_APPLICATION_CREDENTIALS)
 
         Args:
             context: Execution context
 
         Returns:
-            GoogleCredentials object
+            GoogleCredentials object with valid (auto-refreshed) access token
 
         Raises:
             GoogleAuthError: If no credentials found
@@ -288,7 +301,70 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             f"Google credential lookup - config: {cred_id_from_config}, param: {cred_id_from_param}"
         )
 
-        # Try vault/credential resolution first using CredentialAwareMixin
+        # Get credential_id (from picker widget or direct config)
+        cred_id = self.get_parameter("credential_id") or self.config.get(
+            "credential_id"
+        )
+        if cred_id:
+            cred_id = context.resolve_value(cred_id)
+
+        # PRIMARY PATH: Use GoogleOAuthManager for automatic token refresh
+        # This is the recommended path for stored credentials
+        if cred_id:
+            try:
+                from casare_rpa.infrastructure.security.google_oauth import (
+                    get_google_access_token,
+                    GoogleOAuthManager,
+                    TokenRefreshError,
+                    InvalidCredentialError,
+                )
+                from casare_rpa.infrastructure.security.credential_store import (
+                    get_credential_store,
+                )
+
+                # Get valid access token (auto-refreshes if expired)
+                logger.info(f"Using GoogleOAuthManager for auto-refresh: {cred_id}")
+                access_token = await get_google_access_token(cred_id)
+
+                # Get full credential data for client_id/secret/refresh_token
+                store = get_credential_store()
+                data = store.get_credential(cred_id)
+
+                if data:
+                    # Parse expiry timestamp
+                    expiry = None
+                    if data.get("token_expiry"):
+                        from datetime import datetime
+
+                        try:
+                            exp_str = data["token_expiry"]
+                            if exp_str.endswith("Z"):
+                                exp_str = exp_str[:-1] + "+00:00"
+                            exp_dt = datetime.fromisoformat(exp_str)
+                            expiry = exp_dt.timestamp()
+                        except Exception:
+                            pass
+
+                    logger.info(f"Credential auto-refresh successful: {cred_id}")
+                    return GoogleCredentials(
+                        access_token=access_token,  # Fresh token from OAuth manager
+                        refresh_token=data.get("refresh_token"),
+                        client_id=data.get("client_id"),
+                        client_secret=data.get("client_secret"),
+                        scopes=self.REQUIRED_SCOPES,
+                        expiry=expiry,
+                    )
+
+            except (TokenRefreshError, InvalidCredentialError) as e:
+                logger.warning(f"OAuth auto-refresh failed for {cred_id}: {e}")
+                # Fall through to try other methods
+            except ImportError:
+                logger.debug("GoogleOAuthManager not available, using fallback")
+            except Exception as e:
+                logger.warning(f"Unexpected error in OAuth auto-refresh: {e}")
+                # Fall through to try other methods
+
+        # FALLBACK: Try vault/credential resolution using CredentialAwareMixin
         # The credential_id is set by NodeGoogleCredentialWidget in the visual layer
         access_token = await self.resolve_credential(
             context,
@@ -381,24 +457,20 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         except Exception as e:
             logger.debug(f"Legacy credential manager lookup failed: {e}")
 
-        # Try credential_store (local encrypted storage used by UI)
+        # Try credential_store directly (without OAuth manager - last resort)
         try:
             from casare_rpa.infrastructure.security.credential_store import (
                 get_credential_store,
             )
 
             store = get_credential_store()
-            # Use get_parameter first, then fallback to config.get directly
-            # (get_parameter may return None due to MRO issues with CredentialAwareMixin)
-            cred_id = self.get_parameter("credential_id") or self.config.get(
-                "credential_id"
-            )
             if cred_id:
-                cred_id = context.resolve_value(cred_id)
                 # Get decrypted credential data by ID
                 data = store.get_credential(cred_id)
                 if data and data.get("access_token"):
-                    logger.info(f"Using credential from store: {cred_id}")
+                    logger.warning(
+                        f"Using credential from store WITHOUT auto-refresh: {cred_id}"
+                    )
 
                     # Parse expiry timestamp
                     expiry = None

@@ -62,7 +62,7 @@ class RobotUpdate(BaseModel):
 class RobotStatusUpdate(BaseModel):
     """Request model for status update."""
 
-    status: str = Field(..., pattern="^(idle|busy|offline|error|maintenance)$")
+    status: str = Field(..., pattern="^(idle|online|busy|offline|error|maintenance)$")
 
 
 class RobotResponse(BaseModel):
@@ -103,7 +103,8 @@ async def register_robot(
     Register a new robot with the orchestrator.
 
     If robot_id already exists, updates the existing registration.
-    Uses upsert semantics (INSERT ON CONFLICT UPDATE).
+    If name already exists with a different robot_id, updates that robot's robot_id.
+    Uses upsert semantics.
 
     Rate Limit: 30 requests/minute per IP
     """
@@ -116,49 +117,88 @@ async def register_robot(
     try:
         import orjson
 
+        def _dedupe_name(name: str, robot_id: str, attempt: int) -> str:
+            suffix = robot_id[-8:] if robot_id else "robot"
+            candidate = (
+                f"{name} ({suffix})"
+                if attempt == 0
+                else f"{name} ({suffix}-{attempt + 1})"
+            )
+            return candidate[:128]
+
+        def _dedupe_hostname(hostname: str, robot_id: str, attempt: int) -> str:
+            suffix = robot_id[-8:] if robot_id else "robot"
+            candidate = (
+                f"{hostname}-{suffix}"
+                if attempt == 0
+                else f"{hostname}-{suffix}-{attempt + 1}"
+            )
+            return candidate[:255]
+
         now = datetime.utcnow()
 
         async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO robots (
-                    robot_id, name, hostname, status, environment,
-                    max_concurrent_jobs, capabilities, tags,
-                    current_job_ids, metrics, registered_at, last_seen, created_at
-                ) VALUES (
-                    $1, $2, $3, 'idle', $4, $5, $6::jsonb, $7::jsonb,
-                    '[]'::jsonb, '{}'::jsonb, $8, $8, $8
-                )
-                ON CONFLICT (robot_id) DO UPDATE SET
-                    name = EXCLUDED.name,
-                    hostname = EXCLUDED.hostname,
-                    environment = EXCLUDED.environment,
-                    max_concurrent_jobs = EXCLUDED.max_concurrent_jobs,
-                    capabilities = EXCLUDED.capabilities,
-                    tags = EXCLUDED.tags,
-                    last_seen = EXCLUDED.last_seen,
-                    updated_at = NOW()
-                """,
-                registration.robot_id,
-                registration.name,
-                registration.hostname,
-                registration.environment,
-                registration.max_concurrent_jobs,
-                orjson.dumps(registration.capabilities).decode(),
-                orjson.dumps(registration.tags).decode(),
-                now,
-            )
+            # Prefer storing the DB status as 'online' (legacy/supabase schema),
+            # and map it to the API status 'idle' for clients.
+            name_to_use = registration.name
+            hostname_to_use = registration.hostname
+            for attempt in range(3):
+                try:
+                    row = await conn.fetchrow(
+                        """
+                        INSERT INTO robots (
+                            robot_id, name, hostname, status, environment,
+                            max_concurrent_jobs, capabilities, tags,
+                            current_job_ids, metrics, registered_at, last_seen, created_at
+                        ) VALUES (
+                            $1, $2, $3, 'online', $4, $5, $6::jsonb, $7::jsonb,
+                            '[]'::jsonb, '{}'::jsonb, $8, $8, $8
+                        )
+                        ON CONFLICT (robot_id) DO UPDATE SET
+                            name = EXCLUDED.name,
+                            hostname = EXCLUDED.hostname,
+                            environment = EXCLUDED.environment,
+                            max_concurrent_jobs = EXCLUDED.max_concurrent_jobs,
+                            capabilities = EXCLUDED.capabilities,
+                            tags = EXCLUDED.tags,
+                            status = 'online',
+                            last_seen = EXCLUDED.last_seen,
+                            updated_at = NOW()
+                        RETURNING *
+                        """,
+                        registration.robot_id,
+                        name_to_use,
+                        hostname_to_use,
+                        registration.environment,
+                        registration.max_concurrent_jobs,
+                        orjson.dumps(registration.capabilities).decode(),
+                        orjson.dumps(registration.tags).decode(),
+                        now,
+                    )
+                    break
+                except Exception as e:
+                    msg = str(e).lower()
+                    if "duplicate key value violates unique constraint" in msg and (
+                        "name" in msg or "robots_name_uq" in msg
+                    ):
+                        name_to_use = _dedupe_name(
+                            registration.name, registration.robot_id, attempt
+                        )
+                        continue
+                    if "duplicate key value violates unique constraint" in msg and (
+                        "hostname" in msg or "robots_hostname_unique" in msg
+                    ):
+                        hostname_to_use = _dedupe_hostname(
+                            registration.hostname, registration.robot_id, attempt
+                        )
+                        continue
+                    raise
 
-            # Fetch the robot back
-            row = await conn.fetchrow(
-                "SELECT * FROM robots WHERE robot_id = $1",
-                registration.robot_id,
+            logger.info(
+                f"Robot '{name_to_use}' registered/updated with ID: {registration.robot_id}"
             )
-
             if row is None:
-                raise HTTPException(
-                    status_code=500, detail="Failed to fetch registered robot"
-                )
+                raise HTTPException(status_code=500, detail="Failed to register robot")
 
             return _row_to_response(dict(row))
 
@@ -195,9 +235,12 @@ async def list_robots(
             param_idx = 1
 
             if status:
-                query += f" AND status = ${param_idx}"
-                params.append(status)
-                param_idx += 1
+                if status == "idle":
+                    query += " AND status IN ('idle', 'online')"
+                else:
+                    query += f" AND status = ${param_idx}"
+                    params.append(status)
+                    param_idx += 1
 
             if environment:
                 query += f" AND environment = ${param_idx}"
@@ -281,6 +324,24 @@ async def update_robot(
     try:
         import orjson
 
+        def _dedupe_name(name: str, robot_id: str, attempt: int) -> str:
+            suffix = robot_id[-8:] if robot_id else "robot"
+            candidate = (
+                f"{name} ({suffix})"
+                if attempt == 0
+                else f"{name} ({suffix}-{attempt + 1})"
+            )
+            return candidate[:128]
+
+        def _dedupe_hostname(hostname: str, robot_id: str, attempt: int) -> str:
+            suffix = robot_id[-8:] if robot_id else "robot"
+            candidate = (
+                f"{hostname}-{suffix}"
+                if attempt == 0
+                else f"{hostname}-{suffix}-{attempt + 1}"
+            )
+            return candidate[:255]
+
         async with pool.acquire() as conn:
             # Check robot exists
             existing = await conn.fetchrow(
@@ -296,15 +357,19 @@ async def update_robot(
             updates = ["updated_at = NOW()"]
             params = [robot_id]
             param_idx = 2
+            name_param_pos: Optional[int] = None
+            hostname_param_pos: Optional[int] = None
 
             if update.name is not None:
                 updates.append(f"name = ${param_idx}")
                 params.append(update.name)
+                name_param_pos = len(params) - 1
                 param_idx += 1
 
             if update.hostname is not None:
                 updates.append(f"hostname = ${param_idx}")
                 params.append(update.hostname)
+                hostname_param_pos = len(params) - 1
                 param_idx += 1
 
             if update.capabilities is not None:
@@ -327,14 +392,40 @@ async def update_robot(
                 params.append(orjson.dumps(update.tags).decode())
                 param_idx += 1
 
-            query = f"UPDATE robots SET {', '.join(updates)} WHERE robot_id = $1"
-            await conn.execute(query, *params)
+            query = f"UPDATE robots SET {', '.join(updates)} WHERE robot_id = $1 RETURNING *"
 
-            # Fetch updated robot
-            row = await conn.fetchrow(
-                "SELECT * FROM robots WHERE robot_id = $1",
-                robot_id,
-            )
+            for attempt in range(3):
+                try:
+                    row = await conn.fetchrow(query, *params)
+                    break
+                except Exception as e:
+                    msg = str(e).lower()
+                    if "duplicate key value violates unique constraint" not in msg:
+                        raise
+                    if (
+                        ("robots_name_uq" in msg or "name" in msg)
+                        and update.name is not None
+                        and name_param_pos is not None
+                    ):
+                        params[name_param_pos] = _dedupe_name(
+                            str(update.name), robot_id, attempt
+                        )
+                        continue
+                    if (
+                        ("robots_hostname_unique" in msg or "hostname" in msg)
+                        and update.hostname is not None
+                        and hostname_param_pos is not None
+                    ):
+                        params[hostname_param_pos] = _dedupe_hostname(
+                            str(update.hostname), robot_id, attempt
+                        )
+                        continue
+                    raise
+
+            if row is None:
+                raise HTTPException(
+                    status_code=404, detail=f"Robot {robot_id} not found"
+                )
 
             return _row_to_response(dict(row))
 
@@ -366,8 +457,16 @@ async def update_robot_status(
     try:
         async with pool.acquire() as conn:
             now = datetime.utcnow()
+            normalized_status = (
+                "online"
+                if status_update.status.lower() == "idle"
+                else status_update.status.lower()
+            )
+            if normalized_status == "online":
+                # keep online
+                pass
 
-            result = await conn.execute(
+            row = await conn.fetchrow(
                 """
                 UPDATE robots
                 SET status = $2,
@@ -375,21 +474,17 @@ async def update_robot_status(
                     last_heartbeat = $3,
                     updated_at = NOW()
                 WHERE robot_id = $1
+                RETURNING *
                 """,
                 robot_id,
-                status_update.status,
+                normalized_status,
                 now,
             )
 
-            if result == "UPDATE 0":
+            if row is None:
                 raise HTTPException(
                     status_code=404, detail=f"Robot {robot_id} not found"
                 )
-
-            row = await conn.fetchrow(
-                "SELECT * FROM robots WHERE robot_id = $1",
-                robot_id,
-            )
 
             return _row_to_response(dict(row))
 
@@ -468,7 +563,7 @@ async def robot_heartbeat(
                     SET last_seen = $2,
                         last_heartbeat = $2,
                         metrics = $3::jsonb,
-                        status = CASE WHEN status = 'offline' THEN 'idle' ELSE status END,
+                        status = CASE WHEN status = 'offline' THEN 'online' ELSE status END,
                         updated_at = NOW()
                     WHERE robot_id = $1
                     """,
@@ -482,7 +577,7 @@ async def robot_heartbeat(
                     UPDATE robots
                     SET last_seen = $2,
                         last_heartbeat = $2,
-                        status = CASE WHEN status = 'offline' THEN 'idle' ELSE status END,
+                        status = CASE WHEN status = 'offline' THEN 'online' ELSE status END,
                         updated_at = NOW()
                     WHERE robot_id = $1
                     """,
@@ -491,8 +586,34 @@ async def robot_heartbeat(
                 )
 
             if result == "UPDATE 0":
-                raise HTTPException(
-                    status_code=404, detail=f"Robot {robot_id} not found"
+                # Be resilient: robots can heartbeat before they register (or after a transient failure).
+                # Create a minimal robot record so the fleet dashboard and status tracking keep working.
+                # Some deployments enforce UNIQUE(hostname), so don't use the client IP which is shared.
+                hostname = f"robot-{robot_id}"[:255]
+
+                await conn.execute(
+                    """
+                    INSERT INTO robots (
+                        robot_id, name, hostname, status, environment,
+                        metrics, registered_at, last_seen, last_heartbeat,
+                        created_at, updated_at
+                    ) VALUES (
+                        $1, $2, $3, 'online', 'default',
+                        $4::jsonb, $5, $5, $5,
+                        $5, $5
+                    )
+                    ON CONFLICT (robot_id) DO UPDATE
+                    SET last_seen = EXCLUDED.last_seen,
+                        last_heartbeat = EXCLUDED.last_heartbeat,
+                        metrics = EXCLUDED.metrics,
+                        status = 'online',
+                        updated_at = NOW()
+                    """,
+                    robot_id,
+                    robot_id,
+                    hostname,
+                    orjson.dumps(metrics or {}).decode(),
+                    now,
                 )
 
             return {"ok": True, "timestamp": now.isoformat()}
@@ -511,25 +632,43 @@ def _row_to_response(row: Dict[str, Any]) -> RobotResponse:
     """Convert database row to response model."""
     import orjson
 
-    def parse_jsonb(val):
+    def parse_jsonb_list(val):
+        """Parse JSONB value and ensure it's a list."""
         if val is None:
             return []
         if isinstance(val, str):
-            return orjson.loads(val)
-        return val
+            parsed = orjson.loads(val)
+            return parsed if isinstance(parsed, list) else []
+        if isinstance(val, list):
+            return val
+        # If it's a dict or other type, return empty list
+        return []
+
+    def parse_jsonb_dict(val):
+        """Parse JSONB value and ensure it's a dict."""
+        if val is None:
+            return {}
+        if isinstance(val, str):
+            parsed = orjson.loads(val)
+            return parsed if isinstance(parsed, dict) else {}
+        if isinstance(val, dict):
+            return val
+        return {}
 
     return RobotResponse(
         robot_id=row.get("robot_id", ""),
         name=row.get("name", ""),
         hostname=row.get("hostname", ""),
-        status=row.get("status", "offline"),
+        status="idle"
+        if row.get("status") == "online"
+        else row.get("status", "offline"),
         environment=row.get("environment", "default"),
         max_concurrent_jobs=row.get("max_concurrent_jobs", 1),
-        capabilities=parse_jsonb(row.get("capabilities", [])),
-        tags=parse_jsonb(row.get("tags", [])),
-        current_job_ids=parse_jsonb(row.get("current_job_ids", [])),
+        capabilities=parse_jsonb_list(row.get("capabilities")),
+        tags=parse_jsonb_list(row.get("tags")),
+        current_job_ids=parse_jsonb_list(row.get("current_job_ids")),
         last_seen=row.get("last_seen"),
         last_heartbeat=row.get("last_heartbeat"),
         created_at=row.get("created_at"),
-        metrics=parse_jsonb(row.get("metrics", {})) or {},
+        metrics=parse_jsonb_dict(row.get("metrics")),
     )

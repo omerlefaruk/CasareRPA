@@ -36,13 +36,6 @@ try:
 except ImportError:
     HAS_DISPATCHER = False
 
-try:
-    from casare_rpa.infrastructure.orchestrator.communication.websocket_server import (
-        OrchestratorServer,
-    )
-
-    HAS_SERVER = True
-except ImportError:
     HAS_SERVER = False
     logger.warning("websockets not installed. Server features disabled.")
 
@@ -138,7 +131,7 @@ class OrchestratorEngine:
 
         # WebSocket server
         # SECURITY: Default to localhost only. Use configure_server() to enable network access.
-        self._server: Optional["OrchestratorServer"] = None
+        self._server: Any = None
         self._server_host: str = "127.0.0.1"
         self._server_port: int = 8765
 
@@ -201,9 +194,8 @@ class OrchestratorEngine:
         self._background_tasks.clear()
 
         # Stop server
-        if self._server:
-            await self._server.stop()
-            self._server = None
+        # Stop server - Removed
+        self._server = None
 
         # Stop trigger manager
         if self._trigger_manager:
@@ -234,18 +226,17 @@ class OrchestratorEngine:
         self._server_host = host
         self._server_port = port
 
-        self._server = OrchestratorServer(host=host, port=port)
+        logger.warning(
+            f"OrchestratorServer has been removed. Cannot start server on {host}:{port}"
+        )
+        self._server = None
 
         # Wire callbacks from server to engine
-        self._server.set_callbacks(
-            on_robot_connect=self._on_server_robot_connect,
-            on_robot_disconnect=self._on_server_robot_disconnect,
-            on_job_progress=self._on_server_job_progress,
-            on_job_complete=self._on_server_job_complete,
-            on_job_failed=self._on_server_job_failed,
-        )
+        # Wire callbacks from server to engine - Removed
+        # self._server.set_callbacks(...)
 
-        await self._server.start()
+        # await self._server.start()
+        logger.warning("Orchestrator server not available (component removed)")
         logger.info(f"Orchestrator server started on ws://{host}:{port}")
 
     async def _on_server_robot_connect(self, robot: Robot):
@@ -301,7 +292,9 @@ class OrchestratorEngine:
             return False
 
         # Send job via WebSocket
-        result = await self._server.send_job(robot_id, job)
+        # Send job via WebSocket
+        # result = await self._server.send_job(robot_id, job)
+        result = {"accepted": False, "reason": "Server component removed"}
 
         if result.get("accepted"):
             job.status = JobStatus.RUNNING
@@ -324,14 +317,16 @@ class OrchestratorEngine:
     def connected_robots(self) -> List[str]:
         """Get list of connected robot IDs."""
         if self._server:
-            return [r.id for r in self._server.get_connected_robots()]
+            # return [r.id for r in self._server.get_connected_robots()]
+            return []
         return []
 
     @property
     def available_robots(self) -> List[Robot]:
         """Get list of available robots."""
         if self._server:
-            return self._server.get_available_robots()
+            # return self._server.get_available_robots()
+            return []
         return []
 
     async def _load_robots(self):

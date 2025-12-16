@@ -187,6 +187,7 @@ Quick reference for Canvas UI components. Use for fast discovery.
 | `CascadingDropdownBase` | Cascading dropdown |
 | `JsonSyntaxHighlighter` | JSON syntax coloring |
 | `NodeOutputPopup` | Node output inspector |
+| `ToastNotification` | Non-blocking toast notifications |
 | `ProfilingTreeWidget` | Performance profiling tree |
 
 ### Validation Helpers

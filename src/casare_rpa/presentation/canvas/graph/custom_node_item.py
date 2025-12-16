@@ -815,6 +815,49 @@ class CasareNodeItem(NodeItem):
 
         painter.restore()
 
+    def _paint_as_dot(self, painter) -> None:
+        """
+        Paint node as a simple colored dot for ULTRA_LOW semantic zoom.
+
+        When zoomed out < 25%, nodes become simple dots showing just the
+        workflow structure and category colors. This is ideal for navigation
+        and understanding the overall workflow layout.
+        """
+        painter.save()
+        rect = self._get_node_rect()
+
+        # Get category color for the dot
+        if self._cached_header_color:
+            dot_color = self._cached_header_color
+        else:
+            dot_color = get_category_header_color(self._category)
+
+        # Adjust for status
+        if self._has_error:
+            dot_color = _ERROR_RED
+        elif self._is_running:
+            dot_color = QColor("#FBBF24")  # Amber
+        elif self._is_completed:
+            dot_color = _SUCCESS_GREEN
+        elif self._is_disabled:
+            dot_color = _DISABLED_GRAY
+
+        # Draw as a centered circle/dot
+        center = rect.center()
+        radius = min(rect.width(), rect.height()) / 3  # Proportional dot size
+
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        painter.setBrush(QBrush(dot_color))
+
+        # Selection ring
+        if self.selected:
+            painter.setPen(QPen(self._selected_border_color, 2))
+        else:
+            painter.setPen(_PEN_STYLE_NONE)
+
+        painter.drawEllipse(center, radius, radius)
+        painter.restore()
+
     def paint(self, painter, option, widget):
         """
         Custom paint method for the node.
@@ -847,6 +890,11 @@ class CasareNodeItem(NodeItem):
             self._paint_lod(painter, lod_level)
             return
 
+        # SEMANTIC ZOOM: ULTRA_LOW shows dots/blocks for structure overview
+        if lod_manager.should_show_node_as_dot():
+            self._paint_as_dot(painter)
+            return
+
         painter.save()
         painter.setRenderHint(_ANTIALIASING, True)
 
@@ -857,8 +905,9 @@ class CasareNodeItem(NodeItem):
         # Determine border color and style based on status states
         # Disabled state uses dotted border for clear visual feedback
         if self._is_running:
-            border_color = self._running_border_color
+            border_color = QColor("#FBBF24")  # Amber 400 (brighter running highlight)
             border_style = _PEN_STYLE_DASH
+            border_width = 3
         elif self._has_warning:
             border_color = _WARNING_ORANGE
             border_style = _PEN_STYLE_SOLID
@@ -901,7 +950,8 @@ class CasareNodeItem(NodeItem):
             if self._is_running:
                 # Animated dash pattern for running state
                 pen.setDashOffset(self._animation_offset)
-                pen.setDashPattern([4, 4])
+                pen.setDashPattern([2.5, 2.5])
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
 
         painter.strokePath(path, pen)
 

@@ -177,8 +177,7 @@ class ClickElementNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize click element node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "ClickElementNode"
 
     def _define_ports(self) -> None:
@@ -463,8 +462,7 @@ class TypeTextNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize type text node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "TypeTextNode"
 
     def _define_ports(self) -> None:
@@ -716,8 +714,7 @@ class SelectDropdownNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize select dropdown node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "SelectDropdownNode"
 
     def _define_ports(self) -> None:
@@ -914,8 +911,7 @@ class ImageClickNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize image click node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "ImageClickNode"
 
     def _define_ports(self) -> None:

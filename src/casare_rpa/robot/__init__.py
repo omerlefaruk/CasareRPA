@@ -21,8 +21,8 @@ Usage:
     agent = RobotAgent(config)
     await agent.start()
 
-    # Legacy (deprecated)
-    from casare_rpa.robot import DistributedRobotAgent, DistributedRobotConfig
+    # Legacy (deprecated) - Removed
+    # from casare_rpa.robot import DistributedRobotAgent, DistributedRobotConfig
 """
 
 # New unified agent (recommended)
@@ -57,13 +57,8 @@ from casare_rpa.robot.circuit_breaker import (
 )
 
 # Legacy imports (deprecated - for backward compatibility)
-from casare_rpa.robot.distributed_agent import (
-    AgentState,
-    DistributedRobotAgent,
-    DistributedRobotConfig,
-    RobotCapabilities,
-    RobotRegistration,
-)
+# Legacy imports removed
+
 
 # Metrics
 from casare_rpa.robot.metrics import (
@@ -87,11 +82,11 @@ __all__ = [
     "AgentCheckpoint",
     "run_agent",
     # Legacy agent (deprecated)
-    "DistributedRobotAgent",
-    "DistributedRobotConfig",
-    "RobotCapabilities",
-    "RobotRegistration",
-    "AgentState",
+    # "DistributedRobotAgent", - Removed
+    # "DistributedRobotConfig", - Removed
+    # "RobotCapabilities", - Removed
+    # "RobotRegistration", - Removed
+    # "AgentState", - Removed
     # Circuit breaker
     "CircuitBreaker",
     "CircuitBreakerConfig",

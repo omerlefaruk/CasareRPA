@@ -153,9 +153,14 @@ class NodeCreationHelper(QObject):
         """
         try:
             from NodeGraphQt.constants import PortTypeEnum
+            from casare_rpa.application.services.port_type_service import (
+                get_port_type_registry,
+            )
 
             # Determine if source is input or output
             is_source_output = source_port_item.port_type == PortTypeEnum.OUT.value
+            registry = get_port_type_registry()
+            source_type = self._get_port_data_type_from_port_item(source_port_item)
 
             logger.debug(
                 f"Auto-connecting from {'output' if is_source_output else 'input'} "
@@ -165,34 +170,66 @@ class NodeCreationHelper(QObject):
             # Find compatible port on new node and connect
             if is_source_output:
                 # Source is output, find input on new node
+                best_target_item = None
+                best_score = -1
+
                 for port in new_node.input_ports():
-                    target_port_item = port.view
+                    target_port_item = getattr(port, "view", None)
+                    if target_port_item is None:
+                        continue
+
+                    target_type = self._get_node_port_type(new_node, port.name())
+                    score = self._score_connection(
+                        source_type=source_type,
+                        target_type=target_type,
+                        registry=registry,
+                    )
+                    if score > best_score:
+                        best_score = score
+                        best_target_item = target_port_item
+
+                if best_target_item is not None and best_score >= 0:
                     try:
-                        source_port_item.connect_to(target_port_item)
+                        source_port_item.connect_to(best_target_item)
                         logger.info(
-                            f"Auto-connected {source_port_item.name} -> {target_port_item.name}"
+                            f"Auto-connected {source_port_item.name} -> {best_target_item.name}"
                         )
                         return True
                     except Exception as e:
                         logger.debug(
-                            f"Could not connect to {target_port_item.name}: {e}"
+                            f"Could not connect to {best_target_item.name}: {e}"
                         )
-                        continue
             else:
                 # Source is input, find output on new node
+                best_source_item = None
+                best_score = -1
+
                 for port in new_node.output_ports():
-                    target_port_item = port.view
+                    candidate_source_item = getattr(port, "view", None)
+                    if candidate_source_item is None:
+                        continue
+
+                    candidate_type = self._get_node_port_type(new_node, port.name())
+                    score = self._score_connection(
+                        source_type=candidate_type,
+                        target_type=source_type,
+                        registry=registry,
+                    )
+                    if score > best_score:
+                        best_score = score
+                        best_source_item = candidate_source_item
+
+                if best_source_item is not None and best_score >= 0:
                     try:
-                        target_port_item.connect_to(source_port_item)
+                        best_source_item.connect_to(source_port_item)
                         logger.info(
-                            f"Auto-connected {target_port_item.name} -> {source_port_item.name}"
+                            f"Auto-connected {best_source_item.name} -> {source_port_item.name}"
                         )
                         return True
                     except Exception as e:
                         logger.debug(
-                            f"Could not connect to {target_port_item.name}: {e}"
+                            f"Could not connect to {best_source_item.name}: {e}"
                         )
-                        continue
 
             return False
 
@@ -202,6 +239,82 @@ class NodeCreationHelper(QObject):
 
             logger.error(traceback.format_exc())
             return False
+
+    def _get_node_port_type(self, node, port_name: str):
+        """Get port type from a node if available (None for exec, DataType for data)."""
+        try:
+            if hasattr(node, "get_port_type") and callable(
+                getattr(node, "get_port_type")
+            ):
+                return node.get_port_type(port_name)
+        except Exception:
+            pass
+        if "exec" in str(port_name).lower():
+            return None
+        try:
+            from casare_rpa.domain.value_objects.types import DataType
+
+            return DataType.ANY
+        except Exception:
+            return None
+
+    def _get_port_data_type_from_port_item(self, port_item):
+        """
+        Get DataType for a PortItem (None for exec).
+
+        Best-effort: uses attached visual node's get_port_type when available.
+        """
+        try:
+            port_name = getattr(port_item, "name", "")
+            node_item = (
+                port_item.parentItem() if hasattr(port_item, "parentItem") else None
+            )
+            node = None
+            if node_item is not None:
+                node = getattr(node_item, "node", None) or getattr(
+                    node_item, "_node", None
+                )
+            if (
+                node
+                and hasattr(node, "get_port_type")
+                and callable(getattr(node, "get_port_type"))
+            ):
+                return node.get_port_type(port_name)
+        except Exception:
+            pass
+
+        try:
+            port_name = getattr(port_item, "name", "")
+            if "exec" in str(port_name).lower():
+                return None
+        except Exception:
+            pass
+
+        try:
+            from casare_rpa.domain.value_objects.types import DataType
+
+            return DataType.ANY
+        except Exception:
+            return None
+
+    def _score_connection(self, source_type, target_type, registry) -> int:
+        """Score a potential connection (higher is better)."""
+        try:
+            from casare_rpa.domain.value_objects.types import DataType
+
+            if source_type is None and target_type is None:
+                return 100
+            if source_type is None or target_type is None:
+                return -1
+            if source_type == target_type and source_type != DataType.ANY:
+                return 90
+            if target_type == DataType.ANY:
+                return 60
+            if registry.is_compatible(source_type, target_type):
+                return 70
+        except Exception:
+            pass
+        return -1
 
     def create_set_variable_for_port(self, source_port_item) -> Optional[object]:
         """

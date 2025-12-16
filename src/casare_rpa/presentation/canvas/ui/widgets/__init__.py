@@ -125,6 +125,7 @@ from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
     RichTextEditor,
     ExpandButton,
 )
+from casare_rpa.presentation.canvas.ui.widgets.toast import ToastNotification
 
 __all__ = [
     "VariableEditorWidget",
@@ -227,4 +228,5 @@ __all__ = [
     "MarkdownEditor",
     "RichTextEditor",
     "ExpandButton",
+    "ToastNotification",
 ]

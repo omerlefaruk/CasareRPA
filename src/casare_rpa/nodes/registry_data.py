@@ -532,4 +532,5 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "SubflowNode": "subflow_node",
     # Workflow nodes
     "CallSubworkflowNode": "workflow.call_subworkflow_node",
+    "ExecuteWorkflowNode": "workflow.execute_workflow_node",
 }

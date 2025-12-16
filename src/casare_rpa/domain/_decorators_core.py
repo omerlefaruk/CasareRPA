@@ -241,6 +241,18 @@ def properties(
 
         def wrapped_init(self, node_id: str, *args, **kwargs) -> None:
             """Wrapped __init__ that handles config, defaults, and validation."""
+            # Handle config passed positionally (legacy pattern from child nodes)
+            # If args[0] is a dict and there's also config in kwargs, skip args[0]
+            # to prevent "multiple values for argument 'config'" error
+            filtered_args = args
+            if args and isinstance(args[0], dict) and "config" in kwargs:
+                # Config passed both positionally AND via kwargs - skip positional
+                filtered_args = args[1:]
+            elif args and isinstance(args[0], dict) and "config" not in kwargs:
+                # Config passed positionally only - move to kwargs
+                kwargs["config"] = args[0]
+                filtered_args = args[1:]
+
             config = kwargs.get("config") or {}
 
             # Extract property values from kwargs
@@ -274,7 +286,7 @@ def properties(
                     )
 
             kwargs["config"] = config
-            original_init(self, node_id, *args, **kwargs)
+            original_init(self, node_id, *filtered_args, **kwargs)
 
         cls.__init__ = wrapped_init
         return cls

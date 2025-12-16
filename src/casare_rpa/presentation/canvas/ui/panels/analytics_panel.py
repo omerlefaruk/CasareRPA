@@ -178,10 +178,13 @@ class AnalyticsPanel(QDockWidget):
         Args:
             url: Base URL for orchestrator (e.g., https://tunnel.example.com)
         """
-        if not url.endswith("/api/v1"):
-            url = f"{url}/api/v1"
-        self._api_base_url = url
-        logger.info(f"Analytics API URL updated to: {url}")
+        base = url.replace("ws://", "http://").replace("wss://", "https://").rstrip("/")
+        if base.endswith("/ws"):
+            base = base[: -len("/ws")]
+        if not base.endswith("/api/v1"):
+            base = f"{base}/api/v1"
+        self._api_base_url = base
+        logger.info(f"Analytics API URL updated to: {base}")
 
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""

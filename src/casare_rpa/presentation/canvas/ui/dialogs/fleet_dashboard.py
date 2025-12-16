@@ -6,18 +6,22 @@ schedules, analytics, and API keys tabs. Supports multi-tenant filtering
 and real-time updates via WebSocketBridge.
 """
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from __future__ import annotations
 
+from typing import Optional, List, Dict, Any, TYPE_CHECKING, Tuple
+
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QButtonGroup,
     QHBoxLayout,
-    QTabWidget,
-    QPushButton,
     QLabel,
+    QPushButton,
+    QTabWidget,
+    QToolButton,
+    QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QFont
 
 from loguru import logger
 
@@ -30,12 +34,11 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     AnalyticsTabWidget,
     ApiKeysTabWidget,
 )
-from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
-    DEADLINE_COLORS,
-)
 from casare_rpa.presentation.canvas.ui.widgets.tenant_selector import (
     TenantSelectorWidget,
 )
+from casare_rpa.presentation.canvas.ui.widgets.toast import ToastNotification
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -122,6 +125,8 @@ class FleetDashboardDialog(QDialog):
         self._connect_signals()
         self._apply_styles()
 
+        self._toast = ToastNotification(self)
+
         logger.debug("FleetDashboardDialog initialized")
 
     def _setup_ui(self) -> None:
@@ -152,14 +157,25 @@ class FleetDashboardDialog(QDialog):
         header_layout.addWidget(self._tenant_selector)
 
         self._connection_status = QLabel("Disconnected")
-        self._connection_status.setStyleSheet("color: #F44336; font-weight: bold;")
         header_layout.addWidget(self._connection_status)
 
         layout.addWidget(header_widget)
 
-        # Tabs
+        # Main content (sidebar + pages)
+        content_widget = QWidget()
+        content_layout = QHBoxLayout(content_widget)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
+        self._sidebar = QWidget()
+        self._sidebar.setObjectName("fleet_sidebar")
+        sidebar_layout = QVBoxLayout(self._sidebar)
+        sidebar_layout.setContentsMargins(10, 12, 10, 12)
+        sidebar_layout.setSpacing(6)
+
         self._tabs = QTabWidget()
         self._tabs.setDocumentMode(True)
+        self._tabs.tabBar().hide()
 
         self._robots_tab = RobotsTabWidget()
         self._tabs.addTab(self._robots_tab, "Robots")
@@ -179,7 +195,39 @@ class FleetDashboardDialog(QDialog):
         self._analytics_tab = AnalyticsTabWidget()
         self._tabs.addTab(self._analytics_tab, "Analytics")
 
-        layout.addWidget(self._tabs)
+        self._nav_group = QButtonGroup(self)
+        self._nav_group.setExclusive(True)
+        self._nav_buttons: Dict[int, QToolButton] = {}
+        self._nav_icon_cache: Dict[Tuple[str, bool], QIcon] = {}
+
+        nav_items = [
+            ("Robots", "robot"),
+            ("Jobs", "jobs"),
+            ("Schedules", "calendar"),
+            ("Queues", "queue"),
+            ("API Keys", "key"),
+            ("Analytics", "chart"),
+        ]
+
+        for index, (label, icon_kind) in enumerate(nav_items):
+            btn = QToolButton()
+            btn.setObjectName("fleet_nav_btn")
+            btn.setText(label)
+            btn.setCheckable(True)
+            btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            btn.setIcon(self._get_nav_icon(icon_kind, active=False))
+            btn.setIconSize(QSize(18, 18))
+            btn.clicked.connect(lambda checked, i=index: self._tabs.setCurrentIndex(i))
+            self._nav_group.addButton(btn, index)
+            self._nav_buttons[index] = btn
+            sidebar_layout.addWidget(btn)
+
+        sidebar_layout.addStretch()
+
+        content_layout.addWidget(self._sidebar)
+        content_layout.addWidget(self._tabs, 1)
+
+        layout.addWidget(content_widget)
 
         # Footer
         footer = QWidget()
@@ -188,7 +236,6 @@ class FleetDashboardDialog(QDialog):
         footer_layout.setContentsMargins(10, 5, 10, 5)
 
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet("color: #AAAAAA;")
         footer_layout.addWidget(self._status_label)
 
         footer_layout.addStretch()
@@ -225,3 +272,250 @@ class FleetDashboardDialog(QDialog):
 
         # Queues tab
         self._queues_tab.queue_selected.connect(self.queue_selected.emit)
+        self._queues_tab.queue_created.connect(self.queue_created.emit)
+        self._queues_tab.queue_deleted.connect(self.queue_deleted.emit)
+        self._queues_tab.queue_item_action.connect(self.queue_item_action.emit)
+        self._queues_tab.refresh_requested.connect(self.refresh_requested.emit)
+
+        # API Keys tab
+        self._api_keys_tab.api_key_generated.connect(self.api_key_generated.emit)
+        self._api_keys_tab.api_key_revoked.connect(self.api_key_revoked.emit)
+        self._api_keys_tab.api_key_rotated.connect(self.api_key_rotated.emit)
+        self._api_keys_tab.refresh_requested.connect(self.refresh_requested.emit)
+
+        # Analytics tab
+        self._analytics_tab.refresh_requested.connect(self.refresh_requested.emit)
+        self._analytics_tab.drilldown_requested.connect(self._on_analytics_drilldown)
+
+        # Sidebar/tab sync
+        self._tabs.currentChanged.connect(self._on_page_changed)
+        self._nav_group.button(0).setChecked(True)
+        self._on_page_changed(0)
+
+    def _on_analytics_drilldown(self, target: str, payload: object) -> None:
+        del payload
+        if target == "robots":
+            self._tabs.setCurrentWidget(self._robots_tab)
+            return
+        if target == "jobs":
+            self._tabs.setCurrentWidget(self._jobs_tab)
+            return
+        if target == "queues":
+            self._tabs.setCurrentWidget(self._queues_tab)
+            return
+
+    def _apply_styles(self) -> None:
+        """Apply custom styles to the dialog."""
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {THEME.bg_darkest};
+            }}
+
+            QWidget#header {{
+                background: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border};
+            }}
+
+            QWidget#footer {{
+                background: {THEME.bg_header};
+                border-top: 1px solid {THEME.border};
+            }}
+
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+
+            QWidget#fleet_sidebar {{
+                background: {THEME.bg_dark};
+                border-right: 1px solid {THEME.border};
+                min-width: 190px;
+                max-width: 190px;
+            }}
+
+            QToolButton#fleet_nav_btn {{
+                border: 1px solid transparent;
+                border-radius: 6px;
+                padding: 8px 10px;
+                color: {THEME.text_secondary};
+                text-align: left;
+                font-weight: 600;
+            }}
+
+            QToolButton#fleet_nav_btn:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+                color: {THEME.text_primary};
+            }}
+
+            QToolButton#fleet_nav_btn:checked {{
+                background: {THEME.bg_selected};
+                border-color: {THEME.accent_primary};
+                color: {THEME.text_primary};
+            }}
+
+            QPushButton {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: 6px;
+                color: {THEME.text_primary};
+                padding: 6px 14px;
+                font-weight: 600;
+            }}
+
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            """
+        )
+
+    def _on_page_changed(self, index: int) -> None:
+        btn = self._nav_buttons.get(index)
+        if btn is not None:
+            btn.setChecked(True)
+
+        nav_items = [
+            ("robot", 0),
+            ("jobs", 1),
+            ("calendar", 2),
+            ("queue", 3),
+            ("key", 4),
+            ("chart", 5),
+        ]
+        for icon_kind, idx in nav_items:
+            b = self._nav_buttons.get(idx)
+            if b is None:
+                continue
+            b.setIcon(self._get_nav_icon(icon_kind, active=(idx == index)))
+
+    def _get_nav_icon(self, kind: str, active: bool) -> QIcon:
+        cache_key = (kind, active)
+        cached = self._nav_icon_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        size = 18
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        color = QColor(THEME.accent_primary if active else THEME.text_secondary)
+        pen = QPen(color, 1.8)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+
+        if kind == "robot":
+            # Simple robot: head + body + eyes
+            painter.drawRoundedRect(4, 3, 10, 7, 2, 2)
+            painter.drawRoundedRect(5, 10, 8, 6, 2, 2)
+            painter.drawPoint(7, 6)
+            painter.drawPoint(11, 6)
+            painter.drawLine(9, 1, 9, 3)
+        elif kind == "jobs":
+            # List icon
+            painter.drawLine(4, 5, 14, 5)
+            painter.drawLine(4, 9, 14, 9)
+            painter.drawLine(4, 13, 14, 13)
+            painter.drawPoint(3, 5)
+            painter.drawPoint(3, 9)
+            painter.drawPoint(3, 13)
+        elif kind == "calendar":
+            painter.drawRoundedRect(4, 5, 10, 10, 2, 2)
+            painter.drawLine(4, 8, 14, 8)
+            painter.drawLine(7, 3, 7, 6)
+            painter.drawLine(11, 3, 11, 6)
+        elif kind == "queue":
+            painter.drawRoundedRect(4, 4, 10, 4, 2, 2)
+            painter.drawRoundedRect(4, 9, 10, 4, 2, 2)
+            painter.drawRoundedRect(4, 14, 10, 2, 1, 1)
+        elif kind == "key":
+            painter.drawEllipse(4, 6, 6, 6)
+            painter.drawLine(9, 9, 14, 9)
+            painter.drawLine(12, 9, 12, 11)
+            painter.drawLine(13, 9, 13, 10)
+        elif kind == "chart":
+            painter.drawLine(4, 14, 14, 14)
+            painter.drawLine(5, 13, 5, 10)
+            painter.drawLine(9, 13, 9, 7)
+            painter.drawLine(13, 13, 13, 5)
+
+        painter.end()
+
+        icon = QIcon(pixmap)
+        self._nav_icon_cache[cache_key] = icon
+        return icon
+
+    def show_toast(
+        self, message: str, level: str = "info", duration_ms: int = 2500
+    ) -> None:
+        self._toast.show_toast(message, level=level, duration_ms=duration_ms)
+
+    def set_connection_status(self, connected: bool, message: str) -> None:
+        self._connection_status.setText(message)
+        color = THEME.status_success if connected else THEME.status_error
+        self._connection_status.setStyleSheet(f"color: {color}; font-weight: 700;")
+
+    def set_status(self, message: str) -> None:
+        self._status_label.setText(message)
+
+    def set_super_admin(self, is_super_admin: bool) -> None:
+        self._is_super_admin = is_super_admin
+        self._tenant_selector.set_super_admin(is_super_admin)
+        self._update_tenant_selector_visibility()
+
+    def update_tenants(self, tenants: List[Dict[str, Any]]) -> None:
+        self._tenant_selector.update_tenants(tenants)
+        self._update_tenant_selector_visibility(tenant_count=len(tenants))
+
+    def _update_tenant_selector_visibility(
+        self, tenant_count: Optional[int] = None
+    ) -> None:
+        if tenant_count is None:
+            tenant_count = 0
+        visible = bool(self._is_super_admin and tenant_count > 1)
+        self._tenant_selector.setVisible(visible)
+
+    def update_robots(self, robots: List["Robot"]) -> None:
+        if hasattr(self._robots_tab, "update_robots"):
+            self._robots_tab.update_robots(robots)
+
+    def update_jobs(self, jobs: List[Dict[str, Any]]) -> None:
+        self._jobs_tab.update_jobs(jobs)
+
+    def update_schedules(self, schedules: List[Dict[str, Any]]) -> None:
+        self._schedules_tab.update_schedules(schedules)
+
+    def update_queues(self, queues: List[Dict[str, Any]]) -> None:
+        if hasattr(self._queues_tab, "update_queues"):
+            self._queues_tab.update_queues(queues)
+
+    def update_analytics(self, analytics: Dict[str, Any]) -> None:
+        self._analytics_tab.update_analytics(analytics)
+
+    def update_api_keys_robots(self, robots: List[Dict[str, Any]]) -> None:
+        self._api_keys_tab.update_robots(robots)
+
+    def update_api_keys(self, api_keys: List[Dict[str, Any]]) -> None:
+        self._api_keys_tab.update_api_keys(api_keys)
+
+    def _on_tenant_changed(self, tenant_id: Optional[str]) -> None:
+        """Handle tenant selection change."""
+        self._current_tenant_id = tenant_id
+        self.tenant_changed.emit(tenant_id)
+        self.refresh_requested.emit()
+
+    def _on_refresh_robots(self) -> None:
+        self.refresh_requested.emit()
+
+    def _on_job_selected(self, job_id: str) -> None:
+        pass
+
+    def _on_refresh_jobs(self) -> None:
+        self.refresh_requested.emit()
+
+    def _on_schedule_selected(self, schedule_id: str) -> None:
+        pass

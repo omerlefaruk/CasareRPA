@@ -23,6 +23,7 @@ from casare_rpa.infrastructure.observability.metrics import get_metrics_collecto
 from casare_rpa.infrastructure.orchestrator.api.auth import (
     decode_token,
     get_robot_authenticator,
+    _get_admin_api_key,
     JWT_DEV_MODE,
 )
 from casare_rpa.infrastructure.orchestrator.api.models import (
@@ -68,6 +69,11 @@ async def verify_websocket_token(
         return None
 
     # Try JWT token first
+    admin_key = _get_admin_api_key()
+    if admin_key and token == admin_key:
+        logger.debug("WebSocket authenticated via admin API key")
+        return "admin_api_key"
+
     try:
         payload = decode_token(token)
         if payload.type == "access":

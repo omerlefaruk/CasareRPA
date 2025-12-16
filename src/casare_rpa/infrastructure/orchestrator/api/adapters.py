@@ -169,14 +169,41 @@ class MonitoringDataAdapter:
 
         try:
             async with self._db_pool.acquire() as conn:
+                has_id = await conn.fetchval(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'robots' AND column_name = 'id'
+                    )
+                    """
+                )
+                robot_id_expr = "COALESCE(robot_id, id)" if has_id else "robot_id"
+
                 # Build query with optional status filter
                 # Actual Supabase schema: id, robot_id, name, hostname, status,
                 # last_seen, last_heartbeat, metrics, capabilities, environment, etc.
                 # NO current_job_ids column exists!
                 if status:
-                    query = """
+                    if status == "idle":
+                        query = f"""
                         SELECT
-                            COALESCE(robot_id, id) AS robot_id,
+                            {robot_id_expr} AS robot_id,
+                            name,
+                            hostname,
+                            status,
+                            NULL AS current_job_id,
+                            last_seen,
+                            last_heartbeat,
+                            metrics
+                        FROM robots
+                        WHERE status IN ('idle', 'online')
+                        ORDER BY last_seen DESC NULLS LAST
+                        """
+                        rows = await conn.fetch(query)
+                    else:
+                        query = f"""
+                        SELECT
+                            {robot_id_expr} AS robot_id,
                             name,
                             hostname,
                             status,
@@ -187,12 +214,12 @@ class MonitoringDataAdapter:
                         FROM robots
                         WHERE status = $1
                         ORDER BY last_seen DESC NULLS LAST
-                    """
-                    rows = await conn.fetch(query, status)
+                        """
+                        rows = await conn.fetch(query, status)
                 else:
-                    query = """
+                    query = f"""
                         SELECT
-                            COALESCE(robot_id, id) AS robot_id,
+                            {robot_id_expr} AS robot_id,
                             name,
                             hostname,
                             status,

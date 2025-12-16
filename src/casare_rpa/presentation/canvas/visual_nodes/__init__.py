@@ -477,6 +477,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     # but NOT registered here to avoid duplicate __identifier__ conflict
     # Workflow nodes (1 node)
     "VisualCallSubworkflowNode": "workflow",
+    "VisualExecuteWorkflowNode": "workflow.execute_workflow_node",
 }
 
 # Cache for loaded modules and classes

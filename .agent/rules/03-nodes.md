@@ -15,7 +15,7 @@ Outputs: [port: DataType]
 ### 2. SEARCH (MANDATORY)
 ```
 1. Read nodes/_index.md           # Find category
-2. Grep nodes/__init__.py         # Check _NODE_REGISTRY
+2. Grep nodes/registry_data.py    # Check _NODE_REGISTRY
 3. Decision:
    ├── Exists? → Use it
    ├── Similar? → Enhance it (add PropertyDef)
@@ -34,6 +34,13 @@ See `.brain/docs/node-templates.md` for full templates.
 6. Export from `__init__.py`
 7. Add to `_NODE_REGISTRY`
 8. Add to `NODE_TYPE_MAP`
+
+## Test Rules
+- Tests: domain node logic in `tests/domain/` should have no mocks; use `tests/nodes/` fixtures for node behavior.
+
+## Node Registration
+- Register nodes in `src/casare_rpa/nodes/registry_data.py`.
+- Keep `PropertyDef` schemas consistent with visual node widgets.
 
 ## Atomic Design Principles
 

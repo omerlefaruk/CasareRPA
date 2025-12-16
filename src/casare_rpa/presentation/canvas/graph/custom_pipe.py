@@ -109,6 +109,32 @@ def _init_pipe_colors():
 
 
 # ============================================================================
+# PHANTOM VALUES (Last Execution State)
+# ============================================================================
+# Show last known values on output wires after execution completes.
+# Semi-transparent text appears above wires showing what data passed through.
+
+_PHANTOM_FONT = QFont("Consolas", 8)
+_PHANTOM_FONT.setWeight(QFont.Weight.Medium)
+_PHANTOM_BG_ALPHA = 140  # Semi-transparent background
+_PHANTOM_TEXT_ALPHA = 200  # Semi-transparent text
+
+# Global toggle for phantom values
+_show_phantom_values: bool = True
+
+
+def set_show_phantom_values(enabled: bool) -> None:
+    """Enable or disable phantom values globally."""
+    global _show_phantom_values
+    _show_phantom_values = enabled
+
+
+def get_show_phantom_values() -> bool:
+    """Check if phantom values are enabled."""
+    return _show_phantom_values
+
+
+# ============================================================================
 # EXECUTION FLOW ANIMATION CONSTANTS
 # ============================================================================
 # Animation settings for the flowing dot during execution.
@@ -363,6 +389,8 @@ class CasarePipe(PipeItem):
         self._show_completion_glow: bool = False
         # Timer for animation updates (created lazily to avoid overhead)
         self._animation_timer: Optional[QTimer] = None
+        # Per-instance step (kept for future extensions)
+        self._animation_step: float = _ANIMATION_STEP
 
         # ============================================================
         # SMART WIRE ROUTING STATE
@@ -372,6 +400,14 @@ class CasarePipe(PipeItem):
         self._routed_ctrl2: Optional[QPointF] = None
         # Hash of last positions to detect when to recalculate
         self._last_position_hash: int = 0
+
+        # ============================================================
+        # PHANTOM VALUES STATE
+        # ============================================================
+        # Last known value that passed through this wire (persists after execution)
+        self._phantom_value: Optional[str] = None
+        # Whether phantom value has been set (vs. never executed)
+        self._has_phantom: bool = False
 
         # Enable hover events
         self.setAcceptHoverEvents(True)
@@ -393,6 +429,7 @@ class CasarePipe(PipeItem):
         self._is_animating = True
         self._animation_progress = 0.0
         self._show_completion_glow = False
+        self._animation_step = _ANIMATION_STEP
 
         # Create timer lazily
         if self._animation_timer is None:
@@ -459,6 +496,8 @@ class CasarePipe(PipeItem):
         if not self._is_animating:
             return
 
+        _init_flow_colors()
+
         path = self.path()
         if path.isEmpty():
             return
@@ -477,7 +516,7 @@ class CasarePipe(PipeItem):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(pos, _FLOW_DOT_GLOW_RADIUS, _FLOW_DOT_GLOW_RADIUS)
 
-        # Draw solid dot
+        # Draw solid dot (use wire color during pulses for higher contrast)
         painter.setBrush(QBrush(_FLOW_DOT_COLOR))
         painter.drawEllipse(pos, _FLOW_DOT_RADIUS, _FLOW_DOT_RADIUS)
 
@@ -493,6 +532,8 @@ class CasarePipe(PipeItem):
         if not self._show_completion_glow:
             return
 
+        _init_flow_colors()
+
         path = self.path()
         if path.isEmpty():
             return
@@ -502,6 +543,99 @@ class CasarePipe(PipeItem):
         glow_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(glow_pen)
         painter.drawPath(path)
+
+    def _draw_phantom_value(self, painter: QPainter) -> None:
+        """
+        Draw the phantom value (last known value) above the wire.
+
+        Semi-transparent text appears near the output port showing what
+        data last passed through this connection. Turns the static graph
+        into a snapshot of the last execution state.
+
+        Args:
+            painter: QPainter to draw with
+        """
+        if not _show_phantom_values or not self._has_phantom or not self._phantom_value:
+            return
+
+        path = self.path()
+        if path.isEmpty():
+            return
+
+        # Position at 20% along the path (near source port)
+        try:
+            pos = path.pointAtPercent(0.20)
+        except Exception:
+            return
+
+        # Setup font
+        painter.setFont(_PHANTOM_FONT)
+
+        # Calculate text bounds
+        fm = QFontMetrics(_PHANTOM_FONT)
+        text_rect = fm.boundingRect(self._phantom_value)
+        padding = 3
+
+        # Position above the wire
+        bg_rect = QRectF(
+            pos.x() - text_rect.width() / 2 - padding,
+            pos.y() - text_rect.height() - 8 - padding,  # 8px above wire
+            text_rect.width() + padding * 2,
+            text_rect.height() + padding * 2,
+        )
+
+        # Get wire color for tinting
+        wire_color = self._get_wire_color()
+
+        # Semi-transparent background (darker)
+        bg_color = QColor(30, 30, 30, _PHANTOM_BG_ALPHA)
+        painter.setBrush(QBrush(bg_color))
+
+        # Border matches wire color but semi-transparent
+        border_color = QColor(wire_color)
+        border_color.setAlpha(_PHANTOM_BG_ALPHA)
+        painter.setPen(QPen(border_color, 1))
+        painter.drawRoundedRect(bg_rect, 3, 3)
+
+        # Text in wire color but semi-transparent
+        text_color = QColor(wire_color)
+        text_color.setAlpha(_PHANTOM_TEXT_ALPHA)
+        painter.setPen(QPen(text_color))
+        painter.drawText(bg_rect, Qt.AlignmentFlag.AlignCenter, self._phantom_value)
+
+    def set_phantom_value(self, value: any) -> None:
+        """
+        Set the phantom value (last execution result) for this wire.
+
+        Args:
+            value: The value that passed through this connection
+        """
+        if value is None:
+            self._phantom_value = None
+            self._has_phantom = False
+        else:
+            # Format the value for display
+            try:
+                str_val = str(value)
+                # Truncate long values
+                if len(str_val) > 30:
+                    str_val = str_val[:27] + "..."
+                self._phantom_value = str_val
+                self._has_phantom = True
+            except Exception:
+                self._phantom_value = "<value>"
+                self._has_phantom = True
+        self.update()
+
+    def clear_phantom_value(self) -> None:
+        """Clear the phantom value."""
+        self._phantom_value = None
+        self._has_phantom = False
+        self.update()
+
+    def has_phantom_value(self) -> bool:
+        """Check if this wire has a phantom value."""
+        return self._has_phantom
 
     def _get_port_data_type(self) -> Optional[DataType]:
         """
@@ -918,9 +1052,22 @@ class CasarePipe(PipeItem):
         # Draw dashed for live connections, solid for complete
         is_live = not self.input_port or not self.output_port
 
+        # Completion glow (keep in LOD for feedback)
+        if self._show_completion_glow:
+            self._draw_completion_glow(painter)
+
         if is_live:
+            # Make live connection more visible at low zoom
+            live_pen = QPen(pen)
+            try:
+                live_color = QColor(live_pen.color()).lighter(150)
+                live_color.setAlpha(255)
+                live_pen.setColor(live_color)
+            except Exception:
+                pass
+            live_pen.setWidthF(max(live_pen.widthF(), 2.5))
             # Use OpenGL-compatible manual dashed line drawing
-            _draw_dashed_path(painter, path, pen)
+            _draw_dashed_path(painter, path, live_pen)
         else:
             # Solid line for complete connections
             pen.setStyle(Qt.PenStyle.SolidLine)
@@ -932,6 +1079,10 @@ class CasarePipe(PipeItem):
                 painter.drawLine(start, end)
             except Exception:
                 painter.drawPath(path)
+
+        # Flow dot (keep in LOW LOD so pulses remain visible in high performance mode)
+        if self._is_animating and lod_level != LODLevel.ULTRA_LOW:
+            self._draw_flow_dot(painter)
 
     def paint(self, painter, option, widget):
         """
@@ -982,7 +1133,9 @@ class CasarePipe(PipeItem):
             if self._is_incompatible:
                 pen = QPen(_INCOMPATIBLE_WIRE_COLOR, wire_thickness)
             else:
-                pen = QPen(wire_color, wire_thickness)
+                live_color = QColor(wire_color).lighter(150)
+                live_color.setAlpha(255)
+                pen = QPen(live_color, max(wire_thickness, 2.5))
             _draw_dashed_path(painter, self.path(), pen)
         else:
             # Connection is complete - use solid line with type color
@@ -1014,6 +1167,13 @@ class CasarePipe(PipeItem):
         if self._hovered and self._output_value is not None:
             if lod_manager.should_render_labels():
                 self._draw_output_preview(painter)
+
+        # Draw phantom value (last execution state) when not animating
+        # Show at HIGH and FULL LOD levels for better visibility
+        if not self._is_animating and self.input_port and self.output_port:
+            current_lod = lod_manager.get_lod_level()
+            if current_lod in (LODLevel.HIGH, LODLevel.FULL, LODLevel.EXPANDED):
+                self._draw_phantom_value(painter)
 
     def _draw_label(self, painter: QPainter) -> None:
         """Draw the data type label on the connection."""

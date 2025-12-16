@@ -25,6 +25,8 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     REFRESH_INTERVALS,
 )
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 
 class BaseTabWidget(QWidget):
     """
@@ -88,7 +90,7 @@ class BaseTabWidget(QWidget):
         self._footer = QHBoxLayout()
 
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet("color: #888888;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self._footer.addWidget(self._status_label)
 
         self._footer.addStretch()

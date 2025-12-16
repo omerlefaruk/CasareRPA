@@ -5,7 +5,7 @@ Provides a context menu with quick actions when right-clicking on nodes.
 """
 
 from typing import TYPE_CHECKING, Optional
-from PySide6.QtWidgets import QMenu, QApplication, QInputDialog
+from PySide6.QtWidgets import QMenu, QApplication, QInputDialog, QMessageBox
 from PySide6.QtCore import QObject, Signal, QEvent, Qt, QPointF
 from loguru import logger
 
@@ -52,6 +52,7 @@ class NodeQuickActions(QObject):
         super().__init__(parent)
         self._graph = graph
         self._auto_connect_manager = None  # Will be set by NodeGraphWidget
+
         self._setup_context_menu()
 
     def set_auto_connect_manager(self, manager) -> None:

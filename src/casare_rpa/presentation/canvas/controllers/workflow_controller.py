@@ -101,6 +101,160 @@ class WorkflowController(BaseController):
             logger.debug("Created OrchestratorClient for API calls")
         return self._orchestrator_client
 
+    def _extract_schedule_trigger_info(
+        self, workflow_json: dict
+    ) -> tuple[str | None, dict | None]:
+        """
+        Extract schedule trigger configuration from workflow JSON.
+
+        Searches for ScheduleTriggerNode in the workflow and extracts its config.
+
+        Args:
+            workflow_json: Serialized workflow data
+
+        Returns:
+            Tuple of (trigger_type, schedule_config) where:
+            - trigger_type: "scheduled" if Schedule Trigger found, None otherwise
+            - schedule_config: Dict with 'cron_expression' and original config, or None
+        """
+        from typing import Any, Dict
+
+        nodes = workflow_json.get("nodes", {})
+
+        # LOG: Show the number of nodes and format
+        logger.info(
+            f"[SCHEDULE_DETECT] Searching {len(nodes) if nodes else 0} nodes "
+            f"(format: {'list' if isinstance(nodes, list) else 'dict'})"
+        )
+
+        # Handle both dict format (Canvas) and list format
+        if isinstance(nodes, list):
+            nodes_iter = [(n.get("node_id", ""), n) for n in nodes]
+        else:
+            nodes_iter = nodes.items()
+
+        for node_id, node_data in nodes_iter:
+            # Check for ScheduleTriggerNode - try multiple key formats
+            node_type = (
+                node_data.get("node_type", "") or node_data.get("type_", "") or ""
+            )
+
+            # LOG: Show each node type for troubleshooting
+            logger.info(f"[SCHEDULE_DETECT] Node {node_id}: type='{node_type}'")
+
+            if "ScheduleTrigger" in node_type:
+                # Extract config from 'config' (serialized) or 'custom' (Canvas raw)
+                config = node_data.get("config", {}) or node_data.get("custom", {})
+
+                # Convert to cron expression
+                cron_expr = self._schedule_config_to_cron(config)
+
+                logger.info(
+                    f"Found ScheduleTriggerNode: {node_id}, "
+                    f"frequency={config.get('frequency')}, cron={cron_expr}"
+                )
+
+                return "scheduled", {
+                    "cron_expression": cron_expr,
+                    "original_config": config,
+                    "trigger_node_id": node_id,
+                }
+
+        logger.debug("[SCHEDULE_DETECT] No ScheduleTriggerNode found in workflow")
+        return None, None
+
+    def _schedule_config_to_cron(self, config: dict) -> str:
+        """
+        Convert ScheduleTriggerNode config to cron expression.
+
+        Cron format: minute hour day month weekday
+
+        Supports:
+        - interval: Every N seconds (min 60s → */1 * * * *)
+        - hourly: At minute M every hour
+        - daily: At H:M every day
+        - weekly: At H:M on specific weekday
+        - monthly: At H:M on specific day of month
+        - cron: Use provided cron expression directly
+
+        Args:
+            config: ScheduleTriggerNode configuration dict
+
+        Returns:
+            Cron expression string
+        """
+        frequency = config.get("frequency", "daily")
+
+        # Parse time settings with defaults
+        hour = int(config.get("time_hour", 9))
+        minute = int(config.get("time_minute", 0))
+
+        # Clamp to valid ranges
+        hour = max(0, min(23, hour))
+        minute = max(0, min(59, minute))
+
+        if frequency == "cron":
+            # Use provided cron expression directly
+            return config.get("cron_expression", "0 9 * * *")
+
+        elif frequency == "interval":
+            # Convert interval to cron (minimum 1 minute)
+            seconds = int(config.get("interval_seconds", 60))
+            if seconds < 60:
+                logger.warning(
+                    f"Interval {seconds}s is less than 1 minute. "
+                    f"Using minimum interval of 1 minute for cron scheduling."
+                )
+                seconds = 60
+
+            minutes = seconds // 60
+            if minutes >= 60:
+                # Run every N hours
+                hours = minutes // 60
+                return f"0 */{hours} * * *"
+            else:
+                # Run every N minutes
+                return f"*/{minutes} * * * *"
+
+        elif frequency == "hourly":
+            # At minute M every hour
+            return f"{minute} * * * *"
+
+        elif frequency == "daily":
+            # At H:M every day
+            return f"{minute} {hour} * * *"
+
+        elif frequency == "weekly":
+            # Convert day name to cron weekday number (0=Sun or mon,tue,wed...)
+            day_map = {
+                "sun": 0,
+                "mon": 1,
+                "tue": 2,
+                "wed": 3,
+                "thu": 4,
+                "fri": 5,
+                "sat": 6,
+            }
+            day = config.get("day_of_week", "mon").lower()
+            weekday = day_map.get(day, 1)
+            return f"{minute} {hour} * * {weekday}"
+
+        elif frequency == "monthly":
+            # At H:M on day D of month
+            day = int(config.get("day_of_month", 1))
+            day = max(1, min(31, day))
+            return f"{minute} {hour} {day} * *"
+
+        elif frequency == "once":
+            # For 'once', we still create a schedule but it will be disabled after run
+            # Default to daily at specified time
+            return f"{minute} {hour} * * *"
+
+        else:
+            # Fallback: daily at 9:00
+            logger.warning(f"Unknown frequency '{frequency}', defaulting to daily 9:00")
+            return "0 9 * * *"
+
     def new_workflow(self) -> None:
         """Create a new empty workflow."""
         logger.info("Creating new workflow")
@@ -732,20 +886,42 @@ class WorkflowController(BaseController):
         # Note: Keep nodes as dict - Robot's workflow_loader expects dict format
         # keyed by node_id. API accepts both dict and list formats.
 
-        self.main_window.show_status("Submitting workflow to robot...", 3000)
+        # Detect Schedule Trigger nodes and extract scheduling info
+        trigger_type, schedule_config = self._extract_schedule_trigger_info(
+            workflow_json
+        )
+        schedule_cron = None
+
+        if trigger_type == "scheduled" and schedule_config:
+            schedule_cron = schedule_config.get("cron_expression")
+            self.main_window.show_status(
+                f"Creating scheduled workflow (cron: {schedule_cron})...", 3000
+            )
+        else:
+            trigger_type = "manual"
+            self.main_window.show_status("Submitting workflow to robot...", 3000)
 
         # Submit via OrchestratorClient (Application layer)
         client = self._get_orchestrator_client()
+
+        # Build metadata with workflow_json for scheduled execution
+        metadata = {
+            "submitted_from": "canvas",
+            "canvas_file": str(self._current_file) if self._current_file else None,
+        }
+        if schedule_config:
+            metadata["schedule_config"] = schedule_config
+            # Include workflow_json in metadata for schedule execution
+            metadata["workflow_json"] = workflow_json
+
         result = await client.submit_workflow(
             workflow_name=self._current_file.stem if self._current_file else "Untitled",
             workflow_json=workflow_json,
             execution_mode="lan",
-            trigger_type="manual",
+            trigger_type=trigger_type,
             priority=10,
-            metadata={
-                "submitted_from": "canvas",
-                "canvas_file": str(self._current_file) if self._current_file else None,
-            },
+            metadata=metadata,
+            schedule_cron=schedule_cron,
         )
 
         if result.success:
@@ -757,15 +933,27 @@ class WorkflowController(BaseController):
                 5000,
             )
 
-            # Show success dialog
-            QMessageBox.information(
-                self.main_window,
-                "Workflow Submitted",
-                f"Workflow submitted to LAN robot successfully!\n\n"
-                f"Workflow ID: {workflow_id}\n"
-                f"Job ID: {job_id}\n\n"
-                f"Monitor execution in the Monitoring Dashboard.",
-            )
+            # Show success dialog with schedule info if applicable
+            schedule_id = result.schedule_id
+            if schedule_id:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Scheduled",
+                    f"Workflow scheduled on LAN robot successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Schedule ID: {schedule_id}\n"
+                    f"Cron: {schedule_cron}\n\n"
+                    f"View and manage in Fleet Dashboard → Schedules tab.",
+                )
+            else:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Submitted",
+                    f"Workflow submitted to LAN robot successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Job ID: {job_id}\n\n"
+                    f"Monitor execution in the Monitoring Dashboard.",
+                )
         else:
             self.main_window.show_status(f"Submission failed: {result.message}", 5000)
 
@@ -826,20 +1014,45 @@ class WorkflowController(BaseController):
         # Note: Keep nodes as dict - Robot's workflow_loader expects dict format
         # keyed by node_id. API accepts both dict and list formats.
 
-        self.main_window.show_status("Submitting workflow for internet robots...", 3000)
+        # Detect Schedule Trigger nodes and extract scheduling info
+        trigger_type, schedule_config = self._extract_schedule_trigger_info(
+            workflow_json
+        )
+        schedule_cron = None
+
+        if trigger_type == "scheduled" and schedule_config:
+            schedule_cron = schedule_config.get("cron_expression")
+            self.main_window.show_status(
+                f"Creating scheduled workflow for internet robots (cron: {schedule_cron})...",
+                3000,
+            )
+        else:
+            trigger_type = "manual"
+            self.main_window.show_status(
+                "Submitting workflow for internet robots...", 3000
+            )
 
         # Submit via OrchestratorClient (Application layer)
         client = self._get_orchestrator_client()
+
+        # Build metadata with workflow_json for scheduled execution
+        metadata = {
+            "submitted_from": "canvas",
+            "canvas_file": str(self._current_file) if self._current_file else None,
+        }
+        if schedule_config:
+            metadata["schedule_config"] = schedule_config
+            # Include workflow_json in metadata for schedule execution
+            metadata["workflow_json"] = workflow_json
+
         result = await client.submit_workflow(
             workflow_name=self._current_file.stem if self._current_file else "Untitled",
             workflow_json=workflow_json,
             execution_mode="internet",
-            trigger_type="manual",
+            trigger_type=trigger_type,
             priority=10,
-            metadata={
-                "submitted_from": "canvas",
-                "canvas_file": str(self._current_file) if self._current_file else None,
-            },
+            metadata=metadata,
+            schedule_cron=schedule_cron,
         )
 
         if result.success:
@@ -851,16 +1064,28 @@ class WorkflowController(BaseController):
                 5000,
             )
 
-            # Show success dialog
-            QMessageBox.information(
-                self.main_window,
-                "Workflow Queued",
-                f"Workflow queued for internet robots successfully!\n\n"
-                f"Workflow ID: {workflow_id}\n"
-                f"Job ID: {job_id}\n\n"
-                f"The first available internet robot will claim and execute this job.\n\n"
-                f"Monitor execution in the Monitoring Dashboard.",
-            )
+            # Show success dialog with schedule info if applicable
+            schedule_id = result.schedule_id
+            if schedule_id:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Scheduled",
+                    f"Workflow scheduled for internet robots successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Schedule ID: {schedule_id}\n"
+                    f"Cron: {schedule_cron}\n\n"
+                    f"View and manage in Fleet Dashboard → Schedules tab.",
+                )
+            else:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Queued",
+                    f"Workflow queued for internet robots successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Job ID: {job_id}\n\n"
+                    f"The first available internet robot will claim and execute this job.\n\n"
+                    f"Monitor execution in the Monitoring Dashboard.",
+                )
         else:
             self.main_window.show_status(f"Submission failed: {result.message}", 5000)
 

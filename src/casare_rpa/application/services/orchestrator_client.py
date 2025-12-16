@@ -131,6 +131,7 @@ class OrchestratorClient:
         trigger_type: str = "manual",
         priority: int = 10,
         metadata: Optional[Dict[str, Any]] = None,
+        schedule_cron: Optional[str] = None,
     ) -> WorkflowSubmissionResult:
         """
         Submit a workflow to the Orchestrator for execution.
@@ -142,14 +143,16 @@ class OrchestratorClient:
             trigger_type: "manual", "scheduled", or "webhook"
             priority: Job priority (0=highest, 20=lowest)
             metadata: Additional metadata for the job
+            schedule_cron: Cron expression for scheduled workflows (required if trigger_type="scheduled")
 
         Returns:
             WorkflowSubmissionResult with success status and IDs
         """
         logger.info(
-            "Submitting workflow '{}' to Orchestrator (mode={})",
+            "Submitting workflow '{}' to Orchestrator (mode={}, trigger={})",
             workflow_name,
             execution_mode,
+            trigger_type,
         )
 
         payload = {
@@ -160,6 +163,10 @@ class OrchestratorClient:
             "priority": priority,
             "metadata": metadata or {},
         }
+
+        # Include cron expression for scheduled workflows
+        if schedule_cron and trigger_type == "scheduled":
+            payload["schedule_cron"] = schedule_cron
 
         try:
             url = f"{self._base_url}/api/v1/workflows"

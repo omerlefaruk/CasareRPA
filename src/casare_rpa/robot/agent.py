@@ -44,10 +44,11 @@ import signal
 import socket
 import sys
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, replace
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from urllib.parse import urlparse
 from typing import Any, Callable, Dict, List, Optional, Set
 
 from loguru import logger
@@ -65,6 +66,8 @@ from casare_rpa.robot.audit import (
     AuditEventType,
     init_audit_logger,
 )
+
+from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
 
 try:
     import psutil
@@ -219,11 +222,14 @@ class RobotConfig:
     log_dir: Path = field(default_factory=lambda: Path.home() / ".casare_rpa" / "logs")
 
     def __post_init__(self) -> None:
-        """Initialize default values."""
-        if not self.robot_id:
-            self.robot_id = f"robot-{self.hostname}-{uuid.uuid4().hex[:8]}"
-        if not self.robot_name:
-            self.robot_name = f"Robot-{self.hostname}"
+        """Initialize default values.
+
+        Note: robot_id and robot_name are NOT auto-generated here.
+        The RobotIdentityStore handles stable ID generation to ensure
+        the robot ID persists across restarts.
+        """
+        # Robot ID/name will be resolved from identity store in RobotAgent.__init__
+        pass
 
     @classmethod
     def from_env(cls) -> "RobotConfig":
@@ -372,8 +378,30 @@ class RobotAgent:
             on_job_complete: Optional callback (job_id, success, error)
         """
         self.config = config or RobotConfig.from_env()
-        self.robot_id = self.config.robot_id
-        self.name = self.config.robot_name
+
+        self._identity_store = RobotIdentityStore()
+        self._identity: RobotIdentity = self._identity_store.resolve(
+            worker_robot_id=self.config.robot_id,
+            worker_robot_name=self.config.robot_name,
+            hostname=self.config.hostname,
+        )
+        self._identity_mtime_ns: Optional[int] = self._get_identity_mtime_ns()
+
+        self.robot_id = self._identity.worker_robot_id
+        self.name = self._identity.worker_robot_name
+        self.config.robot_id = self.robot_id
+        self.config.robot_name = self.name
+
+        self._fleet_robot_id = self._identity.fleet_robot_id
+        self._fleet_robot_name = self._identity.fleet_robot_name
+        self._fleet_linked = self._identity.fleet_linked
+        self._fleet_ever_registered = self._identity.fleet_ever_registered
+
+        # Orchestrator API (optional)
+        self._orchestrator_client = None
+        self._last_reported_status: Optional[str] = None
+        # Gate to prevent presence/heartbeat calls until registration is confirmed
+        self._api_registration_confirmed = False
 
         # State
         self._state = AgentState.STOPPED
@@ -668,8 +696,16 @@ class RobotAgent:
 
     async def _init_components(self) -> None:
         """Initialize all agent components."""
+        use_orchestrator_jobs = bool(
+            self._get_orchestrator_base_url() and self._get_orchestrator_api_key()
+        )
+
         # Fetch database URL from environment if not set and frozen app
-        if not self.config.postgres_url and getattr(sys, "frozen", False):
+        if (
+            not self.config.postgres_url
+            and getattr(sys, "frozen", False)
+            and not use_orchestrator_jobs
+        ):
             logger.info(
                 "Frozen app detected, building database URL from DB_PASSWORD..."
             )
@@ -710,6 +746,24 @@ class RobotAgent:
                 )
                 self._consumer = PgQueuerConsumer(consumer_config)
                 await self._consumer.start()
+            elif use_orchestrator_jobs:
+                from casare_rpa.infrastructure.orchestrator.robot_job_consumer import (
+                    OrchestratorJobConsumer,
+                    OrchestratorJobConsumerConfig,
+                )
+
+                base_url = self._get_orchestrator_base_url()
+                api_key = self._get_orchestrator_api_key()
+                if base_url and api_key:
+                    self._consumer = OrchestratorJobConsumer(
+                        OrchestratorJobConsumerConfig(
+                            base_url=base_url,
+                            api_key=api_key,
+                            environment=self.config.environment,
+                            visibility_timeout_seconds=self.config.visibility_timeout_seconds,
+                        )
+                    )
+                    await self._consumer.start()
 
             # Initialize DBOS executor
             executor_config = DBOSExecutorConfig(
@@ -743,6 +797,8 @@ class RobotAgent:
 
     async def _stop_components(self) -> None:
         """Stop all agent components."""
+        await self._disconnect_orchestrator_client()
+
         if self._realtime_manager:
             try:
                 await self._realtime_manager.disconnect()
@@ -773,34 +829,176 @@ class RobotAgent:
             except Exception as e:
                 logger.warning(f"Error stopping metrics: {e}")
 
+    async def _disconnect_orchestrator_client(self) -> None:
+        client = self._orchestrator_client
+        if client is None:
+            return
+
+        self._orchestrator_client = None
+        try:
+            await client.disconnect()
+        except Exception as e:
+            logger.debug(f"Error disconnecting orchestrator client: {e}")
+
+    def _get_identity_mtime_ns(self) -> Optional[int]:
+        try:
+            return self._identity_store.path.stat().st_mtime_ns
+        except FileNotFoundError:
+            return None
+        except Exception as e:
+            logger.debug(f"Failed to stat robot identity file: {e}")
+            return None
+
+    def _reload_identity_if_changed(self) -> None:
+        mtime_ns = self._get_identity_mtime_ns()
+        if mtime_ns is None or mtime_ns == self._identity_mtime_ns:
+            return
+
+        identity = self._identity_store.load()
+        self._identity_mtime_ns = mtime_ns
+        if identity is None:
+            return
+
+        previous_fleet_id = self._fleet_robot_id
+        previous_linked = self._fleet_linked
+        self._identity = identity
+        self._fleet_robot_id = identity.fleet_robot_id
+        self._fleet_robot_name = identity.fleet_robot_name
+        self._fleet_linked = identity.fleet_linked
+        self._fleet_ever_registered = identity.fleet_ever_registered
+
+        # Changing Fleet identity should force a status push.
+        if previous_fleet_id != self._fleet_robot_id:
+            self._last_reported_status = None
+
+        # If the UI unlinked us, stop reporting immediately.
+        if previous_linked and not self._fleet_linked:
+            logger.info("Fleet link disabled via UI; stopping Orchestrator reporting")
+
+    def _persist_identity(self) -> None:
+        if not self._identity_store.save(self._identity):
+            return
+        self._identity_mtime_ns = self._get_identity_mtime_ns()
+
+    def _mark_fleet_registered(self) -> None:
+        if self._fleet_ever_registered:
+            return
+        self._fleet_ever_registered = True
+        self._identity = replace(
+            self._identity,
+            fleet_ever_registered=True,
+            updated_at_utc=RobotIdentity.now_utc_iso(),
+        )
+        self._persist_identity()
+
+    async def _unlink_from_fleet(self, reason: str) -> None:
+        if not self._fleet_linked:
+            return
+        logger.warning(f"Unlinking from Fleet dashboard: {reason}")
+        now = RobotIdentity.now_utc_iso()
+        self._fleet_linked = False
+        self._identity = replace(
+            self._identity,
+            fleet_linked=False,
+            fleet_unlinked_reason=reason,
+            fleet_unlinked_at_utc=now,
+            updated_at_utc=now,
+        )
+        self._persist_identity()
+        await self._disconnect_orchestrator_client()
+
     # ==================== REGISTRATION ====================
 
     async def _register(self) -> None:
         """Register robot with orchestrator."""
         try:
+            if await self._register_via_orchestrator_api():
+                logger.info(
+                    f"Fleet registration active via Orchestrator API: {self._fleet_robot_id}"
+                )
+
+                if self._audit:
+                    self._audit.log(
+                        AuditEventType.ROBOT_REGISTERED,
+                        f"Fleet registration active via Orchestrator API: {self._fleet_robot_id}",
+                        details={"capabilities": self._capabilities.to_dict()},
+                    )
+
             if (
                 self._consumer
                 and hasattr(self._consumer, "_pool")
                 and self._consumer._pool
             ):
                 async with self._consumer._pool.acquire() as conn:
-                    await conn.execute(
-                        """
-                        INSERT INTO robots (name, hostname, status, environment, capabilities, last_heartbeat, last_seen, created_at, updated_at)
-                        VALUES ($1, $2, 'online', $3, $4::jsonb, NOW(), NOW(), NOW(), NOW())
-                        ON CONFLICT (hostname) DO UPDATE
-                        SET status = 'online',
-                            capabilities = $4::jsonb,
-                            last_heartbeat = NOW(),
-                            last_seen = NOW(),
-                            updated_at = NOW()
-                        RETURNING robot_id
-                        """,
-                        self.name,
-                        self.config.hostname,
-                        self.config.environment,
-                        orjson.dumps(self._capabilities.to_dict()).decode("utf-8"),
-                    )
+
+                    def dedupe_name(name: str, robot_id: str, attempt: int) -> str:
+                        suffix = robot_id[-8:] if robot_id else "robot"
+                        candidate = (
+                            f"{name} ({suffix})"
+                            if attempt == 0
+                            else f"{name} ({suffix}-{attempt + 1})"
+                        )
+                        return candidate[:128]
+
+                    def dedupe_hostname(
+                        hostname: str, robot_id: str, attempt: int
+                    ) -> str:
+                        suffix = robot_id[-8:] if robot_id else "robot"
+                        candidate = (
+                            f"{hostname}-{suffix}"
+                            if attempt == 0
+                            else f"{hostname}-{suffix}-{attempt + 1}"
+                        )
+                        return candidate[:255]
+
+                    name_to_use = self.name
+                    hostname_to_use = self.config.hostname
+                    for attempt in range(3):
+                        try:
+                            await conn.execute(
+                                """
+                                INSERT INTO robots (robot_id, name, hostname, status, environment, capabilities, last_heartbeat, last_seen, created_at, updated_at)
+                                VALUES ($1, $2, $3, 'online', $4, $5::jsonb, NOW(), NOW(), NOW(), NOW())
+                                ON CONFLICT (robot_id) DO UPDATE
+                                SET name = EXCLUDED.name,
+                                    status = 'online',
+                                    hostname = EXCLUDED.hostname,
+                                    capabilities = EXCLUDED.capabilities,
+                                    last_heartbeat = NOW(),
+                                    last_seen = NOW(),
+                                    updated_at = NOW()
+                                RETURNING robot_id
+                                """,
+                                self.robot_id,
+                                name_to_use,
+                                hostname_to_use,
+                                self.config.environment,
+                                orjson.dumps(self._capabilities.to_dict()).decode(
+                                    "utf-8"
+                                ),
+                            )
+                            break
+                        except Exception as e:
+                            msg = str(e).lower()
+                            if (
+                                "duplicate key value violates unique constraint" in msg
+                                and ("robots_name_uq" in msg or "name" in msg)
+                            ):
+                                name_to_use = dedupe_name(
+                                    self.name, self.robot_id, attempt
+                                )
+                                continue
+                            if (
+                                "duplicate key value violates unique constraint" in msg
+                                and (
+                                    "robots_hostname_unique" in msg or "hostname" in msg
+                                )
+                            ):
+                                hostname_to_use = dedupe_hostname(
+                                    self.config.hostname, self.robot_id, attempt
+                                )
+                                continue
+                            raise
 
             logger.info(f"Robot registered: {self.robot_id}")
 
@@ -813,9 +1011,156 @@ class RobotAgent:
         except Exception as e:
             logger.warning(f"Failed to register robot: {e}")
 
+    def _should_use_orchestrator_api(self) -> bool:
+        if not self._fleet_linked:
+            return False
+        if os.getenv("CASARE_DISABLE_ORCHESTRATOR_API", "false").lower() == "true":
+            return False
+
+        url = (
+            os.getenv("CASARE_ORCHESTRATOR_URL")
+            or os.getenv("ORCHESTRATOR_URL")
+            or os.getenv("CASARE_API_URL")
+        )
+        return bool(url)
+
+    def _get_orchestrator_base_url(self) -> Optional[str]:
+        url = (
+            os.getenv("CASARE_ORCHESTRATOR_URL")
+            or os.getenv("ORCHESTRATOR_URL")
+            or os.getenv("CASARE_API_URL")
+        )
+        if not url:
+            # Try auto-discovery if no URL configured
+            try:
+                from casare_rpa.robot.auto_discovery import get_auto_discovery
+
+                discovery = get_auto_discovery()
+                discovered_url = discovery.get_discovered_url()
+                if discovered_url:
+                    logger.debug(
+                        f"Using auto-discovered orchestrator: {discovered_url}"
+                    )
+                    return discovered_url.rstrip("/")
+            except Exception as e:
+                logger.debug(f"Auto-discovery failed: {e}")
+            return None
+        return url.rstrip("/")
+
+    def _build_ws_url(self, base_url: str) -> str:
+        parsed = urlparse(base_url)
+        scheme = "wss" if parsed.scheme == "https" else "ws"
+        return f"{scheme}://{parsed.netloc}"
+
+    def _get_orchestrator_api_key(self) -> Optional[str]:
+        api_key = os.getenv("CASARE_ORCHESTRATOR_API_KEY") or os.getenv(
+            "ORCHESTRATOR_API_KEY"
+        )
+        return api_key if api_key else None
+
+    async def _get_orchestrator_client(self):
+        if not self._should_use_orchestrator_api():
+            return None
+
+        if self._orchestrator_client is not None:
+            return self._orchestrator_client
+
+        base_url = self._get_orchestrator_base_url()
+        if not base_url:
+            return None
+
+        try:
+            from casare_rpa.infrastructure.orchestrator.client import (
+                OrchestratorClient,
+                OrchestratorConfig,
+            )
+
+            ws_url = self._build_ws_url(base_url)
+            self._orchestrator_client = OrchestratorClient(
+                OrchestratorConfig(
+                    base_url=base_url,
+                    ws_url=ws_url,
+                    api_key=self._get_orchestrator_api_key(),
+                )
+            )
+            return self._orchestrator_client
+        except Exception as e:
+            logger.warning(f"Failed to initialize OrchestratorClient: {e}")
+            return None
+
+    async def _register_via_orchestrator_api(self) -> bool:
+        if not self._should_use_orchestrator_api():
+            return False
+
+        client = await self._get_orchestrator_client()
+        if client is None:
+            return False
+
+        ok = False
+        try:
+            # If we were previously registered and the robot is deleted from the Fleet UI,
+            # do NOT auto re-register. Instead, unlink and keep executing locally.
+            if self._fleet_ever_registered:
+                existing = await client.get_robot(self._fleet_robot_id)
+                if existing is not None:
+                    ok = True
+                    self._api_registration_confirmed = True
+                    return True
+                if getattr(client, "last_http_status", None) == 404:
+                    await self._unlink_from_fleet(
+                        "Robot deleted from Fleet dashboard (not re-registering automatically)"
+                    )
+                return False
+
+            # First link/startup: register only if the robot doesn't exist yet.
+            existing = await client.get_robot(self._fleet_robot_id)
+            if existing is not None:
+                self._mark_fleet_registered()
+                self._api_registration_confirmed = True
+                ok = True
+                return True
+            if getattr(client, "last_http_status", None) != 404:
+                return False
+
+            caps = []
+            caps_dict = self._capabilities.to_dict()
+            if caps_dict.get("desktop_automation"):
+                caps.append("desktop")
+            browser_engines = caps_dict.get("browser_engines") or []
+            if browser_engines:
+                caps.append("browser")
+            if (caps_dict.get("memory_gb") or 0) >= 16:
+                caps.append("high_memory")
+
+            tags = self.config.tags or []
+            ok = bool(
+                await client.register_robot(
+                    robot_id=self._fleet_robot_id,
+                    name=self._fleet_robot_name,
+                    hostname=self.config.hostname,
+                    capabilities=sorted(set(caps)),
+                    environment=self.config.environment,
+                    max_concurrent_jobs=self.config.max_concurrent_jobs,
+                    tags=tags,
+                )
+            )
+            if ok:
+                self._mark_fleet_registered()
+                self._api_registration_confirmed = True
+            return ok
+        except Exception as e:
+            logger.warning(f"Orchestrator API robot registration failed: {e}")
+            return False
+        finally:
+            if not ok:
+                await self._disconnect_orchestrator_client()
+
     async def _update_registration_status(self, status: str) -> None:
         """Update robot status in registry."""
         try:
+            if await self._update_status_via_orchestrator_api(status):
+                return
+
             if (
                 self._consumer
                 and hasattr(self._consumer, "_pool")
@@ -825,13 +1170,46 @@ class RobotAgent:
                     await conn.execute(
                         """
                         UPDATE robots SET status = $2, last_seen = NOW(), updated_at = NOW()
-                        WHERE hostname = $1
+                        WHERE robot_id = $1
                         """,
-                        self.config.hostname,
+                        self.robot_id,
                         status,
                     )
         except Exception as e:
             logger.warning(f"Failed to update registration status: {e}")
+
+    async def _update_status_via_orchestrator_api(self, status: str) -> bool:
+        if not self._should_use_orchestrator_api():
+            return False
+        # Wait for registration to complete before sending status updates
+        if not self._api_registration_confirmed:
+            return False
+
+        client = await self._get_orchestrator_client()
+        if client is None:
+            return False
+
+        normalized = status.lower()
+        # Orchestrator API expects: idle|busy|offline|error|maintenance
+        if normalized == "online":
+            normalized = "idle"
+
+        try:
+            ok = await client.update_robot_status(self._fleet_robot_id, normalized)
+            if ok:
+                self._last_reported_status = normalized
+                return True
+            if (
+                getattr(client, "last_http_status", None) == 404
+                and self._fleet_ever_registered
+            ):
+                await self._unlink_from_fleet(
+                    "Robot deleted from Fleet dashboard (status update 404)"
+                )
+            return bool(ok)
+        except Exception as e:
+            logger.debug(f"Orchestrator API status update failed: {e}")
+            return False
 
     # ==================== JOB LOOP ====================
 
@@ -1103,6 +1481,10 @@ class RobotAgent:
 
         while self._running:
             try:
+                self._reload_identity_if_changed()
+                if not self._fleet_linked and self._orchestrator_client is not None:
+                    await self._disconnect_orchestrator_client()
+
                 async with self._jobs_lock:
                     job_count = len(self._current_jobs)
                     status = "busy" if self._current_jobs else "idle"
@@ -1126,6 +1508,8 @@ class RobotAgent:
 
                 await self._update_presence_in_db(presence_data)
 
+                await self._update_presence_via_orchestrator_api(presence_data)
+
                 await asyncio.sleep(self.config.presence_interval_seconds)
 
             except asyncio.CancelledError:
@@ -1135,6 +1519,63 @@ class RobotAgent:
                 await asyncio.sleep(5)
 
         logger.info("Presence loop stopped")
+
+    async def _update_presence_via_orchestrator_api(
+        self, presence_data: Dict[str, Any]
+    ) -> None:
+        if not self._should_use_orchestrator_api():
+            return
+        # Wait for registration to complete before sending presence updates
+        if not self._api_registration_confirmed:
+            return
+
+        client = await self._get_orchestrator_client()
+        if client is None:
+            return
+
+        status = str(presence_data.get("status") or "idle").lower()
+        if status == "online":
+            status = "idle"
+
+        metrics = {
+            "cpu_percent": presence_data.get("cpu_percent"),
+            "memory_percent": presence_data.get("memory_percent"),
+            "current_job_count": presence_data.get("current_job_count", 0),
+            "max_concurrent_jobs": presence_data.get("max_concurrent_jobs", 1),
+        }
+
+        try:
+            # Only call status endpoint when status changes
+            if self._last_reported_status != status:
+                ok = await client.update_robot_status(self._fleet_robot_id, status)
+                if ok:
+                    self._last_reported_status = status
+                elif (
+                    getattr(client, "last_http_status", None) == 404
+                    and self._fleet_ever_registered
+                ):
+                    await self._unlink_from_fleet(
+                        "Robot deleted from Fleet dashboard (presence status 404)"
+                    )
+                    return
+
+            ok = await client.send_robot_heartbeat(
+                self._fleet_robot_id, metrics=metrics
+            )
+            if (
+                not ok
+                and getattr(client, "last_http_status", None) == 404
+                and self._fleet_ever_registered
+            ):
+                await self._unlink_from_fleet(
+                    "Robot deleted from Fleet dashboard (presence heartbeat 404)"
+                )
+        except Exception as e:
+            logger.debug(f"Failed to update presence via Orchestrator API: {e}")
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
 
     async def _update_presence_in_db(self, presence_data: Dict[str, Any]) -> None:
         """Update presence in database."""
@@ -1151,9 +1592,9 @@ class RobotAgent:
                         SET status = $2,
                             last_seen = NOW(),
                             metrics = $3
-                        WHERE hostname = $1
+                        WHERE robot_id = $1
                         """,
-                        self.config.hostname,
+                        self.robot_id,
                         presence_data.get("status", "idle"),
                         orjson.dumps(
                             {

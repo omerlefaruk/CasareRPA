@@ -23,6 +23,13 @@ from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_repository impo
     CREATE_ROBOTS_TABLE_SQL,
 )
 
+from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_api_keys_schema import (
+    CREATE_ROBOT_API_KEY_AUDIT_TABLE_SQL,
+    CREATE_ROBOT_API_KEYS_TABLE_SQL,
+    CREATE_ROBOT_API_KEYS_INDEXES_SQL,
+    ensure_robot_api_key_tables,
+)
+
 __all__ = [
     "LocalStorageRepository",
     "LocalJobRepository",
@@ -33,4 +40,8 @@ __all__ = [
     # PostgreSQL repositories
     "PgRobotRepository",
     "CREATE_ROBOTS_TABLE_SQL",
+    "CREATE_ROBOT_API_KEYS_TABLE_SQL",
+    "CREATE_ROBOT_API_KEYS_INDEXES_SQL",
+    "CREATE_ROBOT_API_KEY_AUDIT_TABLE_SQL",
+    "ensure_robot_api_key_tables",
 ]

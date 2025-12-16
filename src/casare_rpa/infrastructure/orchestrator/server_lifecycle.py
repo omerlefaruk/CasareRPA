@@ -227,10 +227,28 @@ async def _init_robot_repository(db_pool: Any, config: OrchestratorConfig) -> No
             PgRobotRepository,
             CREATE_ROBOTS_TABLE_SQL,
         )
+        from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_api_keys_schema import (
+            ensure_robot_api_key_tables,
+        )
 
         # Ensure robots table exists
         async with db_pool.acquire() as conn:
             await conn.execute(CREATE_ROBOTS_TABLE_SQL)
+
+            # Backward/forward compatibility: older deployments may have a partial robots table.
+            # Ensure the columns used by the API routers exist.
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS max_concurrent_jobs INTEGER DEFAULT 1"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS registered_at TIMESTAMPTZ"
+            )
+            await conn.execute(
+                "ALTER TABLE robots ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW()"
+            )
+
+            # Ensure robot API key tables exist (used by X-Api-Key auth + admin key management)
+            await ensure_robot_api_key_tables(conn)
         logger.info("Robots table verified/created")
 
         # Create repository

@@ -1,14 +1,40 @@
 # Current Context
 
-**Updated**: 2025-12-14 | **Branch**: main
+**Updated**: 2025-12-15 | **Branch**: main
 
 ## Active Work
-- **Focus**: Expression Editor Feature - IMPLEMENTED
-- **Status**: COMPLETE
-- **Plan**: `.brain/plans/expression-editor.md`
-- **Index**: `presentation/canvas/ui/widgets/expression_editor/_index.md`
+- **Focus**: Orchestrator-first robot job execution (no DB on client)
+- **Status**: IN PROGRESS
+- **Plan**: `.brain/plans/robot-canvas-installers.md` (Phase 1–2)
+- **Area**: `src/casare_rpa/robot/agent.py`, `src/casare_rpa/infrastructure/orchestrator/api/routers/jobs.py`
 
 ## Completed This Session
+
+### Orchestrator-first Robot Job Execution (Foundation)
+
+- Added robot-facing job lease endpoint: `POST /api/v1/jobs/{job_id}/extend-lease`.
+- Implemented Orchestrator-backed robot consumer (no direct Postgres): `src/casare_rpa/infrastructure/orchestrator/robot_job_consumer.py`.
+- Wired RobotAgent to prefer Orchestrator job consumer when `CASARE_ORCHESTRATOR_URL` + `CASARE_ORCHESTRATOR_API_KEY` are present and no `postgres_url` is configured.
+- Added unit tests for the consumer: `tests/infrastructure/orchestrator/test_robot_job_consumer.py`.
+
+### Windows Robot Enrollment (Automation)
+
+- RobotAgent now accepts `CASARE_ORCHESTRATOR_URL` / `CASARE_ORCHESTRATOR_API_KEY` (keeps `ORCHESTRATOR_URL` / `ORCHESTRATOR_API_KEY` working).
+- Added Windows helper script: `deploy/windows/enroll-orchestrator-robot.ps1` to set env vars and optionally start the agent.
+- Updated Fleet Dashboard doc with the ready-to-run PowerShell command.
+
+### Orchestrator Client Cleanup
+
+- Fixed `aiohttp` session leak when Orchestrator is unreachable or `/health` fails.
+- RobotAgent now disconnects Orchestrator client on failed registration and during shutdown.
+- Added regression test: `tests/infrastructure/orchestrator/test_orchestrator_client_cleanup.py`.
+
+### Fleet Dashboard UX Improvements (Partial)
+
+- Added toast notifications (`ToastNotification`) and integrated into Fleet dashboard.
+- Refactored `FleetDashboardDialog` to sidebar navigation + custom painted icons.
+- Migrated Fleet Analytics tab styling to THEME tokens and added stat-card drilldown.
+- Fixed Robots tab validation to use toast when available.
 
 ### Expression Editor Feature Implementation
 

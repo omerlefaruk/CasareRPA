@@ -597,9 +597,10 @@ class ExecutionController(BaseController):
 
                 # Store output data for output inspector popup (middle-click)
                 # Get output port values from event_data (set by node_executor)
+                # Key is 'output_data' from NodeCompleted event's to_dict()
                 if hasattr(visual_node, "set_last_output"):
                     output_data = (
-                        event_data.get("outputs", {})
+                        event_data.get("output_data", {})
                         if isinstance(event_data, dict)
                         else {}
                     )
@@ -608,6 +609,9 @@ class ExecutionController(BaseController):
                         logger.debug(
                             f"Stored output for node {node_id}: {list(output_data.keys())}"
                         )
+
+                        # Update phantom values on output pipes
+                        self._update_phantom_values(visual_node, output_data)
 
             # Forward output to Output Tab and History Tab
             bottom_panel = self.main_window.get_bottom_panel()
@@ -829,6 +833,23 @@ class ExecutionController(BaseController):
         """
         return self._node_index.get(node_id)
 
+    def _iter_connected_pipes(self, port_view):
+        """Yield connected pipe items from a PortItem (supports list or callable API)."""
+        connected = getattr(port_view, "connected_pipes", None)
+        if connected is None:
+            return []
+        try:
+            if callable(connected):
+                connected = connected()
+        except Exception:
+            return []
+        if not connected:
+            return []
+        try:
+            return list(connected)
+        except Exception:
+            return []
+
     def _start_pipe_animations(self, visual_node) -> None:
         """
         Start flow animation on all outgoing pipes from a node.
@@ -846,12 +867,7 @@ class ExecutionController(BaseController):
                 if port_view is None:
                     continue
 
-                # Get connected pipes from the port view
-                connected_pipes = getattr(port_view, "connected_pipes", None)
-                if connected_pipes is None:
-                    continue
-
-                for pipe in connected_pipes:
+                for pipe in self._iter_connected_pipes(port_view):
                     if hasattr(pipe, "start_flow_animation"):
                         pipe.start_flow_animation()
         except Exception:
@@ -876,17 +892,40 @@ class ExecutionController(BaseController):
                 if port_view is None:
                     continue
 
-                # Get connected pipes from the port view
-                connected_pipes = getattr(port_view, "connected_pipes", None)
-                if connected_pipes is None:
-                    continue
-
-                for pipe in connected_pipes:
+                for pipe in self._iter_connected_pipes(port_view):
                     if hasattr(pipe, "stop_flow_animation"):
                         pipe.stop_flow_animation(show_completion_glow=success)
         except Exception:
             # Don't let animation errors affect execution
             pass
+
+    def _update_phantom_values(self, visual_node, output_data: dict) -> None:
+        """
+        Update phantom values on output pipes to show execution results.
+
+        Displays the last execution value as semi-transparent text on each output wire.
+
+        Args:
+            visual_node: The visual node whose output pipes should show phantom values
+            output_data: Dictionary of port_name -> value from node execution
+        """
+        try:
+            for output_port in visual_node.output_ports():
+                port_name = output_port.name()
+                value = output_data.get(port_name)
+
+                if value is None:
+                    continue
+
+                port_view = getattr(output_port, "view", None)
+                if port_view is None:
+                    continue
+
+                for pipe in self._iter_connected_pipes(port_view):
+                    if hasattr(pipe, "set_phantom_value"):
+                        pipe.set_phantom_value(value)
+        except Exception as e:
+            logger.debug(f"Error updating phantom values: {e}")
 
     def _reset_all_node_visuals(self) -> None:
         """Reset all node visual states to idle (clears animations and status icons)."""

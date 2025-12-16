@@ -136,7 +136,23 @@ class RobotController(BaseController):
             # Get API key from config or environment
             api_key = self._get_api_key_from_config()
             if not api_key:
-                api_key = os.getenv("ORCHESTRATOR_API_KEY")
+                # Prioritize API_SECRET for admin access in dev environment
+                secret = os.getenv("API_SECRET")
+                robot_key = os.getenv("ORCHESTRATOR_API_KEY")
+
+                if secret:
+                    api_key = secret.strip()
+                elif robot_key:
+                    api_key = robot_key.strip()
+                else:
+                    api_key = None
+
+            if api_key:
+                logger.info(
+                    f"Canvas using API Key: {api_key[:5]}...{api_key[-5:] if len(api_key)>10 else ''}"
+                )
+            else:
+                logger.warning("Canvas has NO API KEY configured!")
 
             config = OrchestratorConfig(
                 base_url=self._orchestrator_url,
@@ -233,6 +249,20 @@ class RobotController(BaseController):
 
         return urls
 
+    @staticmethod
+    def _normalize_orchestrator_base_url(url: str) -> str:
+        """Normalize an orchestrator URL for REST calls.
+
+        Users/config sometimes provide a WS-style URL ending with `/ws`. REST endpoints
+        are served from the origin root (e.g. `https://host`), so we strip `/ws`.
+        """
+        if not url:
+            return url
+        base = url.replace("ws://", "http://").replace("wss://", "https://").rstrip("/")
+        if base.endswith("/ws"):
+            base = base[: -len("/ws")]
+        return base.rstrip("/")
+
     async def connect_to_orchestrator(self, url: Optional[str] = None) -> bool:
         """
         Connect to orchestrator API with automatic fallback.
@@ -274,13 +304,16 @@ class RobotController(BaseController):
             # Emit connecting status
             self.connection_status_detailed.emit("connecting", "", try_url)
 
-            ws_url = try_url.replace("http://", "ws://").replace("https://", "wss://")
+            api_base_url = self._normalize_orchestrator_base_url(try_url)
+            ws_url = api_base_url.replace("http://", "ws://").replace(
+                "https://", "wss://"
+            )
             api_key = self._get_api_key_from_config() or os.getenv(
                 "ORCHESTRATOR_API_KEY"
             )
 
             self._orchestrator_client.config = OrchestratorConfig(
-                base_url=try_url,
+                base_url=api_base_url,
                 ws_url=ws_url,
                 api_key=api_key,
             )
@@ -288,7 +321,8 @@ class RobotController(BaseController):
             try:
                 connected = await self._orchestrator_client.connect()
                 if connected:
-                    self._orchestrator_url = try_url
+                    # Store normalized URL so downstream code doesn't accidentally call /ws/api/v1/...
+                    self._orchestrator_url = api_base_url
                     self._connected = True
                     self.connection_status_changed.emit(True)
                     self.connection_status_detailed.emit("connected", "", try_url)
@@ -347,8 +381,23 @@ class RobotController(BaseController):
 
     def _on_orchestrator_error(self, data: dict) -> None:
         """Handle orchestrator error event."""
-        error = data.get("error", "Unknown error")
-        logger.error(f"Orchestrator error: {error}")
+        error = data.get("error")
+        status = data.get("status")
+        method = data.get("method")
+        url = data.get("url")
+
+        if error:
+            logger.error(f"Orchestrator error: {error}")
+            self.main_window.show_status(f"Orchestrator error: {error}", 5000)
+            return
+
+        if status and url:
+            msg = f"Orchestrator API {status} ({method or 'request'})"
+            logger.error(f"{msg}: {url}")
+            self.main_window.show_status(msg, 5000)
+            return
+
+        logger.error(f"Orchestrator error: {data}")
 
     def _connect_panel_signals(self) -> None:
         """Connect to robot picker panel signals."""
@@ -531,6 +580,120 @@ class RobotController(BaseController):
         except Exception as e:
             logger.error(f"Error getting workflow variables: {e}")
             return None
+
+    def _extract_schedule_trigger(
+        self, workflow_data: dict
+    ) -> tuple[str | None, str | None]:
+        """
+        Extract schedule trigger info from workflow data.
+
+        Detects ScheduleTriggerNode and converts its config to cron expression.
+
+        Args:
+            workflow_data: Serialized workflow data
+
+        Returns:
+            Tuple of (trigger_type, cron_expression) or (None, None) if no schedule trigger
+        """
+        nodes = workflow_data.get("nodes", {})
+
+        # Handle both dict format (Canvas) and list format
+        if isinstance(nodes, list):
+            nodes_iter = [(n.get("node_id", ""), n) for n in nodes]
+        else:
+            nodes_iter = nodes.items()
+
+        for node_id, node_data in nodes_iter:
+            # Check for ScheduleTriggerNode
+            node_type = (
+                node_data.get("node_type", "") or node_data.get("type_", "") or ""
+            )
+
+            if "ScheduleTrigger" in node_type:
+                # Extract config
+                config = node_data.get("config", {}) or node_data.get("custom", {})
+
+                # Convert to cron expression
+                cron_expr = self._schedule_config_to_cron(config)
+
+                logger.info(
+                    f"Found ScheduleTriggerNode: {node_id}, "
+                    f"frequency={config.get('frequency')}, cron={cron_expr}"
+                )
+
+                return "scheduled", cron_expr
+
+        return None, None
+
+    def _schedule_config_to_cron(self, config: dict) -> str:
+        """
+        Convert ScheduleTriggerNode config to cron expression.
+
+        Args:
+            config: Schedule trigger configuration
+
+        Returns:
+            Cron expression string
+        """
+        frequency = config.get("frequency", "daily")
+
+        # Parse time settings with defaults
+        hour = int(config.get("time_hour", 9))
+        minute = int(config.get("time_minute", 0))
+
+        # Clamp to valid ranges
+        hour = max(0, min(23, hour))
+        minute = max(0, min(59, minute))
+
+        if frequency == "cron":
+            return config.get("cron_expression", "0 9 * * *")
+
+        elif frequency == "interval":
+            seconds = int(config.get("interval_seconds", 60))
+            if seconds < 60:
+                logger.warning(
+                    f"Interval {seconds}s < 60s, using minimum 1 minute for cron"
+                )
+                seconds = 60
+
+            minutes = seconds // 60
+            if minutes >= 60:
+                hours = minutes // 60
+                return f"0 */{hours} * * *"
+            else:
+                return f"*/{minutes} * * * *"
+
+        elif frequency == "hourly":
+            return f"{minute} * * * *"
+
+        elif frequency == "daily":
+            return f"{minute} {hour} * * *"
+
+        elif frequency == "weekly":
+            day_map = {
+                "sun": 0,
+                "mon": 1,
+                "tue": 2,
+                "wed": 3,
+                "thu": 4,
+                "fri": 5,
+                "sat": 6,
+            }
+            day = config.get("day_of_week", "mon").lower()
+            weekday = day_map.get(day, 1)
+            return f"{minute} {hour} * * {weekday}"
+
+        elif frequency == "monthly":
+            day = int(config.get("day_of_month", 1))
+            day = max(1, min(31, day))
+            return f"{minute} {hour} {day} * *"
+
+        elif frequency == "once":
+            return f"{minute} {hour} * * *"
+
+        else:
+            logger.warning(f"Unknown frequency '{frequency}', defaulting to daily 9:00")
+            return "0 9 * * *"
 
     # ==================== Public Methods ====================
 
@@ -776,11 +939,18 @@ class RobotController(BaseController):
                     or "Untitled Workflow"
                 )
 
+                # Detect Schedule Trigger nodes in workflow
+                trigger_type, schedule_cron = self._extract_schedule_trigger(
+                    workflow_data
+                )
+                if trigger_type == "scheduled":
+                    logger.info(f"Schedule trigger detected: cron={schedule_cron}")
+
                 # Build payload matching WorkflowSubmissionRequest schema
                 payload = {
                     "workflow_name": workflow_name,
                     "workflow_json": workflow_data,
-                    "trigger_type": "manual",
+                    "trigger_type": trigger_type or "manual",
                     "execution_mode": "lan",
                     "priority": 10,
                     "metadata": {
@@ -789,8 +959,15 @@ class RobotController(BaseController):
                     },
                 }
 
+                # Add schedule_cron for scheduled workflows
+                if schedule_cron:
+                    payload["schedule_cron"] = schedule_cron
+
+                api_base_url = self._normalize_orchestrator_base_url(
+                    self._orchestrator_url or ""
+                )
                 async with session.post(
-                    f"{self._orchestrator_url}/api/v1/workflows",
+                    f"{api_base_url}/api/v1/workflows",
                     headers=headers,
                     json=payload,
                 ) as resp:
@@ -799,11 +976,22 @@ class RobotController(BaseController):
                         job_id = data.get("job_id") or data.get("data", {}).get(
                             "job_id"
                         )
-                        logger.info(
-                            f"Job submitted: {job_id} to robot {target_robot_id}"
-                        )
-                        self.job_submitted.emit(job_id)
-                        return job_id
+                        schedule_id = data.get("schedule_id")
+
+                        if schedule_id:
+                            logger.info(
+                                f"Workflow scheduled: schedule_id={schedule_id}, cron={schedule_cron}"
+                            )
+                            self.main_window.show_status(
+                                f"Scheduled workflow created (cron: {schedule_cron})",
+                                5000,
+                            )
+                        else:
+                            logger.info(
+                                f"Job submitted: {job_id} to robot {target_robot_id}"
+                            )
+                        self.job_submitted.emit(job_id or schedule_id)
+                        return job_id or schedule_id
                     elif resp.status == 401:
                         # Authentication error - provide helpful message
                         error_detail = (

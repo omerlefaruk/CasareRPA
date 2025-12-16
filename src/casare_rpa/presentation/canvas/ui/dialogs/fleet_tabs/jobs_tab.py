@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QGroupBox,
     QMenu,
-    QMessageBox,
     QProgressBar,
 )
 from functools import partial
@@ -36,6 +35,8 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     TAB_WIDGET_BASE_STYLE,
 )
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon, ToolbarIcons
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 if TYPE_CHECKING:
@@ -216,7 +217,7 @@ class JobsTabWidget(QWidget):
         layout.addWidget(splitter)
 
         self._status_label = QLabel("0 jobs")
-        self._status_label.setStyleSheet("color: #888888;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_secondary};")
         layout.addWidget(self._status_label)
 
     def _apply_styles(self) -> None:
@@ -260,7 +261,7 @@ class JobsTabWidget(QWidget):
 
         # Status
         status_item = QTableWidgetItem(status.upper())
-        status_color = JOB_STATUS_COLORS.get(status.lower(), "#888888")
+        status_color = JOB_STATUS_COLORS.get(status.lower(), THEME.text_secondary)
         status_item.setForeground(QBrush(status_color))
         self._table.setItem(row, 3, status_item)
 

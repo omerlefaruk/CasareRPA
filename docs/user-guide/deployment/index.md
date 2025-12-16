@@ -10,6 +10,7 @@ Deploy CasareRPA in production environments with robots, orchestration, and moni
 |----------|-------------|
 | [Robot Setup](robot-setup.md) | Configure robot execution agents |
 | [Orchestrator Setup](orchestrator-setup.md) | Deploy the central orchestrator |
+| [Fleet Dashboard](fleet-dashboard.md) | Manage robots, jobs, and API keys from Canvas |
 | [Scheduling](scheduling.md) | Configure workflow schedules |
 | [Monitoring](monitoring.md) | Track execution and health |
 

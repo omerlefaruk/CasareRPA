@@ -461,8 +461,15 @@ class PgQueuerConsumer:
                 self._config.postgres_url,
                 min_size=self._config.pool_min_size,
                 max_size=self._config.pool_max_size,
-                command_timeout=30,
+                command_timeout=60,
                 statement_cache_size=0,  # Required for pgbouncer/Supabase
+                # Enable keepalive to prevent load balancer disconnects
+                server_settings={
+                    "keepalives": "1",
+                    "keepalives_idle": "30",
+                    "keepalives_interval": "10",
+                    "keepalives_count": "5",
+                },
             )
 
             # Test connection

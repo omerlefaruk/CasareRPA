@@ -403,9 +403,11 @@ CREATE TABLE IF NOT EXISTS robots (
     tags JSONB DEFAULT '[]',
     metrics JSONB DEFAULT '{}',
     tenant_id VARCHAR(255),
+    registered_at TIMESTAMPTZ,
     last_heartbeat TIMESTAMPTZ,
     last_seen TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- Indexes for common queries
     CONSTRAINT robots_status_check CHECK (status IN ('offline', 'online', 'busy', 'error', 'maintenance'))
@@ -415,6 +417,7 @@ CREATE INDEX IF NOT EXISTS idx_robots_status ON robots(status);
 CREATE INDEX IF NOT EXISTS idx_robots_environment ON robots(environment);
 CREATE INDEX IF NOT EXISTS idx_robots_tenant_id ON robots(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_robots_last_heartbeat ON robots(last_heartbeat);
+CREATE INDEX IF NOT EXISTS idx_robots_registered_at ON robots(registered_at);
 """
 
 

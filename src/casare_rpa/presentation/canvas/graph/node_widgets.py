@@ -144,12 +144,55 @@ class CasareCheckBox:
         group_box = node_widget.widget()
         if group_box:
             group_box.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
-            # Calculate required width: checkbox indicator (14px) + spacing (6px) + text
+
+            # NodeGraphQt's widget sizing is based primarily on the embedded widget,
+            # not the group box title. For boolean properties we often set the
+            # *parameter label* as the group box title and leave the checkbox text
+            # empty, which can make the title get clipped.
             fm = QFontMetrics(font)
-            text_width = fm.horizontalAdvance(checkbox.text())
-            min_width = 14 + 6 + text_width + 8  # indicator + spacing + text + padding
-            checkbox.setMinimumWidth(min_width)
-            group_box.setMinimumWidth(min_width)
+            try:
+                title_text = node_widget.get_label() or ""
+            except Exception:
+                title_text = ""
+
+            checkbox_text = checkbox.text() or ""
+            title_width = fm.horizontalAdvance(title_text) if title_text else 0
+            checkbox_text_width = (
+                fm.horizontalAdvance(checkbox_text) if checkbox_text else 0
+            )
+
+            # Ensure enough room for either the group box title or the checkbox text.
+            # NodeGraphQt nodes also enforce a practical minimum widget width (~200px)
+            # in our CasareNodeItem sizing logic.
+            indicator_width = 14
+            indicator_spacing = 6
+            horizontal_padding = 18
+            required_width = max(
+                200,
+                title_width + horizontal_padding,
+                indicator_width
+                + indicator_spacing
+                + checkbox_text_width
+                + horizontal_padding,
+            )
+
+            group_box.setMinimumWidth(required_width)
+            group_box.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            )
+            checkbox.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            )
+            checkbox.setMinimumWidth(max(0, required_width - horizontal_padding))
+
+            # Also update the proxy widget sizing so boundingRect aligns with the
+            # sizeHint used for node sizing and widget placement.
+            try:
+                node_widget.setMinimumWidth(required_width)
+                node_widget.resize(required_width, group_box.sizeHint().height())
+            except Exception:
+                pass
+
             group_box.adjustSize()
 
         checkmark_path = cls._get_checkmark_path()

@@ -555,6 +555,7 @@ async def submit_workflow(
                     priority=request.priority,
                     metadata={
                         "execution_mode": request.execution_mode,
+                        "workflow_json": request.workflow_json,  # Store workflow for execution
                         **request.metadata,
                     },
                     next_run=next_run,
@@ -592,13 +593,13 @@ async def submit_workflow(
                             await conn.execute(
                                 """
                                 INSERT INTO schedules (
-                                    id, workflow_id, schedule_name, cron_expression,
-                                    enabled, priority, execution_mode, next_run,
-                                    created_at, updated_at, metadata
-                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10)
-                                ON CONFLICT (id) DO UPDATE SET
+                                    schedule_id, workflow_id, schedule_name, cron_expression,
+                                    enabled, next_run_at, created_at, updated_at, metadata
+                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)
+                                ON CONFLICT (schedule_id) DO UPDATE SET
                                     cron_expression = EXCLUDED.cron_expression,
                                     enabled = EXCLUDED.enabled,
+                                    next_run_at = EXCLUDED.next_run_at,
                                     updated_at = NOW()
                                 """,
                                 uuid.UUID(schedule_id),
@@ -606,8 +607,6 @@ async def submit_workflow(
                                 f"Schedule for {request.workflow_name}",
                                 request.schedule_cron,
                                 True,
-                                request.priority,
-                                request.execution_mode,
                                 next_run,
                                 now,
                                 orjson.dumps(request.metadata).decode(),

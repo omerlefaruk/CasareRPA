@@ -38,6 +38,10 @@ from casare_rpa.presentation.canvas.connections.node_insert import NodeInsertMan
 from casare_rpa.presentation.canvas.connections.reroute_insert import (
     RerouteInsertManager,
 )
+from casare_rpa.presentation.canvas.connections.shake_to_detach import (
+    ShakeToDetachManager,
+    set_shake_manager,
+)
 from casare_rpa.presentation.canvas.connections.smart_routing import (
     SmartRoutingManager,
     set_routing_manager,
@@ -191,6 +195,10 @@ class NodeGraphWidget(QWidget):
         # Create reroute insert manager (Alt+LMB on wire to insert reroute node)
         self._reroute_insert = RerouteInsertManager(self._graph, self)
 
+        # Create shake-to-detach manager (shake node to disconnect all wires)
+        self._shake_to_detach = ShakeToDetachManager(self._graph, self)
+        set_shake_manager(self._shake_to_detach)
+
         # Create wire bundler for grouping parallel connections
         self._wire_bundler = WireBundler(self._graph, self)
         set_wire_bundler(self._wire_bundler)
@@ -274,6 +282,7 @@ class NodeGraphWidget(QWidget):
     def _handle_tab_key(self) -> bool:
         """Handle Tab key to show context menu."""
         viewer = self._graph.viewer()
+
         cursor_pos = viewer.cursor().pos()
 
         source_port = None
@@ -570,6 +579,38 @@ class NodeGraphWidget(QWidget):
         """Set the maximum distance for auto-connect suggestions."""
         self._auto_connect.set_max_distance(distance)
 
+    @property
+    def shake_to_detach(self) -> ShakeToDetachManager:
+        """Get the shake-to-detach manager."""
+        return self._shake_to_detach
+
+    def set_shake_to_detach_enabled(self, enabled: bool) -> None:
+        """Enable or disable shake-to-detach gesture."""
+        self._shake_to_detach.set_active(enabled)
+        logger.info(f"Shake-to-detach {'enabled' if enabled else 'disabled'}")
+
+    def is_shake_to_detach_enabled(self) -> bool:
+        """Check if shake-to-detach is enabled."""
+        return self._shake_to_detach.is_active()
+
+    def set_shake_sensitivity(
+        self,
+        shake_threshold: int = 4,
+        time_window_ms: int = 400,
+        min_movement_px: int = 15,
+    ) -> None:
+        """
+        Configure shake-to-detach sensitivity.
+
+        Args:
+            shake_threshold: Direction changes needed to trigger (default 4)
+            time_window_ms: Time window for shake detection (default 400ms)
+            min_movement_px: Minimum horizontal movement per swing (default 15px)
+        """
+        self._shake_to_detach.set_sensitivity(
+            shake_threshold, time_window_ms, min_movement_px
+        )
+
     # =========================================================================
     # HIGH PERFORMANCE MODE
     # =========================================================================
@@ -692,8 +733,10 @@ class NodeGraphWidget(QWidget):
         if event.type() == QEvent.Type.MouseButtonPress:
             if event.button() == Qt.MouseButton.LeftButton:
                 self._check_close_output_popup()
+                modifiers = event.modifiers()
 
-                if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+                # Alt+LMB: drag duplicate
+                if modifiers & Qt.KeyboardModifier.AltModifier:
                     if self._alt_drag_duplicate(event):
                         return True
 
@@ -1449,6 +1492,13 @@ class NodeGraphWidget(QWidget):
             self._output_popup = NodeOutputPopup(self)
             self._output_popup.closed.connect(self._on_output_popup_closed)
 
+            # Set main_window reference on variables view for VariableProvider access
+            if hasattr(self._output_popup, "_variables_view"):
+                # Find main window from parent hierarchy
+                main_window = self._find_main_window()
+                if main_window:
+                    self._output_popup._variables_view.set_main_window(main_window)
+
         popup = self._output_popup
         popup.set_node(node_id, node_name)
 
@@ -1468,6 +1518,17 @@ class NodeGraphWidget(QWidget):
             view = self._graph.viewer()
             if view:
                 popup.start_tracking_node(node_item, view)
+
+    def _find_main_window(self):
+        """Find the MainWindow in the parent hierarchy."""
+        from casare_rpa.presentation.canvas.main_window import MainWindow
+
+        parent = self.parent()
+        while parent is not None:
+            if isinstance(parent, MainWindow):
+                return parent
+            parent = parent.parent() if hasattr(parent, "parent") else None
+        return None
 
     def _on_output_popup_closed(self) -> None:
         """Handle output popup close event."""

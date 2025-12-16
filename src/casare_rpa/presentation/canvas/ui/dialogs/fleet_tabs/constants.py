@@ -1,32 +1,33 @@
-"""
-Fleet Dashboard Shared Constants.
+"""Fleet Dashboard shared constants.
 
-Eliminates duplicated color definitions and refresh intervals across tabs.
-Implements a "Thinkbox Deadline" inspired dark theme.
+Uses Canvas theme tokens (`casare_rpa.presentation.canvas.theme.THEME`) to avoid
+hardcoded UI colors.
 """
 
 from PySide6.QtGui import QColor
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 # Robot status colors - used by robots_tab and robot_picker_panel
 ROBOT_STATUS_COLORS = {
-    "online": QColor(0x4C, 0xAF, 0x50),  # Green
-    "idle": QColor(0x4C, 0xAF, 0x50),  # Green (alias)
-    "busy": QColor(0xFF, 0xC1, 0x07),  # Yellow/Amber
-    "offline": QColor(0xF4, 0x43, 0x36),  # Red
-    "error": QColor(0xF4, 0x43, 0x36),  # Red
-    "maintenance": QColor(0x9E, 0x9E, 0x9E),  # Gray
+    "online": QColor(THEME.status_success),
+    "idle": QColor(THEME.status_success),
+    "busy": QColor(THEME.status_warning),
+    "offline": QColor(THEME.status_error),
+    "error": QColor(THEME.status_error),
+    "maintenance": QColor(THEME.text_muted),
 }
 
 # Job status colors - used by jobs_tab
 JOB_STATUS_COLORS = {
-    "pending": QColor(0x9E, 0x9E, 0x9E),  # Gray
-    "queued": QColor(0x21, 0x96, 0xF3),  # Blue
-    "claimed": QColor(0xFF, 0x98, 0x00),  # Orange
-    "running": QColor(0x4C, 0xAF, 0x50),  # Green
-    "completed": QColor(0x00, 0xC8, 0x53),  # Bright Green
-    "failed": QColor(0xF4, 0x43, 0x36),  # Red
-    "cancelled": QColor(0x9E, 0x9E, 0x9E),  # Gray
-    "timeout": QColor(0xE9, 0x1E, 0x63),  # Pink
+    "pending": QColor(THEME.text_muted),
+    "queued": QColor(THEME.status_info),
+    "claimed": QColor(THEME.status_warning),
+    "running": QColor(THEME.status_running),
+    "completed": QColor(THEME.status_success),
+    "failed": QColor(THEME.status_error),
+    "cancelled": QColor(THEME.text_muted),
+    "timeout": QColor(THEME.status_error),
 }
 
 # Refresh intervals in milliseconds
@@ -40,15 +41,15 @@ REFRESH_INTERVALS = {
 
 # Deadline-inspired theme constants
 DEADLINE_COLORS = {
-    "bg_dark": "#222222",
-    "bg_panel": "#333333",
-    "bg_header": "#2A2A2A",
-    "border": "#111111",
-    "text_primary": "#E0E0E0",
-    "text_secondary": "#AAAAAA",
-    "selection": "#007ACC",  # Professional Blue
-    "selection_text": "#FFFFFF",
-    "hover": "#444444",
+    "bg_dark": THEME.bg_darkest,
+    "bg_panel": THEME.bg_panel,
+    "bg_header": THEME.bg_header,
+    "border": THEME.border,
+    "text_primary": THEME.text_primary,
+    "text_secondary": THEME.text_secondary,
+    "selection": THEME.selection_bg,
+    "selection_text": THEME.text_primary,
+    "hover": THEME.bg_hover,
 }
 
 # Shared dark theme base stylesheet for tab widgets
@@ -61,15 +62,15 @@ TAB_WIDGET_BASE_STYLE = f"""
     QTableWidget {{
         background: {DEADLINE_COLORS['bg_dark']};
         border: 1px solid {DEADLINE_COLORS['border']};
-        gridline-color: #444444;
+        gridline-color: {THEME.border_light};
         selection-background-color: {DEADLINE_COLORS['selection']};
         selection-color: {DEADLINE_COLORS['selection_text']};
-        alternate-background-color: #2A2A2A;
+        alternate-background-color: {THEME.bg_dark};
     }}
 
     QTableWidget::item {{
         padding: 4px; /* Dense padding */
-        border-bottom: 1px solid #2A2A2A;
+        border-bottom: 1px solid {THEME.border_dark};
     }}
 
     QTableWidget::item:selected {{
@@ -88,7 +89,7 @@ TAB_WIDGET_BASE_STYLE = f"""
 
     QLineEdit, QComboBox, QSpinBox {{
         background: {DEADLINE_COLORS['bg_panel']};
-        border: 1px solid #555555;
+        border: 1px solid {THEME.border};
         border-radius: 2px;
         padding: 4px;
         selection-background-color: {DEADLINE_COLORS['selection']};
@@ -100,7 +101,7 @@ TAB_WIDGET_BASE_STYLE = f"""
 
     QPushButton {{
         background: {DEADLINE_COLORS['bg_panel']};
-        border: 1px solid #555555;
+        border: 1px solid {THEME.border};
         border-radius: 3px;
         padding: 5px 15px;
         font-weight: bold;
@@ -108,11 +109,11 @@ TAB_WIDGET_BASE_STYLE = f"""
 
     QPushButton:hover {{
         background: {DEADLINE_COLORS['hover']};
-        border-color: #777777;
+        border-color: {THEME.border_light};
     }}
 
     QPushButton:pressed {{
-        background: #222222;
+        background: {THEME.bg_darkest};
     }}
 
     QLabel {{
@@ -120,7 +121,7 @@ TAB_WIDGET_BASE_STYLE = f"""
     }}
 
     QGroupBox {{
-        border: 1px solid #555555;
+        border: 1px solid {THEME.border};
         border-radius: 4px;
         margin-top: 1em;
         padding-top: 10px;
@@ -141,7 +142,7 @@ TAB_WIDGET_BASE_STYLE = f"""
     }}
 
     QScrollBar::handle:vertical {{
-        background: #555555;
+        background: {THEME.bg_light};
         min-height: 20px;
         border-radius: 2px;
     }}
