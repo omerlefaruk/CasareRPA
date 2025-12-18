@@ -10,7 +10,7 @@ Provides a code editor with:
 Based on Qt's Code Editor Example with VSCode Dark+ styling.
 """
 
-from typing import Optional
+from typing import Optional, Any
 
 from PySide6.QtCore import QRect, QSize, Qt, Slot
 from PySide6.QtGui import QColor, QFont, QPainter, QTextCursor
@@ -22,6 +22,9 @@ from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets.variable_autocomplete import (
+    VariableAutocomplete,
 )
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
     PythonHighlighter,
@@ -85,6 +88,7 @@ class CodePlainTextEdit(QPlainTextEdit):
     - Current line highlighting
     - Tab-to-spaces conversion
     - Fixed-width font
+    - Variable autocomplete trigger
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -104,6 +108,9 @@ class CodePlainTextEdit(QPlainTextEdit):
         # Line number area
         self._line_number_area = LineNumberArea(self)
 
+        # Autocomplete widget (set by parent editor)
+        self._autocomplete: Optional[VariableAutocomplete] = None
+
         # Connect signals
         self.blockCountChanged.connect(self._update_line_number_area_width)
         self.updateRequest.connect(self._update_line_number_area)
@@ -118,6 +125,10 @@ class CodePlainTextEdit(QPlainTextEdit):
 
         # Line wrap off for code
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+
+    def set_autocomplete(self, autocomplete: VariableAutocomplete) -> None:
+        """Set the autocomplete widget reference."""
+        self._autocomplete = autocomplete
 
     def line_number_area_width(self) -> int:
         """
@@ -236,7 +247,22 @@ class CodePlainTextEdit(QPlainTextEdit):
         Handle key press events.
 
         Converts tabs to spaces and handles indentation.
+        Forward navigation keys to autocomplete if visible.
         """
+        # If autocomplete is visible, forward navigation keys
+        if self._autocomplete and self._autocomplete.isVisible():
+            key = event.key()
+            if key in (
+                Qt.Key.Key_Down,
+                Qt.Key.Key_Up,
+                Qt.Key.Key_Return,
+                Qt.Key.Key_Enter,
+                Qt.Key.Key_Tab,
+                Qt.Key.Key_Escape,
+            ):
+                self._autocomplete.keyPressEvent(event)
+                return
+
         # Tab -> 4 spaces
         if event.key() == Qt.Key.Key_Tab:
             cursor = self.textCursor()
@@ -301,6 +327,9 @@ class CodeExpressionEditor(BaseExpressionEditor):
         self._initial_language = language.lower()
         self._language = self._initial_language
         self._highlighter = None
+        self._current_node_id: Optional[str] = None
+        self._graph: Optional[Any] = None
+        self._autocomplete_trigger_pos: int = -1
 
         # Set editor type based on language
         language_to_type = {
@@ -327,11 +356,128 @@ class CodeExpressionEditor(BaseExpressionEditor):
         self._editor = CodePlainTextEdit()
         layout.addWidget(self._editor)
 
+        # Setup autocomplete
+        self._autocomplete = VariableAutocomplete()
+        self._editor.set_autocomplete(self._autocomplete)
+
         # Setup syntax highlighter based on language
         self._setup_highlighter()
 
-        # Connect text changed signal
-        self._editor.textChanged.connect(self._on_content_changed)
+        # Connect signals
+        self._editor.textChanged.connect(self._on_text_changed)
+        self._autocomplete.variable_selected.connect(self._on_variable_selected)
+        self._autocomplete.cancelled.connect(self._on_autocomplete_cancelled)
+
+    def set_node_context(
+        self,
+        node_id: Optional[str],
+        graph: Optional[Any],
+    ) -> None:
+        """
+        Set the current node context for upstream variable detection.
+
+        Args:
+            node_id: ID of the currently selected node
+            graph: NodeGraphQt graph instance
+        """
+        self._current_node_id = node_id
+        self._graph = graph
+        if self._autocomplete:
+            self._autocomplete.set_node_context(node_id, graph)
+
+    @Slot()
+    def _on_text_changed(self) -> None:
+        """Handle text changes."""
+        # Auto-detection logic
+        if self._initial_language == "auto":
+            text = self.get_value()
+            if text.strip():
+                detected_type = CodeDetector.detect_language(text)
+
+                # Map EditorType to string language
+                type_to_lang = {
+                    EditorType.CODE_PYTHON: "python",
+                    EditorType.CODE_JAVASCRIPT: "javascript",
+                    EditorType.CODE_JSON: "json",
+                    EditorType.CODE_YAML: "yaml",
+                    EditorType.MARKDOWN: "markdown",
+                    EditorType.RICH_TEXT: "python",  # Default fallback
+                }
+
+                detected_lang = type_to_lang.get(detected_type, "python")
+
+                # Only switch if confident and different
+                if detected_lang != self._language:
+                    self.set_language(detected_lang)
+
+        # Emit signal for popup
+        self.value_changed.emit(self.get_value())
+
+        # Check for {{ trigger
+        self._check_autocomplete_trigger()
+
+    def _check_autocomplete_trigger(self) -> None:
+        """Check if user typed {{ and show autocomplete."""
+        text = self.get_value()
+        cursor_pos = self.get_cursor_position()
+
+        # Check if cursor is after {{
+        if cursor_pos >= 2 and text[cursor_pos - 2 : cursor_pos] == "{{":
+            self._show_autocomplete("")
+            self._autocomplete_trigger_pos = cursor_pos
+
+        # If autocomplete is visible, update filter
+        elif self._autocomplete.isVisible() and self._autocomplete_trigger_pos >= 0:
+            # Extract text after {{ up to cursor
+            filter_text = text[self._autocomplete_trigger_pos : cursor_pos]
+            # Close if user types }} or deletes back past {{
+            if "}}" in filter_text or cursor_pos < self._autocomplete_trigger_pos:
+                self._autocomplete.hide()
+                self._autocomplete_trigger_pos = -1
+            else:
+                self._autocomplete.set_filter(filter_text)
+
+    def _show_autocomplete(self, filter_text: str = "") -> None:
+        """Show the autocomplete popup."""
+        self._autocomplete.set_node_context(self._current_node_id, self._graph)
+        self._autocomplete.set_filter(filter_text)
+
+        if self._autocomplete.has_matches():
+            cursor_rect = self._editor.cursorRect()
+            self._autocomplete.show_at_cursor(self._editor, cursor_rect)
+
+    @Slot(str)
+    def _on_variable_selected(self, var_text: str) -> None:
+        """
+        Handle variable selection from autocomplete.
+
+        Replaces the {{ trigger and any partial text with the full variable.
+
+        Args:
+            var_text: Full variable insertion text (e.g., "{{node_id.port}}")
+        """
+        if self._autocomplete_trigger_pos < 0:
+            # No trigger position - just insert
+            self.insert_at_cursor(var_text)
+            return
+
+        # Replace from {{ onwards
+        cursor = self._editor.textCursor()
+        current_pos = cursor.position()
+
+        # Select from trigger position (after {{) back to {{ and to current position
+        cursor.setPosition(self._autocomplete_trigger_pos - 2)  # Before {{
+        cursor.setPosition(current_pos, QTextCursor.MoveMode.KeepAnchor)
+        cursor.removeSelectedText()
+        cursor.insertText(var_text)
+
+        self._editor.setTextCursor(cursor)
+        self._autocomplete_trigger_pos = -1
+
+    @Slot()
+    def _on_autocomplete_cancelled(self) -> None:
+        """Handle autocomplete cancellation."""
+        self._autocomplete_trigger_pos = -1
 
     def _setup_highlighter(self) -> None:
         """Setup syntax highlighter for the selected language."""
@@ -384,34 +530,6 @@ class CodeExpressionEditor(BaseExpressionEditor):
         self._setup_highlighter()
         logger.debug(f"Switched editor language to: {language}")
 
-    @Slot()
-    def _on_content_changed(self) -> None:
-        """Handle internal content change with auto-detection."""
-        # Auto-detection logic
-        if self._initial_language == "auto":
-            text = self.get_value()
-            if text.strip():
-                detected_type = CodeDetector.detect_language(text)
-
-                # Map EditorType to string language
-                type_to_lang = {
-                    EditorType.CODE_PYTHON: "python",
-                    EditorType.CODE_JAVASCRIPT: "javascript",
-                    EditorType.CODE_JSON: "json",
-                    EditorType.CODE_YAML: "yaml",
-                    EditorType.MARKDOWN: "markdown",
-                    EditorType.RICH_TEXT: "python",  # Default fallback
-                }
-
-                detected_lang = type_to_lang.get(detected_type, "python")
-
-                # Only switch if confident and different (CodeDetector handles scoring)
-                if detected_lang != self._language:
-                    self.set_language(detected_lang)
-
-        # Emit signal
-        self.value_changed.emit(self.get_value())
-
     def get_value(self) -> str:
         """
         Get the current editor content.
@@ -431,7 +549,7 @@ class CodeExpressionEditor(BaseExpressionEditor):
         self._editor.setPlainText(value)
         # Trigger detection on initial set if auto
         if self._initial_language == "auto":
-            self._on_content_changed()
+            self._on_text_changed()
 
     def insert_at_cursor(self, text: str) -> None:
         """
