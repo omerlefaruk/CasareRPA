@@ -417,7 +417,7 @@ Only if modification won't work, request a NEW ATOMIC node:
 - **Name**: PascalCase ending with 'Node' (e.g., ExtractTableNode)
 - **Category**: Match closest existing category
 - **Ports**: Always include exec_in/exec_out for flow control
-- **Config**: Use PropertyDef patterns (STRING, INTEGER, BOOLEAN, CHOICE, etc.)
+- **MODERN NODE STANDARD**: Use `@properties()` + `get_parameter()`, NEVER `config.get()`
 - **Reusable**: Design for composition with other nodes
 
 ### After Node Creation

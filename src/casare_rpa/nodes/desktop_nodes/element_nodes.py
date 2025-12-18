@@ -43,6 +43,13 @@ PROPERTY_NAME_PROP = PropertyDef(
 
 
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Parent window object",
+    ),
     SELECTOR_PROP,
     TIMEOUT_PROP,
     THROW_ON_NOT_FOUND_PROP,

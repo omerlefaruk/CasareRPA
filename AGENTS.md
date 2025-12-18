@@ -58,13 +58,14 @@ src/casare_rpa/
 ├── application/     # Use cases, orchestration
 ├── infrastructure/  # External integrations, database, APIs
 ├── presentation/    # UI, canvas, widgets
-└── nodes/           # Automation nodes (400+)
+└── nodes/           # Automation nodes (430+ modern)
 ```
 
 **Rules:**
 - Domain layer has NO external dependencies
 - Infrastructure implements domain interfaces
 - Nodes extend `BaseNode` from domain
+- All nodes use `@properties` + `get_parameter()` (Modern Node Standard)
 
 ## Testing Instructions
 
@@ -111,25 +112,55 @@ Types: feat, fix, refactor, test, docs, chore
 
 ## Adding New Nodes
 
-When adding a new automation node, you MUST follow these 4 steps:
+When adding a new automation node, follow the **Modern Node Standard (2025)**:
 
-1.  **Create Backend Node:** Implement the node logic in `src/casare_rpa/nodes/<category>/`.
-    - Inherit from appropriate base class (e.g., `BrowserBaseNode`).
-    - Use `@properties` decorator for configuration.
-    - Implement `async def execute()`.
+### Schema-Driven Logic Pattern
 
-2.  **Register Backend Node:** Add the class to `src/casare_rpa/nodes/registry_data.py`.
-    - Key: Class Name
-    - Value: Module path relative to `nodes` package.
+```python
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.value_objects.types import DataType
 
-3.  **Create Visual Node:** Implement the visual representation in `src/casare_rpa/presentation/canvas/visual_nodes/<category>/`.
-    - Inherit from `VisualNode`.
-    - Define `__identifier__`, `NODE_NAME`, `NODE_CATEGORY`, and `CASARE_NODE_CLASS`.
-    - Implement `setup_ports()` matching backend inputs/outputs.
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    def _define_ports(self):
+        self.add_input_port("url", DataType.STRING)
+        self.add_output_port("result", DataType.STRING)
 
-4.  **Register Visual Node:** Add the class to `src/casare_rpa/presentation/canvas/visual_nodes/__init__.py`.
-    - Key: Visual Class Name
-    - Value: Module path relative to `visual_nodes` package.
+    async def execute(self, context):
+        # MODERN: get_parameter() checks port first, then config
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional
+
+        # LEGACY (DON'T USE): self.config.get("timeout", 30000)
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source: port → config)
+- Explicit DataType on all ports (ANY is valid for polymorphic)
+- NO `self.config.get()` calls
+
+**Audit compliance:** `python scripts/audit_node_modernization.py` → 98%+ modern
+
+### 4-Step Registration
+
+1.  **Create Backend Node:** Implement in `src/casare_rpa/nodes/<category>/`
+    - Use `@properties` + `@node(category="...")` decorators
+    - Use `get_parameter()` for optional properties
+
+2.  **Register Backend Node:** Add to `src/casare_rpa/nodes/registry_data.py`
+    - Key: Class Name, Value: Module path
+
+3.  **Create Visual Node:** Implement in `src/casare_rpa/presentation/canvas/visual_nodes/<category>/`
+    - Define `__identifier__`, `NODE_NAME`, `NODE_CATEGORY`
+
+4.  **Register Visual Node:** Add to `src/casare_rpa/presentation/canvas/visual_nodes/__init__.py`
 
 ## Common Pitfalls & Solutions
 

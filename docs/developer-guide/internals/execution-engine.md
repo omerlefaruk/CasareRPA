@@ -173,16 +173,24 @@ Node properties can come from two sources:
 2. **Config values** - Static values from properties panel
 
 ```python
-# In BaseNode.get_input_value()
-def get_input_value(self, port_name: str, default=None):
+# MODERN: Use get_parameter() for dual-source access
+def get_parameter(self, name: str, default=None):
+    """Get value from port first, fall back to config."""
     # 1. Check port connection first
-    if port_name in self.input_ports:
-        port = self.input_ports[port_name]
+    if name in self.input_ports:
+        port = self.input_ports[name]
         if port.value is not None:
             return port.value
 
     # 2. Fall back to config
-    return self.config.get(port_name, default)
+    return self.config.get(name, default)
+
+# USAGE IN NODES:
+async def execute(self, context):
+    timeout = self.get_parameter("timeout", 30000)  # Dual-source access
+    url = self.get_parameter("url")                  # Required property
+
+    # LEGACY (DON'T USE): self.config.get("timeout", 30000)
 ```
 
 ---

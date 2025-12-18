@@ -21,6 +21,7 @@ GitHub Copilot must mirror the behaviour defined for our in-repo agents. Treat t
 
 ## Quick Operational Facts
 - Platform scope: Windows RPA suite (Canvas designer, Robot executor, Orchestrator API, Monitoring dashboard) built with Python 3.12, PySide6, Playwright, qasync, FastAPI.
+- **Modern Node Standard (430+ nodes):** All nodes use `@properties()` + `get_parameter()` for dual-source access. NEVER use `self.config.get()`. Audit: `python scripts/audit_node_modernization.py`
 - Key commands:
   - Run Canvas Designer: python manage.py canvas
   - Run Robot Agent: python manage.py robot start

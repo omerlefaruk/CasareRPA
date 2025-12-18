@@ -1,6 +1,30 @@
 # Nodes Package Index
 
-Quick reference for automation nodes. 413+ nodes across 18 categories.
+Quick reference for automation nodes. 430+ nodes across 18 categories.
+
+## Modern Node Standard (2025)
+
+**All nodes follow Schema-Driven Logic:**
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source: port → config)
+- Explicit DataType on all ports (ANY is valid)
+- NO `self.config.get()` calls (LEGACY)
+
+**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
 
 ## Directory Structure
 
@@ -73,9 +97,10 @@ NODE_REGISTRY = {
 
 See `.brain/docs/node-checklist.md` for the canonical checklist:
 1. Check existing nodes first
-2. Implement with `@properties(...)` + `@node(...)`
-3. Add to `src/casare_rpa/nodes/registry_data.py`
-4. Create tests in `tests/nodes/`
+2. Implement with `@properties(...)` + `@node(category="...")`
+3. Use `get_parameter()` for optional properties (NOT `config.get()`)
+4. Add to `src/casare_rpa/nodes/registry_data.py`
+5. Create tests in `tests/nodes/`
 
 ## Related Indexes
 

@@ -33,12 +33,19 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 
 @properties(
     PropertyDef(
-        "speech_text",
+        "text",
         PropertyType.TEXT,
         required=True,
         label="Text",
         tooltip="Text to speak",
         essential=True,
+    ),
+    PropertyDef(
+        "speech_text",
+        PropertyType.TEXT,
+        required=False,
+        label="Speech Text",
+        tooltip="Text to speak (deprecated, use 'text')",
     ),
     PropertyDef(
         "rate",

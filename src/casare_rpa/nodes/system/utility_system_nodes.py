@@ -590,6 +590,13 @@ class UUIDGeneratorNode(BaseNode):
         essential=True,
     ),
     PropertyDef(
+        "value",
+        PropertyType.ANY,
+        required=False,
+        label="Value",
+        tooltip="Value to compare in condition",
+    ),
+    PropertyDef(
         "assert_message",
         PropertyType.STRING,
         default="Assertion failed",

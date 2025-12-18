@@ -750,11 +750,13 @@ class HttpRequestNode(BaseNode):
 
 ```python
 async def execute(self, inputs, context):
-    # Access via self.config
-    url = self.config.get("url")
-    method = self.config.get("method", "GET")
-    headers = self.config.get("headers", {})
-    timeout = self.config.get("timeout", 30000)
+    # MODERN: Use get_parameter() for dual-source access (port -> config fallback)
+    url = self.get_parameter("url")
+    method = self.get_parameter("method", "GET")
+    headers = self.get_parameter("headers", {})
+    timeout = self.get_parameter("timeout", 30000)
+
+    # LEGACY (DON'T USE): self.config.get("url")
 
     # Perform request...
 ```

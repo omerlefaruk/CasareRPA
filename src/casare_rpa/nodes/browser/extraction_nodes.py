@@ -216,6 +216,13 @@ class GetAllImagesNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="URL of the file to download",
+    ),
+    PropertyDef(
         "save_path",
         PropertyType.FILE_PATH,
         default="",

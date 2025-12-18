@@ -432,9 +432,9 @@ class FilterEmailsNode(BaseNode):
 
         try:
             emails = self.get_input_value("emails") or []
-            subject_contains = self.get_input_value("subject_contains") or ""
-            from_contains = self.get_input_value("from_contains") or ""
-            has_attachments = self.get_input_value("has_attachments")
+            subject_contains = self.get_parameter("subject_contains", "")
+            from_contains = self.get_parameter("from_contains", "")
+            has_attachments = self.get_parameter("has_attachments", None)
 
             # Resolve {{variable}} patterns
             subject_contains = context.resolve_value(subject_contains)

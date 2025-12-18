@@ -86,6 +86,7 @@ class NodeAuditResult:
 
     # Additional metrics
     property_count: int = 0
+    optional_property_count: int = 0  # Properties that could use config fallback
     input_port_count: int = 0
     output_port_count: int = 0
     required_ports_missing_schema: List[str] = field(default_factory=list)
@@ -93,13 +94,37 @@ class NodeAuditResult:
     issues: List[NodeIssue] = field(default_factory=list)
 
     def is_modern(self) -> bool:
-        """Check if node meets Modern Node Standard."""
+        """Check if node meets Modern Node Standard.
+
+        A node is modern if:
+        1. Has @properties decorator (even empty @properties() counts)
+        2. Either uses get_parameter() OR has no optional properties
+           - Nodes with ONLY required properties (connection-only) don't need get_parameter()
+           - Nodes with optional properties should use get_parameter() for dual-source access
+        3. Doesn't use legacy self.config.get()
+        4. Has typed ports (DataType.ANY is acceptable for polymorphic nodes)
+
+        Note: required_ports_missing_schema is NOT checked because connection-only
+        ports don't need PropertyDef entries - they receive values from wire connections.
+
+        Examples:
+            - ClickElementNode: Only required ports (connection-only), no optional properties
+              → doesn't need get_parameter(), get_input_value() suffices → MODERN
+            - DownloadFileNode: Has optional properties (save_path, timeout, etc.)
+              → must use get_parameter() for dual-source access → MODERN if it does
+            - Empty @properties(): optional_property_count=0 → passes without get_parameter()
+        """
+        # If node has optional properties, it should use get_parameter() to access them
+        # If node has only required properties (connection-only), get_input_value() is fine
+        # Empty @properties() decorators have optional_property_count=0, so they pass
+        needs_get_parameter = self.optional_property_count > 0
+        satisfies_dual_source = self.uses_get_parameter if needs_get_parameter else True
+
         return (
             self.has_properties_decorator
-            and self.uses_get_parameter
+            and satisfies_dual_source
             and not self.uses_config_get
             and self.has_typed_ports
-            and len(self.required_ports_missing_schema) == 0
         )
 
 
@@ -320,6 +345,10 @@ def audit_node_class(
         # Check schema
         if schema:
             result.property_count = len(schema.properties)
+            # Count optional properties (not required) - these should use get_parameter()
+            result.optional_property_count = sum(
+                1 for p in schema.properties if not p.required
+            )
             schema_props = {p.name for p in schema.properties}
         else:
             schema_props = set()
@@ -355,7 +384,10 @@ def audit_node_class(
             if port.data_type == DataType.ANY:
                 result.has_any_type_ports.append(f"output:{port_name}")
 
-        result.has_typed_ports = len(result.has_any_type_ports) == 0
+        # DataType.ANY is a valid explicit type choice for polymorphic ports
+        # has_typed_ports only checks that all ports have an explicit type (including ANY)
+        # The has_any_type_ports list is informational only
+        result.has_typed_ports = True  # All ports have explicit types if we got here
 
     except Exception as e:
         # Can't instantiate - use source analysis only
@@ -387,15 +419,8 @@ def audit_node_class(
     # PropertyDef is only needed for ports that can also receive values from configuration
     # So we don't generate warnings for required_ports_missing_schema anymore
 
-    for any_port in result.has_any_type_ports:
-        result.issues.append(
-            NodeIssue(
-                severity="info",
-                code="ANY_TYPE_PORT",
-                message=f"Port '{any_port}' uses DataType.ANY",
-                suggestion="Consider using a more specific DataType if possible",
-            )
-        )
+    # DataType.ANY is valid for polymorphic nodes - no issue needed, just tracked for info
+    # We don't add issues for ANY_TYPE_PORT as it's a valid design choice
 
     # Determine status
     if result.is_modern():

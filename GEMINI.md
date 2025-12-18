@@ -2,6 +2,30 @@
 
 Configuration and capabilities for the Gemini AI Coding Agent.
 
+## Modern Node Standard (2025)
+
+All 430+ nodes follow **Schema-Driven Logic**:
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source: port → config)
+- Explicit DataType on all ports (ANY is valid)
+- NO `self.config.get()` calls (LEGACY)
+
+**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
+
 ## Agent Capabilities
 
 | Agent | Capability | Skill Mapping |

@@ -17,6 +17,7 @@
 4.  **STRICT TYPING:** Use Python type hints everywhere. Use `mypy` compatible code.
 5.  **DDD COMPLIANCE:** Adhere to Domain-Driven Design principles (Layers, Aggregates, Value Objects).
 6.  **TEST-DRIVEN:** Verify every change with `pytest`.
+7.  **MODERN NODE STANDARD:** All nodes use `@properties()` + `get_parameter()`. Never use `self.config.get()`.
 
 ## Rules Workflow
 
@@ -47,6 +48,9 @@ pytest tests/ -v
 
 # Run specific test
 pytest tests/domain/test_node.py -v
+
+# Audit node modernization (98%+ modern expected)
+python scripts/audit_node_modernization.py
 
 # Re-index codebase for Qdrant (Semantic Search)
 python scripts/index_codebase_qdrant.py

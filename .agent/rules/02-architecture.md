@@ -57,6 +57,31 @@ async with JsonUnitOfWork(path, event_bus) as uow:
 | UnifiedHttpClient | `infrastructure/http/` |
 | SignalCoordinator | `presentation/canvas/coordinators/` |
 | Theme | `presentation/canvas/ui/theme.py` |
+| **Modern Node Standard** | All nodes: `@properties()` + `get_parameter()` |
+
+## Modern Node Standard (2025)
+
+All 430+ nodes follow **Schema-Driven Logic**:
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source: port → config)
+- Explicit DataType on all ports (ANY is valid)
+- **NEVER use `self.config.get()`** (LEGACY)
+
+**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
 
 ## Agent Registry
 

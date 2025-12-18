@@ -3,6 +3,33 @@
 > Quick-start templates for creating atomic nodes following CasareRPA patterns.
 > **MANDATORY**: Use these templates for ALL new nodes. They ensure consistency and proper registration.
 
+## Modern Node Standard (2025)
+
+**All nodes MUST follow Schema-Driven Logic:**
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        # MODERN: get_parameter() checks port first, then config
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional
+
+        # LEGACY (DON'T USE): self.config.get("timeout", 30000)
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source access)
+- Explicit DataType on all ports (ANY is valid for polymorphic)
+- NO `self.config.get()` calls
+
+**Audit compliance:** `python scripts/audit_node_modernization.py`
+
 ## Template Selection Guide
 
 | Category | Base Class | Location | Use When |
@@ -37,7 +64,7 @@ Browser {Operation} Node
 from typing import Any, Dict, Optional
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
@@ -49,19 +76,19 @@ from casare_rpa.nodes.browser.property_constants import (
 )
 
 
-@node_schema(
+@properties(
     BROWSER_SELECTOR,
     BROWSER_TIMEOUT,
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
     BROWSER_SCREENSHOT_ON_FAIL,
 )
-@executable_node
+@node(category="browser")
 class {Operation}Node(BrowserBaseNode):
     """
     {One-line description of atomic operation}.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: CSS/XPath selector for target element
         timeout: Operation timeout in ms (default: 30000)
         retry_count: Number of retries on failure (default: 0)
@@ -95,8 +122,9 @@ class {Operation}Node(BrowserBaseNode):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the browser operation."""
         page = self.get_page(context)
-        selector = self.normalize_selector(self.get_parameter("selector", context))
-        timeout = self.get_parameter("timeout", context)
+        # MODERN: get_parameter() for dual-source access
+        selector = self.normalize_selector(self.get_parameter("selector"))
+        timeout = self.get_parameter("timeout", 30000)
 
         if not selector:
             raise ValueError("Selector is required")
@@ -134,8 +162,8 @@ Desktop {Operation} Node
 from typing import Any, Dict, Optional
 from loguru import logger
 
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.value_objects.types import DataType, NodeStatus, PortType
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
     SELECTOR_PROP,
@@ -144,17 +172,17 @@ from casare_rpa.nodes.desktop_nodes.properties import (
 )
 
 
-@node_schema(
+@properties(
     SELECTOR_PROP,
     TIMEOUT_PROP,
     THROW_ON_NOT_FOUND_PROP,
 )
-@executable_node
+@node(category="desktop")
 class {Operation}Node(DesktopNodeBase):
     """
     {One-line description of atomic operation}.
 
-    Config (via @node_schema):
+    Config (via @properties):
         selector: Element selector dict with strategy/value
         timeout: Operation timeout in seconds (default: 5.0)
         throw_on_not_found: Raise error if element not found (default: True)
@@ -184,9 +212,9 @@ class {Operation}Node(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("window", DataType.ANY)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the desktop operation."""

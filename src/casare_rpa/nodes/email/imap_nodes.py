@@ -528,6 +528,13 @@ class DeleteEmailNode(BaseNode):
         tooltip="IMAP server port",
     ),
     PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="Unique identifier of the email to move",
+    ),
+    PropertyDef(
         "username",
         PropertyType.STRING,
         default="",

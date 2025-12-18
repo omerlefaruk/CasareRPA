@@ -1,12 +1,22 @@
 # Decision Tree: Adding a New Node
 
+## Modern Node Standard (2025)
+
+**All nodes MUST follow Schema-Driven Logic:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties
+- Explicit DataType on all ports (ANY is valid)
+- NO `self.config.get()` calls
+
+**Audit compliance:** `python scripts/audit_node_modernization.py`
+
 ## Quick Decision
 
 ```
 Is this a browser/Playwright node?
 ├─ YES → Extend BrowserBaseNode (see Step 2a)
 └─ NO → Is it a desktop/UI automation node?
-    ├─ YES → Extend BaseNode + use UIAutomation (see Step 2b)
+    ├─ YES → Extend DesktopNodeBase (see Step 2b)
     └─ NO → Extend BaseNode directly (see Step 2c)
 ```
 
@@ -35,7 +45,7 @@ Grep: "YourKeyword" --path nodes/
 
 ```python
 # File: nodes/browser/my_browser_node.py
-from casare_rpa.domain import node, properties
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.nodes.browser import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
@@ -62,7 +72,9 @@ class MyBrowserNode(BrowserBaseNode):
     async def execute(self, context):
         try:
             page = self.get_page(context)
-            selector = self.get_normalized_selector(context)
+            # MODERN: get_parameter() for dual-source access
+            selector = self.get_normalized_selector(self.get_parameter("selector"))
+            timeout = self.get_parameter("timeout", 30000)
 
             # Your Playwright logic here
             result = await page.text_content(selector)
@@ -77,13 +89,14 @@ class MyBrowserNode(BrowserBaseNode):
 
 ```python
 # File: nodes/desktop_nodes/my_desktop_node.py
-from casare_rpa.domain import node, properties
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects import DataType
 
 @properties(
     PropertyDef("window_title", PropertyType.STRING, essential=True),
+    PropertyDef("timeout", PropertyType.FLOAT, default=5.0),
 )
 @node(category="desktop")
 class MyDesktopNode(BaseNode):
@@ -94,10 +107,13 @@ class MyDesktopNode(BaseNode):
     def _define_ports(self):
         self.add_exec_input()
         self.add_exec_output()
-        self.add_output_port("element", DataType.ELEMENT, "Found element")
+        self.add_output_port("element", DataType.ANY, "Found element")
 
     async def execute(self, context):
         try:
+            # MODERN: get_parameter() for dual-source access
+            window_title = self.get_parameter("window_title")
+            timeout = self.get_parameter("timeout", 5.0)
             window_title = self.get_parameter("window_title")
             # UIAutomation logic here
             return {"success": True}

@@ -159,6 +159,15 @@ WINDOW_PORT_SCHEMA.register(
 
 
 @properties(
+    # === PRIMARY INPUT: Window ===
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object to operate on",
+        order=-1,
+    ),
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
         "action",

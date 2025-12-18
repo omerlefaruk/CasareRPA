@@ -64,8 +64,9 @@ def get_trigger_type(self) -> TriggerType:
 
 def get_trigger_config(self) -> Dict[str, Any]:
     """Return trigger-specific config dict."""
+    # MODERN: Use get_parameter() for dual-source access
     return {
-        "bot_token": self.config.get("bot_token", ""),
+        "bot_token": self.get_parameter("bot_token", ""),
         "filter_chat_ids": [...],
     }
 ```

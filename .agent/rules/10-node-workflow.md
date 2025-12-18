@@ -4,6 +4,29 @@ description: Node development workflow and templates
 
 # Node Workflow
 
+## Modern Node Standard (2025)
+
+**Schema-Driven Logic** - All 430+ nodes follow this pattern:
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),  # optional
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        # MODERN: get_parameter() checks port first, then config
+        url = self.get_parameter("url")           # required - from port
+        timeout = self.get_parameter("timeout", 30000)  # optional - port or config
+
+        # LEGACY (DON'T USE): self.config.get("timeout", 30000)
+```
+
+**When to use get_parameter():**
+- Optional properties (have defaults) → MUST use `get_parameter()`
+- Required properties (connection-only) → `get_input_value()` is fine
+
 ## Plan -> Search -> Implement
 
 **Always follow this workflow for nodes:**
@@ -27,7 +50,7 @@ description: Node development workflow and templates
 ## Port Rules
 
 - Use add_exec_input()/add_exec_output() - NEVER add_input_port(name, PortType.EXEC_*)
-- Data ports: add_input_port(name, DataType.*)
+- Data ports: `add_input_port(name, DataType.X)` - ANY is valid for polymorphic ports
 - One node = one atomic operation
 
 ## Registration

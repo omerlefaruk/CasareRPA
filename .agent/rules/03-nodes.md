@@ -1,5 +1,18 @@
 # Node Development
 
+## Modern Node Standard (2025)
+
+All nodes MUST follow the **Schema-Driven Logic** pattern:
+
+| Requirement | Pattern | Notes |
+|-------------|---------|-------|
+| Schema | `@properties(PropertyDef(...))` | Defines configuration schema |
+| Value Access | `self.get_parameter(name, default)` | Dual-source: port → config fallback |
+| Ports | `add_input_port(name, DataType.X)` | Explicit DataType (ANY is valid) |
+| No Legacy | Never use `self.config.get()` | Use get_parameter() instead |
+
+**Modernization Audit:** Run `python scripts/audit_node_modernization.py`
+
 ## Workflow: Plan → Search → Implement
 
 ### 1. PLAN
@@ -15,7 +28,7 @@ Outputs: [port: DataType]
 ### 2. SEARCH (MANDATORY)
 ```
 1. Read nodes/_index.md           # Find category
-2. Grep nodes/registry_data.py    # Check _NODE_REGISTRY
+2. Grep nodes/registry_data.py    # Check NODE_REGISTRY
 3. Decision:
    ├── Exists? → Use it
    ├── Similar? → Enhance it (add PropertyDef)
@@ -27,12 +40,12 @@ See `.brain/docs/node-templates.md` for full templates.
 
 **8-step checklist** (`.brain/docs/node-checklist.md`):
 1. `@node` decorator
-2. `@properties` with PropertyDef
-3. Export PropertyDef constants
+2. `@properties` with PropertyDef (REQUIRED - even empty `@properties()`)
+3. Use `get_parameter()` for optional properties
 4. Visual node class
 5. Unit tests
 6. Export from `__init__.py`
-7. Add to `_NODE_REGISTRY`
+7. Add to `NODE_REGISTRY`
 8. Add to `NODE_TYPE_MAP`
 
 ## Test Rules
