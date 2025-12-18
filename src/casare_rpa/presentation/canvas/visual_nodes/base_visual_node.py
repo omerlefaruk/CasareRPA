@@ -605,7 +605,7 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Set node context for autocomplete
         if hasattr(editor, "set_node_context"):
-            editor.set_node_context(self.model.node_id, self.graph)
+            editor.set_node_context(self.get_property("node_id"), self.graph)
 
         # Set title with property name
         popup.set_title(f"Edit: {property_def.label or property_name}")

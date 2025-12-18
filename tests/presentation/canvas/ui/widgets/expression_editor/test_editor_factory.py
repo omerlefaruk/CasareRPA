@@ -74,10 +74,10 @@ class TestEditorFactoryCreate:
             MarkdownEditor,
         )
 
-        editor = EditorFactory.create(EditorType.MARKDOWN)
+        editor = EditorFactory.create(EditorType.CODE_MARKDOWN)
 
         assert isinstance(editor, MarkdownEditor)
-        assert editor.editor_type == EditorType.MARKDOWN
+        assert editor.editor_type == EditorType.CODE_MARKDOWN
 
     def test_create_rich_text_editor(self, qapp) -> None:
         """Test creating RICH_TEXT editor returns RichTextEditor."""
@@ -258,7 +258,7 @@ class TestEditorFactoryNodeOverrides:
             node_type="EmailSendNode",
             property_name="body",
         )
-        assert editor.editor_type == EditorType.MARKDOWN
+        assert editor.editor_type == EditorType.CODE_MARKDOWN
 
     def test_browser_evaluate_uses_javascript(self, qapp) -> None:
         """Test BrowserEvaluateNode.script uses JavaScript editor."""

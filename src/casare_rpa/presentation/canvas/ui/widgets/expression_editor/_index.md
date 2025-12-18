@@ -250,7 +250,7 @@ class VisualNode:
 
 ```python
 node_overrides = {
-    "EmailSendNode": {"body": EditorType.MARKDOWN, "html_body": EditorType.MARKDOWN},
+    "EmailSendNode": {EditorType.CODE_MARKDOWN, "html_body": EditorType.MARKDOWN},
     "BrowserEvaluateNode": {"script": EditorType.CODE_JAVASCRIPT},
     "RunPythonNode": {"code": EditorType.CODE_PYTHON},
     "CommandNode": {"command": EditorType.CODE_CMD},

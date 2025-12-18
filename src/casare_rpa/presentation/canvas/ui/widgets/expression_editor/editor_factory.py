@@ -86,7 +86,7 @@ class EditorFactory:
 
             return CodeExpressionEditor(language="yaml", parent=parent)
 
-        elif editor_type == EditorType.MARKDOWN:
+        elif editor_type == EditorType.CODE_MARKDOWN:
             from casare_rpa.presentation.canvas.ui.widgets.expression_editor.markdown_editor import (
                 MarkdownEditor,
             )
@@ -161,7 +161,7 @@ _PROPERTY_TYPE_TO_EDITOR = {
 # Node-specific editor overrides
 _NODE_EDITOR_OVERRIDES = {
     "EmailSendNode": {
-        "body": EditorType.MARKDOWN,
+        "body": EditorType.CODE_MARKDOWN,
     },
     "BrowserEvaluateNode": {
         "script": EditorType.CODE_JAVASCRIPT,

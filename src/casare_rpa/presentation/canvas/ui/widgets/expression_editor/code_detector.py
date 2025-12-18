@@ -40,7 +40,7 @@ class CodeDetector:
             EditorType.CODE_JAVASCRIPT: 0,
             EditorType.CODE_JSON: 0,
             EditorType.CODE_YAML: 0,
-            EditorType.MARKDOWN: 0,
+            EditorType.CODE_MARKDOWN: 0,
         }
 
         # JSON Detection
@@ -96,13 +96,13 @@ class CodeDetector:
 
         # Markdown Detection
         if re.search(r"^#+\s", text, re.MULTILINE):
-            scores[EditorType.MARKDOWN] += 30
+            scores[EditorType.CODE_MARKDOWN] += 30
         if re.search(r"\*\*.*\*\*", text):
-            scores[EditorType.MARKDOWN] += 10
+            scores[EditorType.CODE_MARKDOWN] += 10
         if re.search(r"\[.*\]\(.*\)", text):  # Links
-            scores[EditorType.MARKDOWN] += 20
+            scores[EditorType.CODE_MARKDOWN] += 20
         if re.search(r"^\s*[-*]\s", text, re.MULTILINE):  # Lists
-            scores[EditorType.MARKDOWN] += 10
+            scores[EditorType.CODE_MARKDOWN] += 10
 
         # Heuristic adjustments
         # If it looks like JSON but has no quotes on keys, it might be JS object or YAML

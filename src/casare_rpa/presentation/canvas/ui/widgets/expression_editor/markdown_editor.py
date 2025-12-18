@@ -66,7 +66,7 @@ class MarkdownEditor(BaseExpressionEditor):
             parent: Parent widget
         """
         super().__init__(parent)
-        self._editor_type = EditorType.MARKDOWN
+        self._editor_type = EditorType.CODE_MARKDOWN
         self._preview_visible = True
         self._preview_timer: Optional[QTimer] = None
 

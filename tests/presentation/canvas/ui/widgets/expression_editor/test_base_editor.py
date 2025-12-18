@@ -57,7 +57,7 @@ class TestEditorTypeEnum:
             EditorType,
         )
 
-        assert EditorType.MARKDOWN.value == "markdown"
+        assert EditorType.CODE_MARKDOWN.value == "markdown"
 
     def test_editor_type_has_rich_text(self) -> None:
         """Test RICH_TEXT enum exists with correct value."""
@@ -88,7 +88,7 @@ class TestEditorTypeEnum:
             EditorType.CODE_CMD,
             EditorType.CODE_JSON,
             EditorType.CODE_YAML,
-            EditorType.MARKDOWN,
+            EditorType.CODE_MARKDOWN,
             EditorType.RICH_TEXT,
             EditorType.AUTO,
         ]

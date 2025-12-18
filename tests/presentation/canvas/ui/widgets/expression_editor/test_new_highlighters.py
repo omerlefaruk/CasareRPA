@@ -173,7 +173,7 @@ class TestCodeDetector:
         )
 
         code = "# Heading\n\n**Bold text** and [links](http://example.com)"
-        assert CodeDetector.detect_language(code) == EditorType.MARKDOWN
+        assert CodeDetector.detect_language(code) == EditorType.CODE_MARKDOWN
 
     def test_detect_empty(self):
         """Test detection of empty string."""

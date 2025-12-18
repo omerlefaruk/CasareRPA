@@ -97,15 +97,37 @@ class TestCodeExpressionEditorInstantiation:
         from PySide6.QtWidgets import QWidget
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             CodeExpressionEditor,
+            EditorType,
         )
 
         parent = QWidget()
         editor = CodeExpressionEditor(parent=parent)
         assert editor.parent() == parent
 
+        editor = CodeExpressionEditor(language="markdown")
+        assert editor.editor_type == EditorType.CODE_MARKDOWN
 
-# =============================================================================
-# Value Operations Tests
+    def test_set_node_context(self, qapp) -> None:
+        """Test set_node_context updates editor and autocomplete."""
+        from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
+            CodeExpressionEditor,
+        )
+
+        editor = CodeExpressionEditor()
+        mock_graph = MagicMock()
+        node_id = "test_node_123"
+
+        # Mock autocomplete widget
+        mock_autocomplete = MagicMock()
+        editor._autocomplete = mock_autocomplete
+
+        editor.set_node_context(node_id, mock_graph)
+
+        assert editor._current_node_id == node_id
+        assert editor._graph == mock_graph
+        mock_autocomplete.set_node_context.assert_called_once_with(node_id, mock_graph)
+
+
 # =============================================================================
 
 

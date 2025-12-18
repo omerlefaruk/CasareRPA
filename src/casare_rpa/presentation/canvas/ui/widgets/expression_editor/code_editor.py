@@ -338,7 +338,7 @@ class CodeExpressionEditor(BaseExpressionEditor):
             "cmd": EditorType.CODE_CMD,
             "json": EditorType.CODE_JSON,
             "yaml": EditorType.CODE_YAML,
-            "markdown": EditorType.MARKDOWN,
+            "markdown": EditorType.CODE_MARKDOWN,
             "auto": EditorType.AUTO,
         }
         self._editor_type = language_to_type.get(self._language, EditorType.CODE_PYTHON)
@@ -400,7 +400,7 @@ class CodeExpressionEditor(BaseExpressionEditor):
                     EditorType.CODE_JAVASCRIPT: "javascript",
                     EditorType.CODE_JSON: "json",
                     EditorType.CODE_YAML: "yaml",
-                    EditorType.MARKDOWN: "markdown",
+                    EditorType.CODE_MARKDOWN: "markdown",
                     EditorType.RICH_TEXT: "python",  # Default fallback
                 }
 

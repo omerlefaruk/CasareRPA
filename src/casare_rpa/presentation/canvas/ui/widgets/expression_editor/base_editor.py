@@ -29,7 +29,7 @@ class EditorType(Enum):
     CODE_CMD = "cmd"
     CODE_JSON = "json"
     CODE_YAML = "yaml"
-    MARKDOWN = "markdown"
+    CODE_MARKDOWN = "markdown"
     RICH_TEXT = "rich_text"
     AUTO = "auto"
 
