@@ -65,6 +65,8 @@ from casare_rpa.domain.errors import (
     NodeValidationError,
     ErrorContext,
 )
+from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
 
 
 class NodeExecutionResult:
@@ -110,6 +112,7 @@ class NodeExecutor:
         event_bus: Optional[EventBus] = None,
         node_timeout: float = 120.0,
         progress_calculator: Optional[Callable[[], float]] = None,
+        cache_manager: Optional[TieredCacheManager] = None,
     ) -> None:
         """
         Initialize node executor.
@@ -127,6 +130,7 @@ class NodeExecutor:
         self.event_bus = event_bus
         self.node_timeout = node_timeout
         self._calculate_progress = progress_calculator or (lambda: 0.0)
+        self.cache_manager = cache_manager
 
         # PERFORMANCE: Cache metrics instance to avoid singleton lookup on every call
         # Related: See utils.performance.performance_metrics for metrics tracking
@@ -196,6 +200,22 @@ class NodeExecutor:
         # Add spaces before capital letters (e.g., "ClickElement" -> "Click Element")
         return re.sub(r"(?<!^)(?=[A-Z])", " ", node_type)
 
+    def _get_node_cache_key(self, node: INode) -> str:
+        """Generate a cache key for the node based on its inputs and config."""
+        inputs = {}
+        if hasattr(node, "input_ports"):
+            for name in node.input_ports:
+                if not name.startswith("exec"):
+                    inputs[name] = node.get_input_value(name)
+
+        cache_data = {
+            "node_type": node.__class__.__name__,
+            "inputs": inputs,
+            "config": {k: v for k, v in node.config.items() if not k.startswith("_")},
+        }
+        workflow_id = getattr(self.context, "workflow_id", "unknown")
+        return CacheKeyGenerator.generate(f"node:{workflow_id}", cache_data)
+
     async def execute(self, node: INode) -> NodeExecutionResult:
         """
         Execute a single node with full lifecycle management.
@@ -223,6 +243,23 @@ class NodeExecutor:
         # This allows disabling nodes during debugging without breaking data flow
         if node.config.get("_disabled", False):
             return self._handle_bypassed_node(node)
+
+        # Check cache if node is cacheable
+        cache_key = None
+        if self.cache_manager and getattr(node, "cacheable", False):
+            cache_key = self._get_node_cache_key(node)
+            cached_result = await self.cache_manager.get(cache_key)
+            if cached_result is not None:
+                logger.info(
+                    f"Cache hit for node {node.node_id} ({node.__class__.__name__})"
+                )
+                node.status = NodeStatus.SUCCESS
+                node.last_output = cached_result
+                # Set outputs from cache
+                for port_name, value in cached_result.items():
+                    if port_name in node.output_ports:
+                        node.set_output_value(port_name, value)
+                return NodeExecutionResult(success=True, result=cached_result)
 
         # Setup execution tracking
         node.status = NodeStatus.RUNNING
@@ -252,6 +289,12 @@ class NodeExecutor:
             node.execution_count += 1
             node.last_execution_time = execution_time
             node.last_output = result
+
+            # Store in cache if cacheable
+            if cache_key and self.cache_manager and result:
+                await self.cache_manager.set(
+                    cache_key, result, ttl=getattr(node, "cache_ttl", 3600)
+                )
 
             # Handle result
             return self._process_result(node, result, execution_time)

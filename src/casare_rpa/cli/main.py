@@ -86,6 +86,24 @@ def start_canvas():
 tunnel_app = typer.Typer(name="tunnel", help="Manage Cloudflare Tunnels")
 app.add_typer(tunnel_app, name="tunnel")
 
+# Cache CLI Group
+cache_app = typer.Typer(name="cache", help="Manage Caching System")
+app.add_typer(cache_app, name="cache")
+
+
+@cache_app.command("clear")
+def cache_clear():
+    """Clear all cache tiers (Memory and Disk)."""
+    import asyncio
+    from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+
+    async def _clear():
+        manager = TieredCacheManager()
+        await manager.clear()
+        typer.echo("Cache cleared successfully.")
+
+    asyncio.run(_clear())
+
 
 @tunnel_app.command("start")
 def tunnel_start(

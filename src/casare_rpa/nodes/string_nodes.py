@@ -128,6 +128,8 @@ class ConcatenateNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ConcatenateNode"
+        self.cacheable = True
+        self.cache_ttl = 3600  # 1 hour
 
     def _define_ports(self) -> None:
         self.add_input_port("string_1", DataType.STRING, required=False)
@@ -164,6 +166,8 @@ class FormatStringNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FormatStringNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("template", DataType.STRING, required=False)
@@ -221,6 +225,8 @@ class RegexMatchNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RegexMatchNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("text", DataType.STRING, required=False)
@@ -321,6 +327,8 @@ class RegexReplaceNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RegexReplaceNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("text", DataType.STRING, required=False)

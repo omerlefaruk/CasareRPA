@@ -87,6 +87,10 @@ class BaseNode(ABC):
         self.last_execution_time: Optional[float] = None
         self.last_output: Optional[Dict[str, Any]] = None
 
+        # Caching support
+        self.cacheable: bool = False
+        self.cache_ttl: int = 3600  # 1 hour default
+
         # Initialize ports
         self._define_ports()
 
