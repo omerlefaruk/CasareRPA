@@ -27,6 +27,25 @@ from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_h
     PythonHighlighter,
     get_python_editor_stylesheet,
 )
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
+    JavaScriptHighlighter,
+    get_javascript_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.json_highlighter import (
+    JsonHighlighter,
+    get_json_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.yaml_highlighter import (
+    YamlHighlighter,
+    get_yaml_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
+    MarkdownHighlighter,
+    get_markdown_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
+    CodeDetector,
+)
 
 
 class LineNumberArea(QWidget):
@@ -254,11 +273,15 @@ class CodeExpressionEditor(BaseExpressionEditor):
     - Language-specific syntax highlighting
     - Tab/indent handling
     - Variable insertion ({{var}} syntax)
+    - Auto-detection of language
 
     Supported languages:
     - Python (default)
-    - JavaScript (planned)
-    - CMD/Shell (planned)
+    - JavaScript
+    - JSON
+    - YAML
+    - Markdown
+    - CMD/Shell (basic)
     """
 
     def __init__(
@@ -275,7 +298,8 @@ class CodeExpressionEditor(BaseExpressionEditor):
         """
         super().__init__(parent)
 
-        self._language = language.lower()
+        self._initial_language = language.lower()
+        self._language = self._initial_language
         self._highlighter = None
 
         # Set editor type based on language
@@ -283,6 +307,10 @@ class CodeExpressionEditor(BaseExpressionEditor):
             "python": EditorType.CODE_PYTHON,
             "javascript": EditorType.CODE_JAVASCRIPT,
             "cmd": EditorType.CODE_CMD,
+            "json": EditorType.CODE_JSON,
+            "yaml": EditorType.CODE_YAML,
+            "markdown": EditorType.MARKDOWN,
+            "auto": EditorType.AUTO,
         }
         self._editor_type = language_to_type.get(self._language, EditorType.CODE_PYTHON)
 
@@ -307,17 +335,82 @@ class CodeExpressionEditor(BaseExpressionEditor):
 
     def _setup_highlighter(self) -> None:
         """Setup syntax highlighter for the selected language."""
+        # Clean up old highlighter
+        if self._highlighter:
+            self._highlighter.setDocument(None)
+            self._highlighter = None
+
+        document = self._editor.document()
+
         if self._language == "python":
-            self._highlighter = PythonHighlighter(self._editor.document())
+            self._highlighter = PythonHighlighter(document)
+            self._editor.setStyleSheet(get_python_editor_stylesheet())
         elif self._language == "javascript":
-            # JavaScript highlighter (same as Python for now)
-            self._highlighter = PythonHighlighter(self._editor.document())
+            self._highlighter = JavaScriptHighlighter(document)
+            self._editor.setStyleSheet(get_javascript_editor_stylesheet())
+        elif self._language == "json":
+            self._highlighter = JsonHighlighter(document)
+            self._editor.setStyleSheet(get_json_editor_stylesheet())
+        elif self._language == "yaml":
+            self._highlighter = YamlHighlighter(document)
+            self._editor.setStyleSheet(get_yaml_editor_stylesheet())
+        elif self._language == "markdown":
+            self._highlighter = MarkdownHighlighter(document)
+            self._editor.setStyleSheet(get_markdown_editor_stylesheet())
         elif self._language == "cmd":
-            # CMD highlighter (basic, no special highlighting yet)
-            pass
+            # CMD highlighter (basic)
+            self._editor.setStyleSheet(get_python_editor_stylesheet())
+        elif self._language == "auto":
+            # Start with Python as default until detected
+            self._highlighter = PythonHighlighter(document)
+            self._editor.setStyleSheet(get_python_editor_stylesheet())
         else:
             # Default to Python
-            self._highlighter = PythonHighlighter(self._editor.document())
+            self._highlighter = PythonHighlighter(document)
+            self._editor.setStyleSheet(get_python_editor_stylesheet())
+
+    def set_language(self, language: str) -> None:
+        """
+        Set the syntax highlighting language.
+
+        Args:
+            language: Language name (python, javascript, json, yaml, etc.)
+        """
+        language = language.lower()
+        if language == self._language:
+            return
+
+        self._language = language
+        self._setup_highlighter()
+        logger.debug(f"Switched editor language to: {language}")
+
+    @Slot()
+    def _on_content_changed(self) -> None:
+        """Handle internal content change with auto-detection."""
+        # Auto-detection logic
+        if self._initial_language == "auto":
+            text = self.get_value()
+            if text.strip():
+                detected_type = CodeDetector.detect_language(text)
+
+                # Map EditorType to string language
+                type_to_lang = {
+                    EditorType.CODE_PYTHON: "python",
+                    EditorType.CODE_JAVASCRIPT: "javascript",
+                    EditorType.CODE_JSON: "json",
+                    EditorType.CODE_YAML: "yaml",
+                    EditorType.MARKDOWN: "markdown",
+                    EditorType.RICH_TEXT: "python",  # Default fallback
+                }
+
+                detected_lang = type_to_lang.get(detected_type, "python")
+
+                # Only switch if confident and different (CodeDetector handles scoring)
+                if detected_lang != self._language:
+                    self.set_language(detected_lang)
+
+        # Emit signal
+        self.value_changed.emit(self.get_value())
 
     def get_value(self) -> str:
         """
@@ -336,6 +429,9 @@ class CodeExpressionEditor(BaseExpressionEditor):
             value: Text to set
         """
         self._editor.setPlainText(value)
+        # Trigger detection on initial set if auto
+        if self._initial_language == "auto":
+            self._on_content_changed()
 
     def insert_at_cursor(self, text: str) -> None:
         """

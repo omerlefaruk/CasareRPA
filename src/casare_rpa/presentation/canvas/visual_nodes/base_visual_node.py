@@ -183,6 +183,70 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         pass
 
+    def add_custom_widget(self, widget: Any, tab: Optional[str] = None) -> None:
+        """
+        Add a custom widget to the node.
+
+        Override to automatically connect VariableAwareLineEdit expand signals
+        to the expression editor popup. This ensures all widgets with an
+        expand button (File Path, Directory Path, Selector, etc.) work correctly.
+
+        Args:
+            widget: The widget to add
+            tab: Optional tab name
+        """
+        super().add_custom_widget(widget, tab=tab)
+
+        # Check for VariableAwareLineEdit and connect expand signal
+        # Use duck typing to detect compatible widgets
+        if hasattr(widget, "_line_edit"):
+            line_edit = widget._line_edit
+            # Check if it has the expand_clicked signal
+            if hasattr(line_edit, "expand_clicked"):
+                # Retrieve widget name safely (NodeBaseWidget uses get_name())
+                widget_name = "unknown"
+                if hasattr(widget, "get_name"):
+                    widget_name = widget.get_name()
+                elif hasattr(widget, "name"):
+                    widget_name = widget.name
+                elif hasattr(widget, "_name"):
+                    widget_name = widget._name
+
+                # Get property def (attached by _add_variable_aware_text_input) or create default
+                property_def = getattr(widget, "_property_def", None)
+                if property_def is None:
+                    from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
+                    # Create default property def based on widget metadata
+                    label = getattr(widget, "label", widget_name)
+
+                    # Infer type from widget class name if possible
+                    widget_type = widget.__class__.__name__
+                    prop_type = PropertyType.STRING
+                    if "Selector" in widget_type:
+                        prop_type = PropertyType.SELECTOR
+                    elif "File" in widget_type:
+                        prop_type = PropertyType.FILE_PATH
+                    elif "Directory" in widget_type:
+                        prop_type = PropertyType.DIRECTORY_PATH
+
+                    property_def = PropertyDef(
+                        name=widget_name,
+                        type=prop_type,
+                        label=label,
+                    )
+
+                # Connect signal
+                # Disconnect first to prevent duplicates (safe to ignore error if not connected)
+                try:
+                    line_edit.expand_clicked.disconnect()
+                except Exception:
+                    pass
+
+                line_edit.expand_clicked.connect(
+                    partial(self._open_expression_editor, widget_name, property_def)
+                )
+
     def _configure_port_colors(self) -> None:
         """Configure port colors based on data type."""
         # Apply type-based colors to input ports
@@ -417,29 +481,12 @@ class VisualNode(NodeGraphQtBaseNode):
             )
 
             if widget:
-                # Add the widget to the node
+                # Store property def for add_custom_widget to use
+                widget._property_def = property_def
+
+                # Add the widget to the node (this will trigger signal connection via add_custom_widget override)
                 self.add_custom_widget(widget, tab=tab)
                 widget.setParentItem(self.view)
-
-                # Connect expand button to expression editor
-                if hasattr(widget, "_line_edit") and widget._line_edit:
-                    line_edit = widget._line_edit
-                    if hasattr(line_edit, "expand_clicked"):
-                        # Create property def if not provided
-                        if property_def is None:
-                            from casare_rpa.domain.schemas import (
-                                PropertyDef,
-                                PropertyType,
-                            )
-
-                            property_def = PropertyDef(
-                                name=name,
-                                type=PropertyType.STRING,
-                                label=label,
-                            )
-                        line_edit.expand_clicked.connect(
-                            partial(self._open_expression_editor, name, property_def)
-                        )
 
                 return widget
 
@@ -507,17 +554,53 @@ class VisualNode(NodeGraphQtBaseNode):
         )
         from loguru import logger
 
-        # Determine editor type based on property and node type
-        editor_type = self._get_editor_type_for_property(property_def)
+        logger.debug(f"Opening expression editor for property: {property_name}")
 
-        # Get current value
-        current_value = self.get_property(property_name) or ""
+        # Determine node type for overrides
+        node_type = self.__class__.__name__
+
+        # Create appropriate editor using factory (handles overrides and defaults)
+        editor = EditorFactory.create_for_property_type(
+            property_type=property_def.type.name
+            if hasattr(property_def.type, "name")
+            else str(property_def.type),
+            node_type=node_type,
+            property_name=property_name,
+            parent=None,
+        )
+
+        # Get current value - prioritize widget value as it's the source of truth
+        current_value = None
+        widget = self.get_widget(property_name)
+
+        if widget:
+            logger.debug(f"Widget found for {property_name}: {widget}")
+            if hasattr(widget, "get_value"):
+                try:
+                    current_value = widget.get_value()
+                    logger.debug(
+                        f"Retrieved value from widget {property_name}: '{current_value}'"
+                    )
+                except Exception as e:
+                    logger.debug(
+                        f"Could not get value from widget {property_name}: {e}"
+                    )
+            else:
+                logger.debug(f"Widget {property_name} has no get_value method")
+        else:
+            logger.debug(f"No widget found for {property_name}")
+
+        # Fallback to property value if widget value is unavailable
+        if current_value is None:
+            current_value = self.get_property(property_name) or ""
+            logger.debug(
+                f"Used fallback property value for {property_name}: '{current_value}'"
+            )
 
         # Create popup
         popup = ExpressionEditorPopup(parent=None)  # Top-level window
 
-        # Create and set appropriate editor
-        editor = EditorFactory.create(editor_type)
+        # Set the editor
         popup.set_editor(editor)
 
         # Set title with property name
@@ -532,7 +615,6 @@ class VisualNode(NodeGraphQtBaseNode):
         )
 
         # Position near widget
-        widget = self.get_widget(property_name)
         if widget:
             # Try to get global position from widget
             try:
@@ -557,51 +639,6 @@ class VisualNode(NodeGraphQtBaseNode):
         popup.show()
         logger.debug(f"Expression editor opened for {property_name} (center)")
 
-    def _get_editor_type_for_property(
-        self, property_def: "PropertyDef"
-    ) -> "EditorType":
-        """
-        Map property type to editor type with node-specific overrides.
-
-        Args:
-            property_def: Property definition
-
-        Returns:
-            EditorType for the expression editor
-        """
-        from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
-            EditorType,
-        )
-        from casare_rpa.domain.schemas import PropertyType
-
-        # Node-specific overrides for special cases
-        node_overrides = {
-            "EmailSendNode": {
-                "body": EditorType.MARKDOWN,
-                "html_body": EditorType.MARKDOWN,
-            },
-            "BrowserEvaluateNode": {"script": EditorType.CODE_JAVASCRIPT},
-            "RunPythonNode": {"code": EditorType.CODE_PYTHON},
-            "CommandNode": {"command": EditorType.CODE_CMD},
-            "ExecuteScriptNode": {"script": EditorType.CODE_PYTHON},
-        }
-
-        # Check node-specific override
-        node_type = self.__class__.__name__
-        if node_type in node_overrides:
-            if property_def.name in node_overrides[node_type]:
-                return node_overrides[node_type][property_def.name]
-
-        # Default mapping based on property type
-        type_map = {
-            PropertyType.CODE: EditorType.CODE_PYTHON,
-            PropertyType.TEXT: EditorType.RICH_TEXT,
-            PropertyType.STRING: EditorType.RICH_TEXT,
-            PropertyType.JSON: EditorType.CODE_JAVASCRIPT,
-        }
-        return type_map.get(property_def.type, EditorType.RICH_TEXT)
-
-    @Slot(str)
     def _on_expression_editor_accepted(self, property_name: str, value: str) -> None:
         """
         Handle expression editor value acceptance.

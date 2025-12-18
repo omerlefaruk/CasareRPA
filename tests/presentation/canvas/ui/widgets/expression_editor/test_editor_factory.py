@@ -173,34 +173,34 @@ class TestEditorFactoryCreateForPropertyType:
         assert editor.editor_type == EditorType.CODE_PYTHON
 
     def test_text_property_creates_rich_text_editor(self, qapp) -> None:
-        """Test TEXT property type creates RichText editor."""
+        """Test TEXT property type creates AUTO editor (new default)."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             EditorFactory,
             EditorType,
         )
 
         editor = EditorFactory.create_for_property_type("TEXT")
-        assert editor.editor_type == EditorType.RICH_TEXT
+        assert editor.editor_type == EditorType.AUTO
 
     def test_string_property_creates_rich_text_editor(self, qapp) -> None:
-        """Test STRING property type creates RichText editor."""
+        """Test STRING property type creates AUTO editor (new default)."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             EditorFactory,
             EditorType,
         )
 
         editor = EditorFactory.create_for_property_type("STRING")
-        assert editor.editor_type == EditorType.RICH_TEXT
+        assert editor.editor_type == EditorType.AUTO
 
     def test_json_property_creates_javascript_editor(self, qapp) -> None:
-        """Test JSON property type creates JavaScript editor."""
+        """Test JSON property type creates JSON editor (new default)."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             EditorFactory,
             EditorType,
         )
 
         editor = EditorFactory.create_for_property_type("JSON")
-        assert editor.editor_type == EditorType.CODE_JAVASCRIPT
+        assert editor.editor_type == EditorType.CODE_JSON
 
     def test_script_property_creates_python_editor(self, qapp) -> None:
         """Test SCRIPT property type creates Python editor."""
@@ -329,8 +329,8 @@ class TestEditorFactoryNodeOverrides:
             node_type="EmailSendNode",
             property_name="subject",
         )
-        # Should use default TEXT mapping (RICH_TEXT), not MARKDOWN
-        assert editor.editor_type == EditorType.RICH_TEXT
+        # Should use default TEXT mapping (AUTO), not MARKDOWN
+        assert editor.editor_type == EditorType.AUTO
 
     def test_override_not_applied_for_different_node(self, qapp) -> None:
         """Test override is not applied for different node type."""
@@ -345,8 +345,8 @@ class TestEditorFactoryNodeOverrides:
             node_type="SomeOtherNode",
             property_name="body",
         )
-        # Should use default TEXT mapping (RICH_TEXT)
-        assert editor.editor_type == EditorType.RICH_TEXT
+        # Should use default TEXT mapping (AUTO)
+        assert editor.editor_type == EditorType.AUTO
 
 
 # =============================================================================

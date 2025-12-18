@@ -72,6 +72,20 @@ class EditorFactory:
 
             return CodeExpressionEditor(language="cmd", parent=parent)
 
+        elif editor_type == EditorType.CODE_JSON:
+            from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_editor import (
+                CodeExpressionEditor,
+            )
+
+            return CodeExpressionEditor(language="json", parent=parent)
+
+        elif editor_type == EditorType.CODE_YAML:
+            from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_editor import (
+                CodeExpressionEditor,
+            )
+
+            return CodeExpressionEditor(language="yaml", parent=parent)
+
         elif editor_type == EditorType.MARKDOWN:
             from casare_rpa.presentation.canvas.ui.widgets.expression_editor.markdown_editor import (
                 MarkdownEditor,
@@ -85,6 +99,13 @@ class EditorFactory:
             )
 
             return RichTextEditor(parent=parent)
+
+        elif editor_type == EditorType.AUTO:
+            from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_editor import (
+                CodeExpressionEditor,
+            )
+
+            return CodeExpressionEditor(language="auto", parent=parent)
 
         else:
             raise ValueError(f"Unknown editor type: {editor_type}")
@@ -130,9 +151,10 @@ class EditorFactory:
 # Property type to editor type mapping
 _PROPERTY_TYPE_TO_EDITOR = {
     "CODE": EditorType.CODE_PYTHON,
-    "TEXT": EditorType.RICH_TEXT,
-    "STRING": EditorType.RICH_TEXT,
-    "JSON": EditorType.CODE_JAVASCRIPT,
+    "TEXT": EditorType.AUTO,
+    "STRING": EditorType.AUTO,
+    "JSON": EditorType.CODE_JSON,
+    "YAML": EditorType.CODE_YAML,
     "SCRIPT": EditorType.CODE_PYTHON,
 }
 
@@ -152,5 +174,11 @@ _NODE_EDITOR_OVERRIDES = {
     },
     "ExecuteScriptNode": {
         "script": EditorType.CODE_PYTHON,
+    },
+    "JsonParseNode": {
+        "json_string": EditorType.CODE_JSON,
+    },
+    "YamlParseNode": {
+        "yaml_string": EditorType.CODE_YAML,
     },
 }

@@ -68,12 +68,12 @@ class TestEditorTypeEnum:
         assert EditorType.RICH_TEXT.value == "rich_text"
 
     def test_editor_type_count(self) -> None:
-        """Test EditorType has exactly 5 values."""
+        """Test EditorType has exactly 8 values."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             EditorType,
         )
 
-        assert len(EditorType) == 5
+        assert len(EditorType) == 8
 
     def test_editor_type_iteration(self) -> None:
         """Test all EditorType values are iterable."""
@@ -86,8 +86,11 @@ class TestEditorTypeEnum:
             EditorType.CODE_PYTHON,
             EditorType.CODE_JAVASCRIPT,
             EditorType.CODE_CMD,
+            EditorType.CODE_JSON,
+            EditorType.CODE_YAML,
             EditorType.MARKDOWN,
             EditorType.RICH_TEXT,
+            EditorType.AUTO,
         ]
         assert types == expected
 

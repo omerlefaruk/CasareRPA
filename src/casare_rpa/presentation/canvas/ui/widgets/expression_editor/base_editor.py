@@ -27,8 +27,11 @@ class EditorType(Enum):
     CODE_PYTHON = "python"
     CODE_JAVASCRIPT = "javascript"
     CODE_CMD = "cmd"
+    CODE_JSON = "json"
+    CODE_YAML = "yaml"
     MARKDOWN = "markdown"
     RICH_TEXT = "rich_text"
+    AUTO = "auto"
 
 
 # Combined metaclass for Qt + ABC to avoid metaclass conflict with Python 3.13+
