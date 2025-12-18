@@ -42,6 +42,8 @@ class JsonParseNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "JsonParseNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("json_string", DataType.STRING, required=False)
@@ -88,6 +90,8 @@ class GetPropertyNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetPropertyNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("object", DataType.DICT, required=False)
@@ -147,6 +151,8 @@ class DictGetNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "DictGetNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", DataType.DICT, required=False)
