@@ -225,6 +225,11 @@ class NodeGraphWidget(QWidget):
             self._create_subflow_from_selection
         )
 
+        # Connect toggle cache action
+        self._quick_actions.toggle_cache_requested.connect(
+            self._on_toggle_cache_from_menu
+        )
+
         # Setup paste hook for duplicate ID detection
         self._setup_paste_hook()
 
@@ -1052,6 +1057,28 @@ class NodeGraphWidget(QWidget):
     def _create_subflow_from_selection(self) -> bool:
         """Create a subflow from the currently selected nodes."""
         return self._selection_handler.create_subflow_from_selection(self)
+
+    def _on_toggle_cache_from_menu(self, node_id: str) -> None:
+        """Handle toggle cache request from context menu."""
+        try:
+            # Find the node by ID
+            for node in self._graph.all_nodes():
+                nid = node.get_property("node_id") or node.id()
+                if nid == node_id:
+                    view = node.view
+                    if view and hasattr(view, "set_cache_enabled"):
+                        # Toggle the cache state
+                        current = view.is_cache_enabled() if hasattr(view, "is_cache_enabled") else False
+                        view.set_cache_enabled(not current)
+                        # Also update the casare_node config
+                        casare_node = getattr(node, "casare_node", None)
+                        if casare_node:
+                            casare_node.config["_cache_enabled"] = not current
+                        status = "enabled" if not current else "disabled"
+                        logger.info(f"Cache {status} for node {node_id}")
+                    return
+        except Exception as e:
+            logger.error(f"Error toggling cache: {e}")
 
     # =========================================================================
     # PORT LEGEND

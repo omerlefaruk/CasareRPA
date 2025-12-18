@@ -473,8 +473,15 @@ def run_audit(
         except (TypeError, OSError):
             file_path = file_path_cache.get(module_path, "unknown")
 
-        # Get source analysis
-        source_analysis = source_analyses.get(file_path, {})
+        # Get source analysis - use case-insensitive lookup on Windows
+        # The source_analyses dict was built with Path.resolve() which gives uppercase drive letters
+        # but inspect.getfile() may return lowercase depending on how the venv was created
+        normalized_path = os.path.normcase(file_path)
+        source_analysis = {}
+        for src_path, analysis in source_analyses.items():
+            if os.path.normcase(src_path) == normalized_path:
+                source_analysis = analysis
+                break
 
         result = audit_node_class(node_cls, source_analysis, file_path)
         if result:

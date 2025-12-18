@@ -40,6 +40,7 @@ class NodeQuickActions(QObject):
     paste_requested = Signal()
     center_view_requested = Signal(str)
     create_subflow_requested = Signal()  # Create subflow from selection
+    toggle_cache_requested = Signal(str)  # Toggle cache on node (node_id)
 
     def __init__(self, graph: "NodeGraph", parent: Optional[QObject] = None) -> None:
         """
@@ -208,6 +209,14 @@ class NodeQuickActions(QObject):
             create_subflow_action.triggered.connect(self._on_create_subflow)
             menu.addSeparator()
 
+        # === Cache Actions ===
+        cache_enabled = self._is_node_cache_enabled()
+        cache_text = "⚡ Disable Cache" if cache_enabled else "⚡ Enable Cache (Ctrl+K)"
+        toggle_cache_action = menu.addAction(cache_text)
+        toggle_cache_action.triggered.connect(self._on_toggle_cache)
+
+        menu.addSeparator()
+
         # === Info Actions ===
         copy_id_action = menu.addAction("Copy Node ID")
         copy_id_action.triggered.connect(self._on_copy_node_id)
@@ -302,6 +311,25 @@ class NodeQuickActions(QObject):
         """Handle create subflow action."""
         logger.debug("Quick action: Create Subflow")
         self.create_subflow_requested.emit()
+
+    def _is_node_cache_enabled(self) -> bool:
+        """Check if the selected node has cache enabled."""
+        selected = self._graph.selected_nodes()
+        if not selected:
+            return False
+        node = selected[0]
+        # Get the graphics item to check cache state
+        view = node.view
+        if view and hasattr(view, "is_cache_enabled"):
+            return view.is_cache_enabled()
+        return False
+
+    def _on_toggle_cache(self) -> None:
+        """Handle toggle cache action."""
+        node_id = self._get_selected_node_id()
+        if node_id:
+            logger.debug(f"Quick action: Toggle cache on node {node_id}")
+            self.toggle_cache_requested.emit(node_id)
 
 
 def setup_node_quick_actions(graph: "NodeGraph") -> NodeQuickActions:
