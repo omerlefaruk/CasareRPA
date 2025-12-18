@@ -1070,7 +1070,10 @@ class AIAssistantDock(QDockWidget):
                 self._handle_redo()
                 return
 
-            if classification.intent == UserIntent.CLEAR:
+            if (
+                classification.intent == UserIntent.CLEAR
+                and classification.confidence > 0.8
+            ):
                 self._clear_chat()
                 self._chat_area.add_ai_message(
                     "Conversation cleared. How can I help you?"
@@ -1105,8 +1108,8 @@ class AIAssistantDock(QDockWidget):
         # Emit signal
         self.generation_started.emit()
 
-        # Get model ID (default to gpt-4o-mini if not selected)
-        model_id = self._current_model_id or "gpt-4o-mini"
+        # Get model ID (default to DeepSeek if not selected)
+        model_id = self._current_model_id or "openrouter/deepseek/deepseek-v3.2"
 
         # Get credential ID from selection
         credential_id = self._current_credential_id

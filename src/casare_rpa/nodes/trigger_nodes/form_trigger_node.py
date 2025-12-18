@@ -94,12 +94,12 @@ class FormTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get form-specific configuration."""
         return {
-            "form_title": self.config.get("form_title", "Submit Data"),
-            "form_description": self.config.get("form_description", ""),
-            "form_fields": self.config.get("form_fields", "[]"),
-            "submit_button_text": self.config.get("submit_button_text", "Submit"),
-            "success_message": self.config.get(
+            "form_title": self.get_parameter("form_title", "Submit Data"),
+            "form_description": self.get_parameter("form_description", ""),
+            "form_fields": self.get_parameter("form_fields", "[]"),
+            "submit_button_text": self.get_parameter("submit_button_text", "Submit"),
+            "success_message": self.get_parameter(
                 "success_message", "Form submitted successfully"
             ),
-            "require_auth": self.config.get("require_auth", False),
+            "require_auth": self.get_parameter("require_auth", False),
         }

@@ -315,6 +315,14 @@ class SignalCoordinator:
             self._mw._node_controller.disable_all_selected()
 
     @Slot()
+    def on_toggle_cache_node(self) -> None:
+        """Toggle cache state on nearest node (Ctrl+K)."""
+        if self._is_text_widget_focused():
+            return
+        if self._mw._node_controller:
+            self._mw._node_controller.toggle_cache_node()
+
+    @Slot()
     def on_rename_node(self) -> None:
         """Rename selected node (F2)."""
         if self._is_text_widget_focused():

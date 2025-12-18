@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
@@ -22,10 +23,12 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
     COMPARISON_PROP,
+    SELECTOR_PROP,
 )
 
 
 @properties(
+    SELECTOR_PROP,
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
@@ -107,6 +110,27 @@ class WaitForElementNode(DesktopNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=False,
+        label="Window Title",
+        tooltip="Window title to match (partial match)",
+    ),
+    PropertyDef(
+        "title_regex",
+        PropertyType.STRING,
+        required=False,
+        label="Title Regex",
+        tooltip="Regex pattern to match window title",
+    ),
+    PropertyDef(
+        "class_name",
+        PropertyType.STRING,
+        required=False,
+        label="Class Name",
+        tooltip="Window class name",
+    ),
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
@@ -199,7 +223,10 @@ class WaitForWindowNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
-@properties(TIMEOUT_PROP)
+@properties(
+    SELECTOR_PROP,
+    TIMEOUT_PROP,
+)
 @node(category="desktop")
 class VerifyElementExistsNode(DesktopNodeBase):
     """
@@ -273,7 +300,30 @@ class VerifyElementExistsNode(DesktopNodeBase):
         return self.success_result(exists=exists, element=element)
 
 
-@properties(COMPARISON_PROP)
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Desktop element to verify",
+    ),
+    PropertyDef(
+        "property_name",
+        PropertyType.STRING,
+        required=True,
+        label="Property Name",
+        tooltip="Name of the property to verify (e.g., text, name, enabled)",
+    ),
+    PropertyDef(
+        "expected_value",
+        PropertyType.ANY,
+        required=True,
+        label="Expected Value",
+        tooltip="Expected value of the property",
+    ),
+    COMPARISON_PROP,
+)
 @node(category="desktop")
 class VerifyElementPropertyNode(DesktopNodeBase):
     """

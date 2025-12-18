@@ -454,8 +454,8 @@ class CallSubworkflowNode(BaseNode):
             if value is not None:
                 inputs[port_name] = value
             else:
-                # Check config for default
-                value = self.config.get(port_name)
+                # Check config for default using dual-source accessor
+                value = self.get_parameter(port_name)
                 if value is not None:
                     inputs[port_name] = value
         return inputs
@@ -477,7 +477,7 @@ class CallSubworkflowNode(BaseNode):
             return subworkflow
         except ImportError:
             # Try loading from file path in config
-            subworkflow_path = self.config.get("subworkflow_path", "")
+            subworkflow_path = self.get_parameter("subworkflow_path", "")
             if subworkflow_path:
                 try:
                     subworkflow = Subflow.load_from_file(subworkflow_path)

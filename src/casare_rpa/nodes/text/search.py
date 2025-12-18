@@ -329,6 +329,13 @@ class TextEndsWithNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "pattern",
+        PropertyType.STRING,
+        required=True,
+        label="Pattern",
+        tooltip="Regex pattern with optional capture groups",
+    ),
+    PropertyDef(
         "all_matches",
         PropertyType.BOOLEAN,
         default=False,

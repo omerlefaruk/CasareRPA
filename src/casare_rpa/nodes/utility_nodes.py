@@ -47,6 +47,13 @@ class ValidationType(str, Enum):
 
 @properties(
     PropertyDef(
+        "value",
+        PropertyType.ANY,
+        required=True,
+        label="Value",
+        tooltip="Value to validate",
+    ),
+    PropertyDef(
         "validation_type",
         PropertyType.CHOICE,
         default="not_empty",
@@ -118,8 +125,8 @@ class ValidateNode(BaseNode):
         """Define node ports."""
         self.add_input_port("value", DataType.ANY)
 
-        self.add_output_port("valid", DataType.EXECUTION)  # Route when valid
-        self.add_output_port("invalid", DataType.EXECUTION)  # Route when invalid
+        self.add_exec_output("valid")  # Route when valid
+        self.add_exec_output("invalid")  # Route when invalid
         self.add_output_port("is_valid", DataType.BOOLEAN)
         self.add_output_port("error_message", DataType.STRING)
 
@@ -306,6 +313,19 @@ class TransformType(str, Enum):
 
 
 @properties(
+    PropertyDef(
+        "value",
+        PropertyType.ANY,
+        required=True,
+        label="Value",
+        tooltip="Value to transform",
+    ),
+    PropertyDef(
+        "param",
+        PropertyType.ANY,
+        label="Parameter",
+        tooltip="Parameter for transformation (e.g., delimiter for split)",
+    ),
     PropertyDef(
         "transform_type",
         PropertyType.CHOICE,
@@ -547,6 +567,12 @@ class LogLevel(str, Enum):
         tooltip="Message to log (can include {variable} placeholders)",
     ),
     PropertyDef(
+        "data",
+        PropertyType.ANY,
+        label="Data",
+        tooltip="Optional data to include in log output",
+    ),
+    PropertyDef(
         "level",
         PropertyType.CHOICE,
         default="critical",
@@ -669,7 +695,14 @@ class LogNode(BaseNode):
             return {"success": False, "error": error_msg}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "in",
+        PropertyType.ANY,
+        label="In",
+        tooltip="Input value to pass through",
+    ),
+)
 @node(category="utility")
 class RerouteNode(BaseNode):
     """
@@ -738,7 +771,7 @@ class RerouteNode(BaseNode):
         Returns:
             DataType enum value
         """
-        type_str = self.config.get("data_type", "ANY")
+        type_str = self.get_parameter("data_type", "ANY")
         try:
             # DataType.value is the string representation
             for dt in DataType:
@@ -783,7 +816,7 @@ class RerouteNode(BaseNode):
             self.status = NodeStatus.SUCCESS
 
             # Determine next node based on mode
-            is_exec = self.config.get("is_exec_reroute", False)
+            is_exec = self.get_parameter("is_exec_reroute", False)
             next_nodes = ["exec_out"] if is_exec else ["out"]
 
             return {

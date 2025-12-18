@@ -129,15 +129,15 @@ class ReadCSVNode(BaseNode):
         try:
             # Use get_parameter to check both port value and config
             file_path = self.get_parameter("file_path")
-            delimiter = self.config.get("delimiter", ",")
-            has_header = self.config.get("has_header", True)
-            encoding = self.config.get("encoding", "utf-8")
-            quotechar = self.config.get("quotechar", '"')
-            skip_rows = self.config.get("skip_rows", 0)
-            max_rows = self.config.get("max_rows", 0)
-            strict = self.config.get("strict", False)
-            doublequote = self.config.get("doublequote", True)
-            escapechar = self.config.get("escapechar", None)
+            delimiter = self.get_parameter("delimiter", ",")
+            has_header = self.get_parameter("has_header", True)
+            encoding = self.get_parameter("encoding", "utf-8")
+            quotechar = self.get_parameter("quotechar", '"')
+            skip_rows = self.get_parameter("skip_rows", 0)
+            max_rows = self.get_parameter("max_rows", 0)
+            strict = self.get_parameter("strict", False)
+            doublequote = self.get_parameter("doublequote", True)
+            escapechar = self.get_parameter("escapechar", None)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -147,7 +147,7 @@ class ReadCSVNode(BaseNode):
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "read", allow_dangerous)
 
             if not path.exists():
@@ -246,9 +246,9 @@ class WriteCSVNode(BaseNode):
             file_path = self.get_parameter("file_path")
             data = self.get_parameter("data") or []
             headers = self.get_parameter("headers")
-            delimiter = self.config.get("delimiter", ",")
-            write_header = self.config.get("write_header", True)
-            encoding = self.config.get("encoding", "utf-8")
+            delimiter = self.get_parameter("delimiter", ",")
+            write_header = self.get_parameter("write_header", True)
+            encoding = self.get_parameter("encoding", "utf-8")
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -260,7 +260,7 @@ class WriteCSVNode(BaseNode):
             headers = context.resolve_value(headers) if headers else None
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "write", allow_dangerous)
 
             if path.parent:
@@ -336,7 +336,7 @@ class ReadJSONFileNode(BaseNode):
         try:
             # Use get_parameter to check both port value and config
             file_path = self.get_parameter("file_path")
-            encoding = self.config.get("encoding", "utf-8")
+            encoding = self.get_parameter("encoding", "utf-8")
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -346,7 +346,7 @@ class ReadJSONFileNode(BaseNode):
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "read", allow_dangerous)
 
             if not path.exists():
@@ -430,9 +430,9 @@ class WriteJSONFileNode(BaseNode):
             # Use get_parameter to check both port value and config
             file_path = self.get_parameter("file_path")
             data = self.get_parameter("data")
-            encoding = self.config.get("encoding", "utf-8")
-            indent = self.config.get("indent", 2)
-            ensure_ascii = self.config.get("ensure_ascii", False)
+            encoding = self.get_parameter("encoding", "utf-8")
+            indent = self.get_parameter("indent", 2)
+            ensure_ascii = self.get_parameter("ensure_ascii", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -443,7 +443,7 @@ class WriteJSONFileNode(BaseNode):
             data = context.resolve_value(data)
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "write", allow_dangerous)
 
             if path.parent:
@@ -544,7 +544,7 @@ class ZipFilesNode(BaseNode):
             source_path = self.get_parameter("source_path")
             files = self.get_parameter("files") or []
             base_dir = self.get_parameter("base_dir")
-            compression = self.config.get("compression", "ZIP_DEFLATED")
+            compression = self.get_parameter("compression", "ZIP_DEFLATED")
 
             if not zip_path:
                 raise ValueError("zip_path is required")
@@ -560,7 +560,7 @@ class ZipFilesNode(BaseNode):
                 base_dir = os.path.expandvars(base_dir)
 
             # SECURITY: Validate output zip path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             zip_validated_path = validate_path_security(
                 zip_path, "write", allow_dangerous
             )
@@ -663,7 +663,7 @@ class ZipFilesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
-        compression = self.config.get("compression", "ZIP_DEFLATED")
+        compression = self.get_parameter("compression", "ZIP_DEFLATED")
         if compression not in ["ZIP_STORED", "ZIP_DEFLATED"]:
             return False, "compression must be 'ZIP_STORED' or 'ZIP_DEFLATED'"
         return True, ""
@@ -714,7 +714,7 @@ class UnzipFilesNode(BaseNode):
             # Use get_parameter to check both port value and config
             zip_path = self.get_parameter("zip_path")
             extract_to = self.get_parameter("extract_to")
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
 
             if not zip_path:
                 raise ValueError("zip_path is required")

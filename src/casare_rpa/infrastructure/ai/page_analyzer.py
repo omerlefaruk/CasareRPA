@@ -188,11 +188,12 @@ class PageContext:
 
         # Tables
         if self.tables:
-            lines.append("#### Tables")
-            for i, table in enumerate(self.tables[:3], 1):
+            lines.append("#### Tables and Data Lists")
+            for i, table in enumerate(self.tables[:5], 1):
                 headers = table.get("headers", [])
+                label = table.get("label", "Table")
                 lines.append(
-                    f"- Table {i}: `{table.get('selector', '')}` "
+                    f"- {label} {i}: `{table.get('selector', '')}` "
                     f"(ref: `{table.get('ref', '')}`) - Headers: {headers}"
                 )
             lines.append("")
@@ -382,13 +383,15 @@ class PageAnalyzer:
                 )
                 self._form_fields = []
 
-            elif role_lower == "table":
+            elif role_lower in ("table", "grid", "treegrid", "list"):
                 headers = self._extract_table_headers(lines, lines.index(line))
                 context.tables.append(
                     {
+                        "type": role_lower,
                         "selector": selector,
                         "ref": ref,
                         "headers": headers,
+                        "label": f"Data {role_lower.capitalize()}",
                     }
                 )
 

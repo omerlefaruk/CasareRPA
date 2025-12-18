@@ -298,6 +298,23 @@ EXPRESSION_ACTIONS = [
 
 
 @properties(
+    # === PRIMARY INPUTS (always visible) ===
+    PropertyDef(
+        "list",
+        PropertyType.LIST,
+        required=True,
+        label="List",
+        tooltip="Input list to operate on",
+        order=-2,
+    ),
+    PropertyDef(
+        "index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Index",
+        tooltip="Index to access/modify",
+        order=-1,
+    ),
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
         "action",

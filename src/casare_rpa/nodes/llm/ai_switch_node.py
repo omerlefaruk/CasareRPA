@@ -25,6 +25,13 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 @properties(
     PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Context data for AI classification",
+    ),
+    PropertyDef(
         "question",
         PropertyType.TEXT,
         default="",
@@ -88,7 +95,7 @@ class AISwitchNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution input
-        self.add_exec_input_port("exec_in")
+        self.add_exec_input("exec_in")
 
         # Data inputs
         self.add_input_port("question", DataType.STRING)
@@ -105,7 +112,7 @@ class AISwitchNode(LLMBaseNode):
         self.add_output_port("error", DataType.STRING)
 
         # Default exec output (fallback)
-        self.add_exec_output_port("exec_default")
+        self.add_exec_output("exec_default")
 
     def _update_dynamic_ports(self, options: List[str]) -> None:
         """Update dynamic exec output ports based on options."""
@@ -123,7 +130,7 @@ class AISwitchNode(LLMBaseNode):
                 not hasattr(self, "_output_ports")
                 or port_name not in self._output_ports
             ):
-                self.add_exec_output_port(port_name)
+                self.add_exec_output(port_name)
 
     def _sanitize_port_name(self, option: str) -> str:
         """Convert option to valid port name."""

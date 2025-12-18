@@ -245,6 +245,13 @@ class JoinNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "items",
+        PropertyType.LIST,
+        required=True,
+        label="Items",
+        tooltip="List of items to process",
+    ),
+    PropertyDef(
         "batch_size",
         PropertyType.INTEGER,
         default=5,

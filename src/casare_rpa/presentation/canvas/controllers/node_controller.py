@@ -287,6 +287,63 @@ class NodeController(BaseController):
             # Fallback for nodes without set_disabled method
             self.main_window.show_status("Cannot disable this node type", 2000)
 
+    def toggle_cache_node(self) -> None:
+        """
+        Toggle cache state on nearest node to mouse (hotkey Ctrl+K).
+
+        Cached nodes store execution results and return them instantly
+        on subsequent calls with the same inputs.
+        """
+        logger.debug("Toggling cache on nearest node")
+
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        nearest_node = self._get_nearest_node(max_distance=300.0)
+        if not nearest_node:
+            self.main_window.show_status("No node nearby", 2000)
+            return
+
+        # Select and toggle cache on the nearest node
+        graph.clear_selection()
+        nearest_node.set_selected(True)
+
+        # Use view.set_cache_enabled() for proper visual overlay
+        view = nearest_node.view
+        if (
+            view
+            and hasattr(view, "set_cache_enabled")
+            and hasattr(view, "is_cache_enabled")
+        ):
+            # Toggle the cache state using view methods
+            current_cached = view.is_cache_enabled()
+            new_cached = not current_cached
+            view.set_cache_enabled(new_cached)
+
+            # Also sync to casare node config for execution
+            casare_node = (
+                nearest_node.get_casare_node()
+                if hasattr(nearest_node, "get_casare_node")
+                else None
+            )
+            if casare_node:
+                casare_node.config["_cache_enabled"] = new_cached
+
+            # Also set on visual node property for serialization
+            try:
+                nearest_node.set_property("_cache_enabled", new_cached)
+            except Exception:
+                pass  # Property might not exist, that's OK
+
+            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
+            state = "cache enabled" if new_cached else "cache disabled"
+
+            self.main_window.show_status(f"{node_name} {state}", 2000)
+        else:
+            # Fallback for nodes without set_cache_enabled method
+            self.main_window.show_status("Cannot toggle cache on this node type", 2000)
+
     def navigate_to_node(self, node_id: str) -> None:
         """
         Navigate to and select a specific node.

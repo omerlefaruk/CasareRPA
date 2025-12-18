@@ -142,21 +142,23 @@ class WhatsAppTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get WhatsApp-specific configuration."""
         # Parse comma-separated lists
-        filter_phones_str = self.config.get("filter_phone_numbers", "")
+        filter_phones_str = self.get_parameter("filter_phone_numbers", "")
         filter_phones = [p.strip() for p in filter_phones_str.split(",") if p.strip()]
 
-        message_types_str = self.config.get(
+        message_types_str = self.get_parameter(
             "message_types", "text,image,document,audio,video,location"
         )
         message_types = [t.strip() for t in message_types_str.split(",") if t.strip()]
 
         return {
-            "access_token": self.config.get("access_token", ""),
-            "phone_number_id": self.config.get("phone_number_id", ""),
-            "credential_name": self.config.get("credential_name", ""),
-            "verify_token": self.config.get("verify_token", ""),
-            "webhook_path": self.config.get("webhook_path", "/whatsapp/webhook"),
+            "access_token": self.get_parameter("access_token", ""),
+            "phone_number_id": self.get_parameter("phone_number_id", ""),
+            "credential_name": self.get_parameter("credential_name", ""),
+            "verify_token": self.get_parameter("verify_token", ""),
+            "webhook_path": self.get_parameter("webhook_path", "/whatsapp/webhook"),
             "filter_phone_numbers": filter_phones,
             "message_types": message_types,
-            "include_status_updates": self.config.get("include_status_updates", False),
+            "include_status_updates": self.get_parameter(
+                "include_status_updates", False
+            ),
         }

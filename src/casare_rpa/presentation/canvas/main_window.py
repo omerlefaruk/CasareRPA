@@ -923,6 +923,10 @@ class MainWindow(QMainWindow):
         self._signal_coordinator.on_disable_all_selected()
 
     @Slot()
+    def _on_toggle_cache_node(self) -> None:
+        self._signal_coordinator.on_toggle_cache_node()
+
+    @Slot()
     def _on_rename_node(self) -> None:
         self._signal_coordinator.on_rename_node()
 

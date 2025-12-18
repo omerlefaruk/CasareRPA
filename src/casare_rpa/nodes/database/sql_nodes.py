@@ -631,6 +631,13 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
 
 @properties(
     PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+    PropertyDef(
         "query",
         PropertyType.STRING,
         default="",
@@ -873,6 +880,13 @@ class ExecuteQueryNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+    PropertyDef(
         "query",
         PropertyType.STRING,
         default="",
@@ -1105,7 +1119,15 @@ class ExecuteNonQueryNode(BaseNode):
                 await connection.release()
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+)
 @node(category="database")
 class BeginTransactionNode(BaseNode):
     """
@@ -1190,7 +1212,15 @@ class BeginTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection with active transaction",
+    ),
+)
 @node(category="database")
 class CommitTransactionNode(BaseNode):
     """
@@ -1276,7 +1306,15 @@ class CommitTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection with active transaction",
+    ),
+)
 @node(category="database")
 class RollbackTransactionNode(BaseNode):
     """
@@ -1362,7 +1400,15 @@ class RollbackTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection to close",
+    ),
+)
 @node(category="database")
 class CloseDatabaseNode(BaseNode):
     """
@@ -1429,6 +1475,13 @@ class CloseDatabaseNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
     PropertyDef(
         "statements",
         PropertyType.LIST,

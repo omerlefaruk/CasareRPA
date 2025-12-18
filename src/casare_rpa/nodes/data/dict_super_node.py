@@ -265,6 +265,23 @@ JSON_ACTIONS = [
 
 
 @properties(
+    # === PRIMARY INPUT: Dict (always visible) ===
+    PropertyDef(
+        "dict",
+        PropertyType.ANY,
+        required=True,
+        label="Dictionary",
+        tooltip="Input dictionary to operate on",
+        order=-2,
+    ),
+    PropertyDef(
+        "key",
+        PropertyType.STRING,
+        required=True,
+        label="Key",
+        tooltip="Key to access/modify",
+        order=-1,
+    ),
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
         "action",

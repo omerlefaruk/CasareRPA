@@ -140,14 +140,14 @@ class ScheduleTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get schedule-specific configuration."""
         return {
-            "frequency": self.config.get("frequency", "daily"),
-            "time_hour": self.config.get("time_hour", 9),
-            "time_minute": self.config.get("time_minute", 0),
-            "interval_seconds": self.config.get("interval_seconds", 60),
-            "day_of_week": self.config.get("day_of_week", "mon"),
-            "day_of_month": self.config.get("day_of_month", 1),
-            "cron_expression": self.config.get("cron_expression", "0 9 * * *"),
-            "timezone": self.config.get("timezone", "UTC"),
-            "max_runs": self.config.get("max_runs", 0),
-            "start_time": self.config.get("start_time", ""),
+            "frequency": self.get_parameter("frequency", "daily"),
+            "time_hour": self.get_parameter("time_hour", 9),
+            "time_minute": self.get_parameter("time_minute", 0),
+            "interval_seconds": self.get_parameter("interval_seconds", 60),
+            "day_of_week": self.get_parameter("day_of_week", "mon"),
+            "day_of_month": self.get_parameter("day_of_month", 1),
+            "cron_expression": self.get_parameter("cron_expression", "0 9 * * *"),
+            "timezone": self.get_parameter("timezone", "UTC"),
+            "max_runs": self.get_parameter("max_runs", 0),
+            "start_time": self.get_parameter("start_time", ""),
         }

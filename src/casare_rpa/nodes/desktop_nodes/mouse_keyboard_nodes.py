@@ -14,6 +14,7 @@ import asyncio
 from typing import Any, Dict, Optional
 
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
@@ -29,7 +30,6 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     WITH_ALT_PROP,
     CLEAR_FIRST_PROP,
 )
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 
 # =============================================================================
@@ -105,7 +105,25 @@ KEY_PROP = PropertyDef(
 )
 
 
-@properties(DURATION_PROP, EASE_PROP, STEPS_PROP)
+@properties(
+    PropertyDef(
+        "x",
+        PropertyType.INTEGER,
+        required=True,
+        label="X Coordinate",
+        tooltip="Target X coordinate",
+    ),
+    PropertyDef(
+        "y",
+        PropertyType.INTEGER,
+        required=True,
+        label="Y Coordinate",
+        tooltip="Target Y coordinate",
+    ),
+    DURATION_PROP,
+    EASE_PROP,
+    STEPS_PROP,
+)
 @node(category="desktop")
 class MoveMouseNode(DesktopNodeBase):
     """
@@ -188,6 +206,20 @@ class MoveMouseNode(DesktopNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "x",
+        PropertyType.INTEGER,
+        required=False,
+        label="X Coordinate",
+        tooltip="X coordinate (uses current position if empty)",
+    ),
+    PropertyDef(
+        "y",
+        PropertyType.INTEGER,
+        required=False,
+        label="Y Coordinate",
+        tooltip="Y coordinate (uses current position if empty)",
+    ),
     MOUSE_BUTTON_PROP,
     CLICK_TYPE_PROP,
     CLICK_COUNT_PROP,
@@ -487,7 +519,7 @@ class SendHotKeyNode(DesktopNodeBase):
         return self.success_result(keys=keys)
 
 
-@properties()
+@properties()  # No inputs - output only
 @node(category="desktop")
 class GetMousePositionNode(DesktopNodeBase):
     """
@@ -531,7 +563,38 @@ class GetMousePositionNode(DesktopNodeBase):
         return self.success_result(x=x, y=y)
 
 
-@properties(MOUSE_BUTTON_PROP, DURATION_PROP)
+@properties(
+    PropertyDef(
+        "start_x",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start X",
+        tooltip="Starting X coordinate",
+    ),
+    PropertyDef(
+        "start_y",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Y",
+        tooltip="Starting Y coordinate",
+    ),
+    PropertyDef(
+        "end_x",
+        PropertyType.INTEGER,
+        required=True,
+        label="End X",
+        tooltip="Ending X coordinate",
+    ),
+    PropertyDef(
+        "end_y",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Y",
+        tooltip="Ending Y coordinate",
+    ),
+    MOUSE_BUTTON_PROP,
+    DURATION_PROP,
+)
 @node(category="desktop")
 class DragMouseNode(DesktopNodeBase):
     """

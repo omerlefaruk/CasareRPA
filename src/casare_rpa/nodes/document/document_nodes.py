@@ -5,6 +5,7 @@ Nodes for intelligent document processing using LLM vision models.
 """
 
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 import json
 from abc import abstractmethod
@@ -139,7 +140,28 @@ class DocumentBaseNode(BaseNode):
         pass
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.STRING,
+        required=True,
+        label="Document",
+        tooltip="Document path or base64 content to classify",
+    ),
+    PropertyDef(
+        "categories",
+        PropertyType.LIST,
+        label="Categories",
+        tooltip="List of category names for classification",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o",
+        label="Model",
+        tooltip="LLM model to use for classification",
+    ),
+)
 @node(category="document")
 class ClassifyDocumentNode(DocumentBaseNode):
     """Node that classifies documents into predefined categories."""
@@ -224,7 +246,28 @@ class ClassifyDocumentNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.STRING,
+        required=True,
+        label="Document",
+        tooltip="Invoice document path or base64 content",
+    ),
+    PropertyDef(
+        "custom_fields",
+        PropertyType.LIST,
+        label="Custom Fields",
+        tooltip="Additional fields to extract",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o",
+        label="Model",
+        tooltip="LLM model to use for extraction",
+    ),
+)
 @node(category="document")
 class ExtractInvoiceNode(DocumentBaseNode):
     """Node that extracts structured data from invoices."""
@@ -329,7 +372,36 @@ class ExtractInvoiceNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.STRING,
+        required=True,
+        label="Document",
+        tooltip="Form document path or base64 content",
+    ),
+    PropertyDef(
+        "field_schema",
+        PropertyType.JSON,
+        required=True,
+        label="Field Schema",
+        tooltip="Schema defining fields to extract",
+    ),
+    PropertyDef(
+        "fuzzy_match",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Fuzzy Match",
+        tooltip="Allow fuzzy matching of field names",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o",
+        label="Model",
+        tooltip="LLM model to use for extraction",
+    ),
+)
 @node(category="document")
 class ExtractFormNode(DocumentBaseNode):
     """Node that extracts fields from form documents."""
@@ -434,7 +506,28 @@ class ExtractFormNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.STRING,
+        required=True,
+        label="Document",
+        tooltip="Document path or base64 content containing table",
+    ),
+    PropertyDef(
+        "table_hint",
+        PropertyType.STRING,
+        label="Table Hint",
+        tooltip="Description of the table to extract",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o",
+        label="Model",
+        tooltip="LLM model to use for extraction",
+    ),
+)
 @node(category="document")
 class ExtractTableNode(DocumentBaseNode):
     """Node that extracts table data from documents."""
@@ -516,7 +609,35 @@ class ExtractTableNode(DocumentBaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "extraction",
+        PropertyType.JSON,
+        required=True,
+        label="Extraction",
+        tooltip="Extracted data to validate",
+    ),
+    PropertyDef(
+        "required_fields",
+        PropertyType.LIST,
+        required=True,
+        label="Required Fields",
+        tooltip="List of field names that must be present",
+    ),
+    PropertyDef(
+        "confidence_threshold",
+        PropertyType.FLOAT,
+        default=0.8,
+        label="Confidence Threshold",
+        tooltip="Minimum confidence score (0.0-1.0)",
+    ),
+    PropertyDef(
+        "validation_rules",
+        PropertyType.JSON,
+        label="Validation Rules",
+        tooltip="Custom validation rules per field",
+    ),
+)
 @node(category="document")
 class ValidateExtractionNode(BaseNode):
     """Node that validates extracted document data."""

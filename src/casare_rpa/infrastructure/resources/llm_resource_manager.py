@@ -33,8 +33,8 @@ class LLMProvider(Enum):
 class LLMConfig:
     """Configuration for LLM client."""
 
-    provider: LLMProvider = LLMProvider.OPENAI
-    model: str = "gpt-4o-mini"
+    provider: LLMProvider = LLMProvider.OPENROUTER
+    model: str = "openrouter/deepseek/deepseek-v3.2"
     api_key: Optional[str] = None
     api_base: Optional[str] = None
     api_version: Optional[str] = None  # For Azure

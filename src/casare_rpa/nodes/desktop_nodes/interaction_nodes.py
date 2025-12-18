@@ -118,7 +118,23 @@ class InteractionNodeBase(DesktopNodeBase):
         return "Element"
 
 
-@properties(BY_TEXT_PROP)
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Dropdown element",
+    ),
+    PropertyDef(
+        "value",
+        PropertyType.STRING,
+        required=True,
+        label="Value",
+        tooltip="Value to select (text or index)",
+    ),
+    BY_TEXT_PROP,
+)
 @node(category="desktop")
 class SelectFromDropdownNode(InteractionNodeBase):
     """
@@ -183,7 +199,16 @@ class SelectFromDropdownNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@properties(CHECK_PROP)
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Checkbox element",
+    ),
+    CHECK_PROP,
+)
 @node(category="desktop")
 class CheckCheckboxNode(InteractionNodeBase):
     """
@@ -244,7 +269,15 @@ class CheckCheckboxNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Radio button element",
+    ),
+)
 @node(category="desktop")
 class SelectRadioButtonNode(InteractionNodeBase):
     """
@@ -299,7 +332,17 @@ class SelectRadioButtonNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@properties(TAB_NAME_PROP, TAB_INDEX_PROP)
+@properties(
+    PropertyDef(
+        "tab_control",
+        PropertyType.ANY,
+        required=True,
+        label="Tab Control",
+        tooltip="Tab control element",
+    ),
+    TAB_NAME_PROP,
+    TAB_INDEX_PROP,
+)
 @node(category="desktop")
 class SelectTabNode(InteractionNodeBase):
     """
@@ -374,7 +417,16 @@ class SelectTabNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@properties(EXPAND_PROP)
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Tree item element",
+    ),
+    EXPAND_PROP,
+)
 @node(category="desktop")
 class ExpandTreeItemNode(InteractionNodeBase):
     """
@@ -435,7 +487,17 @@ class ExpandTreeItemNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@properties(SCROLL_DIRECTION_PROP, SCROLL_AMOUNT_PROP)
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Element to scroll",
+    ),
+    SCROLL_DIRECTION_PROP,
+    SCROLL_AMOUNT_PROP,
+)
 @node(category="desktop")
 class ScrollElementNode(InteractionNodeBase):
     """

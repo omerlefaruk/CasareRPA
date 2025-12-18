@@ -22,7 +22,15 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service",
+    ),
+)
 @node(category="system")
 class GetServiceStatusNode(BaseNode):
     """
@@ -126,7 +134,15 @@ class GetServiceStatusNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service to start",
+    ),
+)
 @node(category="system")
 class StartServiceNode(BaseNode):
     """
@@ -196,7 +212,15 @@ class StartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service to stop",
+    ),
+)
 @node(category="system")
 class StopServiceNode(BaseNode):
     """
@@ -265,6 +289,13 @@ class StopServiceNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service to restart",
+    ),
     PropertyDef(
         "wait_time",
         PropertyType.INTEGER,

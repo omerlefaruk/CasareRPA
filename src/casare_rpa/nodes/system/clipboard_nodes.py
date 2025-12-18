@@ -19,7 +19,18 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@properties()  # Input port driven
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
+
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        required=True,
+        label="Text",
+        tooltip="Text to copy to clipboard",
+    ),
+)
 @node(category="system")
 class ClipboardCopyNode(BaseNode):
     """

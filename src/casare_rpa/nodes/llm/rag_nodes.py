@@ -134,6 +134,13 @@ class EmbeddingNode(LLMBaseNode):
 
 @properties(
     PropertyDef(
+        "documents",
+        PropertyType.LIST,
+        required=True,
+        label="Documents",
+        tooltip="List of documents to add to vector store",
+    ),
+    PropertyDef(
         "collection",
         PropertyType.STRING,
         default="default",
@@ -595,6 +602,13 @@ Answer:"""
 
 
 @properties(
+    PropertyDef(
+        "document_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Document IDs",
+        tooltip="List of document IDs to delete",
+    ),
     PropertyDef(
         "collection",
         PropertyType.STRING,

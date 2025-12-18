@@ -215,6 +215,13 @@ class WorkflowSerializer:
         if disabled_from_visual and not disabled_from_config:
             config["_disabled"] = True
 
+        # Check if node has caching enabled - from visual node property (set by toggle_cache_node)
+        cache_from_visual = visual_node.get_property("_cache_enabled")
+        cache_from_config = config.get("_cache_enabled", False)
+
+        if cache_from_visual and not cache_from_config:
+            config["_cache_enabled"] = True
+
         # Get custom display name (if user renamed the node)
         display_name = visual_node.name()
         # Default name is typically "{NodeType}_1" or similar - only save if customized

@@ -86,6 +86,7 @@ def validate_sql_identifier(
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -104,7 +105,22 @@ if AIOMYSQL_AVAILABLE:
     import aiomysql
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+    PropertyDef(
+        "table_name",
+        PropertyType.STRING,
+        required=True,
+        label="Table Name",
+        tooltip="Name of the table to check",
+    ),
+)
 @node(category="database")
 class TableExistsNode(BaseNode):
     """
@@ -148,7 +164,7 @@ class TableExistsNode(BaseNode):
             connection: Optional[DatabaseConnection] = self.get_input_value(
                 "connection"
             )
-            table_name = self.get_input_value("table_name") or self.config.get(
+            table_name = self.get_input_value("table_name") or self.get_parameter(
                 "table_name", ""
             )
 
@@ -230,7 +246,22 @@ class TableExistsNode(BaseNode):
         return row is not None
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+    PropertyDef(
+        "table_name",
+        PropertyType.STRING,
+        required=True,
+        label="Table Name",
+        tooltip="Name of the table to get columns from",
+    ),
+)
 @node(category="database")
 class GetTableColumnsNode(BaseNode):
     """
@@ -278,7 +309,7 @@ class GetTableColumnsNode(BaseNode):
             connection: Optional[DatabaseConnection] = self.get_input_value(
                 "connection"
             )
-            table_name = self.get_input_value("table_name") or self.config.get(
+            table_name = self.get_input_value("table_name") or self.get_parameter(
                 "table_name", ""
             )
 

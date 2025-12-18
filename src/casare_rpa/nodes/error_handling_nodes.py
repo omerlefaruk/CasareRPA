@@ -307,7 +307,15 @@ class RetrySuccessNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "error_message",
+        PropertyType.STRING,
+        required=True,
+        label="Error Message",
+        tooltip="Error message to signal failure",
+    ),
+)
 @node(category="error_handling")
 class RetryFailNode(BaseNode):
     """
@@ -440,6 +448,13 @@ class ThrowErrorNode(BaseNode):
         default="Error notification from CasareRPA",
         label="Message",
         tooltip="Notification message",
+    ),
+    PropertyDef(
+        "error_details",
+        PropertyType.ANY,
+        required=True,
+        label="Error Details",
+        tooltip="Dictionary of error details",
     ),
     PropertyDef(
         "format",
@@ -873,6 +888,27 @@ class ErrorRecoveryNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "error_message",
+        PropertyType.STRING,
+        required=True,
+        label="Error Message",
+        tooltip="Error message to log",
+    ),
+    PropertyDef(
+        "error_type",
+        PropertyType.STRING,
+        required=True,
+        label="Error Type",
+        tooltip="Type of error",
+    ),
+    PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Additional context dictionary",
+    ),
     PropertyDef(
         "level",
         PropertyType.CHOICE,

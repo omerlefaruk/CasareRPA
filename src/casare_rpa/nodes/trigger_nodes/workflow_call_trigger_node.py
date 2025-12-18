@@ -93,9 +93,9 @@ class WorkflowCallTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get workflow call-specific configuration."""
         return {
-            "call_alias": self.config.get("call_alias", ""),
-            "input_schema": self.config.get("input_schema", "{}"),
-            "output_schema": self.config.get("output_schema", "{}"),
-            "wait_for_completion": self.config.get("wait_for_completion", True),
-            "timeout_seconds": self.config.get("timeout_seconds", 300),
+            "call_alias": self.get_parameter("call_alias", ""),
+            "input_schema": self.get_parameter("input_schema", "{}"),
+            "output_schema": self.get_parameter("output_schema", "{}"),
+            "wait_for_completion": self.get_parameter("wait_for_completion", True),
+            "timeout_seconds": self.get_parameter("timeout_seconds", 300),
         }

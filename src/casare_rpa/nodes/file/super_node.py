@@ -562,7 +562,7 @@ class FileSystemSuperNode(BaseNode):
     def _define_ports(self) -> None:
         """Define ports based on current action."""
         # Get current action from config
-        action = self.config.get("action", FileSystemAction.READ.value)
+        action = self.get_parameter("action", FileSystemAction.READ.value)
 
         # Get port configuration for this action from schema
         port_config = FILE_SYSTEM_PORT_SCHEMA.get_config(action)
@@ -1575,7 +1575,7 @@ class StructuredDataSuperNode(BaseNode):
     def _define_ports(self) -> None:
         """Define ports based on current action."""
         # Get current action from config
-        action = self.config.get("action", StructuredDataAction.READ_CSV.value)
+        action = self.get_parameter("action", StructuredDataAction.READ_CSV.value)
 
         # Get port configuration for this action from schema
         port_config = STRUCTURED_DATA_PORT_SCHEMA.get_config(action)

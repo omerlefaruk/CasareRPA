@@ -244,7 +244,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         credentials = await self._get_credentials(context)
 
         # Get credential_id for OAuth auto-refresh at client level
-        cred_id = self.get_parameter("credential_id") or self.config.get(
+        cred_id = self.get_parameter("credential_id") or self.get_parameter(
             "credential_id"
         )
         if cred_id:
@@ -295,14 +295,14 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             GoogleAuthError: If no credentials found
         """
         # DEBUG: Log credential_id from config (using INFO so it shows in logs)
-        cred_id_from_config = self.config.get("credential_id")
+        cred_id_from_config = self.get_parameter("credential_id")
         cred_id_from_param = self.get_parameter("credential_id")
         logger.info(
             f"Google credential lookup - config: {cred_id_from_config}, param: {cred_id_from_param}"
         )
 
         # Get credential_id (from picker widget or direct config)
-        cred_id = self.get_parameter("credential_id") or self.config.get(
+        cred_id = self.get_parameter("credential_id") or self.get_parameter(
             "credential_id"
         )
         if cred_id:

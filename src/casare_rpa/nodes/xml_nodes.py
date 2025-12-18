@@ -31,7 +31,15 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to parse",
+    ),
+)
 @node(category="document")
 class ParseXMLNode(BaseNode):
     """
@@ -111,6 +119,13 @@ class ParseXMLNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="File Path",
+        tooltip="Path to XML file to read",
+    ),
     PropertyDef(
         "encoding",
         PropertyType.STRING,
@@ -196,6 +211,20 @@ class ReadXMLFileNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="File Path",
+        tooltip="Path to write XML file",
+    ),
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to write",
+    ),
     PropertyDef(
         "encoding",
         PropertyType.STRING,
@@ -310,7 +339,22 @@ class WriteXMLFileNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to query",
+    ),
+    PropertyDef(
+        "xpath",
+        PropertyType.STRING,
+        required=True,
+        label="XPath",
+        tooltip="XPath expression to query",
+    ),
+)
 @node(category="document")
 class XPathQueryNode(BaseNode):
     """
@@ -406,7 +450,29 @@ class XPathQueryNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to search",
+    ),
+    PropertyDef(
+        "tag_name",
+        PropertyType.STRING,
+        required=True,
+        label="Tag Name",
+        tooltip="Tag name to find",
+    ),
+    PropertyDef(
+        "index",
+        PropertyType.INTEGER,
+        default=0,
+        label="Index",
+        tooltip="Index if multiple elements match (default: 0)",
+    ),
+)
 @node(category="document")
 class GetXMLElementNode(BaseNode):
     """
@@ -497,7 +563,29 @@ class GetXMLElementNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to search",
+    ),
+    PropertyDef(
+        "xpath",
+        PropertyType.STRING,
+        default=".",
+        label="XPath",
+        tooltip="XPath to target element",
+    ),
+    PropertyDef(
+        "attribute_name",
+        PropertyType.STRING,
+        required=True,
+        label="Attribute Name",
+        tooltip="Name of the attribute to get",
+    ),
+)
 @node(category="document")
 class GetXMLAttributeNode(BaseNode):
     """
@@ -575,6 +663,13 @@ class GetXMLAttributeNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to convert to JSON",
+    ),
     PropertyDef(
         "include_attributes",
         PropertyType.BOOLEAN,
@@ -684,6 +779,13 @@ class XMLToJsonNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "json_data",
+        PropertyType.JSON,
+        required=True,
+        label="JSON Data",
+        tooltip="JSON data to convert to XML (dict or string)",
+    ),
     PropertyDef(
         "root_tag",
         PropertyType.STRING,

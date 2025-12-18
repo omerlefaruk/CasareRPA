@@ -25,6 +25,13 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 @properties(
     PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Context data for decision matching",
+    ),
+    PropertyDef(
         "decision_table",
         PropertyType.TEXT,
         default="",
@@ -83,8 +90,8 @@ class AIDecisionTableNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_exec_input_port("exec_in")
-        self.add_exec_output_port("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
 
         # Data inputs
         self.add_input_port("decision_table", DataType.DICT)

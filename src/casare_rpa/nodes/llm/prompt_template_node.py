@@ -32,6 +32,13 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
         essential=True,
     ),
     PropertyDef(
+        "variables",
+        PropertyType.JSON,
+        default={},
+        label="Variables",
+        tooltip="Template variables as key-value pairs",
+    ),
+    PropertyDef(
         "execute",
         PropertyType.BOOLEAN,
         default=True,

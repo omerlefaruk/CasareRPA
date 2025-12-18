@@ -20,6 +20,7 @@ from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -116,7 +117,48 @@ def _create_message_with_attachment(
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body content",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        label="CC",
+        tooltip="CC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        label="BCC",
+        tooltip="BCC recipients (comma-separated)",
+    ),
+)
 @node(category="google")
 class GmailSendEmailNode(BaseNode):
     """Send an email via Gmail."""
@@ -179,7 +221,63 @@ class GmailSendEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body content",
+    ),
+    PropertyDef(
+        "attachments",
+        PropertyType.LIST,
+        required=True,
+        label="Attachments",
+        tooltip="List of file paths to attach",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        label="CC",
+        tooltip="CC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        label="BCC",
+        tooltip="BCC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "body_type",
+        PropertyType.CHOICE,
+        default="text",
+        choices=["text", "html"],
+        label="Body Type",
+        tooltip="Type of email body (text or html)",
+    ),
+)
 @node(category="google")
 class GmailSendWithAttachmentNode(BaseNode):
     """Send an email with attachments via Gmail."""
@@ -246,7 +344,56 @@ class GmailSendWithAttachmentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body content",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        label="CC",
+        tooltip="CC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        label="BCC",
+        tooltip="BCC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "body_type",
+        PropertyType.CHOICE,
+        default="text",
+        choices=["text", "html"],
+        label="Body Type",
+        tooltip="Type of email body (text or html)",
+    ),
+)
 @node(category="google")
 class GmailCreateDraftNode(BaseNode):
     """Create a draft email in Gmail."""
@@ -307,7 +454,22 @@ class GmailCreateDraftNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "draft_id",
+        PropertyType.STRING,
+        required=True,
+        label="Draft ID",
+        tooltip="ID of the draft to send",
+    ),
+)
 @node(category="google")
 class GmailSendDraftNode(BaseNode):
     """Send an existing draft from Gmail."""
@@ -366,7 +528,30 @@ class GmailSendDraftNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to retrieve",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="full",
+        choices=["full", "metadata", "minimal", "raw"],
+        label="Format",
+        tooltip="Format of the returned message",
+    ),
+)
 @node(category="google")
 class GmailGetEmailNode(BaseNode):
     """Get a specific email by ID from Gmail."""
@@ -471,7 +656,37 @@ class GmailGetEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "max_results",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=1,
+        max_value=500,
+        label="Max Results",
+        tooltip="Maximum number of messages to return",
+    ),
+    PropertyDef(
+        "label_ids",
+        PropertyType.LIST,
+        default=["INBOX"],
+        label="Label IDs",
+        tooltip="List of label IDs to filter by (e.g., ['INBOX', 'UNREAD'])",
+    ),
+    PropertyDef(
+        "page_token",
+        PropertyType.STRING,
+        label="Page Token",
+        tooltip="Token for the next page of results",
+    ),
+)
 @node(category="google")
 class GmailListEmailsNode(BaseNode):
     """List emails from Gmail inbox."""
@@ -531,7 +746,37 @@ class GmailListEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "query",
+        PropertyType.STRING,
+        required=True,
+        label="Search Query",
+        tooltip="Gmail search query (e.g., 'from:someone@example.com')",
+    ),
+    PropertyDef(
+        "max_results",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=1,
+        max_value=500,
+        label="Max Results",
+        tooltip="Maximum number of messages to return",
+    ),
+    PropertyDef(
+        "page_token",
+        PropertyType.STRING,
+        label="Page Token",
+        tooltip="Token for the next page of results",
+    ),
+)
 @node(category="google")
 class GmailSearchEmailsNode(BaseNode):
     """Search emails in Gmail using query."""
@@ -592,7 +837,22 @@ class GmailSearchEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "thread_id",
+        PropertyType.STRING,
+        required=True,
+        label="Thread ID",
+        tooltip="ID of the thread to retrieve",
+    ),
+)
 @node(category="google")
 class GmailGetThreadNode(BaseNode):
     """Get a complete email thread from Gmail."""
@@ -656,7 +916,34 @@ class GmailGetThreadNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to modify",
+    ),
+    PropertyDef(
+        "add_labels",
+        PropertyType.LIST,
+        label="Add Labels",
+        tooltip="List of label IDs to add",
+    ),
+    PropertyDef(
+        "remove_labels",
+        PropertyType.LIST,
+        label="Remove Labels",
+        tooltip="List of label IDs to remove",
+    ),
+)
 @node(category="google")
 class GmailModifyLabelsNode(BaseNode):
     """Modify labels on a Gmail message."""
@@ -717,7 +1004,22 @@ class GmailModifyLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to move to trash",
+    ),
+)
 @node(category="google")
 class GmailMoveToTrashNode(BaseNode):
     """Move a Gmail message to trash."""
@@ -760,7 +1062,22 @@ class GmailMoveToTrashNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to mark as read",
+    ),
+)
 @node(category="google")
 class GmailMarkAsReadNode(BaseNode):
     """Mark a Gmail message as read."""
@@ -805,7 +1122,22 @@ class GmailMarkAsReadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to mark as unread",
+    ),
+)
 @node(category="google")
 class GmailMarkAsUnreadNode(BaseNode):
     """Mark a Gmail message as unread."""
@@ -850,7 +1182,29 @@ class GmailMarkAsUnreadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to star/unstar",
+    ),
+    PropertyDef(
+        "star",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Star",
+        tooltip="Whether to star (True) or unstar (False) the message",
+    ),
+)
 @node(category="google")
 class GmailStarEmailNode(BaseNode):
     """Star or unstar a Gmail message."""
@@ -904,7 +1258,22 @@ class GmailStarEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to archive",
+    ),
+)
 @node(category="google")
 class GmailArchiveEmailNode(BaseNode):
     """Archive a Gmail message (remove from inbox)."""
@@ -949,7 +1318,22 @@ class GmailArchiveEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to permanently delete",
+    ),
+)
 @node(category="google")
 class GmailDeleteEmailNode(BaseNode):
     """Permanently delete a Gmail message."""
@@ -997,7 +1381,22 @@ class GmailDeleteEmailNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "emails",
+        PropertyType.LIST,
+        required=True,
+        label="Emails",
+        tooltip="List of email objects to send (each with to, subject, body)",
+    ),
+)
 @node(category="google")
 class GmailBatchSendNode(BaseNode):
     """Send multiple emails in batch."""
@@ -1091,7 +1490,34 @@ class GmailBatchSendNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Message IDs",
+        tooltip="List of message IDs to modify",
+    ),
+    PropertyDef(
+        "add_labels",
+        PropertyType.LIST,
+        label="Add Labels",
+        tooltip="List of label IDs to add to all messages",
+    ),
+    PropertyDef(
+        "remove_labels",
+        PropertyType.LIST,
+        label="Remove Labels",
+        tooltip="List of label IDs to remove from all messages",
+    ),
+)
 @node(category="google")
 class GmailBatchModifyNode(BaseNode):
     """Modify multiple Gmail messages in batch."""
@@ -1145,7 +1571,22 @@ class GmailBatchModifyNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Message IDs",
+        tooltip="List of message IDs to permanently delete",
+    ),
+)
 @node(category="google")
 class GmailBatchDeleteNode(BaseNode):
     """Delete multiple Gmail messages in batch."""
@@ -1196,7 +1637,29 @@ class GmailBatchDeleteNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to add labels to",
+    ),
+    PropertyDef(
+        "label_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Label IDs",
+        tooltip="List of label IDs to add",
+    ),
+)
 @node(category="google")
 class GmailAddLabelNode(BaseNode):
     """Add label(s) to a Gmail message."""
@@ -1262,7 +1725,29 @@ class GmailAddLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to remove labels from",
+    ),
+    PropertyDef(
+        "label_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Label IDs",
+        tooltip="List of label IDs to remove",
+    ),
+)
 @node(category="google")
 class GmailRemoveLabelNode(BaseNode):
     """Remove label(s) from a Gmail message."""
@@ -1389,7 +1874,22 @@ class GmailGetLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to trash",
+    ),
+)
 @node(category="google")
 class GmailTrashEmailNode(BaseNode):
     """Move a Gmail message to trash (alias for MoveToTrash with clearer name)."""

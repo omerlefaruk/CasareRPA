@@ -31,6 +31,19 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 
 @properties(
     PropertyDef(
+        "code",
+        PropertyType.CODE,
+        required=True,
+        label="Python Code",
+        tooltip="Python code to execute",
+    ),
+    PropertyDef(
+        "variables",
+        PropertyType.JSON,
+        label="Variables",
+        tooltip="Dictionary of variables to pass to the script",
+    ),
+    PropertyDef(
         "timeout",
         PropertyType.INTEGER,
         default=60,
@@ -77,7 +90,7 @@ class RunPythonScriptNode(BaseNode):
         self.node_type = "RunPythonScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("code", DataType.STRING, required=True)
         self.add_input_port("variables", DataType.DICT)
         self.add_output_port("result", DataType.ANY)
         self.add_output_port("output", DataType.STRING)
@@ -219,6 +232,25 @@ print("__RESULT__:" + json.dumps(result, default=str))
 
 
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        tooltip="Path to Python file",
+    ),
+    PropertyDef(
+        "args",
+        PropertyType.ANY,
+        label="Arguments",
+        tooltip="Command line arguments (list or string)",
+    ),
+    PropertyDef(
+        "working_dir",
+        PropertyType.DIRECTORY_PATH,
+        label="Working Directory",
+        tooltip="Working directory for execution",
+    ),
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -437,6 +469,7 @@ class RunPythonFileNode(BaseNode):
         "expression",
         PropertyType.STRING,
         default="",
+        required=True,
         label="Expression",
         tooltip="Python expression to evaluate (e.g., '{{num1}} + {{num2}}')",
     ),
@@ -558,6 +591,19 @@ class EvalExpressionNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "script",
+        PropertyType.TEXT,
+        required=True,
+        label="Script",
+        tooltip="Script content to execute",
+    ),
+    PropertyDef(
+        "working_dir",
+        PropertyType.DIRECTORY_PATH,
+        label="Working Directory",
+        tooltip="Working directory for execution",
+    ),
+    PropertyDef(
         "timeout",
         PropertyType.INTEGER,
         default=60,
@@ -595,6 +641,7 @@ class RunBatchScriptNode(BaseNode):
     Execute a batch script (Windows) or shell script (Unix).
 
     Config (via @properties):
+        script: Script content to execute
         timeout: Execution timeout in seconds (default: 60)
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries in ms (default: 1000)
@@ -622,7 +669,7 @@ class RunBatchScriptNode(BaseNode):
         self.node_type = "RunBatchScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("script", DataType.STRING)
+        self.add_input_port("script", DataType.STRING, required=True)
         self.add_input_port("working_dir", DataType.STRING)
         self.add_output_port("stdout", DataType.STRING)
         self.add_output_port("stderr", DataType.STRING)
@@ -779,6 +826,19 @@ class RunBatchScriptNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "code",
+        PropertyType.TEXT,
+        required=True,
+        label="JavaScript Code",
+        tooltip="JavaScript code to execute",
+    ),
+    PropertyDef(
+        "input_data",
+        PropertyType.ANY,
+        label="Input Data",
+        tooltip="JSON data to pass to script (available as 'inputData')",
+    ),
+    PropertyDef(
         "timeout",
         PropertyType.INTEGER,
         default=60,
@@ -800,6 +860,7 @@ class RunJavaScriptNode(BaseNode):
     Execute JavaScript code using Node.js.
 
     Config (via @properties):
+        code: JavaScript code to execute
         timeout: Execution timeout in seconds (default: 60)
         node_path: Path to Node.js executable (default: 'node')
 
@@ -824,7 +885,7 @@ class RunJavaScriptNode(BaseNode):
         self.node_type = "RunJavaScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("code", DataType.STRING, required=True)
         self.add_input_port("input_data", DataType.ANY)
         self.add_output_port("result", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)

@@ -194,6 +194,14 @@ class ActionManager:
             mw._on_disable_all_selected,
         )
 
+        mw.action_toggle_cache = self._create_action(
+            "toggle_cache",
+            "Toggle &Cache",
+            QKeySequence("Ctrl+K"),
+            "Enable/disable caching on nearest node (Ctrl+K)",
+            mw._on_toggle_cache_node,
+        )
+
         mw.action_toggle_panel = self._create_action(
             "toggle_panel",
             "Toggle &Panel",

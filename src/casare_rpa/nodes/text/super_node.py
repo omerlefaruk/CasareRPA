@@ -303,6 +303,23 @@ REGEX_ACTIONS = [
 
 
 @properties(
+    # === PRIMARY INPUTS (always visible) ===
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        required=True,
+        label="Text",
+        tooltip="Input text to operate on",
+        order=-2,
+    ),
+    PropertyDef(
+        "search",
+        PropertyType.STRING,
+        required=True,
+        label="Search",
+        tooltip="Text to search for",
+        order=-1,
+    ),
     # === ESSENTIAL: Action selector (always visible) ===
     PropertyDef(
         "action",

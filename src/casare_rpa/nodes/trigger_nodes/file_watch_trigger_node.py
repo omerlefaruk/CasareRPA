@@ -108,21 +108,21 @@ class FileWatchTriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get file watch-specific configuration."""
-        patterns_str = self.config.get("patterns", "*")
+        patterns_str = self.get_parameter("patterns", "*")
         patterns = [p.strip() for p in patterns_str.split(",") if p.strip()]
 
-        events_str = self.config.get("events", "created,modified")
+        events_str = self.get_parameter("events", "created,modified")
         events = [e.strip() for e in events_str.split(",") if e.strip()]
 
-        ignore_str = self.config.get("ignore_patterns", "*.tmp,~*")
+        ignore_str = self.get_parameter("ignore_patterns", "*.tmp,~*")
         ignore_patterns = [p.strip() for p in ignore_str.split(",") if p.strip()]
 
         return {
-            "watch_path": self.config.get("watch_path", ""),
+            "watch_path": self.get_parameter("watch_path", ""),
             "patterns": patterns,
             "events": events,
-            "recursive": self.config.get("recursive", True),
+            "recursive": self.get_parameter("recursive", True),
             "ignore_patterns": ignore_patterns,
-            "debounce_ms": self.config.get("debounce_ms", 500),
-            "include_hidden": self.config.get("include_hidden", False),
+            "debounce_ms": self.get_parameter("debounce_ms", 500),
+            "include_hidden": self.get_parameter("include_hidden", False),
         }

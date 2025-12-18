@@ -60,6 +60,13 @@ from .email_base import decode_header_value
         tooltip="Email account password",
     ),
     PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="UID of the email to save attachments from",
+    ),
+    PropertyDef(
         "folder",
         PropertyType.STRING,
         default="INBOX",
@@ -242,6 +249,13 @@ class SaveAttachmentNode(BaseNode):
         tooltip="Email account password",
     ),
     PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="UID of the email to mark",
+    ),
+    PropertyDef(
         "folder",
         PropertyType.STRING,
         default="INBOX",
@@ -385,6 +399,13 @@ class MarkEmailNode(BaseNode):
         default="",
         label="Password",
         tooltip="Email account password",
+    ),
+    PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="UID of the email to delete",
     ),
     PropertyDef(
         "folder",

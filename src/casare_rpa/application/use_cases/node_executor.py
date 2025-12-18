@@ -244,9 +244,12 @@ class NodeExecutor:
         if node.config.get("_disabled", False):
             return self._handle_bypassed_node(node)
 
-        # Check cache if node is cacheable
+        # Check cache if node is cacheable (via code or user toggle)
         cache_key = None
-        if self.cache_manager and getattr(node, "cacheable", False):
+        is_cacheable = getattr(node, "cacheable", False) or node.config.get(
+            "_cache_enabled", False
+        )
+        if self.cache_manager and is_cacheable:
             cache_key = self._get_node_cache_key(node)
             cached_result = await self.cache_manager.get(cache_key)
             if cached_result is not None:

@@ -27,6 +27,27 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 
 @properties(
     PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="PDF File Path",
+        tooltip="Path to the PDF file to read",
+    ),
+    PropertyDef(
+        "start_page",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Start Page",
+        tooltip="First page to extract (1-indexed)",
+    ),
+    PropertyDef(
+        "end_page",
+        PropertyType.INTEGER,
+        label="End Page",
+        tooltip="Last page to extract (leave empty for all pages)",
+    ),
+    PropertyDef(
         "page_separator",
         PropertyType.STRING,
         default="\n\n",
@@ -179,7 +200,15 @@ class ReadPDFTextNode(BaseNode):
         return True, ""
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="PDF File Path",
+        tooltip="Path to the PDF file to get info from",
+    ),
+)
 @node(category="document")
 class GetPDFInfoNode(BaseNode):
     """
@@ -276,7 +305,22 @@ class GetPDFInfoNode(BaseNode):
         return True, ""
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "input_files",
+        PropertyType.LIST,
+        required=True,
+        label="Input Files",
+        tooltip="List of PDF file paths to merge",
+    ),
+    PropertyDef(
+        "output_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Output Path",
+        tooltip="Path where the merged PDF will be saved",
+    ),
+)
 @node(category="document")
 class MergePDFsNode(BaseNode):
     """
@@ -369,6 +413,20 @@ class MergePDFsNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "input_file",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Input PDF File",
+        tooltip="Path to the PDF file to split",
+    ),
+    PropertyDef(
+        "output_dir",
+        PropertyType.DIRECTORY_PATH,
+        required=True,
+        label="Output Directory",
+        tooltip="Directory where split pages will be saved",
+    ),
     PropertyDef(
         "filename_pattern",
         PropertyType.STRING,
@@ -474,7 +532,29 @@ class SplitPDFNode(BaseNode):
         return True, ""
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "input_file",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Input PDF File",
+        tooltip="Path to the PDF file to extract from",
+    ),
+    PropertyDef(
+        "output_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Output Path",
+        tooltip="Path where the extracted pages will be saved",
+    ),
+    PropertyDef(
+        "pages",
+        PropertyType.LIST,
+        required=True,
+        label="Pages",
+        tooltip="List of page numbers to extract (1-indexed)",
+    ),
+)
 @node(category="document")
 class ExtractPDFPagesNode(BaseNode):
     """
@@ -573,6 +653,34 @@ class ExtractPDFPagesNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "input_file",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Input PDF File",
+        tooltip="Path to the PDF file to convert",
+    ),
+    PropertyDef(
+        "output_dir",
+        PropertyType.DIRECTORY_PATH,
+        required=True,
+        label="Output Directory",
+        tooltip="Directory where images will be saved",
+    ),
+    PropertyDef(
+        "start_page",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Start Page",
+        tooltip="First page to convert (1-indexed)",
+    ),
+    PropertyDef(
+        "end_page",
+        PropertyType.INTEGER,
+        label="End Page",
+        tooltip="Last page to convert (leave empty for all pages)",
+    ),
     PropertyDef(
         "dpi",
         PropertyType.INTEGER,

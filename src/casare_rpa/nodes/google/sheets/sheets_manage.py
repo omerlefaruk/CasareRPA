@@ -13,6 +13,7 @@ Nodes for managing spreadsheets and worksheets:
 
 from __future__ import annotations
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 
 from typing import Any, Dict
@@ -30,7 +31,35 @@ from casare_rpa.infrastructure.resources.google_sheets_client import (
 from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=True,
+        label="Title",
+        tooltip="Title for the new spreadsheet",
+    ),
+    PropertyDef(
+        "sheets",
+        PropertyType.LIST,
+        label="Sheets",
+        tooltip="List of sheet names to create",
+    ),
+    PropertyDef(
+        "locale",
+        PropertyType.STRING,
+        default="en_US",
+        label="Locale",
+        tooltip="Locale string (e.g., en_US)",
+    ),
+)
 @node(category="google")
 class SheetsCreateSpreadsheetNode(SheetsBaseNode):
     """
@@ -404,7 +433,36 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
         }
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "source_spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Source Spreadsheet ID",
+        tooltip="ID of the source spreadsheet",
+    ),
+    PropertyDef(
+        "source_sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Source Sheet ID",
+        tooltip="ID of the sheet to copy",
+    ),
+    PropertyDef(
+        "destination_spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Destination Spreadsheet ID",
+        tooltip="ID of the destination spreadsheet",
+    ),
+)
 @node(category="google")
 class SheetsCopySheetNode(SheetsBaseNode):
     """

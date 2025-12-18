@@ -104,9 +104,9 @@ class AIAgentNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_exec_input_port("exec_in")
-        self.add_exec_output_port("exec_out")
-        self.add_exec_output_port("exec_error")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_exec_output("exec_error")
 
         # Data inputs
         self.add_input_port("goal", DataType.STRING)

@@ -356,6 +356,23 @@ class WorkflowDeserializer:
                         visual_node.set_property("_disabled", True)
                     except Exception:
                         pass
+                # Handle cache enabled state - set both visual and casare_node config
+                elif key == "_cache_enabled" and value:
+                    # Visual: show cache icon
+                    if hasattr(visual_node, "view") and visual_node.view:
+                        if hasattr(visual_node.view, "set_cache_enabled"):
+                            visual_node.view.set_cache_enabled(True)
+                    # CRITICAL: Also set on casare_node.config so execution uses cache
+                    if (
+                        hasattr(visual_node, "_casare_node")
+                        and visual_node._casare_node
+                    ):
+                        visual_node._casare_node.config["_cache_enabled"] = True
+                    # Try to set on visual node property too
+                    try:
+                        visual_node.set_property("_cache_enabled", True)
+                    except Exception:
+                        pass
                 continue
 
             # Skip node_id as it's already set

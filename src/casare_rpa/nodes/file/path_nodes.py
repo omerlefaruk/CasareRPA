@@ -130,7 +130,7 @@ class FileExistsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
-        check_type = self.config.get("check_type", "any")
+        check_type = self.get_parameter("check_type", "any")
         if check_type not in ["file", "directory", "any"]:
             return False, "check_type must be 'file', 'directory', or 'any'"
         return True, ""

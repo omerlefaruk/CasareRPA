@@ -158,20 +158,22 @@ class SheetsTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Sheets-specific configuration."""
         # Parse comma-separated columns
-        watch_columns_str = self.config.get("watch_columns", "")
+        watch_columns_str = self.get_parameter("watch_columns", "")
         watch_columns = [
             c.strip().upper() for c in watch_columns_str.split(",") if c.strip()
         ]
 
         return {
-            "credential_name": self.config.get("credential_name", "google"),
-            "spreadsheet_id": self.config.get("spreadsheet_id", ""),
-            "sheet_name": self.config.get("sheet_name", "Sheet1"),
-            "range": self.config.get("range", ""),
-            "polling_interval": self.config.get("polling_interval", 30),
-            "trigger_on_new_row": self.config.get("trigger_on_new_row", True),
-            "trigger_on_cell_change": self.config.get("trigger_on_cell_change", True),
-            "trigger_on_delete": self.config.get("trigger_on_delete", False),
+            "credential_name": self.get_parameter("credential_name", "google"),
+            "spreadsheet_id": self.get_parameter("spreadsheet_id", ""),
+            "sheet_name": self.get_parameter("sheet_name", "Sheet1"),
+            "range": self.get_parameter("range", ""),
+            "polling_interval": self.get_parameter("polling_interval", 30),
+            "trigger_on_new_row": self.get_parameter("trigger_on_new_row", True),
+            "trigger_on_cell_change": self.get_parameter(
+                "trigger_on_cell_change", True
+            ),
+            "trigger_on_delete": self.get_parameter("trigger_on_delete", False),
             "watch_columns": watch_columns,
-            "ignore_empty_rows": self.config.get("ignore_empty_rows", True),
+            "ignore_empty_rows": self.get_parameter("ignore_empty_rows", True),
         }

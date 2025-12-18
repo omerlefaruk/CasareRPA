@@ -87,7 +87,7 @@ class WaitNode(BaseNode):
         try:
             duration = self.get_input_value("duration")
             if duration is None:
-                duration = self.config.get("duration", 1.0)
+                duration = self.get_parameter("duration", 1.0)
 
             if isinstance(duration, str):
                 duration = float(duration)
@@ -114,7 +114,7 @@ class WaitNode(BaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        duration = self.config.get("duration", 0)
+        duration = self.get_parameter("duration", 0)
         if duration < 0:
             return False, "Duration must be non-negative"
         return True, ""
@@ -278,7 +278,7 @@ class WaitForElementNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        state = self.config.get("state", "visible")
+        state = self.get_parameter("state", "visible")
         valid_states = ["visible", "hidden", "attached", "detached"]
         if state not in valid_states:
             return False, f"Invalid state: {state}. Must be one of: {valid_states}"
@@ -402,7 +402,7 @@ class WaitForNavigationNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        wait_until = self.config.get("wait_until", "load")
+        wait_until = self.get_parameter("wait_until", "load")
         valid_states = ["load", "domcontentloaded", "networkidle", "commit"]
         if wait_until not in valid_states:
             return (

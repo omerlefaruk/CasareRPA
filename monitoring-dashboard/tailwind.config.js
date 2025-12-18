@@ -1,0 +1,37 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // CasareRPA brand colors
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+        },
+        // Status colors
+        success: '#22c55e',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        // Dark theme base
+        surface: {
+          DEFAULT: '#1e1e2e',
+          elevated: '#2a2a3e',
+          hover: '#363649',
+        },
+      },
+    },
+  },
+  plugins: [],
+}

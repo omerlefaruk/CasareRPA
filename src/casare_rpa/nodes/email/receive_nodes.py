@@ -299,7 +299,15 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "email",
+        PropertyType.JSON,
+        required=True,
+        label="Email",
+        tooltip="Email data object to extract content from",
+    ),
+)
 @node(category="email")
 class GetEmailContentNode(BaseNode):
     """
@@ -364,7 +372,33 @@ class GetEmailContentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "emails",
+        PropertyType.LIST,
+        required=True,
+        label="Emails",
+        tooltip="List of email objects to filter",
+    ),
+    PropertyDef(
+        "subject_contains",
+        PropertyType.STRING,
+        label="Subject Contains",
+        tooltip="Filter emails containing this text in subject",
+    ),
+    PropertyDef(
+        "from_contains",
+        PropertyType.STRING,
+        label="From Contains",
+        tooltip="Filter emails containing this text in sender",
+    ),
+    PropertyDef(
+        "has_attachments",
+        PropertyType.BOOLEAN,
+        label="Has Attachments",
+        tooltip="Filter emails that have attachments",
+    ),
+)
 @node(category="email")
 class FilterEmailsNode(BaseNode):
     """

@@ -150,25 +150,25 @@ class DriveTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Drive-specific configuration."""
         # Parse comma-separated lists
-        event_types_str = self.config.get("event_types", "created,modified")
+        event_types_str = self.get_parameter("event_types", "created,modified")
         event_types = [e.strip() for e in event_types_str.split(",") if e.strip()]
 
-        file_types_str = self.config.get("file_types", "")
+        file_types_str = self.get_parameter("file_types", "")
         file_types = [
             ft.strip().lstrip(".") for ft in file_types_str.split(",") if ft.strip()
         ]
 
-        mime_types_str = self.config.get("mime_types", "")
+        mime_types_str = self.get_parameter("mime_types", "")
         mime_types = [mt.strip() for mt in mime_types_str.split(",") if mt.strip()]
 
         return {
-            "credential_name": self.config.get("credential_name", "google"),
-            "polling_interval": self.config.get("polling_interval", 60),
-            "folder_id": self.config.get("folder_id", ""),
-            "include_subfolders": self.config.get("include_subfolders", True),
+            "credential_name": self.get_parameter("credential_name", "google"),
+            "polling_interval": self.get_parameter("polling_interval", 60),
+            "folder_id": self.get_parameter("folder_id", ""),
+            "include_subfolders": self.get_parameter("include_subfolders", True),
             "event_types": event_types,
             "file_types": file_types,
             "mime_types": mime_types,
-            "name_pattern": self.config.get("name_pattern", ""),
-            "ignore_own_changes": self.config.get("ignore_own_changes", True),
+            "name_pattern": self.get_parameter("name_pattern", ""),
+            "ignore_own_changes": self.get_parameter("ignore_own_changes", True),
         }

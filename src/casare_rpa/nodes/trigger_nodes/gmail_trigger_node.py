@@ -153,17 +153,17 @@ class GmailTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Gmail-specific configuration."""
         # Parse comma-separated label IDs
-        label_ids_str = self.config.get("label_ids", "INBOX")
+        label_ids_str = self.get_parameter("label_ids", "INBOX")
         label_ids = [lid.strip() for lid in label_ids_str.split(",") if lid.strip()]
 
         return {
-            "credential_name": self.config.get("credential_name", "google"),
-            "polling_interval": self.config.get("polling_interval", 60),
+            "credential_name": self.get_parameter("credential_name", "google"),
+            "polling_interval": self.get_parameter("polling_interval", 60),
             "label_ids": label_ids,
-            "query": self.config.get("query", "is:unread"),
-            "from_filter": self.config.get("from_filter", ""),
-            "subject_contains": self.config.get("subject_contains", ""),
-            "mark_as_read": self.config.get("mark_as_read", True),
-            "include_attachments": self.config.get("include_attachments", True),
-            "max_results": self.config.get("max_results", 10),
+            "query": self.get_parameter("query", "is:unread"),
+            "from_filter": self.get_parameter("from_filter", ""),
+            "subject_contains": self.get_parameter("subject_contains", ""),
+            "mark_as_read": self.get_parameter("mark_as_read", True),
+            "include_attachments": self.get_parameter("include_attachments", True),
+            "max_results": self.get_parameter("max_results", 10),
         }

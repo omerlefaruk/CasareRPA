@@ -67,6 +67,8 @@ LLM_MODELS: Dict[str, List[str]] = {
         "deepseek-coder",
     ],
     "OpenRouter": [
+        "openrouter/deepseek/deepseek-v3.2",
+        "openrouter/deepseek/deepseek-chat",
         "openrouter/openai/gpt-4o",
         "openrouter/anthropic/claude-3.5-sonnet",
         "openrouter/google/gemini-2.0-flash-exp:free",
@@ -260,6 +262,11 @@ class AISettingsWidget(QWidget):
             self._provider_combo.setMinimumWidth(120)
             self._provider_combo.addItems(list(LLM_MODELS.keys()))
             self._provider_combo.setToolTip("Select AI provider")
+
+            # Set OpenRouter as default provider
+            idx = self._provider_combo.findText("OpenRouter")
+            if idx >= 0:
+                self._provider_combo.setCurrentIndex(idx)
 
             if not self._compact:
                 provider_layout.addWidget(provider_label)

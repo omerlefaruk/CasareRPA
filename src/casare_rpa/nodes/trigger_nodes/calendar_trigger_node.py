@@ -146,21 +146,21 @@ class CalendarTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Calendar-specific configuration."""
         # Parse comma-separated lists
-        filter_summary_str = self.config.get("filter_summary", "")
+        filter_summary_str = self.get_parameter("filter_summary", "")
         filter_summary = [s.strip() for s in filter_summary_str.split(",") if s.strip()]
 
-        filter_attendees_str = self.config.get("filter_attendees", "")
+        filter_attendees_str = self.get_parameter("filter_attendees", "")
         filter_attendees = [
             a.strip() for a in filter_attendees_str.split(",") if a.strip()
         ]
 
         return {
-            "credential_name": self.config.get("credential_name", ""),
-            "calendar_id": self.config.get("calendar_id", "primary"),
-            "trigger_on": self.config.get("trigger_on", "upcoming"),
-            "minutes_before": self.config.get("minutes_before", 15),
-            "polling_interval": max(30, self.config.get("polling_interval", 60)),
+            "credential_name": self.get_parameter("credential_name", ""),
+            "calendar_id": self.get_parameter("calendar_id", "primary"),
+            "trigger_on": self.get_parameter("trigger_on", "upcoming"),
+            "minutes_before": self.get_parameter("minutes_before", 15),
+            "polling_interval": max(30, self.get_parameter("polling_interval", 60)),
             "filter_summary": filter_summary,
             "filter_attendees": filter_attendees,
-            "include_all_day": self.config.get("include_all_day", True),
+            "include_all_day": self.get_parameter("include_all_day", True),
         }

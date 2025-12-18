@@ -518,6 +518,7 @@ class CasareNodeItem(NodeItem):
         self._is_disabled = False  # Gray diagonal lines overlay, 50% opacity
         self._is_skipped = False  # Gray fast-forward icon in corner
         self._has_warning = False  # Yellow triangle, orange border
+        self._cache_enabled = False  # Cache icon overlay
 
         # MMB click detection (for output inspector popup)
         self._mmb_press_pos = None
@@ -983,6 +984,10 @@ class CasareNodeItem(NodeItem):
         elif self._is_completed:
             self._draw_checkmark(painter, rect)
 
+        # Draw cache indicator (top-left corner, always visible if enabled)
+        if self._cache_enabled:
+            self._draw_cache_icon(painter, rect)
+
         painter.restore()
 
     def _get_status_icon_position(self, rect) -> tuple:
@@ -1111,6 +1116,34 @@ class CasareNodeItem(NodeItem):
         tri2_path.lineTo(x + size * 0.45, y + size * 0.75)
         tri2_path.closeSubpath()
         painter.drawPath(tri2_path)
+
+    def _draw_cache_icon(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw a cache/lightning bolt icon in the top-left corner of the node."""
+        size = 14
+        # Position in top-left corner of header area
+        x = rect.left() + 6
+        y = rect.top() + 6
+
+        # Cyan/teal circle background for cache indicator
+        cache_color = QColor(0, 188, 212)  # Cyan/teal color
+        painter.setBrush(QBrush(cache_color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
+
+        # White lightning bolt symbol
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(Qt.GlobalColor.white))
+
+        bolt_path = QPainterPath()
+        # Lightning bolt shape
+        bolt_path.moveTo(x + size * 0.55, y + size * 0.15)  # Top
+        bolt_path.lineTo(x + size * 0.35, y + size * 0.5)  # Middle left
+        bolt_path.lineTo(x + size * 0.5, y + size * 0.5)  # Middle center
+        bolt_path.lineTo(x + size * 0.45, y + size * 0.85)  # Bottom
+        bolt_path.lineTo(x + size * 0.65, y + size * 0.5)  # Middle right
+        bolt_path.lineTo(x + size * 0.5, y + size * 0.5)  # Middle center
+        bolt_path.closeSubpath()
+        painter.drawPath(bolt_path)
 
     def _draw_disabled_overlay(self, painter: QPainter, rect: QRectF) -> None:
         """
@@ -1601,6 +1634,29 @@ class CasareNodeItem(NodeItem):
             True if node is disabled
         """
         return self._is_disabled
+
+    def set_cache_enabled(self, enabled: bool) -> None:
+        """
+        Set node cache state.
+
+        Cached nodes show a cyan lightning bolt icon in the top-left corner.
+        Cached nodes store execution results and return them instantly
+        on subsequent calls with the same inputs.
+
+        Args:
+            enabled: True to enable caching, False to disable
+        """
+        self._cache_enabled = enabled
+        self.update()
+
+    def is_cache_enabled(self) -> bool:
+        """
+        Check if node has caching enabled.
+
+        Returns:
+            True if caching is enabled for this node
+        """
+        return self._cache_enabled
 
     def set_skipped(self, skipped: bool) -> None:
         """

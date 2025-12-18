@@ -1,0 +1,245 @@
+{
+  "metadata": {
+    "name": "CK Bogazici Login",
+    "description": "Login workflow with While Loop retry logic (avoids circular dependency)",
+    "version": "1.3.2",
+    "author": "Gemini",
+    "created_at": "2025-12-18T15:00:00.000000",
+    "modified_at": "2025-12-18T15:20:00.000000"
+  },
+  "nodes": {
+    "init_vars": {
+      "node_id": "init_vars",
+      "node_type": "SetVariableNode",
+      "position": [-100.0, 0.0],
+      "config": {
+        "variable_name": "login_retries",
+        "default_value": "0",
+        "variable_type": "Int32",
+        "status": "idle"
+      },
+      "name": "Init Retries"
+    },
+    "init_success": {
+      "node_id": "init_success",
+      "node_type": "SetVariableNode",
+      "position": [100.0, 0.0],
+      "config": {
+        "variable_name": "login_success",
+        "default_value": "false",
+        "variable_type": "Boolean",
+        "status": "idle"
+      },
+      "name": "Init Success=False"
+    },
+    "loop_start": {
+      "node_id": "loop_start",
+      "node_type": "WhileLoopStartNode",
+      "position": [300.0, 0.0],
+      "config": {
+        "expression": "{{login_retries}} < 3",
+        "max_iterations": 10,
+        "status": "idle"
+      },
+      "name": "While Retries < 3"
+    },
+    "launch_browser": {
+      "node_id": "launch_browser",
+      "node_type": "LaunchBrowserNode",
+      "position": [600.0, 0.0],
+      "config": {
+        "url": "https://websube.ckbogazici.com.tr/Giris/Giris",
+        "browser_type": "chromium",
+        "headless": false,
+        "window_state": "normal",
+        "do_not_close": true,
+        "profile_mode": "custom",
+        "user_data_dir": "C:/Users/Rau/casare_profiles/ck_bogazici",
+        "status": "success"
+      },
+      "name": "Launch Browser"
+    },
+    "type_tckn": {
+      "node_id": "type_tckn",
+      "node_type": "TypeTextNode",
+      "position": [1000.0, 0.0],
+      "config": {
+        "selector": "input[name*='Kimlik'], input[placeholder*='T.C.'], input[type='text']",
+        "text": "29320919724",
+        "clear_first": true,
+        "timeout": 30000,
+        "status": "idle"
+      },
+      "name": "Type TCKN"
+    },
+    "type_password": {
+      "node_id": "type_password",
+      "node_type": "TypeTextNode",
+      "position": [1400.0, 0.0],
+      "config": {
+        "selector": "input[type='password']",
+        "text": "418887",
+        "clear_first": true,
+        "timeout": 30000,
+        "status": "idle"
+      },
+      "name": "Type Password"
+    },
+    "select_bireysel": {
+      "node_id": "select_bireysel",
+      "node_type": "SelectDropdownNode",
+      "position": [1800.0, 0.0],
+      "config": {
+        "selector": "select",
+        "value": "Bireysel",
+        "select_by": "label",
+        "timeout": 30000,
+        "status": "idle"
+      },
+      "name": "Select User Type"
+    },
+    "click_recaptcha": {
+      "node_id": "click_recaptcha",
+      "node_type": "BrowserRunScriptNode",
+      "position": [2200.0, 0.0],
+      "config": {
+        "script": "import random\n\nawait page.wait_for_load_state(\"networkidle\")\n\nresult = False\ntarget_frame = None\n\nfor frame in page.frames:\n    if \"recaptcha/api2/anchor\" in frame.url:\n        target_frame = frame\n        break\n\nif target_frame:\n    logger.info(f\"Found frame: {target_frame.url}\")\n    checkbox = target_frame.locator(\".recaptcha-checkbox-border, #recaptcha-anchor\").first\n    \n    try:\n        if await checkbox.count() > 0:\n            await checkbox.wait_for(state=\"visible\", timeout=10000)\n            \n            # Human-like interaction\n            logger.info(\"Hovering...\")\n            await checkbox.hover()\n            await page.wait_for_timeout(random.randint(300, 700))\n            logger.info(\"Clicking...\")\n            await checkbox.click(delay=random.randint(100, 300))\n            logger.info(\"Clicked reCAPTCHA checkbox\")\n            \n            # Wait for result\n            await page.wait_for_timeout(2000)\n            \n            is_checked = await checkbox.evaluate(\"el => el.classList.contains('recaptcha-checkbox-checked')\")\n            \n            if is_checked:\n                logger.info(\"Success: reCAPTCHA checked.\")\n                result = True\n            else:\n                logger.warning(\"Failure: reCAPTCHA not checked\")\n                result = False\n        else:\n             logger.error(\"Checkbox not found\")\n             result = False\n            \n    except Exception as e:\n        logger.error(f\"Error: {e}\")\n        result = False\nelse:\n    logger.error(\"Frame not found\")\n    result = False",
+        "timeout": 30000,
+        "status": "idle"
+      },
+      "name": "Click reCAPTCHA (Script)"
+    },
+    "check_result": {
+      "node_id": "check_result",
+      "node_type": "IfNode",
+      "position": [2600.0, 0.0],
+      "config": { "status": "idle" },
+      "name": "Is Checked?"
+    },
+    "set_success": {
+      "node_id": "set_success",
+      "node_type": "SetVariableNode",
+      "position": [3000.0, -200.0],
+      "config": {
+        "variable_name": "login_success",
+        "value": "true",
+        "variable_type": "Boolean",
+        "status": "idle"
+      },
+      "name": "Set Success=True"
+    },
+    "click_login": {
+      "node_id": "click_login",
+      "node_type": "ClickElementNode",
+      "position": [3400.0, -200.0],
+      "config": {
+        "selector": "button[type='submit'], input[type='submit'], button:has-text('Giriş'), button:has-text('Oturum Aç')",
+        "timeout": 30000,
+        "status": "idle"
+      },
+      "name": "Click Login"
+    },
+    "break_loop": {
+      "node_id": "break_loop",
+      "node_type": "BreakNode",
+      "position": [3800.0, -200.0],
+      "config": {
+        "paired_loop_start_id": "loop_start",
+        "status": "idle"
+      },
+      "name": "Break Loop"
+    },
+    "increment_retry": {
+      "node_id": "increment_retry",
+      "node_type": "IncrementVariableNode",
+      "position": [3000.0, 200.0],
+      "config": {
+        "variable_name": "login_retries",
+        "increment": 1.0,
+        "status": "idle"
+      },
+      "name": "Increment Retries"
+    },
+    "close_browser_retry": {
+      "node_id": "close_browser_retry",
+      "node_type": "CloseBrowserNode",
+      "position": [3400.0, 200.0],
+      "config": {
+        "timeout": 30000,
+        "force_close": true,
+        "status": "idle"
+      },
+      "name": "Close Browser"
+    },
+    "wait_retry": {
+      "node_id": "wait_retry",
+      "node_type": "WaitNode",
+      "position": [3800.0, 200.0],
+      "config": {
+        "duration": 5.0,
+        "status": "idle"
+      },
+      "name": "Wait 5s"
+    },
+    "loop_end": {
+      "node_id": "loop_end",
+      "node_type": "WhileLoopEndNode",
+      "position": [4200.0, 200.0],
+      "config": {
+        "paired_start_id": "loop_start",
+        "status": "idle"
+      },
+      "name": "Loop End"
+    },
+    "check_final_success": {
+      "node_id": "check_final_success",
+      "node_type": "IfNode",
+      "position": [300.0, 400.0],
+      "config": {
+        "expression": "{{login_success}}",
+        "status": "idle"
+      },
+      "name": "Final Success Check"
+    },
+    "fail_log": {
+      "node_id": "fail_log",
+      "node_type": "BrowserRunScriptNode",
+      "position": [700.0, 500.0],
+      "config": {
+        "script": "logger.error(\"Max retries reached.\")\nraise Exception(\"Max retries reached.\")",
+        "timeout": 5000,
+        "status": "idle"
+      },
+      "name": "Fail Workflow"
+    }
+  },
+  "connections": [
+    { "source_node": "init_vars", "source_port": "exec_out", "target_node": "init_success", "target_port": "exec_in" },
+    { "source_node": "init_success", "source_port": "exec_out", "target_node": "loop_start", "target_port": "exec_in" },
+    { "source_node": "loop_start", "source_port": "body", "target_node": "launch_browser", "target_port": "exec_in" },
+    { "source_node": "loop_start", "source_port": "completed", "target_node": "check_final_success", "target_port": "exec_in" },
+    { "source_node": "launch_browser", "source_port": "exec_out", "target_node": "type_tckn", "target_port": "exec_in" },
+    { "source_node": "launch_browser", "source_port": "page", "target_node": "type_tckn", "target_port": "page" },
+    { "source_node": "type_tckn", "source_port": "exec_out", "target_node": "type_password", "target_port": "exec_in" },
+    { "source_node": "type_tckn", "source_port": "page", "target_node": "type_password", "target_port": "page" },
+    { "source_node": "type_password", "source_port": "exec_out", "target_node": "select_bireysel", "target_port": "exec_in" },
+    { "source_node": "type_password", "source_port": "page", "target_node": "select_bireysel", "target_port": "page" },
+    { "source_node": "select_bireysel", "source_port": "exec_out", "target_node": "click_recaptcha", "target_port": "exec_in" },
+    { "source_node": "select_bireysel", "source_port": "page", "target_node": "click_recaptcha", "target_port": "page" },
+    { "source_node": "click_recaptcha", "source_port": "exec_out", "target_node": "check_result", "target_port": "exec_in" },
+    { "source_node": "click_recaptcha", "source_port": "result", "target_node": "check_result", "target_port": "condition" },
+    { "source_node": "check_result", "source_port": "true", "target_node": "set_success", "target_port": "exec_in" },
+    { "source_node": "check_result", "source_port": "false", "target_node": "increment_retry", "target_port": "exec_in" },
+    { "source_node": "set_success", "source_port": "exec_out", "target_node": "click_login", "target_port": "exec_in" },
+    { "source_node": "click_login", "source_port": "exec_out", "target_node": "break_loop", "target_port": "exec_in" },
+    { "source_node": "click_recaptcha", "source_port": "page", "target_node": "click_login", "target_port": "page" },
+    { "source_node": "increment_retry", "source_port": "exec_out", "target_node": "close_browser_retry", "target_port": "exec_in" },
+    { "source_node": "close_browser_retry", "source_port": "exec_out", "target_node": "wait_retry", "target_port": "exec_in" },
+    { "source_node": "wait_retry", "source_port": "exec_out", "target_node": "loop_end", "target_port": "exec_in" },
+    { "source_node": "check_final_success", "source_port": "false", "target_node": "fail_log", "target_port": "exec_in" }
+  ],
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 600
+  }
+}

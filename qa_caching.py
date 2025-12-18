@@ -147,8 +147,14 @@ async def run_qa_and_benchmarks():
 
     # Cleanup
     await manager.clear()
+    if manager.l2:
+        manager.l2.close()
+    await asyncio.sleep(0.3)  # Let Windows release file locks
     if os.path.exists(cache_path):
-        shutil.rmtree(cache_path)
+        try:
+            shutil.rmtree(cache_path)
+        except PermissionError:
+            print("(Note: Cache dir cleanup deferred due to Windows file lock)")
     print("\n=== QA & Benchmarks Completed Successfully ===")
 
 

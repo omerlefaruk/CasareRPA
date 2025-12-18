@@ -308,7 +308,7 @@ class BrowserEvaluateNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        script = self.config.get("script", "")
+        script = self.get_parameter("script", "")
         # Script can be empty if provided via input port
         # No strict validation needed here
         return True, ""

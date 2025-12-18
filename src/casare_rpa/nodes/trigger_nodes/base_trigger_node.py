@@ -168,14 +168,14 @@ class BaseTriggerNode(BaseNode):
         """
         return BaseTriggerConfig(
             id=trigger_id or f"trig_{self.node_id}",
-            name=self.config.get("name", self.trigger_display_name),
+            name=self.get_parameter("name", self.trigger_display_name),
             trigger_type=self.get_trigger_type(),
             scenario_id=scenario_id,
             workflow_id=workflow_id,
-            enabled=self.config.get("enabled", True),
-            priority=self.config.get("priority", 1),
-            cooldown_seconds=self.config.get("cooldown_seconds", 0),
-            description=self.config.get("description", ""),
+            enabled=self.get_parameter("enabled", True),
+            priority=self.get_parameter("priority", 1),
+            cooldown_seconds=self.get_parameter("cooldown_seconds", 0),
+            description=self.get_parameter("description", ""),
             config=self.get_trigger_config(),
         )
 

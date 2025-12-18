@@ -108,16 +108,16 @@ class RSSFeedTriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get RSS-specific configuration."""
-        keywords_str = self.config.get("filter_keywords", "")
+        keywords_str = self.get_parameter("filter_keywords", "")
         keywords = [k.strip() for k in keywords_str.split(",") if k.strip()]
 
         return {
-            "feed_url": self.config.get("feed_url", ""),
-            "poll_interval_minutes": self.config.get("poll_interval_minutes", 15),
+            "feed_url": self.get_parameter("feed_url", ""),
+            "poll_interval_minutes": self.get_parameter("poll_interval_minutes", 15),
             "filter_keywords": keywords,
-            "filter_mode": self.config.get("filter_mode", "any"),
-            "max_items_per_check": self.config.get("max_items_per_check", 10),
-            "include_description": self.config.get("include_description", True),
+            "filter_mode": self.get_parameter("filter_mode", "any"),
+            "max_items_per_check": self.get_parameter("max_items_per_check", 10),
+            "include_description": self.get_parameter("include_description", True),
             # Mark as RSS feed for the trigger implementation
             "_trigger_subtype": "rss_feed",
         }

@@ -22,6 +22,13 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 
 @properties(
     PropertyDef(
+        "items",
+        PropertyType.LIST,
+        required=True,
+        label="Items",
+        tooltip="List of items to join",
+    ),
+    PropertyDef(
         "separator",
         PropertyType.STRING,
         default="",

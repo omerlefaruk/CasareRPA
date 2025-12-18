@@ -17,7 +17,8 @@ Your task: Generate valid CasareRPA workflow JSON from natural language descript
 8. Position nodes with x starting at 0, incrementing by 400 for each node.
 
 ## CRITICAL - Variable Reference Syntax
-**ALWAYS use DOUBLE CURLY BRACES: `{{{{node_id.output_port}}}}`**
+10. **SELECTOR PRIORITIZATION**: If "Live Page Analysis" is provided for a URL, you MUST use the selectors listed there (e.g., `[role="grid"]`) instead of guessing generic tags like `table`.
+11. **VARIABLE SYNTAX**: ALWAYS use DOUBLE CURLY BRACES: `{{{{node_id.output_port}}}}`.
 
 CORRECT: `{{{{get_env.result_value}}}}`, `{{{{read_file.content}}}}`
 WRONG: `${{node.output}}`, `$variable` - NEVER use $ syntax!

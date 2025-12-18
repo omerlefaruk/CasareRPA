@@ -8,6 +8,7 @@ Provides nodes for interacting with Google Docs API:
 """
 
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 from typing import Any, Dict
 
@@ -33,7 +34,23 @@ async def _get_docs_service(context: ExecutionContext, credential_name: str) -> 
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=True,
+        default="New Document",
+        label="Title",
+        tooltip="Title for the new document",
+    ),
+)
 @node(category="google")
 class DocsCreateDocumentNode(BaseNode):
     """Create a new Google Document."""
@@ -85,7 +102,22 @@ class DocsCreateDocumentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document to retrieve",
+    ),
+)
 @node(category="google")
 class DocsGetDocumentNode(BaseNode):
     """Get a Google Document's metadata."""
@@ -139,7 +171,22 @@ class DocsGetDocumentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document to get content from",
+    ),
+)
 @node(category="google")
 class DocsGetContentNode(BaseNode):
     """Get the text content of a Google Document."""
@@ -214,7 +261,37 @@ class DocsGetContentNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document to insert text into",
+    ),
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        required=True,
+        label="Text",
+        tooltip="Text to insert",
+    ),
+    PropertyDef(
+        "index",
+        PropertyType.INTEGER,
+        required=True,
+        default=1,
+        label="Index",
+        tooltip="Character index where to insert (1 = beginning)",
+    ),
+)
 @node(category="google")
 class DocsInsertTextNode(BaseNode):
     """Insert text into a Google Document."""
@@ -271,7 +348,36 @@ class DocsInsertTextNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document to delete content from",
+    ),
+    PropertyDef(
+        "start_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Index",
+        tooltip="Start character index",
+    ),
+    PropertyDef(
+        "end_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Index",
+        tooltip="End character index",
+    ),
+)
 @node(category="google")
 class DocsDeleteContentNode(BaseNode):
     """Delete content from a Google Document."""
@@ -334,7 +440,43 @@ class DocsDeleteContentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document",
+    ),
+    PropertyDef(
+        "find_text",
+        PropertyType.STRING,
+        required=True,
+        label="Find Text",
+        tooltip="Text to find",
+    ),
+    PropertyDef(
+        "replace_text",
+        PropertyType.STRING,
+        required=True,
+        label="Replace Text",
+        tooltip="Text to replace with",
+    ),
+    PropertyDef(
+        "match_case",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Match Case",
+        tooltip="Whether to match case when finding text",
+    ),
+)
 @node(category="google")
 class DocsReplaceTextNode(BaseNode):
     """Replace text in a Google Document."""
@@ -423,7 +565,48 @@ class DocsReplaceTextNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document to insert table into",
+    ),
+    PropertyDef(
+        "rows",
+        PropertyType.INTEGER,
+        required=True,
+        default=3,
+        min_value=1,
+        label="Rows",
+        tooltip="Number of rows",
+    ),
+    PropertyDef(
+        "columns",
+        PropertyType.INTEGER,
+        required=True,
+        default=3,
+        min_value=1,
+        label="Columns",
+        tooltip="Number of columns",
+    ),
+    PropertyDef(
+        "index",
+        PropertyType.INTEGER,
+        required=True,
+        default=1,
+        label="Index",
+        tooltip="Character index where to insert the table",
+    ),
+)
 @node(category="google")
 class DocsInsertTableNode(BaseNode):
     """Insert a table into a Google Document."""
@@ -492,7 +675,53 @@ class DocsInsertTableNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document to insert image into",
+    ),
+    PropertyDef(
+        "image_uri",
+        PropertyType.STRING,
+        required=True,
+        label="Image URI",
+        tooltip="URI of the image to insert",
+    ),
+    PropertyDef(
+        "index",
+        PropertyType.INTEGER,
+        required=True,
+        default=1,
+        label="Index",
+        tooltip="Character index where to insert the image",
+    ),
+    PropertyDef(
+        "width",
+        PropertyType.INTEGER,
+        required=True,
+        default=300,
+        label="Width",
+        tooltip="Image width in points",
+    ),
+    PropertyDef(
+        "height",
+        PropertyType.INTEGER,
+        required=True,
+        default=200,
+        label="Height",
+        tooltip="Image height in points",
+    ),
+)
 @node(category="google")
 class DocsInsertImageNode(BaseNode):
     """Insert an image into a Google Document."""
@@ -571,7 +800,36 @@ class DocsInsertImageNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document",
+    ),
+    PropertyDef(
+        "start_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Index",
+        tooltip="Start character index",
+    ),
+    PropertyDef(
+        "end_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Index",
+        tooltip="End character index",
+    ),
+)
 @node(category="google")
 class DocsUpdateStyleNode(BaseNode):
     """Update text style in a range."""
@@ -660,7 +918,29 @@ class DocsUpdateStyleNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "document_id",
+        PropertyType.STRING,
+        required=True,
+        label="Document ID",
+        tooltip="ID of the document",
+    ),
+    PropertyDef(
+        "requests",
+        PropertyType.LIST,
+        required=True,
+        label="Requests",
+        tooltip="List of update request objects",
+    ),
+)
 @node(category="google")
 class DocsBatchUpdateNode(BaseNode):
     """Execute multiple document updates in a single batch."""

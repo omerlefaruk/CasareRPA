@@ -150,10 +150,12 @@ class DesktopNodeBase(BaseNode):
             Operation result dictionary
         """
         if retry_count is None:
-            retry_count = int(self.config.get("retry_count", self.DEFAULT_RETRY_COUNT))
+            retry_count = int(
+                self.get_parameter("retry_count", self.DEFAULT_RETRY_COUNT)
+            )
         if retry_interval is None:
             retry_interval = float(
-                self.config.get("retry_interval", self.DEFAULT_RETRY_INTERVAL)
+                self.get_parameter("retry_interval", self.DEFAULT_RETRY_INTERVAL)
             )
 
         max_attempts = retry_count + 1
@@ -280,7 +282,7 @@ class ElementInteractionMixin:
             raise ValueError("Must provide 'element' or both 'window' and 'selector'")
 
         if timeout is None:
-            timeout = float(self.config.get("timeout", 5.0))  # type: ignore
+            timeout = float(self.get_parameter("timeout", 5.0))  # type: ignore
 
         logger.info(f"[{self.name}] Finding element with selector: {selector}")  # type: ignore
 

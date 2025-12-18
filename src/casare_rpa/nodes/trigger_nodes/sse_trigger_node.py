@@ -102,16 +102,16 @@ class SSETriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get SSE-specific configuration."""
-        event_types_str = self.config.get("event_types", "")
+        event_types_str = self.get_parameter("event_types", "")
         event_types = [e.strip() for e in event_types_str.split(",") if e.strip()]
 
         return {
-            "sse_url": self.config.get("sse_url", ""),
+            "sse_url": self.get_parameter("sse_url", ""),
             "event_types": event_types,
-            "headers": self.config.get("headers", "{}"),
-            "reconnect_delay_seconds": self.config.get("reconnect_delay_seconds", 5),
-            "max_reconnect_attempts": self.config.get("max_reconnect_attempts", 10),
-            "timeout_seconds": self.config.get("timeout_seconds", 0),
+            "headers": self.get_parameter("headers", "{}"),
+            "reconnect_delay_seconds": self.get_parameter("reconnect_delay_seconds", 5),
+            "max_reconnect_attempts": self.get_parameter("max_reconnect_attempts", 10),
+            "timeout_seconds": self.get_parameter("timeout_seconds", 0),
             # Mark as SSE for the trigger implementation
             "_trigger_subtype": "sse",
         }

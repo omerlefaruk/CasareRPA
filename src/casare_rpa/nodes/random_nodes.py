@@ -103,6 +103,13 @@ class RandomNumberNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "items",
+        PropertyType.LIST,
+        required=True,
+        label="Items",
+        tooltip="List of items to choose from",
+    ),
+    PropertyDef(
         "count",
         PropertyType.INTEGER,
         default=1,
@@ -389,7 +396,15 @@ class RandomUUIDNode(BaseNode):
         return True, ""
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "items",
+        PropertyType.LIST,
+        required=True,
+        label="Items",
+        tooltip="List to shuffle",
+    ),
+)
 @node(category="utility")
 class ShuffleListNode(BaseNode):
     """

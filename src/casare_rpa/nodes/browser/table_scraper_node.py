@@ -41,7 +41,13 @@ from casare_rpa.utils.resilience import retry_operation
 # JavaScript code for table extraction - kept separate for readability
 TABLE_EXTRACTION_JS = """
 (params) => {
-    const table = document.querySelector(params.selector);
+    let table = document.querySelector(params.selector);
+
+    // Smart fallback for generic 'table' selector
+    if (!table && params.selector === "table") {
+        table = document.querySelector('[role="grid"], [role="table"], .data-table, .market-table');
+    }
+
     if (!table) {
         return {error: "Table not found with selector: " + params.selector};
     }
@@ -372,11 +378,11 @@ class TableScraperNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        table_selector = self.config.get("table_selector", "")
+        table_selector = self.get_parameter("table_selector", "")
         if not table_selector:
             return False, "Table selector is required"
 
-        output_format = self.config.get("output_format", "list_of_dicts")
+        output_format = self.get_parameter("output_format", "list_of_dicts")
         valid_formats = ["list_of_dicts", "list_of_lists", "csv_string"]
         if output_format not in valid_formats:
             return False, f"Invalid output format. Must be one of: {valid_formats}"

@@ -257,6 +257,12 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
         label="PKCE Enabled",
         tooltip="Enable PKCE (Proof Key for Code Exchange) for enhanced security",
     ),
+    PropertyDef(
+        "extra_params",
+        PropertyType.JSON,
+        label="Extra Parameters",
+        tooltip="Additional query parameters for authorization request",
+    ),
 )
 @node(category="http")
 class OAuth2AuthorizeNode(BaseNode):
@@ -434,6 +440,42 @@ class OAuth2AuthorizeNode(BaseNode):
         ],
         label="Grant Type",
         tooltip="OAuth 2.0 grant type",
+    ),
+    PropertyDef(
+        "code",
+        PropertyType.STRING,
+        label="Authorization Code",
+        tooltip="Authorization code (for auth code flow)",
+    ),
+    PropertyDef(
+        "code_verifier",
+        PropertyType.STRING,
+        label="PKCE Code Verifier",
+        tooltip="PKCE code verifier (for auth code flow with PKCE)",
+    ),
+    PropertyDef(
+        "refresh_token",
+        PropertyType.STRING,
+        label="Refresh Token",
+        tooltip="Refresh token (for refresh_token flow)",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        label="Username",
+        tooltip="Username (for password flow)",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        label="Password",
+        tooltip="Password (for password flow)",
+    ),
+    PropertyDef(
+        "scope",
+        PropertyType.STRING,
+        label="Scope Override",
+        tooltip="Scope override for token request",
     ),
 )
 @node(category="http")
@@ -644,6 +686,12 @@ class OAuth2TokenExchangeNode(BaseNode):
         label="Callback Path",
         tooltip="URL path for the callback",
     ),
+    PropertyDef(
+        "expected_state",
+        PropertyType.STRING,
+        label="Expected State",
+        tooltip="Expected state parameter for CSRF verification",
+    ),
 )
 @node(category="http")
 class OAuth2CallbackServerNode(BaseNode):
@@ -845,6 +893,13 @@ class OAuth2CallbackServerNode(BaseNode):
         default="",
         label="Client Secret",
         tooltip="Client secret for introspection authentication",
+    ),
+    PropertyDef(
+        "token",
+        PropertyType.STRING,
+        required=True,
+        label="Token",
+        tooltip="Access token to validate",
     ),
 )
 @node(category="http")

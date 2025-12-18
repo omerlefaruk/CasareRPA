@@ -707,7 +707,7 @@ class ScreenshotNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        file_path = self.config.get("file_path", "")
+        file_path = self.get_parameter("file_path", "")
         if file_path:
             try:
                 Path(file_path).parent.mkdir(parents=True, exist_ok=True)

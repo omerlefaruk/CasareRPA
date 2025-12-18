@@ -34,6 +34,34 @@ from casare_rpa.utils import safe_int
 
 @properties(
     PropertyDef(
+        "host",
+        PropertyType.STRING,
+        required=True,
+        label="Host",
+        tooltip="FTP server hostname",
+    ),
+    PropertyDef(
+        "port",
+        PropertyType.INTEGER,
+        default=21,
+        label="Port",
+        tooltip="FTP server port",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        required=True,
+        label="Username",
+        tooltip="FTP username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        required=True,
+        label="Password",
+        tooltip="FTP password",
+    ),
+    PropertyDef(
         "passive",
         PropertyType.BOOLEAN,
         default=True,
@@ -204,6 +232,20 @@ class FTPConnectNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "local_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Local Path",
+        tooltip="Local file path to upload",
+    ),
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote destination path on FTP server",
+    ),
+    PropertyDef(
         "binary_mode",
         PropertyType.BOOLEAN,
         default=True,
@@ -364,6 +406,20 @@ class FTPUploadNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote file path on FTP server to download",
+    ),
+    PropertyDef(
+        "local_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Local Path",
+        tooltip="Local destination path",
+    ),
     PropertyDef(
         "binary_mode",
         PropertyType.BOOLEAN,
@@ -530,6 +586,14 @@ class FTPDownloadNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        default=".",
+        label="Remote Path",
+        tooltip="Remote directory path to list",
+    ),
+    PropertyDef(
         "detailed",
         PropertyType.BOOLEAN,
         default=False,
@@ -608,7 +672,15 @@ class FTPListNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote file path to delete",
+    ),
+)
 @node(category="file")
 class FTPDeleteNode(BaseNode):
     """
@@ -669,6 +741,13 @@ class FTPDeleteNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote directory path to create",
+    ),
     PropertyDef(
         "parents",
         PropertyType.BOOLEAN,
@@ -755,7 +834,15 @@ class FTPMakeDirNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote directory path to remove",
+    ),
+)
 @node(category="file")
 class FTPRemoveDirNode(BaseNode):
     """
@@ -815,7 +902,22 @@ class FTPRemoveDirNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "old_path",
+        PropertyType.STRING,
+        required=True,
+        label="Old Path",
+        tooltip="Current remote path",
+    ),
+    PropertyDef(
+        "new_path",
+        PropertyType.STRING,
+        required=True,
+        label="New Path",
+        tooltip="New remote path",
+    ),
+)
 @node(category="file")
 class FTPRenameNode(BaseNode):
     """
@@ -931,7 +1033,15 @@ class FTPDisconnectNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote file path to get size of",
+    ),
+)
 @node(category="file")
 class FTPGetSizeNode(BaseNode):
     """

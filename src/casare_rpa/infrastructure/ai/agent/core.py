@@ -79,7 +79,7 @@ class SmartWorkflowAgent:
         validator: Headless workflow sandbox for validation
     """
 
-    DEFAULT_MODEL = "gpt-4o-mini"
+    DEFAULT_MODEL = "openrouter/deepseek/deepseek-v3.2"
     DEFAULT_TEMPERATURE = 0.2
     DEFAULT_MAX_TOKENS = 4000
     DEFAULT_MAX_RETRIES = 3
@@ -702,6 +702,17 @@ class SmartWorkflowAgent:
 
         if "nodes" not in data:
             data["nodes"] = {}
+        elif isinstance(data["nodes"], list):
+            # AI sometimes returns nodes as a list instead of dict
+            # Convert list to dict using node_id as key
+            logger.debug("Converting nodes from list to dict format")
+            nodes_dict = {}
+            for node in data["nodes"]:
+                if isinstance(node, dict) and "node_id" in node:
+                    nodes_dict[node["node_id"]] = node
+                else:
+                    logger.warning(f"Skipping invalid node in list: {node}")
+            data["nodes"] = nodes_dict
 
         return data
 

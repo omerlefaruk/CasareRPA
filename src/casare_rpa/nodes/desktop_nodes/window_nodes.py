@@ -89,6 +89,13 @@ class WindowNodeBase(DesktopNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     WIDTH_PROP,
     HEIGHT_PROP,
     RETRY_COUNT_PROP,
@@ -167,6 +174,13 @@ class ResizeWindowNode(WindowNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     POSITION_X_PROP,
     POSITION_Y_PROP,
     RETRY_COUNT_PROP,
@@ -245,6 +259,13 @@ class MoveWindowNode(WindowNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
@@ -304,6 +325,13 @@ class MaximizeWindowNode(WindowNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
@@ -363,6 +391,13 @@ class MinimizeWindowNode(WindowNodeBase):
 
 
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
@@ -421,7 +456,15 @@ class RestoreWindowNode(WindowNodeBase):
         )
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
+)
 @node(category="desktop")
 class GetWindowPropertiesNode(WindowNodeBase):
     """
@@ -506,7 +549,22 @@ class GetWindowPropertiesNode(WindowNodeBase):
 
 
 @properties(
-    WINDOW_STATE_PROP,
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
+    PropertyDef(
+        "state",
+        PropertyType.CHOICE,
+        default="normal",
+        choices=["normal", "maximized", "minimized"],
+        required=True,
+        label="State",
+        tooltip="Target window state",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )

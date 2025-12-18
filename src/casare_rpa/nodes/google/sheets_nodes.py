@@ -9,6 +9,7 @@ Provides nodes for interacting with Google Sheets API:
 """
 
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
 from typing import Any, Dict
 
@@ -41,7 +42,37 @@ def _parse_range(spreadsheet_id: str, range_notation: str) -> str:
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "cell",
+        PropertyType.STRING,
+        required=True,
+        default="A1",
+        label="Cell Address",
+        tooltip="Cell address (e.g., A1)",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
 @node(category="google")
 class SheetsGetCellNode(BaseNode):
     """Get value from a single cell."""
@@ -113,7 +144,44 @@ class SheetsGetCellNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "cell",
+        PropertyType.STRING,
+        required=True,
+        default="A1",
+        label="Cell Address",
+        tooltip="Cell address (e.g., A1)",
+    ),
+    PropertyDef(
+        "value",
+        PropertyType.ANY,
+        required=True,
+        label="Value",
+        tooltip="Value to set in the cell",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
 @node(category="google")
 class SheetsSetCellNode(BaseNode):
     """Set value in a single cell."""
@@ -182,7 +250,36 @@ class SheetsSetCellNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "range",
+        PropertyType.STRING,
+        required=True,
+        label="Range",
+        tooltip="Range notation (e.g., A1:C10)",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
 @node(category="google")
 class SheetsGetRangeNode(BaseNode):
     """Get values from a range of cells."""
@@ -262,7 +359,43 @@ class SheetsGetRangeNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "range",
+        PropertyType.STRING,
+        required=True,
+        label="Range",
+        tooltip="Range notation (e.g., A1:C10)",
+    ),
+    PropertyDef(
+        "values",
+        PropertyType.LIST,
+        required=True,
+        label="Values",
+        tooltip="2D array of values to write",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
 @node(category="google")
 class SheetsWriteRangeNode(BaseNode):
     """Write values to a range of cells."""
@@ -343,7 +476,36 @@ class SheetsWriteRangeNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "range",
+        PropertyType.STRING,
+        required=True,
+        label="Range",
+        tooltip="Range notation to clear (e.g., A1:C10)",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
 @node(category="google")
 class SheetsClearRangeNode(BaseNode):
     """Clear values from a range of cells."""
@@ -411,7 +573,28 @@ class SheetsClearRangeNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=True,
+        label="Title",
+        tooltip="Title for the new spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_names",
+        PropertyType.LIST,
+        label="Sheet Names",
+        tooltip="List of sheet names to create (optional)",
+    ),
+)
 @node(category="google")
 class SheetsCreateSpreadsheetNode(BaseNode):
     """Create a new Google Spreadsheet."""
@@ -467,7 +650,22 @@ class SheetsCreateSpreadsheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet to get info for",
+    ),
+)
 @node(category="google")
 class SheetsGetSpreadsheetNode(BaseNode):
     """Get spreadsheet metadata."""
@@ -534,7 +732,29 @@ class SheetsGetSpreadsheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        required=True,
+        label="Sheet Name",
+        tooltip="Name for the new sheet",
+    ),
+)
 @node(category="google")
 class SheetsAddSheetNode(BaseNode):
     """Add a new sheet to a spreadsheet."""
@@ -599,7 +819,29 @@ class SheetsAddSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet to delete",
+    ),
+)
 @node(category="google")
 class SheetsDeleteSheetNode(BaseNode):
     """Delete a sheet from a spreadsheet."""
@@ -652,7 +894,36 @@ class SheetsDeleteSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet to duplicate",
+    ),
+    PropertyDef(
+        "new_sheet_name",
+        PropertyType.STRING,
+        required=True,
+        label="New Sheet Name",
+        tooltip="Name for the duplicated sheet",
+    ),
+)
 @node(category="google")
 class SheetsDuplicateSheetNode(BaseNode):
     """Duplicate a sheet within a spreadsheet."""
@@ -730,7 +1001,36 @@ class SheetsDuplicateSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet to rename",
+    ),
+    PropertyDef(
+        "new_name",
+        PropertyType.STRING,
+        required=True,
+        label="New Name",
+        tooltip="New name for the sheet",
+    ),
+)
 @node(category="google")
 class SheetsRenameSheetNode(BaseNode):
     """Rename a sheet in a spreadsheet."""
@@ -801,7 +1101,36 @@ class SheetsRenameSheetNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "values",
+        PropertyType.LIST,
+        required=True,
+        label="Values",
+        tooltip="List of values to append as a row",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
 @node(category="google")
 class SheetsAppendRowNode(BaseNode):
     """Append a row to a sheet."""
@@ -871,7 +1200,44 @@ class SheetsAppendRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "row_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Row Index",
+        tooltip="Index where to insert the row (0-indexed)",
+    ),
+    PropertyDef(
+        "num_rows",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Rows",
+        tooltip="Number of rows to insert",
+    ),
+)
 @node(category="google")
 class SheetsInsertRowNode(BaseNode):
     """Insert a row at a specific position."""
@@ -946,7 +1312,44 @@ class SheetsInsertRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_row",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Row",
+        tooltip="Start row index (0-indexed)",
+    ),
+    PropertyDef(
+        "num_rows",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Rows",
+        tooltip="Number of rows to delete",
+    ),
+)
 @node(category="google")
 class SheetsDeleteRowNode(BaseNode):
     """Delete rows from a sheet."""
@@ -1020,7 +1423,44 @@ class SheetsDeleteRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "column_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Column Index",
+        tooltip="Index where to insert the column (0-indexed)",
+    ),
+    PropertyDef(
+        "num_columns",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Columns",
+        tooltip="Number of columns to insert",
+    ),
+)
 @node(category="google")
 class SheetsInsertColumnNode(BaseNode):
     """Insert columns at a specific position."""
@@ -1097,7 +1537,44 @@ class SheetsInsertColumnNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_column",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Column",
+        tooltip="Start column index (0-indexed)",
+    ),
+    PropertyDef(
+        "num_columns",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Columns",
+        tooltip="Number of columns to delete",
+    ),
+)
 @node(category="google")
 class SheetsDeleteColumnNode(BaseNode):
     """Delete columns from a sheet."""
@@ -1180,7 +1657,57 @@ class SheetsDeleteColumnNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_row",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Row",
+        tooltip="Start row index (0-indexed)",
+    ),
+    PropertyDef(
+        "end_row",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Row",
+        tooltip="End row index (0-indexed, exclusive)",
+    ),
+    PropertyDef(
+        "start_column",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Column",
+        tooltip="Start column index (0-indexed)",
+    ),
+    PropertyDef(
+        "end_column",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Column",
+        tooltip="End column index (0-indexed, exclusive)",
+    ),
+)
 @node(category="google")
 class SheetsFormatCellsNode(BaseNode):
     """Format cells in a range."""
@@ -1285,7 +1812,51 @@ class SheetsFormatCellsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Index",
+        tooltip="Start column index (0-indexed)",
+    ),
+    PropertyDef(
+        "end_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Index",
+        tooltip="End column index (0-indexed, exclusive)",
+    ),
+    PropertyDef(
+        "dimension",
+        PropertyType.CHOICE,
+        default="COLUMNS",
+        choices=["COLUMNS", "ROWS"],
+        label="Dimension",
+        tooltip="Dimension to auto-resize",
+    ),
+)
 @node(category="google")
 class SheetsAutoResizeNode(BaseNode):
     """Auto-resize columns to fit content."""
@@ -1361,7 +1932,37 @@ class SheetsAutoResizeNode(BaseNode):
 # =============================================================================
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "data",
+        PropertyType.LIST,
+        required=True,
+        label="Data",
+        tooltip="List of update data objects",
+    ),
+    PropertyDef(
+        "value_input_option",
+        PropertyType.CHOICE,
+        default="USER_ENTERED",
+        choices=["RAW", "USER_ENTERED"],
+        label="Value Input Option",
+        tooltip="How input data should be interpreted",
+    ),
+)
 @node(category="google")
 class SheetsBatchUpdateNode(BaseNode):
     """Execute multiple updates in a single batch."""
@@ -1444,7 +2045,29 @@ class SheetsBatchUpdateNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "ranges",
+        PropertyType.LIST,
+        required=True,
+        label="Ranges",
+        tooltip="List of ranges to retrieve (e.g., ['Sheet1!A1:B10', 'Sheet2!C1:D5'])",
+    ),
+)
 @node(category="google")
 class SheetsBatchGetNode(BaseNode):
     """Get values from multiple ranges in a single batch."""
@@ -1510,7 +2133,29 @@ class SheetsBatchGetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@properties()
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "ranges",
+        PropertyType.LIST,
+        required=True,
+        label="Ranges",
+        tooltip="List of ranges to clear (e.g., ['Sheet1!A1:B10', 'Sheet2!C1:D5'])",
+    ),
+)
 @node(category="google")
 class SheetsBatchClearNode(BaseNode):
     """Clear multiple ranges in a single batch."""

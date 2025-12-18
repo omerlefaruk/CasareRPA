@@ -145,10 +145,25 @@ class GetCurrentDateTimeNode(BaseNode):
 
 @properties(
     PropertyDef(
+        "datetime",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime",
+        tooltip="DateTime string or timestamp to format",
+    ),
+    PropertyDef(
+        "input_format",
+        PropertyType.STRING,
+        required=False,
+        label="Input Format",
+        placeholder="%Y-%m-%d %H:%M:%S",
+        tooltip="Input format if datetime is a string (optional)",
+    ),
+    PropertyDef(
         "format",
         PropertyType.STRING,
         default="%Y-%m-%d %H:%M:%S",
-        label="Format",
+        label="Output Format",
         placeholder="%Y-%m-%d %H:%M:%S",
         tooltip="strftime format string",
     ),
@@ -238,6 +253,13 @@ class FormatDateTimeNode(BaseNode):
 
 
 @properties(
+    PropertyDef(
+        "datetime_string",
+        PropertyType.STRING,
+        required=True,
+        label="DateTime String",
+        tooltip="The datetime string to parse",
+    ),
     PropertyDef(
         "format",
         PropertyType.STRING,
@@ -445,7 +467,22 @@ class DateTimeAddNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "datetime_1",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 1",
+        tooltip="First datetime (start)",
+    ),
+    PropertyDef(
+        "datetime_2",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 2",
+        tooltip="Second datetime (end)",
+    ),
+)
 @node(category="utility")
 class DateTimeDiffNode(BaseNode):
     """
@@ -550,7 +587,22 @@ class DateTimeDiffNode(BaseNode):
         return True, ""
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "datetime_1",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 1",
+        tooltip="First datetime",
+    ),
+    PropertyDef(
+        "datetime_2",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 2",
+        tooltip="Second datetime",
+    ),
+)
 @node(category="utility")
 class DateTimeCompareNode(BaseNode):
     """
