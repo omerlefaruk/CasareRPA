@@ -142,7 +142,9 @@ class NodeGraphWidget(QWidget):
             ViewportCullingManager,
         )
 
-        self._culler = ViewportCullingManager(cell_size=500, margin=200)
+        self._culler = ViewportCullingManager(
+            cell_size=500
+        )  # Use default margin=1000 for smoother panning
         self._culler.set_enabled(True)
 
         # Create delegate classes for extracted functionality
