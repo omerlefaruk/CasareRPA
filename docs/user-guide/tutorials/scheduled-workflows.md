@@ -479,8 +479,8 @@ Use `run_number` in your workflow:
         |
 [Log: "Generating monthly invoices for {{previous_month}}"]
         |
-[Read Database: Unbilled Items]
-    query: "SELECT * FROM orders WHERE billed = false AND month = {{previous_month}}"
+[Read File: Unbilled Items]
+    path: "C:\data\orders_{{previous_month}}.csv"
         |
 [For Loop: Each Customer]
         |
@@ -488,7 +488,7 @@ Use `run_number` in your workflow:
             |
     [Send Email: Invoice]
             |
-    [Update Database: Mark as Billed]
+    [Write CSV: Mark as Billed]
             |
 [Log: "Generated {{invoice_count}} invoices"]
         |

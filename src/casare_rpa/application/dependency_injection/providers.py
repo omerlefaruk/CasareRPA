@@ -105,15 +105,9 @@ class StorageProvider(BaseProvider):
 
             return SettingsManager()
 
-        container.register_singleton(
-            "schedule_storage", factory=schedule_storage_factory
-        )
-        container.register_singleton(
-            "recent_files_manager", factory=recent_files_factory
-        )
-        container.register_singleton(
-            "settings_manager", factory=settings_manager_factory
-        )
+        container.register_singleton("schedule_storage", factory=schedule_storage_factory)
+        container.register_singleton("recent_files_manager", factory=recent_files_factory)
+        container.register_singleton("settings_manager", factory=settings_manager_factory)
         logger.debug("StorageProvider registered")
 
 
@@ -124,7 +118,6 @@ class InfrastructureProvider(BaseProvider):
     Manages:
     - update_manager: UpdateManager (singleton)
     - recovery_strategy_registry: RecoveryStrategyRegistry (singleton)
-    - migration_rule_registry: MigrationRuleRegistry (singleton)
     - metrics_exporter: MetricsExporter (singleton)
     - output_capture: OutputCapture controller (singleton)
     - ui_log_controller: UI log sink controller (singleton)
@@ -146,13 +139,6 @@ class InfrastructureProvider(BaseProvider):
             )
 
             return RecoveryStrategyRegistry()
-
-        def migration_registry_factory() -> Any:
-            from casare_rpa.application.use_cases.workflow_migration import (
-                MigrationRuleRegistry,
-            )
-
-            return MigrationRuleRegistry()
 
         def healing_telemetry_factory() -> Any:
             from casare_rpa.infrastructure.browser.healing.telemetry import (
@@ -191,16 +177,9 @@ class InfrastructureProvider(BaseProvider):
         container.register_singleton(
             "recovery_strategy_registry", factory=recovery_registry_factory
         )
-        container.register_singleton(
-            "migration_rule_registry", factory=migration_registry_factory
-        )
-        container.register_singleton(
-            "healing_telemetry", factory=healing_telemetry_factory
-        )
+        container.register_singleton("healing_telemetry", factory=healing_telemetry_factory)
         container.register_singleton("api_key_store", factory=api_key_store_factory)
-        container.register_singleton(
-            "credential_store", factory=credential_store_factory
-        )
+        container.register_singleton("credential_store", factory=credential_store_factory)
         container.register_singleton("memory_queue", factory=memory_queue_factory)
         container.register_singleton("robot_metrics", factory=robot_metrics_factory)
         container.register_singleton("error_handler", factory=error_handler_factory)

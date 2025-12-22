@@ -19,7 +19,7 @@ Examples:
     python scripts/add_node_tags.py
 
     # Process a specific file:
-    python scripts/add_node_tags.py --file src/casare_rpa/nodes/browser_nodes.py
+    python scripts/add_node_tags.py --file src/casare_rpa/nodes/http/http_basic.py
 
 Author: CasareRPA Team
 """
@@ -72,17 +72,11 @@ CATEGORY_MAP: dict[str, str] = {
 # Map filename patterns to categories for files directly in nodes/
 FILENAME_CATEGORY_MAP: dict[str, str] = {
     "basic_nodes": "control_flow",
-    "browser_nodes": "browser",
-    "navigation_nodes": "browser",
-    "interaction_nodes": "browser",
     "data_nodes": "data",
-    "data_operation_nodes": "data",
-    "control_flow_nodes": "control_flow",
     "error_handling_nodes": "control_flow",
     "parallel_nodes": "control_flow",
     "variable_nodes": "data",
     "wait_nodes": "browser",
-    "text_nodes": "data",
     "string_nodes": "data",
     "list_nodes": "data",
     "dict_nodes": "data",
@@ -521,15 +515,11 @@ Examples:
         if result["status"] == "modified":
             summary["modified"] += 1
             if args.verbose:
-                print(
-                    f"MODIFIED: {file_path.name} ({result['classes_processed']} classes)"
-                )
+                print(f"MODIFIED: {file_path.name} ({result['classes_processed']} classes)")
         elif result["status"] == "would_modify":
             summary["modified"] += 1
             if args.verbose or args.dry_run:
-                print(
-                    f"WOULD MODIFY: {file_path.name} ({result['classes_processed']} classes)"
-                )
+                print(f"WOULD MODIFY: {file_path.name} ({result['classes_processed']} classes)")
         elif result["status"] == "already_tagged":
             summary["already_tagged"] += 1
             if args.verbose:

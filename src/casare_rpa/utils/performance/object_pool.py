@@ -263,3 +263,174 @@ def get_list() -> List[Any]:
 def return_list(lst: List[Any]) -> None:
     """Return a list to the pool."""
     _list_pool.release(lst)
+
+
+# =============================================================================
+# Node Instance Pool
+# =============================================================================
+
+
+class NodeInstancePool:
+    """
+    Pool node instances by type for reuse during workflow loading.
+
+    PERFORMANCE: Reduces allocation overhead for repeated workflow loads.
+    Nodes are reset before reuse to clear previous state.
+
+    Usage:
+        pool = get_node_instance_pool()
+        node = pool.acquire("ClickElementNode", ClickElementNode, "node_123")
+        # ... use node ...
+        pool.release(node)  # Return to pool after workflow completes
+    """
+
+    def __init__(self, max_per_type: int = 20):
+        """
+        Initialize node instance pool.
+
+        Args:
+            max_per_type: Maximum instances to keep per node type
+        """
+        self._pools: Dict[str, deque] = {}
+        self._max_per_type = max_per_type
+        self._lock = threading.Lock()
+
+        # Statistics
+        self._hits = 0
+        self._misses = 0
+        self._returns = 0
+
+    def acquire(
+        self,
+        node_type: str,
+        node_class: type,
+        node_id: str,
+        config: Optional[Dict] = None,
+    ) -> Any:
+        """
+        Get or create a node instance.
+
+        Tries to reuse a pooled instance first, creating new if pool empty.
+
+        Args:
+            node_type: Node type name (e.g., "ClickElementNode")
+            node_class: Node class to instantiate
+            node_id: Unique node identifier
+            config: Optional config dict
+
+        Returns:
+            Node instance (reused or newly created)
+        """
+        with self._lock:
+            pool = self._pools.get(node_type)
+            if pool and len(pool) > 0:
+                self._hits += 1
+                node = pool.pop()
+                # Reset for reuse
+                self._reset_node(node, node_id, config)
+                return node
+
+            self._misses += 1
+
+        # Create new instance outside lock
+        if config:
+            return node_class(node_id, config=config)
+        return node_class(node_id)
+
+    def release(self, node: Any) -> None:
+        """
+        Return a node instance to the pool.
+
+        Args:
+            node: Node instance to pool
+        """
+        node_type = getattr(node, "node_type", None)
+        if not node_type:
+            return
+
+        with self._lock:
+            if node_type not in self._pools:
+                self._pools[node_type] = deque()
+
+            pool = self._pools[node_type]
+            if len(pool) < self._max_per_type:
+                self._returns += 1
+                # Clear node state before pooling
+                self._clear_node(node)
+                pool.append(node)
+
+    def release_all(self, nodes: Dict[str, Any]) -> None:
+        """
+        Return multiple nodes to the pool.
+
+        Args:
+            nodes: Dict mapping node_id to node instance
+        """
+        for node in nodes.values():
+            self.release(node)
+
+    def _reset_node(self, node: Any, node_id: str, config: Optional[Dict]) -> None:
+        """Reset node for reuse with new id and config."""
+        node.node_id = node_id
+
+        # Reset config
+        if hasattr(node, "config"):
+            node.config.clear()
+            if config:
+                node.config.update(config)
+
+        # Reset ports data (keep port definitions)
+        if hasattr(node, "_input_port_values"):
+            node._input_port_values.clear()
+        if hasattr(node, "_output_port_values"):
+            node._output_port_values.clear()
+
+    def _clear_node(self, node: Any) -> None:
+        """Clear node state before pooling."""
+        # Clear config values
+        if hasattr(node, "config"):
+            node.config.clear()
+
+        # Clear port values
+        if hasattr(node, "_input_port_values"):
+            node._input_port_values.clear()
+        if hasattr(node, "_output_port_values"):
+            node._output_port_values.clear()
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get pool statistics."""
+        with self._lock:
+            pool_sizes = {k: len(v) for k, v in self._pools.items()}
+            total = self._hits + self._misses
+            return {
+                "total_pooled": sum(pool_sizes.values()),
+                "pools": pool_sizes,
+                "hits": self._hits,
+                "misses": self._misses,
+                "returns": self._returns,
+                "hit_rate": self._hits / total if total > 0 else 0.0,
+            }
+
+    def clear(self) -> None:
+        """Clear all pools."""
+        with self._lock:
+            self._pools.clear()
+
+
+# Global node instance pool (thread-safe singleton)
+_node_instance_pool: Optional[NodeInstancePool] = None
+_node_instance_pool_lock = threading.Lock()
+
+
+def get_node_instance_pool() -> NodeInstancePool:
+    """
+    Get the global node instance pool.
+
+    Thread-safe using double-checked locking pattern.
+    """
+    global _node_instance_pool
+    if _node_instance_pool is None:
+        with _node_instance_pool_lock:
+            if _node_instance_pool is None:
+                _node_instance_pool = NodeInstancePool()
+    return _node_instance_pool

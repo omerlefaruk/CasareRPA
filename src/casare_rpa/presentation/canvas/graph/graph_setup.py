@@ -101,20 +101,12 @@ class GraphSetup:
         """Configure QGraphicsView optimization flags for performance."""
         from PySide6.QtCore import Qt
 
-        viewer.setOptimizationFlag(
-            QGraphicsView.OptimizationFlag.DontSavePainterState, True
-        )
-        viewer.setOptimizationFlag(
-            QGraphicsView.OptimizationFlag.DontAdjustForAntialiasing, True
-        )
-        viewer.setOptimizationFlag(
-            QGraphicsView.OptimizationFlag.IndirectPainting, True
-        )
+        viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontSavePainterState, True)
+        viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontAdjustForAntialiasing, True)
+        viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.IndirectPainting, True)
 
         # Minimal viewport updates
-        viewer.setViewportUpdateMode(
-            QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
-        )
+        viewer.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate)
 
         # Disable Qt caching (use custom LOD-based caching)
         viewer.setCacheMode(QGraphicsView.CacheModeFlag(0))
@@ -193,6 +185,23 @@ class GraphSetup:
         self._viewport_update_timer.timeout.connect(update_callback)
         self._viewport_update_timer.start()
 
+    @staticmethod
+    def _is_viewport_changed(current: QRectF, last: QRectF, tol: float = 0.5) -> bool:
+        """
+        Check if viewport rect changed beyond a small tolerance.
+
+        This avoids missing updates due to minor floating-point jitter while
+        still skipping truly idle frames.
+        """
+        if last.isNull():
+            return True
+        return (
+            abs(current.x() - last.x()) > tol
+            or abs(current.y() - last.y()) > tol
+            or abs(current.width() - last.width()) > tol
+            or abs(current.height() - last.height()) > tol
+        )
+
     def update_viewport_culling(self) -> None:
         """Update culling and LOD based on current viewport."""
         from casare_rpa.presentation.canvas.graph.lod_manager import (
@@ -210,13 +219,6 @@ class GraphSetup:
 
             viewport_rect = viewer.mapToScene(viewer.viewport().rect()).boundingRect()
 
-            # Skip if viewport hasn't changed (idle detection)
-            if viewport_rect == self._last_viewport_rect:
-                return
-
-            self._last_viewport_rect = viewport_rect
-            self._culler.update_viewport(viewport_rect)
-
             # Check transform changes
             transform = viewer.transform()
             m11 = transform.m11()
@@ -231,6 +233,16 @@ class GraphSetup:
                 or abs(dx - self._last_transform_dx) > 0.5
                 or abs(dy - self._last_transform_dy) > 0.5
             )
+
+            viewport_changed = self._is_viewport_changed(viewport_rect, self._last_viewport_rect)
+
+            # Skip if neither viewport nor transform changed (idle detection)
+            if not viewport_changed and not transform_changed:
+                return
+
+            if viewport_changed:
+                self._last_viewport_rect = viewport_rect
+                self._culler.update_viewport(viewport_rect)
 
             if transform_changed:
                 self._last_transform_m11 = m11

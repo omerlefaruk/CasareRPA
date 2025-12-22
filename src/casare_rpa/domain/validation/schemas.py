@@ -50,18 +50,17 @@ DATA_TYPE_COMPATIBILITY: Dict[str, Set[str]] = {
 
 def _get_valid_node_types() -> Set[str]:
     """
-    Dynamically get valid node types from NODE_TYPE_MAP.
+    Dynamically get valid node types from the central node registry.
 
     This ensures VALID_NODE_TYPES always stays in sync with the actual
     available node types in the system.
     """
     try:
-        from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP
+        from casare_rpa.nodes.registry_data import NODE_REGISTRY
 
-        return set(NODE_TYPE_MAP.keys())
+        return set(NODE_REGISTRY.keys())
     except ImportError:
-        # Fallback to a minimal set if workflow_loader isn't available
-        logger.warning("Could not import NODE_TYPE_MAP, using minimal node set")
+        logger.warning("Could not import NODE_REGISTRY, using minimal node set")
         return {
             "StartNode",
             "EndNode",

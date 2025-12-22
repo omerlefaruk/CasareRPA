@@ -45,7 +45,6 @@ from casare_rpa.utils.resilience import retry_operation
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -134,6 +133,7 @@ from casare_rpa.utils.resilience import retry_operation
     ),
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class ClickElementNode(BrowserBaseNode):
     """
     Click element node - clicks on a page element.
@@ -177,8 +177,7 @@ class ClickElementNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize click element node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "ClickElementNode"
 
     def _define_ports(self) -> None:
@@ -261,9 +260,7 @@ class ClickElementNode(BrowserBaseNode):
                 except Exception as healing_error:
                     # If healing also fails, fall back to direct click (original behavior)
                     # This allows Playwright's built-in waiting to have a chance
-                    logger.debug(
-                        f"Healing failed, trying direct click: {healing_error}"
-                    )
+                    logger.debug(f"Healing failed, trying direct click: {healing_error}")
                     await self.highlight_if_enabled(page, selector, timeout)
                     await page.click(selector, **click_options)
                     return True
@@ -343,7 +340,6 @@ class ClickElementNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -419,6 +415,7 @@ class ClickElementNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class TypeTextNode(BrowserBaseNode):
     """
     Type text node - types text into an input field.
@@ -463,8 +460,7 @@ class TypeTextNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize type text node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "TypeTextNode"
 
     def _define_ports(self) -> None:
@@ -483,7 +479,6 @@ class TypeTextNode(BrowserBaseNode):
 
             # Get text parameter (allow empty string)
             text = self.get_parameter("text", "") or ""
-            text = context.resolve_value(text)
 
             # Check for fast mode - optimizes for speed over reliability
             fast_mode = self.get_parameter("fast_mode", False)
@@ -547,9 +542,7 @@ class TypeTextNode(BrowserBaseNode):
                         page, element, timeout
                     )
                     if label_nav_method != "original":
-                        logger.info(
-                            f"Auto-navigated from label to input via {label_nav_method}"
-                        )
+                        logger.info(f"Auto-navigated from label to input via {label_nav_method}")
 
                     # Use element-based operations for better reliability
                     if delay > 0 or press_sequentially:
@@ -567,9 +560,7 @@ class TypeTextNode(BrowserBaseNode):
                         if clear_first:
                             await page.fill(selector, "", **fill_options)
                         type_delay = delay if delay > 0 else 50
-                        await page.type(
-                            selector, text, delay=type_delay, timeout=timeout
-                        )
+                        await page.type(selector, text, delay=type_delay, timeout=timeout)
                     else:
                         await page.fill(selector, text, **fill_options)
 
@@ -598,13 +589,9 @@ class TypeTextNode(BrowserBaseNode):
                     "label_navigation": label_nav_method,
                 }
                 if healing_tier != "original":
-                    logger.info(
-                        f"Type text succeeded with healing: {healing_tier} tier"
-                    )
+                    logger.info(f"Type text succeeded with healing: {healing_tier} tier")
                 if label_nav_method != "original":
-                    logger.info(
-                        f"Type text auto-navigated from label to input: {label_nav_method}"
-                    )
+                    logger.info(f"Type text auto-navigated from label to input: {label_nav_method}")
                 return self.success_result(result_data)
 
             await self.screenshot_on_failure(page, "type_text_fail")
@@ -636,7 +623,6 @@ class TypeTextNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "selector",
@@ -676,6 +662,7 @@ class TypeTextNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class SelectDropdownNode(BrowserBaseNode):
     """
     Select dropdown node - selects an option from a dropdown.
@@ -716,8 +703,7 @@ class SelectDropdownNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize select dropdown node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "SelectDropdownNode"
 
     def _define_ports(self) -> None:
@@ -738,7 +724,6 @@ class SelectDropdownNode(BrowserBaseNode):
             value = self.get_parameter("value")
             if not value:
                 raise ValueError("Value is required")
-            value = context.resolve_value(value)
 
             # Get select-specific parameters
             timeout = safe_int(
@@ -750,9 +735,7 @@ class SelectDropdownNode(BrowserBaseNode):
             strict = self.get_parameter("strict", False)
             select_by = self.get_parameter("select_by", "value")
 
-            logger.info(
-                f"Selecting dropdown option: {selector} = {value} (by={select_by})"
-            )
+            logger.info(f"Selecting dropdown option: {selector} = {value} (by={select_by})")
 
             # Build select options
             select_options = self._build_select_options(
@@ -764,9 +747,7 @@ class SelectDropdownNode(BrowserBaseNode):
 
             async def perform_select() -> bool:
                 if select_by == "index":
-                    await page.select_option(
-                        selector, index=int(value), **select_options
-                    )
+                    await page.select_option(selector, index=int(value), **select_options)
                 elif select_by == "label":
                     await page.select_option(selector, label=value, **select_options)
                 else:
@@ -820,7 +801,6 @@ class SelectDropdownNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "image_template",
@@ -877,6 +857,7 @@ class SelectDropdownNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class ImageClickNode(BrowserBaseNode):
     """
     Image click node - clicks at a location found by image/template matching.
@@ -914,8 +895,7 @@ class ImageClickNode(BrowserBaseNode):
         **kwargs,
     ) -> None:
         """Initialize image click node."""
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config, name=name)
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "ImageClickNode"
 
     def _define_ports(self) -> None:
@@ -935,7 +915,7 @@ class ImageClickNode(BrowserBaseNode):
             click_count = safe_int(self.get_parameter("click_count", 1), 1)
             offset_x = safe_int(self.get_parameter("click_offset_x", 0), 0)
             offset_y = safe_int(self.get_parameter("click_offset_y", 0), 0)
-            timeout = safe_int(
+            safe_int(
                 self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
                 DEFAULT_NODE_TIMEOUT * 1000,
             )
@@ -948,9 +928,7 @@ class ImageClickNode(BrowserBaseNode):
                     "Pick an element with the selector dialog first."
                 )
 
-            logger.info(
-                f"Image click: searching for template ({len(template_bytes)} bytes)"
-            )
+            logger.info(f"Image click: searching for template ({len(template_bytes)} bytes)")
 
             async def perform_image_click() -> dict:
                 # Capture page screenshot
@@ -962,9 +940,7 @@ class ImageClickNode(BrowserBaseNode):
                 )
 
                 if not match:
-                    raise RuntimeError(
-                        f"Template not found on page (threshold: {similarity:.0%})"
-                    )
+                    raise RuntimeError(f"Template not found on page (threshold: {similarity:.0%})")
 
                 # Calculate click position
                 click_x = match["center_x"] + offset_x
@@ -1098,7 +1074,6 @@ class ImageClickNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "key",
@@ -1122,6 +1097,7 @@ class ImageClickNode(BrowserBaseNode):
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
 )
+@node(category="browser")
 class PressKeyNode(BrowserBaseNode):
     """
     Press key node - presses a keyboard key on the browser page.
@@ -1179,7 +1155,6 @@ class PressKeyNode(BrowserBaseNode):
 
             # Get parameters
             key = self.get_parameter("key", "Enter")
-            key = context.resolve_value(key)
             if not key:
                 raise ValueError("Key is required")
 

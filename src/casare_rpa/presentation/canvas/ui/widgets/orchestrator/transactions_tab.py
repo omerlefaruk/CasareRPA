@@ -74,13 +74,9 @@ class ItemDetailsDialog(QDialog):
         form.addRow("Duration:", QLabel(self._item.duration_formatted))
 
         if self._item.created_at:
-            form.addRow(
-                "Created:", QLabel(self._item.created_at.strftime("%Y-%m-%d %H:%M:%S"))
-            )
+            form.addRow("Created:", QLabel(self._item.created_at.strftime("%Y-%m-%d %H:%M:%S")))
         if self._item.started_at:
-            form.addRow(
-                "Started:", QLabel(self._item.started_at.strftime("%Y-%m-%d %H:%M:%S"))
-            )
+            form.addRow("Started:", QLabel(self._item.started_at.strftime("%Y-%m-%d %H:%M:%S")))
         if self._item.completed_at:
             form.addRow(
                 "Completed:",
@@ -322,9 +318,7 @@ class TransactionsTab(QWidget):
         self._refresh_btn.clicked.connect(self.refresh)
         self._status_filter.currentIndexChanged.connect(self.refresh)
         self._search_input.textChanged.connect(self._on_search_changed)
-        self._table.selectionModel().selectionChanged.connect(
-            self._on_selection_changed
-        )
+        self._table.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self._table.customContextMenuRequested.connect(self._on_context_menu)
         self._table.doubleClicked.connect(self._on_double_click)
 

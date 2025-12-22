@@ -54,9 +54,7 @@ class Message:
 
     type: MessageType
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     payload: Dict[str, Any] = field(default_factory=dict)
     correlation_id: Optional[str] = None  # For request-response pairing
 
@@ -191,9 +189,7 @@ class MessageBuilder:
         )
 
     @staticmethod
-    def job_accept(
-        job_id: str, robot_id: str, correlation_id: Optional[str] = None
-    ) -> Message:
+    def job_accept(job_id: str, robot_id: str, correlation_id: Optional[str] = None) -> Message:
         """Build job acceptance message."""
         return Message(
             type=MessageType.JOB_ACCEPT,
@@ -291,9 +287,7 @@ class MessageBuilder:
         )
 
     @staticmethod
-    def job_cancelled(
-        job_id: str, robot_id: str, correlation_id: Optional[str] = None
-    ) -> Message:
+    def job_cancelled(job_id: str, robot_id: str, correlation_id: Optional[str] = None) -> Message:
         """Build job cancelled confirmation."""
         return Message(
             type=MessageType.JOB_CANCELLED,

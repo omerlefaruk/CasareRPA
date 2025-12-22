@@ -1,0 +1,235 @@
+{
+  "params": {
+    "model": "gemini-2.0-flash-exp",
+    "temperature": 0.0,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "safety_settings": "BLOCK_NONE",
+    "response_mime_type": "text/plain"
+  },
+  "agents": [
+    {
+      "name": "Agent",
+      "description": "Capability",
+      "skills": [
+        "Skill Mapping"
+      ]
+    },
+    {
+      "name": "-------",
+      "description": "------------",
+      "skills": [
+        "---------------"
+      ]
+    },
+    {
+      "name": "architect",
+      "description": "System design, DDD patterns, refactoring planning",
+      "skills": [
+        "architect-design"
+      ]
+    },
+    {
+      "name": "builder",
+      "description": "Python 3.12+ implementation, PySide6 UI, Playwright automation",
+      "skills": [
+        "code-implementation"
+      ]
+    },
+    {
+      "name": "docs",
+      "description": "Technical writing, docstring generation, README maintenance",
+      "skills": [
+        "documentation"
+      ]
+    },
+    {
+      "name": "explore",
+      "description": "Codebase navigation, semantic search, dependency mapping",
+      "skills": [
+        "semantic-search"
+      ]
+    },
+    {
+      "name": "integrations",
+      "description": "API client development, database schema design, Supabase",
+      "skills": [
+        "api-integration"
+      ]
+    },
+    {
+      "name": "quality",
+      "description": "Test generation (pytest), bug reproduction, code review",
+      "skills": [
+        "test-generator"
+      ]
+    },
+    {
+      "name": "refactor",
+      "description": "Code optimization, pattern modernization, clean architecture",
+      "skills": [
+        "refactor-patterns"
+      ]
+    },
+    {
+      "name": "researcher",
+      "description": "Error diagnosis, requirement gathering, technology research",
+      "skills": [
+        "error-diagnosis"
+      ]
+    },
+    {
+      "name": "reviewer",
+      "description": "PR review, security audit, style enforcement",
+      "skills": [
+        "code-review"
+      ]
+    },
+    {
+      "name": "ui",
+      "description": "PySide6 widget development, CSS styling, UX optimization",
+      "skills": [
+        "ui-widget"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Skill",
+      "description": "Description",
+      "schema_def": {}
+    },
+    {
+      "name": "-------",
+      "description": "-------------",
+      "schema_def": {}
+    },
+    {
+      "name": "semantic-search",
+      "description": "Search codebase for patterns/meaning",
+      "schema_def": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "top_k": {
+            "type": "integer",
+            "default": 5
+          },
+          "filter": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "test-generator",
+      "description": "Generate pytest files for nodes/domain",
+      "schema_def": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "test_type": {
+            "enum": [
+              "unit",
+              "integration",
+              "e2e"
+            ]
+          },
+          "mock_dependencies": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "file_path"
+        ]
+      }
+    },
+    {
+      "name": "import-fixer",
+      "description": "Organize and fix Python imports",
+      "schema_def": {}
+    },
+    {
+      "name": "node-template-generator",
+      "description": "Scaffold new RPA nodes",
+      "schema_def": {}
+    },
+    {
+      "name": "error-diagnosis",
+      "description": "Analyze logs and tracebacks to find bugs",
+      "schema_def": {}
+    },
+    {
+      "name": "api-integration",
+      "description": "Create REST/GraphQL clients",
+      "schema_def": {}
+    },
+    {
+      "name": "ui-widget",
+      "description": "Create PySide6 custom widgets",
+      "schema_def": {}
+    },
+    {
+      "name": "performance-optimizer",
+      "description": "Identify and fix performance bottlenecks",
+      "schema_def": {
+        "type": "object",
+        "properties": {
+          "target_file": {
+            "type": "string"
+          },
+          "optimization_goal": {
+            "enum": [
+              "cpu",
+              "memory",
+              "latency"
+            ]
+          }
+        },
+        "required": [
+          "target_file"
+        ]
+      }
+    },
+    {
+      "name": "node-creator",
+      "description": "Create complex RPA nodes with logic",
+      "schema_def": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "category"
+        ]
+      }
+    }
+  ]
+}

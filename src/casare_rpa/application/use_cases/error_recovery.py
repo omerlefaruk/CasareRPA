@@ -276,20 +276,14 @@ class ErrorRecoveryUseCase:
         )
 
         # Override certain actions based on config
-        if (
-            decision.action == RecoveryAction.RETRY
-            and not self.config.enable_auto_retry
-        ):
+        if decision.action == RecoveryAction.RETRY and not self.config.enable_auto_retry:
             logger.debug("Auto-retry disabled - converting to SKIP")
             decision = RecoveryDecision(
                 action=RecoveryAction.SKIP,
                 reason="Auto-retry disabled by configuration",
             )
 
-        if (
-            decision.action == RecoveryAction.ESCALATE
-            and not self.config.enable_escalation
-        ):
+        if decision.action == RecoveryAction.ESCALATE and not self.config.enable_escalation:
             logger.debug("Escalation disabled - converting to ABORT")
             decision = RecoveryDecision(
                 action=RecoveryAction.ABORT,
@@ -404,7 +398,9 @@ class ErrorRecoveryUseCase:
             context: Error context.
         """
         # Create error key from type + code
-        error_key = f"{context.node_type}:{context.error_code.name if context.error_code else 'UNKNOWN'}"
+        error_key = (
+            f"{context.node_type}:{context.error_code.name if context.error_code else 'UNKNOWN'}"
+        )
 
         now = datetime.now()
 
@@ -462,9 +458,7 @@ class ErrorRecoveryUseCase:
         else:
             cb.record_failure(context.error_code.name if context.error_code else None)
 
-    def _emit_error_event(
-        self, context: ErrorContext, decision: RecoveryDecision
-    ) -> None:
+    def _emit_error_event(self, context: ErrorContext, decision: RecoveryDecision) -> None:
         """
         Emit error event to event bus.
 
@@ -525,16 +519,12 @@ class ErrorRecoveryUseCase:
                     "first_occurrence": agg.first_occurrence.isoformat(),
                     "last_occurrence": agg.last_occurrence.isoformat(),
                     "affected_nodes": list(agg.node_ids),
-                    "sample_message": agg.sample_context.message
-                    if agg.sample_context
-                    else None,
+                    "sample_message": agg.sample_context.message if agg.sample_context else None,
                 }
             )
 
         # Get circuit breaker states
-        circuit_states = {
-            name: cb.get_state() for name, cb in self._circuit_breakers.items()
-        }
+        circuit_states = {name: cb.get_state() for name, cb in self._circuit_breakers.items()}
 
         # Get error history summary from registry
         history_summary = self.error_registry.get_error_summary()
@@ -542,16 +532,12 @@ class ErrorRecoveryUseCase:
         return {
             "consecutive_errors": self._consecutive_errors,
             "nodes_with_retries": dict(self._node_retry_counts),
-            "error_aggregations": sorted(
-                aggregations, key=lambda x: x["count"], reverse=True
-            ),
+            "error_aggregations": sorted(aggregations, key=lambda x: x["count"], reverse=True),
             "circuit_breakers": circuit_states,
             "history_summary": history_summary,
         }
 
-    def get_node_error_history(
-        self, node_id: NodeId, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    def get_node_error_history(self, node_id: NodeId, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get error history for a specific node.
 

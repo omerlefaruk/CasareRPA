@@ -10,14 +10,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     # Connection settings
     PropertyDef(
@@ -106,6 +102,7 @@ from casare_rpa.triggers.base import TriggerType
         tab="advanced",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class TelegramTriggerNode(BaseTriggerNode):
     """
     Telegram trigger node that listens for incoming messages.
@@ -158,41 +155,37 @@ class TelegramTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Telegram-specific configuration."""
         # Parse comma-separated lists
-        filter_chat_ids_str = self.config.get("filter_chat_ids", "")
+        filter_chat_ids_str = self.get_parameter("filter_chat_ids", "")
         filter_chat_ids = [
             int(cid.strip())
             for cid in filter_chat_ids_str.split(",")
             if cid.strip() and cid.strip().lstrip("-").isdigit()
         ]
 
-        filter_user_ids_str = self.config.get("filter_user_ids", "")
+        filter_user_ids_str = self.get_parameter("filter_user_ids", "")
         filter_user_ids = [
             int(uid.strip())
             for uid in filter_user_ids_str.split(",")
             if uid.strip() and uid.strip().isdigit()
         ]
 
-        filter_commands_str = self.config.get("filter_commands", "")
+        filter_commands_str = self.get_parameter("filter_commands", "")
         filter_commands = [
-            cmd.strip().lstrip("/")
-            for cmd in filter_commands_str.split(",")
-            if cmd.strip()
+            cmd.strip().lstrip("/") for cmd in filter_commands_str.split(",") if cmd.strip()
         ]
 
-        allowed_updates_str = self.config.get("allowed_updates", "message")
-        allowed_updates = [
-            u.strip() for u in allowed_updates_str.split(",") if u.strip()
-        ]
+        allowed_updates_str = self.get_parameter("allowed_updates", "message")
+        allowed_updates = [u.strip() for u in allowed_updates_str.split(",") if u.strip()]
 
         return {
-            "bot_token": self.config.get("bot_token", ""),
-            "credential_name": self.config.get("credential_name", ""),
-            "mode": self.config.get("mode", "auto"),
-            "webhook_url": self.config.get("webhook_url", ""),
-            "polling_interval": self.config.get("polling_interval", 2),
+            "bot_token": self.get_parameter("bot_token", ""),
+            "credential_name": self.get_parameter("credential_name", ""),
+            "mode": self.get_parameter("mode", "auto"),
+            "webhook_url": self.get_parameter("webhook_url", ""),
+            "polling_interval": self.get_parameter("polling_interval", 2),
             "filter_chat_ids": filter_chat_ids,
             "filter_user_ids": filter_user_ids,
-            "commands_only": self.config.get("commands_only", False),
+            "commands_only": self.get_parameter("commands_only", False),
             "filter_commands": filter_commands,
             "allowed_updates": allowed_updates,
         }

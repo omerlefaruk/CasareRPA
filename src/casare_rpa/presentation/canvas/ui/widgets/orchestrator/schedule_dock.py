@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
-    QFrame,
     QComboBox,
     QLineEdit,
     QCheckBox,
@@ -29,7 +28,6 @@ from PySide6.QtWidgets import (
     QTimeEdit,
 )
 from PySide6.QtCore import Qt, Signal, QSize, QTime
-from PySide6.QtGui import QColor
 
 from loguru import logger
 
@@ -108,9 +106,7 @@ class ScheduleBuilderDock(QDockWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
-        container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         main_layout = QHBoxLayout(container)
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(8)
@@ -163,12 +159,8 @@ class ScheduleBuilderDock(QDockWidget):
         self._schedule_table.setHorizontalHeaderLabels(
             ["Name", "Workflow", "Frequency", "Next Run", "Enabled"]
         )
-        self._schedule_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
-        self._schedule_table.setSelectionMode(
-            QTableWidget.SelectionMode.SingleSelection
-        )
+        self._schedule_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._schedule_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self._schedule_table.setAlternatingRowColors(True)
         self._schedule_table.verticalHeader().setVisible(False)
         self._schedule_table.horizontalHeader().setStretchLastSection(True)
@@ -382,9 +374,7 @@ class ScheduleBuilderDock(QDockWidget):
         self._run_now_btn.clicked.connect(self._on_run_now_clicked)
         self._refresh_btn.clicked.connect(self._on_refresh_clicked)
 
-        self._schedule_table.selectionModel().selectionChanged.connect(
-            self._on_selection_changed
-        )
+        self._schedule_table.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self._schedule_table.cellChanged.connect(self._on_cell_changed)
 
         self._filter_combo.currentIndexChanged.connect(self._apply_filter)
@@ -432,9 +422,7 @@ class ScheduleBuilderDock(QDockWidget):
         selected = self._schedule_table.selectedItems()
         if selected:
             row = selected[0].row()
-            schedule_id = self._schedule_table.item(row, 0).data(
-                Qt.ItemDataRole.UserRole
-            )
+            schedule_id = self._schedule_table.item(row, 0).data(Qt.ItemDataRole.UserRole)
             self._selected_schedule_id = schedule_id
             self._edit_btn.setEnabled(True)
             self._delete_btn.setEnabled(True)
@@ -551,10 +539,6 @@ class ScheduleBuilderDock(QDockWidget):
 
         # Update calendar
         try:
-            from casare_rpa.domain.orchestrator.entities import (
-                Schedule as ScheduleEntity,
-            )
-
             schedule_entities = []
             for s in schedules:
                 # Convert dict to entity if needed
@@ -596,9 +580,7 @@ class ScheduleBuilderDock(QDockWidget):
             self._schedule_table.setItem(row, 0, name_item)
 
             # Workflow
-            workflow_name = schedule.get(
-                "workflow_name", schedule.get("workflow_id", "-")
-            )
+            workflow_name = schedule.get("workflow_name", schedule.get("workflow_id", "-"))
             self._schedule_table.setItem(row, 1, QTableWidgetItem(workflow_name))
 
             # Frequency

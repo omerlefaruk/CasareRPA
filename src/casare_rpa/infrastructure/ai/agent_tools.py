@@ -84,9 +84,7 @@ class AgentTool:
         params_desc = []
         for param in self.parameters:
             req_str = "(required)" if param.required else "(optional)"
-            params_desc.append(
-                f"  - {param.name} [{param.type}] {req_str}: {param.description}"
-            )
+            params_desc.append(f"  - {param.name} [{param.type}] {req_str}: {param.description}")
 
         params_str = "\n".join(params_desc) if params_desc else "  (no parameters)"
 

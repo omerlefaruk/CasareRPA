@@ -49,9 +49,7 @@ class FolderStorage:
         return Path.home() / ".casare_rpa" / "config" / "folders.json"
 
     @staticmethod
-    def save_folders(
-        folders_file: FoldersFile, file_path: Optional[Path] = None
-    ) -> None:
+    def save_folders(folders_file: FoldersFile, file_path: Optional[Path] = None) -> None:
         """
         Save folders to file.
 
@@ -63,9 +61,7 @@ class FolderStorage:
             file_path = FolderStorage.get_default_folders_file()
 
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_bytes(
-            orjson.dumps(folders_file.to_dict(), option=orjson.OPT_INDENT_2)
-        )
+        file_path.write_bytes(orjson.dumps(folders_file.to_dict(), option=orjson.OPT_INDENT_2))
 
     @staticmethod
     def save_folders_safe(
@@ -88,9 +84,7 @@ class FolderStorage:
 
         try:
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_bytes(
-                orjson.dumps(folders_file.to_dict(), option=orjson.OPT_INDENT_2)
-            )
+            file_path.write_bytes(orjson.dumps(folders_file.to_dict(), option=orjson.OPT_INDENT_2))
             return Ok(None)
         except Exception as e:
             logger.error(f"Failed to save folders to {file_path}: {e}")
@@ -356,9 +350,7 @@ class FolderStorage:
         return Ok(True)
 
     @staticmethod
-    def rename_folder(
-        folder_id: str, new_name: str, file_path: Optional[Path] = None
-    ) -> bool:
+    def rename_folder(folder_id: str, new_name: str, file_path: Optional[Path] = None) -> bool:
         """
         Rename a folder.
 
@@ -466,9 +458,7 @@ class FolderStorage:
         return None
 
     @staticmethod
-    def set_folder_color(
-        folder_id: str, color: str, file_path: Optional[Path] = None
-    ) -> bool:
+    def set_folder_color(folder_id: str, color: str, file_path: Optional[Path] = None) -> bool:
         """
         Set folder color.
 
@@ -493,9 +483,7 @@ class FolderStorage:
         return True
 
     @staticmethod
-    def reorder_folders(
-        folder_ids: List[str], file_path: Optional[Path] = None
-    ) -> bool:
+    def reorder_folders(folder_ids: List[str], file_path: Optional[Path] = None) -> bool:
         """
         Reorder folders by setting sort_order.
 

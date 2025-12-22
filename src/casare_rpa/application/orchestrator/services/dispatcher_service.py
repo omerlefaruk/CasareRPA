@@ -153,9 +153,7 @@ class JobDispatcher:
         self._rr_index = 0
 
         # Affinity tracking: workflow_id -> {robot_id -> success_count}
-        self._affinity: Dict[str, Dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        self._affinity: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
         # Callbacks
         self._on_robot_status_change: Optional[
@@ -172,9 +170,7 @@ class JobDispatcher:
 
     def set_callbacks(
         self,
-        on_robot_status_change: Optional[
-            Callable[[Robot, RobotStatus, RobotStatus], None]
-        ] = None,
+        on_robot_status_change: Optional[Callable[[Robot, RobotStatus, RobotStatus], None]] = None,
         on_job_dispatched: Optional[Callable[[Job, Robot], None]] = None,
     ):
         """Set event callbacks."""
@@ -285,9 +281,7 @@ class JobDispatcher:
 
     # ==================== JOB DISPATCH ====================
 
-    def select_robot(
-        self, job: Job, pool_name: Optional[str] = None
-    ) -> Optional[Robot]:
+    def select_robot(self, job: Job, pool_name: Optional[str] = None) -> Optional[Robot]:
         """
         Select the best robot for a job.
 
@@ -498,9 +492,7 @@ class JobDispatcher:
         total_robots = len(self._robots)
         online = sum(1 for r in self._robots.values() if r.status == RobotStatus.ONLINE)
         busy = sum(1 for r in self._robots.values() if r.status == RobotStatus.BUSY)
-        offline = sum(
-            1 for r in self._robots.values() if r.status == RobotStatus.OFFLINE
-        )
+        offline = sum(1 for r in self._robots.values() if r.status == RobotStatus.OFFLINE)
         error = sum(1 for r in self._robots.values() if r.status == RobotStatus.ERROR)
 
         total_capacity = sum(r.max_concurrent_jobs for r in self._robots.values())
@@ -514,9 +506,7 @@ class JobDispatcher:
             "error": error,
             "total_capacity": total_capacity,
             "current_load": current_load,
-            "utilization": (current_load / total_capacity * 100)
-            if total_capacity > 0
-            else 0,
+            "utilization": (current_load / total_capacity * 100) if total_capacity > 0 else 0,
             "strategy": self._strategy.value,
             "pools": {
                 name: {

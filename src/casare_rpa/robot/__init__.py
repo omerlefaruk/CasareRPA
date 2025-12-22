@@ -4,9 +4,8 @@ CasareRPA Robot Agent
 Distributed robot agent for workflow execution with full lifecycle management.
 
 Main Components:
-- RobotAgent: Unified robot agent (recommended)
+- RobotAgent: Unified robot agent
 - RobotConfig: Configuration for robot agent
-- DistributedRobotAgent: Legacy agent (deprecated, use RobotAgent)
 - CLI: Command-line interface for starting/stopping robots
 - Windows Service: Run robot as Windows service
 
@@ -14,23 +13,20 @@ Usage:
     # Start robot via CLI
     python -m casare_rpa.robot.cli start
 
-    # Or programmatically (recommended)
+    # Or programmatically
     from casare_rpa.robot import RobotAgent, RobotConfig
 
     config = RobotConfig.from_env()
     agent = RobotAgent(config)
     await agent.start()
-
-    # Legacy (deprecated)
-    from casare_rpa.robot import DistributedRobotAgent, DistributedRobotConfig
 """
 
-# New unified agent (recommended)
+# Unified agent
 from casare_rpa.robot.agent import (
     AgentCheckpoint,
-    AgentState as UnifiedAgentState,
+    AgentState,
     RobotAgent,
-    RobotCapabilities as UnifiedRobotCapabilities,
+    RobotCapabilities,
     RobotConfig,
     run_agent,
 )
@@ -56,15 +52,6 @@ from casare_rpa.robot.circuit_breaker import (
     get_circuit_breaker_registry,
 )
 
-# Legacy imports (deprecated - for backward compatibility)
-from casare_rpa.robot.distributed_agent import (
-    AgentState,
-    DistributedRobotAgent,
-    DistributedRobotConfig,
-    RobotCapabilities,
-    RobotRegistration,
-)
-
 # Metrics
 from casare_rpa.robot.metrics import (
     JobMetrics,
@@ -74,24 +61,14 @@ from casare_rpa.robot.metrics import (
     get_metrics_collector,
 )
 
-# Note: coordination.py has been removed. For fleet coordination functionality, use:
-# - infrastructure/orchestrator/scheduling/job_assignment.py - JobAssignmentEngine
-# - infrastructure/orchestrator/scheduling/state_affinity.py - StateAffinityManager
-
 __all__ = [
-    # Unified agent (recommended)
+    # Agent
     "RobotAgent",
     "RobotConfig",
-    "UnifiedRobotCapabilities",
-    "UnifiedAgentState",
+    "RobotCapabilities",
+    "AgentState",
     "AgentCheckpoint",
     "run_agent",
-    # Legacy agent (deprecated)
-    "DistributedRobotAgent",
-    "DistributedRobotConfig",
-    "RobotCapabilities",
-    "RobotRegistration",
-    "AgentState",
     # Circuit breaker
     "CircuitBreaker",
     "CircuitBreakerConfig",

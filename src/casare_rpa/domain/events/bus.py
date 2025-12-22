@@ -27,7 +27,16 @@ class EventBus:
     """
     Event bus for typed domain events.
 
+    AI-HINT: Central pub/sub system for decoupled communication.
+    AI-CONTEXT: Use get_event_bus() singleton. Don't instantiate directly.
+    AI-WARNING: Handlers run synchronously. Don't block in handlers.
+
     Thread-safe publish/subscribe for DomainEvent subclasses.
+
+    Common usage:
+        bus = get_event_bus()
+        bus.subscribe(NodeCompleted, my_handler)
+        bus.publish(NodeCompleted(node_id="x", execution_time_ms=100))
     """
 
     def __init__(self) -> None:

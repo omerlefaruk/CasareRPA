@@ -177,41 +177,4 @@ class VisualAssertNode(VisualNode):
         self.add_typed_output("passed", DataType.BOOLEAN)
 
 
-class VisualAIRecoveryNode(VisualNode):
-    """Visual representation of AIRecoveryNode.
-
-    AI-powered error recovery analysis that recommends strategies
-    based on error context and optional screenshots.
-
-    Widgets are auto-generated from AIRecoveryNode's @properties decorator.
-    """
-
-    __identifier__ = "casare_rpa.error_handling"
-    NODE_NAME = "AI Recovery"
-    NODE_CATEGORY = "error_handling/ai"
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        # Execution ports
-        self.add_exec_input("exec_in")
-        self.add_exec_output("exec_out")
-
-        # Input ports
-        self.add_typed_input("error_message", DataType.STRING)
-        self.add_typed_input("error_type", DataType.STRING)
-        self.add_typed_input("error_node", DataType.STRING)
-        self.add_typed_input("stack_trace", DataType.STRING)
-        self.add_typed_input("screenshot", DataType.ANY)
-        self.add_typed_input("execution_history", DataType.LIST)
-        self.add_typed_input("node_context", DataType.ANY)
-
-        # Output ports
-        self.add_typed_output("strategy", DataType.STRING)
-        self.add_typed_output("confidence", DataType.FLOAT)
-        self.add_typed_output("reasoning", DataType.STRING)
-        self.add_typed_output("suggested_fix", DataType.STRING)
-        self.add_typed_output("retry_modifications", DataType.ANY)
-        self.add_typed_output("alternatives", DataType.LIST)
-
-
 # Desktop Automation Nodes

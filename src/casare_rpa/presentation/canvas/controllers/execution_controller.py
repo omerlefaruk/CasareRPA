@@ -23,6 +23,7 @@ from casare_rpa.presentation.canvas.ui.theme import THEME
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
 
 
 class _ThreadSafeLogBridge(QObject):
@@ -263,9 +264,7 @@ class ExecutionController(BaseController):
             )
             self._event_bus.subscribe(
                 WorkflowCompleted,
-                partial(
-                    self._emit_to_bridge, self._event_bus_bridge.workflow_completed
-                ),
+                partial(self._emit_to_bridge, self._event_bus_bridge.workflow_completed),
             )
             self._event_bus.subscribe(
                 WorkflowFailed,
@@ -277,9 +276,7 @@ class ExecutionController(BaseController):
             )
             self._event_bus.subscribe(
                 BrowserPageReady,
-                partial(
-                    self._emit_to_bridge, self._event_bus_bridge.browser_page_ready
-                ),
+                partial(self._emit_to_bridge, self._event_bus_bridge.browser_page_ready),
             )
 
             # Subscribe all events to log viewer if available
@@ -288,9 +285,7 @@ class ExecutionController(BaseController):
             if log_viewer and hasattr(log_viewer, "log_event"):
                 self._event_bus.subscribe_all(log_viewer.log_event)
 
-            logger.debug(
-                "EventBus bridge setup with QueuedConnection for thread safety"
-            )
+            logger.debug("EventBus bridge setup with QueuedConnection for thread safety")
         except ImportError as e:
             logger.warning(f"EventBus not available: {e}")
             self._event_bus = None
@@ -312,9 +307,7 @@ class ExecutionController(BaseController):
             self._log_bridge = _ThreadSafeLogBridge(self.main_window)
 
             # Connect signal to slot (runs in main thread)
-            def on_log_received(
-                level: str, message: str, module: str, timestamp: str
-            ) -> None:
+            def on_log_received(level: str, message: str, module: str, timestamp: str) -> None:
                 """Handle log in main thread."""
                 bottom_panel = self.main_window.get_bottom_panel()
                 if bottom_panel:
@@ -337,9 +330,7 @@ class ExecutionController(BaseController):
             )
 
             # Register callback that emits signal (thread-safe)
-            def log_callback(
-                level: str, message: str, module: str, timestamp: str
-            ) -> None:
+            def log_callback(level: str, message: str, module: str, timestamp: str) -> None:
                 """Forward log via thread-safe signal."""
                 if self._log_bridge:
                     self._log_bridge.emit_log(level, message, module, timestamp)
@@ -374,9 +365,7 @@ class ExecutionController(BaseController):
                 if bottom_panel:
                     bottom_panel.terminal_write_stdout(text)
                 else:
-                    logger.warning(
-                        f"Terminal: bottom_panel is None, dropping stdout: {text[:50]}"
-                    )
+                    logger.warning(f"Terminal: bottom_panel is None, dropping stdout: {text[:50]}")
 
             def on_stderr_received(text: str) -> None:
                 """Handle stderr in main thread."""
@@ -384,9 +373,7 @@ class ExecutionController(BaseController):
                 if bottom_panel:
                     bottom_panel.terminal_write_stderr(text)
                 else:
-                    logger.warning(
-                        f"Terminal: bottom_panel is None, dropping stderr: {text[:50]}"
-                    )
+                    logger.warning(f"Terminal: bottom_panel is None, dropping stderr: {text[:50]}")
 
             self._terminal_bridge.stdout_received.connect(
                 on_stdout_received, Qt.ConnectionType.QueuedConnection
@@ -404,9 +391,7 @@ class ExecutionController(BaseController):
                     # Log to original stderr to avoid recursion
                     import sys
 
-                    sys.__stderr__.write(
-                        f"[TERMINAL] Bridge is None, stdout lost: {text}\n"
-                    )
+                    sys.__stderr__.write(f"[TERMINAL] Bridge is None, stdout lost: {text}\n")
 
             def stderr_callback(text: str) -> None:
                 """Forward stderr via thread-safe signal."""
@@ -415,9 +400,7 @@ class ExecutionController(BaseController):
                 else:
                     import sys
 
-                    sys.__stderr__.write(
-                        f"[TERMINAL] Bridge is None, stderr lost: {text}\n"
-                    )
+                    sys.__stderr__.write(f"[TERMINAL] Bridge is None, stderr lost: {text}\n")
 
             # Register callbacks
             set_output_callbacks(stdout_callback, stderr_callback)
@@ -525,7 +508,13 @@ class ExecutionController(BaseController):
         Updates visual node status to 'running' and starts pipe flow animation.
         """
         # Extract data from Event object
-        event_data = event.data if hasattr(event, "data") else event
+        # Support both: typed DomainEvent (has to_dict) and legacy dict events
+        if hasattr(event, "to_dict") and callable(event.to_dict):
+            event_data = event.to_dict()
+        elif hasattr(event, "data"):
+            event_data = event.data
+        else:
+            event_data = event if isinstance(event, dict) else {}
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
@@ -548,16 +537,28 @@ class ExecutionController(BaseController):
         and History Tab.
         """
         # Extract data from Event object
-        event_data = event.data if hasattr(event, "data") else event
+        # Support both: typed DomainEvent (has to_dict) and legacy dict events
+        if hasattr(event, "to_dict") and callable(event.to_dict):
+            event_data = event.to_dict()
+        elif hasattr(event, "data"):
+            event_data = event.data
+        else:
+            event_data = event if isinstance(event, dict) else {}
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
 
             # Extract execution time early (before visual_node check)
-            # Support both 'execution_time' (seconds) and 'duration_ms' (milliseconds)
+            # Support 'execution_time_ms' (from NodeCompleted event),
+            # 'execution_time' (seconds), and 'duration_ms' (milliseconds)
             execution_time_sec = None
             if isinstance(event_data, dict):
-                if "execution_time" in event_data:
+                if "execution_time_ms" in event_data:
+                    # execution_time_ms is in milliseconds (from NodeCompleted event)
+                    execution_time_ms = event_data.get("execution_time_ms")
+                    if execution_time_ms is not None:
+                        execution_time_sec = execution_time_ms / 1000.0
+                elif "execution_time" in event_data:
                     # execution_time is in seconds
                     execution_time_sec = event_data.get("execution_time")
                 elif "duration_ms" in event_data:
@@ -568,9 +569,7 @@ class ExecutionController(BaseController):
 
             if visual_node and hasattr(visual_node, "update_status"):
                 visual_node.update_status("success")
-                if execution_time_sec is not None and hasattr(
-                    visual_node, "update_execution_time"
-                ):
+                if execution_time_sec is not None and hasattr(visual_node, "update_execution_time"):
                     visual_node.update_execution_time(execution_time_sec)
                 logger.debug(f"Node {node_id} visual status: success")
 
@@ -579,17 +578,19 @@ class ExecutionController(BaseController):
 
                 # Store output data for output inspector popup (middle-click)
                 # Get output port values from event_data (set by node_executor)
+                # Key is 'output_data' from NodeCompleted event's to_dict()
                 if hasattr(visual_node, "set_last_output"):
                     output_data = (
-                        event_data.get("outputs", {})
-                        if isinstance(event_data, dict)
-                        else {}
+                        event_data.get("output_data", {}) if isinstance(event_data, dict) else {}
                     )
                     if output_data:
                         visual_node.set_last_output(output_data)
                         logger.debug(
                             f"Stored output for node {node_id}: {list(output_data.keys())}"
                         )
+
+                        # Update phantom values on output pipes
+                        self._update_phantom_values(visual_node, output_data)
 
             # Forward output to Output Tab and History Tab
             bottom_panel = self.main_window.get_bottom_panel()
@@ -626,13 +627,15 @@ class ExecutionController(BaseController):
         Also stops pipe animation and adds failed entry to History Tab.
         """
         # Extract data from Event object
-        event_data = event.data if hasattr(event, "data") else event
+        # Support both: typed DomainEvent (has to_dict) and legacy dict events
+        if hasattr(event, "to_dict") and callable(event.to_dict):
+            event_data = event.to_dict()
+        elif hasattr(event, "data"):
+            event_data = event.data
+        else:
+            event_data = event if isinstance(event, dict) else {}
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
-        error = (
-            event_data.get("error", "Unknown error")
-            if isinstance(event_data, dict)
-            else "Unknown error"
-        )
+        error = event_data.get("error_message") or event_data.get("error") or "Unknown error"
         if node_id:
             visual_node = self._find_visual_node(node_id)
             if visual_node and hasattr(visual_node, "update_status"):
@@ -715,9 +718,7 @@ class ExecutionController(BaseController):
         bottom_panel = self.main_window.get_bottom_panel()
         if bottom_panel:
             # Include node info if available for better error context
-            node_id = (
-                event_data.get("node_id", "") if isinstance(event_data, dict) else ""
-            )
+            node_id = event_data.get("node_id", "") if isinstance(event_data, dict) else ""
             if node_id:
                 error_msg = f"Failed at node {node_id}: {error}"
             else:
@@ -805,6 +806,23 @@ class ExecutionController(BaseController):
         """
         return self._node_index.get(node_id)
 
+    def _iter_connected_pipes(self, port_view):
+        """Yield connected pipe items from a PortItem (supports list or callable API)."""
+        connected = getattr(port_view, "connected_pipes", None)
+        if connected is None:
+            return []
+        try:
+            if callable(connected):
+                connected = connected()
+        except Exception:
+            return []
+        if not connected:
+            return []
+        try:
+            return list(connected)
+        except Exception:
+            return []
+
     def _start_pipe_animations(self, visual_node) -> None:
         """
         Start flow animation on all outgoing pipes from a node.
@@ -822,12 +840,7 @@ class ExecutionController(BaseController):
                 if port_view is None:
                     continue
 
-                # Get connected pipes from the port view
-                connected_pipes = getattr(port_view, "connected_pipes", None)
-                if connected_pipes is None:
-                    continue
-
-                for pipe in connected_pipes:
+                for pipe in self._iter_connected_pipes(port_view):
                     if hasattr(pipe, "start_flow_animation"):
                         pipe.start_flow_animation()
         except Exception:
@@ -852,17 +865,40 @@ class ExecutionController(BaseController):
                 if port_view is None:
                     continue
 
-                # Get connected pipes from the port view
-                connected_pipes = getattr(port_view, "connected_pipes", None)
-                if connected_pipes is None:
-                    continue
-
-                for pipe in connected_pipes:
+                for pipe in self._iter_connected_pipes(port_view):
                     if hasattr(pipe, "stop_flow_animation"):
                         pipe.stop_flow_animation(show_completion_glow=success)
         except Exception:
             # Don't let animation errors affect execution
             pass
+
+    def _update_phantom_values(self, visual_node, output_data: dict) -> None:
+        """
+        Update phantom values on output pipes to show execution results.
+
+        Displays the last execution value as semi-transparent text on each output wire.
+
+        Args:
+            visual_node: The visual node whose output pipes should show phantom values
+            output_data: Dictionary of port_name -> value from node execution
+        """
+        try:
+            for output_port in visual_node.output_ports():
+                port_name = output_port.name()
+                value = output_data.get(port_name)
+
+                if value is None:
+                    continue
+
+                port_view = getattr(output_port, "view", None)
+                if port_view is None:
+                    continue
+
+                for pipe in self._iter_connected_pipes(port_view):
+                    if hasattr(pipe, "set_phantom_value"):
+                        pipe.set_phantom_value(value)
+        except Exception as e:
+            logger.debug(f"Error updating phantom values: {e}")
 
     def _reset_all_node_visuals(self) -> None:
         """Reset all node visual states to idle (clears animations and status icons)."""
@@ -1008,9 +1044,7 @@ class ExecutionController(BaseController):
 
         # If no node selected, fallback to full workflow run
         if not selected_nodes:
-            self.main_window.show_status(
-                "No node selected - running full workflow", 3000
-            )
+            self.main_window.show_status("No node selected - running full workflow", 3000)
             self.run_workflow()
             return
 
@@ -1019,9 +1053,7 @@ class ExecutionController(BaseController):
         target_node_id = target_node.get_property("node_id")
 
         if not target_node_id:
-            self.main_window.show_status(
-                "Selected node has no ID - running full workflow", 3000
-            )
+            self.main_window.show_status("Selected node has no ID - running full workflow", 3000)
             self.run_workflow()
             return
 
@@ -1052,9 +1084,7 @@ class ExecutionController(BaseController):
                 return
 
             # Get node name for display
-            node_name = (
-                target_node.name() if hasattr(target_node, "name") else target_node_id
-            )
+            node_name = target_node.name() if hasattr(target_node, "name") else target_node_id
 
             # CRITICAL: Sync all widget values before execution
             self._sync_all_widget_values()
@@ -1105,9 +1135,7 @@ class ExecutionController(BaseController):
 
         # If no node selected, show message
         if not selected_nodes:
-            self.main_window.show_status(
-                "No node selected - select a node to run", 3000
-            )
+            self.main_window.show_status("No node selected - select a node to run", 3000)
             return
 
         # Get first selected node's ID
@@ -1140,9 +1168,7 @@ class ExecutionController(BaseController):
                 return
 
             # Get node name for display
-            node_name = (
-                target_node.name() if hasattr(target_node, "name") else target_node_id
-            )
+            node_name = target_node.name() if hasattr(target_node, "name") else target_node_id
 
             # CRITICAL: Sync all widget values before execution
             self._sync_all_widget_values()
@@ -1348,9 +1374,7 @@ class ExecutionController(BaseController):
             self.main_window.show_status("Workflow execution stopped", 3000)
         else:
             logger.warning("Workflow stop completed with issues")
-            self.main_window.show_status(
-                "Workflow stopped (cleanup may be incomplete)", 3000
-            )
+            self.main_window.show_status("Workflow stopped (cleanup may be incomplete)", 3000)
 
     def restart_workflow(self) -> None:
         """
@@ -1489,9 +1513,7 @@ class ExecutionController(BaseController):
         if success:
             self._is_listening = True
             self.trigger_listening_started.emit()
-            self.main_window.show_status(
-                "Trigger listening started - waiting for events...", 0
-            )
+            self.main_window.show_status("Trigger listening started - waiting for events...", 0)
             logger.success("Trigger listening started")
 
             # Update trigger node visual to show listening state

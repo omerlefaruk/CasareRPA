@@ -6,18 +6,22 @@ schedules, analytics, and API keys tabs. Supports multi-tenant filtering
 and real-time updates via WebSocketBridge.
 """
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from __future__ import annotations
 
+from typing import Optional, List, Dict, Any, TYPE_CHECKING, Tuple
+
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QButtonGroup,
     QHBoxLayout,
-    QTabWidget,
-    QPushButton,
     QLabel,
+    QPushButton,
+    QTabWidget,
+    QToolButton,
+    QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QFont
 
 from loguru import logger
 
@@ -33,15 +37,11 @@ from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
 from casare_rpa.presentation.canvas.ui.widgets.tenant_selector import (
     TenantSelectorWidget,
 )
+from casare_rpa.presentation.canvas.ui.widgets.toast import ToastNotification
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
-    from casare_rpa.presentation.canvas.services.websocket_bridge import (
-        WebSocketBridge,
-        RobotStatusUpdate,
-        JobStatusUpdate,
-        QueueMetricsUpdate,
-    )
 
 
 class FleetDashboardDialog(QDialog):
@@ -119,19 +119,24 @@ class FleetDashboardDialog(QDialog):
         self._connect_signals()
         self._apply_styles()
 
+        self._toast = ToastNotification(self)
+
         logger.debug("FleetDashboardDialog initialized")
 
     def _setup_ui(self) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Header with title and tenant selector
-        header_layout = QHBoxLayout()
+        header_widget = QWidget()
+        header_widget.setObjectName("header")
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(15, 10, 15, 10)
 
         title = QLabel("Fleet Management Dashboard")
-        title.setFont(QFont("", 16, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         header_layout.addWidget(title)
 
         header_layout.addStretch()
@@ -146,14 +151,25 @@ class FleetDashboardDialog(QDialog):
         header_layout.addWidget(self._tenant_selector)
 
         self._connection_status = QLabel("Disconnected")
-        self._connection_status.setStyleSheet("color: #F44336;")
         header_layout.addWidget(self._connection_status)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header_widget)
 
-        # Tabs
+        # Main content (sidebar + pages)
+        content_widget = QWidget()
+        content_layout = QHBoxLayout(content_widget)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
+        self._sidebar = QWidget()
+        self._sidebar.setObjectName("fleet_sidebar")
+        sidebar_layout = QVBoxLayout(self._sidebar)
+        sidebar_layout.setContentsMargins(10, 12, 10, 12)
+        sidebar_layout.setSpacing(6)
+
         self._tabs = QTabWidget()
         self._tabs.setDocumentMode(True)
+        self._tabs.tabBar().hide()
 
         self._robots_tab = RobotsTabWidget()
         self._tabs.addTab(self._robots_tab, "Robots")
@@ -173,22 +189,56 @@ class FleetDashboardDialog(QDialog):
         self._analytics_tab = AnalyticsTabWidget()
         self._tabs.addTab(self._analytics_tab, "Analytics")
 
-        layout.addWidget(self._tabs)
+        self._nav_group = QButtonGroup(self)
+        self._nav_group.setExclusive(True)
+        self._nav_buttons: Dict[int, QToolButton] = {}
+        self._nav_icon_cache: Dict[Tuple[str, bool], QIcon] = {}
+
+        nav_items = [
+            ("Robots", "robot"),
+            ("Jobs", "jobs"),
+            ("Schedules", "calendar"),
+            ("Queues", "queue"),
+            ("API Keys", "key"),
+            ("Analytics", "chart"),
+        ]
+
+        for index, (label, icon_kind) in enumerate(nav_items):
+            btn = QToolButton()
+            btn.setObjectName("fleet_nav_btn")
+            btn.setText(label)
+            btn.setCheckable(True)
+            btn.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            btn.setIcon(self._get_nav_icon(icon_kind, active=False))
+            btn.setIconSize(QSize(18, 18))
+            btn.clicked.connect(lambda checked, i=index: self._tabs.setCurrentIndex(i))
+            self._nav_group.addButton(btn, index)
+            self._nav_buttons[index] = btn
+            sidebar_layout.addWidget(btn)
+
+        sidebar_layout.addStretch()
+
+        content_layout.addWidget(self._sidebar)
+        content_layout.addWidget(self._tabs, 1)
+
+        layout.addWidget(content_widget)
 
         # Footer
-        footer = QHBoxLayout()
+        footer = QWidget()
+        footer.setObjectName("footer")
+        footer_layout = QHBoxLayout(footer)
+        footer_layout.setContentsMargins(10, 5, 10, 5)
 
         self._status_label = QLabel("Ready")
-        self._status_label.setStyleSheet("color: #888888;")
-        footer.addWidget(self._status_label)
+        footer_layout.addWidget(self._status_label)
 
-        footer.addStretch()
+        footer_layout.addStretch()
 
         self._close_btn = QPushButton("Close")
         self._close_btn.clicked.connect(self.accept)
-        footer.addWidget(self._close_btn)
+        footer_layout.addWidget(self._close_btn)
 
-        layout.addLayout(footer)
+        layout.addWidget(footer)
 
     def _connect_signals(self) -> None:
         """Connect tab signals to dialog signals."""
@@ -206,434 +256,254 @@ class FleetDashboardDialog(QDialog):
 
         # Schedules tab
         self._schedules_tab.schedule_selected.connect(self._on_schedule_selected)
-        self._schedules_tab.schedule_enabled_changed.connect(
-            self.schedule_enabled_changed.emit
-        )
+        self._schedules_tab.schedule_enabled_changed.connect(self.schedule_enabled_changed.emit)
         self._schedules_tab.schedule_edited.connect(self.schedule_edited.emit)
         self._schedules_tab.schedule_deleted.connect(self.schedule_deleted.emit)
         self._schedules_tab.schedule_run_now.connect(self.schedule_run_now.emit)
-        self._schedules_tab.refresh_requested.connect(self._on_refresh_schedules)
+        self._schedules_tab.refresh_requested.connect(self.refresh_requested.emit)
 
         # Queues tab
         self._queues_tab.queue_selected.connect(self.queue_selected.emit)
         self._queues_tab.queue_created.connect(self.queue_created.emit)
         self._queues_tab.queue_deleted.connect(self.queue_deleted.emit)
-        self._queues_tab.items_bulk_action.connect(self.queue_item_action.emit)
-        self._queues_tab.refresh_requested.connect(self._on_refresh_queues)
+        self._queues_tab.queue_item_action.connect(self.queue_item_action.emit)
+        self._queues_tab.refresh_requested.connect(self.refresh_requested.emit)
 
         # API Keys tab
-        self._api_keys_tab.key_generated.connect(self.api_key_generated.emit)
-        self._api_keys_tab.key_revoked.connect(self.api_key_revoked.emit)
-        self._api_keys_tab.key_rotated.connect(self.api_key_rotated.emit)
-        self._api_keys_tab.refresh_requested.connect(self._on_refresh_api_keys)
+        self._api_keys_tab.api_key_generated.connect(self.api_key_generated.emit)
+        self._api_keys_tab.api_key_revoked.connect(self.api_key_revoked.emit)
+        self._api_keys_tab.api_key_rotated.connect(self.api_key_rotated.emit)
+        self._api_keys_tab.refresh_requested.connect(self.refresh_requested.emit)
 
         # Analytics tab
-        self._analytics_tab.refresh_requested.connect(self._on_refresh_analytics)
+        self._analytics_tab.refresh_requested.connect(self.refresh_requested.emit)
+        self._analytics_tab.drilldown_requested.connect(self._on_analytics_drilldown)
+
+        # Sidebar/tab sync
+        self._tabs.currentChanged.connect(self._on_page_changed)
+        self._nav_group.button(0).setChecked(True)
+        self._on_page_changed(0)
+
+    def _on_analytics_drilldown(self, target: str, payload: object) -> None:
+        del payload
+        if target == "robots":
+            self._tabs.setCurrentWidget(self._robots_tab)
+            return
+        if target == "jobs":
+            self._tabs.setCurrentWidget(self._jobs_tab)
+            return
+        if target == "queues":
+            self._tabs.setCurrentWidget(self._queues_tab)
+            return
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QTabWidget::pane {
-                border: 1px solid #3d3d3d;
-                background: #2a2a2a;
-                border-radius: 4px;
-            }
-            QTabBar::tab {
-                background: #2d2d2d;
-                border: 1px solid #3d3d3d;
-                padding: 10px 20px;
-                margin-right: 2px;
-                color: #a0a0a0;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-            }
-            QTabBar::tab:selected {
-                background: #3a3a3a;
-                color: #e0e0e0;
-                border-bottom-color: #3a3a3a;
-            }
-            QTabBar::tab:hover:!selected {
-                background: #353535;
-                color: #c0c0c0;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                color: #e0e0e0;
-                padding: 8px 20px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-                border-color: #5a8a9a;
-            }
-            QPushButton:pressed {
-                background: #3a3a3a;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-        """)
+        """Apply custom styles to the dialog."""
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background: {THEME.bg_darkest};
+            }}
 
-    def _on_refresh_robots(self) -> None:
-        """Handle robots tab refresh request."""
-        self._status_label.setText("Refreshing robots...")
-        self._robots_tab.set_refreshing(True)
-        self.refresh_requested.emit()
+            QWidget#header {{
+                background: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border};
+            }}
 
-    def _on_refresh_jobs(self) -> None:
-        """Handle jobs tab refresh request."""
-        self._status_label.setText("Refreshing jobs...")
-        self._jobs_tab.set_refreshing(True)
-        self.refresh_requested.emit()
+            QWidget#footer {{
+                background: {THEME.bg_header};
+                border-top: 1px solid {THEME.border};
+            }}
 
-    def _on_refresh_schedules(self) -> None:
-        """Handle schedules tab refresh request."""
-        self._status_label.setText("Refreshing schedules...")
-        self._schedules_tab.set_refreshing(True)
-        self.refresh_requested.emit()
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
 
-    def _on_refresh_analytics(self) -> None:
-        """Handle analytics tab refresh request."""
-        self._status_label.setText("Refreshing analytics...")
-        self._analytics_tab.set_refreshing(True)
-        self.refresh_requested.emit()
+            QWidget#fleet_sidebar {{
+                background: {THEME.bg_dark};
+                border-right: 1px solid {THEME.border};
+                min-width: 190px;
+                max-width: 190px;
+            }}
 
-    def _on_refresh_api_keys(self) -> None:
-        """Handle API keys tab refresh request."""
-        self._status_label.setText("Refreshing API keys...")
-        self._api_keys_tab.set_refreshing(True)
-        self.refresh_requested.emit()
+            QToolButton#fleet_nav_btn {{
+                border: 1px solid transparent;
+                border-radius: 6px;
+                padding: 8px 10px;
+                color: {THEME.text_secondary};
+                text-align: left;
+                font-weight: 600;
+            }}
 
-    def _on_refresh_queues(self) -> None:
-        """Handle queues tab refresh request."""
-        self._status_label.setText("Refreshing queues...")
-        self._queues_tab.set_refreshing(True)
-        self.refresh_requested.emit()
+            QToolButton#fleet_nav_btn:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+                color: {THEME.text_primary};
+            }}
+
+            QToolButton#fleet_nav_btn:checked {{
+                background: {THEME.bg_selected};
+                border-color: {THEME.accent_primary};
+                color: {THEME.text_primary};
+            }}
+
+            QPushButton {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: 6px;
+                color: {THEME.text_primary};
+                padding: 6px 14px;
+                font-weight: 600;
+            }}
+
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            """
+        )
+
+    def _on_page_changed(self, index: int) -> None:
+        btn = self._nav_buttons.get(index)
+        if btn is not None:
+            btn.setChecked(True)
+
+        nav_items = [
+            ("robot", 0),
+            ("jobs", 1),
+            ("calendar", 2),
+            ("queue", 3),
+            ("key", 4),
+            ("chart", 5),
+        ]
+        for icon_kind, idx in nav_items:
+            b = self._nav_buttons.get(idx)
+            if b is None:
+                continue
+            b.setIcon(self._get_nav_icon(icon_kind, active=(idx == index)))
+
+    def _get_nav_icon(self, kind: str, active: bool) -> QIcon:
+        cache_key = (kind, active)
+        cached = self._nav_icon_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        size = 18
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        color = QColor(THEME.accent_primary if active else THEME.text_secondary)
+        pen = QPen(color, 1.8)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+
+        if kind == "robot":
+            # Simple robot: head + body + eyes
+            painter.drawRoundedRect(4, 3, 10, 7, 2, 2)
+            painter.drawRoundedRect(5, 10, 8, 6, 2, 2)
+            painter.drawPoint(7, 6)
+            painter.drawPoint(11, 6)
+            painter.drawLine(9, 1, 9, 3)
+        elif kind == "jobs":
+            # List icon
+            painter.drawLine(4, 5, 14, 5)
+            painter.drawLine(4, 9, 14, 9)
+            painter.drawLine(4, 13, 14, 13)
+            painter.drawPoint(3, 5)
+            painter.drawPoint(3, 9)
+            painter.drawPoint(3, 13)
+        elif kind == "calendar":
+            painter.drawRoundedRect(4, 5, 10, 10, 2, 2)
+            painter.drawLine(4, 8, 14, 8)
+            painter.drawLine(7, 3, 7, 6)
+            painter.drawLine(11, 3, 11, 6)
+        elif kind == "queue":
+            painter.drawRoundedRect(4, 4, 10, 4, 2, 2)
+            painter.drawRoundedRect(4, 9, 10, 4, 2, 2)
+            painter.drawRoundedRect(4, 14, 10, 2, 1, 1)
+        elif kind == "key":
+            painter.drawEllipse(4, 6, 6, 6)
+            painter.drawLine(9, 9, 14, 9)
+            painter.drawLine(12, 9, 12, 11)
+            painter.drawLine(13, 9, 13, 10)
+        elif kind == "chart":
+            painter.drawLine(4, 14, 14, 14)
+            painter.drawLine(5, 13, 5, 10)
+            painter.drawLine(9, 13, 9, 7)
+            painter.drawLine(13, 13, 13, 5)
+
+        painter.end()
+
+        icon = QIcon(pixmap)
+        self._nav_icon_cache[cache_key] = icon
+        return icon
+
+    def show_toast(self, message: str, level: str = "info", duration_ms: int = 2500) -> None:
+        self._toast.show_toast(message, level=level, duration_ms=duration_ms)
+
+    def set_connection_status(self, connected: bool, message: str) -> None:
+        self._connection_status.setText(message)
+        color = THEME.status_success if connected else THEME.status_error
+        self._connection_status.setStyleSheet(f"color: {color}; font-weight: 700;")
+
+    def set_status(self, message: str) -> None:
+        self._status_label.setText(message)
+
+    def set_super_admin(self, is_super_admin: bool) -> None:
+        self._is_super_admin = is_super_admin
+        self._tenant_selector.set_super_admin(is_super_admin)
+        self._update_tenant_selector_visibility()
+
+    def update_tenants(self, tenants: List[Dict[str, Any]]) -> None:
+        self._tenant_selector.update_tenants(tenants)
+        self._update_tenant_selector_visibility(tenant_count=len(tenants))
+
+    def _update_tenant_selector_visibility(self, tenant_count: Optional[int] = None) -> None:
+        if tenant_count is None:
+            tenant_count = 0
+        visible = bool(self._is_super_admin and tenant_count > 1)
+        self._tenant_selector.setVisible(visible)
+
+    def update_robots(self, robots: List["Robot"]) -> None:
+        if hasattr(self._robots_tab, "update_robots"):
+            self._robots_tab.update_robots(robots)
+
+    def update_jobs(self, jobs: List[Dict[str, Any]]) -> None:
+        self._jobs_tab.update_jobs(jobs)
+
+    def update_schedules(self, schedules: List[Dict[str, Any]]) -> None:
+        self._schedules_tab.update_schedules(schedules)
+
+    def update_queues(self, queues: List[Dict[str, Any]]) -> None:
+        if hasattr(self._queues_tab, "update_queues"):
+            self._queues_tab.update_queues(queues)
+
+    def update_analytics(self, analytics: Dict[str, Any]) -> None:
+        self._analytics_tab.update_analytics(analytics)
+
+    def update_api_keys_robots(self, robots: List[Dict[str, Any]]) -> None:
+        self._api_keys_tab.update_robots(robots)
+
+    def update_api_keys(self, api_keys: List[Dict[str, Any]]) -> None:
+        self._api_keys_tab.update_api_keys(api_keys)
 
     def _on_tenant_changed(self, tenant_id: Optional[str]) -> None:
         """Handle tenant selection change."""
         self._current_tenant_id = tenant_id
-        self._api_keys_tab.set_tenant(tenant_id)
         self.tenant_changed.emit(tenant_id)
-        logger.debug(f"Tenant changed to: {tenant_id}")
+        self.refresh_requested.emit()
+
+    def _on_refresh_robots(self) -> None:
+        self.refresh_requested.emit()
 
     def _on_job_selected(self, job_id: str) -> None:
-        """Handle job selection."""
-        logger.debug(f"Job selected: {job_id}")
+        pass
+
+    def _on_refresh_jobs(self) -> None:
+        self.refresh_requested.emit()
 
     def _on_schedule_selected(self, schedule_id: str) -> None:
-        """Handle schedule selection."""
-        logger.debug(f"Schedule selected: {schedule_id}")
-
-    def update_robots(self, robots: List["Robot"]) -> None:
-        """
-        Update robots tab with new data.
-
-        Args:
-            robots: List of Robot entities
-        """
-        self._robots_tab.update_robots(robots)
-        self._robots_tab.set_refreshing(False)
-        self._status_label.setText("Ready")
-
-    def update_jobs(self, jobs: List[Dict[str, Any]]) -> None:
-        """
-        Update jobs tab with new data.
-
-        Args:
-            jobs: List of job dictionaries
-        """
-        self._jobs_tab.update_jobs(jobs)
-        self._jobs_tab.set_refreshing(False)
-        self._status_label.setText("Ready")
-
-    def update_schedules(self, schedules: List[Dict[str, Any]]) -> None:
-        """
-        Update schedules tab with new data.
-
-        Args:
-            schedules: List of schedule dictionaries
-        """
-        self._schedules_tab.update_schedules(schedules)
-        self._schedules_tab.set_refreshing(False)
-        self._status_label.setText("Ready")
-
-    def update_analytics(self, analytics: Dict[str, Any]) -> None:
-        """
-        Update analytics tab with new data.
-
-        Args:
-            analytics: Analytics data dictionary
-        """
-        self._analytics_tab.update_analytics(analytics)
-        self._analytics_tab.set_refreshing(False)
-        self._status_label.setText("Ready")
-
-    def set_connection_status(self, connected: bool, message: str = "") -> None:
-        """
-        Set the connection status indicator.
-
-        Args:
-            connected: Whether connected to orchestrator
-            message: Optional status message
-        """
-        if connected:
-            self._connection_status.setText(message or "Connected")
-            self._connection_status.setStyleSheet("color: #4CAF50;")
-        else:
-            self._connection_status.setText(message or "Disconnected")
-            self._connection_status.setStyleSheet("color: #F44336;")
-
-    def set_status(self, message: str) -> None:
-        """
-        Set status bar message.
-
-        Args:
-            message: Status message to display
-        """
-        self._status_label.setText(message)
-
-    def show_robots_tab(self) -> None:
-        """Switch to robots tab."""
-        self._tabs.setCurrentWidget(self._robots_tab)
-
-    def show_jobs_tab(self) -> None:
-        """Switch to jobs tab."""
-        self._tabs.setCurrentWidget(self._jobs_tab)
-
-    def show_schedules_tab(self) -> None:
-        """Switch to schedules tab."""
-        self._tabs.setCurrentWidget(self._schedules_tab)
-
-    def show_analytics_tab(self) -> None:
-        """Switch to analytics tab."""
-        self._tabs.setCurrentWidget(self._analytics_tab)
-
-    def show_api_keys_tab(self) -> None:
-        """Switch to API keys tab."""
-        self._tabs.setCurrentWidget(self._api_keys_tab)
-
-    def show_queues_tab(self) -> None:
-        """Switch to queues tab."""
-        self._tabs.setCurrentWidget(self._queues_tab)
-
-    def get_selected_job(self) -> Optional[Dict[str, Any]]:
-        """Get currently selected job from jobs tab."""
-        return self._jobs_tab.get_selected_job()
-
-    # =========================================================================
-    # Multi-Tenant Support
-    # =========================================================================
-
-    def set_super_admin(self, is_super_admin: bool) -> None:
-        """
-        Set whether current user is a super admin.
-
-        Super admins can see and switch between all tenants.
-
-        Args:
-            is_super_admin: True if user is super admin.
-        """
-        self._is_super_admin = is_super_admin
-        self._tenant_selector.set_super_admin(is_super_admin)
-        self._tenant_selector.setVisible(is_super_admin)
-
-    def update_tenants(self, tenants: List[Dict[str, Any]]) -> None:
-        """
-        Update available tenants list.
-
-        Args:
-            tenants: List of tenant dictionaries with 'id' and 'name' keys.
-        """
-        self._tenant_selector.update_tenants(tenants)
-
-    def set_current_tenant(self, tenant_id: Optional[str]) -> None:
-        """
-        Set current tenant selection.
-
-        Args:
-            tenant_id: Tenant ID or None for "All Tenants".
-        """
-        self._tenant_selector.set_current_tenant(tenant_id)
-
-    def get_current_tenant_id(self) -> Optional[str]:
-        """
-        Get currently selected tenant ID.
-
-        Returns:
-            Tenant ID or None if "All Tenants" selected.
-        """
-        return self._tenant_selector.get_current_tenant_id()
-
-    # =========================================================================
-    # API Keys Support
-    # =========================================================================
-
-    def update_api_keys(self, api_keys: List[Dict[str, Any]]) -> None:
-        """
-        Update API keys tab with new data.
-
-        Args:
-            api_keys: List of API key dictionaries.
-        """
-        self._api_keys_tab.update_api_keys(api_keys)
-        self._api_keys_tab.set_refreshing(False)
-        self._status_label.setText("Ready")
-
-    def update_api_keys_robots(self, robots: List[Dict[str, Any]]) -> None:
-        """
-        Update robots list in API keys tab.
-
-        Args:
-            robots: List of robot dictionaries for key generation dropdown.
-        """
-        self._robots = robots
-        self._api_keys_tab.update_robots(robots)
-
-    # =========================================================================
-    # Queues Support
-    # =========================================================================
-
-    def update_queues(self, queues: List[Dict[str, Any]]) -> None:
-        """
-        Update queues tab with new data.
-
-        Args:
-            queues: List of queue dictionaries.
-        """
-        self._queues_tab.update_queues(queues)
-        self._queues_tab.set_refreshing(False)
-        self._status_label.setText("Ready")
-
-    def update_queue_items(self, items: List[Dict[str, Any]]) -> None:
-        """
-        Update queue items list in queues tab.
-
-        Args:
-            items: List of queue item dictionaries.
-        """
-        self._queues_tab.update_queue_items(items)
-
-    def update_queue_statistics(self, stats: Dict[str, Any]) -> None:
-        """
-        Update queue statistics in queues tab.
-
-        Args:
-            stats: Statistics dictionary with counts.
-        """
-        self._queues_tab.update_statistics(stats)
-
-    # =========================================================================
-    # WebSocket Real-Time Updates
-    # =========================================================================
-
-    def connect_websocket_bridge(self, bridge: "WebSocketBridge") -> None:
-        """
-        Connect to WebSocketBridge for real-time updates.
-
-        Subscribes to robot status, job status, and queue metrics events.
-
-        Args:
-            bridge: WebSocketBridge instance
-        """
-        # Connect bridge signals to tab handlers
-        bridge.robot_status_changed.connect(self._on_realtime_robot_status)
-        bridge.job_status_changed.connect(self._on_realtime_job_status)
-        bridge.queue_metrics_changed.connect(self._on_realtime_queue_metrics)
-        bridge.connection_status_changed.connect(self._on_realtime_connection_status)
-
-        # Connect batch signals for efficiency
-        bridge.robots_batch_updated.connect(self._on_realtime_robots_batch)
-        bridge.jobs_batch_updated.connect(self._on_realtime_jobs_batch)
-
-        logger.info("FleetDashboard connected to WebSocketBridge")
-
-    def disconnect_websocket_bridge(self, bridge: "WebSocketBridge") -> None:
-        """
-        Disconnect from WebSocketBridge.
-
-        Args:
-            bridge: WebSocketBridge instance to disconnect
-        """
-        try:
-            bridge.robot_status_changed.disconnect(self._on_realtime_robot_status)
-            bridge.job_status_changed.disconnect(self._on_realtime_job_status)
-            bridge.queue_metrics_changed.disconnect(self._on_realtime_queue_metrics)
-            bridge.connection_status_changed.disconnect(
-                self._on_realtime_connection_status
-            )
-            bridge.robots_batch_updated.disconnect(self._on_realtime_robots_batch)
-            bridge.jobs_batch_updated.disconnect(self._on_realtime_jobs_batch)
-        except (RuntimeError, TypeError):
-            # Signals may already be disconnected
-            pass
-
-        logger.info("FleetDashboard disconnected from WebSocketBridge")
-
-    def _on_realtime_robot_status(self, update: "RobotStatusUpdate") -> None:
-        """
-        Handle real-time robot status update.
-
-        Args:
-            update: RobotStatusUpdate from WebSocket
-        """
-        self._robots_tab.handle_robot_status_update(update)
-
-    def _on_realtime_job_status(self, update: "JobStatusUpdate") -> None:
-        """
-        Handle real-time job status update.
-
-        Args:
-            update: JobStatusUpdate from WebSocket
-        """
-        self._jobs_tab.handle_job_status_update(update)
-
-    def _on_realtime_queue_metrics(self, update: "QueueMetricsUpdate") -> None:
-        """
-        Handle real-time queue metrics update.
-
-        Updates the analytics tab with new queue depth.
-
-        Args:
-            update: QueueMetricsUpdate from WebSocket
-        """
-        # Update analytics with partial queue metrics
-        if hasattr(self._analytics_tab, "update_queue_metrics"):
-            self._analytics_tab.update_queue_metrics(update)
-
-    def _on_realtime_connection_status(self, connected: bool) -> None:
-        """
-        Handle WebSocket connection status change.
-
-        Args:
-            connected: True if connected
-        """
-        self.set_connection_status(connected)
-
-    def _on_realtime_robots_batch(self, updates: List["RobotStatusUpdate"]) -> None:
-        """
-        Handle batch of robot status updates.
-
-        More efficient than individual updates for high-frequency changes.
-
-        Args:
-            updates: List of RobotStatusUpdate objects
-        """
-        self._robots_tab.handle_batch_robot_updates(updates)
-
-    def _on_realtime_jobs_batch(self, updates: List["JobStatusUpdate"]) -> None:
-        """
-        Handle batch of job status updates.
-
-        More efficient than individual updates for high-frequency changes.
-
-        Args:
-            updates: List of JobStatusUpdate objects
-        """
-        self._jobs_tab.handle_batch_job_updates(updates)
+        pass

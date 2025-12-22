@@ -22,8 +22,16 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service",
+    ),
+)
 @node(category="system")
-@properties()  # Input port driven
 class GetServiceStatusNode(BaseNode):
     """
     Get the status of a Windows service.
@@ -41,9 +49,7 @@ class GetServiceStatusNode(BaseNode):
     # @requires: none
     # @ports: service_name -> status, display_name, exists
 
-    def __init__(
-        self, node_id: str, name: str = "Get Service Status", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Get Service Status", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -62,7 +68,6 @@ class GetServiceStatusNode(BaseNode):
             service_name = str(self.get_input_value("service_name", context) or "")
 
             # Resolve {{variable}} patterns
-            service_name = context.resolve_value(service_name)
 
             if not service_name:
                 raise ValueError("service_name is required")
@@ -70,14 +75,9 @@ class GetServiceStatusNode(BaseNode):
             if sys.platform != "win32":
                 raise RuntimeError("Windows Services only available on Windows")
 
-            result = subprocess.run(
-                ["sc", "query", service_name], capture_output=True, text=True
-            )
+            result = subprocess.run(["sc", "query", service_name], capture_output=True, text=True)
 
-            if (
-                "FAILED 1060" in result.stderr
-                or "does not exist" in result.stderr.lower()
-            ):
+            if "FAILED 1060" in result.stderr or "does not exist" in result.stderr.lower():
                 self.set_output_value("status", "not_found")
                 self.set_output_value("display_name", "")
                 self.set_output_value("exists", False)
@@ -126,8 +126,16 @@ class GetServiceStatusNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service to start",
+    ),
+)
 @node(category="system")
-@properties()  # Input port driven
 class StartServiceNode(BaseNode):
     """
     Start a Windows service.
@@ -162,7 +170,6 @@ class StartServiceNode(BaseNode):
             service_name = str(self.get_input_value("service_name", context) or "")
 
             # Resolve {{variable}} patterns
-            service_name = context.resolve_value(service_name)
 
             if not service_name:
                 raise ValueError("service_name is required")
@@ -170,13 +177,9 @@ class StartServiceNode(BaseNode):
             if sys.platform != "win32":
                 raise RuntimeError("Windows Services only available on Windows")
 
-            result = subprocess.run(
-                ["sc", "start", service_name], capture_output=True, text=True
-            )
+            result = subprocess.run(["sc", "start", service_name], capture_output=True, text=True)
 
-            success = (
-                result.returncode == 0 or "already running" in result.stderr.lower()
-            )
+            success = result.returncode == 0 or "already running" in result.stderr.lower()
             message = result.stdout if success else result.stderr
 
             self.set_output_value("success", success)
@@ -196,8 +199,16 @@ class StartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service to stop",
+    ),
+)
 @node(category="system")
-@properties()  # Input port driven
 class StopServiceNode(BaseNode):
     """
     Stop a Windows service.
@@ -232,7 +243,6 @@ class StopServiceNode(BaseNode):
             service_name = str(self.get_input_value("service_name", context) or "")
 
             # Resolve {{variable}} patterns
-            service_name = context.resolve_value(service_name)
 
             if not service_name:
                 raise ValueError("service_name is required")
@@ -240,9 +250,7 @@ class StopServiceNode(BaseNode):
             if sys.platform != "win32":
                 raise RuntimeError("Windows Services only available on Windows")
 
-            result = subprocess.run(
-                ["sc", "stop", service_name], capture_output=True, text=True
-            )
+            result = subprocess.run(["sc", "stop", service_name], capture_output=True, text=True)
 
             success = result.returncode == 0 or "not started" in result.stderr.lower()
             message = result.stdout if success else result.stderr
@@ -264,8 +272,14 @@ class StopServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
+    PropertyDef(
+        "service_name",
+        PropertyType.STRING,
+        required=True,
+        label="Service Name",
+        tooltip="Name of the Windows service to restart",
+    ),
     PropertyDef(
         "wait_time",
         PropertyType.INTEGER,
@@ -275,6 +289,7 @@ class StopServiceNode(BaseNode):
         tooltip="Seconds to wait between stop and start",
     ),
 )
+@node(category="system")
 class RestartServiceNode(BaseNode):
     """
     Restart a Windows service.
@@ -315,7 +330,6 @@ class RestartServiceNode(BaseNode):
             wait_time = self.get_parameter("wait_time", 2)
 
             # Resolve {{variable}} patterns
-            service_name = context.resolve_value(service_name)
 
             if not service_name:
                 raise ValueError("service_name is required")
@@ -330,9 +344,7 @@ class RestartServiceNode(BaseNode):
             await asyncio.sleep(wait_time)
 
             # Start service
-            result = subprocess.run(
-                ["sc", "start", service_name], capture_output=True, text=True
-            )
+            result = subprocess.run(["sc", "start", service_name], capture_output=True, text=True)
 
             success = result.returncode == 0
             message = result.stdout if success else result.stderr
@@ -354,7 +366,6 @@ class RestartServiceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "state_filter",
@@ -365,6 +376,7 @@ class RestartServiceNode(BaseNode):
         tooltip="Filter services by state",
     ),
 )
+@node(category="system")
 class ListServicesNode(BaseNode):
     """
     List all Windows services.
@@ -401,9 +413,7 @@ class ListServicesNode(BaseNode):
                 raise RuntimeError("Windows Services only available on Windows")
 
             # Use PowerShell to get services as it provides better output
-            ps_cmd = (
-                "Get-Service | Select-Object Name, DisplayName, Status | ConvertTo-Json"
-            )
+            ps_cmd = "Get-Service | Select-Object Name, DisplayName, Status | ConvertTo-Json"
             result = subprocess.run(
                 ["powershell", "-Command", ps_cmd], capture_output=True, text=True
             )

@@ -110,9 +110,7 @@ class SystemMetricsCollector:
                 logger.warning(f"Failed to initialize psutil process: {e}")
                 self._process = None
         else:
-            logger.warning(
-                "psutil not available - system metrics will return zero values"
-            )
+            logger.warning("psutil not available - system metrics will return zero values")
 
         self._initialized = True
 

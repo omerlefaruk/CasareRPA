@@ -19,14 +19,15 @@ from casare_rpa.infrastructure.resources.document_ai_manager import (
     TableExtractionResult,
     ValidationResult,
 )
-from casare_rpa.infrastructure.resources.google_calendar_client import (
-    Calendar,
-    CalendarConfig,
-    CalendarEvent,
-    FreeBusyInfo,
-    GoogleCalendarAPIError,
-    GoogleCalendarClient,
-)
+
+# from casare_rpa.infrastructure.resources.google_calendar_client import (
+#     Calendar,
+#     CalendarConfig,
+#     CalendarEvent,
+#     FreeBusyInfo,
+#     GoogleCalendarAPIError,
+#     GoogleCalendarClient,
+# )
 from casare_rpa.infrastructure.resources.google_client import (
     SCOPES as GOOGLE_SCOPES,
     GoogleAPIClient,
@@ -38,14 +39,15 @@ from casare_rpa.infrastructure.resources.google_client import (
     GoogleScope,
     create_google_client,
 )
-from casare_rpa.infrastructure.resources.google_docs_client import (
-    DocumentStyle,
-    ExportFormat as DocsExportFormat,
-    GoogleDocsAPIError,
-    GoogleDocsClient,
-    GoogleDocsConfig,
-    GoogleDocument,
-)
+
+# from casare_rpa.infrastructure.resources.google_docs_client import (
+#     DocumentStyle,
+#     ExportFormat as DocsExportFormat,
+#     GoogleDocsAPIError,
+#     GoogleDocsClient,
+#     GoogleDocsConfig,
+#     GoogleDocument,
+# )
 from casare_rpa.infrastructure.resources.llm_resource_manager import (
     LLMConfig,
     LLMProvider,
@@ -105,17 +107,17 @@ __all__ = [
     "GOOGLE_SCOPES",
     "create_google_client",
     # Google Docs
-    "GoogleDocsClient",
-    "GoogleDocsConfig",
-    "GoogleDocument",
-    "GoogleDocsAPIError",
-    "DocsExportFormat",
-    "DocumentStyle",
+    # "GoogleDocsClient",
+    # "GoogleDocsConfig",
+    # "GoogleDocument",
+    # "GoogleDocsAPIError",
+    # "DocsExportFormat",
+    # "DocumentStyle",
     # Google Calendar
-    "GoogleCalendarClient",
-    "GoogleCalendarAPIError",
-    "CalendarConfig",
-    "CalendarEvent",
-    "Calendar",
-    "FreeBusyInfo",
+    # "GoogleCalendarClient",
+    # "GoogleCalendarAPIError",
+    # "CalendarConfig",
+    # "CalendarEvent",
+    # "Calendar",
+    # "FreeBusyInfo",
 ]

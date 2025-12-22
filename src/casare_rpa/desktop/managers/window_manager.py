@@ -89,9 +89,7 @@ class WindowManager:
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    async def get_all_windows(
-        self, include_invisible: bool = False
-    ) -> List[DesktopElement]:
+    async def get_all_windows(self, include_invisible: bool = False) -> List[DesktopElement]:
         """
         Get all top-level windows.
 
@@ -151,9 +149,7 @@ class WindowManager:
                     parsed_args = shlex.split(args)
                     cmd_list.extend(parsed_args)
                 except ValueError as e:
-                    logger.warning(
-                        f"Could not parse args with shlex: {e}, using simple split"
-                    )
+                    logger.warning(f"Could not parse args with shlex: {e}, using simple split")
                     cmd_list.extend(args.split())
 
             process = subprocess.Popen(cmd_list, cwd=working_dir, shell=False)
@@ -161,13 +157,9 @@ class WindowManager:
             self._launched_processes.append(process.pid)
             if keep_open:
                 self._keep_open_processes.add(process.pid)
-                logger.debug(
-                    f"Process launched with PID: {process.pid} (will keep open)"
-                )
+                logger.debug(f"Process launched with PID: {process.pid} (will keep open)")
             else:
-                logger.debug(
-                    f"Process launched with PID: {process.pid} (will close on cleanup)"
-                )
+                logger.debug(f"Process launched with PID: {process.pid} (will close on cleanup)")
 
             await asyncio.sleep(0.5)
 
@@ -208,10 +200,7 @@ class WindowManager:
 
                                 windows_checked += 1
 
-                                if (
-                                    window.ControlTypeName == "WindowControl"
-                                    and window.IsEnabled
-                                ):
+                                if window.ControlTypeName == "WindowControl" and window.IsEnabled:
                                     try:
                                         if window.ProcessId == process.pid:
                                             return DesktopElement(window)
@@ -223,9 +212,7 @@ class WindowManager:
                                 f"after checking {windows_checked} windows"
                             )
                         except Exception as e:
-                            logger.error(
-                                f"Error during process-based window search: {e}"
-                            )
+                            logger.error(f"Error during process-based window search: {e}")
                         return None
 
                 result = await asyncio.to_thread(_search_by_pid)
@@ -311,9 +298,7 @@ class WindowManager:
                         try:
                             window._control.GetWindowPattern().Close()
                         except Exception as e:
-                            logger.debug(
-                                f"WindowPattern.Close() failed, trying Alt+F4: {e}"
-                            )
+                            logger.debug(f"WindowPattern.Close() failed, trying Alt+F4: {e}")
                             window._control.SetFocus()
                             window._control.SendKeys("{Alt}F4")
 
@@ -321,9 +306,7 @@ class WindowManager:
 
                 start_time = time.time()
                 while time.time() - start_time < timeout:
-                    exists = await asyncio.to_thread(
-                        lambda: window._control.Exists(0, 0)
-                    )
+                    exists = await asyncio.to_thread(lambda: window._control.Exists(0, 0))
                     if not exists:
                         logger.info("Application closed successfully")
                         return True
@@ -346,9 +329,7 @@ class WindowManager:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    async def resize_window(
-        self, window: DesktopElement, width: int, height: int
-    ) -> bool:
+    async def resize_window(self, window: DesktopElement, width: int, height: int) -> bool:
         """
         Resize a window to specified dimensions.
 

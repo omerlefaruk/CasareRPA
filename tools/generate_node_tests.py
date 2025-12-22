@@ -32,15 +32,15 @@ console = Console()
 
 def get_node_registry() -> Dict[str, Type]:
     """
-    Get the node registry from casare_rpa.nodes.
+    Get all node classes from casare_rpa.nodes.
 
     Returns:
-        Dictionary mapping node type names to classes
+        Dictionary mapping node type names to classes.
     """
     try:
-        from casare_rpa.nodes import _NODE_REGISTRY
+        from casare_rpa.nodes import get_all_node_classes
 
-        return _NODE_REGISTRY
+        return get_all_node_classes()
     except ImportError as e:
         console.print(f"[red]Failed to import node registry: {e}[/red]")
         sys.exit(1)
@@ -64,8 +64,7 @@ def get_node_schema(node_class: Type) -> Dict[str, Any]:
     """
     Extract schema information from a node class.
 
-    Looks for @node_schema decorator metadata and inspects
-    port definitions.
+    Looks for @properties decorator metadata and inspects port definitions.
 
     Args:
         node_class: Node class to inspect
@@ -88,14 +87,14 @@ def get_node_schema(node_class: Type) -> Dict[str, Any]:
     if hasattr(node_class, "_output_ports"):
         schema["output_ports"] = list(node_class._output_ports.keys())
 
-    # Check for properties decorator metadata
-    if hasattr(node_class, "_node_properties"):
-        schema["config_properties"] = list(node_class._node_properties.keys())
+    node_schema = getattr(node_class, "__node_schema__", None)
+    if node_schema is not None and getattr(node_schema, "properties", None):
+        schema["config_properties"] = [p.name for p in node_schema.properties]
 
     # Try to instantiate to get port info
     try:
         # Create with dummy node_id
-        instance = node_class(node_id="test_node")
+        instance = node_class(node_id="test_node", config={})
         if hasattr(instance, "input_ports"):
             schema["input_ports"] = list(instance.input_ports.keys())
         if hasattr(instance, "output_ports"):
@@ -364,15 +363,9 @@ def get_output_path(node_class: Type, output_dir: Optional[str] = None) -> Path:
 
 @app.command("generate")
 def generate(
-    node_name: str = typer.Argument(
-        ..., help="Node class name (e.g., ClickElementNode)"
-    ),
-    output: Optional[str] = typer.Option(
-        None, "--output", "-o", help="Custom output directory"
-    ),
-    force: bool = typer.Option(
-        False, "--force", "-f", help="Overwrite existing test file"
-    ),
+    node_name: str = typer.Argument(..., help="Node class name (e.g., ClickElementNode)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Custom output directory"),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing test file"),
 ):
     """Generate a test template for a specific node."""
     node_class = get_node_class(node_name)
@@ -403,11 +396,16 @@ def generate(
 
 @app.command("list")
 def list_nodes(
-    category: Optional[str] = typer.Option(
-        None, "--category", "-c", help="Filter by category"
-    ),
+    category: Optional[str] = typer.Option(None, "--category", "-c", help="Filter by category"),
 ):
     """List all available nodes in the registry."""
+    # For listing we prefer registry data (no imports), but fall back to class loading.
+    try:
+        from casare_rpa.nodes.registry_data import NODE_REGISTRY
+
+        registry_data = NODE_REGISTRY
+    except Exception:
+        registry_data = {}
     registry = get_node_registry()
 
     table = Table(title="CasareRPA Node Registry")
@@ -415,8 +413,9 @@ def list_nodes(
     table.add_column("Module", style="dim")
     table.add_column("Category", style="green")
 
-    for name, node_class in sorted(registry.items()):
-        module = node_class.__module__
+    for name in sorted(set(registry.keys()) | set(registry_data.keys())):
+        node_class = registry.get(name)
+        module = node_class.__module__ if node_class else str(registry_data.get(name, ""))
 
         # Determine category
         if "browser" in module:
@@ -443,15 +442,15 @@ def list_nodes(
         table.add_row(name, module, cat)
 
     console.print(table)
-    console.print(f"\n[dim]Total: {len(registry)} nodes[/dim]")
+    console.print(
+        f"\n[dim]Total: {len(set(registry.keys()) | set(registry_data.keys()))} nodes[/dim]"
+    )
 
 
 @app.command("category")
 def generate_category(
     category: str = typer.Argument(..., help="Category name (e.g., browser)"),
-    output: Optional[str] = typer.Option(
-        None, "--output", "-o", help="Custom output directory"
-    ),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Custom output directory"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing files"),
 ):
     """Generate test templates for all nodes in a category."""

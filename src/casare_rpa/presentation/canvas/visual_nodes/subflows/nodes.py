@@ -14,37 +14,44 @@ from PySide6.QtWidgets import QWidget, QLabel, QLineEdit
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 # =============================================================================
 # Promoted Parameter Widget with Variable Picker + Editable Label
 # =============================================================================
 
-PROMOTED_PARAM_STYLE = """
-QLineEdit {
-    background: #3c3c50;
-    border: 1px solid #505064;
+
+def _get_promoted_param_style() -> str:
+    """Get the styled stylesheet for promoted parameter inputs."""
+    return f"""
+QLineEdit {{
+    background: {THEME.bg_medium};
+    border: 1px solid {THEME.border_light};
     border-radius: 3px;
-    color: rgba(230, 230, 230, 255);
+    color: {THEME.text_primary};
     padding: 2px 28px 2px 4px;
-    selection-background-color: rgba(100, 150, 200, 150);
-}
-QLineEdit:focus {
-    background: #484860;
-    border: 1px solid #0078d4;
-}
+    selection-background-color: {THEME.accent_primary}99;
+}}
+QLineEdit:focus {{
+    background: {THEME.bg_lighter};
+    border: 1px solid {THEME.accent_primary};
+}}
 """
 
-EDITABLE_LABEL_STYLE = """
-QLabel {
-    color: #cccccc;
+
+def _get_editable_label_style() -> str:
+    """Get the styled stylesheet for editable labels."""
+    return f"""
+QLabel {{
+    color: {THEME.text_secondary};
     font-size: 11px;
     padding: 2px 0px;
-}
-QLabel:hover {
-    color: #ffffff;
+}}
+QLabel:hover {{
+    color: {THEME.text_primary};
     text-decoration: underline;
-}
+}}
 """
 
 
@@ -62,7 +69,7 @@ class EditableLabel(QLabel):
         self._param_name = param_name
         self._editing = False
         self._line_edit: Optional[QLineEdit] = None
-        self.setStyleSheet(EDITABLE_LABEL_STYLE)
+        self.setStyleSheet(_get_editable_label_style())
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("Double-click to rename")
 
@@ -391,9 +398,7 @@ class VisualSubflowNode(VisualNode):
 
         from casare_rpa.domain.schemas import NodeSchema
 
-        schema: NodeSchema = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: NodeSchema = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return
 
@@ -513,15 +518,8 @@ class VisualSubflowNode(VisualNode):
 
                 # First, try to get from internal node's data in subflow entity
                 if self._subflow_entity and param.internal_node_id:
-                    internal_node_data = self._subflow_entity.nodes.get(
-                        param.internal_node_id, {}
-                    )
-                    # Try different keys for properties
-                    properties = (
-                        internal_node_data.get("properties", {})
-                        or internal_node_data.get("config", {})
-                        or internal_node_data.get("custom", {})
-                    )
+                    internal_node_data = self._subflow_entity.nodes.get(param.internal_node_id, {})
+                    properties = internal_node_data.get("config", {})
                     internal_val = properties.get(param.internal_property_name)
                     if internal_val is not None:
                         value = internal_val
@@ -564,9 +562,7 @@ class VisualSubflowNode(VisualNode):
                         placeholder_text=placeholder,
                     )
 
-                logger.info(
-                    f"Added widget for promoted parameter: {param.name} ({prop_type})"
-                )
+                logger.info(f"Added widget for promoted parameter: {param.name} ({prop_type})")
 
             except Exception as e:
                 logger.error(
@@ -613,12 +609,13 @@ class VisualSubflowNode(VisualNode):
         # Apply promoted param styling (darker background)
         if widget:
             try:
+                style = _get_promoted_param_style()
                 if hasattr(widget, "_line_edit") and widget._line_edit:
-                    widget._line_edit.setStyleSheet(PROMOTED_PARAM_STYLE)
+                    widget._line_edit.setStyleSheet(style)
                 elif hasattr(widget, "get_custom_widget"):
                     custom = widget.get_custom_widget()
                     if custom:
-                        custom.setStyleSheet(PROMOTED_PARAM_STYLE)
+                        custom.setStyleSheet(style)
             except Exception as e:
                 logger.debug(f"Could not apply styling to widget: {e}")
 
@@ -642,9 +639,7 @@ class VisualSubflowNode(VisualNode):
 
                 # Connect rename signal
                 editable.renamed.connect(
-                    lambda pname, new_label: self._on_param_label_renamed(
-                        pname, new_label
-                    )
+                    lambda pname, new_label: self._on_param_label_renamed(pname, new_label)
                 )
 
                 # Replace in layout
@@ -675,9 +670,7 @@ class VisualSubflowNode(VisualNode):
                 for param in self._subflow_entity.parameters:
                     if param.name == param_name:
                         param.label = new_label
-                        logger.info(
-                            f"Renamed parameter '{param_name}' label to '{new_label}'"
-                        )
+                        logger.info(f"Renamed parameter '{param_name}' label to '{new_label}'")
                         break
 
             # Mark workflow as modified
@@ -754,9 +747,7 @@ class VisualSubflowNode(VisualNode):
                     os.path.dirname(
                         os.path.dirname(
                             os.path.dirname(
-                                os.path.dirname(
-                                    os.path.dirname(os.path.dirname(__file__))
-                                )
+                                os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
                             )
                         )
                     )
@@ -773,9 +764,7 @@ class VisualSubflowNode(VisualNode):
                                 if subflow.id == subflow_id:
                                     self._subflow_entity = subflow
                                     # Update path for future use
-                                    self.set_property(
-                                        "subflow_path", filepath, push_undo=False
-                                    )
+                                    self.set_property("subflow_path", filepath, push_undo=False)
                                     logger.debug(f"Found subflow by ID in: {filepath}")
                                     return True
                             except Exception:
@@ -926,11 +915,7 @@ class VisualSubflowNode(VisualNode):
             from casare_rpa.nodes import get_node_class
 
             for node_id, node_data in self._subflow_entity.nodes.items():
-                node_type = (
-                    node_data.get("type")
-                    or node_data.get("node_type")
-                    or node_data.get("type_", "").split(".")[-1]
-                )
+                node_type = node_data.get("node_type", "")
 
                 if node_type and node_type not in schemas:
                     node_class = get_node_class(node_type)
@@ -941,7 +926,3 @@ class VisualSubflowNode(VisualNode):
             logger.debug(f"Could not load node schemas: {e}")
 
         return schemas
-
-
-# Backward compatibility alias
-SubflowVisualNode = VisualSubflowNode

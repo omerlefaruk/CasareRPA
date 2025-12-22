@@ -94,7 +94,6 @@ PARAMS_PROPERTY = PropertyDef(
 )
 
 
-@node(category="http")
 @properties(
     URL_PROPERTY,
     PropertyDef(
@@ -143,6 +142,7 @@ PARAMS_PROPERTY = PropertyDef(
         tooltip="Force specific response encoding (optional)",
     ),
 )
+@node(category="http")
 class HttpRequestNode(HttpBaseNode):
     """
     Generic HTTP request node supporting all HTTP methods.

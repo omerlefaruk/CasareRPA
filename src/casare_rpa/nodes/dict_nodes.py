@@ -18,7 +18,6 @@ from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "json_string",
@@ -30,6 +29,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         essential=True,
     ),
 )
+@node(category="data")
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
 
@@ -42,6 +42,8 @@ class JsonParseNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "JsonParseNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("json_string", DataType.STRING, required=False)
@@ -51,7 +53,7 @@ class JsonParseNode(BaseNode):
         try:
             json_str = self.get_parameter("json_string", "")
             # Resolve {{variable}} patterns
-            json_str = context.resolve_value(json_str) if json_str else ""
+            json_str = json_str if json_str else ""
             if not json_str:
                 raise ValueError("Empty JSON string")
 
@@ -64,7 +66,6 @@ class JsonParseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "property_path",
@@ -76,6 +77,7 @@ class JsonParseNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="data")
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
 
@@ -88,6 +90,8 @@ class GetPropertyNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetPropertyNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("object", DataType.DICT, required=False)
@@ -99,8 +103,8 @@ class GetPropertyNode(BaseNode):
             obj = self.get_parameter("object", {})
             path = self.get_parameter("property_path", "")
             # Resolve {{variable}} patterns
-            obj = context.resolve_value(obj) if obj else {}
-            path = context.resolve_value(path) if path else ""
+            obj = obj if obj else {}
+            path = path if path else ""
 
             if not isinstance(obj, dict):
                 raise ValueError("Input is not a dictionary")
@@ -123,7 +127,6 @@ class GetPropertyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "key",
@@ -135,6 +138,7 @@ class GetPropertyNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="data")
 class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
 
@@ -147,6 +151,8 @@ class DictGetNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "DictGetNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", DataType.DICT, required=False)
@@ -161,8 +167,8 @@ class DictGetNode(BaseNode):
             key = self.get_parameter("key", "")
             default = self.get_parameter("default")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
+            d = d if d else {}
+            key = key if key else ""
             default = context.resolve_value(default) if default is not None else None
 
             if not isinstance(d, dict):
@@ -184,7 +190,6 @@ class DictGetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "key",
@@ -196,6 +201,7 @@ class DictGetNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="data")
 class DictSetNode(BaseNode):
     """Node that sets a value in a dictionary."""
 
@@ -221,9 +227,8 @@ class DictSetNode(BaseNode):
             key = self.get_parameter("key", "")
             value = self.get_parameter("value")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
-            value = context.resolve_value(value)
+            d = d if d else {}
+            key = key if key else ""
 
             if not isinstance(d, dict):
                 d = {}
@@ -242,7 +247,6 @@ class DictSetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "key",
@@ -254,6 +258,7 @@ class DictSetNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="data")
 class DictRemoveNode(BaseNode):
     """Node that removes a key from a dictionary."""
 
@@ -278,8 +283,8 @@ class DictRemoveNode(BaseNode):
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
+            d = d if d else {}
+            key = key if key else ""
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -300,8 +305,8 @@ class DictRemoveNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class DictMergeNode(BaseNode):
     """Node that merges two dictionaries."""
 
@@ -325,8 +330,8 @@ class DictMergeNode(BaseNode):
             d1 = self.get_parameter("dict_1", {})
             d2 = self.get_parameter("dict_2", {})
             # Resolve {{variable}} patterns
-            d1 = context.resolve_value(d1) if d1 else {}
-            d2 = context.resolve_value(d2) if d2 else {}
+            d1 = d1 if d1 else {}
+            d2 = d2 if d2 else {}
 
             if not isinstance(d1, dict):
                 d1 = {}
@@ -343,8 +348,8 @@ class DictMergeNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class DictKeysNode(BaseNode):
     """Node that gets all keys from a dictionary."""
 
@@ -367,7 +372,7 @@ class DictKeysNode(BaseNode):
         try:
             d = self.get_parameter("dict", {})
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -388,8 +393,8 @@ class DictKeysNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class DictValuesNode(BaseNode):
     """Node that gets all values from a dictionary."""
 
@@ -412,7 +417,7 @@ class DictValuesNode(BaseNode):
         try:
             d = self.get_parameter("dict", {})
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -433,8 +438,8 @@ class DictValuesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class DictHasKeyNode(BaseNode):
     """Node that checks if a dictionary has a key."""
 
@@ -458,8 +463,8 @@ class DictHasKeyNode(BaseNode):
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
+            d = d if d else {}
+            key = key if key else ""
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -474,8 +479,8 @@ class DictHasKeyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class CreateDictNode(BaseNode):
     """Node that creates a dictionary from key-value pairs."""
 
@@ -507,7 +512,7 @@ class CreateDictNode(BaseNode):
                 key = self.get_parameter(f"key_{i}")
                 value = self.get_parameter(f"value_{i}")
                 # Resolve {{variable}} patterns
-                key = context.resolve_value(key) if key else None
+                key = key if key else None
                 value = context.resolve_value(value) if value is not None else None
                 if key is not None and key != "":
                     result[key] = value
@@ -520,7 +525,6 @@ class CreateDictNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "indent",
@@ -545,6 +549,7 @@ class CreateDictNode(BaseNode):
         tooltip="Escape non-ASCII characters",
     ),
 )
+@node(category="data")
 class DictToJsonNode(BaseNode):
     """Node that converts a dictionary to a JSON string."""
 
@@ -568,7 +573,7 @@ class DictToJsonNode(BaseNode):
             d = self.get_parameter("dict", {})
             indent = self.get_parameter("indent")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if indent is not None:
                 indent = int(indent)
@@ -596,8 +601,8 @@ class DictToJsonNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="data")
 class DictItemsNode(BaseNode):
     """Node that gets key-value pairs from a dictionary as a list of dicts."""
 
@@ -620,7 +625,7 @@ class DictItemsNode(BaseNode):
         try:
             d = self.get_parameter("dict", {})
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")

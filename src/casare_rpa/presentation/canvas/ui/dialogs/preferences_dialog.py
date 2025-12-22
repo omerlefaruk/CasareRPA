@@ -114,9 +114,7 @@ class PreferencesDialog(QDialog):
         )
         button_box.accepted.connect(self._on_ok)
         button_box.rejected.connect(self.reject)
-        button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
-            self._on_apply
-        )
+        button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self._on_apply)
 
         layout.addWidget(button_box)
 
@@ -386,9 +384,7 @@ class PreferencesDialog(QDialog):
 
         # Autosave
         if "autosave_enabled" in self.preferences:
-            self._autosave_enabled.setChecked(
-                bool(self.preferences["autosave_enabled"])
-            )
+            self._autosave_enabled.setChecked(bool(self.preferences["autosave_enabled"]))
 
         if "autosave_interval" in self.preferences:
             self._autosave_interval.setValue(int(self.preferences["autosave_interval"]))
@@ -416,20 +412,14 @@ class PreferencesDialog(QDialog):
             self._show_node_ids.setChecked(bool(self.preferences["show_node_ids"]))
 
         if "connection_style" in self.preferences:
-            self._connection_style.setCurrentText(
-                str(self.preferences["connection_style"])
-            )
+            self._connection_style.setCurrentText(str(self.preferences["connection_style"]))
 
         if "show_port_labels" in self.preferences:
-            self._show_port_labels.setChecked(
-                bool(self.preferences["show_port_labels"])
-            )
+            self._show_port_labels.setChecked(bool(self.preferences["show_port_labels"]))
 
         # Performance
         if "enable_antialiasing" in self.preferences:
-            self._enable_antialiasing.setChecked(
-                bool(self.preferences["enable_antialiasing"])
-            )
+            self._enable_antialiasing.setChecked(bool(self.preferences["enable_antialiasing"]))
 
         if "enable_shadows" in self.preferences:
             self._enable_shadows.setChecked(bool(self.preferences["enable_shadows"]))

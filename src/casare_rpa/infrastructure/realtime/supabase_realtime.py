@@ -33,10 +33,10 @@ Architecture:
 
 Database Schema (expected):
     -- Realtime requires replication enabled on tables
-    ALTER TABLE pgqueuer_jobs REPLICA IDENTITY FULL;
+    ALTER TABLE job_queue REPLICA IDENTITY FULL;
 
     -- Enable Realtime for the table
-    ALTER PUBLICATION supabase_realtime ADD TABLE pgqueuer_jobs;
+    ALTER PUBLICATION supabase_realtime ADD TABLE job_queue;
 """
 
 from __future__ import annotations
@@ -189,9 +189,7 @@ class JobInsertedPayload:
         created_at_str = record.get("created_at", "")
         if created_at_str:
             try:
-                created_at = datetime.fromisoformat(
-                    created_at_str.replace("Z", "+00:00")
-                )
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
             except ValueError:
                 created_at = datetime.now(timezone.utc)
         else:
@@ -543,8 +541,7 @@ class RealtimeClient:
         self._presence_task: Optional[asyncio.Task] = None
 
         logger.info(
-            f"RealtimeClient initialized for robot '{config.robot_id}' "
-            f"at {config.supabase_url}"
+            f"RealtimeClient initialized for robot '{config.robot_id}' " f"at {config.supabase_url}"
         )
 
     @property
@@ -724,16 +721,13 @@ class RealtimeClient:
         self._reconnect_attempts += 1
 
         if self._reconnect_attempts > self._config.reconnect_max_attempts:
-            logger.error(
-                f"Max reconnect attempts ({self._config.reconnect_max_attempts}) exceeded"
-            )
+            logger.error(f"Max reconnect attempts ({self._config.reconnect_max_attempts}) exceeded")
             self._set_state(RealtimeConnectionState.FAILED)
             return False
 
         # Calculate delay with exponential backoff and jitter
         delay = min(
-            self._config.reconnect_base_delay_seconds
-            * (2 ** (self._reconnect_attempts - 1)),
+            self._config.reconnect_base_delay_seconds * (2 ** (self._reconnect_attempts - 1)),
             self._config.reconnect_max_delay_seconds,
         )
         jitter = delay * random.uniform(0.1, 0.3)
@@ -884,9 +878,7 @@ class RealtimeClient:
 
         self._subscription_manager.register_channel(self.CHANNEL_PRESENCE, channel)
 
-        if not await self._subscription_manager.subscribe_channel(
-            self.CHANNEL_PRESENCE
-        ):
+        if not await self._subscription_manager.subscribe_channel(self.CHANNEL_PRESENCE):
             return False
 
         # Start presence update task
@@ -902,9 +894,7 @@ class RealtimeClient:
         """
         try:
             job_payload = JobInsertedPayload.from_postgres_change(payload)
-            logger.debug(
-                f"Job inserted: {job_payload.job_id[:8]} - {job_payload.workflow_name}"
-            )
+            logger.debug(f"Job inserted: {job_payload.job_id[:8]} - {job_payload.workflow_name}")
 
             # Signal hybrid model
             self._job_notification_event.set()
@@ -945,13 +935,8 @@ class RealtimeClient:
             cmd_payload = ControlCommandPayload.from_broadcast(payload)
 
             # Check if command targets this robot
-            if (
-                cmd_payload.target_robot_id
-                and cmd_payload.target_robot_id != self._config.robot_id
-            ):
-                logger.debug(
-                    f"Ignoring command for robot {cmd_payload.target_robot_id}"
-                )
+            if cmd_payload.target_robot_id and cmd_payload.target_robot_id != self._config.robot_id:
+                logger.debug(f"Ignoring command for robot {cmd_payload.target_robot_id}")
                 return
 
             logger.info(f"Control command received: {command}")
@@ -997,9 +982,7 @@ class RealtimeClient:
     def _handle_presence_leave(self, left_presences: Dict[str, Any]) -> None:
         """Handle presence leave event."""
         try:
-            left_ids = (
-                list(left_presences.keys()) if isinstance(left_presences, dict) else []
-            )
+            left_ids = list(left_presences.keys()) if isinstance(left_presences, dict) else []
             if left_ids:
                 logger.info(f"Robots left: {left_ids}")
 
@@ -1023,9 +1006,7 @@ class RealtimeClient:
         for key, presences in raw_state.items():
             if presences:
                 # Take the most recent presence
-                presence_data = (
-                    presences[-1] if isinstance(presences, list) else presences
-                )
+                presence_data = presences[-1] if isinstance(presences, list) else presences
                 if isinstance(presence_data, dict):
                     robot_id = presence_data.get("robot_id", key)
                     self._presence_state.robots[robot_id] = RobotPresenceInfo(
@@ -1043,17 +1024,13 @@ class RealtimeClient:
 
         self._presence_state.last_sync = datetime.now(timezone.utc)
 
-    def _parse_presence_list(
-        self, presences: Dict[str, Any]
-    ) -> List[RobotPresenceInfo]:
+    def _parse_presence_list(self, presences: Dict[str, Any]) -> List[RobotPresenceInfo]:
         """Parse presence dictionary to list of RobotPresenceInfo."""
         result = []
         for key, presence_list in presences.items():
             if presence_list:
                 presence_data = (
-                    presence_list[-1]
-                    if isinstance(presence_list, list)
-                    else presence_list
+                    presence_list[-1] if isinstance(presence_list, list) else presence_list
                 )
                 if isinstance(presence_data, dict):
                     result.append(
@@ -1068,9 +1045,7 @@ class RealtimeClient:
                     )
         return result
 
-    async def _safe_callback(
-        self, callback: Callable[[T], Awaitable[None]], payload: T
-    ) -> None:
+    async def _safe_callback(self, callback: Callable[[T], Awaitable[None]], payload: T) -> None:
         """
         Safely invoke async callback with error handling.
 
@@ -1116,9 +1091,7 @@ class RealtimeClient:
             True if tracking succeeded
         """
         channel = self._subscription_manager._channels.get(self.CHANNEL_PRESENCE)
-        if not channel or not self._subscription_manager.is_subscribed(
-            self.CHANNEL_PRESENCE
-        ):
+        if not channel or not self._subscription_manager.is_subscribed(self.CHANNEL_PRESENCE):
             logger.warning("Presence channel not subscribed")
             return False
 

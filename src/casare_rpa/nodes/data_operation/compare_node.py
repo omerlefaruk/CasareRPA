@@ -22,9 +22,7 @@ def _normalize_value(value: Any, case_sensitive: bool) -> Any:
     return value
 
 
-def _get_row_key(
-    row: Dict[str, Any], key_columns: List[str], case_sensitive: bool
-) -> Tuple:
+def _get_row_key(row: Dict[str, Any], key_columns: List[str], case_sensitive: bool) -> Tuple:
     """Extract composite key from row based on key columns."""
     key_values = []
     for col in key_columns:
@@ -63,7 +61,6 @@ def _rows_equal(
     return len(different_columns) == 0, different_columns
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "key_columns",
@@ -87,6 +84,7 @@ def _rows_equal(
         tooltip="Case sensitivity for string comparison",
     ),
 )
+@node(category="data_operation")
 class DataCompareNode(BaseNode):
     """
     Compare two datasets and report differences.
@@ -182,18 +180,12 @@ class DataCompareNode(BaseNode):
             # Resolve inputs
             data_a = self._resolve_list_input(context, "data_a", "data_a")
             data_b = self._resolve_list_input(context, "data_b", "data_b")
-            key_columns_str = self._resolve_string_input(
-                context, "key_columns", "key_columns", ""
-            )
-            compare_all_columns = self._resolve_bool_input(
-                context, "compare_all_columns", True
-            )
+            key_columns_str = self._resolve_string_input(context, "key_columns", "key_columns", "")
+            compare_all_columns = self._resolve_bool_input(context, "compare_all_columns", True)
             case_sensitive = self._resolve_bool_input(context, "case_sensitive", True)
 
             # Parse key columns
-            key_columns = [
-                col.strip() for col in key_columns_str.split(",") if col.strip()
-            ]
+            key_columns = [col.strip() for col in key_columns_str.split(",") if col.strip()]
 
             # Validate inputs
             if not isinstance(data_a, list):
@@ -279,9 +271,7 @@ class DataCompareNode(BaseNode):
                 "key_columns": key_columns,
             }
 
-            has_differences = (
-                len(only_in_a) > 0 or len(only_in_b) > 0 or modified_count > 0
-            )
+            has_differences = len(only_in_a) > 0 or len(only_in_b) > 0 or modified_count > 0
 
             # Set outputs
             self.set_output_value("only_in_a", only_in_a)

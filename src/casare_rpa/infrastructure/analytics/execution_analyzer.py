@@ -213,9 +213,7 @@ class ExecutionAnalyzer:
             return self._empty_result(workflow_id, analysis_period_hours)
 
         # Sort by timestamp
-        sorted_executions = sorted(
-            executions, key=lambda e: e.get("timestamp", datetime.min)
-        )
+        sorted_executions = sorted(executions, key=lambda e: e.get("timestamp", datetime.min))
 
         # Split into current and previous period for trend analysis
         midpoint = len(sorted_executions) // 2
@@ -224,9 +222,7 @@ class ExecutionAnalyzer:
 
         # Calculate trends
         duration_trend = self._calculate_duration_trend(current_period, previous_period)
-        success_rate_trend = self._calculate_success_rate_trend(
-            current_period, previous_period
-        )
+        success_rate_trend = self._calculate_success_rate_trend(current_period, previous_period)
 
         # Calculate time distribution
         time_distribution = self._calculate_time_distribution(sorted_executions)
@@ -292,20 +288,12 @@ class ExecutionAnalyzer:
         previous: List[Dict[str, Any]],
     ) -> DurationTrend:
         """Calculate duration trend between periods."""
-        current_durations = [
-            e.get("duration_ms", 0) for e in current if e.get("duration_ms")
-        ]
-        previous_durations = [
-            e.get("duration_ms", 0) for e in previous if e.get("duration_ms")
-        ]
+        current_durations = [e.get("duration_ms", 0) for e in current if e.get("duration_ms")]
+        previous_durations = [e.get("duration_ms", 0) for e in previous if e.get("duration_ms")]
 
-        current_avg = (
-            sum(current_durations) / len(current_durations) if current_durations else 0
-        )
+        current_avg = sum(current_durations) / len(current_durations) if current_durations else 0
         previous_avg = (
-            sum(previous_durations) / len(previous_durations)
-            if previous_durations
-            else 0
+            sum(previous_durations) / len(previous_durations) if previous_durations else 0
         )
 
         if previous_avg > 0:
@@ -370,9 +358,7 @@ class ExecutionAnalyzer:
             confidence=confidence,
         )
 
-    def _calculate_time_distribution(
-        self, executions: List[Dict[str, Any]]
-    ) -> TimeDistribution:
+    def _calculate_time_distribution(self, executions: List[Dict[str, Any]]) -> TimeDistribution:
         """Calculate execution time distribution."""
         hourly: Dict[int, int] = defaultdict(int)
         daily: Dict[str, int] = defaultdict(int)
@@ -403,9 +389,7 @@ class ExecutionAnalyzer:
             off_peak_hours=sorted(off_peak),
         )
 
-    def _calculate_error_breakdown(
-        self, executions: List[Dict[str, Any]]
-    ) -> Dict[str, int]:
+    def _calculate_error_breakdown(self, executions: List[Dict[str, Any]]) -> Dict[str, int]:
         """Calculate error type breakdown."""
         errors: Dict[str, int] = defaultdict(int)
 
@@ -427,10 +411,7 @@ class ExecutionAnalyzer:
         insights = []
 
         # Performance trend insights
-        if (
-            duration_trend.direction == TrendDirection.IMPROVING
-            and duration_trend.confidence > 0.5
-        ):
+        if duration_trend.direction == TrendDirection.IMPROVING and duration_trend.confidence > 0.5:
             if abs(duration_trend.change_percent) >= self.PERFORMANCE_CHANGE_THRESHOLD:
                 insights.append(
                     ExecutionInsight(
@@ -447,8 +428,7 @@ class ExecutionAnalyzer:
                 )
 
         elif (
-            duration_trend.direction == TrendDirection.DEGRADING
-            and duration_trend.confidence > 0.5
+            duration_trend.direction == TrendDirection.DEGRADING and duration_trend.confidence > 0.5
         ):
             if abs(duration_trend.change_percent) >= self.PERFORMANCE_CHANGE_THRESHOLD:
                 insights.append(
@@ -491,10 +471,7 @@ class ExecutionAnalyzer:
             insights.append(streak_insight)
 
         # Schedule optimization insight
-        if (
-            time_distribution.off_peak_hours
-            and len(time_distribution.off_peak_hours) >= 4
-        ):
+        if time_distribution.off_peak_hours and len(time_distribution.off_peak_hours) >= 4:
             insights.append(
                 ExecutionInsight(
                     insight_type=InsightType.SCHEDULE_OPTIMIZATION,
@@ -514,9 +491,7 @@ class ExecutionAnalyzer:
 
         return insights[:10]  # Return top 10 insights
 
-    def _detect_streaks(
-        self, executions: List[Dict[str, Any]]
-    ) -> Optional[ExecutionInsight]:
+    def _detect_streaks(self, executions: List[Dict[str, Any]]) -> Optional[ExecutionInsight]:
         """Detect success or failure streaks."""
         if not executions:
             return None
@@ -544,9 +519,7 @@ class ExecutionAnalyzer:
                 data={"streak_length": current_streak},
             )
 
-        elif (
-            streak_type == "failed" and current_streak >= self.FAILURE_STREAK_THRESHOLD
-        ):
+        elif streak_type == "failed" and current_streak >= self.FAILURE_STREAK_THRESHOLD:
             return ExecutionInsight(
                 insight_type=InsightType.FAILURE_PATTERN,
                 title="Consecutive Failures Detected",

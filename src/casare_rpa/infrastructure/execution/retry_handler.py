@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from casare_rpa.domain.interfaces import IExecutionContext
     from casare_rpa.domain.value_objects.node_metadata import NodeMetadata
     from casare_rpa.domain.value_objects.types import NodeResult
-    from casare_rpa.domain.value_objects.execution_metadata import ExecutionMetadata
 
 
 class RetryHandler:
@@ -43,9 +42,7 @@ class RetryHandler:
         self,
         node: "BaseNode",
         context: "IExecutionContext",
-        execute_fn: Callable[
-            ["BaseNode", "IExecutionContext"], Coroutine[Any, Any, "NodeResult"]
-        ],
+        execute_fn: Callable[["BaseNode", "IExecutionContext"], Coroutine[Any, Any, "NodeResult"]],
     ) -> "NodeResult":
         """
         Execute a node with retry logic based on NodeMetadata configuration.
@@ -63,12 +60,9 @@ class RetryHandler:
 
         # Get metadata from node (if @node decorator was used)
         metadata: Optional["NodeMetadata"] = getattr(node, "__node_meta__", None)
-        max_attempts = (
-            (metadata.retries + 1) if metadata and metadata.retries > 0 else 1
-        )
+        max_attempts = (metadata.retries + 1) if metadata and metadata.retries > 0 else 1
 
         last_error: str = ""
-        last_exception: Optional[Exception] = None
 
         for attempt in range(1, max_attempts + 1):
             # Create execution metadata for this attempt
@@ -81,9 +75,7 @@ class RetryHandler:
             )
 
             try:
-                logger.debug(
-                    f"Executing {node.node_type} (attempt {attempt}/{max_attempts})"
-                )
+                logger.debug(f"Executing {node.node_type} (attempt {attempt}/{max_attempts})")
 
                 result = await execute_fn(node, context)
 
@@ -95,8 +87,7 @@ class RetryHandler:
                     if result.should_retry and attempt < max_attempts:
                         delay = result.retry_delay_ms / 1000.0
                         logger.info(
-                            f"Node {node.node_type} requested retry, "
-                            f"waiting {delay:.2f}s"
+                            f"Node {node.node_type} requested retry, " f"waiting {delay:.2f}s"
                         )
                         await asyncio.sleep(delay)
                         continue
@@ -106,9 +97,9 @@ class RetryHandler:
                     # Legacy dict result - wrap in NodeResult
                     if isinstance(result, dict):
                         if result.get("success", False):
-                            return NodeResult.ok(
-                                **result.get("data", {})
-                            ).with_metadata(exec_meta.with_end_time())
+                            return NodeResult.ok(**result.get("data", {})).with_metadata(
+                                exec_meta.with_end_time()
+                            )
                         else:
                             return NodeResult.fail(
                                 error=result.get("error", "Unknown error"),
@@ -117,7 +108,6 @@ class RetryHandler:
                     return result
 
             except Exception as e:
-                last_exception = e
                 last_error = str(e)
 
                 # Check if we should retry this exception
@@ -133,9 +123,7 @@ class RetryHandler:
                     )
                     await asyncio.sleep(delay)
                 else:
-                    logger.error(
-                        f"{node.node_type} failed after {attempt} attempts: {e}"
-                    )
+                    logger.error(f"{node.node_type} failed after {attempt} attempts: {e}")
                     break
 
         # All retries exhausted - return failure result

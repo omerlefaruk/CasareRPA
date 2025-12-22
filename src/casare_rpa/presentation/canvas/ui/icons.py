@@ -378,6 +378,7 @@ class ToolbarIcons:
         "restart": ("restart", "#2196F3"),  # Blue
         "resume": ("play", "#4CAF50"),  # Green
         "ai_assistant": ("brain", "#9C27B0"),  # Purple - AI brain icon
+        "ai": ("brain", "#9C27B0"),  # Purple - AI brain icon (alias)
         "credentials": ("key", "#FFB300"),  # Amber/Gold - Key icon for credentials
     }
 

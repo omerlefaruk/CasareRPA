@@ -63,9 +63,7 @@ class VisualReadEmailsNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Read Emails node."""
         super().__init__()
-        self.add_text_input(
-            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
-        )
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
         self.add_text_input("imap_port", "IMAP Port", text="993", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
@@ -78,16 +76,12 @@ class VisualReadEmailsNode(VisualNode):
             tab="config",
         )
         # Advanced options
-        self.add_text_input(
-            "timeout", "Timeout (s)", placeholder_text="30", tab="advanced"
-        )
+        self.add_text_input("timeout", "Timeout (s)", placeholder_text="30", tab="advanced")
         self._safe_create_property("mark_as_read", False, widget_type=1, tab="advanced")
         self._safe_create_property("include_body", True, widget_type=1, tab="advanced")
         self._safe_create_property("newest_first", True, widget_type=1, tab="advanced")
         # Retry options
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -149,9 +143,7 @@ class VisualSaveAttachmentNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Save Attachment node."""
         super().__init__()
-        self.add_text_input(
-            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
-        )
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("save_path", "Save Path", text=".", tab="config")
@@ -181,13 +173,9 @@ class VisualFilterEmailsNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Filter Emails node."""
         super().__init__()
-        self.add_text_input(
-            "subject_contains", "Subject Contains", text="", tab="filters"
-        )
+        self.add_text_input("subject_contains", "Subject Contains", text="", tab="filters")
         self.add_text_input("from_contains", "From Contains", text="", tab="filters")
-        self._safe_create_property(
-            "has_attachments", False, widget_type=1, tab="filters"
-        )
+        self._safe_create_property("has_attachments", False, widget_type=1, tab="filters")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -214,9 +202,7 @@ class VisualMarkEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Mark Email node."""
         super().__init__()
-        self.add_text_input(
-            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
-        )
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("folder", "Folder", text="INBOX", tab="config")
@@ -250,9 +236,7 @@ class VisualDeleteEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Delete Email node."""
         super().__init__()
-        self.add_text_input(
-            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
-        )
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("folder", "Folder", text="INBOX", tab="config")
@@ -280,14 +264,10 @@ class VisualMoveEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Move Email node."""
         super().__init__()
-        self.add_text_input(
-            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
-        )
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
-        self.add_text_input(
-            "source_folder", "Source Folder", text="INBOX", tab="config"
-        )
+        self.add_text_input("source_folder", "Source Folder", text="INBOX", tab="config")
         self.add_text_input("target_folder", "Target Folder", text="", tab="config")
 
     def setup_ports(self) -> None:

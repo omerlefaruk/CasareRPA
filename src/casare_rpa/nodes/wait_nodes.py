@@ -45,7 +45,6 @@ from casare_rpa.utils import safe_int
 # =============================================================================
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "duration",
@@ -55,6 +54,7 @@ from casare_rpa.utils import safe_int
         tooltip="Wait duration in seconds",
     )
 )
+@node(category="browser")
 class WaitNode(BaseNode):
     """
     Wait node - pauses execution for a specified duration.
@@ -67,9 +67,7 @@ class WaitNode(BaseNode):
     # @requires: none
     # @ports: duration -> none
 
-    def __init__(
-        self, node_id: str, name: str = "Wait", duration: float = 1.0, **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Wait", duration: float = 1.0, **kwargs) -> None:
         """Initialize wait node."""
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -87,7 +85,7 @@ class WaitNode(BaseNode):
         try:
             duration = self.get_input_value("duration")
             if duration is None:
-                duration = self.config.get("duration", 1.0)
+                duration = self.get_parameter("duration", 1.0)
 
             if isinstance(duration, str):
                 duration = float(duration)
@@ -114,7 +112,7 @@ class WaitNode(BaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        duration = self.config.get("duration", 0)
+        duration = self.get_parameter("duration", 0)
         if duration < 0:
             return False, "Duration must be non-negative"
         return True, ""
@@ -125,7 +123,6 @@ class WaitNode(BaseNode):
 # =============================================================================
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "selector",
@@ -152,6 +149,7 @@ class WaitNode(BaseNode):
     ),
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class WaitForElementNode(BrowserBaseNode):
     """
     Wait for element node - waits for an element to appear.
@@ -237,7 +235,7 @@ class WaitForElementNode(BrowserBaseNode):
                             f"Retry attempt {attempts - 1}/{retry_count} for element: {selector}"
                         )
 
-                    element = await page.wait_for_selector(selector, **wait_options)
+                    await page.wait_for_selector(selector, **wait_options)
 
                     # Highlight if enabled
                     await self.highlight_if_enabled(page, selector, timeout)
@@ -257,9 +255,7 @@ class WaitForElementNode(BrowserBaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Wait for element failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Wait for element failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
 
             # All attempts failed
@@ -278,7 +274,7 @@ class WaitForElementNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        state = self.config.get("state", "visible")
+        state = self.get_parameter("state", "visible")
         valid_states = ["visible", "hidden", "attached", "detached"]
         if state not in valid_states:
             return False, f"Invalid state: {state}. Must be one of: {valid_states}"
@@ -290,7 +286,6 @@ class WaitForElementNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="control_flow")
 @properties(
     BROWSER_TIMEOUT,
     BROWSER_WAIT_UNTIL,
@@ -299,6 +294,7 @@ class WaitForElementNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class WaitForNavigationNode(BrowserBaseNode):
     """
     Wait for navigation node - waits for page navigation to complete.
@@ -366,9 +362,7 @@ class WaitForNavigationNode(BrowserBaseNode):
                 attempts += 1
                 try:
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for navigation"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for navigation")
 
                     await page.wait_for_load_state(wait_until, timeout=timeout)
 
@@ -385,9 +379,7 @@ class WaitForNavigationNode(BrowserBaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Wait for navigation failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Wait for navigation failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
 
             # All attempts failed
@@ -402,7 +394,7 @@ class WaitForNavigationNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        wait_until = self.config.get("wait_until", "load")
+        wait_until = self.get_parameter("wait_until", "load")
         valid_states = ["load", "domcontentloaded", "networkidle", "commit"]
         if wait_until not in valid_states:
             return (

@@ -61,9 +61,7 @@ class Queue:
         if self.max_retries < 0:
             raise ValueError(f"Max retries must be >= 0, got {self.max_retries}")
         if self.retry_delay_seconds < 0:
-            raise ValueError(
-                f"Retry delay must be >= 0, got {self.retry_delay_seconds}"
-            )
+            raise ValueError(f"Retry delay must be >= 0, got {self.retry_delay_seconds}")
 
     @property
     def success_rate(self) -> float:
@@ -231,13 +229,9 @@ class QueueItem:
             "robot_id": self.robot_id,
             "robot_name": self.robot_name,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "deadline": self.deadline.isoformat() if self.deadline else None,
-            "postpone_until": self.postpone_until.isoformat()
-            if self.postpone_until
-            else None,
+            "postpone_until": self.postpone_until.isoformat() if self.postpone_until else None,
             "error_message": self.error_message,
             "error_type": self.error_type,
             "processing_exception_type": self.processing_exception_type,

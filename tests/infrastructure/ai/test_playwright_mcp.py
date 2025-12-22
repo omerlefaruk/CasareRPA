@@ -80,7 +80,7 @@ class TestPlaywrightMCPClientInit:
         client = PlaywrightMCPClient()
 
         assert client._headless is True
-        assert client._browser == "chromium"
+        assert client._browser == "chrome"
         assert client._process is None
         assert client._initialized is False
         assert client._request_id == 0
@@ -150,9 +150,7 @@ class TestPlaywrightMCPClientMocked:
     @pytest.mark.asyncio
     async def test_call_tool_not_initialized(self, client):
         """Should return error when calling tool before init."""
-        result = await client.call_tool(
-            "browser_navigate", {"url": "https://example.com"}
-        )
+        result = await client.call_tool("browser_navigate", {"url": "https://example.com"})
 
         assert result.success is False
         assert "not initialized" in result.error.lower()
@@ -179,9 +177,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_navigate_calls_correct_tool(self, initialized_client):
         """Should call browser_navigate tool with URL."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
             result = await initialized_client.navigate("https://example.com")
@@ -194,9 +190,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_get_snapshot_calls_correct_tool(self, initialized_client):
         """Should call browser_snapshot tool."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(
                 success=True,
                 content=[{"type": "text", "text": "- WebArea [ref=root]:"}],
@@ -210,9 +204,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_click_calls_correct_tool(self, initialized_client):
         """Should call browser_click tool with ref."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
             await initialized_client.click("e1", "Login button")
@@ -225,14 +217,10 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_type_text_calls_correct_tool(self, initialized_client):
         """Should call browser_type tool with text."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
-            await initialized_client.type_text(
-                "e1", "test@example.com", "email field", submit=True
-            )
+            await initialized_client.type_text("e1", "test@example.com", "email field", submit=True)
 
             call_args = mock_call.call_args
             assert call_args[0][0] == "browser_type"
@@ -243,9 +231,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_close_browser_calls_correct_tool(self, initialized_client):
         """Should call browser_close tool."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
             await initialized_client.close_browser()
@@ -255,9 +241,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_take_screenshot_calls_correct_tool(self, initialized_client):
         """Should call browser_take_screenshot tool."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
             await initialized_client.take_screenshot("screenshot.png")
@@ -269,9 +253,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_wait_for_text(self, initialized_client):
         """Should call browser_wait_for with text."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
             await initialized_client.wait_for(text="Loading complete")
@@ -283,9 +265,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_wait_for_time(self, initialized_client):
         """Should call browser_wait_for with time."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(success=True, content=[])
 
             await initialized_client.wait_for(time_seconds=2.0)
@@ -296,9 +276,7 @@ class TestPlaywrightMCPClientHighLevelMethods:
     @pytest.mark.asyncio
     async def test_evaluate_js(self, initialized_client):
         """Should call browser_evaluate with JS function."""
-        with patch.object(
-            initialized_client, "call_tool", new_callable=AsyncMock
-        ) as mock_call:
+        with patch.object(initialized_client, "call_tool", new_callable=AsyncMock) as mock_call:
             mock_call.return_value = MCPToolResult(
                 success=True,
                 content=[{"type": "text", "text": "Example Page"}],
@@ -457,9 +435,7 @@ class TestMCPErrorHandling:
     @pytest.mark.asyncio
     async def test_start_general_exception(self, client):
         """Should handle general exceptions during start."""
-        with patch(
-            "asyncio.create_subprocess_exec", side_effect=Exception("Unknown error")
-        ):
+        with patch("asyncio.create_subprocess_exec", side_effect=Exception("Unknown error")):
             result = await client.start()
 
         assert result is False
@@ -471,9 +447,7 @@ class TestMCPErrorHandling:
         client._process = Mock()
         client._process.stdin = AsyncMock()
 
-        with patch.object(
-            client, "_send_request", side_effect=Exception("Request failed")
-        ):
+        with patch.object(client, "_send_request", side_effect=Exception("Request failed")):
             result = await client.call_tool("test_tool", {})
 
         assert result.success is False

@@ -24,7 +24,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.file.file_security import validate_path_security_readonly
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "path",
@@ -50,6 +49,7 @@ from casare_rpa.nodes.file.file_security import validate_path_security_readonly
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
+@node(category="file")
 class FileExistsNode(BaseNode):
     """
     Check if a file or directory exists.
@@ -95,7 +95,6 @@ class FileExistsNode(BaseNode):
                 raise ValueError("path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only, allows system paths)
@@ -130,13 +129,12 @@ class FileExistsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
-        check_type = self.config.get("check_type", "any")
+        check_type = self.get_parameter("check_type", "any")
         if check_type not in ["file", "directory", "any"]:
             return False, "check_type must be 'file', 'directory', or 'any'"
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -154,6 +152,7 @@ class FileExistsNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
+@node(category="file")
 class GetFileSizeNode(BaseNode):
     """
     Get the size of a file in bytes.
@@ -196,7 +195,6 @@ class GetFileSizeNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only)
@@ -221,7 +219,6 @@ class GetFileSizeNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -239,6 +236,7 @@ class GetFileSizeNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
+@node(category="file")
 class GetFileInfoNode(BaseNode):
     """
     Get detailed information about a file.
@@ -291,7 +289,6 @@ class GetFileInfoNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only)
@@ -302,12 +299,8 @@ class GetFileInfoNode(BaseNode):
             stat = path.stat()
 
             self.set_output_value("size", stat.st_size)
-            self.set_output_value(
-                "created", datetime.fromtimestamp(stat.st_ctime).isoformat()
-            )
-            self.set_output_value(
-                "modified", datetime.fromtimestamp(stat.st_mtime).isoformat()
-            )
+            self.set_output_value("created", datetime.fromtimestamp(stat.st_ctime).isoformat())
+            self.set_output_value("modified", datetime.fromtimestamp(stat.st_mtime).isoformat())
             self.set_output_value("extension", path.suffix)
             self.set_output_value("name", path.name)
             self.set_output_value("parent", str(path.parent))

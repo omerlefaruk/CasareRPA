@@ -7,18 +7,25 @@ This is the inverse of WorkflowSerializer.
 
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
 from pathlib import Path
+import time
 import orjson
 from loguru import logger
-from pydantic import ValidationError
-
-from casare_rpa.infrastructure.security.workflow_schema import validate_workflow_json
+from casare_rpa.domain.validation import (
+    WorkflowValidationError,
+    validate_workflow_json,
+)
 from casare_rpa.nodes.file.file_security import (
     validate_path_security_readonly,
     PathSecurityError,
 )
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
+
+
+# A4: Module-level cache for node type map (persists across deserializer instances)
+_NODE_TYPE_MAP_CACHE: Optional[Dict[str, str]] = None
 
 
 class WorkflowDeserializer:
@@ -52,11 +59,26 @@ class WorkflowDeserializer:
         """
         Get node type map, building it lazily on first use.
 
+        A4 Optimization: Uses module-level cache that persists across
+        deserializer instances, avoiding repeated enumeration of registered nodes.
+
         Returns:
             Dict mapping node_type to NodeGraphQt identifier
         """
-        if self._node_type_map is None:
-            self._node_type_map = self._build_node_type_map()
+        global _NODE_TYPE_MAP_CACHE
+
+        # First check instance cache (for dynamic additions during session)
+        if self._node_type_map is not None:
+            return self._node_type_map
+
+        # Check module-level cache (persists across instances)
+        if _NODE_TYPE_MAP_CACHE is not None:
+            self._node_type_map = _NODE_TYPE_MAP_CACHE.copy()
+            return self._node_type_map
+
+        # Build and cache at both levels
+        self._node_type_map = self._build_node_type_map()
+        _NODE_TYPE_MAP_CACHE = self._node_type_map.copy()
         return self._node_type_map
 
     def _build_node_type_map(self) -> Dict[str, str]:
@@ -136,18 +158,24 @@ class WorkflowDeserializer:
         Returns:
             True if deserialized successfully, False otherwise
         """
+        start = time.perf_counter()
+        log_canvas_event(
+            "deserialize_start",
+            node_count=len(workflow_data.get("nodes", {})),
+            connection_count=len(workflow_data.get("connections", [])),
+        )
         try:
-            # SECURITY: Validate workflow JSON against schema before processing
-            # This prevents code injection and resource exhaustion attacks
-            try:
-                validate_workflow_json(workflow_data)
-                logger.debug("Workflow schema validation passed")
-            except ValidationError as e:
-                logger.error(f"Workflow schema validation failed: {e}")
-                return False
-            except Exception as e:
-                logger.warning(f"Schema validation skipped (non-standard format): {e}")
-                # Continue anyway for backwards compatibility with older formats
+            # SECURITY: Validate workflow JSON against canonical schema
+            # A1 Optimization: Skip validation if already validated upstream
+            if not workflow_data.get("__validated__"):
+                try:
+                    validate_workflow_json(workflow_data)
+                    logger.debug("Workflow schema validation passed")
+                except WorkflowValidationError as e:
+                    logger.error(f"Workflow schema validation failed: {e}")
+                    return False
+            else:
+                logger.debug("Workflow already validated upstream, skipping re-validation")
 
             # Clear existing graph
             self._graph.clear_session()
@@ -177,10 +205,21 @@ class WorkflowDeserializer:
             if node_map:
                 self._graph.center_on(list(node_map.values()))
 
+            log_canvas_event(
+                "deserialize_end",
+                duration_ms=round((time.perf_counter() - start) * 1000.0, 2),
+                node_count=len(node_map),
+                connection_count=len(connections_data),
+            )
             return True
 
         except Exception as e:
             logger.exception(f"Failed to deserialize workflow: {e}")
+            log_canvas_event(
+                "deserialize_error",
+                duration_ms=round((time.perf_counter() - start) * 1000.0, 2),
+                error=str(e),
+            )
             return False
 
     def _create_node(self, node_id: str, node_data: Dict) -> Optional[Any]:
@@ -242,10 +281,7 @@ class WorkflowDeserializer:
                 visual_node.set_name(custom_name)
 
             # Special handling for subflow nodes - load subflow to create promoted parameter widgets
-            if (
-                node_type == "SubflowNode"
-                or "Subflow" in visual_node.__class__.__name__
-            ):
+            if node_type == "SubflowNode" or "Subflow" in visual_node.__class__.__name__:
                 try:
                     if hasattr(visual_node, "load_subflow"):
                         visual_node.load_subflow()
@@ -319,14 +355,25 @@ class WorkflowDeserializer:
                     if hasattr(visual_node, "view") and visual_node.view:
                         visual_node.view.setOpacity(0.4)
                     # CRITICAL: Also set on casare_node.config so execution skips this node
-                    if (
-                        hasattr(visual_node, "_casare_node")
-                        and visual_node._casare_node
-                    ):
+                    if hasattr(visual_node, "_casare_node") and visual_node._casare_node:
                         visual_node._casare_node.config["_disabled"] = True
                     # Try to set on visual node property too
                     try:
                         visual_node.set_property("_disabled", True)
+                    except Exception:
+                        pass
+                # Handle cache enabled state - set both visual and casare_node config
+                elif key == "_cache_enabled" and value:
+                    # Visual: show cache icon
+                    if hasattr(visual_node, "view") and visual_node.view:
+                        if hasattr(visual_node.view, "set_cache_enabled"):
+                            visual_node.view.set_cache_enabled(True)
+                    # CRITICAL: Also set on casare_node.config so execution uses cache
+                    if hasattr(visual_node, "_casare_node") and visual_node._casare_node:
+                        visual_node._casare_node.config["_cache_enabled"] = True
+                    # Try to set on visual node property too
+                    try:
+                        visual_node.set_property("_cache_enabled", True)
                     except Exception:
                         pass
                 continue
@@ -356,6 +403,17 @@ class WorkflowDeserializer:
             except Exception as e:
                 logger.debug(f"Could not set property {key}={value}: {e}")
 
+        # CRITICAL: Refresh ports for SuperNodes after config is applied
+        # The 'action' property determines which ports should exist,
+        # but ports were created with the default action in __init__.
+        # Now we have the correct action, so refresh ports.
+        if hasattr(visual_node, "_apply_ports_for_action"):
+            try:
+                visual_node._apply_ports_for_action()
+                logger.debug("Refreshed ports for SuperNode after config applied")
+            except Exception as e:
+                logger.debug(f"Could not refresh ports: {e}")
+
     def _has_property(self, visual_node, prop_name: str) -> bool:
         """Check if visual node has a property."""
         try:
@@ -376,9 +434,7 @@ class WorkflowDeserializer:
             Number of connections created
         """
         created = 0
-        logger.debug(
-            f"Creating {len(connections)} connections, node_map has {len(node_map)} nodes"
-        )
+        logger.debug(f"Creating {len(connections)} connections, node_map has {len(node_map)} nodes")
 
         for conn in connections:
             try:
@@ -412,9 +468,7 @@ class WorkflowDeserializer:
                 # Create connection
                 output_port.connect_to(input_port)
                 created += 1
-                logger.debug(
-                    f"Connected {source_id}.{source_port} -> {target_id}.{target_port}"
-                )
+                logger.debug(f"Connected {source_id}.{source_port} -> {target_id}.{target_port}")
 
             except Exception as e:
                 logger.warning(f"Failed to create connection: {e}")
@@ -434,10 +488,7 @@ class WorkflowDeserializer:
             return
 
         try:
-            if (
-                hasattr(self._main_window, "_bottom_panel")
-                and self._main_window._bottom_panel
-            ):
+            if hasattr(self._main_window, "_bottom_panel") and self._main_window._bottom_panel:
                 variables_tab = self._main_window._bottom_panel.get_variables_tab()
                 if variables_tab and hasattr(variables_tab, "set_variables"):
                     variables_tab.set_variables(variables)
@@ -471,9 +522,7 @@ class WorkflowDeserializer:
                     node_ids = frame_data.get("node_ids", [])
 
                     # Get contained nodes
-                    contained_nodes = [
-                        node_map[nid] for nid in node_ids if nid in node_map
-                    ]
+                    contained_nodes = [node_map[nid] for nid in node_ids if nid in node_map]
 
                     # Create frame
                     frame = NodeFrame(
@@ -491,9 +540,7 @@ class WorkflowDeserializer:
                         from PySide6.QtGui import QColor
 
                         frame.set_color(
-                            QColor(*color)
-                            if isinstance(color, (list, tuple))
-                            else QColor(color)
+                            QColor(*color) if isinstance(color, (list, tuple)) else QColor(color)
                         )
 
                     scene.addItem(frame)

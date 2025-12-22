@@ -107,10 +107,7 @@ def validate_path_security(
     for blocked in _BLOCKED_PATHS:
         try:
             blocked_resolved = blocked.resolve()
-            if (
-                resolved_path == blocked_resolved
-                or blocked_resolved in resolved_path.parents
-            ):
+            if resolved_path == blocked_resolved or blocked_resolved in resolved_path.parents:
                 raise PathSecurityError(
                     f"Access to '{resolved_path}' is blocked for security reasons. "
                     f"This path is in a protected system directory."
@@ -122,15 +119,13 @@ def validate_path_security(
     path_str = str(path)
     if ".." in path_str:
         raise PathSecurityError(
-            f"Path traversal detected in '{path}'. "
-            f"Paths containing '..' are not allowed."
+            f"Path traversal detected in '{path}'. " f"Paths containing '..' are not allowed."
         )
 
     # SECURITY: Check for null bytes (can be used to bypass checks)
     if "\x00" in path_str:
         raise PathSecurityError(
-            f"Null byte detected in path '{path}'. "
-            f"This is a potential security exploit."
+            f"Null byte detected in path '{path}'. " f"This is a potential security exploit."
         )
 
     # SECURITY: Check for special Windows device names
@@ -180,15 +175,13 @@ def validate_path_security_readonly(
     path_str = str(path)
     if ".." in path_str:
         raise PathSecurityError(
-            f"Path traversal detected in '{path}'. "
-            f"Paths containing '..' are not allowed."
+            f"Path traversal detected in '{path}'. " f"Paths containing '..' are not allowed."
         )
 
     # SECURITY: Still block null bytes
     if "\x00" in path_str:
         raise PathSecurityError(
-            f"Null byte detected in path '{path}'. "
-            f"This is a potential security exploit."
+            f"Null byte detected in path '{path}'. " f"This is a potential security exploit."
         )
 
     # SECURITY: Still block Windows device names
@@ -200,10 +193,7 @@ def validate_path_security_readonly(
     for blocked in _BLOCKED_PATHS:
         try:
             blocked_resolved = blocked.resolve()
-            if (
-                resolved_path == blocked_resolved
-                or blocked_resolved in resolved_path.parents
-            ):
+            if resolved_path == blocked_resolved or blocked_resolved in resolved_path.parents:
                 logger.warning(
                     f"Read-only access to protected path: {resolved_path} "
                     f"(operation: {operation})"

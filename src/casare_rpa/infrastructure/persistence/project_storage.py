@@ -7,9 +7,12 @@ Manages all file system operations for projects, scenarios, variables, and crede
 """
 
 from pathlib import Path
-from typing import List
+from typing import List, TYPE_CHECKING
 import orjson
 from loguru import logger
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.entities.workflow import WorkflowSchema
 
 from casare_rpa.domain.entities.project import (
     CredentialBindingsFile,
@@ -209,9 +212,7 @@ class ProjectStorage:
     # =========================================================================
 
     @staticmethod
-    def save_project_credentials(
-        project: Project, credentials: CredentialBindingsFile
-    ) -> None:
+    def save_project_credentials(project: Project, credentials: CredentialBindingsFile) -> None:
         """
         Save project credential bindings to credentials.json.
 
@@ -475,9 +476,7 @@ class ProjectStorage:
                 if not result.is_valid:
                     error_summary = result.format_summary()
                     logger.error(f"Validation failed before save:\n{error_summary}")
-                    raise ValueError(
-                        f"Cannot save invalid workflow: {result.error_count} error(s)"
-                    )
+                    raise ValueError(f"Cannot save invalid workflow: {result.error_count} error(s)")
 
             # Update modified timestamp
             workflow.metadata.update_modified_timestamp()
@@ -519,19 +518,10 @@ class ProjectStorage:
             FileNotFoundError: If file doesn't exist
         """
         from casare_rpa.domain.entities.workflow import WorkflowSchema
-        from casare_rpa.utils.workflow.workflow_migration import (
-            migrate_workflow_ids,
-            needs_migration,
-        )
 
         try:
             json_data = file_path.read_bytes()
             data = orjson.loads(json_data)
-
-            # Auto-migrate legacy node IDs
-            if needs_migration(data):
-                logger.info(f"Migrating legacy node IDs in {file_path}")
-                data, _ = migrate_workflow_ids(data)
 
             # Optionally validate
             if validate_on_load:
@@ -548,9 +538,7 @@ class ProjectStorage:
                             f"Workflow validation failed: {result.error_count} error(s)"
                         )
                 elif result.warnings:
-                    logger.info(
-                        f"Workflow loaded with {result.warning_count} warning(s)"
-                    )
+                    logger.info(f"Workflow loaded with {result.warning_count} warning(s)")
 
             workflow = WorkflowSchema.from_dict(data)
             logger.info(f"Workflow loaded from {file_path}")

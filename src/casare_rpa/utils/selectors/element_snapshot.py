@@ -110,9 +110,7 @@ class ElementDiff:
     # Attribute changes
     attributes_added: Dict[str, str] = field(default_factory=dict)
     attributes_removed: Dict[str, str] = field(default_factory=dict)
-    attributes_changed: Dict[str, Tuple[str, str]] = field(
-        default_factory=dict
-    )  # name: (old, new)
+    attributes_changed: Dict[str, Tuple[str, str]] = field(default_factory=dict)  # name: (old, new)
 
     # Class changes
     classes_added: List[str] = field(default_factory=list)
@@ -180,12 +178,8 @@ class ElementDiff:
             parts.append(f"classes removed: {self.classes_removed}")
 
         if self.text_changed:
-            old_preview = (
-                self.old_text[:30] + "..." if len(self.old_text) > 30 else self.old_text
-            )
-            new_preview = (
-                self.new_text[:30] + "..." if len(self.new_text) > 30 else self.new_text
-            )
+            old_preview = self.old_text[:30] + "..." if len(self.old_text) > 30 else self.old_text
+            new_preview = self.new_text[:30] + "..." if len(self.new_text) > 30 else self.new_text
             parts.append(f"text: '{old_preview}' -> '{new_preview}'")
 
         if self.visibility_changed:
@@ -208,9 +202,7 @@ class ElementDiff:
             "new_size": self.new_size,
             "attributes_added": self.attributes_added,
             "attributes_removed": self.attributes_removed,
-            "attributes_changed": {
-                k: list(v) for k, v in self.attributes_changed.items()
-            },
+            "attributes_changed": {k: list(v) for k, v in self.attributes_changed.items()},
             "classes_added": self.classes_added,
             "classes_removed": self.classes_removed,
             "text_changed": self.text_changed,
@@ -235,11 +227,7 @@ class ElementDiff:
             return "major"
 
         # Moderate: position, size, or significant attribute changes
-        if (
-            self.position_changed
-            or self.size_changed
-            or len(self.attributes_changed) > 2
-        ):
+        if self.position_changed or self.size_changed or len(self.attributes_changed) > 2:
             return "moderate"
 
         # Minor: class changes, text changes, or small attribute changes
@@ -313,12 +301,8 @@ class SnapshotManager:
             }""")
 
             # Truncate content
-            text_content = (
-                info["textContent"][:max_text_length] if info["textContent"] else ""
-            )
-            inner_html = (
-                info["innerHTML"][:max_html_length] if info["innerHTML"] else ""
-            )
+            text_content = info["textContent"][:max_text_length] if info["textContent"] else ""
+            inner_html = info["innerHTML"][:max_html_length] if info["innerHTML"] else ""
 
             # Get bounding rect
             rect = await el.bounding_box()
@@ -483,9 +467,7 @@ class SnapshotManager:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         data = snapshot.to_dict()
-        file_path.write_text(
-            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
         logger.debug(f"Saved snapshot to {path}")
 

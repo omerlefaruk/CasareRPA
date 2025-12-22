@@ -540,9 +540,7 @@ class BrowserRecorder:
         self._stop_requested = False
 
         # Callbacks for real-time notification
-        self._on_action_recorded: Optional[Callable[[BrowserRecordedAction], None]] = (
-            None
-        )
+        self._on_action_recorded: Optional[Callable[[BrowserRecordedAction], None]] = None
         self._on_recording_started: Optional[Callable[[], None]] = None
         self._on_recording_stopped: Optional[Callable[[], None]] = None
 
@@ -602,9 +600,7 @@ class BrowserRecorder:
 
         try:
             # Expose callback function to receive actions from JavaScript
-            await self._page.expose_function(
-                "__casareRecordAction", self._on_action_from_browser
-            )
+            await self._page.expose_function("__casareRecordAction", self._on_action_from_browser)
         except Exception as e:
             # Function might already be exposed from a previous recording session
             if "has been already registered" not in str(e):
@@ -612,9 +608,7 @@ class BrowserRecorder:
 
         try:
             # Expose stop callback for Escape key
-            await self._page.expose_function(
-                "__casareStopRecording", self._on_stop_requested
-            )
+            await self._page.expose_function("__casareStopRecording", self._on_stop_requested)
         except Exception as e:
             if "has been already registered" not in str(e):
                 logger.warning(f"Could not expose stop function: {e}")
@@ -762,14 +756,14 @@ class BrowserRecorder:
             workflow generation.
         """
         nodes = []
-        for action in self._actions:
-            node = self._action_to_node(action)
+        for i, action in enumerate(self._actions):
+            node = self._action_to_node(action, f"action_{i+1}")
             if node:
                 nodes.append(node)
         return nodes
 
     def _action_to_node(
-        self, action: BrowserRecordedAction
+        self, action: BrowserRecordedAction, node_id: str
     ) -> Optional[Dict[str, Any]]:
         """
         Convert a single action to a node configuration.
@@ -780,7 +774,7 @@ class BrowserRecorder:
         Returns:
             Node configuration dictionary or None if not convertible.
         """
-        # Mapping of action types to node types and their properties
+        # Mapping of action types to node types and their configs
         mapping: Dict[BrowserActionType, Tuple[str, Dict[str, Any]]] = {
             BrowserActionType.CLICK: (
                 "ClickElementNode",
@@ -844,12 +838,12 @@ class BrowserRecorder:
         }
 
         if action.action_type in mapping:
-            node_type, properties = mapping[action.action_type]
+            node_type, config = mapping[action.action_type]
             return {
-                "type": node_type,
-                "properties": properties,
-                "element_info": action.element_info,
-                "description": action.get_description(),
+                "node_id": node_id,
+                "node_type": node_type,
+                "config": config,
+                "name": action.get_description(),
             }
 
         return None
@@ -876,51 +870,48 @@ class BrowserWorkflowGenerator:
         Returns:
             Workflow data dictionary with only user action nodes.
         """
-        nodes = []
-        connections = []
+        nodes: Dict[str, Dict[str, Any]] = {}
+        connections: List[Dict[str, Any]] = []
 
         # Generate workflow name if not provided
         if not workflow_name:
-            workflow_name = (
-                f"Recorded Browser Workflow {datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            )
+            workflow_name = f"Recorded Browser Workflow {datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         # Filter out Navigate actions (page load events, not user actions)
-        user_actions = [
-            a for a in actions if a.action_type != BrowserActionType.NAVIGATE
-        ]
+        user_actions = [a for a in actions if a.action_type != BrowserActionType.NAVIGATE]
 
         prev_node_id = None
         x_offset = 100
         HORIZONTAL_SPACING = 350  # Node width (~300) + 50px gap
 
         for i, action in enumerate(user_actions):
-            node_data = BrowserWorkflowGenerator._action_to_node(
-                action, f"action_{i+1}", 100
-            )
+            node_data = BrowserWorkflowGenerator._action_to_node(action, f"action_{i+1}", 100)
 
             if node_data:
                 # Position side-by-side horizontally
                 node_data["position"] = [x_offset, 100]
-                nodes.append(node_data)
+                nodes[node_data["node_id"]] = node_data
 
                 # Connect to previous node (exec only, no page connections)
                 if prev_node_id:
                     connections.append(
                         {
-                            "from_node": prev_node_id,
-                            "from_port": "exec_out",
-                            "to_node": node_data["id"],
-                            "to_port": "exec_in",
+                            "source_node": prev_node_id,
+                            "source_port": "exec_out",
+                            "target_node": node_data["node_id"],
+                            "target_port": "exec_in",
                         }
                     )
 
-                prev_node_id = node_data["id"]
+                prev_node_id = node_data["node_id"]
                 x_offset += HORIZONTAL_SPACING
 
         return {
-            "name": workflow_name,
-            "description": f"Recorded {len(nodes)} user actions",
+            "metadata": {
+                "name": workflow_name,
+                "description": f"Recorded {len(nodes)} user actions",
+                "version": "1.0.0",
+            },
             "nodes": nodes,
             "connections": connections,
         }
@@ -935,8 +926,8 @@ class BrowserWorkflowGenerator:
 
         if action.action_type == BrowserActionType.CLICK:
             return {
-                "id": node_id,
-                "type": "ClickElementNode",
+                "node_id": node_id,
+                "node_type": "ClickElementNode",
                 "name": f"Click {action.element_info.get('text', '')[:20] or action.selector[:20]}",
                 "position": [100, y_pos],
                 "config": {
@@ -948,8 +939,8 @@ class BrowserWorkflowGenerator:
         elif action.action_type == BrowserActionType.TYPE:
             text_preview = (action.value or "")[:15]
             return {
-                "id": node_id,
-                "type": "TypeTextNode",
+                "node_id": node_id,
+                "node_type": "TypeTextNode",
                 "name": f"Type: {text_preview}...",
                 "position": [100, y_pos],
                 "config": {
@@ -963,8 +954,8 @@ class BrowserWorkflowGenerator:
         elif action.action_type == BrowserActionType.NAVIGATE:
             url_preview = (action.url or "")[:30]
             return {
-                "id": node_id,
-                "type": "NavigateNode",
+                "node_id": node_id,
+                "node_type": "NavigateNode",
                 "name": f"Navigate: {url_preview}",
                 "position": [100, y_pos],
                 "config": {
@@ -975,8 +966,8 @@ class BrowserWorkflowGenerator:
 
         elif action.action_type == BrowserActionType.SELECT:
             return {
-                "id": node_id,
-                "type": "SelectOptionNode",
+                "node_id": node_id,
+                "node_type": "SelectOptionNode",
                 "name": f"Select: {action.value}",
                 "position": [100, y_pos],
                 "config": {
@@ -987,8 +978,8 @@ class BrowserWorkflowGenerator:
 
         elif action.action_type == BrowserActionType.CHECK:
             return {
-                "id": node_id,
-                "type": "CheckboxNode",
+                "node_id": node_id,
+                "node_type": "CheckboxNode",
                 "name": f"Check: {action.element_info.get('name', 'checkbox')}",
                 "position": [100, y_pos],
                 "config": {
@@ -1002,8 +993,8 @@ class BrowserWorkflowGenerator:
             # For Enter key, use TypeTextNode with press_enter_after
             if keys == ["Enter"]:
                 return {
-                    "id": node_id,
-                    "type": "PressEnterNode",
+                    "node_id": node_id,
+                    "node_type": "PressEnterNode",
                     "name": "Press Enter",
                     "position": [100, y_pos],
                     "config": {
@@ -1013,8 +1004,8 @@ class BrowserWorkflowGenerator:
             # Other keys use SendHotKeyNode
             keys_str = "+".join(keys)
             return {
-                "id": node_id,
-                "type": "SendHotKeyNode",
+                "node_id": node_id,
+                "node_type": "SendHotKeyNode",
                 "name": f"Press: {keys_str}",
                 "position": [100, y_pos],
                 "config": {
@@ -1024,8 +1015,8 @@ class BrowserWorkflowGenerator:
 
         elif action.action_type == BrowserActionType.HOVER:
             return {
-                "id": node_id,
-                "type": "HoverElementNode",
+                "node_id": node_id,
+                "node_type": "HoverElementNode",
                 "name": f"Hover: {action.selector[:20]}",
                 "position": [100, y_pos],
                 "config": {
@@ -1035,8 +1026,8 @@ class BrowserWorkflowGenerator:
 
         elif action.action_type == BrowserActionType.SUBMIT:
             return {
-                "id": node_id,
-                "type": "SubmitFormNode",
+                "node_id": node_id,
+                "node_type": "SubmitFormNode",
                 "name": "Submit Form",
                 "position": [100, y_pos],
                 "config": {

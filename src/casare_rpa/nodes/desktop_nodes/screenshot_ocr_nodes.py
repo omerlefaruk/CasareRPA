@@ -12,10 +12,35 @@ from typing import Any, Dict
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.utils import safe_int
 
 
+@properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=False,
+        label="File Path",
+        tooltip="Path to save screenshot (optional)",
+    ),
+    PropertyDef(
+        "region",
+        PropertyType.ANY,
+        required=False,
+        label="Region",
+        tooltip="Dict with x, y, width, height for specific region (optional)",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="PNG",
+        choices=["PNG", "JPEG", "BMP"],
+        label="Format",
+        tooltip="Image format",
+    ),
+)
 @node(category="desktop")
 class CaptureScreenshotNode(BaseNode):
     """
@@ -63,11 +88,9 @@ class CaptureScreenshotNode(BaseNode):
         """Execute screenshot capture"""
         file_path = self.get_input_value("file_path")
         region = self.get_input_value("region")
-        format_type = self.config.get("format", "PNG")
+        format_type = self.get_parameter("format", "PNG")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
@@ -92,6 +115,37 @@ class CaptureScreenshotNode(BaseNode):
         }
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="DesktopElement to capture",
+    ),
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=False,
+        label="File Path",
+        tooltip="Path to save image (optional)",
+    ),
+    PropertyDef(
+        "padding",
+        PropertyType.INTEGER,
+        default=0,
+        label="Padding",
+        tooltip="Extra pixels around element bounds",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="PNG",
+        choices=["PNG", "JPEG", "BMP"],
+        label="Format",
+        tooltip="Image format",
+    ),
+)
 @node(category="desktop")
 class CaptureElementImageNode(BaseNode):
     """
@@ -141,12 +195,10 @@ class CaptureElementImageNode(BaseNode):
         """Execute element image capture"""
         element = self.get_input_value("element")
         file_path = self.get_input_value("file_path")
-        padding = self.get_input_value("padding") or self.config.get("padding", 0)
-        format_type = self.config.get("format", "PNG")
+        padding = self.get_input_value("padding") or self.get_parameter("padding", 0)
+        format_type = self.get_parameter("format", "PNG")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         padding = safe_int(padding, 0)
 
@@ -180,6 +232,51 @@ class CaptureElementImageNode(BaseNode):
         }
 
 
+@properties(
+    PropertyDef(
+        "image",
+        PropertyType.ANY,
+        required=False,
+        label="Image",
+        tooltip="PIL Image object (optional)",
+    ),
+    PropertyDef(
+        "image_path",
+        PropertyType.FILE_PATH,
+        required=False,
+        label="Image Path",
+        tooltip="Path to image file (optional)",
+    ),
+    PropertyDef(
+        "region",
+        PropertyType.ANY,
+        required=False,
+        label="Region",
+        tooltip="Dict with x, y, width, height for specific region (optional)",
+    ),
+    PropertyDef(
+        "engine",
+        PropertyType.CHOICE,
+        default="auto",
+        choices=["auto", "rapidocr", "tesseract", "winocr"],
+        label="Engine",
+        tooltip="OCR engine",
+    ),
+    PropertyDef(
+        "language",
+        PropertyType.STRING,
+        default="eng",
+        label="Language",
+        tooltip="Tesseract language code",
+    ),
+    PropertyDef(
+        "config",
+        PropertyType.STRING,
+        default="",
+        label="Config",
+        tooltip="Additional Tesseract config options",
+    ),
+)
 @node(category="desktop")
 class OCRExtractTextNode(BaseNode):
     """
@@ -232,16 +329,11 @@ class OCRExtractTextNode(BaseNode):
         image = self.get_input_value("image")
         image_path = self.get_input_value("image_path")
         region = self.get_input_value("region")
-        engine = self.config.get("engine", "auto")
-        language = self.config.get("language", "eng")
-        ocr_config = self.config.get("config", "")
+        engine = self.get_parameter("engine", "auto")
+        language = self.get_parameter("language", "eng")
+        ocr_config = self.get_parameter("config", "")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if image_path:
-                image_path = context.resolve_value(image_path)
-            language = context.resolve_value(language)
-            ocr_config = context.resolve_value(ocr_config)
 
         desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
@@ -272,6 +364,51 @@ class OCRExtractTextNode(BaseNode):
         }
 
 
+@properties(
+    PropertyDef(
+        "image1",
+        PropertyType.ANY,
+        required=False,
+        label="Image 1",
+        tooltip="First PIL Image object (optional)",
+    ),
+    PropertyDef(
+        "image2",
+        PropertyType.ANY,
+        required=False,
+        label="Image 2",
+        tooltip="Second PIL Image object (optional)",
+    ),
+    PropertyDef(
+        "image1_path",
+        PropertyType.FILE_PATH,
+        required=False,
+        label="Image 1 Path",
+        tooltip="Path to first image file (optional)",
+    ),
+    PropertyDef(
+        "image2_path",
+        PropertyType.FILE_PATH,
+        required=False,
+        label="Image 2 Path",
+        tooltip="Path to second image file (optional)",
+    ),
+    PropertyDef(
+        "method",
+        PropertyType.CHOICE,
+        default="histogram",
+        choices=["ssim", "histogram", "pixel"],
+        label="Method",
+        tooltip="Comparison method",
+    ),
+    PropertyDef(
+        "threshold",
+        PropertyType.FLOAT,
+        default=0.9,
+        label="Threshold",
+        tooltip="Similarity threshold for match (0.0 to 1.0)",
+    ),
+)
 @node(category="desktop")
 class CompareImagesNode(BaseNode):
     """
@@ -326,8 +463,8 @@ class CompareImagesNode(BaseNode):
         image2 = self.get_input_value("image2")
         image1_path = self.get_input_value("image1_path")
         image2_path = self.get_input_value("image2_path")
-        method = self.config.get("method", "histogram")
-        threshold = self.config.get("threshold", 0.9)
+        method = self.get_parameter("method", "histogram")
+        threshold = self.get_parameter("threshold", 0.9)
 
         desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:

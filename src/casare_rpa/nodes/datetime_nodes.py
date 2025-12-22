@@ -31,7 +31,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "timezone",
@@ -50,6 +49,7 @@ from casare_rpa.utils import safe_int
         tooltip="Output format string (default: ISO format)",
     ),
 )
+@node(category="utility")
 class GetCurrentDateTimeNode(BaseNode):
     """
     Get the current date and time.
@@ -69,9 +69,7 @@ class GetCurrentDateTimeNode(BaseNode):
     # @requires: none
     # @ports: none -> datetime, timestamp, year, month, day, hour, minute, second, day_of_week
 
-    def __init__(
-        self, node_id: str, name: str = "Get Current DateTime", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Get Current DateTime", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -143,17 +141,32 @@ class GetCurrentDateTimeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "datetime",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime",
+        tooltip="DateTime string or timestamp to format",
+    ),
+    PropertyDef(
+        "input_format",
+        PropertyType.STRING,
+        required=False,
+        label="Input Format",
+        placeholder="%Y-%m-%d %H:%M:%S",
+        tooltip="Input format if datetime is a string (optional)",
+    ),
     PropertyDef(
         "format",
         PropertyType.STRING,
         default="%Y-%m-%d %H:%M:%S",
-        label="Format",
+        label="Output Format",
         placeholder="%Y-%m-%d %H:%M:%S",
         tooltip="strftime format string",
     ),
 )
+@node(category="utility")
 class FormatDateTimeNode(BaseNode):
     """
     Format a datetime to a string.
@@ -237,8 +250,14 @@ class FormatDateTimeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "datetime_string",
+        PropertyType.STRING,
+        required=True,
+        label="DateTime String",
+        tooltip="The datetime string to parse",
+    ),
     PropertyDef(
         "format",
         PropertyType.STRING,
@@ -248,6 +267,7 @@ class FormatDateTimeNode(BaseNode):
         tooltip="Expected format string (optional, will try auto-detect)",
     ),
 )
+@node(category="utility")
 class ParseDateTimeNode(BaseNode):
     """
     Parse a datetime string into components.
@@ -350,8 +370,8 @@ class ParseDateTimeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties()  # Input port driven
+@node(category="utility")
 class DateTimeAddNode(BaseNode):
     """
     Add or subtract time from a datetime.
@@ -423,9 +443,7 @@ class DateTimeAddNode(BaseNode):
             total_days = days + (years * 365) + (months * 30) + (weeks * 7)
 
             # Add the delta
-            delta = timedelta(
-                days=total_days, hours=hours, minutes=minutes, seconds=seconds
-            )
+            delta = timedelta(days=total_days, hours=hours, minutes=minutes, seconds=seconds)
             result_dt = dt + delta
 
             self.set_output_value("result", result_dt.isoformat())
@@ -445,8 +463,23 @@ class DateTimeAddNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "datetime_1",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 1",
+        tooltip="First datetime (start)",
+    ),
+    PropertyDef(
+        "datetime_2",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 2",
+        tooltip="Second datetime (end)",
+    ),
+)
+@node(category="utility")
 class DateTimeDiffNode(BaseNode):
     """
     Calculate the difference between two datetimes.
@@ -550,8 +583,23 @@ class DateTimeDiffNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "datetime_1",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 1",
+        tooltip="First datetime",
+    ),
+    PropertyDef(
+        "datetime_2",
+        PropertyType.ANY,
+        required=True,
+        label="DateTime 2",
+        tooltip="Second datetime",
+    ),
+)
+@node(category="utility")
 class DateTimeCompareNode(BaseNode):
     """
     Compare two datetimes.
@@ -633,7 +681,6 @@ class DateTimeCompareNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "milliseconds",
@@ -643,6 +690,7 @@ class DateTimeCompareNode(BaseNode):
         tooltip="Return milliseconds instead of seconds",
     ),
 )
+@node(category="utility")
 class GetTimestampNode(BaseNode):
     """
     Get current Unix timestamp.

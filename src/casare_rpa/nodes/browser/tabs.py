@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "tab_name",
@@ -88,6 +87,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         placeholder="screenshots/error.png",
     ),
 )
+@node(category="browser")
 class NewTabNode(BaseNode):
     """
     New tab node - creates a new browser tab/page.
@@ -158,9 +158,7 @@ class NewTabNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for new tab"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for new tab")
 
                     # Reuse existing browser context if available (much faster)
                     # Creating a new page in existing context shares cookies/session
@@ -173,9 +171,7 @@ class NewTabNode(BaseNode):
                     else:
                         # No existing context - create a new one
                         browser_context = await browser.new_context()
-                        context.add_browser_context(
-                            browser_context
-                        )  # Track for cleanup
+                        context.add_browser_context(browser_context)  # Track for cleanup
                         page = await browser_context.new_page()
                         logger.debug("Created new browser context for first page")
 
@@ -183,14 +179,9 @@ class NewTabNode(BaseNode):
                     if url and url.strip():
                         nav_url = url.strip()
                         # Resolve {{variable}} patterns in URL
-                        nav_url = context.resolve_value(nav_url)
-                        logger.debug(
-                            f"NewTabNode URL after variable resolution: '{nav_url}'"
-                        )
+                        logger.debug(f"NewTabNode URL after variable resolution: '{nav_url}'")
                         # Add protocol if missing
-                        if not nav_url.startswith(
-                            ("http://", "https://", "file://", "about:")
-                        ):
+                        if not nav_url.startswith(("http://", "https://", "file://", "about:")):
                             nav_url = f"https://{nav_url}"
                         logger.info(f"Navigating new tab to: {nav_url}")
                         await page.goto(nav_url, timeout=timeout, wait_until=wait_until)
@@ -203,9 +194,7 @@ class NewTabNode(BaseNode):
                     self.set_output_value("page", page)
 
                     self.status = NodeStatus.SUCCESS
-                    logger.info(
-                        f"Tab created successfully: {tab_name} (attempt {attempts})"
-                    )
+                    logger.info(f"Tab created successfully: {tab_name} (attempt {attempts})")
 
                     return {
                         "success": True,
@@ -221,9 +210,7 @@ class NewTabNode(BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"New tab creation failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"New tab creation failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break

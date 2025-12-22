@@ -67,9 +67,7 @@ async def generate_notepad_workflow():
             print(workflow_json)
 
             # Save to file
-            output_path = (
-                Path(__file__).parent.parent / "workflows" / "ai_notepad_workflow.json"
-            )
+            output_path = Path(__file__).parent.parent / "workflows" / "ai_notepad_workflow.json"
             output_path.parent.mkdir(exist_ok=True)
             with open(output_path, "w") as f:
                 json.dump(result.workflow, f, indent=2)

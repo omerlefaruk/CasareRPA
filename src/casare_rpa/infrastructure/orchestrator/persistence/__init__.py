@@ -18,6 +18,17 @@ from casare_rpa.infrastructure.orchestrator.persistence.local_trigger_repository
 from casare_rpa.infrastructure.orchestrator.persistence.local_workflow_repository import (
     LocalWorkflowRepository,
 )
+from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_repository import (
+    PgRobotRepository,
+    CREATE_ROBOTS_TABLE_SQL,
+)
+
+from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_api_keys_schema import (
+    CREATE_ROBOT_API_KEY_AUDIT_TABLE_SQL,
+    CREATE_ROBOT_API_KEYS_TABLE_SQL,
+    CREATE_ROBOT_API_KEYS_INDEXES_SQL,
+    ensure_robot_api_key_tables,
+)
 
 __all__ = [
     "LocalStorageRepository",
@@ -26,4 +37,11 @@ __all__ = [
     "LocalWorkflowRepository",
     "LocalScheduleRepository",
     "LocalTriggerRepository",
+    # PostgreSQL repositories
+    "PgRobotRepository",
+    "CREATE_ROBOTS_TABLE_SQL",
+    "CREATE_ROBOT_API_KEYS_TABLE_SQL",
+    "CREATE_ROBOT_API_KEYS_INDEXES_SQL",
+    "CREATE_ROBOT_API_KEY_AUDIT_TABLE_SQL",
+    "ensure_robot_api_key_tables",
 ]

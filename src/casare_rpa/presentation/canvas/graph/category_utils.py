@@ -142,9 +142,7 @@ def build_category_tree(categories: List[str]) -> CategoryNode:
     return root
 
 
-def update_category_counts(
-    tree: CategoryNode, category_node_counts: Dict[str, int]
-) -> None:
+def update_category_counts(tree: CategoryNode, category_node_counts: Dict[str, int]) -> None:
     """
     Update node counts in the category tree.
 
@@ -191,8 +189,7 @@ CATEGORY_DISPLAY_NAMES = {
     "triggers": "Triggers",
     "utility": "Utility",
     "variable": "Variables",
-    "ai_ml": "AI / Machine Learning",
-    "document": "Document AI",
+    "document": "Document",
     # Browser subcategories
     "launch": "Launch",
     "navigation": "Navigation",
@@ -272,6 +269,8 @@ CATEGORY_DISPLAY_NAMES = {
     "conditional": "Conditional",
     "loop": "Loop",
     "flow": "Flow",
+    # SuperNode subcategory
+    "super": "Super Nodes",
 }
 
 
@@ -351,8 +350,7 @@ def _hex_to_rgb_tuple(hex_color: str) -> tuple:
 # ROOT_CATEGORY_COLORS now built from theme for consistency
 # This maintains backward compatibility with code that expects RGB tuples
 ROOT_CATEGORY_COLORS = {
-    category: _hex_to_rgb_tuple(hex_color)
-    for category, hex_color in CATEGORY_COLOR_MAP.items()
+    category: _hex_to_rgb_tuple(hex_color) for category, hex_color in CATEGORY_COLOR_MAP.items()
 }
 
 
@@ -462,12 +460,12 @@ def get_all_parent_paths(category_path: str) -> List[str]:
 
 # Category sort order (alphabetical)
 CATEGORY_ORDER = [
-    "ai_ml",
     "basic",
     "browser",
     "control_flow",
     "data_operations",
     "database",
+    "desktop",  # SuperNode category (distinct from desktop_automation)
     "desktop_automation",
     "document",
     "email",
@@ -479,6 +477,7 @@ CATEGORY_ORDER = [
     "rest_api",
     "scripts",
     "system",
+    "text",  # SuperNode category for text operations
     "triggers",
     "utility",
     "variable",

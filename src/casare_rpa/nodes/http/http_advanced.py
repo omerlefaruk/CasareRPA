@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "header_name",
@@ -61,6 +60,7 @@ if TYPE_CHECKING:
         tooltip="Multiple headers as JSON object",
     ),
 )
+@node(category="http")
 class SetHttpHeadersNode(BaseNode):
     """
     Configure HTTP headers for subsequent requests.
@@ -84,9 +84,7 @@ class SetHttpHeadersNode(BaseNode):
     # @requires: requests
     # @ports: base_headers, header_name, header_value, headers_json -> headers
 
-    def __init__(
-        self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -143,7 +141,6 @@ class SetHttpHeadersNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "path",
@@ -161,6 +158,7 @@ class SetHttpHeadersNode(BaseNode):
         tooltip="Default value if path not found",
     ),
 )
+@node(category="http")
 class ParseJsonResponseNode(BaseNode):
     """
     Parse JSON response and extract data using JSONPath-like expressions.
@@ -275,7 +273,6 @@ class ParseJsonResponseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "url",
@@ -354,6 +351,7 @@ class ParseJsonResponseNode(BaseNode):
         tooltip="Download chunk size in bytes",
     ),
 )
+@node(category="http")
 class HttpDownloadFileNode(BaseNode):
     """
     Download a file from a URL and save to disk.
@@ -381,9 +379,7 @@ class HttpDownloadFileNode(BaseNode):
     # @requires: requests
     # @ports: url, save_path, headers, timeout -> file_path, file_size, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "HTTP Download File", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "HTTP Download File", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -418,9 +414,6 @@ class HttpDownloadFileNode(BaseNode):
             overwrite = self.get_parameter("overwrite", True)
             retry_count = self.get_parameter("retry_count", 0)
             chunk_size = self.get_parameter("chunk_size", 8192)
-
-            url = context.resolve_value(url)
-            save_path = context.resolve_value(save_path)
 
             if not url:
                 raise ValueError("URL is required")
@@ -496,7 +489,6 @@ class HttpDownloadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "url",
@@ -567,6 +559,7 @@ class HttpDownloadFileNode(BaseNode):
         tooltip="Delay between retry attempts",
     ),
 )
+@node(category="http")
 class HttpUploadFileNode(BaseNode):
     """
     Upload a file via HTTP POST multipart/form-data.
@@ -593,9 +586,7 @@ class HttpUploadFileNode(BaseNode):
     # @requires: requests
     # @ports: url, file_path, field_name, headers, extra_fields, timeout -> response_body, response_json, status_code, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -636,9 +627,6 @@ class HttpUploadFileNode(BaseNode):
             extra_fields = self.get_parameter("extra_fields", {})
             timeout_seconds = self.get_parameter("timeout", 300.0)
             retry_count = self.get_parameter("retry_count", 0)
-
-            url = context.resolve_value(url)
-            file_path = context.resolve_value(file_path)
 
             if not url:
                 raise ValueError("URL is required")
@@ -733,7 +721,6 @@ class HttpUploadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="http")
 @properties(
     PropertyDef(
         "base_url",
@@ -759,6 +746,7 @@ class HttpUploadFileNode(BaseNode):
         tooltip="Query parameters as JSON object",
     ),
 )
+@node(category="http")
 class BuildUrlNode(BaseNode):
     """
     Build a URL with query parameters.
@@ -801,9 +789,6 @@ class BuildUrlNode(BaseNode):
             base_url = self.get_parameter("base_url")
             path = self.get_parameter("path", "")
             params = self.get_parameter("params", {})
-
-            base_url = context.resolve_value(base_url)
-            path = context.resolve_value(path)
 
             if not base_url:
                 raise ValueError("Base URL is required")

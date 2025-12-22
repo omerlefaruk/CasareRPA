@@ -22,7 +22,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "model",
@@ -56,6 +55,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Minimum confidence threshold to accept AI recommendation",
     ),
 )
+@node(category="error_handling")
 class AIRecoveryNode(BaseNode):
     """
     AI-powered error recovery analysis node.
@@ -126,7 +126,7 @@ class AIRecoveryNode(BaseNode):
             error_message = self.get_input_value("error_message") or "Unknown error"
             error_type = self.get_input_value("error_type") or "Exception"
             error_node = self.get_input_value("error_node") or ""
-            stack_trace = self.get_input_value("stack_trace")
+            self.get_input_value("stack_trace")
             screenshot = self.get_input_value("screenshot")
             execution_history = self.get_input_value("execution_history") or []
             node_context = self.get_input_value("node_context") or {}

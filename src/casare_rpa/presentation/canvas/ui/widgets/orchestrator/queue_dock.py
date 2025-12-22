@@ -79,9 +79,7 @@ class StatisticsTab(QWidget):
         metrics_layout = QHBoxLayout()
         metrics_layout.setSpacing(16)
 
-        self._success_rate_card = self._create_stat_card(
-            "Success Rate", "0%", "#89D185"
-        )
+        self._success_rate_card = self._create_stat_card("Success Rate", "0%", "#89D185")
         metrics_layout.addWidget(self._success_rate_card)
 
         self._avg_duration_card = self._create_stat_card("Avg Duration", "-")
@@ -91,9 +89,7 @@ class StatisticsTab(QWidget):
 
         layout.addStretch()
 
-    def _create_stat_card(
-        self, title: str, value: str, color: Optional[str] = None
-    ) -> QFrame:
+    def _create_stat_card(self, title: str, value: str, color: Optional[str] = None) -> QFrame:
         """Create a statistics card widget."""
         c = Theme.get_colors()
 
@@ -118,9 +114,7 @@ class StatisticsTab(QWidget):
 
         value_label = QLabel(value)
         value_color = color or c.text_primary
-        value_label.setStyleSheet(
-            f"color: {value_color}; font-size: 24px; font-weight: bold;"
-        )
+        value_label.setStyleSheet(f"color: {value_color}; font-size: 24px; font-weight: bold;")
         value_label.setObjectName("value_label")
         card_layout.addWidget(value_label)
 
@@ -160,12 +154,8 @@ class StatisticsTab(QWidget):
 
         self._update_card_value(self._total_card, str(stats.get("total_items", 0)))
         self._update_card_value(self._new_card, str(stats.get("new_count", 0)))
-        self._update_card_value(
-            self._progress_card, str(stats.get("in_progress_count", 0))
-        )
-        self._update_card_value(
-            self._completed_card, str(stats.get("completed_count", 0))
-        )
+        self._update_card_value(self._progress_card, str(stats.get("in_progress_count", 0)))
+        self._update_card_value(self._completed_card, str(stats.get("completed_count", 0)))
         self._update_card_value(self._failed_card, str(stats.get("failed_count", 0)))
 
         success_rate = stats.get("success_rate", 0)
@@ -254,9 +244,7 @@ class QueueManagementDock(QDockWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         container = QWidget()
-        container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -264,9 +252,7 @@ class QueueManagementDock(QDockWidget):
         self._tab_widget = QTabWidget()
         self._tab_widget.setTabPosition(QTabWidget.TabPosition.North)
         self._tab_widget.setDocumentMode(True)
-        self._tab_widget.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self._tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self._queues_tab = QueuesTab(self._queue_service, self)
         self._tab_widget.addTab(self._queues_tab, "Queues")

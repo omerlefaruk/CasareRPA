@@ -121,9 +121,7 @@ class SearchIndex:
             score, positions = _match_item(query_chars, query_set, item)
 
             if score < 10000:  # Valid match found
-                results.append(
-                    (item.category, item.name, item.description, score, positions)
-                )
+                results.append((item.category, item.name, item.description, score, positions))
 
         # Sort by score (lower is better)
         results.sort(key=lambda x: x[3])
@@ -167,9 +165,7 @@ def _split_into_words(text: str) -> List[str]:
     return words
 
 
-def _match_item(
-    query: str, query_set: frozenset, item: IndexedItem
-) -> Tuple[int, List[int]]:
+def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[int, List[int]]:
     """
     Match query against item using multiple strategies.
     Returns (score, positions) where lower score is better.
@@ -191,16 +187,12 @@ def _match_item(
     if len(query) <= len(item.initials):
         if item.initials.startswith(query):
             # Perfect initials prefix match
-            positions = _get_initial_positions(
-                item.name_words, len(query), item.name_lower
-            )
+            positions = _get_initial_positions(item.name_words, len(query), item.name_lower)
             return (50 + len(query), positions)
         elif query in item.initials:
             # Initials substring match
             start = item.initials.index(query)
-            positions = _get_initial_positions(
-                item.name_words, len(query), item.name_lower, start
-            )
+            positions = _get_initial_positions(item.name_words, len(query), item.name_lower, start)
             return (75 + start * 10, positions)
 
     # Strategy 3: ABBREVIATION match (consecutive chars from word starts)

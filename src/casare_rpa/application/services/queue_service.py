@@ -564,12 +564,8 @@ class QueueService:
         queue.new_count = sum(
             1 for i in items if i.status in (QueueItemStatus.NEW, QueueItemStatus.RETRY)
         )
-        queue.in_progress_count = sum(
-            1 for i in items if i.status == QueueItemStatus.IN_PROGRESS
-        )
-        queue.completed_count = sum(
-            1 for i in items if i.status == QueueItemStatus.COMPLETED
-        )
+        queue.in_progress_count = sum(1 for i in items if i.status == QueueItemStatus.IN_PROGRESS)
+        queue.completed_count = sum(1 for i in items if i.status == QueueItemStatus.COMPLETED)
         queue.failed_count = sum(1 for i in items if i.status == QueueItemStatus.FAILED)
 
     def process_retry_items(self, queue_id: str) -> int:

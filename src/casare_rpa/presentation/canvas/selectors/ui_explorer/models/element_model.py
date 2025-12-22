@@ -330,8 +330,7 @@ class UIExplorerElement:
         """
         # Extract properties from DesktopElement
         data = {
-            "ControlTypeName": desktop_element.get_property("ControlTypeName")
-            or "Unknown",
+            "ControlTypeName": desktop_element.get_property("ControlTypeName") or "Unknown",
             "Name": desktop_element.get_property("Name") or "",
             "AutomationId": desktop_element.get_property("AutomationId") or "",
             "ClassName": desktop_element.get_property("ClassName") or "",

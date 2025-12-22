@@ -85,7 +85,6 @@ SHEETS_VALUE_RENDER = PropertyDef(
 )
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -103,6 +102,7 @@ SHEETS_VALUE_RENDER = PropertyDef(
     ),
     SHEETS_VALUE_RENDER,
 )
+@node(category="google")
 class SheetsGetCellNode(SheetsBaseNode):
     """
     Read a single cell value from Google Sheets.
@@ -128,7 +128,7 @@ class SheetsGetCellNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Get Cell", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -151,13 +151,9 @@ class SheetsGetCellNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         cell = self.get_parameter("cell")
-        if hasattr(context, "resolve_value") and cell:
-            cell = context.resolve_value(cell)
 
         if not cell:
             self._set_error_outputs("Cell reference is required")
@@ -193,7 +189,6 @@ class SheetsGetCellNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -219,6 +214,7 @@ class SheetsGetCellNode(SheetsBaseNode):
         tab="advanced",
     ),
 )
+@node(category="google")
 class SheetsGetRangeNode(SheetsBaseNode):
     """
     Read a range of values from Google Sheets.
@@ -245,7 +241,7 @@ class SheetsGetRangeNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Get Range", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -270,8 +266,6 @@ class SheetsGetRangeNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         range_notation = self.get_parameter("range")
-        if hasattr(context, "resolve_value") and range_notation:
-            range_notation = context.resolve_value(range_notation)
 
         if not range_notation:
             self._set_error_outputs("Range is required")
@@ -306,7 +300,6 @@ class SheetsGetRangeNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -341,6 +334,7 @@ class SheetsGetRangeNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_RENDER,
 )
+@node(category="google")
 class SheetsGetRowNode(SheetsBaseNode):
     """
     Read an entire row from Google Sheets.
@@ -367,7 +361,7 @@ class SheetsGetRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Get Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -393,13 +387,9 @@ class SheetsGetRowNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         row_num = self.get_parameter("row_num")
-        if hasattr(context, "resolve_value"):
-            row_num = context.resolve_value(row_num)
         row_num = int(row_num) if row_num else 1
 
         if row_num < 1:
@@ -441,7 +431,6 @@ class SheetsGetRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -477,6 +466,7 @@ class SheetsGetRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_RENDER,
 )
+@node(category="google")
 class SheetsGetColumnNode(SheetsBaseNode):
     """
     Read an entire column from Google Sheets.
@@ -503,7 +493,7 @@ class SheetsGetColumnNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Get Column", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -529,13 +519,9 @@ class SheetsGetColumnNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         column = self.get_parameter("column")
-        if hasattr(context, "resolve_value") and column:
-            column = context.resolve_value(column)
 
         if not column:
             self._set_error_outputs("Column letter is required")
@@ -580,7 +566,6 @@ class SheetsGetColumnNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -619,6 +604,7 @@ class SheetsGetColumnNode(SheetsBaseNode):
         tooltip="Only match if entire cell content equals search value",
     ),
 )
+@node(category="google")
 class SheetsSearchNode(SheetsBaseNode):
     """
     Search for values in Google Sheets.
@@ -646,7 +632,7 @@ class SheetsSearchNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Search", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -673,8 +659,6 @@ class SheetsSearchNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         search_value = self.get_parameter("search_value")
-        if hasattr(context, "resolve_value") and search_value:
-            search_value = context.resolve_value(search_value)
 
         if not search_value:
             self._set_error_outputs("Search value is required")
@@ -685,12 +669,8 @@ class SheetsSearchNode(SheetsBaseNode):
             }
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
 
         search_range = self.get_parameter("search_range")
-        if hasattr(context, "resolve_value") and search_range:
-            search_range = context.resolve_value(search_range)
 
         match_case = bool(self.get_parameter("match_case"))
         match_entire_cell = bool(self.get_parameter("match_entire_cell"))
@@ -732,9 +712,7 @@ class SheetsSearchNode(SheetsBaseNode):
 
                     found = False
                     if match_entire_cell:
-                        found = compare_value == (
-                            search_value if match_case else search_lower
-                        )
+                        found = compare_value == (search_value if match_case else search_lower)
                     else:
                         found = search_lower in compare_value
 
@@ -770,13 +748,13 @@ class SheetsSearchNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
     SHEETS_CREDENTIAL_NAME,
     SHEETS_SPREADSHEET_ID,
 )
+@node(category="google")
 class SheetsGetSheetInfoNode(SheetsBaseNode):
     """
     Get spreadsheet metadata and sheet information.
@@ -803,7 +781,7 @@ class SheetsGetSheetInfoNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Get Sheet Info", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

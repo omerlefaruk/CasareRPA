@@ -4,8 +4,14 @@ Base Visual Node for CasareRPA.
 This module provides the base VisualNode class to avoid circular imports.
 """
 
-from typing import Optional, Dict, Any
+from functools import partial
+from typing import Optional, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.schemas.property_schema import PropertyDef
+
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
+from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor
 
 from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
@@ -90,9 +96,7 @@ class VisualNode(NodeGraphQtBaseNode):
         self.create_property("status", "idle")
         self.create_property("_is_running", False)
         self.create_property("_is_completed", False)
-        self.create_property(
-            "_disabled", False
-        )  # Disabled nodes are skipped during execution
+        self.create_property("_disabled", False)  # Disabled nodes are skipped during execution
 
         # Auto-create linked CasareRPA node
         # This ensures every visual node has a CasareRPA node regardless of how it was created
@@ -180,6 +184,70 @@ class VisualNode(NodeGraphQtBaseNode):
         so custom widgets can override schema-based widgets.
         """
         pass
+
+    def add_custom_widget(self, widget: Any, tab: Optional[str] = None) -> None:
+        """
+        Add a custom widget to the node.
+
+        Override to automatically connect VariableAwareLineEdit expand signals
+        to the expression editor popup. This ensures all widgets with an
+        expand button (File Path, Directory Path, Selector, etc.) work correctly.
+
+        Args:
+            widget: The widget to add
+            tab: Optional tab name
+        """
+        super().add_custom_widget(widget, tab=tab)
+
+        # Check for VariableAwareLineEdit and connect expand signal
+        # Use duck typing to detect compatible widgets
+        if hasattr(widget, "_line_edit"):
+            line_edit = widget._line_edit
+            # Check if it has the expand_clicked signal
+            if hasattr(line_edit, "expand_clicked"):
+                # Retrieve widget name safely (NodeBaseWidget uses get_name())
+                widget_name = "unknown"
+                if hasattr(widget, "get_name"):
+                    widget_name = widget.get_name()
+                elif hasattr(widget, "name"):
+                    widget_name = widget.name
+                elif hasattr(widget, "_name"):
+                    widget_name = widget._name
+
+                # Get property def (attached by _add_variable_aware_text_input) or create default
+                property_def = getattr(widget, "_property_def", None)
+                if property_def is None:
+                    from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
+                    # Create default property def based on widget metadata
+                    label = getattr(widget, "label", widget_name)
+
+                    # Infer type from widget class name if possible
+                    widget_type = widget.__class__.__name__
+                    prop_type = PropertyType.STRING
+                    if "Selector" in widget_type:
+                        prop_type = PropertyType.SELECTOR
+                    elif "File" in widget_type:
+                        prop_type = PropertyType.FILE_PATH
+                    elif "Directory" in widget_type:
+                        prop_type = PropertyType.DIRECTORY_PATH
+
+                    property_def = PropertyDef(
+                        name=widget_name,
+                        type=prop_type,
+                        label=label,
+                    )
+
+                # Connect signal
+                # Disconnect first to prevent duplicates (safe to ignore error if not connected)
+                try:
+                    line_edit.expand_clicked.disconnect()
+                except Exception:
+                    pass
+
+                line_edit.expand_clicked.connect(
+                    partial(self._open_expression_editor, widget_name, property_def)
+                )
 
     def _configure_port_colors(self) -> None:
         """Configure port colors based on data type."""
@@ -376,9 +444,10 @@ class VisualNode(NodeGraphQtBaseNode):
         placeholder_text: str = "",
         tab: Optional[str] = None,
         tooltip: Optional[str] = None,
+        property_def: Optional["PropertyDef"] = None,
     ) -> Any:
         """
-        Add a text input widget with variable picker integration.
+        Add a text input widget with variable picker and expand button integration.
 
         PERFORMANCE: Uses direct creation via create_variable_text_widget() when
         available, avoiding the two-step create+replace pattern. This reduces
@@ -391,6 +460,7 @@ class VisualNode(NodeGraphQtBaseNode):
             placeholder_text: Placeholder text when empty
             tab: Tab name for grouping (optional)
             tooltip: Tooltip text (optional)
+            property_def: Property definition for expression editor type detection
 
         Returns:
             The created widget
@@ -409,12 +479,17 @@ class VisualNode(NodeGraphQtBaseNode):
                 text=text,
                 placeholder_text=placeholder_text,
                 tooltip=tooltip or "",
+                show_expand_button=True,
             )
 
             if widget:
-                # Add the widget to the node
+                # Store property def for add_custom_widget to use
+                widget._property_def = property_def
+
+                # Add the widget to the node (this will trigger signal connection via add_custom_widget override)
                 self.add_custom_widget(widget, tab=tab)
                 widget.setParentItem(self.view)
+
                 return widget
 
         except ImportError:
@@ -459,6 +534,118 @@ class VisualNode(NodeGraphQtBaseNode):
                         }
                     """)
 
+    # =========================================================================
+    # EXPRESSION EDITOR INTEGRATION
+    # =========================================================================
+
+    def _open_expression_editor(self, property_name: str, property_def: "PropertyDef") -> None:
+        """
+        Open expression editor popup for a property.
+
+        Args:
+            property_name: Name of the property
+            property_def: Property definition with type info
+        """
+        from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
+            ExpressionEditorPopup,
+        )
+        from casare_rpa.presentation.canvas.ui.widgets.expression_editor.editor_factory import (
+            EditorFactory,
+        )
+        from loguru import logger
+
+        logger.debug(f"Opening expression editor for property: {property_name}")
+
+        # Determine node type for overrides
+        node_type = self.__class__.__name__
+
+        # Create appropriate editor using factory (handles overrides and defaults)
+        editor = EditorFactory.create_for_property_type(
+            property_type=property_def.type.name
+            if hasattr(property_def.type, "name")
+            else str(property_def.type),
+            node_type=node_type,
+            property_name=property_name,
+            parent=None,
+        )
+
+        # Get current value - prioritize widget value as it's the source of truth
+        current_value = None
+        widget = self.get_widget(property_name)
+
+        if widget:
+            logger.debug(f"Widget found for {property_name}: {widget}")
+            if hasattr(widget, "get_value"):
+                try:
+                    current_value = widget.get_value()
+                    logger.debug(f"Retrieved value from widget {property_name}: '{current_value}'")
+                except Exception as e:
+                    logger.debug(f"Could not get value from widget {property_name}: {e}")
+            else:
+                logger.debug(f"Widget {property_name} has no get_value method")
+        else:
+            logger.debug(f"No widget found for {property_name}")
+
+        # Fallback to property value if widget value is unavailable
+        if current_value is None:
+            current_value = self.get_property(property_name) or ""
+            logger.debug(f"Used fallback property value for {property_name}: '{current_value}'")
+
+        # Create popup
+        popup = ExpressionEditorPopup(parent=None)  # Top-level window
+
+        # Set the editor
+        popup.set_editor(editor)
+
+        # Set node context for autocomplete
+        if hasattr(editor, "set_node_context"):
+            editor.set_node_context(self.get_property("node_id"), self.graph)
+
+        # Set title with property name
+        popup.set_title(f"Edit: {property_def.label or property_name}")
+
+        # Set initial value
+        popup.set_value(str(current_value))
+
+        # Connect accepted signal to update property
+        popup.accepted.connect(partial(self._on_expression_editor_accepted, property_name))
+
+        # Position near widget
+        if widget:
+            # Try to get global position from widget
+            try:
+                # Get the internal QLineEdit or similar widget for positioning
+                internal_widget = None
+                if hasattr(widget, "get_custom_widget"):
+                    internal_widget = widget.get_custom_widget()
+                elif hasattr(widget, "widget"):
+                    internal_widget = widget.widget()
+
+                if internal_widget and hasattr(internal_widget, "mapToGlobal"):
+                    global_pos = internal_widget.mapToGlobal(QPoint(0, internal_widget.height()))
+                    popup.show_at_position(global_pos)
+                    logger.debug(f"Expression editor opened for {property_name}")
+                    return
+            except Exception as e:
+                logger.debug(f"Could not position popup near widget: {e}")
+
+        # Fallback: show at screen center
+        popup.show()
+        logger.debug(f"Expression editor opened for {property_name} (center)")
+
+    def _on_expression_editor_accepted(self, property_name: str, value: str) -> None:
+        """
+        Handle expression editor value acceptance.
+
+        Args:
+            property_name: Name of the property being edited
+            value: New value from the editor
+        """
+        from loguru import logger
+
+        logger.debug(f"Expression editor accepted for {property_name}: {len(value)} chars")
+        self.set_property(property_name, value)
+
     def get_casare_node(self) -> Optional[CasareBaseNode]:
         """
         Get the underlying CasareRPA node instance.
@@ -472,11 +659,20 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         Set the underlying CasareRPA node instance.
 
+        Also triggers widget creation from schema if not already done.
+        This handles the case where the visual node is created before
+        the casare node is linked (common in node factories).
+
         Args:
             node: CasareRPA node instance
         """
         self._casare_node = node
         self.set_property("node_id", node.node_id)
+
+        # Create widgets from schema now that casare_node is available
+        # This is needed because _auto_create_widgets_from_schema() in __init__
+        # may have been skipped when _casare_node was None
+        self._auto_create_widgets_from_schema()
 
     def set_property(self, name: str, value, push_undo: bool = True) -> None:
         """
@@ -559,9 +755,7 @@ class VisualNode(NodeGraphQtBaseNode):
             # Log the error for debugging but don't crash
             from loguru import logger
 
-            logger.warning(
-                f"_auto_create_casare_node failed for {type(self).__name__}: {e}"
-            )
+            logger.warning(f"_auto_create_casare_node failed for {type(self).__name__}: {e}")
 
     def _sync_properties_to_casare_node(self, casare_node) -> None:
         """
@@ -617,14 +811,17 @@ class VisualNode(NodeGraphQtBaseNode):
         the config and UI generated automatically.
 
         Note: Widgets created in setup_widgets() take precedence over schema widgets.
+        Visual nodes can set SKIP_SCHEMA_WIDGETS = True to disable this entirely.
         """
+        # Allow visual nodes to opt-out of schema-based widget generation
+        if getattr(self, "SKIP_SCHEMA_WIDGETS", False):
+            return
+
         if not self._casare_node:
             return  # No casare node yet
 
         # Get schema from casare node class
-        schema: Optional[NodeSchema] = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return  # No schema, use manual widget definitions
 
@@ -662,7 +859,7 @@ class VisualNode(NodeGraphQtBaseNode):
                         widget.set_node_ref(self)
 
             elif prop_def.type == PropertyType.STRING:
-                # Use variable-aware text input with {x} button for variable insertion
+                # Use variable-aware text input with {x} and ... buttons
                 self._add_variable_aware_text_input(
                     prop_def.name,
                     prop_def.label or prop_def.name,
@@ -670,6 +867,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     placeholder_text=prop_def.placeholder,
                     tab=prop_def.tab,
                     tooltip=prop_def.tooltip,
+                    property_def=prop_def,
                 )
 
             elif prop_def.type == PropertyType.INTEGER:
@@ -678,9 +876,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     self.add_int_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        value=int(prop_def.default)
-                        if prop_def.default is not None
-                        else 0,
+                        value=int(prop_def.default) if prop_def.default is not None else 0,
                         tab=prop_def.tab,
                     )
                 except AttributeError:
@@ -688,11 +884,10 @@ class VisualNode(NodeGraphQtBaseNode):
                     self._add_variable_aware_text_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        text=str(prop_def.default)
-                        if prop_def.default is not None
-                        else "0",
+                        text=str(prop_def.default) if prop_def.default is not None else "0",
                         tab=prop_def.tab,
                         tooltip=prop_def.tooltip,
+                        property_def=prop_def,
                     )
 
             elif prop_def.type == PropertyType.FLOAT:
@@ -701,29 +896,24 @@ class VisualNode(NodeGraphQtBaseNode):
                     self.add_float_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        value=float(prop_def.default)
-                        if prop_def.default is not None
-                        else 0.0,
+                        value=float(prop_def.default) if prop_def.default is not None else 0.0,
                         tab=prop_def.tab,
                     )
                 except AttributeError:
                     self._add_variable_aware_text_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        text=str(prop_def.default)
-                        if prop_def.default is not None
-                        else "0.0",
+                        text=str(prop_def.default) if prop_def.default is not None else "0.0",
                         tab=prop_def.tab,
                         tooltip=prop_def.tooltip,
+                        property_def=prop_def,
                     )
 
             elif prop_def.type == PropertyType.BOOLEAN:
                 self.add_checkbox(
                     prop_def.name,
                     prop_def.label or prop_def.name,
-                    state=bool(prop_def.default)
-                    if prop_def.default is not None
-                    else False,
+                    state=bool(prop_def.default) if prop_def.default is not None else False,
                     tab=prop_def.tab,
                 )
 
@@ -736,10 +926,7 @@ class VisualNode(NodeGraphQtBaseNode):
                         tab=prop_def.tab,
                     )
                     # Set default value
-                    if (
-                        prop_def.default is not None
-                        and prop_def.default in prop_def.choices
-                    ):
+                    if prop_def.default is not None and prop_def.default in prop_def.choices:
                         self.set_property(prop_def.name, prop_def.default)
 
             elif prop_def.type == PropertyType.FILE_PATH:
@@ -751,6 +938,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     placeholder_text=prop_def.placeholder or "Select file...",
                     tab=prop_def.tab,
                     tooltip=prop_def.tooltip,
+                    property_def=prop_def,
                 )
 
             elif prop_def.type == PropertyType.DIRECTORY_PATH:
@@ -762,6 +950,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     placeholder_text=prop_def.placeholder or "Select directory...",
                     tab=prop_def.tab,
                     tooltip=prop_def.tooltip,
+                    property_def=prop_def,
                 )
 
             elif prop_def.type == PropertyType.SELECTOR:
@@ -796,6 +985,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     placeholder_text=prop_def.placeholder,
                     tab=prop_def.tab,
                     tooltip=prop_def.tooltip,
+                    property_def=prop_def,
                 )
 
             # Other types (DATE, TIME, COLOR, etc.) can be added later with specialized widgets
@@ -916,16 +1106,23 @@ class VisualNode(NodeGraphQtBaseNode):
             self.view.post_init()
 
     def _update_widget_visibility(self) -> None:
-        """Update widget visibility based on collapse state and essential flags."""
+        """Update widget visibility based on collapse state and essential flags.
+
+        CRITICAL: Calls prepareGeometryChange() on the view before changing visibility
+        to ensure Qt's scene cache is properly invalidated for geometry changes.
+        """
         from loguru import logger
 
         if not self._casare_node:
             return
 
+        # CRITICAL: Notify Qt scene that geometry will change before modifying visibility
+        # This prevents rendering artifacts when panning/scrolling after collapse state changes
+        if hasattr(self.view, "prepareGeometryChange"):
+            self.view.prepareGeometryChange()
+
         # Get schema from casare node class
-        schema: Optional[NodeSchema] = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return
 
@@ -971,9 +1168,7 @@ class VisualNode(NodeGraphQtBaseNode):
         if not self._casare_node:
             return []
 
-        schema: Optional[NodeSchema] = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return []
 
@@ -990,7 +1185,6 @@ class VisualNode(NodeGraphQtBaseNode):
         Returns:
             List of PropertyDef that should be rendered
         """
-        from casare_rpa.domain.schemas import PropertyDef
 
         if not self._casare_node:
             return []

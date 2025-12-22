@@ -9,14 +9,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "error_types",
@@ -58,6 +54,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Also trigger on warning-level events",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class ErrorTriggerNode(BaseTriggerNode):
     """
     Error trigger node that fires when errors occur.
@@ -101,21 +98,19 @@ class ErrorTriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get error-specific configuration."""
-        error_types_str = self.config.get("error_types", "*")
+        error_types_str = self.get_parameter("error_types", "*")
         if error_types_str == "*":
             error_types = ["*"]
         else:
             error_types = [e.strip() for e in error_types_str.split(",") if e.strip()]
 
-        workflow_filter_str = self.config.get("workflow_filter", "")
-        workflow_filter = [
-            w.strip() for w in workflow_filter_str.split(",") if w.strip()
-        ]
+        workflow_filter_str = self.get_parameter("workflow_filter", "")
+        workflow_filter = [w.strip() for w in workflow_filter_str.split(",") if w.strip()]
 
         return {
             "error_types": error_types,
             "workflow_filter": workflow_filter,
-            "severity": self.config.get("severity", "all"),
-            "error_pattern": self.config.get("error_pattern", ""),
-            "include_warnings": self.config.get("include_warnings", False),
+            "severity": self.get_parameter("severity", "all"),
+            "error_pattern": self.get_parameter("error_pattern", ""),
+            "include_warnings": self.get_parameter("include_warnings", False),
         }

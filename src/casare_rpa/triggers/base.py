@@ -145,9 +145,7 @@ class BaseTriggerConfig:
             "description": self.description,
             "config": self.config,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "last_triggered": self.last_triggered.isoformat()
-            if self.last_triggered
-            else None,
+            "last_triggered": self.last_triggered.isoformat() if self.last_triggered else None,
             "trigger_count": self.trigger_count,
             "success_count": self.success_count,
             "error_count": self.error_count,
@@ -235,9 +233,7 @@ class BaseTrigger(ABC):
         self._error_message: Optional[str] = None
         self._task: Optional[asyncio.Task] = None
 
-        logger.debug(
-            f"Trigger initialized: {self.config.name} ({self.trigger_type.value})"
-        )
+        logger.debug(f"Trigger initialized: {self.config.name} ({self.trigger_type.value})")
 
     @abstractmethod
     async def start(self) -> bool:
@@ -308,9 +304,7 @@ class BaseTrigger(ABC):
         """
         # Check cooldown
         if self.config.cooldown_seconds > 0 and self.config.last_triggered:
-            elapsed = (
-                datetime.now(timezone.utc) - self.config.last_triggered
-            ).total_seconds()
+            elapsed = (datetime.now(timezone.utc) - self.config.last_triggered).total_seconds()
             if elapsed < self.config.cooldown_seconds:
                 logger.debug(
                     f"Trigger {self.config.name} in cooldown "
@@ -388,9 +382,7 @@ class BaseTrigger(ABC):
             "priority": self.config.priority,
             "cooldown_seconds": self.config.cooldown_seconds,
             "last_triggered": (
-                self.config.last_triggered.isoformat()
-                if self.config.last_triggered
-                else None
+                self.config.last_triggered.isoformat() if self.config.last_triggered else None
             ),
             "trigger_count": self.config.trigger_count,
             "success_count": self.config.success_count,

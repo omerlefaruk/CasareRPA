@@ -97,20 +97,14 @@ class AttributeRow(QWidget):
         # Name label (fixed width for alignment)
         self._name_label = QLabel(self._attribute.name)
         self._name_label.setFixedWidth(120)
-        self._name_label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
+        self._name_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self._name_label)
 
         # Value label (stretches)
         self._value_label = QLabel(self._attribute.display_value)
-        self._value_label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
+        self._value_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self._value_label.setWordWrap(False)
-        self._value_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self._value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self._value_label, 1)  # Stretch factor 1
 
         # Set fixed height
@@ -166,9 +160,7 @@ class AttributeRow(QWidget):
         if attr.is_empty:
             value_font.setItalic(True)
         self._value_label.setFont(value_font)
-        self._value_label.setStyleSheet(
-            f"color: {value_color}; background: transparent;"
-        )
+        self._value_label.setStyleSheet(f"color: {value_color}; background: transparent;")
 
         # Style checkbox for required state
         if attr.required:

@@ -101,13 +101,9 @@ class GmailTrigger(GoogleTriggerBase):
             # Try incremental sync if we have a history ID
             new_messages = []
             if self._history_id:
-                new_messages = await self._get_new_messages_by_history(
-                    client, label_ids
-                )
+                new_messages = await self._get_new_messages_by_history(client, label_ids)
             else:
-                new_messages = await self._get_new_messages_by_query(
-                    client, label_ids, query
-                )
+                new_messages = await self._get_new_messages_by_query(client, label_ids, query)
 
             # Process new messages
             for message_data in new_messages:
@@ -141,9 +137,7 @@ class GmailTrigger(GoogleTriggerBase):
             if label_ids:
                 params["labelId"] = label_ids[0]
 
-            response = await client.get(
-                f"{self.GMAIL_API_BASE}/users/me/history", params=params
-            )
+            response = await client.get(f"{self.GMAIL_API_BASE}/users/me/history", params=params)
 
             # Update history ID
             if "historyId" in response:
@@ -175,15 +169,11 @@ class GmailTrigger(GoogleTriggerBase):
         if label_ids:
             params["labelIds"] = ",".join(label_ids)
 
-        response = await client.get(
-            f"{self.GMAIL_API_BASE}/users/me/messages", params=params
-        )
+        response = await client.get(f"{self.GMAIL_API_BASE}/users/me/messages", params=params)
 
         return response.get("messages", [])
 
-    async def _get_message_details(
-        self, client, message_id: str
-    ) -> Optional[Dict[str, Any]]:
+    async def _get_message_details(self, client, message_id: str) -> Optional[Dict[str, Any]]:
         """Fetch full message details including body."""
         try:
             message = await client.get(
@@ -247,9 +237,7 @@ class GmailTrigger(GoogleTriggerBase):
             part_mime = part.get("mimeType", "")
             body_data = part.get("body", {}).get("data", "")
             if body_data:
-                decoded = base64.urlsafe_b64decode(body_data).decode(
-                    "utf-8", errors="replace"
-                )
+                decoded = base64.urlsafe_b64decode(body_data).decode("utf-8", errors="replace")
                 if part_mime == "text/plain":
                     plain_body = decoded
                 elif part_mime == "text/html" and not html_body:

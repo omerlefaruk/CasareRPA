@@ -82,9 +82,7 @@ class User:
         self.locked_until = None
         self.updated_at = datetime.now(timezone.utc)
 
-    def record_failed_login(
-        self, max_attempts: int = 5, lockout_minutes: int = 30
-    ) -> None:
+    def record_failed_login(self, max_attempts: int = 5, lockout_minutes: int = 30) -> None:
         """
         Record failed login attempt.
 
@@ -98,9 +96,7 @@ class User:
         if self.failed_login_attempts >= max_attempts:
             from datetime import timedelta
 
-            self.locked_until = datetime.now(timezone.utc) + timedelta(
-                minutes=lockout_minutes
-            )
+            self.locked_until = datetime.now(timezone.utc) + timedelta(minutes=lockout_minutes)
             self.status = UserStatus.LOCKED
 
     def unlock(self) -> None:
@@ -168,9 +164,7 @@ class User:
             data["password_hash"] = self.password_hash
             data["mfa_secret"] = self.mfa_secret
             data["failed_login_attempts"] = self.failed_login_attempts
-            data["locked_until"] = (
-                self.locked_until.isoformat() if self.locked_until else None
-            )
+            data["locked_until"] = self.locked_until.isoformat() if self.locked_until else None
         return data
 
 

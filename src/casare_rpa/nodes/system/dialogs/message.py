@@ -6,7 +6,7 @@ Nodes for displaying information or confirmation dialogs.
 
 import sys
 import asyncio
-from typing import Optional, Tuple
+from typing import Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
@@ -19,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -89,6 +88,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Auto-dismiss after X seconds, 0 to disable",
     ),
 )
+@node(category="system")
 class MessageBoxNode(BaseNode):
     """
     Display a message box dialog.
@@ -145,8 +145,6 @@ class MessageBoxNode(BaseNode):
             # Resolve variable first, THEN convert to string (resolve preserves types for {{var}} patterns)
             resolved_message = context.resolve_value(message)
             message = str(resolved_message) if resolved_message is not None else ""
-            if detailed_text:
-                detailed_text = context.resolve_value(detailed_text)
 
             result = "ok"
             accepted = True
@@ -420,7 +418,6 @@ class MessageBoxNode(BaseNode):
             return result, result in ("ok", "yes")
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -467,6 +464,7 @@ class MessageBoxNode(BaseNode):
         tooltip="Text for No button",
     ),
 )
+@node(category="system")
 class ConfirmDialogNode(BaseNode):
     """
     Display a Yes/No confirmation dialog.
@@ -514,9 +512,6 @@ class ConfirmDialogNode(BaseNode):
             button_yes_text = self.get_parameter("button_yes_text", "Yes")
             button_no_text = self.get_parameter("button_no_text", "No")
 
-            title = context.resolve_value(title)
-            message = context.resolve_value(message)
-
             try:
                 from PySide6.QtWidgets import QMessageBox, QApplication
                 from PySide6.QtCore import Qt
@@ -538,12 +533,10 @@ class ConfirmDialogNode(BaseNode):
                 msg_box.setIcon(icon)
 
                 yes_btn = msg_box.addButton(button_yes_text, QMessageBox.YesRole)
-                no_btn = msg_box.addButton(button_no_text, QMessageBox.NoRole)
+                msg_box.addButton(button_no_text, QMessageBox.NoRole)
 
                 if always_on_top:
-                    msg_box.setWindowFlags(
-                        msg_box.windowFlags() | Qt.WindowStaysOnTopHint
-                    )
+                    msg_box.setWindowFlags(msg_box.windowFlags() | Qt.WindowStaysOnTopHint)
 
                 future = asyncio.get_event_loop().create_future()
 

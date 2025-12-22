@@ -5,21 +5,18 @@ Nodes for displaying progress bars and splash screens.
 """
 
 import asyncio
-from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -58,6 +55,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Show indeterminate progress bar",
     ),
 )
+@node(category="system")
 class ProgressDialogNode(BaseNode):
     """
     Display a progress dialog.
@@ -106,9 +104,6 @@ class ProgressDialogNode(BaseNode):
             value = int(value)
             value = max(0, min(100, value))
 
-            title = context.resolve_value(title)
-            message = context.resolve_value(message)
-
             try:
                 from PySide6.QtWidgets import QProgressDialog, QApplication
                 from PySide6.QtCore import Qt
@@ -117,9 +112,7 @@ class ProgressDialogNode(BaseNode):
                 if app is None:
                     raise ImportError("No QApplication")
 
-                dialog = QProgressDialog(
-                    message, "Cancel" if allow_cancel else None, 0, 100
-                )
+                dialog = QProgressDialog(message, "Cancel" if allow_cancel else None, 0, 100)
                 dialog.setWindowTitle(title)
                 dialog.setWindowModality(Qt.WindowModal)
                 dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowStaysOnTopHint)
@@ -173,7 +166,6 @@ class ProgressDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -207,6 +199,7 @@ class ProgressDialogNode(BaseNode):
         tooltip="Show progress bar",
     ),
 )
+@node(category="system")
 class SplashScreenNode(BaseNode):
     """
     Display a splash screen with optional progress.
@@ -254,9 +247,6 @@ class SplashScreenNode(BaseNode):
             duration = int(self.get_parameter("duration", 3000) or 3000)
             show_progress = self.get_parameter("progress", True)
 
-            if image_path:
-                image_path = context.resolve_value(image_path)
-
             try:
                 from PySide6.QtWidgets import (
                     QSplashScreen,
@@ -290,9 +280,7 @@ class SplashScreenNode(BaseNode):
 
                 if show_progress:
                     # Overlay progress bar
-                    splash.showMessage(
-                        message, Qt.AlignBottom | Qt.AlignHCenter, QColor("white")
-                    )
+                    splash.showMessage(message, Qt.AlignBottom | Qt.AlignHCenter, QColor("white"))
 
                 splash.show()
 

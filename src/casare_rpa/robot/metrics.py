@@ -61,9 +61,7 @@ class JobMetrics:
             "job_id": self.job_id,
             "workflow_name": self.workflow_name,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "duration_ms": self.duration_ms,
             "success": self.success,
             "total_nodes": self.total_nodes,
@@ -134,9 +132,7 @@ class MetricsCollector:
 
         # Resource monitoring (deque for O(1) operations)
         max_resource_samples = int(3600 / resource_sample_interval)  # 1 hour of samples
-        self._resource_history: deque[ResourceSnapshot] = deque(
-            maxlen=max_resource_samples
-        )
+        self._resource_history: deque[ResourceSnapshot] = deque(maxlen=max_resource_samples)
         self._resource_task: Optional[asyncio.Task] = None
         self._monitoring = False
 
@@ -355,14 +351,8 @@ class MetricsCollector:
 
     def get_summary(self) -> Dict[str, Any]:
         """Get overall metrics summary."""
-        avg_duration = (
-            self._total_duration_ms / self._total_jobs if self._total_jobs > 0 else 0
-        )
-        success_rate = (
-            self._successful_jobs / self._total_jobs * 100
-            if self._total_jobs > 0
-            else 0
-        )
+        avg_duration = self._total_duration_ms / self._total_jobs if self._total_jobs > 0 else 0
+        success_rate = self._successful_jobs / self._total_jobs * 100 if self._total_jobs > 0 else 0
 
         return {
             "total_jobs": self._total_jobs,

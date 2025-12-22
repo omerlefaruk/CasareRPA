@@ -352,9 +352,7 @@ class GridSnapManager(QObject):
         """Clear current guidelines."""
         self._current_guidelines = []
 
-    def draw_guidelines(
-        self, painter: QPainter, viewport_rect: Optional[QRectF] = None
-    ) -> None:
+    def draw_guidelines(self, painter: QPainter, viewport_rect: Optional[QRectF] = None) -> None:
         """
         Draw alignment guidelines on the painter.
 

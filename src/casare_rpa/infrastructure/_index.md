@@ -6,6 +6,7 @@ Quick reference for infrastructure layer. Framework integrations and external ad
 
 | Directory | Description | Key Exports |
 |-----------|-------------|-------------|
+| `caching/` | LRU caches for workflows, schemas | WorkflowCache, get_workflow_cache |
 | `agent/` | Robot agent for headless execution | RobotAgent, JobExecutor, HeartbeatService |
 | `ai/` | AI-powered workflow generation | SmartWorkflowAgent, dump_node_manifest |
 | `analytics/` | Metrics aggregation, process mining | MetricsAggregator, ProcessMiner |
@@ -31,7 +32,8 @@ Quick reference for infrastructure layer. Framework integrations and external ad
 
 | File | Contains |
 |------|----------|
-| `__init__.py` | Top-level exports (24 items) |
+| `__init__.py` | Top-level exports (26 items) |
+| `caching/workflow_cache.py` | WorkflowCache LRU cache |
 | `agent/robot_agent.py` | RobotAgent class |
 | `ai/smart_agent.py` | SmartWorkflowAgent (54KB) |
 | `ai/registry_dumper.py` | Node manifest generation |
@@ -45,6 +47,12 @@ Quick reference for infrastructure layer. Framework integrations and external ad
 ## Entry Points
 
 ```python
+# Workflow Caching
+from casare_rpa.infrastructure.caching import (
+    WorkflowCache,
+    get_workflow_cache,
+)
+
 # Robot Agent (headless execution)
 from casare_rpa.infrastructure import RobotAgent, RobotConfig
 

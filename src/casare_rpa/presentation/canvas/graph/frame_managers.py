@@ -41,8 +41,7 @@ class FrameDeletedCmd(QUndoCommand):
             "pos": (self._frame.pos().x(), self._frame.pos().y()),
             "rect": (self._frame.rect().width(), self._frame.rect().height()),
             "contained_node_ids": [
-                node.id if hasattr(node, "id") else id(node)
-                for node in self._frame.contained_nodes
+                node.id if hasattr(node, "id") else id(node) for node in self._frame.contained_nodes
             ],
             "is_collapsed": self._frame._is_collapsed,
             "expanded_rect": (

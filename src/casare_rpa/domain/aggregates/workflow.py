@@ -488,9 +488,7 @@ class Workflow:
         """Get all connections in the workflow."""
         return self._connections.copy()
 
-    def _validate_connection(
-        self, source: PortReference, target: PortReference
-    ) -> None:
+    def _validate_connection(self, source: PortReference, target: PortReference) -> None:
         """
         Validate a connection before creating it.
 
@@ -585,7 +583,7 @@ class Workflow:
 
         # Load nodes
         for node_id, node_data in data.get("nodes", {}).items():
-            position = Position.from_dict(node_data.get("position", {}))
+            position = Position.from_dict(node_data.get("position", [0, 0]))
             workflow.add_node(
                 node_type=node_data.get("node_type", ""),
                 position=position,

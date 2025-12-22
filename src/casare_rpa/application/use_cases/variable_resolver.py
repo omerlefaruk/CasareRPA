@@ -85,8 +85,8 @@ class VariableResolver:
             "IfNode",
             "ForLoopStartNode",
             "ForLoopEndNode",
-            "WhileLoopNode",
-            "WhileEndNode",
+            "WhileLoopStartNode",
+            "WhileLoopEndNode",
             "TryCatchNode",
             "TryEndNode",
             "CatchNode",
@@ -98,6 +98,9 @@ class VariableResolver:
             "StartNode",
             "EndNode",
             "ParallelForEachNode",
+            "ControlFlowSuperNode",
+            "ExecuteScriptNode",
+            "MergeNode",
         }
     )
 
@@ -137,9 +140,7 @@ class VariableResolver:
                 self._incoming_connections[conn.target_node] = []
             self._incoming_connections[conn.target_node].append(conn)
 
-    def transfer_data(
-        self, connection: Any, context_override: Optional[Any] = None
-    ) -> None:
+    def transfer_data(self, connection: Any, context_override: Optional[Any] = None) -> None:
         """
         Transfer data from source port to target port.
 
@@ -175,15 +176,18 @@ class VariableResolver:
         else:
             # WARNING: Missing data might indicate a bug in upstream node
             # Skip exec ports - they're flow control, not data
-            if "exec" not in connection.source_port.lower():
+            # Also skip 'true'/'false' ports from If/Branch nodes
+            source_port_lower = connection.source_port.lower()
+            if "exec" not in source_port_lower and source_port_lower not in (
+                "true",
+                "false",
+            ):
                 logger.warning(
                     f"Data transfer skipped: source node {source_node.node_id} "
                     f"({type(source_node).__name__}) port '{connection.source_port}' has no value"
                 )
 
-    def transfer_inputs_to_node(
-        self, node_id: str, context_override: Optional[Any] = None
-    ) -> None:
+    def transfer_inputs_to_node(self, node_id: str, context_override: Optional[Any] = None) -> None:
         """
         Transfer all input data to a node from its connected sources.
 
@@ -285,9 +289,7 @@ class VariableResolver:
     # RESULT PATTERN - Safe variants for explicit error handling
     # ========================================================================
 
-    def transfer_data_safe(
-        self, connection: Any
-    ) -> Result[Tuple[str, Any], NodeExecutionError]:
+    def transfer_data_safe(self, connection: Any) -> Result[Tuple[str, Any], NodeExecutionError]:
         """
         Transfer data from source port to target port with explicit error handling.
 
@@ -339,9 +341,7 @@ class VariableResolver:
         logger.warning(f"Data transfer: source {connection.source_port} has no value")
         return Ok((connection.target_port, None))
 
-    def transfer_inputs_to_node_safe(
-        self, node_id: str
-    ) -> Result[int, NodeExecutionError]:
+    def transfer_inputs_to_node_safe(self, node_id: str) -> Result[int, NodeExecutionError]:
         """
         Transfer all input data to a node with explicit error handling.
 
@@ -442,9 +442,7 @@ class TryCatchErrorHandler:
         """
         self.context = context
 
-    def capture_error(
-        self, error_msg: str, error_type: str, exception: Exception
-    ) -> bool:
+    def capture_error(self, error_msg: str, error_type: str, exception: Exception) -> bool:
         """
         Check if we're inside a try block and capture the error if so.
 
@@ -467,9 +465,7 @@ class TryCatchErrorHandler:
 
         # STACK TRACE: Full traceback for debugging in CatchNode
         stack_trace = "".join(
-            traceback.format_exception(
-                type(exception), exception, exception.__traceback__
-            )
+            traceback.format_exception(type(exception), exception, exception.__traceback__)
         )
 
         # TRY STATE DETECTION: Look for active try blocks
@@ -507,9 +503,7 @@ class TryCatchErrorHandler:
 
         return None
 
-    def capture_from_result(
-        self, result: Optional[Dict[str, Any]], node_id: str
-    ) -> bool:
+    def capture_from_result(self, result: Optional[Dict[str, Any]], node_id: str) -> bool:
         """
         Capture error from a failed execution result.
 
@@ -524,9 +518,7 @@ class TryCatchErrorHandler:
             True if error was captured by a try block
         """
         error_msg = result.get("error", "Unknown error") if result else "Unknown error"
-        return self.capture_error(
-            error_msg, "ExecutionError", Exception(f"{node_id}: {error_msg}")
-        )
+        return self.capture_error(error_msg, "ExecutionError", Exception(f"{node_id}: {error_msg}"))
 
     # ========================================================================
     # RESULT PATTERN - Safe variants for explicit error handling
@@ -555,9 +547,7 @@ class TryCatchErrorHandler:
             return Ok(False)
 
         stack_trace = "".join(
-            traceback.format_exception(
-                type(exception), exception, exception.__traceback__
-            )
+            traceback.format_exception(type(exception), exception, exception.__traceback__)
         )
 
         # Search for active try blocks

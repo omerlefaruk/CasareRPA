@@ -29,7 +29,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "directory_path",
@@ -61,6 +60,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class CreateDirectoryNode(BaseNode):
     """
     Create a directory.
@@ -107,7 +107,6 @@ class CreateDirectoryNode(BaseNode):
                 raise ValueError("directory_path is required")
 
             # Resolve {{variable}} patterns and environment variables in dir_path
-            dir_path = context.resolve_value(dir_path)
             dir_path = os.path.expandvars(dir_path)
 
             # SECURITY: Validate path before directory creation
@@ -139,7 +138,6 @@ class CreateDirectoryNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "directory_path",
@@ -171,6 +169,7 @@ class CreateDirectoryNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class ListFilesNode(BaseNode):
     """
     List files in a directory.
@@ -218,9 +217,7 @@ class ListFilesNode(BaseNode):
                 raise ValueError("directory_path is required")
 
             # Resolve {{variable}} patterns and environment variables in dir_path and pattern
-            dir_path = context.resolve_value(dir_path)
             dir_path = os.path.expandvars(dir_path)
-            pattern = context.resolve_value(pattern)
 
             # SECURITY: Validate directory path (read-only)
             path = validate_path_security_readonly(dir_path, "list", allow_dangerous)
@@ -264,7 +261,6 @@ class ListFilesNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "dir_path",
@@ -310,6 +306,7 @@ class ListFilesNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class ListDirectoryNode(BaseNode):
     """
     List files and directories in a folder.
@@ -362,9 +359,7 @@ class ListDirectoryNode(BaseNode):
                 raise ValueError("dir_path is required")
 
             # Resolve {{variable}} patterns and environment variables in dir_path and pattern
-            dir_path = context.resolve_value(dir_path)
             dir_path = os.path.expandvars(dir_path)
-            pattern = context.resolve_value(pattern)
 
             # SECURITY: Validate directory path (read-only)
             path = validate_path_security_readonly(dir_path, "list", allow_dangerous)

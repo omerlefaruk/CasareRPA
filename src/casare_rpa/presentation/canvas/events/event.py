@@ -138,9 +138,7 @@ class Event:
             raise TypeError(f"data must be dict or None, got {type(self.data)}")
 
         if not isinstance(self.priority, EventPriority):
-            raise TypeError(
-                f"priority must be EventPriority, got {type(self.priority)}"
-            )
+            raise TypeError(f"priority must be EventPriority, got {type(self.priority)}")
 
     @property
     def category(self) -> EventCategory:

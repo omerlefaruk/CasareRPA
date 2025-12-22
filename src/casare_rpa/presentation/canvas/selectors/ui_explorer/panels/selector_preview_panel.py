@@ -211,9 +211,7 @@ class SelectorPreviewPanel(QFrame):
         # Preview text area with syntax highlighting
         self._preview_text = QTextEdit()
         self._preview_text.setReadOnly(True)
-        self._preview_text.setPlaceholderText(
-            "<html app='...' title='...' />\n<element ... />"
-        )
+        self._preview_text.setPlaceholderText("<html app='...' title='...' />\n<element ... />")
 
         # Set monospace font
         font = QFont("Consolas", 10)
@@ -333,9 +331,7 @@ class SelectorPreviewPanel(QFrame):
         # Disconnect old model if present
         if self._selector_model:
             try:
-                self._selector_model.preview_updated.disconnect(
-                    self._on_model_preview_updated
-                )
+                self._selector_model.preview_updated.disconnect(self._on_model_preview_updated)
             except RuntimeError:
                 pass  # Signal was not connected
 

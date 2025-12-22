@@ -75,8 +75,7 @@ class BrowserSelectorTab(BaseSelectorTab):
 
         # Info label
         info = QLabel(
-            "Click 'Start Picking' then click any element in the browser.\n"
-            "Press ESC to cancel."
+            "Click 'Start Picking' then click any element in the browser.\n" "Press ESC to cancel."
         )
         info.setWordWrap(True)
         info.setStyleSheet("color: #888;")
@@ -137,31 +136,23 @@ class BrowserSelectorTab(BaseSelectorTab):
         healing_group = QGroupBox("Healing Context")
         healing_layout = QVBoxLayout(healing_group)
 
-        healing_info = QLabel(
-            "Capture additional context for self-healing selectors at runtime."
-        )
+        healing_info = QLabel("Capture additional context for self-healing selectors at runtime.")
         healing_info.setStyleSheet("color: #888; font-size: 11px;")
         healing_layout.addWidget(healing_info)
 
         self.capture_fingerprint = QCheckBox("Capture element fingerprint")
         self.capture_fingerprint.setChecked(True)
-        self.capture_fingerprint.setToolTip(
-            "Store element attributes for heuristic healing"
-        )
+        self.capture_fingerprint.setToolTip("Store element attributes for heuristic healing")
         healing_layout.addWidget(self.capture_fingerprint)
 
         self.capture_spatial = QCheckBox("Capture spatial context")
         self.capture_spatial.setChecked(True)
-        self.capture_spatial.setToolTip(
-            "Store relationships with nearby anchor elements"
-        )
+        self.capture_spatial.setToolTip("Store relationships with nearby anchor elements")
         healing_layout.addWidget(self.capture_spatial)
 
         self.capture_cv = QCheckBox("Capture CV template")
         self.capture_cv.setChecked(False)
-        self.capture_cv.setToolTip(
-            "Store element screenshot for visual matching (slower)"
-        )
+        self.capture_cv.setToolTip("Store element screenshot for visual matching (slower)")
         healing_layout.addWidget(self.capture_cv)
 
         layout.addWidget(healing_group)
@@ -170,15 +161,11 @@ class BrowserSelectorTab(BaseSelectorTab):
 
     def set_browser_page(self, page: "Page") -> None:
         """Set the browser page."""
-        logger.info(
-            f"BrowserSelectorTab.set_browser_page called: page={page is not None}"
-        )
+        logger.info(f"BrowserSelectorTab.set_browser_page called: page={page is not None}")
 
         # Check if page changed - if so, we need a new selector manager
         if self._browser_page is not None and self._browser_page != page:
-            logger.info(
-                "Browser page changed - will create new SelectorManager on next use"
-            )
+            logger.info("Browser page changed - will create new SelectorManager on next use")
             self._selector_manager = None  # Force new manager for new page
 
         self._browser_page = page
@@ -343,9 +330,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         self._strategies.sort(key=lambda s: -s.score)
 
         # Emit strategies
-        logger.info(
-            f"Emitting selectors_generated signal with {len(self._strategies)} strategies"
-        )
+        logger.info(f"Emitting selectors_generated signal with {len(self._strategies)} strategies")
         self.selectors_generated.emit(self._strategies)
         logger.info("selectors_generated signal emitted")
 
@@ -381,9 +366,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             f"Selected <{fingerprint.tag_name}> - {len(self._strategies)} selectors generated"
         )
 
-    async def _capture_healing_context(
-        self, selector: str, context: Dict[str, Any]
-    ) -> None:
+    async def _capture_healing_context(self, selector: str, context: Dict[str, Any]) -> None:
         """Capture healing context for the selector."""
         if not self._browser_page or not self._healing_chain:
             return
@@ -391,19 +374,15 @@ class BrowserSelectorTab(BaseSelectorTab):
         try:
             # Capture if options are checked
             if self.capture_fingerprint.isChecked():
-                fingerprint = (
-                    await self._healing_chain._heuristic_healer.capture_fingerprint(
-                        self._browser_page, selector
-                    )
+                fingerprint = await self._healing_chain._heuristic_healer.capture_fingerprint(
+                    self._browser_page, selector
                 )
                 if fingerprint:
                     context["fingerprint"] = fingerprint.__dict__
 
             if self.capture_spatial.isChecked():
-                spatial = (
-                    await self._healing_chain._anchor_healer.capture_spatial_context(
-                        self._browser_page, selector
-                    )
+                spatial = await self._healing_chain._anchor_healer.capture_spatial_context(
+                    self._browser_page, selector
                 )
                 if spatial:
                     context["spatial"] = spatial.__dict__
@@ -441,9 +420,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         # Then capture the element screenshot (updates self._current_result.healing_context)
         await self._capture_element_screenshot(fingerprint)
 
-        logger.info(
-            f"All healing data captured. cv_template present: {'cv_template' in context}"
-        )
+        logger.info(f"All healing data captured. cv_template present: {'cv_template' in context}")
 
     async def _capture_element_screenshot(self, fingerprint) -> None:
         """Capture screenshot of the selected element for image matching and healing."""

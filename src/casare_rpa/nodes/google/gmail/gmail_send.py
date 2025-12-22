@@ -116,7 +116,6 @@ def _parse_email_list(email_string: str) -> list[str]:
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -127,6 +126,7 @@ def _parse_email_list(email_string: str) -> list[str]:
     GMAIL_BODY,
     GMAIL_BODY_TYPE,
 )
+@node(category="google")
 class GmailSendEmailNode(GmailBaseNode):
     """
     Send a plain text or HTML email via Gmail.
@@ -156,7 +156,7 @@ class GmailSendEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Send Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -183,8 +183,6 @@ class GmailSendEmailNode(GmailBaseNode):
         """Send a plain/HTML email."""
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -192,37 +190,37 @@ class GmailSendEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get subject and body
         subject = self.get_parameter("subject")
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
 
         if not subject:
             self._set_error_outputs("Subject is required")
-            return {"success": False, "error": "Subject is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Subject is required",
+                "next_nodes": ["exec_out"],
+            }
 
         if not body:
             self._set_error_outputs("Body is required")
-            return {"success": False, "error": "Body is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Body is required",
+                "next_nodes": ["exec_out"],
+            }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         logger.debug(f"Sending Gmail to {to_list}")
 
@@ -247,7 +245,7 @@ class GmailSendEmailNode(GmailBaseNode):
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -256,7 +254,6 @@ class GmailSendEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -275,6 +272,7 @@ class GmailSendEmailNode(GmailBaseNode):
         tooltip="File paths to attach (comma-separated)",
     ),
 )
+@node(category="google")
 class GmailSendWithAttachmentNode(GmailBaseNode):
     """
     Send an email with file attachments via Gmail.
@@ -306,7 +304,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Send with Attachment", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -337,8 +335,6 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         """Send an email with attachments."""
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -346,52 +342,53 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get subject and body
         subject = self.get_parameter("subject")
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
 
         if not subject:
             self._set_error_outputs("Subject is required")
-            return {"success": False, "error": "Subject is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Subject is required",
+                "next_nodes": ["exec_out"],
+            }
 
         if not body:
             self._set_error_outputs("Body is required")
-            return {"success": False, "error": "Body is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Body is required",
+                "next_nodes": ["exec_out"],
+            }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         # Get attachments - from string or list
         attachments_str = self.get_parameter("attachments") or ""
         attachment_list = self.get_parameter("attachment_list") or []
-        if hasattr(context, "resolve_value"):
-            attachments_str = context.resolve_value(attachments_str)
-            attachment_list = context.resolve_value(attachment_list)
 
         # Parse attachment paths
         attachment_paths: list[Union[str, Path]] = []
         if attachments_str:
-            for path_str in attachments_str.split(","):
-                path = path_str.strip()
-                if path:
-                    attachment_paths.append(path)
+            # Handle both string (comma-separated) and list inputs
+            if isinstance(attachments_str, str):
+                for path_str in attachments_str.split(","):
+                    path = path_str.strip()
+                    if path:
+                        attachment_paths.append(path)
+            elif isinstance(attachments_str, list):
+                attachment_paths.extend(attachments_str)
         if attachment_list:
             attachment_paths.extend(attachment_list)
 
@@ -404,9 +401,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
             else:
                 logger.warning(f"Attachment not found: {att_path}")
 
-        logger.debug(
-            f"Sending Gmail with {len(valid_attachments)} attachments to {to_list}"
-        )
+        logger.debug(f"Sending Gmail with {len(valid_attachments)} attachments to {to_list}")
 
         # Send message
         result = await client.send_message(
@@ -425,16 +420,14 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         self.set_output_value("thread_id", result.thread_id)
         self.set_output_value("attachment_count", len(valid_attachments))
 
-        logger.info(
-            f"Gmail sent with {len(valid_attachments)} attachments: {result.id}"
-        )
+        logger.info(f"Gmail sent with {len(valid_attachments)} attachments: {result.id}")
 
         return {
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
             "attachment_count": len(valid_attachments),
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -443,7 +436,6 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -478,6 +470,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
     GMAIL_CC,
     GMAIL_BCC,
 )
+@node(category="google")
 class GmailReplyToEmailNode(GmailBaseNode):
     """
     Reply to an existing email thread.
@@ -507,7 +500,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Reply to Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -535,16 +528,13 @@ class GmailReplyToEmailNode(GmailBaseNode):
         # Get thread and message IDs
         thread_id = self.get_parameter("thread_id")
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            thread_id = context.resolve_value(thread_id)
-            message_id = context.resolve_value(message_id)
 
         if not thread_id:
             self._set_error_outputs("Thread ID is required")
             return {
                 "success": False,
                 "error": "Thread ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         if not message_id:
@@ -552,33 +542,26 @@ class GmailReplyToEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "Message ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get body
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            body = context.resolve_value(body)
 
         if not body:
             self._set_error_outputs("Reply body is required")
             return {
                 "success": False,
                 "error": "Reply body is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
@@ -605,7 +588,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -614,7 +597,6 @@ class GmailReplyToEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -639,6 +621,7 @@ class GmailReplyToEmailNode(GmailBaseNode):
         tooltip="Optional text to add before the forwarded message",
     ),
 )
+@node(category="google")
 class GmailForwardEmailNode(GmailBaseNode):
     """
     Forward an existing email to new recipients.
@@ -667,7 +650,7 @@ class GmailForwardEmailNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Forward Email", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -693,21 +676,17 @@ class GmailForwardEmailNode(GmailBaseNode):
         """Forward an email."""
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         if not message_id:
             self._set_error_outputs("Message ID is required")
             return {
                 "success": False,
                 "error": "Message ID is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -715,22 +694,17 @@ class GmailForwardEmailNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get additional body
         additional_body = self.get_parameter("additional_body") or ""
-        if hasattr(context, "resolve_value"):
-            additional_body = context.resolve_value(additional_body)
 
         logger.debug(f"Forwarding message {message_id} to {to_list}")
 
@@ -754,7 +728,7 @@ class GmailForwardEmailNode(GmailBaseNode):
             "success": True,
             "message_id": result.id,
             "thread_id": result.thread_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 
@@ -763,7 +737,6 @@ class GmailForwardEmailNode(GmailBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     GMAIL_ACCESS_TOKEN,
     GMAIL_CREDENTIAL_NAME,
@@ -782,6 +755,7 @@ class GmailForwardEmailNode(GmailBaseNode):
         tooltip="File paths to attach (comma-separated)",
     ),
 )
+@node(category="google")
 class GmailCreateDraftNode(GmailBaseNode):
     """
     Create a draft email (save without sending).
@@ -812,7 +786,7 @@ class GmailCreateDraftNode(GmailBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Gmail Create Draft", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -840,8 +814,6 @@ class GmailCreateDraftNode(GmailBaseNode):
         """Create a draft email."""
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -849,42 +821,40 @@ class GmailCreateDraftNode(GmailBaseNode):
             return {
                 "success": False,
                 "error": "At least one recipient is required",
-                "next_nodes": [],
+                "next_nodes": ["exec_out"],
             }
 
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get subject and body
         subject = self.get_parameter("subject")
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
 
         if not subject:
             self._set_error_outputs("Subject is required")
-            return {"success": False, "error": "Subject is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Subject is required",
+                "next_nodes": ["exec_out"],
+            }
 
         if not body:
             self._set_error_outputs("Body is required")
-            return {"success": False, "error": "Body is required", "next_nodes": []}
+            return {
+                "success": False,
+                "error": "Body is required",
+                "next_nodes": ["exec_out"],
+            }
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         # Get attachments
         attachments_str = self.get_parameter("attachments") or ""
-        if hasattr(context, "resolve_value"):
-            attachments_str = context.resolve_value(attachments_str)
 
         attachment_paths = []
         if attachments_str:
@@ -920,7 +890,7 @@ class GmailCreateDraftNode(GmailBaseNode):
             "success": True,
             "draft_id": result.id,
             "message_id": message_id,
-            "next_nodes": [],
+            "next_nodes": ["exec_out"],
         }
 
 

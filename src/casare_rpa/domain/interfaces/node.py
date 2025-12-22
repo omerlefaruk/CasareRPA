@@ -251,9 +251,7 @@ class INode(Protocol):
     # Status Management
     # ========================================================================
 
-    def set_status(
-        self, status: NodeStatus, error_message: Optional[str] = None
-    ) -> None:
+    def set_status(self, status: NodeStatus, error_message: Optional[str] = None) -> None:
         """Update node execution status."""
         ...
 

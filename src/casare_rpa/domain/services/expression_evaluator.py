@@ -24,9 +24,7 @@ class ExpressionError(Exception):
 
     def __init__(self, message: str, expression: Optional[str] = None):
         self.expression = expression
-        super().__init__(
-            f"{message}" + (f" in expression: {expression}" if expression else "")
-        )
+        super().__init__(f"{message}" + (f" in expression: {expression}" if expression else ""))
 
 
 class ExpressionEvaluator:
@@ -223,11 +221,7 @@ class ExpressionEvaluator:
             return expression
 
         # Pure @{expression} - evaluate and return typed result
-        if (
-            expression.startswith("@{")
-            and expression.endswith("}")
-            and expression.count("@{") == 1
-        ):
+        if expression.startswith("@{") and expression.endswith("}") and expression.count("@{") == 1:
             inner = expression[2:-1]
             try:
                 return self._evaluate_expression(inner, variables)
@@ -386,9 +380,7 @@ class ExpressionEvaluator:
         # Try to evaluate as literal
         return self._parse_literal(expr)
 
-    def _call_function(
-        self, name: str, args_str: str, variables: Dict[str, Any]
-    ) -> Any:
+    def _call_function(self, name: str, args_str: str, variables: Dict[str, Any]) -> Any:
         """
         Call a built-in function with parsed arguments.
 
@@ -606,9 +598,7 @@ class ExpressionEvaluator:
         """
         if not isinstance(value, str):
             return False
-        return bool(
-            self.LEGACY_VAR_PATTERN.search(value) or self.NEW_EXPR_PATTERN.search(value)
-        )
+        return bool(self.LEGACY_VAR_PATTERN.search(value) or self.NEW_EXPR_PATTERN.search(value))
 
     def list_functions(self) -> List[str]:
         """

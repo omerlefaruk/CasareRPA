@@ -1,0 +1,884 @@
+{
+  "metadata": {
+    "name": "Untitled Workflow",
+    "description": "",
+    "version": "1.0.0",
+    "author": "",
+    "created_at": "2025-12-19T11:57:53.520976",
+    "modified_at": "2025-12-19T11:57:53.520979"
+  },
+  "nodes": {
+    "init_vars": {
+      "node_id": "init_vars",
+      "node_type": "SetVariableNode",
+      "position": [
+        -626.1286338583717,
+        -3.8925850220663705
+      ],
+      "config": {
+        "variable_name": "login_retries",
+        "default_value": "0",
+        "variable_type": "Int32",
+        "status": "success"
+      },
+      "name": "Init Retries"
+    },
+    "init_success": {
+      "node_id": "init_success",
+      "node_type": "SetVariableNode",
+      "position": [
+        -166.6229657206137,
+        -6.487641703443952
+      ],
+      "config": {
+        "variable_name": "login_success",
+        "default_value": "false",
+        "variable_type": "Boolean",
+        "status": "success"
+      },
+      "name": "Init Success=False"
+    },
+    "loop_start": {
+      "node_id": "loop_start",
+      "node_type": "WhileLoopStartNode",
+      "position": [
+        295.4777590985219,
+        0.0
+      ],
+      "config": {
+        "expression": "{{login_retries}} < 3",
+        "max_iterations": "10",
+        "status": "success"
+      },
+      "name": "While Retries < 3"
+    },
+    "launch_browser": {
+      "node_id": "launch_browser",
+      "node_type": "LaunchBrowserNode",
+      "position": [
+        595.4777590985219,
+        0.0
+      ],
+      "config": {
+        "url": "https://websube.ckbogazici.com.tr/Giris/Giris",
+        "browser_type": "chromium",
+        "headless": false,
+        "window_state": "normal",
+        "do_not_close": true,
+        "profile_mode": "custom",
+        "slow_mo": "0",
+        "channel": "",
+        "viewport_width": "1280",
+        "viewport_height": "720",
+        "user_agent": "",
+        "locale": "",
+        "timezone_id": "",
+        "color_scheme": "light",
+        "ignore_https_errors": false,
+        "proxy_server": "",
+        "user_data_dir": "C:/Users/Rau/casare_profiles/ck_bogazici",
+        "retry_count": "0",
+        "retry_interval": "2000",
+        "window_wait": "100",
+        "status": "success"
+      },
+      "name": "Launch Browser"
+    },
+    "type_tckn": {
+      "node_id": "type_tckn",
+      "node_type": "TypeTextNode",
+      "position": [
+        995.4777590985219,
+        0.0
+      ],
+      "config": {
+        "selector": "input[name*='Kimlik'], input[placeholder*='T.C.'], input[type='text']",
+        "text": "29320919724",
+        "fast_mode": false,
+        "delay": "0",
+        "timeout": "30000",
+        "clear_first": true,
+        "press_sequentially": false,
+        "force": false,
+        "no_wait_after": false,
+        "strict": false,
+        "press_enter_after": false,
+        "press_tab_after": false,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "anchor_config": "",
+        "status": "success"
+      },
+      "name": "Type TCKN"
+    },
+    "type_password": {
+      "node_id": "type_password",
+      "node_type": "TypeTextNode",
+      "position": [
+        1395.4777590985218,
+        0.0
+      ],
+      "config": {
+        "selector": "input[type='password']",
+        "text": "418887",
+        "fast_mode": false,
+        "delay": "0",
+        "timeout": "30000",
+        "clear_first": true,
+        "press_sequentially": false,
+        "force": false,
+        "no_wait_after": false,
+        "strict": false,
+        "press_enter_after": false,
+        "press_tab_after": false,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "anchor_config": "",
+        "status": "success"
+      },
+      "name": "Type Password"
+    },
+    "select_bireysel": {
+      "node_id": "select_bireysel",
+      "node_type": "SelectDropdownNode",
+      "position": [
+        1795.4777590985218,
+        0.0
+      ],
+      "config": {
+        "selector": "select",
+        "value": "Bireysel",
+        "timeout": "30000",
+        "force": false,
+        "no_wait_after": false,
+        "strict": false,
+        "select_by": "label",
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "anchor_config": "",
+        "status": "success"
+      },
+      "name": "Select User Type"
+    },
+    "click_recaptcha": {
+      "node_id": "click_recaptcha",
+      "node_type": "BrowserRunScriptNode",
+      "position": [
+        2195.477759098522,
+        0.0
+      ],
+      "config": {
+        "script": "import random\n\nawait page.wait_for_load_state(\"networkidle\")\n\nresult = False\ntarget_frame = None\n\nfor frame in page.frames:\n    if \"recaptcha/api2/anchor\" in frame.url:\n        target_frame = frame\n        break\n\nif target_frame:\n    logger.info(f\"Found frame: {target_frame.url}\")\n    checkbox = target_frame.locator(\".recaptcha-checkbox-border, #recaptcha-anchor\").first\n    \n    try:\n        if await checkbox.count() > 0:\n            await checkbox.wait_for(state=\"visible\", timeout=10000)\n            \n            # Human-like interaction\n            logger.info(\"Hovering...\")\n            await checkbox.hover()\n            await page.wait_for_timeout(random.randint(300, 700))\n            logger.info(\"Clicking...\")\n            await checkbox.click(delay=random.randint(100, 300))\n            logger.info(\"Clicked reCAPTCHA checkbox\")\n            \n            # Wait for result\n            await page.wait_for_timeout(2000)\n            \n            is_checked = await checkbox.evaluate(\"el => el.classList.contains('recaptcha-checkbox-checked')\")\n            \n            if is_checked:\n                logger.info(\"Success: reCAPTCHA checked.\")\n                result = True\n            else:\n                logger.warning(\"Failure: reCAPTCHA not checked (Puzzle likely displayed)\")\n                result = False\n        else:\n             logger.error(\"Checkbox not found\")\n             result = False\n            \n    except Exception as e:\n        logger.error(f\"Error: {e}\")\n        result = False\nelse:\n    logger.error(\"Frame not found\")\n    result = False\n\n# MUST RETURN FOR NODE TO SEE IT\nreturn result",
+        "timeout": "30000",
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "status": "success"
+      },
+      "name": "Click reCAPTCHA (Script)"
+    },
+    "check_result": {
+      "node_id": "check_result",
+      "node_type": "IfNode",
+      "position": [
+        3700.0,
+        0.0
+      ],
+      "config": {
+        "expression": "{{click_recaptcha.result}} or {{solve_captcha_ai.solved}}",
+        "status": "success"
+      },
+      "name": "Is Checked?"
+    },
+    "set_success": {
+      "node_id": "set_success",
+      "node_type": "SetVariableNode",
+      "position": [
+        4000.0,
+        -200.0
+      ],
+      "config": {
+        "variable_name": "login_success",
+        "default_value": "true",
+        "variable_type": "Boolean",
+        "status": "success"
+      },
+      "name": "Set Success=True"
+    },
+    "click_login": {
+      "node_id": "click_login",
+      "node_type": "ClickElementNode",
+      "position": [
+        4398.668999006766,
+        -403.067768075299
+      ],
+      "config": {
+        "selector": "button[type='submit'], input[type='submit'], button:has-text('Giriş'), button:has-text('Oturum Aç')",
+        "fast_mode": false,
+        "timeout": "30000",
+        "button": "left",
+        "click_count": "1",
+        "delay": "0",
+        "force": false,
+        "position_x": "0.0",
+        "position_y": "0.0",
+        "modifiers": [],
+        "no_wait_after": false,
+        "trial": false,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "highlight_before_click": false,
+        "anchor_config": "",
+        "status": "success"
+      },
+      "name": "Click Login"
+    },
+    "break_loop": {
+      "node_id": "break_loop",
+      "node_type": "BreakNode",
+      "position": [
+        8420.431868332062,
+        -276.6648643215236
+      ],
+      "config": {
+        "paired_loop_start_id": "loop_start",
+        "status": "idle"
+      }
+    },
+    "increment_retry": {
+      "node_id": "increment_retry",
+      "node_type": "IncrementVariableNode",
+      "position": [
+        4000.0,
+        200.0
+      ],
+      "config": {
+        "variable_name": "login_retries",
+        "increment": "1.0",
+        "status": "idle"
+      },
+      "name": "Increment Retries"
+    },
+    "close_browser_retry": {
+      "node_id": "close_browser_retry",
+      "node_type": "CloseBrowserNode",
+      "position": [
+        4300.0,
+        200.0
+      ],
+      "config": {
+        "timeout": "30000",
+        "force_close": true,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "status": "idle"
+      },
+      "name": "Close Browser"
+    },
+    "wait_retry": {
+      "node_id": "wait_retry",
+      "node_type": "WaitNode",
+      "position": [
+        4600.0,
+        200.0
+      ],
+      "config": {
+        "duration": "5.0",
+        "status": "idle",
+        "_disabled": true
+      }
+    },
+    "loop_end": {
+      "node_id": "loop_end",
+      "node_type": "WhileLoopEndNode",
+      "position": [
+        4900.0,
+        200.0
+      ],
+      "config": {
+        "paired_start_id": "loop_start",
+        "status": "idle"
+      },
+      "name": "Loop End"
+    },
+    "check_final_success": {
+      "node_id": "check_final_success",
+      "node_type": "IfNode",
+      "position": [
+        686.0337896458478,
+        415.57034008826537
+      ],
+      "config": {
+        "expression": "{{login_success}}",
+        "status": "idle"
+      },
+      "name": "Final Success Check"
+    },
+    "fail_log": {
+      "node_id": "fail_log",
+      "node_type": "BrowserRunScriptNode",
+      "position": [
+        1051.2352579943154,
+        524.7251750420576
+      ],
+      "config": {
+        "script": "logger.error(\"Max retries reached.\")\nraise Exception(\"Max retries reached.\")",
+        "timeout": "5000",
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "status": "idle"
+      },
+      "name": "Fail Workflow"
+    },
+    "wait_for_atla": {
+      "node_id": "wait_for_atla",
+      "node_type": "WaitNode",
+      "position": [
+        4755.4973658117715,
+        -549.4608357458294
+      ],
+      "config": {
+        "duration": "2.0",
+        "status": "success",
+        "_disabled": true
+      }
+    },
+    "click_atla": {
+      "node_id": "click_atla",
+      "node_type": "ClickElementNode",
+      "position": [
+        5816.92927483929,
+        -577.4431028828457
+      ],
+      "config": {
+        "selector": "button:has-text('Atla'), a:has-text('Atla'), *:has-text('Atla')",
+        "fast_mode": false,
+        "timeout": "30000",
+        "button": "left",
+        "click_count": "1",
+        "delay": "0",
+        "force": false,
+        "position_x": "0.0",
+        "position_y": "0.0",
+        "modifiers": [],
+        "no_wait_after": false,
+        "trial": false,
+        "retry_count": "3",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "highlight_before_click": false,
+        "anchor_config": "",
+        "status": "idle"
+      },
+      "name": "Click Atla"
+    },
+    "detect_puzzle": {
+      "node_id": "detect_puzzle",
+      "node_type": "DetectCaptchaNode",
+      "position": [
+        2631.1904751106167,
+        -16.6393856067952
+      ],
+      "config": {
+        "captcha_type": "recaptcha_v2",
+        "challenge_selector": "iframe[title*='recaptcha challenge'], .rc-imageselect",
+        "timeout": "5000",
+        "status": "success"
+      },
+      "name": "Detect Puzzle"
+    },
+    "if_puzzle": {
+      "node_id": "if_puzzle",
+      "node_type": "IfNode",
+      "position": [
+        2835.5307536757923,
+        -2.9737111161058465
+      ],
+      "config": {
+        "expression": "{{detect_puzzle.captcha_detected}}",
+        "status": "success"
+      },
+      "name": "Puzzle Displayed?"
+    },
+    "solve_captcha_ai": {
+      "node_id": "solve_captcha_ai",
+      "node_type": "SolveCaptchaAINode",
+      "position": [
+        3100.0,
+        -200.0
+      ],
+      "config": {
+        "credential_id": "cred_3be9a941dfef",
+        "api_key": "",
+        "model": "gemini-2.0-flash-exp",
+        "max_attempts": "10",
+        "timeout": "120000",
+        "status": "idle"
+      },
+      "name": "Solve reCAPTCHA (AI)"
+    },
+    "nav_fatura": {
+      "node_id": "nav_fatura",
+      "node_type": "ClickElementNode",
+      "position": [
+        6137.593561619522,
+        -237.81186098170528
+      ],
+      "config": {
+        "selector": "a[href*='Fatura'], a:has-text('Fatura'), .m-menu__link:has-text('Fatura')",
+        "fast_mode": false,
+        "timeout": "30000",
+        "button": "left",
+        "click_count": "1",
+        "delay": "0",
+        "force": true,
+        "position_x": "0.0",
+        "position_y": "0.0",
+        "modifiers": [],
+        "no_wait_after": false,
+        "trial": false,
+        "retry_count": "3",
+        "retry_interval": "2000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "highlight_before_click": false,
+        "anchor_config": "",
+        "status": "idle"
+      },
+      "name": "Click Fatura Bilgileri"
+    },
+    "select_account": {
+      "node_id": "select_account",
+      "node_type": "SelectDropdownNode",
+      "position": [
+        6601.253166218668,
+        -245.65903745438877
+      ],
+      "config": {
+        "selector": "select#hesapddl, select[name*='hesap'], select.form-control",
+        "value": "4007119742",
+        "timeout": "30000",
+        "force": false,
+        "no_wait_after": false,
+        "strict": false,
+        "select_by": "value",
+        "retry_count": "3",
+        "retry_interval": "2000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "anchor_config": "",
+        "status": "idle"
+      },
+      "name": "Select Account 4007119742"
+    },
+    "click_view_bill": {
+      "node_id": "click_view_bill",
+      "node_type": "ClickElementNode",
+      "position": [
+        7095.50699296916,
+        -287.54503427704776
+      ],
+      "config": {
+        "selector": "a.btn:has-text('Faturamı Görüntüle')",
+        "fast_mode": false,
+        "timeout": "10000",
+        "button": "left",
+        "click_count": "1",
+        "delay": "0",
+        "force": false,
+        "position_x": "0.0",
+        "position_y": "0.0",
+        "modifiers": [],
+        "no_wait_after": false,
+        "trial": false,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "highlight_before_click": false,
+        "anchor_config": "",
+        "status": "idle"
+      },
+      "name": "Click Faturamı Görüntüle"
+    },
+    "save_invoice_pdf": {
+      "node_id": "save_invoice_pdf",
+      "node_type": "BrowserRunScriptNode",
+      "position": [
+        7585.10091547049,
+        -283.1447920858827
+      ],
+      "config": {
+        "script": "\nimport os\nfrom datetime import datetime\n\n# Configure paths\ndest_dir = r\"C:\\Users\\Rau\\Desktop\\muhasebe\"\nos.makedirs(dest_dir, exist_ok=True)\n\nproject_name = \"MonthlyMuhasebe\"\naccount_num = \"4007119742\"\nfilename = f\"{project_name}_Fatura_{account_num}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf\"\nfull_path = os.path.join(dest_dir, filename)\n\nlogger.info(f\"Target PDF path: {full_path}\")\n\n# Smart wait: Wait for network to be idle (PDF viewer fully loaded)\nlogger.info(\"Waiting for PDF viewer to load...\")\ntry:\n    await page.wait_for_load_state('networkidle', timeout=30000)\nexcept:\n    pass\n\ndownloaded = False\n\n# The PDF viewer download button is in Chrome's Shadow DOM (not accessible via normal selectors)\n# We'll click it by position - the download button is in the PDF viewer toolbar\n# Typical Chrome PDF viewer: toolbar is at top, download icon is near right side\n\n# Get viewport size\nviewport = page.viewport_size\nlogger.info(f\"Viewport size: {viewport}\")\n\n# Download button position in Chrome PDF viewer:\n# - It's in the top toolbar (y ~ 20-25 pixels from top)\n# - It's the second button from the right (before the menu icon)\n# - Approximately 60-80 pixels from the right edge\n\ndownload_x = viewport['width'] - 70  # ~70px from right edge\ndownload_y = 22  # In the toolbar area\n\nlogger.info(f\"Clicking download button at position ({download_x}, {download_y})\")\n\ntry:\n    async with page.expect_download(timeout=60000) as download_info:\n        # Click at the download button position\n        await page.mouse.click(download_x, download_y)\n        \n        logger.info(\"Waiting for download to complete...\")\n        download = await download_info.value\n        await download.save_as(full_path)\n        downloaded = True\n        logger.info(f\"SUCCESS: Downloaded PDF to {full_path}\")\n\nexcept Exception as e:\n    logger.error(f\"Download at ({download_x}, {download_y}) failed: {e}\")\n    \n    # Try alternative position (print button is next to download)\n    if not downloaded:\n        try:\n            print_x = viewport['width'] - 40  # Closer to edge (might be print)\n            logger.info(f\"Trying alternative position ({print_x}, {download_y})\")\n            \n            async with page.expect_download(timeout=30000) as download_info:\n                await page.mouse.click(print_x, download_y)\n                download = await download_info.value\n                await download.save_as(full_path)\n                downloaded = True\n                logger.info(f\"SUCCESS: Downloaded PDF to {full_path}\")\n        except Exception as e2:\n            logger.error(f\"Alternative position failed: {e2}\")\n\n# FAIL if not downloaded - NO fallbacks\nif not downloaded:\n    raise Exception(f\"FAILED: Could not download PDF by clicking toolbar. Check button position.\")\n\nresult = full_path\n",
+        "timeout": "120000",
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "status": "idle"
+      },
+      "name": "Save Invoice PDF"
+    },
+    "verify_file": {
+      "node_id": "verify_file",
+      "node_type": "FileSystemSuperNode",
+      "position": [
+        8053.705766294006,
+        -292.73128623104276
+      ],
+      "config": {
+        "action": "File Exists",
+        "file_path": "",
+        "path": "C:\\Users\\Rau\\Desktop\\muhasebe",
+        "source_path": "",
+        "directory_path": "",
+        "dir_path": "",
+        "dest_path": "",
+        "content": "",
+        "encoding": "utf-8",
+        "binary_mode": false,
+        "max_size": "0",
+        "create_dirs": true,
+        "create_if_missing": true,
+        "ignore_missing": false,
+        "overwrite": false,
+        "check_type": "file",
+        "parents": true,
+        "exist_ok": true,
+        "pattern": "*",
+        "recursive": false,
+        "files_only": false,
+        "dirs_only": false,
+        "allow_dangerous_paths": false,
+        "status": "idle"
+      },
+      "name": "Verify Invoice Path"
+    },
+    "check_atla": {
+      "node_id": "check_atla",
+      "node_type": "BrowserRunScriptNode",
+      "position": [
+        4973.794094752029,
+        -408.9658535765817
+      ],
+      "config": {
+        "script": "\nselector = \"button:has-text('Atla'), a:has-text('Atla'), *:has-text('Atla')\"\nis_visible = False\nif 'page' in locals() and page:\n    try:\n        el = page.locator(selector).first\n        if await el.count() > 0:\n            if await el.is_visible(timeout=3000):\n                is_visible = True\n    except Exception as e:\n        logger.warning(f\"Check Atla failed: {e}\")\nreturn is_visible\n",
+        "timeout": "10000",
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "status": "success"
+      },
+      "name": "Check Atla Visible"
+    },
+    "if_atla": {
+      "node_id": "if_atla",
+      "node_type": "IfNode",
+      "position": [
+        5355.469755149036,
+        -577.8987425142927
+      ],
+      "config": {
+        "expression": "{{check_atla.result}}",
+        "status": "success"
+      }
+    },
+    "wait_after_ai": {
+      "node_id": "wait_after_ai",
+      "node_type": "WaitNode",
+      "position": [
+        3400.0,
+        -200.0
+      ],
+      "config": {
+        "duration": "3.0",
+        "status": "success",
+        "_disabled": false
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "init_vars",
+      "source_port": "exec_out",
+      "target_node": "init_success",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "init_success",
+      "source_port": "exec_out",
+      "target_node": "loop_start",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "loop_start",
+      "source_port": "body",
+      "target_node": "launch_browser",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "loop_start",
+      "source_port": "completed",
+      "target_node": "check_final_success",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "launch_browser",
+      "source_port": "exec_out",
+      "target_node": "type_tckn",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "launch_browser",
+      "source_port": "page",
+      "target_node": "type_tckn",
+      "target_port": "page"
+    },
+    {
+      "source_node": "type_tckn",
+      "source_port": "exec_out",
+      "target_node": "type_password",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "type_tckn",
+      "source_port": "page",
+      "target_node": "type_password",
+      "target_port": "page"
+    },
+    {
+      "source_node": "type_password",
+      "source_port": "exec_out",
+      "target_node": "select_bireysel",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "type_password",
+      "source_port": "page",
+      "target_node": "select_bireysel",
+      "target_port": "page"
+    },
+    {
+      "source_node": "select_bireysel",
+      "source_port": "exec_out",
+      "target_node": "click_recaptcha",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "select_bireysel",
+      "source_port": "page",
+      "target_node": "click_recaptcha",
+      "target_port": "page"
+    },
+    {
+      "source_node": "click_recaptcha",
+      "source_port": "exec_out",
+      "target_node": "detect_puzzle",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "click_recaptcha",
+      "source_port": "page",
+      "target_node": "detect_puzzle",
+      "target_port": "page"
+    },
+    {
+      "source_node": "check_result",
+      "source_port": "true",
+      "target_node": "set_success",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "check_result",
+      "source_port": "false",
+      "target_node": "increment_retry",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "set_success",
+      "source_port": "exec_out",
+      "target_node": "click_login",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "click_login",
+      "source_port": "exec_out",
+      "target_node": "wait_for_atla",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "click_login",
+      "source_port": "page",
+      "target_node": "check_atla",
+      "target_port": "page"
+    },
+    {
+      "source_node": "increment_retry",
+      "source_port": "exec_out",
+      "target_node": "close_browser_retry",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "close_browser_retry",
+      "source_port": "exec_out",
+      "target_node": "wait_retry",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "wait_retry",
+      "source_port": "exec_out",
+      "target_node": "loop_end",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "check_final_success",
+      "source_port": "true",
+      "target_node": "nav_fatura",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "launch_browser",
+      "source_port": "page",
+      "target_node": "nav_fatura",
+      "target_port": "page"
+    },
+    {
+      "source_node": "check_final_success",
+      "source_port": "false",
+      "target_node": "fail_log",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "wait_for_atla",
+      "source_port": "exec_out",
+      "target_node": "check_atla",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "click_atla",
+      "source_port": "exec_out",
+      "target_node": "nav_fatura",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "detect_puzzle",
+      "source_port": "exec_out",
+      "target_node": "if_puzzle",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "detect_puzzle",
+      "source_port": "page",
+      "target_node": "solve_captcha_ai",
+      "target_port": "page"
+    },
+    {
+      "source_node": "if_puzzle",
+      "source_port": "true",
+      "target_node": "solve_captcha_ai",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "if_puzzle",
+      "source_port": "false",
+      "target_node": "check_result",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "solve_captcha_ai",
+      "source_port": "exec_out",
+      "target_node": "wait_after_ai",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "nav_fatura",
+      "source_port": "exec_out",
+      "target_node": "select_account",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "nav_fatura",
+      "source_port": "page",
+      "target_node": "select_account",
+      "target_port": "page"
+    },
+    {
+      "source_node": "select_account",
+      "source_port": "exec_out",
+      "target_node": "click_view_bill",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "select_account",
+      "source_port": "page",
+      "target_node": "click_view_bill",
+      "target_port": "page"
+    },
+    {
+      "source_node": "click_view_bill",
+      "source_port": "exec_out",
+      "target_node": "save_invoice_pdf",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "click_view_bill",
+      "source_port": "page",
+      "target_node": "save_invoice_pdf",
+      "target_port": "page"
+    },
+    {
+      "source_node": "save_invoice_pdf",
+      "source_port": "exec_out",
+      "target_node": "verify_file",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "verify_file",
+      "source_port": "exec_out",
+      "target_node": "break_loop",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "check_atla",
+      "source_port": "exec_out",
+      "target_node": "if_atla",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "check_atla",
+      "source_port": "page",
+      "target_node": "click_atla",
+      "target_port": "page"
+    },
+    {
+      "source_node": "if_atla",
+      "source_port": "true",
+      "target_node": "click_atla",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "if_atla",
+      "source_port": "false",
+      "target_node": "nav_fatura",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "wait_after_ai",
+      "source_port": "exec_out",
+      "target_node": "check_result",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "frames": [],
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 120,
+    "retry_count": 0
+  }
+}

@@ -1,26 +1,36 @@
 """
 Visual Nodes - File Operations
+
+Super Nodes (consolidated operations):
+- VisualFileSystemSuperNode: 12 file system operations in one node
+
+Remaining atomic nodes (not yet consolidated):
+- Structured data operations (CSV, JSON, ZIP)
+- XML operations (8 nodes)
+- PDF operations (6 nodes)
+- FTP operations (10 nodes)
+
+NOTE: Structured data (CSV/JSON/ZIP) are available as atomic nodes for clarity.
 """
 
+# Super Nodes (consolidated operations)
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.super_nodes import (
+    VisualFileSystemSuperNode,
+)
+
+# Structured data operations
 from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
-    VisualReadFileNode,
-    VisualWriteFileNode,
-    VisualAppendFileNode,
-    VisualDeleteFileNode,
-    VisualCopyFileNode,
-    VisualMoveFileNode,
-    VisualFileExistsNode,
-    VisualGetFileSizeNode,
-    VisualGetFileInfoNode,
-    VisualListFilesNode,
-    VisualListDirectoryNode,
-    VisualCreateDirectoryNode,
-    VisualReadCsvNode,
-    VisualWriteCsvNode,
-    VisualReadJsonNode,
-    VisualWriteJsonNode,
+    VisualReadCSVNode,
+    VisualWriteCSVNode,
+    VisualReadJSONFileNode,
+    VisualWriteJSONFileNode,
     VisualZipFilesNode,
-    VisualUnzipFileNode,
+    VisualUnzipFilesNode,
+)
+
+# XML operations
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualImageConvertNode,
     VisualParseXMLNode,
     VisualReadXMLFileNode,
     VisualWriteXMLFileNode,
@@ -29,12 +39,20 @@ from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualGetXMLAttributeNode,
     VisualXMLToJsonNode,
     VisualJsonToXMLNode,
+)
+
+# PDF operations (not yet consolidated)
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualReadPDFTextNode,
     VisualGetPDFInfoNode,
     VisualMergePDFsNode,
     VisualSplitPDFNode,
     VisualExtractPDFPagesNode,
     VisualPDFToImagesNode,
+)
+
+# FTP operations (not yet consolidated)
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualFTPConnectNode,
     VisualFTPUploadNode,
     VisualFTPDownloadNode,
@@ -45,28 +63,28 @@ from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualFTPRenameNode,
     VisualFTPDisconnectNode,
     VisualFTPGetSizeNode,
-    VisualImageConvertNode,
+)
+
+# Directory and path operations
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualListDirectoryNode,
+    VisualFileExistsNode,
+    VisualCreateDirectoryNode,
 )
 
 __all__ = [
-    "VisualReadFileNode",
-    "VisualWriteFileNode",
-    "VisualAppendFileNode",
-    "VisualDeleteFileNode",
-    "VisualCopyFileNode",
-    "VisualMoveFileNode",
-    "VisualFileExistsNode",
-    "VisualGetFileSizeNode",
-    "VisualGetFileInfoNode",
-    "VisualListFilesNode",
-    "VisualListDirectoryNode",
-    "VisualCreateDirectoryNode",
-    "VisualReadCsvNode",
-    "VisualWriteCsvNode",
-    "VisualReadJsonNode",
-    "VisualWriteJsonNode",
+    # Super Nodes (consolidated operations)
+    "VisualFileSystemSuperNode",
+    # Structured data
+    "VisualReadCSVNode",
+    "VisualWriteCSVNode",
+    "VisualReadJSONFileNode",
+    "VisualWriteJSONFileNode",
     "VisualZipFilesNode",
-    "VisualUnzipFileNode",
+    "VisualUnzipFilesNode",
+    # Image operations
+    "VisualImageConvertNode",
+    # XML operations
     "VisualParseXMLNode",
     "VisualReadXMLFileNode",
     "VisualWriteXMLFileNode",
@@ -75,12 +93,14 @@ __all__ = [
     "VisualGetXMLAttributeNode",
     "VisualXMLToJsonNode",
     "VisualJsonToXMLNode",
+    # PDF operations
     "VisualReadPDFTextNode",
     "VisualGetPDFInfoNode",
     "VisualMergePDFsNode",
     "VisualSplitPDFNode",
     "VisualExtractPDFPagesNode",
     "VisualPDFToImagesNode",
+    # FTP operations
     "VisualFTPConnectNode",
     "VisualFTPUploadNode",
     "VisualFTPDownloadNode",
@@ -91,5 +111,8 @@ __all__ = [
     "VisualFTPRenameNode",
     "VisualFTPDisconnectNode",
     "VisualFTPGetSizeNode",
-    "VisualImageConvertNode",
+    # Directory and path operations
+    "VisualListDirectoryNode",
+    "VisualFileExistsNode",
+    "VisualCreateDirectoryNode",
 ]

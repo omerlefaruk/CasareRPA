@@ -329,9 +329,7 @@ class SelectorValidator(QObject):
         elif result.count == 1:
             return f"Found exactly 1 element ({result.time_ms:.1f}ms)"
         else:
-            return (
-                f"Found {result.count} elements - not unique ({result.time_ms:.1f}ms)"
-            )
+            return f"Found {result.count} elements - not unique ({result.time_ms:.1f}ms)"
 
     def get_validation_style(self, result: ValidationResult) -> str:
         """
@@ -344,19 +342,11 @@ class SelectorValidator(QObject):
             CSS style string
         """
         if not result.success:
-            return (
-                "padding: 8px; background: #3d1e1e; color: #ef4444; border-radius: 4px;"
-            )
+            return "padding: 8px; background: #3d1e1e; color: #ef4444; border-radius: 4px;"
 
         if result.count == 0:
-            return (
-                "padding: 8px; background: #3d1e1e; color: #ef4444; border-radius: 4px;"
-            )
+            return "padding: 8px; background: #3d1e1e; color: #ef4444; border-radius: 4px;"
         elif result.count == 1:
-            return (
-                "padding: 8px; background: #1e3d2e; color: #10b981; border-radius: 4px;"
-            )
+            return "padding: 8px; background: #1e3d2e; color: #10b981; border-radius: 4px;"
         else:
-            return (
-                "padding: 8px; background: #3d3520; color: #fbbf24; border-radius: 4px;"
-            )
+            return "padding: 8px; background: #3d3520; color: #fbbf24; border-radius: 4px;"

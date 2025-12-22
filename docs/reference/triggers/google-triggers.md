@@ -277,7 +277,7 @@ Trigger: 15 minutes before meetings
 | filter_summary: "Team Meeting"             |
 +-------------------------------------------+
         |
-        |-- summary ------->  [Send Slack]
+        |-- summary ------->  [Send Webhook]
         |-- attendees ----->  [Notify]
         |-- html_link ----->  |
         |-- exec_out ------>  |

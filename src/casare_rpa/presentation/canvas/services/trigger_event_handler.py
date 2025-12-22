@@ -68,9 +68,7 @@ class QtTriggerEventHandler:
         except Exception as e:
             logger.error(f"Error requesting workflow run: {e}")
 
-    def update_trigger_stats(
-        self, trigger_id: str, count: int, last_triggered: str
-    ) -> None:
+    def update_trigger_stats(self, trigger_id: str, count: int, last_triggered: str) -> None:
         """
         Update the UI with trigger statistics.
 
@@ -105,9 +103,7 @@ class QtTriggerEventHandler:
                         logger.warning("No triggers tab for trigger stats update")
                         return
 
-                    logger.debug(
-                        f"Updating trigger stats: {_trigger_id} -> count={_count}"
-                    )
+                    logger.debug(f"Updating trigger stats: {_trigger_id} -> count={_count}")
                     triggers_tab.update_trigger_stats(_trigger_id, _count, _timestamp)
 
                 except Exception as e:

@@ -233,9 +233,7 @@ class NodePropertiesDialog(QDialog):
             self._retry_spin.setValue(int(self.properties["retry_count"]))
 
         if "continue_on_error" in self.properties:
-            self._continue_on_error.setChecked(
-                bool(self.properties["continue_on_error"])
-            )
+            self._continue_on_error.setChecked(bool(self.properties["continue_on_error"]))
 
         if "log_level" in self.properties:
             self._log_level_combo.setCurrentText(str(self.properties["log_level"]))

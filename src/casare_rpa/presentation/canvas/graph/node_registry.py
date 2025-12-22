@@ -26,6 +26,8 @@ from functools import lru_cache
 from NodeGraphQt import NodeGraph
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 if TYPE_CHECKING:
     pass
 
@@ -35,7 +37,7 @@ if TYPE_CHECKING:
 # =============================================================================
 _CACHE_DIR = Path.home() / ".casare_rpa" / "cache"
 _MAPPING_CACHE_FILE = _CACHE_DIR / "node_mapping_cache.json"
-_CACHE_VERSION = "1.0"  # Increment when node structure changes
+_CACHE_VERSION = "1.1"  # Increment when node structure changes
 
 
 # =============================================================================
@@ -119,8 +121,7 @@ def _save_mapping_to_cache(mapping: Dict[Type, Type]) -> None:
 
         # Convert to serializable format (class names only)
         serializable_mapping = {
-            visual_cls.__name__: casare_cls.__name__
-            for visual_cls, casare_cls in mapping.items()
+            visual_cls.__name__: casare_cls.__name__ for visual_cls, casare_cls in mapping.items()
         }
 
         cache_data = {
@@ -169,36 +170,14 @@ def _build_casare_node_mapping_with_cache() -> Dict[Type, Type]:
 
                 visual_cls = visual_lazy_import(visual_name)
 
-                # Get casare class module info from visual class
-                casare_module = getattr(visual_cls, "CASARE_NODE_MODULE", None)
+                # Import from main nodes registry (uses lazy loading).
+                # This is the single source of truth for executable nodes.
+                from casare_rpa.nodes import get_node_class
 
-                # Look up the CasareRPA node class based on module
-                casare_class = None
-                if casare_module == "desktop":
-                    from casare_rpa.nodes import desktop_nodes
-
-                    casare_class = getattr(desktop_nodes, casare_name, None)
-                elif casare_module == "file":
-                    from casare_rpa.nodes import file_nodes
-
-                    casare_class = getattr(file_nodes, casare_name, None)
-                elif casare_module == "utility":
-                    from casare_rpa.nodes import utility_nodes
-
-                    casare_class = getattr(utility_nodes, casare_name, None)
-                elif casare_module == "office":
-                    from casare_rpa.nodes.desktop_nodes import office_nodes
-
-                    casare_class = getattr(office_nodes, casare_name, None)
-                else:
-                    # Import from main nodes module (uses lazy loading)
-                    from casare_rpa.nodes import (
-                        _lazy_import as nodes_lazy_import,
-                        _NODE_REGISTRY,
-                    )
-
-                    if casare_name in _NODE_REGISTRY:
-                        casare_class = nodes_lazy_import(casare_name)
+                try:
+                    casare_class = get_node_class(casare_name)
+                except AttributeError:
+                    casare_class = None
 
                 if casare_class is not None:
                     mapping[visual_cls] = casare_class
@@ -271,7 +250,6 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
 
         # Get the CasareRPA node class name from attribute or derive from class name
         casare_class_name = getattr(visual_class, "CASARE_NODE_CLASS", None)
-        casare_module = getattr(visual_class, "CASARE_NODE_MODULE", None)
 
         if casare_class_name is None:
             # Derive from visual node class name: VisualFooNode -> FooNode
@@ -282,36 +260,14 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
                 logger.warning(f"Cannot derive CasareRPA node name for {visual_name}")
                 continue
 
-        # Look up the CasareRPA node class
+        # Look up the CasareRPA node class (single source of truth: nodes registry).
         try:
-            if casare_module == "desktop":
-                # Import from desktop_nodes
-                from casare_rpa.nodes import desktop_nodes
+            from casare_rpa.nodes import get_node_class
 
-                casare_class = getattr(desktop_nodes, casare_class_name, None)
-            elif casare_module == "file":
-                # Import from file_nodes
-                from casare_rpa.nodes import file_nodes
-
-                casare_class = getattr(file_nodes, casare_class_name, None)
-            elif casare_module == "utility":
-                # Import from utility_nodes
-                from casare_rpa.nodes import utility_nodes
-
-                casare_class = getattr(utility_nodes, casare_class_name, None)
-            elif casare_module == "office":
-                # Import from desktop_nodes.office_nodes
-                from casare_rpa.nodes.desktop_nodes import office_nodes
-
-                casare_class = getattr(office_nodes, casare_class_name, None)
-            else:
-                # Import from main nodes module (uses lazy loading)
-                from casare_rpa.nodes import _lazy_import, _NODE_REGISTRY
-
-                if casare_class_name in _NODE_REGISTRY:
-                    casare_class = _lazy_import(casare_class_name)
-                else:
-                    casare_class = None
+            try:
+                casare_class = get_node_class(casare_class_name)
+            except AttributeError:
+                casare_class = None
 
             if casare_class is not None:
                 mapping[visual_class] = casare_class
@@ -322,9 +278,7 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
                 )
 
         except Exception as e:
-            logger.warning(
-                f"Failed to load CasareRPA node class '{casare_class_name}': {e}"
-            )
+            logger.warning(f"Failed to load CasareRPA node class '{casare_class_name}': {e}")
 
     return mapping
 
@@ -348,10 +302,6 @@ def get_casare_node_mapping() -> Dict[Type, Type]:
     if _casare_node_mapping is None:
         _casare_node_mapping = _build_casare_node_mapping_with_cache()
     return _casare_node_mapping
-
-
-# Legacy alias for backwards compatibility
-CASARE_NODE_MAPPING = property(lambda self: get_casare_node_mapping())
 
 
 # =============================================================================
@@ -575,11 +525,10 @@ class NodeRegistry:
     def __init__(self) -> None:
         """Initialize node registry."""
         self._registered_nodes: Dict[str, Type] = {}
+        self._registered_class_names: set = set()  # Track class names to avoid duplicates
         self._categories: Dict[str, List[Type]] = {}
 
-    def register_node(
-        self, node_class: Type, graph: Optional[NodeGraph] = None
-    ) -> None:
+    def register_node(self, node_class: Type, graph: Optional[NodeGraph] = None) -> None:
         """
         Register a visual node class.
 
@@ -587,22 +536,29 @@ class NodeRegistry:
             node_class: Visual node class to register
             graph: Optional NodeGraph instance to register with
         """
+        class_name = node_class.__name__
         node_name = node_class.NODE_NAME
         category = node_class.NODE_CATEGORY
 
-        # Store in registry
-        self._registered_nodes[node_name] = node_class
+        # Skip registry updates if already registered by class name, but still
+        # allow per-graph registration for new graph instances.
+        if class_name not in self._registered_class_names:
+            # Track by class name
+            self._registered_class_names.add(class_name)
 
-        # Store in category
-        if category not in self._categories:
-            self._categories[category] = []
-        self._categories[category].append(node_class)
+            # Store in registry by display name
+            self._registered_nodes[node_name] = node_class
 
-        # Register with NodeGraphQt if graph provided
+            # Store in category
+            if category not in self._categories:
+                self._categories[category] = []
+            self._categories[category].append(node_class)
+
+        # Register with NodeGraphQt if graph provided and not already registered
         if graph is not None:
-            graph.register_node(node_class)
-
-        logger.debug(f"Registered node: {node_name} (category: {category})")
+            identifier = f"{node_class.__identifier__}.{node_class.__name__}"
+            if identifier not in graph.registered_nodes():
+                graph.register_node(node_class)
 
     def register_all_nodes(self, graph: NodeGraph) -> None:
         """
@@ -656,9 +612,7 @@ class NodeRegistry:
                         if auto_connect:
                             # First try: use last created node (for chaining)
                             if qmenu._last_created_node_id:
-                                source_node = self._find_node_by_id(
-                                    qmenu._last_created_node_id
-                                )
+                                source_node = self._find_node_by_id(qmenu._last_created_node_id)
                             # Fallback: use selected node
                             if not source_node:
                                 selected_nodes = graph.selected_nodes()
@@ -679,9 +633,7 @@ class NodeRegistry:
                             pos = qmenu._initial_scene_pos
                             if pos is None:
                                 viewer = graph.viewer()
-                                pos = viewer.mapToScene(
-                                    viewer.mapFromGlobal(viewer.cursor().pos())
-                                )
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
                             pos_x = pos.x() - 100
                             pos_y = pos.y() - 30
 
@@ -755,26 +707,24 @@ class NodeRegistry:
                     # Connect if both ports found
                     if source_output and target_input:
                         source_output.connect_to(target_input)
-                        logger.info(
-                            f"Auto-connected {source_node.name()} -> {target_node.name()}"
-                        )
+                        logger.info(f"Auto-connected {source_node.name()} -> {target_node.name()}")
                 except Exception as e:
                     logger.warning(f"Auto-connect failed: {e}")
 
         search_input = SearchLineEdit()
         search_input.setPlaceholderText("Search... Enter=add, Shift+Enter=add+connect")
-        search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #2b2b2b;
-                color: #ffffff;
-                border: 2px solid #FFA500;
+        search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_primary};
+                border: 2px solid {THEME.accent_warning};
                 border-radius: 4px;
                 padding: 6px;
                 font-size: 12px;
-            }
-            QLineEdit:focus {
-                border-color: #FFD700;
-            }
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME.status_warning};
+            }}
         """)
 
         # Add search input as the first item in menu
@@ -834,9 +784,7 @@ class NodeRegistry:
                 self._categories.items(), key=lambda x: get_category_sort_key(x[0])
             )
         else:
-            sorted_categories = sorted(
-                self._categories.items(), key=lambda x: x[0].lower()
-            )
+            sorted_categories = sorted(self._categories.items(), key=lambda x: x[0].lower())
 
         # Organize nodes by category and add to nested menus
         for category, nodes in sorted_categories:
@@ -857,9 +805,7 @@ class NodeRegistry:
                 if node_class.__doc__:
                     description = node_class.__doc__.strip().split("\n")[0]
 
-                qmenu._node_items.append(
-                    (category_label, node_class.NODE_NAME, description)
-                )
+                qmenu._node_items.append((category_label, node_class.NODE_NAME, description))
 
                 # Create a function to instantiate this specific node class
                 def make_creator(cls):
@@ -869,9 +815,7 @@ class NodeRegistry:
                         if pos is None:
                             # Fallback to current position if not captured
                             viewer = graph.viewer()
-                            pos = viewer.mapToScene(
-                                viewer.mapFromGlobal(viewer.cursor().pos())
-                            )
+                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
 
                         # Create node at initial mouse position (centered)
                         node = graph.create_node(
@@ -893,9 +837,7 @@ class NodeRegistry:
 
                 action = category_menu.addAction(node_class.NODE_NAME)
                 action.triggered.connect(make_creator(node_class))
-                action.setData(
-                    {"category": category_label, "name": node_class.NODE_NAME}
-                )
+                action.setData({"category": category_label, "name": node_class.NODE_NAME})
                 qmenu._all_actions.append(action)
 
         # Store references needed for search functionality
@@ -915,10 +857,9 @@ class NodeRegistry:
                     node_class,
                 )
 
-        # Pre-build SearchIndex for lightning-fast search (avoids rebuilding on every keystroke)
-        from casare_rpa.utils.fuzzy_search import SearchIndex
-
-        qmenu._search_index = SearchIndex(qmenu._node_items)
+        # PERFORMANCE: Defer SearchIndex creation to first search (lazy initialization)
+        # This saves ~20-40ms at startup by not building the index until user actually searches
+        qmenu._search_index = None
 
         # Connect search functionality
         def on_search_changed(text):
@@ -945,9 +886,7 @@ class NodeRegistry:
                         key=lambda x: get_category_sort_key(x[0]),
                     )
                 else:
-                    sorted_cats = sorted(
-                        self._categories.items(), key=lambda x: x[0].lower()
-                    )
+                    sorted_cats = sorted(self._categories.items(), key=lambda x: x[0].lower())
 
                 for category, nodes in sorted_cats:
                     # Use hierarchical submenu creation
@@ -991,8 +930,15 @@ class NodeRegistry:
                 qmenu._first_match = None
                 return
 
-            # Perform fuzzy search using pre-built SearchIndex (lightning-fast, top 15 results)
-            results = qmenu._search_index.search(text)
+            # PERFORMANCE: Lazy-build SearchIndex on first search
+            if qmenu._search_index is None and qmenu._node_items:
+                from casare_rpa.utils.fuzzy_search import SearchIndex
+
+                qmenu._search_index = SearchIndex(qmenu._node_items)
+                logger.debug(f"SearchIndex built on first search ({len(qmenu._node_items)} items)")
+
+            # Perform fuzzy search using SearchIndex (lightning-fast, top 15 results)
+            results = qmenu._search_index.search(text) if qmenu._search_index else []
 
             if not results:
                 no_results_action = qmenu.addAction("No matching nodes found")
@@ -1001,9 +947,7 @@ class NodeRegistry:
                 return
 
             # Add all matching nodes as flat list (no categories)
-            for i, (category, name, description, score, positions) in enumerate(
-                results
-            ):
+            for i, (category, name, description, score, positions) in enumerate(results):
                 # Get the node class for this match
                 if name in qmenu._category_data:
                     _, node_class = qmenu._category_data[name]
@@ -1015,9 +959,7 @@ class NodeRegistry:
                             if pos is None:
                                 # Fallback to current position if not captured
                                 viewer = graph.viewer()
-                                pos = viewer.mapToScene(
-                                    viewer.mapFromGlobal(viewer.cursor().pos())
-                                )
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
 
                             node = graph.create_node(
                                 f"{cls.__identifier__}.{cls.__name__}",
@@ -1070,9 +1012,7 @@ class NodeRegistry:
         # when create_node() is called. The position will be overwritten on each
         # new right-click anyway.
 
-        logger.debug(
-            f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu"
-        )
+        logger.debug(f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu")
 
     def get_node_class(self, node_name: str) -> Optional[Type]:
         """
@@ -1182,12 +1122,302 @@ class NodeRegistry:
         """
         return list(self._registered_nodes.values())
 
+    # =========================================================================
+    # B2: MINIMAL CONTEXT MENU (Phase B Optimization)
+    # =========================================================================
+
+    def _build_minimal_context_menu(self, graph: NodeGraph) -> None:
+        """
+        Build a minimal context menu with just essential nodes.
+
+        PERFORMANCE: Called after essential nodes are registered to provide
+        a functional context menu immediately. The full menu is rebuilt
+        after all nodes are registered.
+
+        Args:
+            graph: NodeGraph instance
+        """
+        from PySide6.QtWidgets import QWidgetAction, QLineEdit, QMenu
+
+        graph_menu = graph.get_context_menu("graph")
+        qmenu = graph_menu.qmenu
+        qmenu.clear()
+
+        # Initialize menu state
+        qmenu._last_created_node_id = None
+        qmenu._initial_scene_pos = None
+        qmenu._node_items = []
+        qmenu._category_data = {}
+        qmenu._category_menus = {}
+        qmenu._all_actions = []
+        qmenu._search_index = None  # Lazy build on first search
+        qmenu._first_match = None
+        qmenu._loading_more = True  # Flag to indicate more nodes loading
+
+        # Create search input
+        search_input = QLineEdit()
+        search_input.setPlaceholderText("Search nodes... (more loading)")
+        search_input.setFixedWidth(200)
+        search_input.setClearButtonEnabled(True)
+
+        search_action = QWidgetAction(qmenu)
+        search_action.setDefaultWidget(search_input)
+        qmenu.addAction(search_action)
+        qmenu.addSeparator()
+
+        # Add essential nodes by category
+        for category, nodes in sorted(self._categories.items()):
+            if not nodes:
+                continue
+
+            # Create category submenu
+            cat_menu = QMenu(category.replace("/", " → "), qmenu)
+            has_nodes = False
+
+            for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
+                if getattr(node_class, "INTERNAL_NODE", False):
+                    continue
+
+                has_nodes = True
+
+                def make_creator(cls):
+                    def create_node():
+                        pos = qmenu._initial_scene_pos
+                        if pos is None:
+                            viewer = graph.viewer()
+                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                        node = graph.create_node(
+                            f"{cls.__identifier__}.{cls.__name__}",
+                            name=cls.NODE_NAME,
+                            pos=[pos.x() - 100, pos.y() - 30],
+                        )
+                        qmenu._last_created_node_id = node.id() if callable(node.id) else node.id
+                        return node
+
+                    return create_node
+
+                action = cat_menu.addAction(node_class.NODE_NAME)
+                action.triggered.connect(make_creator(node_class))
+
+                # Build node items for search
+                category_label = category.split("/")[-1] if "/" in category else category
+                qmenu._node_items.append((category_label, node_class.NODE_NAME, "", node_class))
+                qmenu._category_data[node_class.NODE_NAME] = (
+                    category_label,
+                    node_class,
+                )
+
+            if has_nodes:
+                qmenu.addMenu(cat_menu)
+                qmenu._category_menus[category] = cat_menu
+
+        # Add "Loading more nodes..." indicator
+        qmenu.addSeparator()
+        loading_action = qmenu.addAction("⏳ Loading more nodes...")
+        loading_action.setEnabled(False)
+        qmenu._loading_action = loading_action
+
+        # Simple search handler for minimal menu
+        def on_search_changed(text):
+            # Remove all except search widget, separator, and loading indicator
+            actions_to_remove = []
+            for action in qmenu.actions():
+                if action != search_action and not action.isSeparator():
+                    if action != qmenu._loading_action:
+                        actions_to_remove.append(action)
+
+            for action in actions_to_remove:
+                qmenu.removeAction(action)
+
+            if not text.strip():
+                # Restore category menus
+                for cat_menu in qmenu._category_menus.values():
+                    qmenu.insertMenu(qmenu._loading_action, cat_menu)
+                qmenu._first_match = None
+                return
+
+            # Lazy-build SearchIndex on first search
+            if qmenu._search_index is None and qmenu._node_items:
+                from casare_rpa.utils.fuzzy_search import SearchIndex
+
+                qmenu._search_index = SearchIndex(qmenu._node_items)
+
+            results = qmenu._search_index.search(text) if qmenu._search_index else []
+
+            if not results:
+                no_results = qmenu.addAction("No matching nodes (more loading...)")
+                no_results.setEnabled(False)
+                qmenu._first_match = None
+                return
+
+            # Add matching results
+            for i, (cat, name, desc, score, positions) in enumerate(results):
+                if name in qmenu._category_data:
+                    _, node_class = qmenu._category_data[name]
+
+                    def make_creator(cls):
+                        def create_node():
+                            pos = qmenu._initial_scene_pos
+                            if pos is None:
+                                viewer = graph.viewer()
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                            node = graph.create_node(
+                                f"{cls.__identifier__}.{cls.__name__}",
+                                name=cls.NODE_NAME,
+                                pos=[pos.x() - 100, pos.y() - 30],
+                            )
+                            return node
+
+                        return create_node
+
+                    action = qmenu.addAction(f"{name} ({cat})")
+                    action.triggered.connect(make_creator(node_class))
+
+                    if i == 0:
+                        qmenu._first_match = make_creator(node_class)
+
+        search_input.textChanged.connect(on_search_changed)
+
+        logger.debug(
+            f"Built minimal context menu with {len(self._categories)} categories, "
+            f"{len(qmenu._node_items)} nodes"
+        )
+
+    # =========================================================================
+    # B1: INCREMENTAL NODE REGISTRATION (Phase B Optimization)
+    # =========================================================================
+
+    def register_remaining_nodes_incremental(
+        self,
+        graph: NodeGraph,
+        batch_size: int = 40,
+        callback: Optional[callable] = None,
+    ) -> None:
+        """
+        Register remaining nodes incrementally in batches.
+
+        PERFORMANCE: Spreads node registration across multiple event loop cycles
+        to avoid UI freeze. Each batch processes `batch_size` nodes, then yields
+        to the event loop via QTimer.singleShot(0).
+
+        Args:
+            graph: NodeGraph instance to register nodes with
+            batch_size: Number of nodes per batch (default 40)
+            callback: Optional callback(completed, total) for progress updates
+        """
+        from casare_rpa.presentation.canvas.visual_nodes import (
+            _VISUAL_NODE_REGISTRY,
+        )
+
+        # Get list of remaining nodes to register (using class names)
+        remaining_names = [
+            name
+            for name in _VISUAL_NODE_REGISTRY.keys()
+            if name not in self._registered_class_names
+        ]
+
+        if not remaining_names:
+            logger.debug("No additional nodes to register")
+            if callback:
+                total = len(self._registered_nodes)
+                callback(total, total)
+            self._rebuild_context_menu(graph)
+            return
+
+        # Store state for incremental processing
+        self._pending_registration = remaining_names
+        self._registration_graph = graph
+        self._registration_callback = callback
+        self._registration_batch_size = batch_size
+        self._registration_start_count = len(self._registered_nodes)
+
+        logger.debug(
+            f"Starting incremental registration of {len(remaining_names)} nodes "
+            f"in batches of {batch_size}"
+        )
+
+        # Start first batch
+        self._register_next_batch()
+
+    def _register_next_batch(self) -> None:
+        """
+        Register next batch of nodes.
+
+        Called by QTimer.singleShot to process nodes in batches,
+        yielding to the event loop between batches.
+        """
+        from casare_rpa.presentation.canvas.visual_nodes import _lazy_import
+        from PySide6.QtCore import QTimer
+
+        # Check if done
+        if not hasattr(self, "_pending_registration") or not self._pending_registration:
+            # All done - rebuild context menu and cleanup
+            total = len(self._registered_nodes)
+            start = getattr(self, "_registration_start_count", 0)
+
+            logger.debug(f"Incremental registration batch done: {total - start} new nodes")
+
+            # Remove loading indicator from minimal menu
+            graph = getattr(self, "_registration_graph", None)
+            if graph:
+                graph_menu = graph.get_context_menu("graph")
+                qmenu = graph_menu.qmenu
+                if hasattr(qmenu, "_loading_action") and qmenu._loading_action:
+                    qmenu.removeAction(qmenu._loading_action)
+                    qmenu._loading_action = None
+                    qmenu._loading_more = False
+
+                # Rebuild full context menu
+                self._rebuild_context_menu(graph)
+
+            # Final callback
+            if hasattr(self, "_registration_callback") and self._registration_callback:
+                self._registration_callback(total, total)
+
+            # Cleanup state
+            for attr in [
+                "_pending_registration",
+                "_registration_graph",
+                "_registration_callback",
+                "_registration_batch_size",
+                "_registration_start_count",
+            ]:
+                if hasattr(self, attr):
+                    delattr(self, attr)
+
+            return
+
+        # Process next batch
+        batch_size = getattr(self, "_registration_batch_size", 40)
+        batch = self._pending_registration[:batch_size]
+        self._pending_registration = self._pending_registration[batch_size:]
+
+        registered_in_batch = 0
+        for name in batch:
+            try:
+                node_class = _lazy_import(name)
+                self.register_node(node_class, self._registration_graph)
+                registered_in_batch += 1
+            except Exception as e:
+                logger.warning(f"Failed to register node {name}: {e}")
+
+        # Progress callback
+        if hasattr(self, "_registration_callback") and self._registration_callback:
+            total_remaining = len(self._pending_registration)
+            total_done = len(self._registered_nodes)
+            total_all = total_done + total_remaining
+            self._registration_callback(total_done, total_all)
+
+        # Schedule next batch (yield to event loop)
+        QTimer.singleShot(0, self._register_next_batch)
+
     def register_essential_nodes(self, graph: NodeGraph) -> None:
         """
         Register only essential nodes for fast startup.
 
         PERFORMANCE: Only loads ~8 essential nodes instead of 300+.
         Other nodes are registered lazily when complete_node_registration() is called.
+        Also builds a minimal context menu with just essential categories.
 
         Args:
             graph: NodeGraph instance to register nodes with
@@ -1203,7 +1433,10 @@ class NodeRegistry:
             except Exception as e:
                 logger.warning(f"Failed to load essential node {name}: {e}")
 
-        logger.debug(f"Registered {registered_count} essential nodes for fast startup")
+        # B2: Build minimal context menu with essential nodes
+        self._build_minimal_context_menu(graph)
+
+        logger.debug(f"Registered {registered_count} essential nodes with minimal menu")
 
     def register_remaining_nodes(self, graph: NodeGraph) -> None:
         """
@@ -1227,8 +1460,7 @@ class NodeRegistry:
                 new_count += 1
 
         logger.debug(
-            f"Registered {new_count} additional nodes "
-            f"(total: {len(self._registered_nodes)})"
+            f"Registered {new_count} additional nodes " f"(total: {len(self._registered_nodes)})"
         )
 
         # Rebuild the context menu with all nodes
@@ -1280,9 +1512,7 @@ class NodeRegistry:
                         source_node = None
                         if auto_connect:
                             if qmenu._last_created_node_id:
-                                source_node = self._find_node_by_id(
-                                    qmenu._last_created_node_id
-                                )
+                                source_node = self._find_node_by_id(qmenu._last_created_node_id)
                             if not source_node:
                                 selected_nodes = graph.selected_nodes()
                                 if selected_nodes:
@@ -1298,9 +1528,7 @@ class NodeRegistry:
                             pos = qmenu._initial_scene_pos
                             if pos is None:
                                 viewer = graph.viewer()
-                                pos = viewer.mapToScene(
-                                    viewer.mapFromGlobal(viewer.cursor().pos())
-                                )
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
                             pos_x = pos.x() - 100
                             pos_y = pos.y() - 30
 
@@ -1361,26 +1589,24 @@ class NodeRegistry:
 
                     if source_output and target_input:
                         source_output.connect_to(target_input)
-                        logger.info(
-                            f"Auto-connected {source_node.name()} -> {target_node.name()}"
-                        )
+                        logger.info(f"Auto-connected {source_node.name()} -> {target_node.name()}")
                 except Exception as e:
                     logger.warning(f"Auto-connect failed: {e}")
 
         search_input = SearchLineEdit()
         search_input.setPlaceholderText("Search... Enter=add, Shift+Enter=add+connect")
-        search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: #2b2b2b;
-                color: #ffffff;
-                border: 2px solid #FFA500;
+        search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {THEME.bg_dark};
+                color: {THEME.text_primary};
+                border: 2px solid {THEME.accent_warning};
                 border-radius: 4px;
                 padding: 6px;
                 font-size: 12px;
-            }
-            QLineEdit:focus {
-                border-color: #FFD700;
-            }
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME.status_warning};
+            }}
         """)
 
         search_action = QWidgetAction(qmenu)
@@ -1439,9 +1665,7 @@ class NodeRegistry:
                 self._categories.items(), key=lambda x: get_category_sort_key(x[0])
             )
         else:
-            sorted_categories = sorted(
-                self._categories.items(), key=lambda x: x[0].lower()
-            )
+            sorted_categories = sorted(self._categories.items(), key=lambda x: x[0].lower())
 
         # Build menu structure
         for category, nodes in sorted_categories:
@@ -1460,18 +1684,14 @@ class NodeRegistry:
                 if node_class.__doc__:
                     description = node_class.__doc__.strip().split("\n")[0]
 
-                qmenu._node_items.append(
-                    (category_label, node_class.NODE_NAME, description)
-                )
+                qmenu._node_items.append((category_label, node_class.NODE_NAME, description))
 
                 def make_creator(cls):
                     def create_node():
                         pos = qmenu._initial_scene_pos
                         if pos is None:
                             viewer = graph.viewer()
-                            pos = viewer.mapToScene(
-                                viewer.mapFromGlobal(viewer.cursor().pos())
-                            )
+                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
                         node = graph.create_node(
                             f"{cls.__identifier__}.{cls.__name__}",
                             name=cls.NODE_NAME,
@@ -1488,9 +1708,7 @@ class NodeRegistry:
 
                 action = category_menu.addAction(node_class.NODE_NAME)
                 action.triggered.connect(make_creator(node_class))
-                action.setData(
-                    {"category": category_label, "name": node_class.NODE_NAME}
-                )
+                action.setData({"category": category_label, "name": node_class.NODE_NAME})
                 qmenu._all_actions.append(action)
 
                 # Build category data for search
@@ -1499,10 +1717,8 @@ class NodeRegistry:
                     node_class,
                 )
 
-        # Build search index
-        from casare_rpa.utils.fuzzy_search import SearchIndex
-
-        qmenu._search_index = SearchIndex(qmenu._node_items)
+        # PERFORMANCE: Defer SearchIndex creation to first search (lazy initialization)
+        qmenu._search_index = None
 
         def on_search_changed(text):
             """Handle search text changes."""
@@ -1521,9 +1737,7 @@ class NodeRegistry:
                         key=lambda x: get_category_sort_key(x[0]),
                     )
                 else:
-                    sorted_cats = sorted(
-                        self._categories.items(), key=lambda x: x[0].lower()
-                    )
+                    sorted_cats = sorted(self._categories.items(), key=lambda x: x[0].lower())
 
                 for cat, cat_nodes in sorted_cats:
                     cat_menu = get_or_create_submenu(qmenu, cat)
@@ -1559,7 +1773,14 @@ class NodeRegistry:
                 qmenu._first_match = None
                 return
 
-            results = qmenu._search_index.search(text)
+            # PERFORMANCE: Lazy-build SearchIndex on first search
+            if qmenu._search_index is None and qmenu._node_items:
+                from casare_rpa.utils.fuzzy_search import SearchIndex
+
+                qmenu._search_index = SearchIndex(qmenu._node_items)
+                logger.debug(f"SearchIndex built on first search ({len(qmenu._node_items)} items)")
+
+            results = qmenu._search_index.search(text) if qmenu._search_index else []
             if not results:
                 no_results_action = qmenu.addAction("No matching nodes found")
                 no_results_action.setEnabled(False)
@@ -1575,9 +1796,7 @@ class NodeRegistry:
                             pos = qmenu._initial_scene_pos
                             if pos is None:
                                 viewer = graph.viewer()
-                                pos = viewer.mapToScene(
-                                    viewer.mapFromGlobal(viewer.cursor().pos())
-                                )
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
                             node = graph.create_node(
                                 f"{cls.__identifier__}.{cls.__name__}",
                                 name=cls.NODE_NAME,
@@ -1617,9 +1836,7 @@ class NodeRegistry:
 
         qmenu.aboutToShow.connect(on_menu_shown)
 
-        logger.debug(
-            f"Rebuilt context menu with {len(self._registered_nodes)} node types"
-        )
+        logger.debug(f"Rebuilt context menu with {len(self._registered_nodes)} node types")
 
 
 class NodeFactory:
@@ -1648,9 +1865,12 @@ class NodeFactory:
         Returns:
             Created visual node instance
         """
-        # Create visual node
+        # Create visual node.
+        #
+        # NodeGraphQt registers nodes under: f"{__identifier__}.{__name__}"
+        # (NOT NODE_NAME, which is the display label).
         visual_node = graph.create_node(
-            f"{node_class.__identifier__}.{node_class.NODE_NAME}", pos=pos
+            f"{node_class.__identifier__}.{node_class.__name__}", pos=pos
         )
 
         # Setup ports

@@ -50,9 +50,7 @@ def parse_selector(selector: Dict[str, Any]) -> Dict[str, Any]:
     valid_strategies = ["control_type", "name", "automation_id", "class_name", "xpath"]
 
     if strategy not in valid_strategies:
-        raise ValueError(
-            f"Invalid strategy '{strategy}'. Must be one of: {valid_strategies}"
-        )
+        raise ValueError(f"Invalid strategy '{strategy}'. Must be one of: {valid_strategies}")
 
     # Normalize selector
     normalized = {
@@ -165,9 +163,7 @@ def find_element(
             # If control found and matches all properties, return it
             if control and control.Exists(0, 0):
                 if _matches_properties(control, properties):
-                    logger.info(
-                        f"Found element: {control.ControlTypeName} - '{control.Name}'"
-                    )
+                    logger.info(f"Found element: {control.ControlTypeName} - '{control.Name}'")
                     return DesktopElement(control)
 
         except Exception as e:

@@ -24,6 +24,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from loguru import logger
 
+from casare_rpa.config.security_config import get_crypto_security_config
+
 
 @dataclass
 class APIKeyEntry:
@@ -144,11 +146,12 @@ class APIKeyStore:
         machine_id = self._get_machine_identifier()
         salt = hashlib.sha256(machine_id.encode()).digest()[:16]
 
+        crypto_config = get_crypto_security_config()
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=crypto_config.pbkdf2_iterations,
         )
         derived_key = base64.urlsafe_b64encode(kdf.derive(machine_id.encode()))
         fernet = Fernet(derived_key)
@@ -175,11 +178,12 @@ class APIKeyStore:
         machine_id = self._get_machine_identifier()
         salt = hashlib.sha256(machine_id.encode()).digest()[:16]
 
+        crypto_config = get_crypto_security_config()
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=crypto_config.pbkdf2_iterations,
         )
         derived_key = base64.urlsafe_b64encode(kdf.derive(machine_id.encode()))
         fernet = Fernet(derived_key)

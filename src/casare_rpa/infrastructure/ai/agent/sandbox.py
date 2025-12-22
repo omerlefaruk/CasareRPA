@@ -163,9 +163,7 @@ class HeadlessWorkflowSandbox:
 
         return result
 
-    def _validate_node_types(
-        self, workflow_dict: Dict[str, Any], result: ValidationResult
-    ) -> None:
+    def _validate_node_types(self, workflow_dict: Dict[str, Any], result: ValidationResult) -> None:
         """Validate that all node types are registered."""
         valid_types = self._get_valid_node_types()
         if not valid_types:

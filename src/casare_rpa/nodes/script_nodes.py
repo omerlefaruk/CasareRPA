@@ -29,8 +29,20 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
+    PropertyDef(
+        "code",
+        PropertyType.CODE,
+        required=True,
+        label="Python Code",
+        tooltip="Python code to execute",
+    ),
+    PropertyDef(
+        "variables",
+        PropertyType.JSON,
+        label="Variables",
+        tooltip="Dictionary of variables to pass to the script",
+    ),
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -47,6 +59,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Run in isolated subprocess (default: False)",
     ),
 )
+@node(category="scripts")
 class RunPythonScriptNode(BaseNode):
     """
     Execute Python code inline.
@@ -77,7 +90,7 @@ class RunPythonScriptNode(BaseNode):
         self.node_type = "RunPythonScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("code", DataType.STRING, required=True)
         self.add_input_port("variables", DataType.DICT)
         self.add_output_port("result", DataType.ANY)
         self.add_output_port("output", DataType.STRING)
@@ -93,8 +106,6 @@ class RunPythonScriptNode(BaseNode):
             timeout = self.get_parameter("timeout", 60)
             isolated = self.get_parameter("isolated", False)
 
-            code = context.resolve_value(code)
-
             if not code:
                 raise ValueError("code is required")
 
@@ -102,9 +113,7 @@ class RunPythonScriptNode(BaseNode):
                 variables = {}
 
             if isolated:
-                result, output, error = await self._run_isolated(
-                    code, variables, timeout
-                )
+                result, output, error = await self._run_isolated(code, variables, timeout)
             else:
                 result, output, error = self._run_inline(code, variables)
 
@@ -198,9 +207,7 @@ print("__RESULT__:" + json.dumps(result, default=str))
             result = None
             if "__RESULT__:" in output:
                 result_line = [
-                    line
-                    for line in output.split("\n")
-                    if line.startswith("__RESULT__:")
+                    line for line in output.split("\n") if line.startswith("__RESULT__:")
                 ]
                 if result_line:
                     try:
@@ -218,8 +225,26 @@ print("__RESULT__:" + json.dumps(result, default=str))
         return True, ""
 
 
-@node(category="system")
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        tooltip="Path to Python file",
+    ),
+    PropertyDef(
+        "args",
+        PropertyType.ANY,
+        label="Arguments",
+        tooltip="Command line arguments (list or string)",
+    ),
+    PropertyDef(
+        "working_dir",
+        PropertyType.DIRECTORY_PATH,
+        label="Working Directory",
+        tooltip="Working directory for execution",
+    ),
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -259,6 +284,7 @@ print("__RESULT__:" + json.dumps(result, default=str))
         tooltip="Retry if return code is non-zero (default: False)",
     ),
 )
+@node(category="scripts")
 class RunPythonFileNode(BaseNode):
     """
     Execute a Python file.
@@ -313,11 +339,6 @@ class RunPythonFileNode(BaseNode):
             retry_count = self.get_parameter("retry_count", 0)
             retry_interval = self.get_parameter("retry_interval", 1000)
             retry_on_nonzero = self.get_parameter("retry_on_nonzero", False)
-
-            file_path = context.resolve_value(file_path)
-            python_path = context.resolve_value(python_path)
-            if working_dir:
-                working_dir = context.resolve_value(working_dir)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -399,9 +420,7 @@ class RunPythonFileNode(BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Python file execution failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Python file execution failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -412,9 +431,7 @@ class RunPythonFileNode(BaseNode):
                 self.set_output_value("return_code", -1)
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
-                logger.error(
-                    f"Python file execution timed out after {max_attempts} attempts"
-                )
+                logger.error(f"Python file execution timed out after {max_attempts} attempts")
                 return {"success": False, "error": "Timeout", "next_nodes": []}
 
             raise last_error
@@ -432,16 +449,17 @@ class RunPythonFileNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "expression",
         PropertyType.STRING,
         default="",
+        required=True,
         label="Expression",
         tooltip="Python expression to evaluate (e.g., '{{num1}} + {{num2}}')",
     ),
 )
+@node(category="scripts")
 class EvalExpressionNode(BaseNode):
     """
     Evaluate a Python expression and return the result.
@@ -479,8 +497,6 @@ class EvalExpressionNode(BaseNode):
         try:
             expression = str(self.get_parameter("expression", ""))
             variables = self.get_parameter("variables", {})
-
-            expression = context.resolve_value(expression)
 
             if not expression:
                 raise ValueError("expression is required")
@@ -556,8 +572,20 @@ class EvalExpressionNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties(
+    PropertyDef(
+        "script",
+        PropertyType.TEXT,
+        required=True,
+        label="Script",
+        tooltip="Script content to execute",
+    ),
+    PropertyDef(
+        "working_dir",
+        PropertyType.DIRECTORY_PATH,
+        label="Working Directory",
+        tooltip="Working directory for execution",
+    ),
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -590,11 +618,13 @@ class EvalExpressionNode(BaseNode):
         tooltip="Retry if return code is non-zero (default: False)",
     ),
 )
+@node(category="scripts")
 class RunBatchScriptNode(BaseNode):
     """
     Execute a batch script (Windows) or shell script (Unix).
 
     Config (via @properties):
+        script: Script content to execute
         timeout: Execution timeout in seconds (default: 60)
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries in ms (default: 1000)
@@ -622,7 +652,7 @@ class RunBatchScriptNode(BaseNode):
         self.node_type = "RunBatchScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("script", DataType.STRING)
+        self.add_input_port("script", DataType.STRING, required=True)
         self.add_input_port("working_dir", DataType.STRING)
         self.add_output_port("stdout", DataType.STRING)
         self.add_output_port("stderr", DataType.STRING)
@@ -639,10 +669,6 @@ class RunBatchScriptNode(BaseNode):
             retry_count = self.get_parameter("retry_count", 0)
             retry_interval = self.get_parameter("retry_interval", 1000)
             retry_on_nonzero = self.get_parameter("retry_on_nonzero", False)
-
-            script = context.resolve_value(script)
-            if working_dir:
-                working_dir = context.resolve_value(working_dir)
 
             if not script:
                 raise ValueError("script is required")
@@ -663,13 +689,9 @@ class RunBatchScriptNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for batch script"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for batch script")
 
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=suffix, delete=False
-                    ) as f:
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False) as f:
                         if sys.platform != "win32":
                             f.write("#!/bin/bash\n")
                         f.write(script)
@@ -744,9 +766,7 @@ class RunBatchScriptNode(BaseNode):
                         os.unlink(script_path)
                         script_path = None
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Batch script execution failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Batch script execution failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -757,9 +777,7 @@ class RunBatchScriptNode(BaseNode):
                 self.set_output_value("return_code", -1)
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
-                logger.error(
-                    f"Batch script execution timed out after {max_attempts} attempts"
-                )
+                logger.error(f"Batch script execution timed out after {max_attempts} attempts")
                 return {"success": False, "error": "Timeout", "next_nodes": []}
 
             raise last_error
@@ -777,8 +795,20 @@ class RunBatchScriptNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties(
+    PropertyDef(
+        "code",
+        PropertyType.TEXT,
+        required=True,
+        label="JavaScript Code",
+        tooltip="JavaScript code to execute",
+    ),
+    PropertyDef(
+        "input_data",
+        PropertyType.ANY,
+        label="Input Data",
+        tooltip="JSON data to pass to script (available as 'inputData')",
+    ),
     PropertyDef(
         "timeout",
         PropertyType.INTEGER,
@@ -795,11 +825,13 @@ class RunBatchScriptNode(BaseNode):
         tooltip="Path to Node.js executable (default: 'node')",
     ),
 )
+@node(category="scripts")
 class RunJavaScriptNode(BaseNode):
     """
     Execute JavaScript code using Node.js.
 
     Config (via @properties):
+        code: JavaScript code to execute
         timeout: Execution timeout in seconds (default: 60)
         node_path: Path to Node.js executable (default: 'node')
 
@@ -824,7 +856,7 @@ class RunJavaScriptNode(BaseNode):
         self.node_type = "RunJavaScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("code", DataType.STRING)
+        self.add_input_port("code", DataType.STRING, required=True)
         self.add_input_port("input_data", DataType.ANY)
         self.add_output_port("result", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
@@ -840,9 +872,6 @@ class RunJavaScriptNode(BaseNode):
             input_data = self.get_parameter("input_data")
             timeout = self.get_parameter("timeout", 60)
             node_path = self.get_parameter("node_path", "node")
-
-            code = context.resolve_value(code)
-            node_path = context.resolve_value(node_path)
 
             if not code:
                 raise ValueError("code is required")

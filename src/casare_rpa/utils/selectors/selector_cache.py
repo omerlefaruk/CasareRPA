@@ -129,9 +129,7 @@ class SelectorCache:
         entry.hit_count += 1
         self._hits += 1
 
-        logger.debug(
-            f"Cache hit for selector: {selector_type}:{selector_value[:30]}..."
-        )
+        logger.debug(f"Cache hit for selector: {selector_type}:{selector_value[:30]}...")
         return entry
 
     def put(
@@ -208,9 +206,7 @@ class SelectorCache:
         Returns:
             Number of entries removed
         """
-        keys_to_remove = [
-            k for k, v in self._cache.items() if v.is_expired(self._ttl_seconds)
-        ]
+        keys_to_remove = [k for k, v in self._cache.items() if v.is_expired(self._ttl_seconds)]
 
         for key in keys_to_remove:
             del self._cache[key]

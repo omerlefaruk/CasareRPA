@@ -159,9 +159,7 @@ class EventDetailsDialog(QDialog):
         # Robot ID
         robot_id = event.get("robot_id") or "N/A"
         robot_label = QLabel(robot_id)
-        robot_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        robot_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         form.addRow("Robot ID:", robot_label)
 
         # User ID
@@ -700,15 +698,9 @@ class AuditPanel(QDockWidget):
                 if ts.tzinfo is None:
                     ts = ts.replace(tzinfo=timezone.utc)
                 start_aware = (
-                    start_dt.replace(tzinfo=timezone.utc)
-                    if start_dt.tzinfo is None
-                    else start_dt
+                    start_dt.replace(tzinfo=timezone.utc) if start_dt.tzinfo is None else start_dt
                 )
-                end_aware = (
-                    end_dt.replace(tzinfo=timezone.utc)
-                    if end_dt.tzinfo is None
-                    else end_dt
-                )
+                end_aware = end_dt.replace(tzinfo=timezone.utc) if end_dt.tzinfo is None else end_dt
                 return start_aware <= ts <= end_aware
             return True
 
@@ -780,12 +772,8 @@ class AuditPanel(QDockWidget):
 
     def _export_to_format(self, format_type: str) -> None:
         """Export events to specified format."""
-        file_filter = (
-            "CSV Files (*.csv)" if format_type == "csv" else "JSON Files (*.json)"
-        )
-        default_name = (
-            f"audit_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{format_type}"
-        )
+        file_filter = "CSV Files (*.csv)" if format_type == "csv" else "JSON Files (*.json)"
+        default_name = f"audit_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{format_type}"
 
         path, _ = QFileDialog.getSaveFileName(
             self,
@@ -802,9 +790,7 @@ class AuditPanel(QDockWidget):
         msg = QMessageBox(self)
         msg.setWindowTitle("Verify Audit Integrity")
         msg.setText("Verifying audit chain integrity...")
-        msg.setInformativeText(
-            "This will check that no audit events have been tampered with."
-        )
+        msg.setInformativeText("This will check that no audit events have been tampered with.")
         msg.setIcon(QMessageBox.Icon.Information)
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.setStyleSheet(f"""
@@ -887,8 +873,7 @@ class AuditPanel(QDockWidget):
         """Handle copy resource path context menu action."""
         if self._context_event:
             self._copy_to_clipboard(
-                self._context_event.get("path")
-                or self._context_event.get("resource", "")
+                self._context_event.get("path") or self._context_event.get("resource", "")
             )
 
     def _on_row_double_clicked(self, row: int, col: int) -> None:

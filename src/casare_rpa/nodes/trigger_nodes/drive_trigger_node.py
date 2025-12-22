@@ -10,14 +10,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     # Connection settings
     PropertyDef(
@@ -96,6 +92,7 @@ from casare_rpa.triggers.base import TriggerType
         tab="advanced",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class DriveTriggerNode(BaseTriggerNode):
     """
     Google Drive trigger node that monitors for file changes.
@@ -153,25 +150,23 @@ class DriveTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Drive-specific configuration."""
         # Parse comma-separated lists
-        event_types_str = self.config.get("event_types", "created,modified")
+        event_types_str = self.get_parameter("event_types", "created,modified")
         event_types = [e.strip() for e in event_types_str.split(",") if e.strip()]
 
-        file_types_str = self.config.get("file_types", "")
-        file_types = [
-            ft.strip().lstrip(".") for ft in file_types_str.split(",") if ft.strip()
-        ]
+        file_types_str = self.get_parameter("file_types", "")
+        file_types = [ft.strip().lstrip(".") for ft in file_types_str.split(",") if ft.strip()]
 
-        mime_types_str = self.config.get("mime_types", "")
+        mime_types_str = self.get_parameter("mime_types", "")
         mime_types = [mt.strip() for mt in mime_types_str.split(",") if mt.strip()]
 
         return {
-            "credential_name": self.config.get("credential_name", "google"),
-            "polling_interval": self.config.get("polling_interval", 60),
-            "folder_id": self.config.get("folder_id", ""),
-            "include_subfolders": self.config.get("include_subfolders", True),
+            "credential_name": self.get_parameter("credential_name", "google"),
+            "polling_interval": self.get_parameter("polling_interval", 60),
+            "folder_id": self.get_parameter("folder_id", ""),
+            "include_subfolders": self.get_parameter("include_subfolders", True),
             "event_types": event_types,
             "file_types": file_types,
             "mime_types": mime_types,
-            "name_pattern": self.config.get("name_pattern", ""),
-            "ignore_own_changes": self.config.get("ignore_own_changes", True),
+            "name_pattern": self.get_parameter("name_pattern", ""),
+            "ignore_own_changes": self.get_parameter("ignore_own_changes", True),
         }

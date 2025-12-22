@@ -1,6 +1,12 @@
 """
 WebSocket Client for CasareRPA Robot.
 Connects to orchestrator and handles job execution.
+
+The client connects to the FastAPI WebSocket endpoint at:
+- ws://host:8000/ws/robot/{robot_id}?api_key={api_key}
+
+For backward compatibility, the legacy standalone server at port 8765
+is also supported but deprecated.
 """
 
 import asyncio
@@ -50,7 +56,7 @@ class RobotClient:
         self,
         robot_id: str,
         robot_name: str,
-        orchestrator_url: str = "ws://localhost:8765",
+        orchestrator_url: str = "wss://api.casare.net/ws/robot",
         environment: str = "default",
         max_concurrent_jobs: int = 1,
         tags: Optional[List[str]] = None,
@@ -65,19 +71,21 @@ class RobotClient:
         Args:
             robot_id: Unique robot identifier
             robot_name: Human-readable robot name
-            orchestrator_url: WebSocket URL of orchestrator
+            orchestrator_url: WebSocket base URL of orchestrator.
+                Default: wss://api.casare.net/ws/robot (production Cloudflare Tunnel).
+                The robot_id will be appended to this URL.
+                Alternative: ws://localhost:8000/ws/robot (local development)
+                Legacy: ws://localhost:8765 (deprecated standalone server)
             environment: Robot environment/pool
             max_concurrent_jobs: Maximum concurrent jobs
             tags: Robot capability tags
-            auth_token: Authentication token
+            auth_token: Authentication token (passed as api_key query param)
             heartbeat_interval: Seconds between heartbeats
             reconnect_interval: Seconds between reconnection attempts
             max_reconnect_attempts: Max reconnection attempts (0 = infinite)
         """
         if not HAS_WEBSOCKETS:
-            raise ImportError(
-                "websockets package required. Install with: pip install websockets"
-            )
+            raise ImportError("websockets package required. Install with: pip install websockets")
 
         self.robot_id = robot_id
         self.robot_name = robot_name
@@ -89,6 +97,12 @@ class RobotClient:
         self.heartbeat_interval = heartbeat_interval
         self.reconnect_interval = reconnect_interval
         self.max_reconnect_attempts = max_reconnect_attempts
+
+        # Exponential backoff settings for connection resilience
+        self._initial_backoff = 1  # Start with 1 second
+        self._max_backoff = 60  # Cap at 60 seconds
+        self._backoff_multiplier = 2  # Double each time
+        self._current_backoff = self._initial_backoff
 
         # Connection state
         self._websocket: Optional[ClientConnection] = None
@@ -159,11 +173,23 @@ class RobotClient:
 
         self._running = True
 
+        # Build connection URL
+        # FastAPI endpoint format: ws://host:port/ws/robot/{robot_id}?api_key={token}
+        # Legacy format: ws://host:port (robot_id in registration message)
+        if "/ws/robot" in self.orchestrator_url:
+            # FastAPI endpoint - append robot_id and api_key
+            url = f"{self.orchestrator_url}/{self.robot_id}"
+            if self.auth_token:
+                url = f"{url}?api_key={self.auth_token}"
+        else:
+            # Legacy standalone server
+            url = self.orchestrator_url
+
         while self._running:
             try:
-                logger.info(f"Connecting to orchestrator at {self.orchestrator_url}")
+                logger.info(f"Connecting to orchestrator at {url}")
                 self._websocket = await websockets.connect(
-                    self.orchestrator_url,
+                    url,
                     ping_interval=30,
                     ping_timeout=10,
                 )
@@ -173,6 +199,7 @@ class RobotClient:
 
                 self._connected = True
                 self._reconnect_count = 0
+                self._current_backoff = self._initial_backoff  # Reset backoff on success
 
                 # Start background tasks
                 self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
@@ -194,7 +221,8 @@ class RobotClient:
             except (ConnectionRefusedError, OSError) as e:
                 self._reconnect_count += 1
                 logger.warning(
-                    f"Connection failed (attempt {self._reconnect_count}): {e}"
+                    f"Connection failed (attempt {self._reconnect_count}): {e}. "
+                    f"Retrying in {self._current_backoff}s..."
                 )
 
                 if (
@@ -205,7 +233,12 @@ class RobotClient:
                     self._running = False
                     return False
 
-                await asyncio.sleep(self.reconnect_interval)
+                # Use exponential backoff
+                await asyncio.sleep(self._current_backoff)
+                # Increase backoff for next attempt (exponential with cap)
+                self._current_backoff = min(
+                    self._current_backoff * self._backoff_multiplier, self._max_backoff
+                )
 
             except Exception as e:
                 logger.error(f"Connection error: {e}")
@@ -285,9 +318,7 @@ class RobotClient:
             caps.update(
                 {
                     "cpu_count": psutil.cpu_count(),
-                    "memory_total_gb": round(
-                        psutil.virtual_memory().total / (1024**3), 2
-                    ),
+                    "memory_total_gb": round(psutil.virtual_memory().total / (1024**3), 2),
                 }
             )
 
@@ -334,7 +365,7 @@ class RobotClient:
                 asyncio.create_task(self._reconnect())
 
     async def _reconnect(self):
-        """Attempt to reconnect."""
+        """Attempt to reconnect with exponential backoff."""
         if self._on_disconnected:
             try:
                 result = self._on_disconnected()
@@ -343,7 +374,15 @@ class RobotClient:
             except Exception:
                 pass
 
-        await asyncio.sleep(self.reconnect_interval)
+        # Use exponential backoff for reconnection
+        logger.info(f"Reconnecting in {self._current_backoff}s...")
+        await asyncio.sleep(self._current_backoff)
+
+        # Increase backoff for next attempt
+        self._current_backoff = min(
+            self._current_backoff * self._backoff_multiplier, self._max_backoff
+        )
+
         if self._running:
             await self.connect()
 
@@ -543,9 +582,7 @@ class RobotClient:
         """Handle error message."""
         error_code = msg.payload.get("error_code")
         error_message = msg.payload.get("error_message")
-        logger.error(
-            f"Received error from orchestrator: [{error_code}] {error_message}"
-        )
+        logger.error(f"Received error from orchestrator: [{error_code}] {error_message}")
 
     # ==================== PUBLIC API ====================
 
@@ -571,9 +608,7 @@ class RobotClient:
             )
         )
 
-    async def report_job_complete(
-        self, job_id: str, result: Optional[Dict[str, Any]] = None
-    ):
+    async def report_job_complete(self, job_id: str, result: Optional[Dict[str, Any]] = None):
         """
         Report job completion to orchestrator.
 
@@ -585,8 +620,7 @@ class RobotClient:
         duration_ms = 0
         if job_info:
             duration_ms = int(
-                (datetime.now(timezone.utc) - job_info["started_at"]).total_seconds()
-                * 1000
+                (datetime.now(timezone.utc) - job_info["started_at"]).total_seconds() * 1000
             )
 
         await self._send(

@@ -43,6 +43,12 @@ from casare_rpa.nodes.database.database_utils import (
     GetTableColumnsNode,
 )
 
+# Re-export from database_super_node
+from casare_rpa.nodes.database.database_super_node import (
+    DatabaseSuperNode,
+    DatabaseAction,
+)
+
 
 __all__ = [
     # Driver availability flags
@@ -63,4 +69,7 @@ __all__ = [
     # Utility nodes
     "TableExistsNode",
     "GetTableColumnsNode",
+    # Super node
+    "DatabaseSuperNode",
+    "DatabaseAction",
 ]

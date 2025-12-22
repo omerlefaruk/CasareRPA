@@ -171,9 +171,7 @@ class DesktopElement:
 
             # Attempt to find the element
             if search_kwargs:
-                new_control = control_class(
-                    searchFromControl=search_root, **search_kwargs
-                )
+                new_control = control_class(searchFromControl=search_root, **search_kwargs)
                 if new_control.Exists(1, 0.5):  # Wait up to 1 second
                     self._control = new_control
                     self._last_validated = time.time()
@@ -211,9 +209,7 @@ class DesktopElement:
         return self._try_recover()
 
     @with_stale_check
-    def click(
-        self, simulate: bool = False, x_offset: int = 0, y_offset: int = 0
-    ) -> bool:
+    def click(self, simulate: bool = False, x_offset: int = 0, y_offset: int = 0) -> bool:
         """
         Click the element.
 
@@ -238,14 +234,10 @@ class DesktopElement:
                     invoke_pattern = self._control.GetInvokePattern()
                     if invoke_pattern:
                         invoke_pattern.Invoke()
-                        logger.info(
-                            f"Clicked element using InvokePattern: {self._control.Name}"
-                        )
+                        logger.info(f"Clicked element using InvokePattern: {self._control.Name}")
                         return True
                 except Exception as e:
-                    logger.debug(
-                        f"InvokePattern not available, falling back to mouse click: {e}"
-                    )
+                    logger.debug(f"InvokePattern not available, falling back to mouse click: {e}")
 
             # Fallback to mouse click
             rect = self._control.BoundingRectangle
@@ -258,9 +250,7 @@ class DesktopElement:
                 else:
                     self._control.Click(simulateMove=False, x=center_x, y=center_y)
 
-                logger.info(
-                    f"Clicked element at ({center_x}, {center_y}): {self._control.Name}"
-                )
+                logger.info(f"Clicked element at ({center_x}, {center_y}): {self._control.Name}")
                 return True
             else:
                 raise RuntimeError(f"Element has invalid bounds: {rect}")
@@ -271,9 +261,7 @@ class DesktopElement:
             raise RuntimeError(error_msg)
 
     @with_stale_check
-    def type_text(
-        self, text: str, clear_first: bool = False, interval: float = 0.01
-    ) -> bool:
+    def type_text(self, text: str, clear_first: bool = False, interval: float = 0.01) -> bool:
         """
         Type text into the element.
 
@@ -303,9 +291,7 @@ class DesktopElement:
                         value_pattern.SetValue("")
                 except Exception as e:
                     # Fallback: select all and delete
-                    logger.debug(
-                        f"ValuePattern not available for clear, using SendKeys: {e}"
-                    )
+                    logger.debug(f"ValuePattern not available for clear, using SendKeys: {e}")
                     self._control.SendKeys("{Ctrl}a{Delete}")
 
             # Type the text
@@ -318,9 +304,7 @@ class DesktopElement:
                         logger.info(f"Set text using ValuePattern: '{text[:50]}...'")
                         return True
                 except Exception as e:
-                    logger.debug(
-                        f"ValuePattern not available for set text, using SendKeys: {e}"
-                    )
+                    logger.debug(f"ValuePattern not available for set text, using SendKeys: {e}")
 
                 # Fallback: send keys
                 self._control.SendKeys(text, interval=interval)

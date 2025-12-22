@@ -1,137 +1,47 @@
-# CasareRPA
+# CLAUDE.md
 
-Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 Architecture
+This repository is configured for MCP-enabled AI coding (Claude Code / OpenCode / Codex-style agents).
 
-## Quick Commands
-```bash
-python run.py                              # Run app
-pytest tests/ -v                           # Tests
-pip install -e .                           # Dev install
-python scripts/index_codebase_qdrant.py    # Re-index for semantic search
-```
+## Required Reading (Project Rules)
 
-## Search Strategy (Qdrant vs Grep)
+- `AGENTS.md` (repo-wide conventions)
+- `AGENT.md` (agent identity + lifecycle)
+- `.agent/workflows/opencode_lifecycle.md` (5-phase workflow)
+- `.agent/rules/` (coding standards, enforcement, tools)
 
-| Use Case | Tool | Why |
-|----------|------|-----|
-| Explore patterns/architecture | **qdrant-find** | Semantic, finds related concepts |
-| Understand how X works | **qdrant-find** | Returns full context chunks |
-| Find exact symbol/string | **Grep** | Faster, precise matches |
-| Find specific class/function | **Grep** | Direct name lookup |
+## MCP Servers
 
-### Qdrant (Semantic Search) - ~500ms
-```
-qdrant-find: "browser automation pattern"    # Finds BrowserBaseNode + related
-qdrant-find: "error handling implementation" # Finds retry, recovery, handlers
-```
-- Returns rich context (full functions/classes)
-- Finds conceptually related code (no exact match needed)
-- Best for: exploration, understanding, unfamiliar code
+MCP servers are defined in `./.mcp.json`.
 
-### Grep (Exact Search) - ~260ms
-```
-Grep: "BrowserBaseNode"     # Find exact class references
-Grep: "def execute"         # Find method definitions
-```
-- Faster for known symbols
-- Precise line-level matches
-- Best for: refactoring, finding usages, known targets
+### Installed/Configured Servers
 
-### Decision Flow
-1. **Don't know what to look for?** → `qdrant-find`
-2. **Know exact name/symbol?** → `Grep`
-3. **Exploring new area?** → `qdrant-find` first, then `Grep` for specifics
+- `filesystem` (Node, via `npx`) — safe file operations within the allowed repo roots.
+- `git` (Python, via `mcp-server-git`) — Git repository inspection and operations.
+- `sequential-thinking` (Node, via `npx`) — structured reasoning/thought sequencing.
 
-## Core Rules (Non-Negotiable)
+Other optional servers may also be configured (e.g., `exa`, `context7`, `ref`, `playwright`).
 
-1. **INDEX-FIRST**: Read `_index.md` before grep/glob. See `.claude/rules/01-core.md`
-2. **PARALLEL**: Launch independent agents/reads in ONE message block
-3. **SEARCH BEFORE CREATE**: Check existing code before writing new
-4. **NO SILENT FAILURES**: Wrap external calls in try/except, use loguru
-5. **THEME.* ONLY**: No hardcoded colors - use `THEME.bg_darkest`, `THEME.text_primary`, etc.
-6. **UnifiedHttpClient**: No raw httpx/aiohttp
-7. **@Slot ALWAYS**: All signal handlers need `@Slot(types)` decorator - see `.claude/rules/ui/signal-slot-rules.md`
-8. **NO LAMBDAS**: Use named methods or `functools.partial` for signal connections
-9. **TYPED EVENTS**: Use typed domain events - see DDD 2025 section
-10. **EXEC PORTS**: Use `add_exec_input()`/`add_exec_output()` - NEVER `add_input_port(name, PortType.EXEC_*)`
+### One-Time Setup
 
-## DDD 2025 Architecture
+The Git MCP server is Python-based and must be installed:
 
-### Layers
-| Layer | Path | Dependencies |
-|-------|------|--------------|
-| Domain | `domain/` | None |
-| Application | `application/` | Domain |
-| Infrastructure | `infrastructure/` | Domain, App |
-| Presentation | `presentation/` | All |
+- `python -m pip install mcp-server-git`
 
-### Key Patterns
-| Pattern | Location | Usage |
-|---------|----------|-------|
-| **Typed Events** | `domain/events/` | `NodeCompleted`, `WorkflowStarted` (frozen dataclasses) |
-| **EventBus** | `domain/events.py` | `get_event_bus()` singleton |
-| **Aggregates** | `domain/aggregates/` | `Workflow` aggregate root |
-| **Unit of Work** | `infrastructure/persistence/unit_of_work.py` | Transaction + event publishing |
-| **CQRS Queries** | `application/queries/` | Read-optimized DTOs |
-| **Qt Event Bridge** | `presentation/canvas/coordinators/event_bridge.py` | Domain→Qt signals |
+Node-based MCP servers are launched via `npx` from `.mcp.json` and do not require committing any Node dependencies to this repo.
 
-### Typed Events Quick Reference
-```python
-from casare_rpa.domain.events import NodeCompleted, get_event_bus
+### Quick Sanity Checks
 
-bus = get_event_bus()
-bus.subscribe(NodeCompleted, handler)
-bus.publish(NodeCompleted(node_id="x", node_type="Y", execution_time_ms=100))
-```
+Run these from the repo root to verify the MCP servers can start:
 
-### Event Classes
-| Event | Attributes |
-|-------|------------|
-| `NodeStarted` | node_id, node_type, workflow_id |
-| `NodeCompleted` | node_id, node_type, workflow_id, execution_time_ms |
-| `NodeFailed` | node_id, node_type, error_code, error_message, is_retryable |
-| `WorkflowStarted` | workflow_id, workflow_name, total_nodes |
-| `WorkflowCompleted` | workflow_id, execution_time_ms, nodes_executed |
-| `WorkflowFailed` | workflow_id, failed_node_id, error_message |
+- `npx -y @modelcontextprotocol/server-filesystem .`
+- `python -m mcp_server_git --repository . --help`
+- `npx -y @modelcontextprotocol/server-sequential-thinking`
 
-Full list: `domain/events/__init__.py`
+### Client Notes
 
-### Node Decorators
-```python
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
+Some MCP clients read repo-local `.mcp.json` automatically; others require you to copy the server definitions into a user-level config. Use `.mcp.json.example` as a starting point.
 
-@node(category="browser")
-@properties(
-    PropertyDef("selector", PropertyType.SELECTOR, essential=True),
-)
-class MyNode(BaseNode):
-    pass
-```
+## Security
 
-## Key Indexes (P0 - Always Check First)
-- `nodes/_index.md` - Node registry
-- `presentation/canvas/visual_nodes/_index.md` - Visual nodes
-- `domain/_index.md` - Core entities, aggregates, events
-- `.brain/context/current.md` - Session state
-
-## Rules Reference
-| Topic | File |
-|-------|------|
-| Core workflow & standards | `.claude/rules/01-core.md` |
-| Architecture & DDD patterns | `.claude/rules/02-architecture.md` |
-| Node development | `.claude/rules/03-nodes.md` |
-| DDD Events reference | `.claude/rules/04-ddd-events.md` |
-
-### Path-Specific (auto-loaded)
-| Scope | File |
-|-------|------|
-| UI/Presentation | `.claude/rules/ui/theme-rules.md` |
-| Signal/Slot patterns | `.claude/rules/ui/signal-slot-rules.md` |
-| Node files | `.claude/rules/nodes/node-registration.md` |
-
-## On-Demand Docs (Load When Needed)
-- `.brain/docs/node-templates.md` - Full node templates
-- `.brain/docs/node-checklist.md` - Node implementation steps
-- `.brain/projectRules.md` - Full coding standards
-- `.brain/systemPatterns.md` - Architecture patterns
+- Do not commit API keys or tokens.
+- Prefer environment variables (e.g., `${EXA_API_KEY}`, `${CONTEXT7_API_KEY}`) for MCP server credentials.

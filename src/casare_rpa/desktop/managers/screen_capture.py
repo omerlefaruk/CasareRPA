@@ -203,13 +203,9 @@ class ScreenCapture:
                         if result:
                             text_parts = [item[1] for item in result]
                             text = "\n".join(text_parts)
-                            gpu_used = (
-                                "CUDA" in str(providers[0]) if providers else False
-                            )
+                            gpu_used = "CUDA" in str(providers[0]) if providers else False
                             backend = "GPU" if gpu_used else "CPU"
-                            logger.info(
-                                f"RapidOCR ({backend}) extracted {len(text)} characters"
-                            )
+                            logger.info(f"RapidOCR ({backend}) extracted {len(text)} characters")
                             return text.strip()
                         return ""
                     except ImportError:
@@ -223,9 +219,7 @@ class ScreenCapture:
                     try:
                         import pytesseract
 
-                        text = pytesseract.image_to_string(
-                            img, lang=language, config=config
-                        )
+                        text = pytesseract.image_to_string(img, lang=language, config=config)
                         text = text.strip()
                         logger.info(f"Tesseract OCR extracted {len(text)} characters")
                         return text
@@ -246,7 +240,7 @@ class ScreenCapture:
                             return result.text
 
                         try:
-                            loop = aio.get_running_loop()
+                            aio.get_running_loop()
                             import concurrent.futures
 
                             with concurrent.futures.ThreadPoolExecutor() as pool:
@@ -277,18 +271,14 @@ class ScreenCapture:
                     result = try_tesseract()
                     if result is not None:
                         return result
-                    logger.error(
-                        "Tesseract not available. Install: pip install pytesseract"
-                    )
+                    logger.error("Tesseract not available. Install: pip install pytesseract")
                     return None
 
                 elif engine == "winocr":
                     result = try_winocr()
                     if result is not None:
                         return result
-                    logger.error(
-                        "Windows OCR not available. Install: pip install winocr"
-                    )
+                    logger.error("Windows OCR not available. Install: pip install winocr")
                     return None
 
                 else:
@@ -504,9 +494,7 @@ class ScreenCapture:
                             "confidence": float(max_val),
                         }
 
-                    logger.debug(
-                        f"Template not found (confidence: {max_val:.4f} < {threshold})"
-                    )
+                    logger.debug(f"Template not found (confidence: {max_val:.4f} < {threshold})")
                     return None
 
                 except ImportError:

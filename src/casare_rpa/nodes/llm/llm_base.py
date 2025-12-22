@@ -6,6 +6,8 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 import os
 from abc import abstractmethod
@@ -28,6 +30,8 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import (
 )
 
 
+@properties()
+@node(category="llm")
 class LLMBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for LLM nodes.
@@ -52,7 +56,7 @@ class LLMBaseNode(CredentialAwareMixin, BaseNode):
     # @ports: none -> none
 
     # Default model settings
-    DEFAULT_MODEL: str = "gpt-4o-mini"
+    DEFAULT_MODEL: str = "gemini-3-flash-preview"
     DEFAULT_TEMPERATURE: float = 0.7
     DEFAULT_MAX_TOKENS: int = 1000
 
@@ -102,9 +106,7 @@ class LLMBaseNode(CredentialAwareMixin, BaseNode):
         provider = self._get_provider(context)
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
-        model = (
-            context.resolve_value(model) if hasattr(context, "resolve_value") else model
-        )
+        model = context.resolve_value(model) if hasattr(context, "resolve_value") else model
 
         config = LLMConfig(
             provider=provider,
@@ -174,8 +176,6 @@ class LLMBaseNode(CredentialAwareMixin, BaseNode):
     def _get_provider(self, context: ExecutionContext) -> LLMProvider:
         """Determine LLM provider from model name or config."""
         model = self.get_parameter("model") or self.DEFAULT_MODEL
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         model_lower = model.lower()
 

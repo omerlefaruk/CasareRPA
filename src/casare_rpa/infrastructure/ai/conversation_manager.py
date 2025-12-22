@@ -325,9 +325,7 @@ class ConversationManager:
             return
 
         # Keep system messages and recent messages
-        system_messages = [
-            m for m in self._context.messages if m.role == MessageRole.SYSTEM
-        ]
+        system_messages = [m for m in self._context.messages if m.role == MessageRole.SYSTEM]
         non_system = [m for m in self._context.messages if m.role != MessageRole.SYSTEM]
 
         # Calculate how many non-system messages to keep
@@ -365,8 +363,7 @@ class ConversationManager:
 
         self._context.current_workflow = workflow
         logger.debug(
-            f"Workflow set: {len(workflow.get('nodes', {}))} nodes, "
-            f"snapshot={create_snapshot}"
+            f"Workflow set: {len(workflow.get('nodes', {}))} nodes, " f"snapshot={create_snapshot}"
         )
 
     def _create_workflow_snapshot(self, description: str) -> None:
@@ -377,9 +374,7 @@ class ConversationManager:
         snapshot = WorkflowSnapshot(
             workflow=dict(self._context.current_workflow),
             description=description,
-            message_id=self._context.messages[-1].message_id
-            if self._context.messages
-            else "",
+            message_id=self._context.messages[-1].message_id if self._context.messages else "",
         )
 
         self._context.workflow_history.append(snapshot)
@@ -523,9 +518,7 @@ class ConversationManager:
             conversation_parts = []
             for msg in recent_messages:
                 role = msg.role.value.upper()
-                content = (
-                    msg.content[:100] + "..." if len(msg.content) > 100 else msg.content
-                )
+                content = msg.content[:100] + "..." if len(msg.content) > 100 else msg.content
                 conversation_parts.append(f"  [{role}]: {content}")
 
             parts.append("RECENT CONVERSATION:\n" + "\n".join(conversation_parts))
@@ -560,9 +553,7 @@ class ConversationManager:
             "can_undo": self._context.can_undo,
             "can_redo": self._context.can_redo,
             "undo_stack_size": len(self._context.workflow_history),
-            "last_intent": self._context.last_intent.value
-            if self._context.last_intent
-            else None,
+            "last_intent": self._context.last_intent.value if self._context.last_intent else None,
         }
 
     def set_intent(self, intent: UserIntent) -> None:
@@ -586,9 +577,7 @@ class ConversationManager:
             "current_workflow": self._context.current_workflow,
             "workflow_history": [s.to_dict() for s in self._context.workflow_history],
             "created_at": self._context.created_at,
-            "last_intent": self._context.last_intent.value
-            if self._context.last_intent
-            else None,
+            "last_intent": self._context.last_intent.value if self._context.last_intent else None,
             "metadata": self._context.metadata,
         }
 

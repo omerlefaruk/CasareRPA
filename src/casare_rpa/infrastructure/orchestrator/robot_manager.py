@@ -2,22 +2,60 @@
 Robot Manager for Cloud Orchestrator.
 
 Manages connected robots, job queue, and admin WebSocket connections.
+Supports optional PostgreSQL persistence for robot state.
+
+Architecture:
+- WebSocket connections: Always in-memory (not serializable)
+- Robot state: Persisted to PostgreSQL when repository provided
+- Job queue: In-memory (Phase 2 will move to PgQueuer)
+- Domain events: Published for all state changes
 """
 
 import asyncio
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Protocol, Set
 
 import orjson
 from fastapi import WebSocket
 from loguru import logger
 
+from casare_rpa.domain.events import get_event_bus
+from casare_rpa.domain.orchestrator import Robot, RobotCapability, RobotStatus
+from casare_rpa.domain.orchestrator.events import (
+    JobAssigned,
+    JobCompletedOnOrchestrator,
+    JobRequeued,
+    JobSubmitted,
+    RobotDisconnected,
+    RobotHeartbeat,
+    RobotRegistered,
+)
+
+
+class RobotRepositoryProtocol(Protocol):
+    """Protocol for robot repository (for type hints without circular import)."""
+
+    async def get_by_id(self, robot_id: str) -> Optional[Robot]: ...
+    async def get_all_online(self) -> List[Robot]: ...
+    async def save(self, robot: Robot) -> None: ...
+    async def update_status(self, robot_id: str, status: RobotStatus) -> None: ...
+    async def update_heartbeat(
+        self, robot_id: str, metrics: Optional[Dict[str, Any]] = None
+    ) -> None: ...
+    async def add_job_to_robot(self, robot_id: str, job_id: str) -> None: ...
+    async def remove_job_from_robot(self, robot_id: str, job_id: str) -> None: ...
+    async def mark_offline(self, robot_id: str) -> List[str]: ...
+
 
 @dataclass
 class ConnectedRobot:
-    """Represents a connected robot."""
+    """Represents a connected robot with WebSocket.
+
+    Note: This is a runtime object containing the WebSocket connection.
+    Persistent state is stored in the Robot domain entity via repository.
+    """
 
     robot_id: str
     robot_name: str
@@ -29,6 +67,7 @@ class ConnectedRobot:
     last_heartbeat: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     environment: str = "production"
     tenant_id: Optional[str] = None
+    hostname: str = ""
 
     @property
     def status(self) -> str:
@@ -43,6 +82,32 @@ class ConnectedRobot:
     def available_slots(self) -> int:
         """Get number of available job slots."""
         return max(0, self.max_concurrent_jobs - len(self.current_job_ids))
+
+    def to_domain_robot(self) -> Robot:
+        """Convert to domain Robot entity for persistence."""
+        capabilities_set: Set[RobotCapability] = set()
+        for cap in self.capabilities:
+            try:
+                capabilities_set.add(RobotCapability(cap))
+            except ValueError:
+                pass
+
+        status = RobotStatus.ONLINE
+        if len(self.current_job_ids) >= self.max_concurrent_jobs:
+            status = RobotStatus.BUSY
+
+        return Robot(
+            id=self.robot_id,
+            name=self.robot_name,
+            status=status,
+            environment=self.environment,
+            max_concurrent_jobs=self.max_concurrent_jobs,
+            last_seen=datetime.now(timezone.utc),
+            last_heartbeat=self.last_heartbeat,
+            created_at=self.connected_at,
+            capabilities=capabilities_set,
+            current_job_ids=list(self.current_job_ids),
+        )
 
 
 @dataclass
@@ -65,20 +130,52 @@ class PendingJob:
 
 
 class RobotManager:
-    """Manages connected robots and job queue."""
+    """Manages connected robots and job queue.
 
-    def __init__(self, job_timeout_default: int = 3600):
+    Supports two modes:
+    1. In-memory only (default): Robot state lost on restart
+    2. Persistent (with repository): Robot state survives restarts
+
+    WebSocket connections are always in-memory (not serializable).
+    """
+
+    def __init__(
+        self,
+        job_timeout_default: int = 3600,
+        robot_repository: Optional[RobotRepositoryProtocol] = None,
+        publish_events: bool = True,
+    ):
         """Initialize robot manager.
 
         Args:
             job_timeout_default: Default job timeout in seconds.
+            robot_repository: Optional PostgreSQL repository for persistence.
+            publish_events: Whether to publish domain events (default True).
         """
         self._job_timeout_default = job_timeout_default
-        self._robots: Dict[str, ConnectedRobot] = {}
+        self._repository = robot_repository
+        self._publish_events = publish_events
+
+        # In-memory state (always needed for WebSocket connections)
+        self._connections: Dict[str, WebSocket] = {}  # robot_id -> websocket
+        self._robots: Dict[str, ConnectedRobot] = {}  # robot_id -> connected robot
         self._jobs: Dict[str, PendingJob] = {}
         self._admin_connections: Set[WebSocket] = set()
         self._api_key_cache: Dict[str, str] = {}  # hash -> robot_id
         self._lock = asyncio.Lock()
+
+        # Event bus for domain events
+        self._event_bus = get_event_bus() if publish_events else None
+
+        if robot_repository:
+            logger.info("RobotManager initialized with PostgreSQL persistence")
+        else:
+            logger.info("RobotManager initialized in memory-only mode")
+
+    @property
+    def is_persistent(self) -> bool:
+        """Check if persistence is enabled."""
+        return self._repository is not None
 
     async def register_robot(
         self,
@@ -88,6 +185,7 @@ class RobotManager:
         capabilities: Dict[str, Any],
         environment: str = "production",
         tenant_id: Optional[str] = None,
+        hostname: str = "",
     ) -> ConnectedRobot:
         """Register a new robot connection."""
         async with self._lock:
@@ -102,13 +200,39 @@ class RobotManager:
                 max_concurrent_jobs=max_jobs,
                 environment=environment,
                 tenant_id=tenant_id,
+                hostname=hostname,
             )
 
+            # Store in-memory (needed for WebSocket)
             self._robots[robot_id] = robot
+            self._connections[robot_id] = websocket
+
+            # Persist to database if repository available
+            if self._repository:
+                try:
+                    await self._repository.save(robot.to_domain_robot())
+                except Exception as e:
+                    logger.error(f"Failed to persist robot {robot_id}: {e}")
+
             logger.info(
                 f"Robot registered: {robot_name} ({robot_id})"
                 f"{f' [tenant: {tenant_id}]' if tenant_id else ''}"
+                f"{' [persistent]' if self._repository else ''}"
             )
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    RobotRegistered(
+                        robot_id=robot_id,
+                        robot_name=robot_name,
+                        hostname=hostname,
+                        environment=environment,
+                        capabilities=tuple(caps),
+                        max_concurrent_jobs=max_jobs,
+                        tenant_id=tenant_id or "",
+                    )
+                )
 
             await self._broadcast_admin(
                 {
@@ -123,24 +247,48 @@ class RobotManager:
 
             return robot
 
-    async def unregister_robot(self, robot_id: str) -> None:
+    async def unregister_robot(self, robot_id: str, reason: str = "") -> None:
         """Unregister a robot connection."""
         async with self._lock:
             robot = self._robots.pop(robot_id, None)
+            self._connections.pop(robot_id, None)
+
             if robot:
-                logger.info(f"Robot disconnected: {robot.robot_name} ({robot_id})")
+                orphaned_jobs = list(robot.current_job_ids)
+                robot_name = robot.robot_name
+
+                logger.info(f"Robot disconnected: {robot_name} ({robot_id})")
 
                 # Requeue any jobs assigned to this robot
-                for job_id in robot.current_job_ids:
+                for job_id in orphaned_jobs:
                     if job_id in self._jobs:
                         self._jobs[job_id].status = "pending"
                         self._jobs[job_id].assigned_robot_id = None
                         logger.warning(f"Requeued job {job_id} after robot disconnect")
 
+                # Mark offline in database
+                if self._repository:
+                    try:
+                        await self._repository.mark_offline(robot_id)
+                    except Exception as e:
+                        logger.error(f"Failed to mark robot {robot_id} offline: {e}")
+
+                # Publish domain event
+                if self._event_bus:
+                    self._event_bus.publish(
+                        RobotDisconnected(
+                            robot_id=robot_id,
+                            robot_name=robot_name,
+                            orphaned_job_ids=tuple(orphaned_jobs),
+                            reason=reason,
+                        )
+                    )
+
                 await self._broadcast_admin(
                     {
                         "type": "robot_disconnected",
                         "robot_id": robot_id,
+                        "orphaned_jobs": orphaned_jobs,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                 )
@@ -149,6 +297,24 @@ class RobotManager:
         """Update robot heartbeat timestamp."""
         if robot_id in self._robots:
             self._robots[robot_id].last_heartbeat = datetime.now(timezone.utc)
+
+            # Persist heartbeat
+            if self._repository:
+                try:
+                    await self._repository.update_heartbeat(robot_id, metrics)
+                except Exception as e:
+                    logger.error(f"Failed to update heartbeat for {robot_id}: {e}")
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    RobotHeartbeat(
+                        robot_id=robot_id,
+                        cpu_percent=metrics.get("cpu_percent", 0.0),
+                        memory_mb=metrics.get("memory_mb", 0.0),
+                        current_job_count=len(self._robots[robot_id].current_job_ids),
+                    )
+                )
 
             await self._broadcast_admin(
                 {
@@ -162,6 +328,10 @@ class RobotManager:
     def get_robot(self, robot_id: str) -> Optional[ConnectedRobot]:
         """Get a connected robot by ID."""
         return self._robots.get(robot_id)
+
+    def get_websocket(self, robot_id: str) -> Optional[WebSocket]:
+        """Get WebSocket connection for a robot."""
+        return self._connections.get(robot_id)
 
     def get_all_robots(
         self,
@@ -217,10 +387,27 @@ class RobotManager:
                 tenant_id=tenant_id,
             )
             self._jobs[job_id] = job
+
+            # Get workflow name for event
+            workflow_name = workflow_data.get("name", workflow_id)
+
             logger.info(
                 f"Job submitted: {job_id} (workflow: {workflow_id})"
                 f"{f' [tenant: {tenant_id}]' if tenant_id else ''}"
             )
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    JobSubmitted(
+                        job_id=job_id,
+                        workflow_id=workflow_id,
+                        workflow_name=workflow_name,
+                        priority=priority,
+                        target_robot_id=target_robot_id or "",
+                        tenant_id=tenant_id or "",
+                    )
+                )
 
             await self._try_assign_job(job)
 
@@ -260,6 +447,13 @@ class RobotManager:
         job.assigned_robot_id = target_robot.robot_id
         target_robot.current_job_ids.add(job.job_id)
 
+        # Persist job assignment
+        if self._repository:
+            try:
+                await self._repository.add_job_to_robot(target_robot.robot_id, job.job_id)
+            except Exception as e:
+                logger.error(f"Failed to persist job assignment: {e}")
+
         try:
             await target_robot.websocket.send_text(
                 orjson.dumps(
@@ -274,6 +468,18 @@ class RobotManager:
                     }
                 ).decode()
             )
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    JobAssigned(
+                        job_id=job.job_id,
+                        robot_id=target_robot.robot_id,
+                        robot_name=target_robot.robot_name,
+                        workflow_id=job.workflow_id,
+                    )
+                )
+
             logger.info(f"Job {job.job_id} assigned to robot {target_robot.robot_name}")
             return True
 
@@ -282,6 +488,14 @@ class RobotManager:
             job.status = "pending"
             job.assigned_robot_id = None
             target_robot.current_job_ids.discard(job.job_id)
+
+            # Rollback persistence
+            if self._repository:
+                try:
+                    await self._repository.remove_job_from_robot(target_robot.robot_id, job.job_id)
+                except Exception as e2:
+                    logger.error(f"Failed to rollback job assignment: {e2}")
+
             return False
 
     async def requeue_job(
@@ -296,6 +510,13 @@ class RobotManager:
             if robot:
                 robot.current_job_ids.discard(job_id)
 
+                # Persist removal
+                if self._repository:
+                    try:
+                        await self._repository.remove_job_from_robot(robot_id, job_id)
+                    except Exception as e:
+                        logger.error(f"Failed to persist job removal: {e}")
+
             job = self._jobs.get(job_id)
             if not job:
                 logger.warning(f"Cannot requeue unknown job: {job_id}")
@@ -305,9 +526,18 @@ class RobotManager:
             job.status = "pending"
             job.assigned_robot_id = None
 
-            logger.info(
-                f"Job {job_id} requeued after rejection by {robot_id}: {reason}"
-            )
+            logger.info(f"Job {job_id} requeued after rejection by {robot_id}: {reason}")
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    JobRequeued(
+                        job_id=job_id,
+                        previous_robot_id=robot_id,
+                        reason=reason,
+                        rejected_by_count=len(job.rejected_by),
+                    )
+                )
 
             await self._broadcast_admin(
                 {
@@ -354,6 +584,13 @@ class RobotManager:
         job.assigned_robot_id = target_robot.robot_id
         target_robot.current_job_ids.add(job.job_id)
 
+        # Persist job assignment
+        if self._repository:
+            try:
+                await self._repository.add_job_to_robot(target_robot.robot_id, job.job_id)
+            except Exception as e:
+                logger.error(f"Failed to persist job assignment: {e}")
+
         try:
             await target_robot.websocket.send_text(
                 orjson.dumps(
@@ -368,9 +605,19 @@ class RobotManager:
                     }
                 ).decode()
             )
-            logger.info(
-                f"Requeued job {job.job_id} assigned to robot {target_robot.robot_name}"
-            )
+
+            # Publish domain event
+            if self._event_bus:
+                self._event_bus.publish(
+                    JobAssigned(
+                        job_id=job.job_id,
+                        robot_id=target_robot.robot_id,
+                        robot_name=target_robot.robot_name,
+                        workflow_id=job.workflow_id,
+                    )
+                )
+
+            logger.info(f"Requeued job {job.job_id} assigned to robot {target_robot.robot_name}")
             return True
 
         except Exception as e:
@@ -378,6 +625,14 @@ class RobotManager:
             job.status = "pending"
             job.assigned_robot_id = None
             target_robot.current_job_ids.discard(job.job_id)
+
+            # Rollback persistence
+            if self._repository:
+                try:
+                    await self._repository.remove_job_from_robot(target_robot.robot_id, job.job_id)
+                except Exception as e2:
+                    logger.error(f"Failed to rollback job assignment: {e2}")
+
             return False
 
     async def job_completed(
@@ -393,10 +648,30 @@ class RobotManager:
             if robot:
                 robot.current_job_ids.discard(job_id)
 
+                # Persist job removal
+                if self._repository:
+                    try:
+                        await self._repository.remove_job_from_robot(robot_id, job_id)
+                    except Exception as e:
+                        logger.error(f"Failed to persist job completion: {e}")
+
             job = self._jobs.get(job_id)
             if job:
                 job.status = "completed" if success else "failed"
                 logger.info(f"Job {job_id} {job.status}")
+
+                # Publish domain event
+                if self._event_bus:
+                    self._event_bus.publish(
+                        JobCompletedOnOrchestrator(
+                            job_id=job_id,
+                            robot_id=robot_id,
+                            success=success,
+                            execution_time_ms=int(
+                                (datetime.now(timezone.utc) - job.created_at).total_seconds() * 1000
+                            ),
+                        )
+                    )
 
                 await self._broadcast_admin(
                     {
@@ -445,3 +720,35 @@ class RobotManager:
 
         for conn in disconnected:
             self._admin_connections.discard(conn)
+
+    async def get_fleet_stats(self) -> Dict[str, Any]:
+        """Get fleet statistics.
+
+        Returns summary of all robots and jobs.
+        """
+        robots = self.get_all_robots()
+        jobs = self._jobs
+
+        online_count = sum(1 for r in robots if r.status in ("idle", "working"))
+        busy_count = sum(1 for r in robots if r.status == "busy")
+
+        pending_jobs = sum(1 for j in jobs.values() if j.status == "pending")
+        assigned_jobs = sum(1 for j in jobs.values() if j.status == "assigned")
+        completed_jobs = sum(1 for j in jobs.values() if j.status == "completed")
+        failed_jobs = sum(1 for j in jobs.values() if j.status == "failed")
+
+        return {
+            "robots": {
+                "total": len(robots),
+                "online": online_count,
+                "busy": busy_count,
+            },
+            "jobs": {
+                "pending": pending_jobs,
+                "assigned": assigned_jobs,
+                "completed": completed_jobs,
+                "failed": failed_jobs,
+                "total": len(jobs),
+            },
+            "persistent": self.is_persistent,
+        }

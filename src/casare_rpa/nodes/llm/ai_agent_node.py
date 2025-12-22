@@ -12,6 +12,8 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -21,6 +23,50 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@properties(
+    PropertyDef(
+        "goal",
+        PropertyType.TEXT,
+        default="",
+        label="Goal",
+        placeholder="Find the order status for customer 12345...",
+        tooltip="The goal for the AI agent to accomplish",
+        essential=True,
+    ),
+    PropertyDef(
+        "available_tools",
+        PropertyType.STRING,
+        default="",
+        label="Available Tools",
+        placeholder="read_file, http_request, calculate",
+        tooltip="Comma-separated list of tools the agent can use",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model for the agent",
+    ),
+    PropertyDef(
+        "max_steps",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=1,
+        max_value=50,
+        label="Max Steps",
+        tooltip="Maximum reasoning steps",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=300.0,
+        min_value=10.0,
+        label="Timeout (sec)",
+        tooltip="Maximum execution time in seconds",
+    ),
+)
+@node(category="llm")
 class AIAgentNode(LLMBaseNode):
     """
     Autonomous AI agent with multi-step reasoning.
@@ -58,9 +104,9 @@ class AIAgentNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_exec_input_port("exec_in")
-        self.add_exec_output_port("exec_out")
-        self.add_exec_output_port("exec_error")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_exec_output("exec_error")
 
         # Data inputs
         self.add_input_port("goal", DataType.STRING)
@@ -91,13 +137,6 @@ class AIAgentNode(LLMBaseNode):
         max_steps = self.get_parameter("max_steps") or self.DEFAULT_MAX_STEPS
         timeout = self.get_parameter("timeout") or self.DEFAULT_TIMEOUT
 
-        if hasattr(context, "resolve_value"):
-            goal = context.resolve_value(goal)
-            agent_context = context.resolve_value(agent_context)
-            available_tools = context.resolve_value(available_tools)
-            max_steps = context.resolve_value(max_steps)
-            timeout = context.resolve_value(timeout)
-
         if not goal:
             self._set_agent_error("Goal is required")
             return {"success": False, "error": "Goal is required", "next_nodes": []}
@@ -107,9 +146,7 @@ class AIAgentNode(LLMBaseNode):
             try:
                 available_tools = json.loads(available_tools)
             except json.JSONDecodeError:
-                available_tools = [
-                    t.strip() for t in available_tools.split(",") if t.strip()
-                ]
+                available_tools = [t.strip() for t in available_tools.split(",") if t.strip()]
 
         # Convert context to dict if needed
         initial_context: Optional[Dict[str, Any]] = None
@@ -125,8 +162,6 @@ class AIAgentNode(LLMBaseNode):
                 initial_context = {"context": str(agent_context)}
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         try:
             from casare_rpa.infrastructure.ai.agent_executor import AgentExecutor

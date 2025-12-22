@@ -138,9 +138,7 @@ def analyze_file(file_path: Path) -> Optional[FileMetrics]:
     )
 
 
-def check_architecture_compliance(
-    file_path: Path, imports: List[str]
-) -> Dict[str, bool]:
+def check_architecture_compliance(file_path: Path, imports: List[str]) -> Dict[str, bool]:
     """Check if file follows architecture rules."""
     path_str = str(file_path).replace("\\", "/")
 
@@ -197,12 +195,8 @@ def main():
 
     print("## New Code Metrics")
     print()
-    print(
-        "| File | LOC | Functions | Avg Length | Max Complexity | Type Hints % | Docstrings % |"
-    )
-    print(
-        "|------|-----|-----------|------------|----------------|--------------|--------------|"
-    )
+    print("| File | LOC | Functions | Avg Length | Max Complexity | Type Hints % | Docstrings % |")
+    print("|------|-----|-----------|------------|----------------|--------------|--------------|")
 
     total_new_loc = 0
     total_new_functions = 0
@@ -249,15 +243,11 @@ def main():
             if mw_metrics.functions
             else 0
         )
-        max_method_complexity = max(
-            (f.complexity for f in mw_metrics.functions), default=0
-        )
+        max_method_complexity = max((f.complexity for f in mw_metrics.functions), default=0)
 
         # Estimate "before" metrics (MainWindow was significantly larger)
         # Based on typical refactoring patterns, estimate ~40% reduction
-        estimated_before_loc = int(
-            mw_metrics.loc * 1.7
-        )  # Coordinator + Manager extracted
+        estimated_before_loc = int(mw_metrics.loc * 1.7)  # Coordinator + Manager extracted
 
         print("| Metric | Before (Est.) | After | Change |")
         print("|--------|---------------|-------|--------|")

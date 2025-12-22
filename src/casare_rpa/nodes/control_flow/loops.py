@@ -24,7 +24,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "mode",
@@ -71,6 +70,7 @@ from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
         tooltip="Step value for range iteration (when mode='range')",
     ),
 )
+@node(category="control_flow", exec_outputs=["body", "completed"])
 class ForLoopStartNode(BaseNode):
     """
     Start node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -106,11 +106,11 @@ class ForLoopStartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in")
+        # Note: exec_in/exec_out are added by @node decorator
         self.add_input_port("items", DataType.ANY, required=False)
         self.add_input_port("end", DataType.INTEGER, required=False)
-        self.add_output_port("body")
-        self.add_output_port("completed")
+        self.add_exec_output("body")
+        self.add_exec_output("completed")
         self.add_output_port("current_item", DataType.ANY)
         self.add_output_port("current_index", DataType.INTEGER)
         self.add_output_port("current_key", DataType.ANY)
@@ -136,11 +136,7 @@ class ForLoopStartNode(BaseNode):
                     # Range mode - use start, end, step
                     start = self.get_parameter("start", 0)
                     end_input = self.get_input_value("end")
-                    end = (
-                        end_input
-                        if end_input is not None
-                        else self.get_parameter("end", 10)
-                    )
+                    end = end_input if end_input is not None else self.get_parameter("end", 10)
                     step = self.get_parameter("step", 1)
                     items = list(range(start, end, step))
                     keys = None  # No keys for range mode
@@ -259,7 +255,6 @@ class ForLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_start_id",
@@ -269,6 +264,7 @@ class ForLoopStartNode(BaseNode):
         tooltip="ID of the paired ForLoopStartNode (set automatically)",
     ),
 )
+@node(category="control_flow")
 class ForLoopEndNode(BaseNode):
     """
     End node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -309,15 +305,11 @@ class ForLoopEndNode(BaseNode):
         self.status = NodeStatus.SUCCESS
 
         # Get the paired ForLoopStart node ID
-        loop_start_id = self.paired_start_id or self.get_parameter(
-            "paired_start_id", ""
-        )
+        loop_start_id = self.paired_start_id or self.get_parameter("paired_start_id", "")
 
         if not loop_start_id:
             # Try to find it from context (fallback)
-            logger.warning(
-                "ForLoopEndNode has no paired ForLoopStartNode - check loop setup"
-            )
+            logger.warning("ForLoopEndNode has no paired ForLoopStartNode - check loop setup")
             return {
                 "success": True,
                 "data": {},
@@ -342,7 +334,6 @@ class ForLoopEndNode(BaseNode):
         }
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "expression",
@@ -361,6 +352,7 @@ class ForLoopEndNode(BaseNode):
         tooltip="Maximum iterations to prevent infinite loops",
     ),
 )
+@node(category="control_flow", exec_outputs=["body", "completed"])
 class WhileLoopStartNode(BaseNode):
     """
     Start node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -389,10 +381,10 @@ class WhileLoopStartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in")
+        # Note: exec_in/exec_out are added by @node decorator
         self.add_input_port("condition", DataType.BOOLEAN, required=False)
-        self.add_output_port("body")
-        self.add_output_port("completed")
+        self.add_exec_output("body")
+        self.add_exec_output("completed")
         self.add_output_port("current_iteration", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -445,14 +437,10 @@ class WhileLoopStartNode(BaseNode):
                         # Convert {{variable}} syntax to plain variable names
                         resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
                         if not is_safe_expression(resolved_expr):
-                            raise ValueError(
-                                f"Unsafe expression detected: {resolved_expr}"
-                            )
+                            raise ValueError(f"Unsafe expression detected: {resolved_expr}")
                         condition = safe_eval(resolved_expr, context.variables)
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to evaluate expression '{expression}': {e}"
-                        )
+                        logger.warning(f"Failed to evaluate expression '{expression}': {e}")
                         condition = False
                 else:
                     condition = False
@@ -492,7 +480,6 @@ class WhileLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_start_id",
@@ -502,6 +489,7 @@ class WhileLoopStartNode(BaseNode):
         tooltip="ID of the paired WhileLoopStartNode (set automatically)",
     ),
 )
+@node(category="control_flow")
 class WhileLoopEndNode(BaseNode):
     """
     End node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -538,9 +526,7 @@ class WhileLoopEndNode(BaseNode):
         """Execute while loop end - signals to loop back to start."""
         self.status = NodeStatus.SUCCESS
 
-        loop_start_id = self.paired_start_id or self.get_parameter(
-            "paired_start_id", ""
-        )
+        loop_start_id = self.paired_start_id or self.get_parameter("paired_start_id", "")
 
         if not loop_start_id:
             logger.warning("WhileLoopEndNode has no paired WhileLoopStartNode")
@@ -562,7 +548,6 @@ class WhileLoopEndNode(BaseNode):
         }
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_loop_start_id",
@@ -572,6 +557,7 @@ class WhileLoopEndNode(BaseNode):
         tooltip="ID of the parent loop's start node (set automatically)",
     ),
 )
+@node(category="control_flow")
 class BreakNode(BaseNode):
     """
     Loop control node that exits from the current loop.
@@ -616,8 +602,7 @@ class BreakNode(BaseNode):
 
             if not loop_start_id:
                 logger.warning(
-                    "BreakNode has no paired loop - check loop setup. "
-                    "Continuing to exec_out."
+                    "BreakNode has no paired loop - check loop setup. " "Continuing to exec_out."
                 )
                 self.status = NodeStatus.SUCCESS
                 return {
@@ -648,7 +633,6 @@ class BreakNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_loop_start_id",
@@ -658,6 +642,7 @@ class BreakNode(BaseNode):
         tooltip="ID of the parent loop's start node (set automatically)",
     ),
 )
+@node(category="control_flow")
 class ContinueNode(BaseNode):
     """
     Loop control node that skips to next iteration.
@@ -703,8 +688,7 @@ class ContinueNode(BaseNode):
 
             if not loop_start_id:
                 logger.warning(
-                    "ContinueNode has no paired loop - check loop setup. "
-                    "Continuing to exec_out."
+                    "ContinueNode has no paired loop - check loop setup. " "Continuing to exec_out."
                 )
                 self.status = NodeStatus.SUCCESS
                 return {

@@ -456,9 +456,7 @@ class ApiKeyRepository:
             )
             count = int(result.split()[-1])
             if count > 0:
-                logger.info(
-                    f"Deleted {count} expired API keys older than {days_old} days"
-                )
+                logger.info(f"Deleted {count} expired API keys older than {days_old} days")
             return count
         except Exception as e:
             logger.error(f"Failed to delete expired API keys: {e}")

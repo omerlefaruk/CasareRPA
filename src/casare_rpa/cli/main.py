@@ -10,9 +10,7 @@ from typing import Optional
 try:
     from casare_rpa.robot.cli import app as robot_app
 except ImportError:
-    robot_app = typer.Typer(
-        name="robot", help="Robot CLI not available (dependencies missing)"
-    )
+    robot_app = typer.Typer(name="robot", help="Robot CLI not available (dependencies missing)")
 
 app = typer.Typer(name="casare", help="CasareRPA Unified CLI")
 
@@ -30,9 +28,7 @@ def start_orchestrator(
     port: int = typer.Option(8000, "--port", "-p", help="Bind port"),
     workers: int = typer.Option(1, "--workers", "-w", help="Number of workers"),
     reload: bool = typer.Option(False, "--reload", "-r", help="Enable auto-reload"),
-    dev: bool = typer.Option(
-        False, "--dev", "-d", help="Enable dev mode (bypass JWT auth)"
-    ),
+    dev: bool = typer.Option(False, "--dev", "-d", help="Enable dev mode (bypass JWT auth)"),
 ):
     """Start the Orchestrator API locally (development)."""
     env = os.environ.copy()
@@ -44,7 +40,7 @@ def start_orchestrator(
         sys.executable,
         "-m",
         "uvicorn",
-        "casare_rpa.infrastructure.orchestrator.api.main:app",
+        "casare_rpa.infrastructure.orchestrator.server:app",
         "--host",
         host,
         "--port",
@@ -76,15 +72,31 @@ def start_canvas():
         sys.exit(main())
     except ImportError as e:
         typer.echo(f"Error starting Canvas: {e}", err=True)
-        typer.echo(
-            "Ensure dependencies are installed (PySide6, NodeGraphQt, etc.)", err=True
-        )
+        typer.echo("Ensure dependencies are installed (PySide6, NodeGraphQt, etc.)", err=True)
         raise typer.Exit(1)
 
 
 # Cloudflare Tunnel CLI Group
 tunnel_app = typer.Typer(name="tunnel", help="Manage Cloudflare Tunnels")
 app.add_typer(tunnel_app, name="tunnel")
+
+# Cache CLI Group
+cache_app = typer.Typer(name="cache", help="Manage Caching System")
+app.add_typer(cache_app, name="cache")
+
+
+@cache_app.command("clear")
+def cache_clear():
+    """Clear all cache tiers (Memory and Disk)."""
+    import asyncio
+    from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+
+    async def _clear():
+        manager = TieredCacheManager()
+        await manager.clear()
+        typer.echo("Cache cleared successfully.")
+
+    asyncio.run(_clear())
 
 
 @tunnel_app.command("start")

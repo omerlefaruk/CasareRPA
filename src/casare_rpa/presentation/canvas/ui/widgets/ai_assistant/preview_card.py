@@ -406,9 +406,7 @@ class PreviewCard(QFrame):
             self._append_btn.setEnabled(True)
             self._regenerate_btn.setEnabled(True)
 
-            logger.debug(
-                f"Preview card set: {node_count} nodes, {conn_count} connections"
-            )
+            logger.debug(f"Preview card set: {node_count} nodes, {conn_count} connections")
         except Exception as e:
             logger.error(f"Error setting workflow in preview card: {e}", exc_info=True)
             # Still try to show basic info

@@ -128,9 +128,7 @@ class PriorityQueueItem:
         """Create queue item from job."""
         # Use negative priority for max-heap behavior (higher priority = lower number)
         priority_value = -(
-            job.priority.value
-            if isinstance(job.priority, JobPriority)
-            else job.priority
+            job.priority.value if isinstance(job.priority, JobPriority) else job.priority
         )
         created = job.created_at
         if isinstance(created, str):
@@ -245,11 +243,7 @@ class JobTimeoutManager:
 
     def start_tracking(self, job_id: str, timeout_seconds: Optional[int] = None):
         """Start tracking a job's timeout."""
-        timeout = (
-            timedelta(seconds=timeout_seconds)
-            if timeout_seconds
-            else self._default_timeout
-        )
+        timeout = timedelta(seconds=timeout_seconds) if timeout_seconds else self._default_timeout
         with self._lock:
             self._job_timeouts[job_id] = (datetime.now(timezone.utc), timeout)
         logger.debug(f"Tracking timeout for job {job_id[:8]}: {timeout}")
@@ -311,9 +305,7 @@ class JobQueue:
         self._queue: List[PriorityQueueItem] = []
         self._jobs: Dict[str, Job] = {}  # job_id -> Job
         self._running_jobs: Dict[str, str] = {}  # job_id -> robot_id
-        self._robot_jobs: Dict[str, Set[str]] = defaultdict(
-            set
-        )  # robot_id -> {job_ids}
+        self._robot_jobs: Dict[str, Set[str]] = defaultdict(set)  # robot_id -> {job_ids}
 
         self._deduplicator = JobDeduplicator(dedup_window_seconds)
         self._timeout_manager = JobTimeoutManager(default_timeout_seconds)
@@ -351,9 +343,7 @@ class JobQueue:
             try:
                 old_status = job.status
                 job = JobStateMachine.transition(job, JobStatus.QUEUED)
-                job.created_at = (
-                    job.created_at or datetime.now(timezone.utc).isoformat()
-                )
+                job.created_at = job.created_at or datetime.now(timezone.utc).isoformat()
             except JobStateError as e:
                 return False, str(e)
 
@@ -406,10 +396,7 @@ class JobQueue:
                 # Check environment match
                 # Job environment must match robot environment, or robot must be in "default"
                 # which can accept jobs from any environment
-                if (
-                    job.environment != robot.environment
-                    and robot.environment != "default"
-                ):
+                if job.environment != robot.environment and robot.environment != "default":
                     logger.debug(
                         f"Job {job.id[:8]} requires environment '{job.environment}' "
                         f"but robot {robot.name} is in '{robot.environment}'"
@@ -488,13 +475,9 @@ class JobQueue:
         Returns:
             Tuple of (success, message)
         """
-        return self._finish_job(
-            job_id, JobStatus.TIMEOUT, error_message="Job execution timed out"
-        )
+        return self._finish_job(job_id, JobStatus.TIMEOUT, error_message="Job execution timed out")
 
-    def cancel(
-        self, job_id: str, reason: str = "Cancelled by user"
-    ) -> Tuple[bool, str]:
+    def cancel(self, job_id: str, reason: str = "Cancelled by user") -> Tuple[bool, str]:
         """
         Cancel a job.
 
@@ -558,9 +541,7 @@ class JobQueue:
                     job.result = result
                 if error_message:
                     job.error_message = error_message
-                job.progress = (
-                    100 if new_status == JobStatus.COMPLETED else job.progress
-                )
+                job.progress = 100 if new_status == JobStatus.COMPLETED else job.progress
             except JobStateError as e:
                 return False, str(e)
 
@@ -577,9 +558,7 @@ class JobQueue:
         logger.info(f"Job {job_id[:8]} finished with status {new_status.value}")
         return True, f"Job {new_status.value}"
 
-    def update_progress(
-        self, job_id: str, progress: int, current_node: str = ""
-    ) -> bool:
+    def update_progress(self, job_id: str, progress: int, current_node: str = "") -> bool:
         """
         Update job progress.
 
@@ -626,18 +605,13 @@ class JobQueue:
             return [
                 self._jobs[item.job_id]
                 for item in self._queue
-                if item.job_id in self._jobs
-                and self._jobs[item.job_id].status == JobStatus.QUEUED
+                if item.job_id in self._jobs and self._jobs[item.job_id].status == JobStatus.QUEUED
             ]
 
     def get_running_jobs(self) -> List[Job]:
         """Get all running jobs."""
         with self._lock:
-            return [
-                self._jobs[job_id]
-                for job_id in self._running_jobs
-                if job_id in self._jobs
-            ]
+            return [self._jobs[job_id] for job_id in self._running_jobs if job_id in self._jobs]
 
     def get_robot_jobs(self, robot_id: str) -> List[Job]:
         """Get jobs assigned to a specific robot."""
@@ -666,8 +640,7 @@ class JobQueue:
             queued = [
                 self._jobs[item.job_id]
                 for item in self._queue
-                if item.job_id in self._jobs
-                and self._jobs[item.job_id].status == JobStatus.QUEUED
+                if item.job_id in self._jobs and self._jobs[item.job_id].status == JobStatus.QUEUED
             ]
 
             running = len(self._running_jobs)
@@ -676,9 +649,7 @@ class JobQueue:
             by_priority = defaultdict(int)
             for job in queued:
                 priority = (
-                    job.priority.value
-                    if isinstance(job.priority, JobPriority)
-                    else job.priority
+                    job.priority.value if isinstance(job.priority, JobPriority) else job.priority
                 )
                 by_priority[priority] += 1
 

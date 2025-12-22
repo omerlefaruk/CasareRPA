@@ -10,9 +10,7 @@ from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
 
 # PERFORMANCE: Incremental validation cache
 # Stores validation results for unchanged nodes to avoid re-validation
-_validation_cache: Dict[
-    str, Tuple[str, "ValidationResult"]
-] = {}  # node_id -> (hash, result)
+_validation_cache: Dict[str, Tuple[str, "ValidationResult"]] = {}  # node_id -> (hash, result)
 
 from casare_rpa.domain.validation.rules import (
     find_entry_points_and_reachable,
@@ -493,13 +491,7 @@ def _check_duplicate_node_ids(
     node_id_to_graph_ids: Dict[str, List[str]] = {}
 
     for graph_id, node_data in nodes.items():
-        # Get the node_id - check multiple locations:
-        # 1. Top-level node_id (WorkflowSerializer format)
-        # 2. custom.node_id (NodeGraphQt raw serialization format)
         node_id = node_data.get("node_id", "")
-        if not node_id:
-            custom = node_data.get("custom", {})
-            node_id = custom.get("node_id", "")
 
         if not node_id:
             continue  # Skip nodes without node_id

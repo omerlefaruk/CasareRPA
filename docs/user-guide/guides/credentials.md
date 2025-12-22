@@ -139,7 +139,6 @@ For database connections.
 - PostgreSQL connections
 - MySQL connections
 - SQL Server access
-- MongoDB connections
 
 ### Bot Token
 
@@ -149,7 +148,7 @@ For messaging platform bots.
 |-------|-------------|
 | Name | Credential identifier |
 | Bot Token | The bot authentication token |
-| Platform | telegram, whatsapp, slack, etc. |
+| Platform | telegram, whatsapp, discord, etc. |
 
 ---
 

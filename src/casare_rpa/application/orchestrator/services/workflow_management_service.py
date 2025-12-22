@@ -58,9 +58,7 @@ class WorkflowManagementService:
             self._use_local = True
             return True
 
-    async def get_workflows(
-        self, status: Optional[WorkflowStatus] = None
-    ) -> List[Workflow]:
+    async def get_workflows(self, status: Optional[WorkflowStatus] = None) -> List[Workflow]:
         """Get all workflows."""
         if self._use_local:
             if status:
@@ -128,9 +126,7 @@ class WorkflowManagementService:
             workflow = Workflow(
                 id=str(uuid.uuid4()),
                 name=workflow_data.get("name", file_path.stem),
-                description=workflow_data.get(
-                    "description", f"Imported from {file_path.name}"
-                ),
+                description=workflow_data.get("description", f"Imported from {file_path.name}"),
                 json_definition=json_content,
                 version=1,
                 status=WorkflowStatus.DRAFT,
@@ -151,10 +147,7 @@ class WorkflowManagementService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("workflows")
-                    .delete()
-                    .eq("id", workflow_id)
-                    .execute()
+                    lambda: self._client.table("workflows").delete().eq("id", workflow_id).execute()
                 )
                 return True
             except Exception as e:

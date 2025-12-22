@@ -1,0 +1,1919 @@
+{
+  "nodes": [
+    {
+      "name": "StartNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "EndNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CommentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "LaunchBrowserNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CloseBrowserNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "NewTabNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetAllImagesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DownloadFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GoToURLNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GoBackNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GoForwardNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RefreshPageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ClickElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TypeTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SelectDropdownNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ImageClickNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "PressKeyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExtractTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetAttributeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ScreenshotNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TableScraperNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "BrowserEvaluateNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "BrowserRunScriptNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FormFieldNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FormFillerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DetectFormsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WaitNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WaitForElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WaitForNavigationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SetVariableNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetVariableNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "IncrementVariableNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "IfNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SwitchNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MergeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ForLoopStartNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ForLoopEndNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhileLoopStartNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhileLoopEndNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "BreakNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ContinueNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TryNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CatchNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FinallyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ForkNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "JoinNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ParallelForEachNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RetryNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RetrySuccessNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RetryFailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ThrowErrorNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WebhookNotifyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "OnErrorNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ErrorRecoveryNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "LogErrorNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "AssertNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ConcatenateNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FormatStringNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RegexMatchNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RegexReplaceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MathOperationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ComparisonNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CreateListNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListGetItemNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "JsonParseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetPropertyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListLengthNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListAppendNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListContainsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListSliceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListJoinNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListSortNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListReverseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListUniqueNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListFilterNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListMapNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListReduceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListFlattenNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictGetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictSetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictRemoveNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictMergeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictKeysNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictValuesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictHasKeyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CreateDictNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictToJsonNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DictItemsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DataCompareNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HttpRequestNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ValidateNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TransformNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "LogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FileSystemSuperNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "StructuredDataSuperNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ReadFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WriteFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "AppendFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DeleteFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CopyFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MoveFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CreateDirectoryNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListDirectoryNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListFilesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FileExistsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetFileSizeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetFileInfoNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ReadCSVNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WriteCSVNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ReadJSONFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WriteJSONFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ZipFilesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "UnzipFilesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ImageConvertNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SendEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ReadEmailsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetEmailContentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FilterEmailsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SaveAttachmentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MarkEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DeleteEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MoveEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HttpRequestNodeNew",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SetHttpHeadersNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ParseJsonResponseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HttpDownloadFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HttpUploadFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "BuildUrlNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HttpAuthNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HttpSuperNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RandomNumberNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RandomChoiceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RandomStringNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RandomUUIDNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ShuffleListNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetCurrentDateTimeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FormatDateTimeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ParseDateTimeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DateTimeAddNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DateTimeDiffNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DateTimeCompareNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetTimestampNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextSuperNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextSplitNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextReplaceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextTrimNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextCaseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextPadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextReverseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextLinesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextSubstringNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextContainsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextStartsWithNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextEndsWithNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextExtractNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextCountNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextJoinNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ClipboardCopyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ClipboardPasteNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ClipboardClearNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MessageBoxNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ConfirmDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "InputDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MultilineInputDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CredentialDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TooltipNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SystemNotificationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SnackbarNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "BalloonTipNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "AudioAlertNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ProgressDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SplashScreenNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FilePickerDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FolderPickerDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ColorPickerDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DateTimePickerDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListPickerDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FormDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WizardDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ImagePreviewDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TableDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RunCommandNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RunPowerShellNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetServiceStatusNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "StartServiceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "StopServiceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RestartServiceNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ListServicesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ScreenRegionPickerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "VolumeControlNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ProcessListNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ProcessKillNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "EnvironmentVariableNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SystemInfoNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "HotkeyWaitNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "BeepNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ClipboardMonitorNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FileWatcherNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "QRCodeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "Base64Node",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "UUIDGeneratorNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "AssertSystemNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "LogToFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TextToSpeechNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "PDFPreviewDialogNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WebcamCaptureNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RunPythonScriptNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RunPythonFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "EvalExpressionNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RunBatchScriptNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RunJavaScriptNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ParseXMLNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ReadXMLFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WriteXMLFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "XPathQueryNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetXMLElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetXMLAttributeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "XMLToJsonNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "JsonToXMLNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ReadPDFTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetPDFInfoNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MergePDFsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SplitPDFNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExtractPDFPagesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "PDFToImagesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPConnectNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPUploadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPDownloadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPListNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPDeleteNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPMakeDirNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPRemoveDirNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPRenameNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPDisconnectNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FTPGetSizeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WebhookTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ScheduleTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FileWatchTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "EmailTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "AppEventTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ErrorTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WorkflowCallTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FormTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ChatTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RSSFeedTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SSETriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsTriggerNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramSendMessageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramSendPhotoNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramSendDocumentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramSendLocationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramEditMessageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramDeleteMessageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramSendMediaGroupNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramAnswerCallbackNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "TelegramGetUpdatesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendMessageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendTemplateNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendImageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendDocumentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendVideoNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendLocationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WhatsAppSendInteractiveNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailSendEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailSendWithAttachmentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailCreateDraftNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailReplyToEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailForwardEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailGetEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailListEmailsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailSearchEmailsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailGetThreadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailGetAttachmentNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailModifyLabelsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailMoveToTrashNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailMarkAsReadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailMarkAsUnreadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailStarEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailArchiveEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailDeleteEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailBatchSendNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailBatchModifyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailBatchDeleteNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsGetCellNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsSetCellNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsGetRangeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsWriteRangeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsClearRangeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsCreateSpreadsheetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsGetSpreadsheetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsAddSheetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsDeleteSheetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsDuplicateSheetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsRenameSheetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsAppendRowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsInsertRowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsDeleteRowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsInsertColumnNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsDeleteColumnNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsFormatCellsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsAutoResizeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsBatchUpdateNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsBatchGetNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SheetsBatchClearNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveUploadFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveDownloadFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveDownloadFolderNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveBatchDownloadNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveDeleteFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveCopyFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveMoveFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveRenameFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveGetFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveCreateFolderNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveListFilesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveSearchFilesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveShareFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveRemovePermissionNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveGetPermissionsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveExportFileNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveBatchDeleteNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveBatchMoveNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DriveBatchCopyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExcelOpenNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExcelReadCellNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExcelWriteCellNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExcelGetRangeNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExcelCloseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WordOpenNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WordGetTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WordReplaceTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WordCloseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "OutlookSendEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "OutlookReadEmailsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "OutlookGetInboxCountNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WindowManagementSuperNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "LaunchApplicationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CloseApplicationNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ActivateWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetWindowListNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "FindElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DesktopClickElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DesktopTypeTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetElementTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetElementPropertyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ResizeWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MoveWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MaximizeWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MinimizeWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "RestoreWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetWindowPropertiesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SetWindowStateNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SelectFromDropdownNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CheckCheckboxNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SelectRadioButtonNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SelectTabNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExpandTreeItemNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ScrollElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MoveMouseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "MouseClickNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SendKeysNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SendHotKeyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GetMousePositionNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DragMouseNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "DesktopWaitForElementNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "WaitForWindowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "VerifyElementExistsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "VerifyElementPropertyNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CaptureScreenshotNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CaptureElementImageNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "OCRExtractTextNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CompareImagesNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailAddLabelNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailRemoveLabelNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailGetLabelsNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "GmailTrashEmailNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "SubflowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "CallSubworkflowNode",
+      "category": "unknown",
+      "properties": []
+    },
+    {
+      "name": "ExecuteWorkflowNode",
+      "category": "unknown",
+      "properties": []
+    }
+  ]
+}

@@ -112,9 +112,7 @@ class UIComponentInitializer:
             mw._ui_state_controller.restore_state()
 
         elapsed = (time.perf_counter() - start_time) * 1000
-        logger.info(
-            f"UIComponentInitializer: Normal tier components loaded in {elapsed:.2f}ms"
-        )
+        logger.info(f"UIComponentInitializer: Normal tier components loaded in {elapsed:.2f}ms")
 
     def _connect_variable_provider(self) -> None:
         """

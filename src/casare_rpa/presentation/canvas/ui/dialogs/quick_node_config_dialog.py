@@ -92,15 +92,9 @@ class QuickNodeConfigDialog(QDialog):
         )
         self._bindings_table.setColumnWidth(0, 50)
         self._bindings_table.setColumnWidth(2, 100)
-        self._bindings_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._bindings_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
-        self._bindings_table.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
+        self._bindings_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._bindings_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._bindings_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         bindings_layout.addWidget(self._bindings_table)
 
         # Remove button
@@ -131,26 +125,14 @@ class QuickNodeConfigDialog(QDialog):
         # Nodes table
         self._nodes_table = QTableWidget()
         self._nodes_table.setColumnCount(3)
-        self._nodes_table.setHorizontalHeaderLabels(
-            ["Node Name", "Type", "Current Key"]
-        )
-        self._nodes_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
-        self._nodes_table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.Fixed
-        )
-        self._nodes_table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.Fixed
-        )
+        self._nodes_table.setHorizontalHeaderLabels(["Node Name", "Type", "Current Key"])
+        self._nodes_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._nodes_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self._nodes_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
         self._nodes_table.setColumnWidth(1, 180)
         self._nodes_table.setColumnWidth(2, 80)
-        self._nodes_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._nodes_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
+        self._nodes_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._nodes_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._nodes_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         nodes_layout.addWidget(self._nodes_table)
 
@@ -298,9 +280,7 @@ class QuickNodeConfigDialog(QDialog):
         # Get selected node
         selected = self._nodes_table.selectedItems()
         if not selected:
-            QMessageBox.warning(
-                self, "No Selection", "Please select a node to assign a hotkey."
-            )
+            QMessageBox.warning(self, "No Selection", "Please select a node to assign a hotkey.")
             return
 
         row = selected[0].row()
@@ -331,11 +311,7 @@ class QuickNodeConfigDialog(QDialog):
 
         if "browser" in node_lower or "url" in node_lower or "click" in node_lower:
             return "browser"
-        elif (
-            "desktop" in node_lower
-            or "window" in node_lower
-            or "application" in node_lower
-        ):
+        elif "desktop" in node_lower or "window" in node_lower or "application" in node_lower:
             return "desktop"
         elif "variable" in node_lower:
             return "variables"

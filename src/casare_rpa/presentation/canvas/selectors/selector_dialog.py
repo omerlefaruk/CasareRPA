@@ -135,9 +135,7 @@ class SelectorDialog(QDialog):
         layout = QVBoxLayout(panel)
 
         # Info label
-        info = QLabel(
-            f"{len(self.fingerprint.selectors)} strategies found, sorted by reliability"
-        )
+        info = QLabel(f"{len(self.fingerprint.selectors)} strategies found, sorted by reliability")
         info.setStyleSheet("color: #666; font-size: 11px;")
         layout.addWidget(info)
 
@@ -416,9 +414,7 @@ class SelectorDialog(QDialog):
                 SelectorType.TEXT: "📝",
             }.get(strategy.selector_type, "•")
 
-            score_color = (
-                "🟢" if strategy.score >= 80 else "🟡" if strategy.score >= 60 else "🔴"
-            )
+            score_color = "🟢" if strategy.score >= 80 else "🟡" if strategy.score >= 60 else "🔴"
 
             display_text = f"{type_icon} {strategy.selector_type.value.upper()} {score_color} {strategy.score:.0f}"
             if strategy.is_unique:
@@ -447,20 +443,14 @@ class SelectorDialog(QDialog):
 
         # Update score with color
         score_color = (
-            "#4caf50"
-            if strategy.score >= 80
-            else "#ff9800"
-            if strategy.score >= 60
-            else "#f44336"
+            "#4caf50" if strategy.score >= 80 else "#ff9800" if strategy.score >= 60 else "#f44336"
         )
         self.score_label.setText(f"{strategy.score:.1f} / 100")
         self.score_label.setStyleSheet(f"color: {score_color};")
 
         # Update uniqueness
         if strategy.is_unique:
-            self.unique_label.setText(
-                "✓ Selector is unique (matches exactly 1 element)"
-            )
+            self.unique_label.setText("✓ Selector is unique (matches exactly 1 element)")
             self.unique_label.setStyleSheet("color: #4caf50;")
         else:
             self.unique_label.setText("⚠ Selector may match multiple elements")
@@ -468,9 +458,7 @@ class SelectorDialog(QDialog):
 
         # Update performance if available
         if strategy.execution_time_ms > 0:
-            self.perf_label.setText(
-                f"Last execution: {strategy.execution_time_ms:.2f}ms"
-            )
+            self.perf_label.setText(f"Last execution: {strategy.execution_time_ms:.2f}ms")
         else:
             self.perf_label.setText("")
 
@@ -489,9 +477,7 @@ class SelectorDialog(QDialog):
 
         self.test_button.setEnabled(False)
         self.test_results.setText("⏳ Testing selector...")
-        self.test_results.setStyleSheet(
-            "padding: 8px; background: #e3f2fd; border-radius: 4px;"
-        )
+        self.test_results.setStyleSheet("padding: 8px; background: #e3f2fd; border-radius: 4px;")
 
         # Use QTimer to call async test function
         QTimer.singleShot(100, lambda: self._do_test(selector_value, selector_type))

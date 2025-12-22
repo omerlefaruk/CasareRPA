@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
-from typing import Any, List, Optional
+from typing import Any, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
 
 from loguru import logger
 
@@ -39,6 +42,10 @@ from casare_rpa.infrastructure.resources.google_client import (
     GoogleAuthError,
     GoogleQuotaError,
     SCOPES,
+)
+from casare_rpa.infrastructure.resources.gmail_client import (
+    GmailClient,
+    GmailConfig,
 )
 
 
@@ -124,6 +131,8 @@ GOOGLE_COMMON_PROPERTIES = (
 )
 
 
+@properties()
+@node(category="google")
 class GoogleBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for Google Workspace nodes.
@@ -234,12 +243,16 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             if "google_client" in context.resources:
                 return context.resources["google_client"]
 
-        # Get credentials
+        # Get credentials (with auto-refresh via GoogleOAuthManager)
         credentials = await self._get_credentials(context)
 
-        # Create client config
+        # Get credential_id for OAuth auto-refresh at client level
+        cred_id = self.get_parameter("credential_id") or self.get_parameter("credential_id")
+
+        # Create client config with credential_id for auto-refresh
         config = GoogleConfig(
             credentials=credentials,
+            credential_id=cred_id,  # Enable auto-refresh at client level
             timeout=30.0,
             max_retries=3,
         )
@@ -257,32 +270,96 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
 
     async def _get_credentials(self, context: ExecutionContext) -> GoogleCredentials:
         """
-        Get Google credentials from various sources using unified credential resolution.
+        Get Google credentials with automatic OAuth token refresh.
+
+        Uses GoogleOAuthManager for automatic token refresh when credentials
+        are stored in the credential store. Falls back to other sources if
+        credential_id is not available.
 
         Resolution order:
-        1. Vault lookup (via credential_id from picker widget)
-        2. Direct parameters (access_token, refresh_token) - for programmatic use
-        3. Service account JSON
-        4. Context variables (google_access_token, google_refresh_token)
-        5. Environment variables (GOOGLE_ACCESS_TOKEN, GOOGLE_APPLICATION_CREDENTIALS)
+        1. GoogleOAuthManager with auto-refresh (via credential_id from picker widget)
+        2. Vault lookup (via credential_id)
+        3. Direct parameters (access_token, refresh_token) - for programmatic use
+        4. Service account JSON
+        5. Context variables (google_access_token, google_refresh_token)
+        6. Environment variables (GOOGLE_ACCESS_TOKEN, GOOGLE_APPLICATION_CREDENTIALS)
 
         Args:
             context: Execution context
 
         Returns:
-            GoogleCredentials object
+            GoogleCredentials object with valid (auto-refreshed) access token
 
         Raises:
             GoogleAuthError: If no credentials found
         """
         # DEBUG: Log credential_id from config (using INFO so it shows in logs)
-        cred_id_from_config = self.config.get("credential_id")
+        cred_id_from_config = self.get_parameter("credential_id")
         cred_id_from_param = self.get_parameter("credential_id")
         logger.info(
             f"Google credential lookup - config: {cred_id_from_config}, param: {cred_id_from_param}"
         )
 
-        # Try vault/credential resolution first using CredentialAwareMixin
+        # Get credential_id (from picker widget or direct config)
+        cred_id = self.get_parameter("credential_id") or self.get_parameter("credential_id")
+
+        # PRIMARY PATH: Use GoogleOAuthManager for automatic token refresh
+        # This is the recommended path for stored credentials
+        if cred_id:
+            try:
+                from casare_rpa.infrastructure.security.google_oauth import (
+                    get_google_access_token,
+                    GoogleOAuthManager,
+                    TokenRefreshError,
+                    InvalidCredentialError,
+                )
+                from casare_rpa.infrastructure.security.credential_store import (
+                    get_credential_store,
+                )
+
+                # Get valid access token (auto-refreshes if expired)
+                logger.info(f"Using GoogleOAuthManager for auto-refresh: {cred_id}")
+                access_token = await get_google_access_token(cred_id)
+
+                # Get full credential data for client_id/secret/refresh_token
+                store = get_credential_store()
+                data = store.get_credential(cred_id)
+
+                if data:
+                    # Parse expiry timestamp
+                    expiry = None
+                    if data.get("token_expiry"):
+                        from datetime import datetime
+
+                        try:
+                            exp_str = data["token_expiry"]
+                            if exp_str.endswith("Z"):
+                                exp_str = exp_str[:-1] + "+00:00"
+                            exp_dt = datetime.fromisoformat(exp_str)
+                            expiry = exp_dt.timestamp()
+                        except Exception:
+                            pass
+
+                    logger.info(f"Credential auto-refresh successful: {cred_id}")
+                    return GoogleCredentials(
+                        access_token=access_token,  # Fresh token from OAuth manager
+                        refresh_token=data.get("refresh_token"),
+                        client_id=data.get("client_id"),
+                        client_secret=data.get("client_secret"),
+                        scopes=self.REQUIRED_SCOPES,
+                        expiry=expiry,
+                    )
+
+            except (TokenRefreshError, InvalidCredentialError) as e:
+                logger.warning(f"OAuth auto-refresh failed for {cred_id}: {e}")
+                # Fall through to try other methods
+            except ImportError:
+                logger.debug("GoogleOAuthManager not available, using fallback")
+            except Exception as e:
+                logger.warning(f"Unexpected error in OAuth auto-refresh: {e}")
+                # Fall through to try other methods
+
+        # FALLBACK: Try vault/credential resolution using CredentialAwareMixin
         # The credential_id is set by NodeGoogleCredentialWidget in the visual layer
         access_token = await self.resolve_credential(
             context,
@@ -342,7 +419,6 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
 
             cred_name = self.get_parameter("credential_id")
             if cred_name:
-                cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_credential(cred_name)
                 if cred and cred.access_token:
                     logger.debug(f"Using legacy credential from manager: {cred_name}")
@@ -375,24 +451,18 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         except Exception as e:
             logger.debug(f"Legacy credential manager lookup failed: {e}")
 
-        # Try credential_store (local encrypted storage used by UI)
+        # Try credential_store directly (without OAuth manager - last resort)
         try:
             from casare_rpa.infrastructure.security.credential_store import (
                 get_credential_store,
             )
 
             store = get_credential_store()
-            # Use get_parameter first, then fallback to config.get directly
-            # (get_parameter may return None due to MRO issues with CredentialAwareMixin)
-            cred_id = self.get_parameter("credential_id") or self.config.get(
-                "credential_id"
-            )
             if cred_id:
-                cred_id = context.resolve_value(cred_id)
                 # Get decrypted credential data by ID
                 data = store.get_credential(cred_id)
                 if data and data.get("access_token"):
-                    logger.info(f"Using credential from store: {cred_id}")
+                    logger.warning(f"Using credential from store WITHOUT auto-refresh: {cred_id}")
 
                     # Parse expiry timestamp
                     expiry = None
@@ -578,9 +648,7 @@ def get_drive_scopes(readonly: bool = False, file_only: bool = False) -> List[st
 
 def get_calendar_scopes(readonly: bool = False) -> List[str]:
     """Get Calendar OAuth2 scopes."""
-    return (
-        SCOPES.get("calendar_readonly", []) if readonly else SCOPES.get("calendar", [])
-    )
+    return SCOPES.get("calendar_readonly", []) if readonly else SCOPES.get("calendar", [])
 
 
 # =============================================================================
@@ -588,16 +656,19 @@ def get_calendar_scopes(readonly: bool = False) -> List[str]:
 # =============================================================================
 
 
+@properties()
+@node(category="google")
 class GmailBaseNode(GoogleBaseNode):
     """
     Base class for Gmail nodes.
 
     Extends GoogleBaseNode with Gmail-specific functionality:
-    - Gmail API service access (gmail/v1)
-    - Gmail-specific scopes
+    - GmailClient for async email operations
+    - Gmail-specific scopes (gmail.modify)
     - Email message handling utilities
 
     Subclasses implement _execute_gmail() instead of _execute_google().
+    The _execute_gmail method receives a GmailClient instance.
     """
 
     # @category: google
@@ -614,24 +685,43 @@ class GmailBaseNode(GoogleBaseNode):
         context: ExecutionContext,
         client: GoogleAPIClient,
     ) -> ExecutionResult:
-        """Delegate to Gmail-specific execution."""
-        service = await client.get_service(self.SERVICE_NAME, self.SERVICE_VERSION)
-        return await self._execute_gmail(context, client, service)
+        """
+        Delegate to Gmail-specific execution with GmailClient.
+
+        Creates a GmailClient using the access token from credentials
+        and delegates to the _execute_gmail method.
+        """
+        # Get access token from the credentials in client config
+        access_token = client.config.credentials.access_token
+        if not access_token:
+            raise GoogleAuthError("No access token available for Gmail operations")
+
+        # Create GmailClient with the access token
+        gmail_config = GmailConfig(
+            access_token=access_token,
+            timeout=client.config.timeout or 30.0,
+        )
+        gmail_client = GmailClient(gmail_config)
+
+        try:
+            async with gmail_client:
+                return await self._execute_gmail(context, gmail_client)
+        finally:
+            # Ensure cleanup even if gmail client is already closed
+            pass
 
     @abstractmethod
     async def _execute_gmail(
         self,
         context: ExecutionContext,
-        client: GoogleAPIClient,
-        service: Any,
+        client: GmailClient,
     ) -> ExecutionResult:
         """
         Execute the Gmail operation.
 
         Args:
             context: Execution context
-            client: Google API client
-            service: Gmail API service object
+            client: GmailClient instance for async Gmail API operations
 
         Returns:
             Execution result dictionary
@@ -639,6 +729,8 @@ class GmailBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class DocsBaseNode(GoogleBaseNode):
     """
     Base class for Google Docs nodes.
@@ -671,8 +763,6 @@ class DocsBaseNode(GoogleBaseNode):
     def _get_document_id(self, context: ExecutionContext) -> str:
         """Get document ID from parameter, resolving variables."""
         doc_id = self.get_parameter("document_id")
-        if hasattr(context, "resolve_value"):
-            doc_id = context.resolve_value(doc_id)
         return str(doc_id) if doc_id else ""
 
     async def _execute_google(
@@ -705,6 +795,8 @@ class DocsBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class SheetsBaseNode(GoogleBaseNode):
     """
     Base class for Google Sheets nodes.
@@ -746,17 +838,11 @@ class SheetsBaseNode(GoogleBaseNode):
     def _get_spreadsheet_id(self, context: ExecutionContext) -> str:
         """Get spreadsheet ID from parameter, resolving variables."""
         sheet_id = self.get_parameter("spreadsheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
         return str(sheet_id) if sheet_id else ""
 
-    def _get_sheet_name(
-        self, context: ExecutionContext, default: str = "Sheet1"
-    ) -> str:
+    def _get_sheet_name(self, context: ExecutionContext, default: str = "Sheet1") -> str:
         """Get sheet name from parameter, resolving variables."""
         name = self.get_parameter("sheet_name") or self.get_input_value("sheet_name")
-        if hasattr(context, "resolve_value") and name:
-            name = context.resolve_value(name)
         return str(name) if name else default
 
     # A1 notation utilities
@@ -858,6 +944,8 @@ class SheetsBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class DriveBaseNode(GoogleBaseNode):
     """
     Base class for Google Drive nodes.
@@ -890,8 +978,6 @@ class DriveBaseNode(GoogleBaseNode):
     def _get_file_id(self, context: ExecutionContext) -> str:
         """Get file ID from parameter, resolving variables."""
         file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
-        if hasattr(context, "resolve_value") and file_id:
-            file_id = context.resolve_value(file_id)
         return str(file_id) if file_id else ""
 
     @staticmethod
@@ -900,7 +986,7 @@ class DriveBaseNode(GoogleBaseNode):
         from pathlib import Path
         import mimetypes
 
-        ext = Path(file_path).suffix.lower()
+        Path(file_path).suffix.lower()
         mime_type, _ = mimetypes.guess_type(file_path)
         return mime_type or "application/octet-stream"
 
@@ -954,6 +1040,8 @@ class DriveBaseNode(GoogleBaseNode):
         ...
 
 
+@properties()
+@node(category="google")
 class CalendarBaseNode(GoogleBaseNode):
     """
     Base class for Google Calendar nodes.
@@ -983,15 +1071,9 @@ class CalendarBaseNode(GoogleBaseNode):
             required=False,
         )
 
-    def _get_calendar_id(
-        self, context: ExecutionContext, default: str = "primary"
-    ) -> str:
+    def _get_calendar_id(self, context: ExecutionContext, default: str = "primary") -> str:
         """Get calendar ID from parameter, resolving variables."""
-        cal_id = self.get_parameter("calendar_id") or self.get_input_value(
-            "calendar_id"
-        )
-        if hasattr(context, "resolve_value") and cal_id:
-            cal_id = context.resolve_value(cal_id)
+        cal_id = self.get_parameter("calendar_id") or self.get_input_value("calendar_id")
         return str(cal_id) if cal_id else default
 
     async def _execute_google(

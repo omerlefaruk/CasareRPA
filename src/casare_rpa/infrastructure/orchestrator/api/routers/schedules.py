@@ -109,9 +109,7 @@ class ScheduleRequest(BaseModel):
 
     workflow_id: str = Field(..., description="Workflow to schedule")
     schedule_name: str = Field(..., min_length=1, max_length=255)
-    cron_expression: str = Field(
-        ..., description="Cron expression (e.g., '0 9 * * 1-5')"
-    )
+    cron_expression: str = Field(..., description="Cron expression (e.g., '0 9 * * 1-5')")
     enabled: bool = Field(default=True)
     priority: int = Field(default=10, ge=0, le=20, description="Job priority")
     execution_mode: str = Field(default="lan", description="lan or internet")
@@ -159,9 +157,7 @@ class ScheduleResponse(BaseModel):
 # =========================
 
 
-def calculate_next_run(
-    cron_expression: str, base_time: Optional[datetime] = None
-) -> datetime:
+def calculate_next_run(cron_expression: str, base_time: Optional[datetime] = None) -> datetime:
     """
     Calculate next run time from cron expression.
 
@@ -548,21 +544,15 @@ async def create_schedule(
         now = datetime.now(timezone.utc)
 
         # Calculate next run time
-        next_run = (
-            calculate_next_run(request.cron_expression) if request.enabled else None
-        )
+        next_run = calculate_next_run(request.cron_expression) if request.enabled else None
 
         # Try to register with APScheduler if available
         scheduler = get_global_scheduler()
         if scheduler is not None and is_scheduler_initialized():
-            advanced_schedule = _convert_to_advanced_schedule(
-                schedule_id, request, now, next_run
-            )
+            advanced_schedule = _convert_to_advanced_schedule(schedule_id, request, now, next_run)
             success = scheduler.add_schedule(advanced_schedule)
             if not success:
-                logger.warning(
-                    "Failed to add schedule to APScheduler, using in-memory only"
-                )
+                logger.warning("Failed to add schedule to APScheduler, using in-memory only")
 
             # Get updated next_run from scheduler (may differ from calculated)
             registered_schedule = scheduler.get_schedule(schedule_id)
@@ -616,9 +606,7 @@ async def create_schedule(
 
     except Exception as e:
         logger.error("Failed to create schedule: {}", e)
-        raise HTTPException(
-            status_code=500, detail=f"Failed to create schedule: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to create schedule: {str(e)}")
 
 
 @router.get("/schedules", response_model=List[ScheduleResponse])
@@ -662,8 +650,7 @@ async def list_schedules(
 
         # Sort by created_at descending
         schedules.sort(
-            key=lambda s: s.get("created_at")
-            or datetime.min.replace(tzinfo=timezone.utc),
+            key=lambda s: s.get("created_at") or datetime.min.replace(tzinfo=timezone.utc),
             reverse=True,
         )
 
@@ -674,9 +661,7 @@ async def list_schedules(
 
     except Exception as e:
         logger.error("Failed to list schedules: {}", e)
-        raise HTTPException(
-            status_code=500, detail=f"Failed to list schedules: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list schedules: {str(e)}")
 
 
 @router.get("/schedules/{schedule_id}", response_model=ScheduleResponse)
@@ -709,9 +694,7 @@ async def get_schedule(
         schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Schedule not found: {schedule_id}")
 
     return ScheduleResponse(**schedule_data)
 
@@ -741,9 +724,7 @@ async def enable_schedule(
         schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Schedule not found: {schedule_id}")
 
     # Resume in APScheduler if available
     scheduler = get_global_scheduler()
@@ -801,9 +782,7 @@ async def disable_schedule(
         schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Schedule not found: {schedule_id}")
 
     # Pause in APScheduler if available
     scheduler = get_global_scheduler()
@@ -864,9 +843,7 @@ async def delete_schedule(
             # Also check APScheduler
             scheduler = get_global_scheduler()
             if scheduler is None or not scheduler.get_schedule(schedule_id):
-                raise HTTPException(
-                    status_code=404, detail=f"Schedule not found: {schedule_id}"
-                )
+                raise HTTPException(status_code=404, detail=f"Schedule not found: {schedule_id}")
 
     # Remove from APScheduler if available
     scheduler = get_global_scheduler()
@@ -875,9 +852,7 @@ async def delete_schedule(
         if success:
             logger.info("Schedule removed from APScheduler: {}", schedule_id)
         else:
-            logger.warning(
-                "Failed to remove schedule from APScheduler: {}", schedule_id
-            )
+            logger.warning("Failed to remove schedule from APScheduler: {}", schedule_id)
 
     # Remove from in-memory storage
     async with _schedules_lock:
@@ -924,9 +899,7 @@ async def trigger_schedule_now(
                 schedule_data = _schedule_to_response(advanced_schedule)
 
     if not schedule_data:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Schedule not found: {schedule_id}")
 
     job_id = f"manual_{schedule_id}_{uuid.uuid4().hex[:8]}"
 
@@ -1049,9 +1022,7 @@ async def get_upcoming_schedules(
                     "schedule_id": schedule["schedule_id"],
                     "schedule_name": schedule["schedule_name"],
                     "workflow_id": schedule["workflow_id"],
-                    "workflow_name": schedule.get("metadata", {}).get(
-                        "workflow_name", ""
-                    ),
+                    "workflow_name": schedule.get("metadata", {}).get("workflow_name", ""),
                     "next_run": schedule["next_run"],
                     "type": "cron",
                     "status": "active" if schedule["enabled"] else "paused",

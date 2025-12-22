@@ -9,14 +9,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "event_source",
@@ -86,6 +82,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Name of custom RPA event",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class AppEventTriggerNode(BaseTriggerNode):
     """
     App event trigger node that fires on system/application events.
@@ -128,15 +125,15 @@ class AppEventTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get app event-specific configuration."""
         return {
-            "event_source": self.config.get("event_source", "windows"),
+            "event_source": self.get_parameter("event_source", "windows"),
             # Windows
-            "window_event": self.config.get("window_event", "focus"),
-            "window_title_pattern": self.config.get("window_title_pattern", ""),
-            "process_name": self.config.get("process_name", ""),
+            "window_event": self.get_parameter("window_event", "focus"),
+            "window_title_pattern": self.get_parameter("window_title_pattern", ""),
+            "process_name": self.get_parameter("process_name", ""),
             # Browser
-            "browser_event": self.config.get("browser_event", "tab_open"),
-            "url_pattern": self.config.get("url_pattern", ""),
+            "browser_event": self.get_parameter("browser_event", "tab_open"),
+            "url_pattern": self.get_parameter("url_pattern", ""),
             # RPA
-            "rpa_event": self.config.get("rpa_event", "workflow_complete"),
-            "custom_event_name": self.config.get("custom_event_name", ""),
+            "rpa_event": self.get_parameter("rpa_event", "workflow_complete"),
+            "custom_event_name": self.get_parameter("custom_event_name", ""),
         }

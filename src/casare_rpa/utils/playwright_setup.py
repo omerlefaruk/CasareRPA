@@ -142,9 +142,7 @@ def install_playwright_browsers_gui(parent=None) -> bool:
                 self.setModal(True)
                 self.setMinimumWidth(450)
                 self.setMinimumHeight(120)
-                self.setWindowFlags(
-                    self.windowFlags() & ~Qt.WindowContextHelpButtonHint
-                )
+                self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
                 layout = QVBoxLayout(self)
                 layout.setSpacing(15)
@@ -165,9 +163,7 @@ def install_playwright_browsers_gui(parent=None) -> bool:
                 layout.addWidget(self.progress_bar)
 
                 # Info label
-                info = QLabel(
-                    "This may take a few minutes depending on your internet connection."
-                )
+                info = QLabel("This may take a few minutes depending on your internet connection.")
                 info.setStyleSheet("color: gray; font-size: 11px;")
                 layout.addWidget(info)
 

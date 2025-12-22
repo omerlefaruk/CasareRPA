@@ -194,12 +194,8 @@ class PickerToolbar(QWidget):
         self._current_mode = mode
         self._browser_btn.setChecked(mode == PickingMode.BROWSER)
         self._desktop_btn.setChecked(mode == PickingMode.DESKTOP)
-        self._browser_btn.setStyleSheet(
-            self._mode_btn_style(mode == PickingMode.BROWSER)
-        )
-        self._desktop_btn.setStyleSheet(
-            self._mode_btn_style(mode == PickingMode.DESKTOP)
-        )
+        self._browser_btn.setStyleSheet(self._mode_btn_style(mode == PickingMode.BROWSER))
+        self._desktop_btn.setStyleSheet(self._mode_btn_style(mode == PickingMode.DESKTOP))
         self.mode_changed.emit(mode)
 
     def set_mode(self, mode: PickingMode) -> None:

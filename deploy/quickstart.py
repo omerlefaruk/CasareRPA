@@ -151,9 +151,7 @@ def run_command(
         return subprocess.CompletedProcess(command, 1, "", "Command not found")
 
 
-def check_command_exists(
-    command: str, version_flag: str = "--version"
-) -> tuple[bool, str]:
+def check_command_exists(command: str, version_flag: str = "--version") -> tuple[bool, str]:
     """Check if a command exists and get its version."""
     try:
         result = run_command([command, version_flag])

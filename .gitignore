@@ -13,6 +13,12 @@ secrets.json
 pgpass.conf
 %APPDATA%/
 **/pgpass*
+node_modules/
+dist/
+build/
+.next/
+.serverless/
+out/
 
 # Python
 __pycache__/
@@ -82,6 +88,12 @@ workflows/*.json
 .coverage
 htmlcov/
 .tox/
+test_output/
+pytest_*.txt
+ruff_*.txt
+git_*.txt
+task_*.txt
+modernization_report*.json
 
 # MyPy
 .mypy_cache/
@@ -101,5 +113,20 @@ nul
 gha-creds-*.json
 site/
 .qdrant/
+.qdrant_new/
 .casare/
-.agent/
+.chroma/
+# Note: .agent/ is tracked for Gemini/Antigravity AI rules
+
+# Temp files and debug outputs
+f821_*.txt
+f821_*.json
+f401_*.txt
+@AutomationLog.txt
+all_nodes.txt
+node_tests_run.txt
+power_test.txt
+task_*.log
+test_cache_dir/
+test_output_*
+*.tmp

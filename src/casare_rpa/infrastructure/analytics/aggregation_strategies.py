@@ -67,9 +67,7 @@ class AggregationStrategy(ABC, Generic[T, V]):
         pass
 
 
-class TimeBasedAggregationStrategy(
-    AggregationStrategy[Dict[str, Any], List[TimeSeriesDataPoint]]
-):
+class TimeBasedAggregationStrategy(AggregationStrategy[Dict[str, Any], List[TimeSeriesDataPoint]]):
     """
     Aggregates metrics over time periods.
 
@@ -121,9 +119,7 @@ class TimeBasedAggregationStrategy(
             return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         elif self.period == AggregationPeriod.QUARTER:
             quarter_month = ((dt.month - 1) // 3) * 3 + 1
-            return dt.replace(
-                month=quarter_month, day=1, hour=0, minute=0, second=0, microsecond=0
-            )
+            return dt.replace(month=quarter_month, day=1, hour=0, minute=0, second=0, microsecond=0)
         elif self.period == AggregationPeriod.YEAR:
             return dt.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         return dt
@@ -284,11 +280,7 @@ class StatisticalAggregationStrategy(AggregationStrategy[float, StatisticalResul
         c = f + 1 if f + 1 < n else f
         d = k - f
 
-        return (
-            sorted_data[f] + d * (sorted_data[c] - sorted_data[f])
-            if c != f
-            else sorted_data[f]
-        )
+        return sorted_data[f] + d * (sorted_data[c] - sorted_data[f]) if c != f else sorted_data[f]
 
     def aggregate(self, data: List[float]) -> StatisticalResult:
         """
@@ -447,9 +439,7 @@ class DimensionalAggregationStrategy(
 
         return self._buckets.copy()
 
-    def get_top_dimensions(
-        self, n: int = 10, by: str = "count"
-    ) -> List[DimensionalBucket]:
+    def get_top_dimensions(self, n: int = 10, by: str = "count") -> List[DimensionalBucket]:
         """
         Get top N dimensions by metric.
 
@@ -585,9 +575,7 @@ class RollingWindowAggregationStrategy(AggregationStrategy[float, RollingWindowR
             second_half_avg = sum(self._values[mid:]) / (len(self._values) - mid)
 
             if first_half_avg > 0:
-                change_rate = (
-                    (second_half_avg - first_half_avg) / first_half_avg
-                ) * 100
+                change_rate = ((second_half_avg - first_half_avg) / first_half_avg) * 100
             else:
                 change_rate = 0.0
 

@@ -160,12 +160,8 @@ class ResourceRegistry:
                 if result and result.get("success"):
                     self._initialization_order.append(resource_id)
                 else:
-                    error_msg = (
-                        result.get("error", "Unknown error") if result else "No result"
-                    )
-                    logger.error(
-                        f"Resource '{resource_id}' failed to initialize: {error_msg}"
-                    )
+                    error_msg = result.get("error", "Unknown error") if result else "No result"
+                    logger.error(f"Resource '{resource_id}' failed to initialize: {error_msg}")
                     # Clean up already initialized resources
                     await self._cleanup_initialized(context)
                     return False
@@ -175,9 +171,7 @@ class ResourceRegistry:
                 await self._cleanup_initialized(context)
                 return False
 
-        logger.info(
-            f"Successfully initialized {len(self._initialization_order)} resource(s)"
-        )
+        logger.info(f"Successfully initialized {len(self._initialization_order)} resource(s)")
         return True
 
     async def _cleanup_initialized(self, context: "IExecutionContext") -> None:

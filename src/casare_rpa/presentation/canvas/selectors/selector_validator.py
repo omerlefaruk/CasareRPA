@@ -99,9 +99,7 @@ class SelectorValidator:
         self.parent_control = parent_control or auto.GetRootControl()
         logger.debug("Selector validator initialized")
 
-    def validate(
-        self, selector: Dict[str, Any], find_all: bool = False
-    ) -> ValidationResult:
+    def validate(self, selector: Dict[str, Any], find_all: bool = False) -> ValidationResult:
         """
         Validate a selector.
 
@@ -118,7 +116,7 @@ class SelectorValidator:
 
         try:
             # Parse selector first
-            parsed = parse_selector(selector)
+            parse_selector(selector)
 
             if find_all:
                 # Find all matching elements
@@ -149,9 +147,7 @@ class SelectorValidator:
 
                     # Found one - but is it unique?
                     # Quick check by trying to find second element
-                    all_elements = find_elements(
-                        self.parent_control, selector, max_depth=10
-                    )
+                    all_elements = find_elements(self.parent_control, selector, max_depth=10)
                     count = len(all_elements)
 
                     if count == 1:
@@ -188,9 +184,7 @@ class SelectorValidator:
                 error_message=error_msg,
             )
 
-    def validate_multiple(
-        self, selectors: List[Dict[str, Any]]
-    ) -> List[ValidationResult]:
+    def validate_multiple(self, selectors: List[Dict[str, Any]]) -> List[ValidationResult]:
         """
         Validate multiple selectors.
 

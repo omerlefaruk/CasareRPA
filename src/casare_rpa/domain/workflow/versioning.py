@@ -414,9 +414,7 @@ class WorkflowVersion:
             self.status = new_status
             return True
 
-        logger.warning(
-            f"Invalid status transition: {self.status.name} -> {new_status.name}"
-        )
+        logger.warning(f"Invalid status transition: {self.status.name} -> {new_status.name}")
         return False
 
     def to_dict(self) -> Dict[str, Any]:
@@ -478,9 +476,7 @@ class VersionHistory:
             workflow_id: UUID of the workflow
         """
         self.workflow_id = workflow_id
-        self.versions: Dict[
-            str, WorkflowVersion
-        ] = {}  # version string -> WorkflowVersion
+        self.versions: Dict[str, WorkflowVersion] = {}  # version string -> WorkflowVersion
         self._version_order: List[str] = []  # Ordered list of version strings
         self._active_version: Optional[str] = None
 
@@ -613,9 +609,7 @@ class VersionHistory:
         self.add_version(version)
         return version
 
-    def generate_diff(
-        self, from_version: str, to_version: str
-    ) -> Optional[VersionDiff]:
+    def generate_diff(self, from_version: str, to_version: str) -> Optional[VersionDiff]:
         """
         Generate diff between two versions.
 
@@ -630,9 +624,7 @@ class VersionHistory:
         to_ver = self.versions.get(to_version)
 
         if not from_ver or not to_ver:
-            logger.error(
-                f"Cannot diff: version not found ({from_version} or {to_version})"
-            )
+            logger.error(f"Cannot diff: version not found ({from_version} or {to_version})")
             return None
 
         diff = VersionDiff(from_version=from_version, to_version=to_version)
@@ -712,9 +704,7 @@ class VersionHistory:
 
         return diff
 
-    def check_compatibility(
-        self, from_version: str, to_version: str
-    ) -> CompatibilityResult:
+    def check_compatibility(self, from_version: str, to_version: str) -> CompatibilityResult:
         """
         Check backward compatibility between versions.
 
@@ -802,15 +792,9 @@ class VersionHistory:
             to_var = to_data["variables"][var_name]
 
             from_type = (
-                from_var.get("type")
-                if isinstance(from_var, dict)
-                else type(from_var).__name__
+                from_var.get("type") if isinstance(from_var, dict) else type(from_var).__name__
             )
-            to_type = (
-                to_var.get("type")
-                if isinstance(to_var, dict)
-                else type(to_var).__name__
-            )
+            to_type = to_var.get("type") if isinstance(to_var, dict) else type(to_var).__name__
 
             if from_type != to_type:
                 result.breaking_changes.append(

@@ -271,7 +271,7 @@ class CanvasColors:
     category_google: str = "#4285F4"  # GOOGLE BLUE - Google services
     category_triggers: str = "#7C4DFF"  # DEEP PURPLE - Triggers/Events
     category_messaging: str = "#25D366"  # WHATSAPP GREEN - Messaging
-    category_ai_ml: str = "#00ACC1"  # TEAL - AI/ML
+
     category_document: str = "#FF9800"  # ORANGE - Documents
     category_utility: str = "#607D8B"  # BLUE GRAY - Utilities
     category_basic: str = "#3F51B5"  # INDIGO - Basic nodes
@@ -461,7 +461,6 @@ CATEGORY_COLOR_MAP: Dict[str, str] = {
     "desktop_automation": DARK_CANVAS_COLORS.category_desktop,
     "triggers": DARK_CANVAS_COLORS.category_triggers,
     "messaging": DARK_CANVAS_COLORS.category_messaging,
-    "ai_ml": DARK_CANVAS_COLORS.category_ai_ml,
     "document": DARK_CANVAS_COLORS.category_document,
     "google": DARK_CANVAS_COLORS.category_google,
     "scripts": DARK_CANVAS_COLORS.category_scripts,

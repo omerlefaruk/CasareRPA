@@ -85,9 +85,7 @@ class RobotSelectionService:
                 # Verify capabilities if required
                 if required_capabilities:
                     if robot.has_all_capabilities(required_capabilities):
-                        logger.info(
-                            f"Using assigned robot {robot.id} for workflow {workflow_id}"
-                        )
+                        logger.info(f"Using assigned robot {robot.id} for workflow {workflow_id}")
                         return robot.id
                     else:
                         logger.warning(
@@ -95,9 +93,7 @@ class RobotSelectionService:
                             f"falling back to auto-selection"
                         )
                 else:
-                    logger.info(
-                        f"Using assigned robot {robot.id} for workflow {workflow_id}"
-                    )
+                    logger.info(f"Using assigned robot {robot.id} for workflow {workflow_id}")
                     return robot.id
             else:
                 logger.warning(

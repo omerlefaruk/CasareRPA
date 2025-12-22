@@ -75,9 +75,7 @@ class MemoryJob:
             "created_at": self.created_at.isoformat(),
             "claimed_at": self.claimed_at.isoformat() if self.claimed_at else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "result": self.result,
             "error": self.error,
             "retry_count": self.retry_count,
@@ -127,9 +125,7 @@ class MemoryQueue:
 
         self._running = True
         self._cleanup_task = asyncio.create_task(self._cleanup_expired_claims())
-        logger.info(
-            "MemoryQueue started with visibility timeout {}", self._visibility_timeout
-        )
+        logger.info("MemoryQueue started with visibility timeout {}", self._visibility_timeout)
 
     async def stop(self) -> None:
         """Stop the queue and cleanup task."""
@@ -337,9 +333,7 @@ class MemoryQueue:
         async with self._lock:
             return self._jobs.get(job_id)
 
-    async def get_jobs_by_status(
-        self, status: JobStatus, limit: int = 100
-    ) -> List[MemoryJob]:
+    async def get_jobs_by_status(self, status: JobStatus, limit: int = 100) -> List[MemoryJob]:
         """
         Get jobs by status.
 
@@ -355,9 +349,7 @@ class MemoryQueue:
             jobs.sort(key=lambda j: j.created_at, reverse=True)
             return jobs[:limit]
 
-    async def get_jobs_by_robot(
-        self, robot_id: str, limit: int = 100
-    ) -> List[MemoryJob]:
+    async def get_jobs_by_robot(self, robot_id: str, limit: int = 100) -> List[MemoryJob]:
         """
         Get jobs assigned to robot.
 
@@ -388,13 +380,10 @@ class MemoryQueue:
                 return sum(
                     1
                     for job in self._jobs.values()
-                    if job.status == JobStatus.QUEUED
-                    and job.execution_mode == execution_mode
+                    if job.status == JobStatus.QUEUED and job.execution_mode == execution_mode
                 )
             else:
-                return sum(
-                    1 for job in self._jobs.values() if job.status == JobStatus.QUEUED
-                )
+                return sum(1 for job in self._jobs.values() if job.status == JobStatus.QUEUED)
 
     async def _cleanup_expired_claims(self) -> None:
         """Background task to return expired claims to queue."""

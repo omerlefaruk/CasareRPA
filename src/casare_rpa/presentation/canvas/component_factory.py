@@ -65,24 +65,16 @@ class ComponentFactory:
             try:
                 instance = factory()
                 if instance is None:
-                    raise RuntimeError(
-                        f"Factory returned None for component '{component_name}'"
-                    )
+                    raise RuntimeError(f"Factory returned None for component '{component_name}'")
                 cls._instances[component_name] = instance
 
                 elapsed = (time.perf_counter() - start_time) * 1000
                 cls._creation_times[component_name] = elapsed
 
-                logger.debug(
-                    f"ComponentFactory: Created '{component_name}' in {elapsed:.2f}ms"
-                )
+                logger.debug(f"ComponentFactory: Created '{component_name}' in {elapsed:.2f}ms")
             except Exception as e:
-                logger.error(
-                    f"ComponentFactory: Failed to create '{component_name}': {e}"
-                )
-                raise RuntimeError(
-                    f"Failed to create component '{component_name}': {e}"
-                ) from e
+                logger.error(f"ComponentFactory: Failed to create '{component_name}': {e}")
+                raise RuntimeError(f"Failed to create component '{component_name}': {e}") from e
 
         return cls._instances[component_name]  # type: ignore
 
@@ -134,9 +126,7 @@ class ComponentFactory:
         Should be called during cleanup or in tests to reset state.
         Does NOT destroy the widgets - caller must handle widget cleanup.
         """
-        logger.debug(
-            f"ComponentFactory: Clearing cache ({len(cls._instances)} components)"
-        )
+        logger.debug(f"ComponentFactory: Clearing cache ({len(cls._instances)} components)")
         cls._instances.clear()
         cls._creation_times.clear()
 

@@ -89,9 +89,7 @@ class PropertyExplorerPanel(QFrame):
         super().__init__(parent)
 
         self._current_element: Optional[UIExplorerElement] = None
-        self._all_properties: List[
-            Dict[str, Any]
-        ] = []  # Stores all properties for filtering
+        self._all_properties: List[Dict[str, Any]] = []  # Stores all properties for filtering
         self._context_row: int = -1  # Context menu target row
 
         self._setup_ui()
@@ -695,6 +693,4 @@ class PropertyExplorerPanel(QFrame):
         self._apply_filter()
         self._update_count()
 
-        logger.debug(
-            f"PropertyExplorer: Loaded {len(self._all_properties)} properties from dict"
-        )
+        logger.debug(f"PropertyExplorer: Loaded {len(self._all_properties)} properties from dict")

@@ -234,8 +234,7 @@ def _extract_category(node_class: Type[BaseNode], node_instance: BaseNode) -> st
         return "email"
     if "desktop" in module:
         return "desktop"
-    if "llm" in module:
-        return "ai_ml"
+
     if "trigger" in module:
         return "triggers"
     if "messaging" in module:
@@ -353,17 +352,15 @@ def dump_node_manifest() -> NodeManifest:
             # Extract description
             description = _extract_description(node_class)
 
-            # Extract input ports (exclude exec ports)
+            # Extract input ports
             input_ports: List[PortManifestEntry] = []
             for port in instance.input_ports.values():
-                if not _is_exec_port(port):
-                    input_ports.append(_create_port_entry(port))
+                input_ports.append(_create_port_entry(port))
 
-            # Extract output ports (exclude exec ports)
+            # Extract output ports
             output_ports: List[PortManifestEntry] = []
             for port in instance.output_ports.values():
-                if not _is_exec_port(port):
-                    output_ports.append(_create_port_entry(port))
+                output_ports.append(_create_port_entry(port))
 
             # Create entry
             entry = NodeManifestEntry(
@@ -457,9 +454,7 @@ def manifest_to_markdown(manifest: Optional[NodeManifest] = None) -> str:
 
     lines: List[str] = []
     lines.append("# CasareRPA Node Reference")
-    lines.append(
-        f"Total: {manifest.total_count} nodes | {len(manifest.categories)} categories"
-    )
+    lines.append(f"Total: {manifest.total_count} nodes | {len(manifest.categories)} categories")
     lines.append("")
 
     # Group by category
@@ -482,16 +477,13 @@ def manifest_to_markdown(manifest: Optional[NodeManifest] = None) -> str:
             # Input ports (compact notation)
             if node.inputs:
                 inputs_str = ", ".join(
-                    f"`{p.name}:{p.data_type}{'?' if not p.required else ''}`"
-                    for p in node.inputs
+                    f"`{p.name}:{p.data_type}{'?' if not p.required else ''}`" for p in node.inputs
                 )
                 lines.append(f"  IN: {inputs_str}")
 
             # Output ports
             if node.outputs:
-                outputs_str = ", ".join(
-                    f"`{p.name}:{p.data_type}`" for p in node.outputs
-                )
+                outputs_str = ", ".join(f"`{p.name}:{p.data_type}`" for p in node.outputs)
                 lines.append(f"  OUT: {outputs_str}")
 
             lines.append("")

@@ -112,9 +112,7 @@ def generate_selectors(
                 strategy="name",
                 value=name,
                 properties={},
-                confidence=ConfidenceLevel.MEDIUM
-                if not is_generic
-                else ConfidenceLevel.LOW,
+                confidence=ConfidenceLevel.MEDIUM if not is_generic else ConfidenceLevel.LOW,
                 score=80.0 if not is_generic else 60.0,
                 description=f"By Name: {name}",
             )
@@ -133,9 +131,7 @@ def generate_selectors(
                 description=f"By {control_type_clean} with Name: {name}",
             )
         )
-        logger.debug(
-            f"Generated ControlType+Name strategy: {control_type_clean} / {name}"
-        )
+        logger.debug(f"Generated ControlType+Name strategy: {control_type_clean} / {name}")
 
     # Strategy 4: ClassName (if available)
     if class_name and class_name.strip():
@@ -185,9 +181,7 @@ def generate_selectors(
         index = 0
         if parent_control:
             try:
-                index = _calculate_element_index(
-                    element, parent_control, control_type_clean
-                )
+                index = _calculate_element_index(element, parent_control, control_type_clean)
             except Exception:
                 pass
 
@@ -201,9 +195,7 @@ def generate_selectors(
                 description=f"By {control_type_clean} at index {index} (may be fragile)",
             )
         )
-        logger.debug(
-            f"Generated ControlType+Index strategy: {control_type_clean}[{index}]"
-        )
+        logger.debug(f"Generated ControlType+Index strategy: {control_type_clean}[{index}]")
 
     # Strategy 8: Path-based selector (hierarchical)
     if parent_control:

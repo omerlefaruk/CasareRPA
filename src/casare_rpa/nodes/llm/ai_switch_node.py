@@ -12,6 +12,8 @@ from typing import Any, List
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -21,6 +23,50 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@properties(
+    PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Context data for AI classification",
+    ),
+    PropertyDef(
+        "question",
+        PropertyType.TEXT,
+        default="",
+        label="Question",
+        placeholder="What type of document is this?",
+        tooltip="Question to determine which branch to take",
+        essential=True,
+    ),
+    PropertyDef(
+        "options",
+        PropertyType.STRING,
+        default="",
+        label="Options",
+        placeholder="invoice, receipt, contract, other",
+        tooltip="Comma-separated list of branch options",
+        essential=True,
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.0,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature for consistent branching",
+    ),
+)
+@node(category="llm")
 class AISwitchNode(LLMBaseNode):
     """
     Multi-way branching using AI classification.
@@ -49,7 +95,7 @@ class AISwitchNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution input
-        self.add_exec_input_port("exec_in")
+        self.add_exec_input("exec_in")
 
         # Data inputs
         self.add_input_port("question", DataType.STRING)
@@ -66,7 +112,7 @@ class AISwitchNode(LLMBaseNode):
         self.add_output_port("error", DataType.STRING)
 
         # Default exec output (fallback)
-        self.add_exec_output_port("exec_default")
+        self.add_exec_output("exec_default")
 
     def _update_dynamic_ports(self, options: List[str]) -> None:
         """Update dynamic exec output ports based on options."""
@@ -80,11 +126,8 @@ class AISwitchNode(LLMBaseNode):
         self._options = options[: self.MAX_OPTIONS]
         for option in self._options:
             port_name = f"exec_{self._sanitize_port_name(option)}"
-            if (
-                not hasattr(self, "_output_ports")
-                or port_name not in self._output_ports
-            ):
-                self.add_exec_output_port(port_name)
+            if not hasattr(self, "_output_ports") or port_name not in self._output_ports:
+                self.add_exec_output(port_name)
 
     def _sanitize_port_name(self, option: str) -> str:
         """Convert option to valid port name."""
@@ -99,11 +142,6 @@ class AISwitchNode(LLMBaseNode):
         question = self.get_parameter("question")
         options = self.get_parameter("options")
         eval_context = self.get_parameter("context")
-
-        if hasattr(context, "resolve_value"):
-            question = context.resolve_value(question)
-            options = context.resolve_value(options)
-            eval_context = context.resolve_value(eval_context)
 
         if not question:
             self._set_switch_error("Question is required")
@@ -138,9 +176,6 @@ class AISwitchNode(LLMBaseNode):
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.0
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         options_str = ", ".join(f'"{o}"' for o in options)
 
@@ -203,8 +238,7 @@ Return ONLY the JSON, no other text."""
             self.set_output_value("error", "")
 
             logger.info(
-                f"AI switch: '{question[:30]}...' -> {selected} "
-                f"(confidence: {confidence:.2f})"
+                f"AI switch: '{question[:30]}...' -> {selected} " f"(confidence: {confidence:.2f})"
             )
 
             # Determine next exec port

@@ -31,7 +31,6 @@ from casare_rpa.nodes.messaging.telegram.telegram_send import (
 )
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -56,6 +55,7 @@ from casare_rpa.nodes.messaging.telegram.telegram_send import (
     ),
     TELEGRAM_PARSE_MODE,
 )
+@node(category="messaging")
 class TelegramEditMessageNode(TelegramBaseNode):
     """
     Edit a sent text message via Telegram.
@@ -105,8 +105,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
 
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         try:
             message_id = int(message_id)
@@ -116,8 +114,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
 
         # Get new text
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self._set_error_outputs("Text is required")
@@ -125,8 +121,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
 
         # Get optional params
         parse_mode = self.get_parameter("parse_mode")
-        if parse_mode and hasattr(context, "resolve_value"):
-            parse_mode = context.resolve_value(parse_mode)
 
         logger.debug(f"Editing Telegram message {message_id} in {chat_id}")
 
@@ -150,7 +144,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -165,6 +158,7 @@ class TelegramEditMessageNode(TelegramBaseNode):
         tooltip="ID of the message to delete",
     ),
 )
+@node(category="messaging")
 class TelegramDeleteMessageNode(TelegramBaseNode):
     """
     Delete a message via Telegram.
@@ -211,8 +205,6 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
 
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         try:
             message_id = int(message_id)
@@ -238,7 +230,6 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -254,6 +245,7 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
     ),
     TELEGRAM_DISABLE_NOTIFICATION,
 )
+@node(category="messaging")
 class TelegramSendMediaGroupNode(TelegramBaseNode):
     """
     Send a media group (album) via Telegram.
@@ -305,8 +297,6 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
 
         # Get media JSON
         media_json = self.get_parameter("media_json")
-        if hasattr(context, "resolve_value"):
-            media_json = context.resolve_value(media_json)
 
         if not media_json:
             self.set_output_value("success", False)
@@ -365,7 +355,6 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -403,6 +392,7 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         tab="advanced",
     ),
 )
+@node(category="messaging")
 class TelegramAnswerCallbackNode(TelegramBaseNode):
     """
     Answer a callback query from an inline keyboard.
@@ -452,8 +442,6 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         """Answer a callback query."""
         # Get callback query ID
         callback_query_id = self.get_parameter("callback_query_id")
-        if hasattr(context, "resolve_value"):
-            callback_query_id = context.resolve_value(callback_query_id)
 
         if not callback_query_id:
             self.set_output_value("success", False)
@@ -466,14 +454,10 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
 
         # Get optional params
         text = self.get_parameter("text")
-        if text and hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         show_alert = self.get_parameter("show_alert") or False
 
         url = self.get_parameter("url")
-        if url and hasattr(context, "resolve_value"):
-            url = context.resolve_value(url)
 
         logger.debug(f"Answering Telegram callback: {callback_query_id}")
 
@@ -497,7 +481,6 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         }
 
 
-@node(category="messaging")
 @properties(
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
@@ -528,6 +511,7 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         max_value=120,
     ),
 )
+@node(category="messaging")
 class TelegramGetUpdatesNode(TelegramBaseNode):
     """
     Get updates via Telegram's getUpdates API.
@@ -583,24 +567,19 @@ class TelegramGetUpdatesNode(TelegramBaseNode):
         """Get updates."""
         # Get optional params
         offset = self.get_parameter("offset")
-        if offset and hasattr(context, "resolve_value"):
-            offset = context.resolve_value(offset)
+        if offset:
             try:
                 offset = int(offset)
             except (TypeError, ValueError):
                 offset = None
 
         limit = self.get_parameter("limit") or 100
-        if hasattr(context, "resolve_value"):
-            limit = context.resolve_value(limit)
         try:
             limit = min(int(limit), 100)
         except (TypeError, ValueError):
             limit = 100
 
         timeout = self.get_parameter("timeout") or 30
-        if hasattr(context, "resolve_value"):
-            timeout = context.resolve_value(timeout)
         try:
             timeout = int(timeout)
         except (TypeError, ValueError):

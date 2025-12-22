@@ -147,6 +147,7 @@ class UIExplorerDialog(QDialog):
         self._is_picking_element = False
         self._is_picking_anchor = False
         self._highlight_active = False
+        self._desktop_picker = None  # ElementPickerOverlay instance for desktop mode
 
         # Snapshot state for visual diff
         self._snapshot_data: Optional[Dict[str, Any]] = None
@@ -344,9 +345,7 @@ class UIExplorerDialog(QDialog):
 
         # Visual tree panel signals
         self._visual_tree_panel.element_selected.connect(self._on_tree_element_selected)
-        self._visual_tree_panel.element_double_clicked.connect(
-            self._on_tree_element_double_clicked
-        )
+        self._visual_tree_panel.element_double_clicked.connect(self._on_tree_element_double_clicked)
 
         # Selector model signals
         self._selector_model.preview_updated.connect(self._on_preview_updated)
@@ -438,9 +437,7 @@ class UIExplorerDialog(QDialog):
                 await self._selector_manager.inject_into_page(self._browser_page)
                 self._status_bar.set_status_message("Tree refreshed", "success")
             else:
-                self._status_bar.set_status_message(
-                    "Selector manager unavailable", "warning"
-                )
+                self._status_bar.set_status_message("Selector manager unavailable", "warning")
         except Exception as e:
             logger.error(f"UIExplorer: Browser tree refresh failed: {e}")
             self._status_bar.set_status_message(f"Refresh failed: {e}", "error")
@@ -448,9 +445,7 @@ class UIExplorerDialog(QDialog):
     def _refresh_desktop_tree(self) -> None:
         """Refresh desktop element tree."""
         try:
-            self._status_bar.set_status_message(
-                "Desktop tree refresh not yet implemented", "info"
-            )
+            self._status_bar.set_status_message("Desktop tree refresh not yet implemented", "info")
         except Exception as e:
             logger.error(f"UIExplorer: Desktop tree refresh failed: {e}")
             self._status_bar.set_status_message(f"Refresh failed: {e}", "error")
@@ -491,9 +486,7 @@ class UIExplorerDialog(QDialog):
             self._init_selector_manager()
 
             if not self._selector_manager:
-                self._status_bar.set_status_message(
-                    "Selector manager unavailable", "warning"
-                )
+                self._status_bar.set_status_message("Selector manager unavailable", "warning")
                 self._cancel_picking()
                 return
 
@@ -511,11 +504,118 @@ class UIExplorerDialog(QDialog):
             self._cancel_picking()
 
     def _start_desktop_picking(self) -> None:
-        """Start desktop element picking mode."""
-        self._status_bar.set_status_message(
-            "Desktop picking not yet implemented", "info"
-        )
-        self._cancel_picking()
+        """Start desktop element picking mode using ElementPickerOverlay."""
+        try:
+            from casare_rpa.presentation.canvas.selectors.element_picker import (
+                activate_element_picker,
+            )
+
+            self._status_bar.set_status_message(
+                "Hover over elements and click to select • ESC to cancel", "info"
+            )
+
+            def on_element_selected(desktop_element):
+                """Handle desktop element selection."""
+                try:
+                    is_anchor = self._is_picking_anchor
+                    logger.info(
+                        f"UIExplorer: Desktop {'anchor' if is_anchor else 'element'} picked"
+                    )
+
+                    # Build element data from DesktopElement
+                    control_type = desktop_element.get_property("ControlTypeName") or "Unknown"
+                    if control_type.endswith("Control"):
+                        control_type = control_type[:-7]
+
+                    name = desktop_element.get_property("Name") or ""
+                    automation_id = desktop_element.get_property("AutomationId") or ""
+                    class_name = desktop_element.get_property("ClassName") or ""
+
+                    element_data = {
+                        "tag_or_control": control_type,
+                        "tag": control_type,
+                        "element_id": automation_id,
+                        "name": name[:50] if name else "",
+                        "source": "desktop",
+                        "attributes": {
+                            "AutomationId": automation_id,
+                            "Name": name,
+                            "ControlType": control_type,
+                            "ClassName": class_name,
+                        },
+                    }
+
+                    # Build selector
+                    selector = self._build_desktop_selector(desktop_element)
+
+                    if is_anchor:
+                        self._anchor_data = element_data
+                        self._anchor_selector = selector
+                        self._status_bar.set_status_message(
+                            "Anchor set! Pick target (Ctrl+E) or clear anchor (Ctrl+Shift+A)",
+                            "success",
+                        )
+                        self._status_bar.set_anchor_element(control_type, name)
+                    else:
+                        self._on_tree_element_selected(element_data)
+                        self._current_selector = selector
+                        self._status_bar.set_status_message(
+                            f"Selected {control_type}: {name[:30] if name else automation_id[:30]}",
+                            "success",
+                        )
+
+                except Exception as e:
+                    logger.error(f"UIExplorer: Failed to process desktop element: {e}")
+                    self._status_bar.set_status_message(f"Error: {e}", "error")
+                finally:
+                    self._cancel_picking()
+
+            def on_cancelled():
+                """Handle picker cancelled."""
+                self._status_bar.set_status_message("Selection cancelled", "info")
+                self._cancel_picking()
+
+            # Hide the dialog temporarily so user can pick elements
+            self.hide()
+
+            # Activate the element picker
+            self._desktop_picker = activate_element_picker(
+                callback_on_select=on_element_selected,
+                callback_on_cancel=on_cancelled,
+            )
+
+        except ImportError as e:
+            logger.error(f"UIExplorer: ElementPickerOverlay not available: {e}")
+            self._status_bar.set_status_message("Desktop picker not available", "error")
+            self._cancel_picking()
+        except Exception as e:
+            logger.error(f"UIExplorer: Failed to start desktop picking: {e}")
+            self._status_bar.set_status_message(f"Pick failed: {e}", "error")
+            self._cancel_picking()
+
+    def _build_desktop_selector(self, desktop_element) -> str:
+        """Build a UiPath-style selector from a desktop element."""
+        control_type = desktop_element.get_property("ControlTypeName") or "Unknown"
+        if control_type.endswith("Control"):
+            control_type = control_type[:-7]
+
+        attrs = [f"type='{control_type}'"]
+
+        automation_id = desktop_element.get_property("AutomationId")
+        if automation_id:
+            attrs.append(f"AutomationId='{automation_id}'")
+
+        name = desktop_element.get_property("Name")
+        if name:
+            # Escape single quotes in name
+            name_escaped = name.replace("'", "&apos;")[:50]
+            attrs.append(f"Name='{name_escaped}'")
+
+        class_name = desktop_element.get_property("ClassName")
+        if class_name:
+            attrs.append(f"ClassName='{class_name}'")
+
+        return f"<ctrl {' '.join(attrs)} />"
 
     def _on_browser_element_picked(self, fingerprint) -> None:
         """
@@ -535,15 +635,11 @@ class UIExplorerDialog(QDialog):
                 "tag_or_control": fingerprint.tag_name,
                 "tag": fingerprint.tag_name,
                 "element_id": fingerprint.element_id or "",
-                "name": fingerprint.text_content[:50]
-                if fingerprint.text_content
-                else "",
+                "name": fingerprint.text_content[:50] if fingerprint.text_content else "",
                 "source": "browser",
                 "attributes": {
                     "id": fingerprint.element_id or "",
-                    "class": " ".join(fingerprint.class_names)
-                    if fingerprint.class_names
-                    else "",
+                    "class": " ".join(fingerprint.class_names) if fingerprint.class_names else "",
                     "text": fingerprint.text_content or "",
                 },
             }
@@ -609,9 +705,7 @@ class UIExplorerDialog(QDialog):
 
         return f"<webctrl {' '.join(attrs)} />"
 
-    def _build_combined_selector(
-        self, anchor: str, target: str, position: str = "left_of"
-    ) -> str:
+    def _build_combined_selector(self, anchor: str, target: str, position: str = "left_of") -> str:
         """
         Build combined anchor + target selector in UiPath XML format.
 
@@ -714,6 +808,20 @@ class UIExplorerDialog(QDialog):
         self._is_picking_anchor = False
         self._toolbar.set_picking_active(element=False, anchor=False)
 
+        # Close desktop picker overlay if active
+        if self._desktop_picker:
+            try:
+                self._desktop_picker.close()
+            except Exception:
+                pass
+            self._desktop_picker = None
+
+        # Show dialog again if it was hidden for desktop picking
+        if not self.isVisible():
+            self.show()
+            self.raise_()
+            self.activateWindow()
+
         if self._selector_manager and self._browser_page:
             self._schedule_task(self._stop_browser_picking())
 
@@ -731,9 +839,7 @@ class UIExplorerDialog(QDialog):
             logger.debug("UIExplorer: Validate requested")
 
             if not self._current_selector:
-                self._status_bar.set_status_message(
-                    "No selector to validate", "warning"
-                )
+                self._status_bar.set_status_message("No selector to validate", "warning")
                 self._toolbar.reset_validate_button()
                 return
 
@@ -759,9 +865,7 @@ class UIExplorerDialog(QDialog):
             self._init_selector_manager()
 
             if not self._selector_manager:
-                self._status_bar.set_status_message(
-                    "Selector manager unavailable", "warning"
-                )
+                self._status_bar.set_status_message("Selector manager unavailable", "warning")
                 self._toolbar.set_validate_result(False)
                 return
 
@@ -800,9 +904,7 @@ class UIExplorerDialog(QDialog):
 
     def _validate_desktop_selector(self) -> None:
         """Validate selector against desktop."""
-        self._status_bar.set_status_message(
-            "Desktop validation not yet implemented", "info"
-        )
+        self._status_bar.set_status_message("Desktop validation not yet implemented", "info")
         self._toolbar.reset_validate_button()
 
     def _on_repair(self) -> None:
@@ -815,9 +917,7 @@ class UIExplorerDialog(QDialog):
                 return
 
             # Repair functionality will integrate with selector healing later
-            self._status_bar.set_status_message(
-                "Selector repair not yet implemented", "info"
-            )
+            self._status_bar.set_status_message("Selector repair not yet implemented", "info")
 
             # Show tooltip on repair button
             QMessageBox.information(
@@ -841,9 +941,7 @@ class UIExplorerDialog(QDialog):
                 if self._current_selector:
                     self._schedule_task(self._highlight_current_selector())
                 else:
-                    self._status_bar.set_status_message(
-                        "No selector to highlight", "warning"
-                    )
+                    self._status_bar.set_status_message("No selector to highlight", "warning")
                     self._toolbar.set_highlight_checked(False)
             else:
                 self._schedule_task(self._clear_highlights())
@@ -855,17 +953,13 @@ class UIExplorerDialog(QDialog):
         """Highlight the current selector in the browser/desktop."""
         try:
             if self._mode != "browser" or not self._browser_page:
-                self._status_bar.set_status_message(
-                    "Highlight requires browser", "warning"
-                )
+                self._status_bar.set_status_message("Highlight requires browser", "warning")
                 return
 
             self._init_selector_manager()
 
             if not self._selector_manager:
-                self._status_bar.set_status_message(
-                    "Selector manager unavailable", "warning"
-                )
+                self._status_bar.set_status_message("Selector manager unavailable", "warning")
                 return
 
             selector = self._current_selector.strip()
@@ -925,9 +1019,7 @@ class UIExplorerDialog(QDialog):
             # Show hidden elements option
             show_hidden_action = QAction("Show hidden elements", self)
             show_hidden_action.setCheckable(True)
-            show_hidden_action.setChecked(
-                self._options.get("show_hidden_elements", False)
-            )
+            show_hidden_action.setChecked(self._options.get("show_hidden_elements", False))
             show_hidden_action.triggered.connect(
                 lambda checked: self._set_option("show_hidden_elements", checked)
             )
@@ -936,9 +1028,7 @@ class UIExplorerDialog(QDialog):
             # Include computed properties option
             computed_action = QAction("Include computed properties", self)
             computed_action.setCheckable(True)
-            computed_action.setChecked(
-                self._options.get("include_computed_properties", True)
-            )
+            computed_action.setChecked(self._options.get("include_computed_properties", True))
             computed_action.triggered.connect(
                 lambda checked: self._set_option("include_computed_properties", checked)
             )
@@ -990,16 +1080,12 @@ class UIExplorerDialog(QDialog):
         """Capture current element snapshot for comparison."""
         try:
             if not self._current_element:
-                self._status_bar.set_status_message(
-                    "No element selected for snapshot", "warning"
-                )
+                self._status_bar.set_status_message("No element selected for snapshot", "warning")
                 self._toolbar.reset_snapshot_button()
                 return
 
             if self._mode == "browser" and not self._browser_page:
-                self._status_bar.set_status_message(
-                    "No browser page for snapshot", "warning"
-                )
+                self._status_bar.set_status_message("No browser page for snapshot", "warning")
                 self._toolbar.reset_snapshot_button()
                 return
 
@@ -1017,27 +1103,19 @@ class UIExplorerDialog(QDialog):
             # Build snapshot data from current element
             snapshot = {
                 "timestamp": asyncio.get_event_loop().time(),
-                "element": self._current_element.copy()
-                if self._current_element
-                else {},
+                "element": self._current_element.copy() if self._current_element else {},
                 "selector": self._current_selector,
             }
 
             # For browser mode, capture live element state
-            if (
-                self._mode == "browser"
-                and self._browser_page
-                and self._current_selector
-            ):
+            if self._mode == "browser" and self._browser_page and self._current_selector:
                 self._init_selector_manager()
                 if self._selector_manager:
                     try:
                         # Try to get live element attributes
                         selector = self._current_selector.strip()
                         selector_type = "xpath" if selector.startswith("//") else "css"
-                        await self._selector_manager.inject_into_page(
-                            self._browser_page
-                        )
+                        await self._selector_manager.inject_into_page(self._browser_page)
 
                         # Get element info via JS
                         element_info = await self._browser_page.evaluate(
@@ -1081,15 +1159,11 @@ class UIExplorerDialog(QDialog):
         """Compare current state with previous snapshot."""
         try:
             if not self._snapshot_data:
-                self._status_bar.set_status_message(
-                    "No snapshot to compare with", "warning"
-                )
+                self._status_bar.set_status_message("No snapshot to compare with", "warning")
                 return
 
             if not self._current_element:
-                self._status_bar.set_status_message(
-                    "No current element to compare", "warning"
-                )
+                self._status_bar.set_status_message("No current element to compare", "warning")
                 return
 
             logger.debug("UIExplorer: Comparing with snapshot")
@@ -1267,9 +1341,7 @@ class UIExplorerDialog(QDialog):
                 return
 
             logger.debug("UIExplorer: Finding similar elements")
-            self._status_bar.set_status_message(
-                "Searching for similar elements...", "info"
-            )
+            self._status_bar.set_status_message("Searching for similar elements...", "info")
             self._schedule_task(self._find_similar_elements())
 
         except Exception as e:
@@ -1288,8 +1360,8 @@ class UIExplorerDialog(QDialog):
             current_tag = self._current_element.get(
                 "tag_or_control", self._current_element.get("tag", "")
             )
-            current_text = self._current_element.get("name", "")
-            current_attrs = self._current_element.get("attributes", {})
+            self._current_element.get("name", "")
+            self._current_element.get("attributes", {})
 
             # Find elements by same tag
             similar_elements = await self._browser_page.evaluate(
@@ -1363,16 +1435,14 @@ class UIExplorerDialog(QDialog):
 
         layout = QVBoxLayout(dialog)
 
-        info_label = QLabel(
-            "Double-click to use selector. Found elements with same tag:"
-        )
+        info_label = QLabel("Double-click to use selector. Found elements with same tag:")
         layout.addWidget(info_label)
 
         list_widget = QListWidget()
         for r in results:
             selector = r.get("selector", "")
             text = r.get("text", "")[:30]
-            tag = r.get("tag", "")
+            r.get("tag", "")
             display = f"{selector}"
             if text:
                 display += f' - "{text}"'
@@ -1427,9 +1497,7 @@ class UIExplorerDialog(QDialog):
                 return
 
             logger.debug("UIExplorer: Generating AI suggestions")
-            self._status_bar.set_status_message(
-                "Generating selector suggestions...", "info"
-            )
+            self._status_bar.set_status_message("Generating selector suggestions...", "info")
 
             # Generate strategies from current element
             strategies = self._generate_selector_strategies(self._current_element)
@@ -1437,9 +1505,7 @@ class UIExplorerDialog(QDialog):
             if strategies:
                 self._show_suggestions_dialog(strategies)
             else:
-                self._status_bar.set_status_message(
-                    "No suggestions generated", "warning"
-                )
+                self._status_bar.set_status_message("No suggestions generated", "warning")
 
         except Exception as e:
             logger.error(f"UIExplorer: AI suggest failed: {e}")
@@ -1615,11 +1681,11 @@ class UIExplorerDialog(QDialog):
 
             # Color code by score
             if score >= 85:
-                score_color = "#10b981"  # Green
+                pass  # Green
             elif score >= 70:
-                score_color = "#f59e0b"  # Yellow
+                pass  # Yellow
             else:
-                score_color = "#ef4444"  # Red
+                pass  # Red
 
             display = f"[{score}] {selector}"
 
@@ -1664,9 +1730,7 @@ class UIExplorerDialog(QDialog):
                 self._current_selector = selector
                 self._update_save_button_state()
                 dialog.accept()
-                self._status_bar.set_status_message(
-                    f"Applied: {selector[:50]}...", "success"
-                )
+                self._status_bar.set_status_message(f"Applied: {selector[:50]}...", "success")
 
         list_widget.itemDoubleClicked.connect(on_item_double_clicked)
 
@@ -1687,9 +1751,7 @@ class UIExplorerDialog(QDialog):
             if selector:
                 clipboard = QApplication.clipboard()
                 clipboard.setText(selector)
-                self._status_bar.set_status_message(
-                    "Selector copied to clipboard", "success"
-                )
+                self._status_bar.set_status_message("Selector copied to clipboard", "success")
             else:
                 self._status_bar.set_status_message("No selector to copy", "warning")
         except Exception as e:
@@ -1777,13 +1839,9 @@ class UIExplorerDialog(QDialog):
         """
         try:
             if value:
-                self._status_bar.set_status_message(
-                    f"Copied '{name}' to clipboard", "success"
-                )
+                self._status_bar.set_status_message(f"Copied '{name}' to clipboard", "success")
             else:
-                self._status_bar.set_status_message(
-                    f"Copied empty value for '{name}'", "info"
-                )
+                self._status_bar.set_status_message(f"Copied empty value for '{name}'", "info")
         except Exception as e:
             logger.error(f"UIExplorer: Property copy notification failed: {e}")
 
@@ -2074,9 +2132,7 @@ class UIExplorerDialog(QDialog):
         # Handle both old format (tag/control_type) and new format (tag_or_control)
         tag = self._current_element.get(
             "tag_or_control",
-            self._current_element.get(
-                "tag", self._current_element.get("control_type", "element")
-            ),
+            self._current_element.get("tag", self._current_element.get("control_type", "element")),
         )
         attrs = self._current_element.get("attributes", {})
 
@@ -2131,9 +2187,7 @@ class UIExplorerDialog(QDialog):
         task = asyncio.ensure_future(coro)
         self._pending_tasks.append(task)
         task.add_done_callback(
-            lambda t: self._pending_tasks.remove(t)
-            if t in self._pending_tasks
-            else None
+            lambda t: self._pending_tasks.remove(t) if t in self._pending_tasks else None
         )
 
     def _cancel_pending_tasks(self) -> None:

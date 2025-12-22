@@ -15,13 +15,16 @@ Features:
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
 import uuid
 
 import orjson
 import logging
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.schemas.property_schema import PropertyDef
 
 from casare_rpa.domain.entities.node_connection import NodeConnection
 from casare_rpa.domain.value_objects.types import (
@@ -81,9 +84,7 @@ class SubflowPort:
         if not self.name:
             raise ValueError("SubflowPort name cannot be empty")
         if not self.name.replace("_", "").replace("-", "").isalnum():
-            raise ValueError(
-                f"SubflowPort name '{self.name}' contains invalid characters"
-            )
+            raise ValueError(f"SubflowPort name '{self.name}' contains invalid characters")
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize port to dictionary."""
@@ -102,16 +103,18 @@ class SubflowPort:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SubflowPort":
         """Create port from dictionary."""
-        # Handle both old format (port_type/data_type strings) and new format (type as DataType)
-        data_type_str = data.get("type") or data.get("data_type", "ANY")
-        try:
-            if isinstance(data_type_str, str):
-                data_type = DataType[data_type_str.upper()]
-            else:
-                data_type = DataType.ANY
-        except KeyError:
-            logger.warning(f"Unknown DataType '{data_type_str}', defaulting to ANY")
-            data_type = DataType.ANY
+        data_type_value = data.get("type")
+        if data_type_value is None:
+            raise ValueError("SubflowPort 'type' is required.")
+        if isinstance(data_type_value, DataType):
+            data_type = data_type_value
+        elif isinstance(data_type_value, str):
+            try:
+                data_type = DataType[data_type_value.upper()]
+            except KeyError as exc:
+                raise ValueError(f"Unknown DataType '{data_type_value}' for SubflowPort.") from exc
+        else:
+            raise ValueError(f"Invalid SubflowPort 'type': {type(data_type_value).__name__}")
 
         return cls(
             name=data.get("name", ""),
@@ -212,19 +215,22 @@ class SubflowParameter:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SubflowParameter":
         """Create from dictionary."""
-        property_type_str = data.get("property_type", "string")
-        try:
-            if isinstance(property_type_str, str):
-                property_type = PropertyType(property_type_str)
-            elif isinstance(property_type_str, PropertyType):
-                property_type = property_type_str
-            else:
-                property_type = PropertyType.STRING
-        except ValueError:
-            logger.warning(
-                f"Unknown PropertyType '{property_type_str}', defaulting to STRING"
+        property_type_value = data.get("property_type")
+        if property_type_value is None:
+            raise ValueError("SubflowParameter 'property_type' is required.")
+        if isinstance(property_type_value, PropertyType):
+            property_type = property_type_value
+        elif isinstance(property_type_value, str):
+            try:
+                property_type = PropertyType(property_type_value)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Unknown PropertyType '{property_type_value}' for SubflowParameter."
+                ) from exc
+        else:
+            raise ValueError(
+                f"Invalid SubflowParameter 'property_type': {type(property_type_value).__name__}"
             )
-            property_type = PropertyType.STRING
 
         return cls(
             name=data.get("name", ""),
@@ -615,7 +621,7 @@ class Subflow:
         for node_data in self.nodes.values():
             node_type = node_data.get("node_type", "")
             if node_type == "SubflowNode":
-                subflow_id = node_data.get("properties", {}).get("subflow_id")
+                subflow_id = node_data.get("config", {}).get("subflow_id")
                 if subflow_id:
                     subflow_ids.add(subflow_id)
         return subflow_ids
@@ -636,9 +642,7 @@ class Subflow:
             Tuple of (is_valid, error_message)
         """
         if current_depth > MAX_NESTING_DEPTH:
-            return False, (
-                f"Nesting depth {current_depth} exceeds maximum of {MAX_NESTING_DEPTH}"
-            )
+            return False, (f"Nesting depth {current_depth} exceeds maximum of {MAX_NESTING_DEPTH}")
 
         nested_ids = self.get_nested_subflow_ids()
         for nested_id in nested_ids:
@@ -734,9 +738,7 @@ class Subflow:
 
         return self.version
 
-    def clone(
-        self, new_id: Optional[str] = None, new_name: Optional[str] = None
-    ) -> "Subflow":
+    def clone(self, new_id: Optional[str] = None, new_name: Optional[str] = None) -> "Subflow":
         """
         Create a deep copy of this subflow with a new ID.
 
@@ -819,17 +821,13 @@ class Subflow:
             try:
                 created_at = datetime.fromisoformat(data["created_at"])
             except (ValueError, TypeError):
-                logger.warning(
-                    f"Invalid created_at timestamp: {data.get('created_at')}"
-                )
+                logger.warning(f"Invalid created_at timestamp: {data.get('created_at')}")
 
         if data.get("updated_at"):
             try:
                 updated_at = datetime.fromisoformat(data["updated_at"])
             except (ValueError, TypeError):
-                logger.warning(
-                    f"Invalid updated_at timestamp: {data.get('updated_at')}"
-                )
+                logger.warning(f"Invalid updated_at timestamp: {data.get('updated_at')}")
 
         # Parse ports using SubflowPort.from_dict for consistent handling
         inputs = [SubflowPort.from_dict(p) for p in data.get("inputs", [])]

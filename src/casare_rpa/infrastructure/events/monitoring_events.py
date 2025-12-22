@@ -132,9 +132,7 @@ class MonitoringEventBus:
             f"({len(self._handlers[event_type])} total handlers)"
         )
 
-    def unsubscribe(
-        self, event_type: MonitoringEventType, handler: EventHandler
-    ) -> None:
+    def unsubscribe(self, event_type: MonitoringEventType, handler: EventHandler) -> None:
         """
         Unsubscribe from an event type.
 
@@ -147,9 +145,7 @@ class MonitoringEventBus:
                 self._handlers[event_type].remove(handler)
                 logger.debug(f"Handler unsubscribed from {event_type.name}")
             except ValueError:
-                logger.warning(
-                    f"Handler not found for {event_type.name} during unsubscribe"
-                )
+                logger.warning(f"Handler not found for {event_type.name} during unsubscribe")
 
     async def publish(
         self,
@@ -198,9 +194,7 @@ class MonitoringEventBus:
                 if asyncio.iscoroutinefunction(handler):
                     tasks.append(handler(event))
                 else:
-                    logger.warning(
-                        f"Handler {i} for {event_type.name} is not async, wrapping"
-                    )
+                    logger.warning(f"Handler {i} for {event_type.name} is not async, wrapping")
 
                     # Wrap sync handler
                     async def wrapped(h=handler, e=event):
@@ -242,8 +236,7 @@ class MonitoringEventBus:
             Dict with handler counts and recent event count
         """
         handler_counts = {
-            event_type.name: len(handlers)
-            for event_type, handlers in self._handlers.items()
+            event_type.name: len(handlers) for event_type, handlers in self._handlers.items()
         }
 
         return {

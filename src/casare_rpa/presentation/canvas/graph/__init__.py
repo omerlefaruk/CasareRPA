@@ -33,6 +33,8 @@ from casare_rpa.presentation.canvas.graph.custom_pipe import (
     CasarePipe,
     get_show_connection_labels,
     set_show_connection_labels,
+    get_show_phantom_values,
+    set_show_phantom_values,
 )
 from casare_rpa.presentation.canvas.graph.event_filters import (
     ConnectionDropFilter,
@@ -118,6 +120,8 @@ __all__ = [
     "CasarePipe",
     "set_show_connection_labels",
     "get_show_connection_labels",
+    "set_show_phantom_values",
+    "get_show_phantom_values",
     # Reroute node
     "RerouteNodeItem",
     # Subflow node

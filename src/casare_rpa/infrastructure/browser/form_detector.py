@@ -275,9 +275,7 @@ class FormDetector:
             logger.error(f"Failed to detect forms: {e}")
             return []
 
-    async def detect_fields(
-        self, page: "Page", container: str = "body"
-    ) -> List[FormField]:
+    async def detect_fields(self, page: "Page", container: str = "body") -> List[FormField]:
         """
         Detect input fields within a container.
 
@@ -301,9 +299,7 @@ class FormDetector:
             logger.error(f"Failed to detect fields in {container}: {e}")
             return []
 
-    async def get_form_by_selector(
-        self, page: "Page", selector: str
-    ) -> Optional[DetectedForm]:
+    async def get_form_by_selector(self, page: "Page", selector: str) -> Optional[DetectedForm]:
         """
         Get a specific form by its selector.
 

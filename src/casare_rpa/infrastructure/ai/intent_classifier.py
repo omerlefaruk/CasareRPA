@@ -126,7 +126,7 @@ class IntentClassifier:
                 r"\bstart\b.*\bfrom scratch\b",
                 r"^(create|build|make)\b",
             ],
-            weight=1.2,
+            weight=1.5,
         ),
         # MODIFY_WORKFLOW patterns
         PatternRule(
@@ -221,13 +221,12 @@ class IntentClassifier:
         PatternRule(
             intent=UserIntent.CLEAR,
             patterns=[
-                r"\bclear\b.*\b(all|everything|workflow|conversation)\b",
-                r"\bstart over\b",
-                r"\breset\b",
-                r"\bfresh start\b",
-                r"\bfrom scratch\b",
+                r"\bclear\b\s+\b(all|everything|workflow|conversation|chat|history)\b",
+                r"\bstart\b\s+\bover\b",
+                r"\bfresh\b\s+\bstart\b",
+                r"\bfrom\b\s+\bscratch\b",
             ],
-            weight=1.3,
+            weight=1.0,
         ),
         # TEMPLATE_REQUEST patterns
         PatternRule(
@@ -579,9 +578,7 @@ class IntentClassifier:
         if context:
             context_info = f"\nConversation context:\n{context[:500]}"
 
-        workflow_info = (
-            "has an existing workflow" if has_workflow else "no workflow loaded"
-        )
+        workflow_info = "has an existing workflow" if has_workflow else "no workflow loaded"
 
         return f"""Classify the user's intent. User currently {workflow_info}.
 

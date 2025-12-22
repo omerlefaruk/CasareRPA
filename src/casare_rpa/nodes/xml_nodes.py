@@ -31,8 +31,16 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node(category="data")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to parse",
+    ),
+)
+@node(category="document")
 class ParseXMLNode(BaseNode):
     """
     Parse XML from a string.
@@ -110,8 +118,14 @@ class ParseXMLNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="File Path",
+        tooltip="Path to XML file to read",
+    ),
     PropertyDef(
         "encoding",
         PropertyType.STRING,
@@ -120,6 +134,7 @@ class ParseXMLNode(BaseNode):
         tooltip="File encoding (e.g., utf-8, latin-1)",
     ),
 )
+@node(category="document")
 class ReadXMLFileNode(BaseNode):
     """
     Read and parse an XML file.
@@ -195,8 +210,21 @@ class ReadXMLFileNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="File Path",
+        tooltip="Path to write XML file",
+    ),
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to write",
+    ),
     PropertyDef(
         "encoding",
         PropertyType.STRING,
@@ -219,6 +247,7 @@ class ReadXMLFileNode(BaseNode):
         tooltip="Include <?xml version...?> declaration",
     ),
 )
+@node(category="document")
 class WriteXMLFileNode(BaseNode):
     """
     Write XML to a file.
@@ -284,9 +313,7 @@ class WriteXMLFileNode(BaseNode):
 
             # Add XML declaration if requested
             if xml_declaration and not xml_string.startswith("<?xml"):
-                xml_string = (
-                    f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
-                )
+                xml_string = f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
 
             with open(path, "w", encoding=encoding) as f:
                 f.write(xml_string)
@@ -310,8 +337,23 @@ class WriteXMLFileNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to query",
+    ),
+    PropertyDef(
+        "xpath",
+        PropertyType.STRING,
+        required=True,
+        label="XPath",
+        tooltip="XPath expression to query",
+    ),
+)
+@node(category="document")
 class XPathQueryNode(BaseNode):
     """
     Query XML using XPath.
@@ -361,9 +403,7 @@ class XPathQueryNode(BaseNode):
             else:
                 root = context.get_variable("_xml_root")
                 if root is None:
-                    raise ValueError(
-                        "No XML available. Parse XML first or provide xml_string."
-                    )
+                    raise ValueError("No XML available. Parse XML first or provide xml_string.")
 
             # Execute XPath query
             elements = root.findall(xpath)
@@ -406,8 +446,30 @@ class XPathQueryNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to search",
+    ),
+    PropertyDef(
+        "tag_name",
+        PropertyType.STRING,
+        required=True,
+        label="Tag Name",
+        tooltip="Tag name to find",
+    ),
+    PropertyDef(
+        "index",
+        PropertyType.INTEGER,
+        default=0,
+        label="Index",
+        tooltip="Index if multiple elements match (default: 0)",
+    ),
+)
+@node(category="document")
 class GetXMLElementNode(BaseNode):
     """
     Get XML element by tag name.
@@ -497,8 +559,30 @@ class GetXMLElementNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to search",
+    ),
+    PropertyDef(
+        "xpath",
+        PropertyType.STRING,
+        default=".",
+        label="XPath",
+        tooltip="XPath to target element",
+    ),
+    PropertyDef(
+        "attribute_name",
+        PropertyType.STRING,
+        required=True,
+        label="Attribute Name",
+        tooltip="Name of the attribute to get",
+    ),
+)
+@node(category="document")
 class GetXMLAttributeNode(BaseNode):
     """
     Get an attribute value from an XML element.
@@ -574,8 +658,14 @@ class GetXMLAttributeNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "xml_string",
+        PropertyType.TEXT,
+        required=True,
+        label="XML String",
+        tooltip="XML content to convert to JSON",
+    ),
     PropertyDef(
         "include_attributes",
         PropertyType.BOOLEAN,
@@ -591,6 +681,7 @@ class GetXMLAttributeNode(BaseNode):
         tooltip="Key name for element text content in JSON",
     ),
 )
+@node(category="document")
 class XMLToJsonNode(BaseNode):
     """
     Convert XML to JSON.
@@ -683,8 +774,14 @@ class XMLToJsonNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "json_data",
+        PropertyType.JSON,
+        required=True,
+        label="JSON Data",
+        tooltip="JSON data to convert to XML (dict or string)",
+    ),
     PropertyDef(
         "root_tag",
         PropertyType.STRING,
@@ -700,6 +797,7 @@ class XMLToJsonNode(BaseNode):
         tooltip="Format XML output with indentation",
     ),
 )
+@node(category="document")
 class JsonToXMLNode(BaseNode):
     """
     Convert JSON to XML.

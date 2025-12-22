@@ -385,9 +385,7 @@ class VaultCredentialProvider:
         """Renew a credential lease."""
         try:
             new_duration = await self._client.renew_lease(lease.lease_id)
-            lease.expires_at = datetime.now(timezone.utc) + timedelta(
-                seconds=new_duration
-            )
+            lease.expires_at = datetime.now(timezone.utc) + timedelta(seconds=new_duration)
             logger.info(f"Renewed lease for {lease.path} (new TTL: {new_duration}s)")
         except Exception as e:
             logger.error(f"Failed to renew lease for {lease.path}: {e}")
@@ -439,9 +437,7 @@ class VaultCredentialProvider:
                 "lease_id": lease.lease_id,
                 "expires_at": lease.expires_at.isoformat(),
                 "renewable": lease.renewable,
-                "time_remaining": (
-                    lease.expires_at - datetime.now(timezone.utc)
-                ).total_seconds(),
+                "time_remaining": (lease.expires_at - datetime.now(timezone.utc)).total_seconds(),
             }
             for lease in self._leases.values()
         ]

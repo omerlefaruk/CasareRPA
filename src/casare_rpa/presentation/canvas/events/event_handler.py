@@ -165,9 +165,7 @@ class EventHandler:
         self._wildcard_subscriptions: list[Callable] = []
         self._filtered_subscriptions: list[tuple[EventFilter, Callable]] = []
 
-    def subscribe(
-        self, event_type: EventType, handler: Callable[[Event], None]
-    ) -> None:
+    def subscribe(self, event_type: EventType, handler: Callable[[Event], None]) -> None:
         """
         Subscribe to a specific event type.
 
@@ -225,13 +223,9 @@ class EventHandler:
         self._event_bus.subscribe_filtered(event_filter, handler)
         self._filtered_subscriptions.append((event_filter, handler))
 
-        logger.debug(
-            f"{self.__class__.__name__} subscribed with filter: {event_filter}"
-        )
+        logger.debug(f"{self.__class__.__name__} subscribed with filter: {event_filter}")
 
-    def unsubscribe(
-        self, event_type: EventType, handler: Callable[[Event], None]
-    ) -> bool:
+    def unsubscribe(self, event_type: EventType, handler: Callable[[Event], None]) -> bool:
         """
         Unsubscribe from specific event type.
 
@@ -250,9 +244,7 @@ class EventHandler:
             except ValueError:
                 pass
 
-            logger.debug(
-                f"{self.__class__.__name__} unsubscribed from {event_type.name}"
-            )
+            logger.debug(f"{self.__class__.__name__} unsubscribed from {event_type.name}")
 
         return success
 

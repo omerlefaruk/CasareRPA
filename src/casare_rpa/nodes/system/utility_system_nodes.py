@@ -35,7 +35,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "watch_path",
@@ -70,6 +69,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Monitor subdirectories as well",
     ),
 )
+@node(category="system")
 class FileWatcherNode(BaseNode):
     """
     Monitor a file or folder for changes.
@@ -101,8 +101,6 @@ class FileWatcherNode(BaseNode):
             events = self.get_parameter("events", "all")
             timeout = int(self.get_parameter("timeout", 30) or 30)
             recursive = self.get_parameter("recursive", False)
-
-            watch_path = context.resolve_value(str(watch_path))
 
             if not watch_path:
                 self.status = NodeStatus.ERROR
@@ -234,7 +232,6 @@ class FileWatcherNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "action",
@@ -276,6 +273,7 @@ class FileWatcherNode(BaseNode):
         tooltip="Size of the generated QR code in pixels",
     ),
 )
+@node(category="system")
 class QRCodeNode(BaseNode):
     """Generate or read QR codes."""
 
@@ -305,10 +303,8 @@ class QRCodeNode(BaseNode):
                 data = self.get_input_value("data")
                 if data is None:
                     data = self.get_parameter("data", "")
-                data = context.resolve_value(str(data))
 
                 output_path = self.get_parameter("output_path", "")
-                output_path = context.resolve_value(str(output_path))
 
                 if not data:
                     self.status = NodeStatus.ERROR
@@ -355,7 +351,6 @@ class QRCodeNode(BaseNode):
 
             else:  # read
                 image_path = self.get_parameter("image_path", "")
-                image_path = context.resolve_value(str(image_path))
 
                 if not image_path or not os.path.exists(image_path):
                     self.status = NodeStatus.ERROR
@@ -408,7 +403,6 @@ class QRCodeNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "action",
@@ -428,6 +422,7 @@ class QRCodeNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="system")
 class Base64Node(BaseNode):
     """Encode or decode base64 strings."""
 
@@ -455,7 +450,6 @@ class Base64Node(BaseNode):
             input_text = self.get_input_value("input_text")
             if input_text is None:
                 input_text = self.get_parameter("input_text", "")
-            input_text = context.resolve_value(str(input_text))
 
             if not input_text:
                 self.status = NodeStatus.ERROR
@@ -469,9 +463,7 @@ class Base64Node(BaseNode):
                 result = base64.b64encode(input_text.encode("utf-8")).decode("utf-8")
             else:  # decode
                 try:
-                    result = base64.b64decode(input_text.encode("utf-8")).decode(
-                        "utf-8"
-                    )
+                    result = base64.b64decode(input_text.encode("utf-8")).decode("utf-8")
                 except Exception as decode_error:
                     self.status = NodeStatus.ERROR
                     return {
@@ -501,7 +493,6 @@ class Base64Node(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "uuid_version",
@@ -521,6 +512,7 @@ class Base64Node(BaseNode):
         tooltip="Number of UUIDs to generate",
     ),
 )
+@node(category="system")
 class UUIDGeneratorNode(BaseNode):
     """Generate UUIDs."""
 
@@ -580,7 +572,6 @@ class UUIDGeneratorNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "condition",
@@ -589,6 +580,13 @@ class UUIDGeneratorNode(BaseNode):
         label="Condition",
         tooltip="Expression to evaluate (supports {{var}}, operators like >, <, ==)",
         essential=True,
+    ),
+    PropertyDef(
+        "value",
+        PropertyType.ANY,
+        required=False,
+        label="Value",
+        tooltip="Value to compare in condition",
     ),
     PropertyDef(
         "assert_message",
@@ -605,6 +603,7 @@ class UUIDGeneratorNode(BaseNode):
         tooltip="If true, node fails when condition is false; if false, just outputs result",
     ),
 )
+@node(category="system")
 class AssertSystemNode(BaseNode):
     """Validate conditions and optionally fail the workflow."""
 
@@ -635,14 +634,10 @@ class AssertSystemNode(BaseNode):
             condition_input = self.get_input_value("condition")
             value_input = self.get_input_value("value")
 
-            condition_expr = context.resolve_value(str(condition_expr))
-
             if not condition_expr and condition_input is not None:
                 passed = bool(condition_input)
             elif condition_expr:
-                passed = self._evaluate_condition(
-                    condition_expr, condition_input, value_input
-                )
+                passed = self._evaluate_condition(condition_expr, condition_input, value_input)
             else:
                 self.status = NodeStatus.ERROR
                 return {
@@ -725,9 +720,7 @@ class AssertSystemNode(BaseNode):
                         return left_val < right_val
 
         # Truthy check (no eval for security)
-        return bool(
-            condition and condition.lower() not in ("false", "0", "none", "null", "")
-        )
+        return bool(condition and condition.lower() not in ("false", "0", "none", "null", ""))
 
 
 # =============================================================================
@@ -735,7 +728,6 @@ class AssertSystemNode(BaseNode):
 # =============================================================================
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "log_file_path",
@@ -776,6 +768,7 @@ class AssertSystemNode(BaseNode):
         tooltip="Add timestamp to log entries",
     ),
 )
+@node(category="system")
 class LogToFileNode(BaseNode):
     """Write messages to a custom log file."""
 

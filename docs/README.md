@@ -25,7 +25,7 @@ casare-rpa agent start --name my-robot
 
 ## Features
 
-- **413+ Automation Nodes** - Browser, desktop, data, HTTP, email, database, and system automation
+- **413+ Automation Nodes** - Browser, desktop, data, HTTP, email, and system automation
 - **20+ Trigger Types** - Schedule, webhook, file watch, email, messaging integrations
 - **Visual Canvas Designer** - Drag-and-drop workflow editor with real-time execution
 - **AI Workflow Generation** - Generate workflows from natural language

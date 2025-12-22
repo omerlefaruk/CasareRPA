@@ -130,17 +130,13 @@ class MonitoringDataAdapter:
         total_robots = len(all_robots)
         active_robots = sum(1 for r in all_robots.values() if r.status.value == "busy")
         idle_robots = sum(1 for r in all_robots.values() if r.status.value == "idle")
-        offline_robots = sum(
-            1 for r in all_robots.values() if r.status.value == "offline"
-        )
+        offline_robots = sum(1 for r in all_robots.values() if r.status.value == "offline")
 
         # Calculate today's job stats
         job_metrics = self.metrics.get_job_metrics()
         total_jobs_today = job_metrics.total_jobs
         average_duration = (
-            job_metrics.total_duration_seconds / total_jobs_today
-            if total_jobs_today > 0
-            else 0.0
+            job_metrics.total_duration_seconds / total_jobs_today if total_jobs_today > 0 else 0.0
         )
 
         return {
@@ -169,14 +165,41 @@ class MonitoringDataAdapter:
 
         try:
             async with self._db_pool.acquire() as conn:
+                has_id = await conn.fetchval(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'robots' AND column_name = 'id'
+                    )
+                    """
+                )
+                robot_id_expr = "COALESCE(robot_id, id)" if has_id else "robot_id"
+
                 # Build query with optional status filter
                 # Actual Supabase schema: id, robot_id, name, hostname, status,
                 # last_seen, last_heartbeat, metrics, capabilities, environment, etc.
                 # NO current_job_ids column exists!
                 if status:
-                    query = """
+                    if status == "idle":
+                        query = f"""
                         SELECT
-                            COALESCE(robot_id, id) AS robot_id,
+                            {robot_id_expr} AS robot_id,
+                            name,
+                            hostname,
+                            status,
+                            NULL AS current_job_id,
+                            last_seen,
+                            last_heartbeat,
+                            metrics
+                        FROM robots
+                        WHERE status IN ('idle', 'online')
+                        ORDER BY last_seen DESC NULLS LAST
+                        """
+                        rows = await conn.fetch(query)
+                    else:
+                        query = f"""
+                        SELECT
+                            {robot_id_expr} AS robot_id,
                             name,
                             hostname,
                             status,
@@ -187,12 +210,12 @@ class MonitoringDataAdapter:
                         FROM robots
                         WHERE status = $1
                         ORDER BY last_seen DESC NULLS LAST
-                    """
-                    rows = await conn.fetch(query, status)
+                        """
+                        rows = await conn.fetch(query, status)
                 else:
-                    query = """
+                    query = f"""
                         SELECT
-                            COALESCE(robot_id, id) AS robot_id,
+                            {robot_id_expr} AS robot_id,
                             name,
                             hostname,
                             status,
@@ -227,9 +250,7 @@ class MonitoringDataAdapter:
                     result.append(
                         {
                             "robot_id": row["robot_id"],
-                            "name": row.get("name")
-                            or row["hostname"]
-                            or row["robot_id"],
+                            "name": row.get("name") or row["hostname"] or row["robot_id"],
                             "hostname": row["hostname"] or row["robot_id"],
                             "status": api_status,
                             "cpu_percent": metrics.get("cpu_percent", 0.0),
@@ -237,8 +258,7 @@ class MonitoringDataAdapter:
                             "current_job_id": str(row["current_job_id"])
                             if row["current_job_id"]
                             else None,
-                            "last_heartbeat": row.get("last_heartbeat")
-                            or row["last_seen"],
+                            "last_heartbeat": row.get("last_heartbeat") or row["last_seen"],
                         }
                     )
                 return result
@@ -343,9 +363,7 @@ class MonitoringDataAdapter:
 
         try:
             async with self._db_pool.acquire() as conn:
-                return await self._query_job_history(
-                    conn, limit, status, workflow_id, robot_id
-                )
+                return await self._query_job_history(conn, limit, status, workflow_id, robot_id)
         except Exception as e:
             logger.error(f"Database error fetching job history: {e}")
             return []
@@ -369,18 +387,18 @@ class MonitoringDataAdapter:
             """
             SELECT
                 id::text AS job_id,
-                payload->>'workflow_id' AS workflow_id,
-                payload->>'workflow_name' AS workflow_name,
-                claimed_by AS robot_id,
+                workflow_id,
+                workflow_name,
+                robot_id,
                 status,
                 created_at,
                 completed_at,
                 CASE
-                    WHEN completed_at IS NOT NULL AND claimed_at IS NOT NULL
-                    THEN EXTRACT(EPOCH FROM (completed_at - claimed_at))::integer * 1000
+                    WHEN completed_at IS NOT NULL AND started_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - started_at))::integer * 1000
                     ELSE NULL
                 END AS duration_ms
-            FROM pgqueuer_jobs
+            FROM job_queue
             WHERE 1=1
             """
         ]
@@ -394,12 +412,12 @@ class MonitoringDataAdapter:
             param_idx += 1
 
         if workflow_id:
-            query_parts.append(f"AND payload->>'workflow_id' = ${param_idx}")
+            query_parts.append(f"AND workflow_id = ${param_idx}")
             params.append(workflow_id)
             param_idx += 1
 
         if robot_id:
-            query_parts.append(f"AND claimed_by = ${param_idx}")
+            query_parts.append(f"AND robot_id = ${param_idx}")
             params.append(robot_id)
             param_idx += 1
 
@@ -532,43 +550,43 @@ class MonitoringDataAdapter:
         query = """
             SELECT
                 id::text AS job_id,
-                payload->>'workflow_id' AS workflow_id,
-                payload->>'workflow_name' AS workflow_name,
-                claimed_by AS robot_id,
+                workflow_id,
+                workflow_name,
+                robot_id,
                 status,
                 created_at,
-                claimed_at,
+                started_at AS claimed_at,
                 completed_at,
                 CASE
-                    WHEN completed_at IS NOT NULL AND claimed_at IS NOT NULL
-                    THEN EXTRACT(EPOCH FROM (completed_at - claimed_at))::integer * 1000
+                    WHEN completed_at IS NOT NULL AND started_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - started_at))::integer * 1000
                     ELSE NULL
                 END AS duration_ms,
-                payload->>'error_message' AS error_message,
+                error_message,
                 COALESCE(
                     SUBSTRING(
-                        payload->>'error_message'
+                        error_message
                         FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
                     ),
                     CASE
-                        WHEN payload->>'error_message' ILIKE '%%timeout%%'
+                        WHEN error_message ILIKE '%%timeout%%'
                             THEN 'TimeoutError'
-                        WHEN payload->>'error_message' ILIKE '%%connection%%'
+                        WHEN error_message ILIKE '%%connection%%'
                             THEN 'ConnectionError'
-                        WHEN payload->>'error_message' ILIKE '%%not found%%'
+                        WHEN error_message ILIKE '%%not found%%'
                             THEN 'NotFoundError'
-                        WHEN payload->>'error_message' ILIKE '%%permission%%'
+                        WHEN error_message ILIKE '%%permission%%'
                             THEN 'PermissionError'
-                        WHEN payload->>'error_message' ILIKE '%%validation%%'
+                        WHEN error_message ILIKE '%%validation%%'
                             THEN 'ValidationError'
-                        WHEN payload->>'error_message' IS NOT NULL
+                        WHEN error_message IS NOT NULL
                             THEN 'UnknownError'
                         ELSE NULL
                     END
                 ) AS error_type,
-                COALESCE((payload->>'retry_count')::integer, 0) AS retry_count,
-                payload->'node_executions' AS node_executions_json
-            FROM pgqueuer_jobs
+                retry_count,
+                result->'node_executions' AS node_executions_json
+            FROM job_queue
             WHERE id = $1::uuid
         """
 
@@ -657,8 +675,7 @@ class MonitoringDataAdapter:
         for wf in workflow_metrics:
             if wf.duration_distribution.total_executions > 0:
                 all_durations.extend(
-                    [wf.duration_distribution.mean_ms]
-                    * wf.duration_distribution.total_executions
+                    [wf.duration_distribution.mean_ms] * wf.duration_distribution.total_executions
                 )
 
         p50_ms = 0.0
@@ -687,9 +704,7 @@ class MonitoringDataAdapter:
             "p99_duration_ms": p99_ms,
             "slowest_workflows": slowest_workflows,
             "error_distribution": error_distribution,
-            "self_healing_success_rate": healing_success_rate
-            if healing_success_rate
-            else None,
+            "self_healing_success_rate": healing_success_rate if healing_success_rate else None,
         }
 
     async def get_analytics_async(
@@ -723,26 +738,26 @@ class MonitoringDataAdapter:
                         COUNT(*) FILTER (WHERE status = 'completed') AS successful_jobs,
                         COUNT(*) FILTER (WHERE status = 'failed') AS failed_jobs,
                         AVG(
-                            EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS avg_duration_ms,
                         PERCENTILE_CONT(0.50) WITHIN GROUP (
-                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS p50_duration_ms,
                         PERCENTILE_CONT(0.90) WITHIN GROUP (
-                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS p90_duration_ms,
                         PERCENTILE_CONT(0.99) WITHIN GROUP (
-                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS p99_duration_ms
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
                 """
                 stats_row = await conn.fetchrow(stats_query, cutoff)
@@ -751,12 +766,8 @@ class MonitoringDataAdapter:
                 successful_jobs = stats_row["successful_jobs"] or 0
                 failed_jobs = stats_row["failed_jobs"] or 0
 
-                success_rate = (
-                    (successful_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
-                )
-                failure_rate = (
-                    (failed_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
-                )
+                success_rate = (successful_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
+                failure_rate = (failed_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
 
                 avg_duration_ms = stats_row["avg_duration_ms"] or 0.0
                 p50_duration_ms = stats_row["p50_duration_ms"] or 0.0
@@ -766,18 +777,18 @@ class MonitoringDataAdapter:
                 # Query 2: Slowest workflows (top 10 by avg duration)
                 slowest_query = """
                     SELECT
-                        payload->>'workflow_id' AS workflow_id,
-                        payload->>'workflow_name' AS workflow_name,
+                        workflow_id,
+                        workflow_name,
                         AVG(
-                            EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                            EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000
                         ) AS average_duration_ms,
                         COUNT(*) AS execution_count
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
                       AND completed_at IS NOT NULL
-                      AND claimed_at IS NOT NULL
+                      AND started_at IS NOT NULL
                       AND status IN ('completed', 'failed')
-                    GROUP BY payload->>'workflow_id', payload->>'workflow_name'
+                    GROUP BY workflow_id, workflow_name
                     HAVING COUNT(*) >= 3
                     ORDER BY average_duration_ms DESC
                     LIMIT 10
@@ -787,9 +798,7 @@ class MonitoringDataAdapter:
                 slowest_workflows = [
                     {
                         "workflow_id": row["workflow_id"] or "unknown",
-                        "workflow_name": row["workflow_name"]
-                        or row["workflow_id"]
-                        or "Unknown",
+                        "workflow_name": row["workflow_name"] or row["workflow_id"] or "Unknown",
                         "average_duration_ms": round(row["average_duration_ms"], 2),
                     }
                     for row in slowest_rows
@@ -800,29 +809,29 @@ class MonitoringDataAdapter:
                     SELECT
                         COALESCE(
                             SUBSTRING(
-                                payload->>'error_message'
+                                error_message
                                 FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
                             ),
                             CASE
-                                WHEN payload->>'error_message' ILIKE '%%timeout%%'
+                                WHEN error_message ILIKE '%%timeout%%'
                                     THEN 'TimeoutError'
-                                WHEN payload->>'error_message' ILIKE '%%connection%%'
+                                WHEN error_message ILIKE '%%connection%%'
                                     THEN 'ConnectionError'
-                                WHEN payload->>'error_message' ILIKE '%%not found%%'
+                                WHEN error_message ILIKE '%%not found%%'
                                     THEN 'NotFoundError'
-                                WHEN payload->>'error_message' ILIKE '%%permission%%'
+                                WHEN error_message ILIKE '%%permission%%'
                                     THEN 'PermissionError'
-                                WHEN payload->>'error_message' ILIKE '%%validation%%'
+                                WHEN error_message ILIKE '%%validation%%'
                                     THEN 'ValidationError'
                                 ELSE 'UnknownError'
                             END
                         ) AS error_type,
                         COUNT(*) AS count
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
                       AND status = 'failed'
-                      AND payload->>'error_message' IS NOT NULL
-                      AND payload->>'error_message' != ''
+                      AND error_message IS NOT NULL
+                      AND error_message != ''
                     GROUP BY error_type
                     ORDER BY count DESC
                     LIMIT 20
@@ -830,22 +839,21 @@ class MonitoringDataAdapter:
                 error_rows = await conn.fetch(error_query, cutoff)
 
                 error_distribution = [
-                    {"error_type": row["error_type"], "count": row["count"]}
-                    for row in error_rows
+                    {"error_type": row["error_type"], "count": row["count"]} for row in error_rows
                 ]
 
                 # Query 4: Self-healing success rate from payload metadata
                 healing_query = """
                     SELECT
                         COALESCE(
-                            SUM((payload->>'healing_attempts')::int), 0
+                            SUM((metadata->>'healing_attempts')::int), 0
                         ) AS total_attempts,
                         COALESCE(
-                            SUM((payload->>'healing_successes')::int), 0
+                            SUM((metadata->>'healing_successes')::int), 0
                         ) AS total_successes
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE created_at >= $1
-                      AND payload ? 'healing_attempts'
+                      AND metadata ? 'healing_attempts'
                 """
                 healing_row = await conn.fetchrow(healing_query, cutoff)
 
@@ -926,9 +934,7 @@ class MonitoringDataAdapter:
                 events: List[Dict[str, Any]] = []
 
                 # Query job events
-                job_events = await self._query_job_activity_events(
-                    conn, limit, since, event_type
-                )
+                job_events = await self._query_job_activity_events(conn, limit, since, event_type)
                 events.extend(job_events)
 
                 # Query robot status change events
@@ -980,14 +986,14 @@ class MonitoringDataAdapter:
             """
             SELECT
                 id::text AS job_id,
-                payload->>'workflow_id' AS workflow_id,
-                payload->>'workflow_name' AS workflow_name,
-                claimed_by AS robot_id,
+                workflow_id,
+                workflow_name,
+                robot_id,
                 status,
                 created_at,
-                claimed_at,
+                started_at AS claimed_at,
                 completed_at
-            FROM pgqueuer_jobs
+            FROM job_queue
             WHERE status IN ('claimed', 'completed', 'failed')
             """
         ]
@@ -1015,9 +1021,7 @@ class MonitoringDataAdapter:
 
         for row in rows:
             job_id = row["job_id"]
-            workflow_name = (
-                row["workflow_name"] or row["workflow_id"] or "Unknown Workflow"
-            )
+            workflow_name = row["workflow_name"] or row["workflow_id"] or "Unknown Workflow"
             robot_id = row["robot_id"]
             status = row["status"]
 
@@ -1045,9 +1049,7 @@ class MonitoringDataAdapter:
                         "type": "job_completed",
                         "timestamp": row["completed_at"],
                         "title": f"Job completed: {workflow_name}",
-                        "details": f"Executed by {robot_id}{duration_str}"
-                        if robot_id
-                        else None,
+                        "details": f"Executed by {robot_id}{duration_str}" if robot_id else None,
                         "robot_id": robot_id,
                         "job_id": job_id,
                     }

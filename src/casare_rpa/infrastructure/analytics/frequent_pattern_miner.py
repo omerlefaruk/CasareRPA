@@ -153,8 +153,7 @@ class FrequentPatternMiner:
 
             # Get node types
             node_types = [
-                activity_info.get(node_id, {}).get("type", "unknown")
-                for node_id in pattern
+                activity_info.get(node_id, {}).get("type", "unknown") for node_id in pattern
             ]
 
             subsequences.append(
@@ -198,9 +197,7 @@ class FrequentPatternMiner:
         """
         # Find frequent 1-sequences
         item_counts: Dict[str, int] = defaultdict(int)
-        item_positions: Dict[str, Dict[int, List[int]]] = defaultdict(
-            lambda: defaultdict(list)
-        )
+        item_positions: Dict[str, Dict[int, List[int]]] = defaultdict(lambda: defaultdict(list))
 
         for seq_idx, seq in enumerate(sequences):
             seen: Set[str] = set()
@@ -211,9 +208,7 @@ class FrequentPatternMiner:
                 item_positions[item][seq_idx].append(pos)
 
         # Filter frequent items
-        frequent_items = [
-            item for item, count in item_counts.items() if count >= min_support_count
-        ]
+        frequent_items = [item for item, count in item_counts.items() if count >= min_support_count]
 
         if not frequent_items:
             return []
@@ -224,17 +219,14 @@ class FrequentPatternMiner:
         # Add frequent 1-sequences
         for item in frequent_items:
             positions = {
-                str(seq_idx): pos_list
-                for seq_idx, pos_list in item_positions[item].items()
+                str(seq_idx): pos_list for seq_idx, pos_list in item_positions[item].items()
             }
             results.append(((item,), item_counts[item], positions))
 
         # Grow patterns using prefix-projected databases
         for item in frequent_items:
             prefix = (item,)
-            projected_db = self._build_projected_database(
-                sequences, prefix, item_positions[item]
-            )
+            projected_db = self._build_projected_database(sequences, prefix, item_positions[item])
             self._prefixspan_recursive(
                 prefix=prefix,
                 projected_db=projected_db,
@@ -290,9 +282,7 @@ class FrequentPatternMiner:
 
         # Find frequent items in projected database
         item_counts: Dict[str, int] = defaultdict(int)
-        item_positions: Dict[str, Dict[int, List[int]]] = defaultdict(
-            lambda: defaultdict(list)
-        )
+        item_positions: Dict[str, Dict[int, List[int]]] = defaultdict(lambda: defaultdict(list))
 
         for seq_idx, suffixes in projected_db.items():
             seen: Set[str] = set()
@@ -312,15 +302,12 @@ class FrequentPatternMiner:
 
             # Record positions
             positions = {
-                str(seq_idx): pos_list
-                for seq_idx, pos_list in item_positions[item].items()
+                str(seq_idx): pos_list for seq_idx, pos_list in item_positions[item].items()
             }
             results.append((new_prefix, count, positions))
 
             # Build new projected database
-            new_projected = self._build_projected_database_from_suffix(
-                projected_db, item
-            )
+            new_projected = self._build_projected_database_from_suffix(projected_db, item)
 
             if new_projected:
                 self._prefixspan_recursive(
@@ -360,9 +347,7 @@ class FrequentPatternMiner:
 
         return new_projected
 
-    def find_maximal_patterns(
-        self, result: FrequentPatternResult
-    ) -> List[FrequentSubsequence]:
+    def find_maximal_patterns(self, result: FrequentPatternResult) -> List[FrequentSubsequence]:
         """
         Find maximal frequent patterns (not subsumed by longer patterns).
 
@@ -437,7 +422,6 @@ class FrequentPatternMiner:
 
             # Find pattern in trace
             pattern_idx = 0
-            prev_pos = -1
             prev_end_time: Optional[int] = None
 
             for pos, activity in enumerate(activities):
@@ -446,7 +430,6 @@ class FrequentPatternMiner:
                         gap = activity.duration_ms  # Simplified: use duration as proxy
                         gaps[pattern_idx - 1].append(gap)
 
-                    prev_pos = pos
                     prev_end_time = activity.duration_ms
                     pattern_idx += 1
 

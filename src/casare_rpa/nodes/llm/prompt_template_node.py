@@ -11,6 +11,8 @@ from typing import Any
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -19,6 +21,56 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@properties(
+    PropertyDef(
+        "template_id",
+        PropertyType.STRING,
+        default="",
+        label="Template ID",
+        placeholder="my_template",
+        tooltip="ID of the prompt template to use",
+        essential=True,
+    ),
+    PropertyDef(
+        "variables",
+        PropertyType.JSON,
+        default={},
+        label="Variables",
+        tooltip="Template variables as key-value pairs",
+    ),
+    PropertyDef(
+        "execute",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Execute with LLM",
+        tooltip="Execute the rendered prompt with LLM (or just render)",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.7,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Creativity/randomness (0-2)",
+    ),
+    PropertyDef(
+        "max_tokens",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=1,
+        label="Max Tokens",
+        tooltip="Maximum response length",
+    ),
+)
+@node(category="llm")
 class PromptTemplateNode(LLMBaseNode):
     """
     Execute a prompt template with LLM.
@@ -65,9 +117,6 @@ class PromptTemplateNode(LLMBaseNode):
         template_id = self.get_parameter("template_id")
         variables = self.get_parameter("variables") or {}
         should_execute = self.get_parameter("execute")
-
-        if hasattr(context, "resolve_value"):
-            template_id = context.resolve_value(template_id)
 
         if not template_id:
             self.set_output_value("success", False)
@@ -118,9 +167,6 @@ class PromptTemplateNode(LLMBaseNode):
                 temperature = self.get_parameter("temperature") or 0.7
                 max_tokens = self.get_parameter("max_tokens") or 1000
 
-                if hasattr(context, "resolve_value"):
-                    model = context.resolve_value(model)
-
                 llm_manager = await self._get_llm_manager(context)
 
                 response = await llm_manager.completion(
@@ -140,9 +186,7 @@ class PromptTemplateNode(LLMBaseNode):
                     clean = response_text.strip()
                     if clean.startswith("```"):
                         lines = clean.split("\n")
-                        clean = "\n".join(
-                            lines[1:-1] if lines[-1] == "```" else lines[1:]
-                        )
+                        clean = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
                     parsed = json.loads(clean)
                 except (json.JSONDecodeError, ValueError):
                     pass
@@ -154,8 +198,7 @@ class PromptTemplateNode(LLMBaseNode):
                 self.set_output_value("error", "")
 
                 logger.info(
-                    f"Prompt template executed: {template_id}, "
-                    f"tokens={response.total_tokens}"
+                    f"Prompt template executed: {template_id}, " f"tokens={response.total_tokens}"
                 )
 
                 return {
@@ -200,6 +243,32 @@ class PromptTemplateNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "category",
+        PropertyType.STRING,
+        default="",
+        label="Category",
+        placeholder="extraction, generation, analysis",
+        tooltip="Filter by template category (optional)",
+    ),
+    PropertyDef(
+        "search",
+        PropertyType.STRING,
+        default="",
+        label="Search",
+        placeholder="Search term...",
+        tooltip="Search templates by name/description",
+    ),
+    PropertyDef(
+        "include_builtin",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Built-in",
+        tooltip="Include built-in templates in results",
+    ),
+)
+@node(category="llm")
 class ListTemplatesNode(LLMBaseNode):
     """
     List available prompt templates.
@@ -246,12 +315,6 @@ class ListTemplatesNode(LLMBaseNode):
         if include_builtin is None:
             include_builtin = True
 
-        if hasattr(context, "resolve_value"):
-            if category:
-                category = context.resolve_value(category)
-            if search:
-                search = context.resolve_value(search)
-
         try:
             template_manager = get_prompt_template_manager()
 
@@ -293,6 +356,18 @@ class ListTemplatesNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "template_id",
+        PropertyType.STRING,
+        default="",
+        label="Template ID",
+        placeholder="my_template",
+        tooltip="ID of the template to get info for",
+        essential=True,
+    ),
+)
+@node(category="llm")
 class GetTemplateInfoNode(LLMBaseNode):
     """
     Get detailed information about a prompt template.
@@ -332,8 +407,6 @@ class GetTemplateInfoNode(LLMBaseNode):
         )
 
         template_id = self.get_parameter("template_id")
-        if hasattr(context, "resolve_value"):
-            template_id = context.resolve_value(template_id)
 
         if not template_id:
             self.set_output_value("success", False)

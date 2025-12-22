@@ -138,9 +138,7 @@ def get_local_ip() -> str:
 
 async def run_migration(database_url: str) -> bool:
     """Run database migration against Supabase."""
-    migration_file = (
-        PROJECT_ROOT / "deploy" / "supabase" / "migrations" / "001_initial_schema.sql"
-    )
+    migration_file = PROJECT_ROOT / "deploy" / "supabase" / "migrations" / "001_initial_schema.sql"
 
     if not migration_file.exists():
         print_step("Migration file", "Not found", False)
@@ -582,9 +580,7 @@ async def main_status(args):
     print_step("Robots in DB", str(status["robots"]), status["robots"] > 0)
 
     if not status["database"]:
-        print(
-            "\n  Tip: Run 'python deploy/auto_setup.py setup --db-password YOUR_PASSWORD'"
-        )
+        print("\n  Tip: Run 'python deploy/auto_setup.py setup --db-password YOUR_PASSWORD'")
 
 
 def main():
@@ -598,12 +594,8 @@ def main():
 
     # Setup command
     setup_parser = subparsers.add_parser("setup", help="Full setup (first time)")
-    setup_parser.add_argument(
-        "--db-password", required=True, help="Supabase database password"
-    )
-    setup_parser.add_argument(
-        "--robot-name", help="Robot name (default: Robot-HOSTNAME)"
-    )
+    setup_parser.add_argument("--db-password", required=True, help="Supabase database password")
+    setup_parser.add_argument("--robot-name", help="Robot name (default: Robot-HOSTNAME)")
 
     # Orchestrator command
     orch_parser = subparsers.add_parser("orchestrator", help="Start orchestrator only")
@@ -611,9 +603,7 @@ def main():
     # Robot command
     robot_parser = subparsers.add_parser("robot", help="Start robot agent only")
     robot_parser.add_argument("--robot-name", help="Robot name")
-    robot_parser.add_argument(
-        "--orchestrator-url", help="Orchestrator URL (for remote)"
-    )
+    robot_parser.add_argument("--orchestrator-url", help="Orchestrator URL (for remote)")
 
     # All command
     all_parser = subparsers.add_parser("all", help="Start orchestrator + robot")
@@ -637,9 +627,7 @@ def main():
     else:
         parser.print_help()
         print("\nQuick start:")
-        print(
-            "  python deploy/auto_setup.py setup --db-password YOUR_SUPABASE_PASSWORD"
-        )
+        print("  python deploy/auto_setup.py setup --db-password YOUR_SUPABASE_PASSWORD")
         print("  python deploy/auto_setup.py all")
 
 

@@ -109,6 +109,4 @@ class NodeMetadata:
 
     def has_lifecycle_hooks(self) -> bool:
         """Check if any lifecycle hooks are configured."""
-        return bool(
-            self.on_start or self.on_success or self.on_failure or self.on_complete
-        )
+        return bool(self.on_start or self.on_success or self.on_failure or self.on_complete)

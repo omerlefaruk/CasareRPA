@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
@@ -22,15 +23,17 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
     COMPARISON_PROP,
+    SELECTOR_PROP,
 )
 
 
-@node(category="desktop")
 @properties(
+    SELECTOR_PROP,
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
 )
+@node(category="desktop")
 class WaitForElementNode(DesktopNodeBase):
     """
     Wait for an element to reach a specific state.
@@ -106,12 +109,33 @@ class WaitForElementNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=False,
+        label="Window Title",
+        tooltip="Window title to match (partial match)",
+    ),
+    PropertyDef(
+        "title_regex",
+        PropertyType.STRING,
+        required=False,
+        label="Title Regex",
+        tooltip="Regex pattern to match window title",
+    ),
+    PropertyDef(
+        "class_name",
+        PropertyType.STRING,
+        required=False,
+        label="Class Name",
+        tooltip="Window class name",
+    ),
     TIMEOUT_LONG_PROP,
     WAIT_STATE_PROP,
     POLL_INTERVAL_PROP,
 )
+@node(category="desktop")
 class WaitForWindowNode(DesktopNodeBase):
     """
     Wait for a window to reach a specific state.
@@ -159,18 +183,14 @@ class WaitForWindowNode(DesktopNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute wait for window."""
         title = self.resolve_variable(context, self.get_input_value("title"))
-        title_regex = self.resolve_variable(
-            context, self.get_input_value("title_regex")
-        )
+        title_regex = self.resolve_variable(context, self.get_input_value("title_regex"))
         class_name = self.resolve_variable(context, self.get_input_value("class_name"))
         timeout = self.get_parameter("timeout", context)
         state = self.get_parameter("state", context)
         poll_interval = self.get_parameter("poll_interval", context)
 
         if not title and not title_regex and not class_name:
-            raise ValueError(
-                "Must provide at least one of: title, title_regex, class_name"
-            )
+            raise ValueError("Must provide at least one of: title, title_regex, class_name")
 
         desktop_ctx = self.require_desktop_context(context)
 
@@ -199,8 +219,11 @@ class WaitForWindowNode(DesktopNodeBase):
             return self.error_result(str(e), state=state, timeout=timeout)
 
 
+@properties(
+    SELECTOR_PROP,
+    TIMEOUT_PROP,
+)
 @node(category="desktop")
-@properties(TIMEOUT_PROP)
 class VerifyElementExistsNode(DesktopNodeBase):
     """
     Verify if an element exists.
@@ -261,9 +284,7 @@ class VerifyElementExistsNode(DesktopNodeBase):
         element = None
         if exists:
             try:
-                element = await desktop_ctx.async_wait_for_element(
-                    selector=selector, timeout=0.1
-                )
+                element = await desktop_ctx.async_wait_for_element(selector=selector, timeout=0.1)
             except Exception:
                 pass
 
@@ -273,8 +294,31 @@ class VerifyElementExistsNode(DesktopNodeBase):
         return self.success_result(exists=exists, element=element)
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Desktop element to verify",
+    ),
+    PropertyDef(
+        "property_name",
+        PropertyType.STRING,
+        required=True,
+        label="Property Name",
+        tooltip="Name of the property to verify (e.g., text, name, enabled)",
+    ),
+    PropertyDef(
+        "expected_value",
+        PropertyType.ANY,
+        required=True,
+        label="Expected Value",
+        tooltip="Expected value of the property",
+    ),
+    COMPARISON_PROP,
+)
 @node(category="desktop")
-@properties(COMPARISON_PROP)
 class VerifyElementPropertyNode(DesktopNodeBase):
     """
     Verify an element property has an expected value.
@@ -330,9 +374,7 @@ class VerifyElementPropertyNode(DesktopNodeBase):
 
         desktop_ctx = self.require_desktop_context(context)
 
-        logger.info(
-            f"[{self.name}] Verifying property '{property_name}' with {comparison}"
-        )
+        logger.info(f"[{self.name}] Verifying property '{property_name}' with {comparison}")
 
         result = desktop_ctx.verify_element_property(
             element=element,

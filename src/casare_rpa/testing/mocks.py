@@ -8,9 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock
-
-from loguru import logger
 
 
 @dataclass
@@ -43,9 +40,7 @@ class MockService:
         self._return_values[method] = value
         return self
 
-    def configure_side_effect(
-        self, method: str, side_effect: Callable[..., Any]
-    ) -> "MockService":
+    def configure_side_effect(self, method: str, side_effect: Callable[..., Any]) -> "MockService":
         """Configure side effect function for a method."""
         self._side_effects[method] = side_effect
         return self
@@ -326,9 +321,7 @@ class MockBrowserPool(MockService):
     ) -> "MockBrowserContext":
         """Acquire a mock browser context."""
         context = MockBrowserContext(browser_type=browser_type, headless=headless)
-        self._record_call(
-            "acquire", (browser_type,), {"headless": headless}, result=context
-        )
+        self._record_call("acquire", (browser_type,), {"headless": headless}, result=context)
         return context
 
     async def release(self, context: "MockBrowserContext") -> None:

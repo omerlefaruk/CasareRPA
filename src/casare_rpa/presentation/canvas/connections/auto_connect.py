@@ -172,10 +172,7 @@ class AutoConnectManager(QObject):
 
             # Track right mouse button state and handle context menu
             elif event.type() == QEvent.Type.MouseButtonPress:
-                if (
-                    isinstance(event, QMouseEvent)
-                    and event.button() == Qt.MouseButton.RightButton
-                ):
+                if isinstance(event, QMouseEvent) and event.button() == Qt.MouseButton.RightButton:
                     self._right_button_pressed = True
 
                     # Only handle right-click if we're currently dragging
@@ -394,9 +391,7 @@ class AutoConnectManager(QObject):
             logger.debug(f"Port compatibility check failed: {e}")
             return False  # Default to not compatible if we can't determine
 
-    def _draw_suggestion_lines(
-        self, suggestions: List[Tuple[BaseNode, str, BaseNode, str]]
-    ):
+    def _draw_suggestion_lines(self, suggestions: List[Tuple[BaseNode, str, BaseNode, str]]):
         """Draw faded lines showing suggested connections."""
         logger.debug(f"AutoConnect: Drawing {len(suggestions)} suggestion lines")
         try:
@@ -412,20 +407,14 @@ class AutoConnectManager(QObject):
                     f"AutoConnect: Drawing line {from_node.name()}:{from_port_name} -> {to_node.name()}:{to_port_name}"
                 )
                 # Get port positions
-                from_pos = self._get_port_scene_pos(
-                    from_node, from_port_name, is_output=True
-                )
-                to_pos = self._get_port_scene_pos(
-                    to_node, to_port_name, is_output=False
-                )
+                from_pos = self._get_port_scene_pos(from_node, from_port_name, is_output=True)
+                to_pos = self._get_port_scene_pos(to_node, to_port_name, is_output=False)
 
                 if not from_pos or not to_pos:
                     continue
 
                 # Create a faded line
-                line = QGraphicsLineItem(
-                    from_pos.x(), from_pos.y(), to_pos.x(), to_pos.y()
-                )
+                line = QGraphicsLineItem(from_pos.x(), from_pos.y(), to_pos.x(), to_pos.y())
 
                 # Style the line (faded blue/cyan with dashes)
                 pen = QPen(QColor(100, 200, 255, 120))  # Semi-transparent cyan

@@ -98,6 +98,27 @@ class CanvasThemeColors:
     dock_title_text: str = "#a1a1aa"
     splitter_handle: str = "#18181b"  # Invisible splitter (matches bg)
 
+    # Code Editor colors (VSCode Dark+ inspired)
+    editor_bg: str = "#1E1E1E"  # Editor background
+    editor_line_number_bg: str = "#1E1E1E"  # Line number gutter
+    editor_line_number_fg: str = "#858585"  # Line number text
+    editor_current_line: str = "#282828"  # Current line highlight
+    editor_selection: str = "#264F78"  # Selection background
+    editor_matching_bracket: str = "#515151"  # Bracket match
+
+    # Syntax highlighting colors (VSCode Dark+ theme)
+    syntax_keyword: str = "#C586C0"  # Purple (if, for, def)
+    syntax_function: str = "#DCDCAA"  # Yellow (functions)
+    syntax_string: str = "#CE9178"  # Orange-brown (strings)
+    syntax_number: str = "#B5CEA8"  # Light green (numbers)
+    syntax_comment: str = "#6A9955"  # Green (comments)
+    syntax_builtin: str = "#4EC9B0"  # Teal (True, False, None)
+    syntax_variable: str = "#9CDCFE"  # Light blue (variables)
+    syntax_decorator: str = "#DCDCAA"  # Yellow (decorators)
+    syntax_regex: str = "#D16969"  # Red (regex)
+    syntax_operator: str = "#D4D4D4"  # Light gray (operators)
+    syntax_class: str = "#4EC9B0"  # Teal (class names)
+
 
 # Wire color mapping by data type
 WIRE_COLOR_MAP: Dict[str, str] = {

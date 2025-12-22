@@ -90,9 +90,7 @@ def audit_nodes():
     if not issues:
         print("\nNo issues found! All required ports map to schema properties.")
     else:
-        print(
-            f"\nFound {len(issues)} potential issues (Required Port missing from Schema):"
-        )
+        print(f"\nFound {len(issues)} potential issues (Required Port missing from Schema):")
 
         # Group by file for easier fixing
         files_map = {}

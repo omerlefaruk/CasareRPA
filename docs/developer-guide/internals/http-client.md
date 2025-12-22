@@ -505,8 +505,9 @@ class HttpGetNode(BaseNode):
         client = await get_unified_http_client()
 
         url = self.get_input_value("url")
-        headers = self.config.get("headers", {})
-        timeout = self.config.get("timeout", 30.0)
+        # MODERN: Use get_parameter() for optional config values
+        headers = self.get_parameter("headers", {})
+        timeout = self.get_parameter("timeout", 30.0)
 
         try:
             response = await client.get(

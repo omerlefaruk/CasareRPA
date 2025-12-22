@@ -8,6 +8,9 @@ Provides nodes for interacting with Google Sheets API:
 - Formatting and batch operations
 """
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
 from typing import Any, Dict
 
 from loguru import logger
@@ -39,6 +42,38 @@ def _parse_range(spreadsheet_id: str, range_notation: str) -> str:
 # =============================================================================
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "cell",
+        PropertyType.STRING,
+        required=True,
+        default="A1",
+        label="Cell Address",
+        tooltip="Cell address (e.g., A1)",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
+@node(category="google")
 class SheetsGetCellNode(BaseNode):
     """Get value from a single cell."""
 
@@ -63,9 +98,9 @@ class SheetsGetCellNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             cell = self.get_input_value("cell") or self.get_parameter("cell", "A1")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
@@ -92,9 +127,7 @@ class SheetsGetCellNode(BaseNode):
             value = values[0][0] if values and values[0] else None
 
             self.set_output_value("value", value)
-            self.set_output_value(
-                "formatted_value", str(value) if value is not None else ""
-            )
+            self.set_output_value("formatted_value", str(value) if value is not None else "")
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
@@ -109,6 +142,45 @@ class SheetsGetCellNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "cell",
+        PropertyType.STRING,
+        required=True,
+        default="A1",
+        label="Cell Address",
+        tooltip="Cell address (e.g., A1)",
+    ),
+    PropertyDef(
+        "value",
+        PropertyType.ANY,
+        required=True,
+        label="Value",
+        tooltip="Value to set in the cell",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
+@node(category="google")
 class SheetsSetCellNode(BaseNode):
     """Set value in a single cell."""
 
@@ -133,9 +205,9 @@ class SheetsSetCellNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             cell = self.get_input_value("cell") or self.get_parameter("cell", "A1")
             value = self.get_input_value("value")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
@@ -176,6 +248,37 @@ class SheetsSetCellNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "range",
+        PropertyType.STRING,
+        required=True,
+        label="Range",
+        tooltip="Range notation (e.g., A1:C10)",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
+@node(category="google")
 class SheetsGetRangeNode(BaseNode):
     """Get values from a range of cells."""
 
@@ -201,12 +304,10 @@ class SheetsGetRangeNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            range_addr = self.get_input_value("range") or self.get_parameter(
-                "range", "A1:Z100"
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            range_addr = self.get_input_value("range") or self.get_parameter("range", "A1:Z100")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
             )
@@ -254,6 +355,44 @@ class SheetsGetRangeNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "range",
+        PropertyType.STRING,
+        required=True,
+        label="Range",
+        tooltip="Range notation (e.g., A1:C10)",
+    ),
+    PropertyDef(
+        "values",
+        PropertyType.LIST,
+        required=True,
+        label="Values",
+        tooltip="2D array of values to write",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
+@node(category="google")
 class SheetsWriteRangeNode(BaseNode):
     """Write values to a range of cells."""
 
@@ -273,21 +412,17 @@ class SheetsWriteRangeNode(BaseNode):
         self.add_exec_output()
         self.add_output_port("updated_range", DataType.STRING, "Updated range")
         self.add_output_port("updated_rows", DataType.INTEGER, "Number of rows updated")
-        self.add_output_port(
-            "updated_columns", DataType.INTEGER, "Number of columns updated"
-        )
+        self.add_output_port("updated_columns", DataType.INTEGER, "Number of columns updated")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            range_addr = self.get_input_value("range") or self.get_parameter(
-                "range", "A1"
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            range_addr = self.get_input_value("range") or self.get_parameter("range", "A1")
             values = self.get_input_value("values") or []
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
@@ -333,6 +468,37 @@ class SheetsWriteRangeNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "range",
+        PropertyType.STRING,
+        required=True,
+        label="Range",
+        tooltip="Range notation to clear (e.g., A1:C10)",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
+@node(category="google")
 class SheetsClearRangeNode(BaseNode):
     """Clear values from a range of cells."""
 
@@ -356,12 +522,10 @@ class SheetsClearRangeNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            range_addr = self.get_input_value("range") or self.get_parameter(
-                "range", "A1:Z100"
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            range_addr = self.get_input_value("range") or self.get_parameter("range", "A1:Z100")
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
             )
@@ -399,6 +563,29 @@ class SheetsClearRangeNode(BaseNode):
 # =============================================================================
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=True,
+        label="Title",
+        tooltip="Title for the new spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_names",
+        PropertyType.LIST,
+        label="Sheet Names",
+        tooltip="List of sheet names to create (optional)",
+    ),
+)
+@node(category="google")
 class SheetsCreateSpreadsheetNode(BaseNode):
     """Create a new Google Spreadsheet."""
 
@@ -422,9 +609,7 @@ class SheetsCreateSpreadsheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            title = self.get_input_value("title") or self.get_parameter(
-                "title", "New Spreadsheet"
-            )
+            title = self.get_input_value("title") or self.get_parameter("title", "New Spreadsheet")
             sheet_names = self.get_input_value("sheet_names") or ["Sheet1"]
 
             service = await _get_sheets_service(context, credential_name)
@@ -453,6 +638,23 @@ class SheetsCreateSpreadsheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet to get info for",
+    ),
+)
+@node(category="google")
 class SheetsGetSpreadsheetNode(BaseNode):
     """Get spreadsheet metadata."""
 
@@ -477,9 +679,9 @@ class SheetsGetSpreadsheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
 
             if not spreadsheet_id:
                 raise ValueError("Spreadsheet ID is required")
@@ -518,6 +720,30 @@ class SheetsGetSpreadsheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        required=True,
+        label="Sheet Name",
+        tooltip="Name for the new sheet",
+    ),
+)
+@node(category="google")
 class SheetsAddSheetNode(BaseNode):
     """Add a new sheet to a spreadsheet."""
 
@@ -540,9 +766,9 @@ class SheetsAddSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "New Sheet"
             )
@@ -581,6 +807,30 @@ class SheetsAddSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet to delete",
+    ),
+)
+@node(category="google")
 class SheetsDeleteSheetNode(BaseNode):
     """Delete a sheet from a spreadsheet."""
 
@@ -602,9 +852,9 @@ class SheetsDeleteSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -616,9 +866,7 @@ class SheetsDeleteSheetNode(BaseNode):
 
             body = {"requests": [{"deleteSheet": {"sheetId": sheet_id}}]}
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -632,6 +880,37 @@ class SheetsDeleteSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet to duplicate",
+    ),
+    PropertyDef(
+        "new_sheet_name",
+        PropertyType.STRING,
+        required=True,
+        label="New Sheet Name",
+        tooltip="Name for the duplicated sheet",
+    ),
+)
+@node(category="google")
 class SheetsDuplicateSheetNode(BaseNode):
     """Duplicate a sheet within a spreadsheet."""
 
@@ -655,15 +934,15 @@ class SheetsDuplicateSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
-            new_sheet_name = self.get_input_value(
-                "new_sheet_name"
-            ) or self.get_parameter("new_sheet_name", "Copy")
+            new_sheet_name = self.get_input_value("new_sheet_name") or self.get_parameter(
+                "new_sheet_name", "Copy"
+            )
 
             if not spreadsheet_id:
                 raise ValueError("Spreadsheet ID is required")
@@ -708,6 +987,37 @@ class SheetsDuplicateSheetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet to rename",
+    ),
+    PropertyDef(
+        "new_name",
+        PropertyType.STRING,
+        required=True,
+        label="New Name",
+        tooltip="New name for the sheet",
+    ),
+)
+@node(category="google")
 class SheetsRenameSheetNode(BaseNode):
     """Rename a sheet in a spreadsheet."""
 
@@ -730,15 +1040,13 @@ class SheetsRenameSheetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
-            new_name = self.get_input_value("new_name") or self.get_parameter(
-                "new_name", "Renamed"
-            )
+            new_name = self.get_input_value("new_name") or self.get_parameter("new_name", "Renamed")
 
             if not spreadsheet_id:
                 raise ValueError("Spreadsheet ID is required")
@@ -756,9 +1064,7 @@ class SheetsRenameSheetNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -777,6 +1083,37 @@ class SheetsRenameSheetNode(BaseNode):
 # =============================================================================
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "values",
+        PropertyType.LIST,
+        required=True,
+        label="Values",
+        tooltip="List of values to append as a row",
+    ),
+    PropertyDef(
+        "sheet_name",
+        PropertyType.STRING,
+        default="Sheet1",
+        label="Sheet Name",
+        tooltip="Name of the sheet",
+    ),
+)
+@node(category="google")
 class SheetsAppendRowNode(BaseNode):
     """Append a row to a sheet."""
 
@@ -800,9 +1137,9 @@ class SheetsAppendRowNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             values = self.get_input_value("values") or []
             sheet_name = self.get_input_value("sheet_name") or self.get_parameter(
                 "sheet_name", "Sheet1"
@@ -845,6 +1182,45 @@ class SheetsAppendRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "row_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Row Index",
+        tooltip="Index where to insert the row (0-indexed)",
+    ),
+    PropertyDef(
+        "num_rows",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Rows",
+        tooltip="Number of rows to insert",
+    ),
+)
+@node(category="google")
 class SheetsInsertRowNode(BaseNode):
     """Insert a row at a specific position."""
 
@@ -868,9 +1244,9 @@ class SheetsInsertRowNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -902,9 +1278,7 @@ class SheetsInsertRowNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -918,6 +1292,45 @@ class SheetsInsertRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_row",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Row",
+        tooltip="Start row index (0-indexed)",
+    ),
+    PropertyDef(
+        "num_rows",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Rows",
+        tooltip="Number of rows to delete",
+    ),
+)
+@node(category="google")
 class SheetsDeleteRowNode(BaseNode):
     """Delete rows from a sheet."""
 
@@ -941,9 +1354,9 @@ class SheetsDeleteRowNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -974,9 +1387,7 @@ class SheetsDeleteRowNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -990,6 +1401,45 @@ class SheetsDeleteRowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "column_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Column Index",
+        tooltip="Index where to insert the column (0-indexed)",
+    ),
+    PropertyDef(
+        "num_columns",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Columns",
+        tooltip="Number of columns to insert",
+    ),
+)
+@node(category="google")
 class SheetsInsertColumnNode(BaseNode):
     """Insert columns at a specific position."""
 
@@ -1005,9 +1455,7 @@ class SheetsInsertColumnNode(BaseNode):
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("sheet_id", DataType.INTEGER, "Sheet ID")
         self.add_input_port("column_index", DataType.INTEGER, "Column index (0-based)")
-        self.add_input_port(
-            "num_columns", DataType.INTEGER, "Number of columns to insert"
-        )
+        self.add_input_port("num_columns", DataType.INTEGER, "Number of columns to insert")
         self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1015,9 +1463,9 @@ class SheetsInsertColumnNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -1049,9 +1497,7 @@ class SheetsInsertColumnNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1065,6 +1511,45 @@ class SheetsInsertColumnNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_column",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Column",
+        tooltip="Start column index (0-indexed)",
+    ),
+    PropertyDef(
+        "num_columns",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Number of Columns",
+        tooltip="Number of columns to delete",
+    ),
+)
+@node(category="google")
 class SheetsDeleteColumnNode(BaseNode):
     """Delete columns from a sheet."""
 
@@ -1079,12 +1564,8 @@ class SheetsDeleteColumnNode(BaseNode):
         self.add_exec_input()
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("sheet_id", DataType.INTEGER, "Sheet ID")
-        self.add_input_port(
-            "start_column", DataType.INTEGER, "Start column index (0-based)"
-        )
-        self.add_input_port(
-            "num_columns", DataType.INTEGER, "Number of columns to delete"
-        )
+        self.add_input_port("start_column", DataType.INTEGER, "Start column index (0-based)")
+        self.add_input_port("num_columns", DataType.INTEGER, "Number of columns to delete")
         self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1092,9 +1573,9 @@ class SheetsDeleteColumnNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             sheet_id = self.get_input_value("sheet_id")
             if sheet_id is None:
                 sheet_id = self.get_parameter("sheet_id", 0)
@@ -1125,9 +1606,7 @@ class SheetsDeleteColumnNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1146,6 +1625,58 @@ class SheetsDeleteColumnNode(BaseNode):
 # =============================================================================
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_row",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Row",
+        tooltip="Start row index (0-indexed)",
+    ),
+    PropertyDef(
+        "end_row",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Row",
+        tooltip="End row index (0-indexed, exclusive)",
+    ),
+    PropertyDef(
+        "start_column",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Column",
+        tooltip="Start column index (0-indexed)",
+    ),
+    PropertyDef(
+        "end_column",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Column",
+        tooltip="End column index (0-indexed, exclusive)",
+    ),
+)
+@node(category="google")
 class SheetsFormatCellsNode(BaseNode):
     """Format cells in a range."""
 
@@ -1171,12 +1702,10 @@ class SheetsFormatCellsNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            sheet_id = self.get_input_value("sheet_id") or self.get_parameter(
-                "sheet_id", 0
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            sheet_id = self.get_input_value("sheet_id") or self.get_parameter("sheet_id", 0)
             start_row = self.get_input_value("start_row") or 0
             end_row = self.get_input_value("end_row") or 1
             start_column = self.get_input_value("start_column") or 0
@@ -1233,9 +1762,7 @@ class SheetsFormatCellsNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1249,6 +1776,52 @@ class SheetsFormatCellsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Sheet ID",
+        tooltip="ID of the sheet",
+    ),
+    PropertyDef(
+        "start_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="Start Index",
+        tooltip="Start column index (0-indexed)",
+    ),
+    PropertyDef(
+        "end_index",
+        PropertyType.INTEGER,
+        required=True,
+        label="End Index",
+        tooltip="End column index (0-indexed, exclusive)",
+    ),
+    PropertyDef(
+        "dimension",
+        PropertyType.CHOICE,
+        default="COLUMNS",
+        choices=["COLUMNS", "ROWS"],
+        label="Dimension",
+        tooltip="Dimension to auto-resize",
+    ),
+)
+@node(category="google")
 class SheetsAutoResizeNode(BaseNode):
     """Auto-resize columns to fit content."""
 
@@ -1272,12 +1845,10 @@ class SheetsAutoResizeNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
-            sheet_id = self.get_input_value("sheet_id") or self.get_parameter(
-                "sheet_id", 0
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
             )
+            sheet_id = self.get_input_value("sheet_id") or self.get_parameter("sheet_id", 0)
             start_index = self.get_input_value("start_index") or 0
             end_index = self.get_input_value("end_index") or 26
             dimension = self.get_parameter("dimension", "COLUMNS")
@@ -1302,9 +1873,7 @@ class SheetsAutoResizeNode(BaseNode):
                 ]
             }
 
-            service.spreadsheets().batchUpdate(
-                spreadsheetId=spreadsheet_id, body=body
-            ).execute()
+            service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -1323,6 +1892,38 @@ class SheetsAutoResizeNode(BaseNode):
 # =============================================================================
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "data",
+        PropertyType.LIST,
+        required=True,
+        label="Data",
+        tooltip="List of update data objects",
+    ),
+    PropertyDef(
+        "value_input_option",
+        PropertyType.CHOICE,
+        default="USER_ENTERED",
+        choices=["RAW", "USER_ENTERED"],
+        label="Value Input Option",
+        tooltip="How input data should be interpreted",
+    ),
+)
+@node(category="google")
 class SheetsBatchUpdateNode(BaseNode):
     """Execute multiple updates in a single batch."""
 
@@ -1338,24 +1939,18 @@ class SheetsBatchUpdateNode(BaseNode):
         self.add_input_port("spreadsheet_id", DataType.STRING, "Spreadsheet ID")
         self.add_input_port("data", DataType.LIST, "Array of {range, values} objects")
         self.add_exec_output()
-        self.add_output_port(
-            "total_updated_rows", DataType.INTEGER, "Total rows updated"
-        )
-        self.add_output_port(
-            "total_updated_columns", DataType.INTEGER, "Total columns updated"
-        )
-        self.add_output_port(
-            "total_updated_cells", DataType.INTEGER, "Total cells updated"
-        )
+        self.add_output_port("total_updated_rows", DataType.INTEGER, "Total rows updated")
+        self.add_output_port("total_updated_columns", DataType.INTEGER, "Total columns updated")
+        self.add_output_port("total_updated_cells", DataType.INTEGER, "Total cells updated")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             data = self.get_input_value("data") or []
 
             if not spreadsheet_id:
@@ -1380,15 +1975,9 @@ class SheetsBatchUpdateNode(BaseNode):
                 .execute()
             )
 
-            self.set_output_value(
-                "total_updated_rows", result.get("totalUpdatedRows", 0)
-            )
-            self.set_output_value(
-                "total_updated_columns", result.get("totalUpdatedColumns", 0)
-            )
-            self.set_output_value(
-                "total_updated_cells", result.get("totalUpdatedCells", 0)
-            )
+            self.set_output_value("total_updated_rows", result.get("totalUpdatedRows", 0))
+            self.set_output_value("total_updated_columns", result.get("totalUpdatedColumns", 0))
+            self.set_output_value("total_updated_cells", result.get("totalUpdatedCells", 0))
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
@@ -1404,6 +1993,30 @@ class SheetsBatchUpdateNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "ranges",
+        PropertyType.LIST,
+        required=True,
+        label="Ranges",
+        tooltip="List of ranges to retrieve (e.g., ['Sheet1!A1:B10', 'Sheet2!C1:D5'])",
+    ),
+)
+@node(category="google")
 class SheetsBatchGetNode(BaseNode):
     """Get values from multiple ranges in a single batch."""
 
@@ -1426,9 +2039,9 @@ class SheetsBatchGetNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             ranges = self.get_input_value("ranges") or []
 
             if not spreadsheet_id:
@@ -1468,6 +2081,30 @@ class SheetsBatchGetNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Spreadsheet ID",
+        tooltip="ID of the spreadsheet",
+    ),
+    PropertyDef(
+        "ranges",
+        PropertyType.LIST,
+        required=True,
+        label="Ranges",
+        tooltip="List of ranges to clear (e.g., ['Sheet1!A1:B10', 'Sheet2!C1:D5'])",
+    ),
+)
+@node(category="google")
 class SheetsBatchClearNode(BaseNode):
     """Clear multiple ranges in a single batch."""
 
@@ -1490,9 +2127,9 @@ class SheetsBatchClearNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            spreadsheet_id = self.get_input_value(
-                "spreadsheet_id"
-            ) or self.get_parameter("spreadsheet_id", "")
+            spreadsheet_id = self.get_input_value("spreadsheet_id") or self.get_parameter(
+                "spreadsheet_id", ""
+            )
             ranges = self.get_input_value("ranges") or []
 
             if not spreadsheet_id:

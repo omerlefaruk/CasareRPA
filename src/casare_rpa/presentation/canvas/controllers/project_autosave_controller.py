@@ -12,6 +12,7 @@ Automatically saves all project data:
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
+import re
 import threading
 
 from PySide6.QtCore import QTimer, Signal, QObject
@@ -94,15 +95,9 @@ class ProjectAutosaveController(QObject):
         self._event_bus.subscribe(EventType.VARIABLE_DELETED, self._mark_dirty)
         self._event_bus.subscribe(EventType.NODE_ADDED, self._mark_dirty_debounced)
         self._event_bus.subscribe(EventType.NODE_REMOVED, self._mark_dirty_debounced)
-        self._event_bus.subscribe(
-            EventType.NODE_POSITION_CHANGED, self._mark_dirty_debounced
-        )
-        self._event_bus.subscribe(
-            EventType.CONNECTION_ADDED, self._mark_dirty_debounced
-        )
-        self._event_bus.subscribe(
-            EventType.CONNECTION_REMOVED, self._mark_dirty_debounced
-        )
+        self._event_bus.subscribe(EventType.NODE_POSITION_CHANGED, self._mark_dirty_debounced)
+        self._event_bus.subscribe(EventType.CONNECTION_ADDED, self._mark_dirty_debounced)
+        self._event_bus.subscribe(EventType.CONNECTION_REMOVED, self._mark_dirty_debounced)
 
         # Credential events
         if hasattr(EventType, "CREDENTIAL_ADDED"):
@@ -249,10 +244,7 @@ class ProjectAutosaveController(QObject):
             data["workflow"] = self._main_window.get_workflow_data()
 
         # Get variables from panel
-        if (
-            hasattr(self._main_window, "_bottom_panel")
-            and self._main_window._bottom_panel
-        ):
+        if hasattr(self._main_window, "_bottom_panel") and self._main_window._bottom_panel:
             variables_tab = self._main_window._bottom_panel.get_variables_tab()
             if variables_tab and hasattr(variables_tab, "get_all_variables_flat"):
                 data["variables"] = variables_tab.get_all_variables_flat()
@@ -278,26 +270,22 @@ class ProjectAutosaveController(QObject):
 
         # Save workflow as scenario
         if data.get("workflow"):
-            scenario_id = data["workflow"].get("id", "main")
+            workflow_name = data["workflow"].get("metadata", {}).get("name") or "main"
+            safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", workflow_name).strip("_")
+            scenario_id = safe_name or "main"
             scenario_path = project_path / "scenarios" / f"{scenario_id}.json"
-            scenario_path.write_bytes(
-                orjson.dumps(data["workflow"], option=orjson.OPT_INDENT_2)
-            )
+            scenario_path.write_bytes(orjson.dumps(data["workflow"], option=orjson.OPT_INDENT_2))
 
         # Save variables
         if data.get("variables"):
             variables_path = project_path / "variables.json"
             variables_data = {"scope": "project", "variables": data["variables"]}
-            variables_path.write_bytes(
-                orjson.dumps(variables_data, option=orjson.OPT_INDENT_2)
-            )
+            variables_path.write_bytes(orjson.dumps(variables_data, option=orjson.OPT_INDENT_2))
 
         # Save project.json
         if data.get("project"):
             project_file = project_path / "project.json"
-            project_file.write_bytes(
-                orjson.dumps(data["project"], option=orjson.OPT_INDENT_2)
-            )
+            project_file.write_bytes(orjson.dumps(data["project"], option=orjson.OPT_INDENT_2))
 
         # Create marker file
         marker = project_path / ".casare_project"
@@ -316,7 +304,7 @@ class ProjectAutosaveController(QObject):
             QTimer.singleShot(0, lambda: self._emit_saved())
         except Exception as e:
             logger.error(f"Background project save failed: {e}")
-            QTimer.singleShot(0, lambda: self.save_failed.emit(str(e)))
+            QTimer.singleShot(0, lambda err=e: self.save_failed.emit(str(err)))
 
     def _emit_saved(self) -> None:
         """Emit saved signal on main thread."""

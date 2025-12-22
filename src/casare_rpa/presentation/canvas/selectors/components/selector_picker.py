@@ -149,9 +149,7 @@ class SelectorPicker(QObject):
         mode_name = mode_names.get(pick_mode, pick_mode)
 
         if pick_mode == "browser":
-            self.status_changed.emit(
-                f"{mode_name} picking active - Ctrl+Click element in browser"
-            )
+            self.status_changed.emit(f"{mode_name} picking active - Ctrl+Click element in browser")
         else:
             self.status_changed.emit(f"{mode_name} picking active...")
 
@@ -201,9 +199,7 @@ class SelectorPicker(QObject):
                 return False
         return False
 
-    async def auto_detect_anchor(
-        self, target_selector: str
-    ) -> Optional[Dict[str, Any]]:
+    async def auto_detect_anchor(self, target_selector: str) -> Optional[Dict[str, Any]]:
         """
         Auto-detect the best anchor for a target element.
 

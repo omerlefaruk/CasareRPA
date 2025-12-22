@@ -8,6 +8,8 @@ from casare_rpa.nodes.google.google_base import DriveBaseNode
 from casare_rpa.nodes.google.drive.drive_files import (
     DriveUploadFileNode,
     DriveDownloadFileNode,
+    DriveDownloadFolderNode,
+    DriveBatchDownloadNode,
     DriveCopyFileNode,
     DriveMoveFileNode,
     DriveDeleteFileNode,
@@ -23,7 +25,7 @@ from casare_rpa.nodes.google.drive.drive_folders import (
 __all__ = [
     # Base
     "DriveBaseNode",
-    # File operations
+    # File operations - Single file
     "DriveUploadFileNode",
     "DriveDownloadFileNode",
     "DriveCopyFileNode",
@@ -31,6 +33,9 @@ __all__ = [
     "DriveDeleteFileNode",
     "DriveRenameFileNode",
     "DriveGetFileNode",
+    # File operations - Bulk download
+    "DriveDownloadFolderNode",
+    "DriveBatchDownloadNode",
     # Folder operations
     "DriveCreateFolderNode",
     "DriveListFilesNode",

@@ -96,9 +96,7 @@ class WorkflowMetrics:
     failed_executions: int = 0
     cancelled_executions: int = 0
     timeout_executions: int = 0
-    duration_distribution: ExecutionDistribution = field(
-        default_factory=ExecutionDistribution
-    )
+    duration_distribution: ExecutionDistribution = field(default_factory=ExecutionDistribution)
     error_breakdown: Dict[str, int] = field(default_factory=dict)
     last_execution: Optional[datetime] = None
     first_execution: Optional[datetime] = None
@@ -155,12 +153,8 @@ class WorkflowMetrics:
             "failure_rate": round(self.failure_rate, 2),
             "duration_distribution": self.duration_distribution.to_dict(),
             "error_breakdown": self.error_breakdown,
-            "last_execution": (
-                self.last_execution.isoformat() if self.last_execution else None
-            ),
-            "first_execution": (
-                self.first_execution.isoformat() if self.first_execution else None
-            ),
+            "last_execution": (self.last_execution.isoformat() if self.last_execution else None),
+            "first_execution": (self.first_execution.isoformat() if self.first_execution else None),
             "hourly_trend": [dp.to_dict() for dp in self.hourly_trend[-24:]],
         }
 
@@ -200,11 +194,7 @@ class RobotPerformanceMetrics:
     @property
     def availability_percent(self) -> float:
         """Calculate availability percentage."""
-        total = (
-            self.total_busy_seconds
-            + self.total_idle_seconds
-            + self.total_offline_seconds
-        )
+        total = self.total_busy_seconds + self.total_idle_seconds + self.total_offline_seconds
         if total == 0:
             return 0.0
         online = self.total_busy_seconds + self.total_idle_seconds
@@ -290,9 +280,7 @@ class AnalyticsReport:
             "queue_metrics": self.queue_metrics,
             "error_analysis": self.error_analysis,
             "healing_metrics": self.healing_metrics,
-            "cost_analysis": self.cost_analysis.to_dict()
-            if self.cost_analysis
-            else None,
+            "cost_analysis": self.cost_analysis.to_dict() if self.cost_analysis else None,
             "sla_compliance": [s.to_dict() for s in self.sla_compliance],
             "bottlenecks": [b.to_dict() for b in self.bottlenecks],
             "efficiency_scores": [e.to_dict() for e in self.efficiency_scores],

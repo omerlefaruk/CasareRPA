@@ -151,9 +151,7 @@ class SlidingWindowRateLimiter:
     def _cleanup_old_entries(self, schedule_id: str) -> None:
         """Remove expired entries from tracking."""
         cutoff = datetime.now(timezone.utc) - self._window
-        self._executions[schedule_id] = [
-            ts for ts in self._executions[schedule_id] if ts > cutoff
-        ]
+        self._executions[schedule_id] = [ts for ts in self._executions[schedule_id] if ts > cutoff]
 
 
 class ExecutionOptimizer:

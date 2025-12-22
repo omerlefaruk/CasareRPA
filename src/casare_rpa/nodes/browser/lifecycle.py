@@ -30,9 +30,7 @@ from casare_rpa.infrastructure.browser.playwright_manager import (
 )
 
 
-def _get_browser_profile_path(
-    profile_mode: str, custom_path: str = ""
-) -> Tuple[str, str]:
+def _get_browser_profile_path(profile_mode: str, custom_path: str = "") -> Tuple[str, str]:
     """
     Resolve browser profile path and profile directory based on profile mode.
 
@@ -82,7 +80,6 @@ def _get_browser_profile_path(
     return profile_config.get(profile_mode, ("", ""))
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "url",
@@ -255,6 +252,7 @@ def _get_browser_profile_path(
         tab="advanced",
     ),
 )
+@node(category="browser")
 class LaunchBrowserNode(BaseNode):
     """
     Launch browser node - creates a new browser instance.
@@ -316,9 +314,7 @@ class LaunchBrowserNode(BaseNode):
             try:
                 attempts += 1
                 if attempts > 1:
-                    logger.info(
-                        f"Retry attempt {attempts - 1}/{retry_count} for browser launch"
-                    )
+                    logger.info(f"Retry attempt {attempts - 1}/{retry_count} for browser launch")
 
                 browser_type = self.get_parameter("browser_type", DEFAULT_BROWSER)
                 headless = self.get_parameter("headless", HEADLESS_MODE)
@@ -407,9 +403,7 @@ class LaunchBrowserNode(BaseNode):
                             f"Using system browser profile: {user_data_dir} (profile: {profile_directory})"
                         )
                     else:
-                        logger.info(
-                            f"Using persistent browser profile: {user_data_dir}"
-                        )
+                        logger.info(f"Using persistent browser profile: {user_data_dir}")
 
                     # Merge launch options into context options for persistent context
                     persistent_options = {**context_options, **launch_options}
@@ -421,9 +415,7 @@ class LaunchBrowserNode(BaseNode):
                         # Chrome rejects this flag with default user-data-dir
                         if profile_directory:
                             args = [
-                                arg
-                                for arg in args
-                                if not arg.startswith("--disable-web-security")
+                                arg for arg in args if not arg.startswith("--disable-web-security")
                             ]
                             args.append(f"--profile-directory={profile_directory}")
 
@@ -441,18 +433,15 @@ class LaunchBrowserNode(BaseNode):
 
                     # Launch persistent context (combines browser + context)
                     try:
-                        browser_context = (
-                            await browser_type_obj.launch_persistent_context(
-                                user_data_dir, **persistent_options
-                            )
+                        browser_context = await browser_type_obj.launch_persistent_context(
+                            user_data_dir, **persistent_options
                         )
                     except Exception as launch_err:
                         # Check for profile lock error (exitCode=21)
                         err_str = str(launch_err)
                         if (
                             "exitCode=21" in err_str
-                            or "Target page, context or browser has been closed"
-                            in err_str
+                            or "Target page, context or browser has been closed" in err_str
                         ):
                             if profile_directory:
                                 raise RuntimeError(
@@ -543,9 +532,7 @@ class LaunchBrowserNode(BaseNode):
                     await browser_context.add_init_script(anti_detect_script)
                     logger.debug("Anti-detection script injected")
                 except Exception as script_err:
-                    logger.warning(
-                        f"Failed to inject anti-detection script: {script_err}"
-                    )
+                    logger.warning(f"Failed to inject anti-detection script: {script_err}")
 
                 # Navigate to URL if provided
                 url = self.get_parameter("url", "")
@@ -554,10 +541,7 @@ class LaunchBrowserNode(BaseNode):
                 url = url.strip() if url else ""
 
                 # Resolve {{variable}} patterns in URL using context variables
-                url = context.resolve_value(url)
-                logger.debug(
-                    f"LaunchBrowserNode URL after variable resolution: '{url}'"
-                )
+                logger.debug(f"LaunchBrowserNode URL after variable resolution: '{url}'")
 
                 if url:
                     # Add protocol if missing
@@ -582,9 +566,7 @@ class LaunchBrowserNode(BaseNode):
 
                 # Set outputs
                 # Set outputs - for persistent context, browser_context acts as the browser
-                self.set_output_value(
-                    "browser", browser if browser else browser_context
-                )
+                self.set_output_value("browser", browser if browser else browser_context)
                 self.set_output_value("page", page)
 
                 # Get browser window for desktop window operations (maximize/minimize)
@@ -611,12 +593,8 @@ class LaunchBrowserNode(BaseNode):
                             ]
                             for class_name in browser_classes:
                                 try:
-                                    window = auto.WindowControl(
-                                        ClassName=class_name, searchDepth=1
-                                    )
-                                    if window.Exists(
-                                        0.5, 0.1
-                                    ):  # 500ms max wait, 100ms interval
+                                    window = auto.WindowControl(ClassName=class_name, searchDepth=1)
+                                    if window.Exists(0.5, 0.1):  # 500ms max wait, 100ms interval
                                         return window, class_name
                                 except Exception:
                                     continue
@@ -637,34 +615,24 @@ class LaunchBrowserNode(BaseNode):
                                     )
 
                                     # Apply window state
-                                    window_state = self.get_parameter(
-                                        "window_state", "normal"
-                                    )
+                                    window_state = self.get_parameter("window_state", "normal")
                                     if window_state == "maximized":
                                         try:
                                             window.Maximize()
                                             logger.info("Browser window maximized")
                                         except Exception as max_err:
-                                            logger.warning(
-                                                f"Failed to maximize window: {max_err}"
-                                            )
+                                            logger.warning(f"Failed to maximize window: {max_err}")
                                     elif window_state == "minimized":
                                         try:
                                             window.Minimize()
                                             logger.info("Browser window minimized")
                                         except Exception as min_err:
-                                            logger.warning(
-                                                f"Failed to minimize window: {min_err}"
-                                            )
+                                            logger.warning(f"Failed to minimize window: {min_err}")
                                     # "normal" state - no action needed (default)
                                 else:
-                                    logger.debug(
-                                        "Browser window not found within timeout"
-                                    )
+                                    logger.debug("Browser window not found within timeout")
                             except asyncio.TimeoutError:
-                                logger.debug(
-                                    "Browser window search timed out (2s) - skipping"
-                                )
+                                logger.debug("Browser window search timed out (2s) - skipping")
 
                     except Exception as e:
                         logger.warning(f"Could not get browser window handle: {e}")
@@ -715,9 +683,7 @@ class LaunchBrowserNode(BaseNode):
 
         # All retries exhausted
         self.status = NodeStatus.ERROR
-        logger.error(
-            f"Failed to launch browser after {attempts} attempts: {last_error}"
-        )
+        logger.error(f"Failed to launch browser after {attempts} attempts: {last_error}")
         return {"success": False, "error": str(last_error), "next_nodes": []}
 
     def _validate_config(self) -> Tuple[bool, str]:
@@ -728,7 +694,6 @@ class LaunchBrowserNode(BaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -762,6 +727,7 @@ class LaunchBrowserNode(BaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class CloseBrowserNode(BaseNode):
     """
     Close browser node - closes the browser instance.

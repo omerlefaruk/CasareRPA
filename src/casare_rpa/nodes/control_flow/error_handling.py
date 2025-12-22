@@ -21,8 +21,8 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@node(category="control_flow")
 @properties()  # No config - paired with Catch/Finally
+@node(category="control_flow", exec_outputs=["exec_out", "try_body"])
 class TryNode(BaseNode):
     """
     Try block for error handling.
@@ -88,7 +88,6 @@ class TryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_try_id",
@@ -105,6 +104,7 @@ class TryNode(BaseNode):
         tooltip="Comma-separated error types to catch (empty = catch all). E.g., 'ValueError,KeyError'",
     ),
 )
+@node(category="control_flow", exec_outputs=["catch_body"])
 class CatchNode(BaseNode):
     """
     Catch block for handling errors from the Try block.
@@ -169,9 +169,7 @@ class CatchNode(BaseNode):
             # Check error type filter
             error_types_str = self.get_parameter("error_types", "")
             if error_types_str:
-                allowed_types = [
-                    t.strip() for t in error_types_str.split(",") if t.strip()
-                ]
+                allowed_types = [t.strip() for t in error_types_str.split(",") if t.strip()]
                 error_type = try_state.get("error_type", "")
                 if allowed_types and error_type not in allowed_types:
                     # Error type not in filter - re-raise
@@ -207,7 +205,6 @@ class CatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "paired_try_id",
@@ -217,6 +214,7 @@ class CatchNode(BaseNode):
         tooltip="ID of the paired TryNode (set automatically)",
     ),
 )
+@node(category="control_flow", exec_outputs=["finally_body"])
 class FinallyNode(BaseNode):
     """
     Finally block - always executes after Try/Catch regardless of errors.

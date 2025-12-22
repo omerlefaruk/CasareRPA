@@ -89,9 +89,7 @@ class CronBuilderDialog(QDialog):
 
         self._expression_display = QLineEdit()
         self._expression_display.setReadOnly(True)
-        self._expression_display.setStyleSheet(
-            "font-family: monospace; font-size: 14px;"
-        )
+        self._expression_display.setStyleSheet("font-family: monospace; font-size: 14px;")
         self._expression_display.setText(self._current_expression)
         expression_layout.addWidget(self._expression_display)
 

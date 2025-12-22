@@ -56,9 +56,7 @@ class PreferencesController(BaseController):
         self._settings_manager = get_settings_manager()
 
         # Subscribe to EventBus events
-        self._event_bus.subscribe(
-            EventType.PREFERENCES_UPDATED, self._on_preferences_updated_event
-        )
+        self._event_bus.subscribe(EventType.PREFERENCES_UPDATED, self._on_preferences_updated_event)
         self._event_bus.subscribe(EventType.THEME_CHANGED, self._on_theme_changed_event)
 
     def cleanup(self) -> None:
@@ -67,9 +65,7 @@ class PreferencesController(BaseController):
         self._event_bus.unsubscribe(
             EventType.PREFERENCES_UPDATED, self._on_preferences_updated_event
         )
-        self._event_bus.unsubscribe(
-            EventType.THEME_CHANGED, self._on_theme_changed_event
-        )
+        self._event_bus.unsubscribe(EventType.THEME_CHANGED, self._on_theme_changed_event)
 
         super().cleanup()
         logger.info("PreferencesController cleanup")

@@ -22,8 +22,8 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@node(category="error_handling")
 @properties()  # No config - paired with catch/finally
+@node(category="error_handling", exec_outputs=["try_body", "success", "catch"])
 class TryNode(BaseNode):
     """
     Try block node for error handling.
@@ -94,9 +94,7 @@ class TryNode(BaseNode):
                     self.set_output_value("error_message", error_msg)
                     self.set_output_value("error_type", error_type)
 
-                    logger.warning(
-                        f"Error caught in try block: {error_type}: {error_msg}"
-                    )
+                    logger.warning(f"Error caught in try block: {error_type}: {error_msg}")
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -117,7 +115,6 @@ class TryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "max_attempts",
@@ -144,6 +141,7 @@ class TryNode(BaseNode):
         tooltip="Exponential backoff multiplier for retry delays",
     ),
 )
+@node(category="error_handling", exec_outputs=["retry_body", "success", "failed"])
 class RetryNode(BaseNode):
     """
     Retry node for automatic retry with backoff.
@@ -210,17 +208,13 @@ class RetryNode(BaseNode):
                 # Attempt execution
                 if current_attempt > 1:
                     # Apply delay with exponential backoff (except for first attempt)
-                    delay = initial_delay * (
-                        backoff_multiplier ** (current_attempt - 2)
-                    )
+                    delay = initial_delay * (backoff_multiplier ** (current_attempt - 2))
                     logger.info(
                         f"Retry attempt {current_attempt}/{max_attempts} after {delay:.2f}s delay"
                     )
                     await asyncio.sleep(delay)
                 else:
-                    logger.info(
-                        f"Retry attempt {current_attempt}/{max_attempts} (initial)"
-                    )
+                    logger.info(f"Retry attempt {current_attempt}/{max_attempts} (initial)")
 
                 self.status = NodeStatus.RUNNING
                 return {
@@ -230,14 +224,10 @@ class RetryNode(BaseNode):
                 }
             else:
                 # Max attempts reached - fail
-                last_error = retry_state.get(
-                    "last_error", "Max retry attempts exceeded"
-                )
+                last_error = retry_state.get("last_error", "Max retry attempts exceeded")
                 self.set_output_value("last_error", last_error)
 
-                logger.error(
-                    f"Retry failed after {max_attempts} attempts: {last_error}"
-                )
+                logger.error(f"Retry failed after {max_attempts} attempts: {last_error}")
 
                 # Clean up state
                 del context.variables[retry_state_key]
@@ -255,8 +245,8 @@ class RetryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties()  # No config - signal node
+@node(category="error_handling")
 class RetrySuccessNode(BaseNode):
     """
     Marks successful completion of retry body.
@@ -307,8 +297,16 @@ class RetrySuccessNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "error_message",
+        PropertyType.STRING,
+        required=True,
+        label="Error Message",
+        tooltip="Error message to signal failure",
+    ),
+)
 @node(category="error_handling")
-@properties()  # Input port driven
 class RetryFailNode(BaseNode):
     """
     Marks failed attempt in retry body.
@@ -361,7 +359,6 @@ class RetryFailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "error_message",
@@ -372,6 +369,7 @@ class RetryFailNode(BaseNode):
         placeholder="Something went wrong",
     ),
 )
+@node(category="error_handling")
 class ThrowErrorNode(BaseNode):
     """
     Throws a custom error to trigger error handling.
@@ -425,7 +423,6 @@ class ThrowErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "webhook_url",
@@ -441,6 +438,13 @@ class ThrowErrorNode(BaseNode):
         default="Error notification from CasareRPA",
         label="Message",
         tooltip="Notification message",
+    ),
+    PropertyDef(
+        "error_details",
+        PropertyType.ANY,
+        required=True,
+        label="Error Details",
+        tooltip="Dictionary of error details",
     ),
     PropertyDef(
         "format",
@@ -475,6 +479,7 @@ class ThrowErrorNode(BaseNode):
         tooltip="Delay between retries",
     ),
 )
+@node(category="error_handling")
 class WebhookNotifyNode(BaseNode):
     """
     Send error notifications via webhook.
@@ -567,12 +572,8 @@ class WebhookNotifyNode(BaseNode):
                                     "next_nodes": ["exec_out"],
                                 }
                             else:
-                                logger.warning(
-                                    f"Webhook notification failed: {response.status}"
-                                )
-                                self.status = (
-                                    NodeStatus.SUCCESS
-                                )  # Node succeeded, webhook failed
+                                logger.warning(f"Webhook notification failed: {response.status}")
+                                self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
                                 return {
                                     "success": True,
                                     "data": {
@@ -652,10 +653,7 @@ class WebhookNotifyNode(BaseNode):
                 "sections": [
                     {
                         "activityTitle": message,
-                        "facts": [
-                            {"name": k, "value": str(v)}
-                            for k, v in error_details.items()
-                        ],
+                        "facts": [{"name": k, "value": str(v)} for k, v in error_details.items()],
                     }
                 ],
             }
@@ -668,8 +666,8 @@ class WebhookNotifyNode(BaseNode):
             }
 
 
-@node(category="error_handling")
 @properties()  # No config - routing node
+@node(category="error_handling", exec_outputs=["protected_body", "on_error", "finally"])
 class OnErrorNode(BaseNode):
     """
     Global error handler node.
@@ -730,9 +728,7 @@ class OnErrorNode(BaseNode):
                 # Returning from protected block
                 error_state = context.variables[error_state_key]
 
-                if error_state.get("error_occurred") and not error_state.get(
-                    "error_handled"
-                ):
+                if error_state.get("error_occurred") and not error_state.get("error_handled"):
                     # Error occurred - route to error handler
                     error_msg = error_state.get("error_message", "Unknown error")
                     error_type = error_state.get("error_type", "Exception")
@@ -746,9 +742,7 @@ class OnErrorNode(BaseNode):
 
                     error_state["error_handled"] = True
 
-                    logger.warning(
-                        f"Error caught by OnError handler: {error_type}: {error_msg}"
-                    )
+                    logger.warning(f"Error caught by OnError handler: {error_type}: {error_msg}")
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -781,7 +775,6 @@ class OnErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "strategy",
@@ -800,6 +793,7 @@ class OnErrorNode(BaseNode):
         tooltip="Maximum retries for 'retry' strategy",
     ),
 )
+@node(category="error_handling", exec_outputs=["exec_out", "fallback"])
 class ErrorRecoveryNode(BaseNode):
     """
     Configure error recovery strategy for workflow.
@@ -872,8 +866,28 @@ class ErrorRecoveryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
+    PropertyDef(
+        "error_message",
+        PropertyType.STRING,
+        required=True,
+        label="Error Message",
+        tooltip="Error message to log",
+    ),
+    PropertyDef(
+        "error_type",
+        PropertyType.STRING,
+        required=True,
+        label="Error Type",
+        tooltip="Type of error",
+    ),
+    PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Additional context dictionary",
+    ),
     PropertyDef(
         "level",
         PropertyType.CHOICE,
@@ -890,6 +904,7 @@ class ErrorRecoveryNode(BaseNode):
         tooltip="Include stack trace in log output",
     ),
 )
+@node(category="error_handling")
 class LogErrorNode(BaseNode):
     """
     Log error details with structured information.
@@ -982,7 +997,6 @@ class LogErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="error_handling")
 @properties(
     PropertyDef(
         "condition",
@@ -1000,6 +1014,7 @@ class LogErrorNode(BaseNode):
         placeholder="Expected value to be greater than 0",
     ),
 )
+@node(category="error_handling")
 class AssertNode(BaseNode):
     """
     Assert a condition and throw error if false.

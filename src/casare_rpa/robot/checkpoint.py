@@ -353,9 +353,7 @@ class ResumableRunner:
             True if workflow completed successfully
         """
         workflow_name = (
-            self.runner.workflow.metadata.name
-            if self.runner.workflow.metadata
-            else "unknown"
+            self.runner.workflow.metadata.name if self.runner.workflow.metadata else "unknown"
         )
 
         # Check for existing checkpoint

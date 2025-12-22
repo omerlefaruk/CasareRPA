@@ -31,7 +31,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -98,6 +97,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class WriteFileNode(BaseNode):
     """
     Write content to a file, creating or overwriting.
@@ -157,9 +157,7 @@ class WriteFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path and content
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            content = context.resolve_value(content)
 
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "write", allow_dangerous)
@@ -231,7 +229,6 @@ class WriteFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -270,6 +267,7 @@ class WriteFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class AppendFileNode(BaseNode):
     """
     Append content to an existing file.
@@ -322,9 +320,7 @@ class AppendFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path and content
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            content = context.resolve_value(content)
 
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "append", allow_dangerous)

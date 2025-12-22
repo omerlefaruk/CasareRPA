@@ -1,6 +1,6 @@
 """Orchestrator domain layer.
 
-Contains entities, value objects, services, and errors for the orchestrator domain.
+Contains entities, value objects, services, events, and errors for the orchestrator domain.
 """
 
 from casare_rpa.domain.orchestrator.entities import (
@@ -30,6 +30,17 @@ from casare_rpa.domain.orchestrator.errors import (
     RobotAtCapacityError,
     RobotNotFoundError,
     RobotUnavailableError,
+)
+from casare_rpa.domain.orchestrator.events import (
+    JobAssigned,
+    JobCompletedOnOrchestrator,
+    JobMovedToDLQ,
+    JobRequeued,
+    JobSubmitted,
+    RobotDisconnected,
+    RobotHeartbeat,
+    RobotRegistered,
+    RobotStatusChanged,
 )
 from casare_rpa.domain.orchestrator.services import (
     RobotSelectionService,
@@ -71,4 +82,14 @@ __all__ = [
     "JobNotFoundError",
     "InvalidAssignmentError",
     "DuplicateAssignmentError",
+    # Orchestrator Events
+    "RobotRegistered",
+    "RobotDisconnected",
+    "RobotHeartbeat",
+    "RobotStatusChanged",
+    "JobSubmitted",
+    "JobAssigned",
+    "JobRequeued",
+    "JobCompletedOnOrchestrator",
+    "JobMovedToDLQ",
 ]

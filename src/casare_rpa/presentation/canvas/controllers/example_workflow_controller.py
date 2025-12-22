@@ -183,9 +183,7 @@ class ExampleWorkflowController(EventHandler):
 
         # Determine event type
         is_save_as = self._current_file != file_path
-        event_type = (
-            EventType.WORKFLOW_SAVE_AS if is_save_as else EventType.WORKFLOW_SAVED
-        )
+        event_type = EventType.WORKFLOW_SAVE_AS if is_save_as else EventType.WORKFLOW_SAVED
 
         # Update state
         self._current_file = file_path
@@ -313,8 +311,7 @@ class ExampleWorkflowController(EventHandler):
             event: NODE_PROPERTY_CHANGED event
         """
         logger.debug(
-            f"Node property changed: {event.data.get('node_id')} - "
-            f"{event.data.get('property')}"
+            f"Node property changed: {event.data.get('node_id')} - " f"{event.data.get('property')}"
         )
         self.mark_modified()
 

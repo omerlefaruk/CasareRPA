@@ -1,6 +1,6 @@
 # Google Workspace Nodes
 
-Google Workspace nodes provide integration with Gmail, Google Sheets, Google Drive, Google Docs, and Google Calendar. All nodes support OAuth 2.0 and service account authentication.
+Google Workspace nodes provide integration with Gmail, Google Sheets, and Google Drive. All nodes support OAuth 2.0 and service account authentication.
 
 ## Authentication
 
@@ -389,148 +389,6 @@ Share a file or folder.
 
 ---
 
-## Google Docs Nodes
-
-### DocsReadDocumentNode
-
-Read content from Google Docs.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `document_id` | STRING | (required) | Document ID |
-| `include_suggestions` | BOOLEAN | `false` | Include pending suggestions |
-
-#### Ports
-
-**Outputs:**
-- `content` (STRING) - Document text content
-- `title` (STRING) - Document title
-- `revision_id` (STRING) - Current revision
-- `success` (BOOLEAN) - Read success
-
-### DocsCreateDocumentNode
-
-Create a new Google Doc.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `title` | STRING | (required) | Document title |
-| `content` | TEXT | `""` | Initial content |
-| `folder_id` | STRING | `""` | Target folder ID |
-
-#### Ports
-
-**Outputs:**
-- `document_id` (STRING) - Created document ID
-- `document_url` (STRING) - Document URL
-- `success` (BOOLEAN) - Creation success
-
-### DocsAppendTextNode
-
-Append text to a Google Doc.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `document_id` | STRING | (required) | Document ID |
-| `text` | TEXT | (required) | Text to append |
-
-### DocsReplaceTextNode
-
-Find and replace text in a Google Doc.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `document_id` | STRING | (required) | Document ID |
-| `find` | STRING | (required) | Text to find |
-| `replace` | STRING | (required) | Replacement text |
-| `match_case` | BOOLEAN | `false` | Case-sensitive match |
-
----
-
-## Google Calendar Nodes
-
-### CalendarListEventsNode
-
-List calendar events.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `calendar_id` | STRING | `primary` | Calendar ID |
-| `time_min` | STRING | `""` | Start time (ISO format) |
-| `time_max` | STRING | `""` | End time (ISO format) |
-| `max_results` | INTEGER | `10` | Maximum events |
-| `single_events` | BOOLEAN | `true` | Expand recurring events |
-
-#### Ports
-
-**Outputs:**
-- `events` (LIST) - List of event objects
-- `count` (INTEGER) - Number of events
-- `success` (BOOLEAN) - Operation success
-
-### CalendarCreateEventNode
-
-Create a calendar event.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `calendar_id` | STRING | `primary` | Calendar ID |
-| `summary` | STRING | (required) | Event title |
-| `description` | TEXT | `""` | Event description |
-| `start_time` | STRING | (required) | Start (ISO format) |
-| `end_time` | STRING | (required) | End (ISO format) |
-| `location` | STRING | `""` | Event location |
-| `attendees` | STRING | `""` | Attendee emails (comma-separated) |
-| `send_notifications` | BOOLEAN | `true` | Notify attendees |
-
-#### Ports
-
-**Outputs:**
-- `event_id` (STRING) - Created event ID
-- `event_link` (STRING) - Event URL
-- `success` (BOOLEAN) - Creation success
-
-### CalendarUpdateEventNode
-
-Update an existing event.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `calendar_id` | STRING | `primary` | Calendar ID |
-| `event_id` | STRING | (required) | Event ID to update |
-| `summary` | STRING | `""` | New title |
-| `description` | TEXT | `""` | New description |
-| `start_time` | STRING | `""` | New start time |
-| `end_time` | STRING | `""` | New end time |
-
-### CalendarDeleteEventNode
-
-Delete a calendar event.
-
-#### Properties
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `calendar_id` | STRING | `primary` | Calendar ID |
-| `event_id` | STRING | (required) | Event ID to delete |
-| `send_notifications` | BOOLEAN | `true` | Notify attendees |
-
----
-
 ## Complete Example: Invoice Processing Workflow
 
 ```python
@@ -560,16 +418,6 @@ log_invoice = SheetsAppendRowNode(
         "values": [["{{date}}", "{{sender}}", "{{amount}}", "{{file_id}}"]]
     }
 )
-
-# 4. Create calendar reminder
-create_reminder = CalendarCreateEventNode(
-    node_id="payment_reminder",
-    config={
-        "summary": "Invoice Due: {{vendor}}",
-        "start_time": "{{due_date}}",
-        "description": "Invoice amount: {{amount}}"
-    }
-)
 ```
 
 ---
@@ -579,9 +427,9 @@ create_reminder = CalendarCreateEventNode(
 ### Service Account Setup
 
 1. Create service account in Google Cloud Console
-2. Enable required APIs (Gmail, Sheets, Drive, Calendar, Docs)
+2. Enable required APIs (Gmail, Sheets, Drive)
 3. Download JSON key file
-4. For Gmail/Calendar: Enable domain-wide delegation
+4. For Gmail: Enable domain-wide delegation
 
 ### Rate Limits
 
@@ -592,7 +440,6 @@ Google APIs have usage quotas. Implement appropriate delays:
 | Gmail | 250 quota units/second |
 | Sheets | 500 requests/100 seconds |
 | Drive | 1000 requests/100 seconds |
-| Calendar | 500 requests/100 seconds |
 
 ### Error Handling
 

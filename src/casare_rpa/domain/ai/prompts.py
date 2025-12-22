@@ -417,7 +417,7 @@ Only if modification won't work, request a NEW ATOMIC node:
 - **Name**: PascalCase ending with 'Node' (e.g., ExtractTableNode)
 - **Category**: Match closest existing category
 - **Ports**: Always include exec_in/exec_out for flow control
-- **Config**: Use PropertyDef patterns (STRING, INTEGER, BOOLEAN, CHOICE, etc.)
+- **MODERN NODE STANDARD**: Use `@properties()` + `get_parameter()`, NEVER `config.get()`
 - **Reusable**: Design for composition with other nodes
 
 ### After Node Creation
@@ -459,7 +459,7 @@ JSON_SCHEMA_TEMPLATE: str = """{
         "url": "https://example.com",
         "timeout": 30000
       },
-      "position": {"x": 0, "y": 0}
+      "position": [0, 0]
     },
     "click_2": {
       "node_id": "click_2",
@@ -468,7 +468,7 @@ JSON_SCHEMA_TEMPLATE: str = """{
         "selector": "#submit-btn",
         "timeout": 5000
       },
-      "position": {"x": 400, "y": 0}
+      "position": [400, 0]
     }
   },
   "connections": [
@@ -902,9 +902,7 @@ class PromptBuilder:
 
             # Add additional context
             if self._config.additional_context:
-                sections.append(
-                    f"## Additional Context\n{self._config.additional_context}"
-                )
+                sections.append(f"## Additional Context\n{self._config.additional_context}")
 
         # Add JSON schema template
         sections.append("## JSON Schema Template")
@@ -1136,7 +1134,9 @@ def get_append_prompt(
             include_performance=True,
         )
     else:
-        system_prompt = f"{GENIUS_SYSTEM_PROMPT}\n\n{NODE_CONTEXT_PROMPT.format(node_manifest=node_manifest)}"
+        system_prompt = (
+            f"{GENIUS_SYSTEM_PROMPT}\n\n{NODE_CONTEXT_PROMPT.format(node_manifest=node_manifest)}"
+        )
 
     return f"""{system_prompt}
 

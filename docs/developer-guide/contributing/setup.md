@@ -248,7 +248,7 @@ CasareRPA/
 | Lint code | `ruff check src/ tests/ --fix` |
 | Type check | `mypy src/` |
 | Security audit | `pip-audit` |
-| Re-index for semantic search | `python scripts/index_codebase_qdrant.py` |
+| Re-index for semantic search | `python scripts/index_codebase.py` |
 
 ## Troubleshooting
 

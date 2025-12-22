@@ -82,9 +82,7 @@ class DeadLetterItem:
             "retry_count": self.retry_count,
             "added_at": self.added_at.isoformat() if self.added_at else None,
             "original_created_at": (
-                self.original_created_at.isoformat()
-                if self.original_created_at
-                else None
+                self.original_created_at.isoformat() if self.original_created_at else None
             ),
             "robot_id": self.robot_id,
             "robot_name": self.robot_name,
@@ -186,8 +184,7 @@ class DeadLetterQueue:
         self._lock = threading.Lock()
 
         logger.info(
-            f"DeadLetterQueue initialized (max_size={max_size}, "
-            f"retention={retention_days}d)"
+            f"DeadLetterQueue initialized (max_size={max_size}, " f"retention={retention_days}d)"
         )
 
     async def add(
@@ -252,9 +249,7 @@ class DeadLetterQueue:
             self._items[item.id] = item
             self._insertion_order.append(item.id)
 
-        logger.warning(
-            f"Job {job_id[:8]} added to DLQ: {reason.value} - {final_error[:100]}"
-        )
+        logger.warning(f"Job {job_id[:8]} added to DLQ: {reason.value} - {final_error[:100]}")
 
         # Notify callback
         if self._on_item_added:
@@ -287,9 +282,7 @@ class DeadLetterQueue:
                 return None
 
             if item.is_retried:
-                logger.warning(
-                    f"DLQ: Item {item_id} already retried as {item.retried_job_id}"
-                )
+                logger.warning(f"DLQ: Item {item_id} already retried as {item.retried_job_id}")
                 return item.retried_job_id
 
         # Submit new job

@@ -12,6 +12,9 @@ Usage:
 
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add src to path to ensure imports work even if not installed as package
 sys.path.insert(0, str(Path(__file__).parent / "src"))

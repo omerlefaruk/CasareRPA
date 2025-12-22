@@ -90,12 +90,12 @@ graph LR
     A[Define Node] --> B[Add Properties]
     B --> C[Implement Logic]
     C --> D[Create Visual]
-    D --> E[Register Node]
+    D --> E[Register in NODE_REGISTRY]
     E --> F[Write Tests]
     F --> G[Update _index.md]
 ```
 
-### 8-Step Node Checklist
+### 7-Step Node Checklist
 
 1. Create node class with `@node` decorator
 2. Define properties with `@properties` decorator
@@ -103,8 +103,7 @@ graph LR
 4. Create visual node class
 5. Write unit tests
 6. Export from `__init__.py`
-7. Add to `_NODE_REGISTRY`
-8. Add to `NODE_TYPE_MAP`
+7. Add to `NODE_REGISTRY` (`src/casare_rpa/nodes/registry_data.py`)
 
 ---
 

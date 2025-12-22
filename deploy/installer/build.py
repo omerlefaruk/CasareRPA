@@ -165,9 +165,7 @@ class InstallerBuilder:
         # PyInstaller
         if not shutil.which("pyinstaller"):
             self._print_warning("PyInstaller not found, installing...")
-            code, _, _ = self._run_command(
-                [sys.executable, "-m", "pip", "install", "pyinstaller"]
-            )
+            code, _, _ = self._run_command([sys.executable, "-m", "pip", "install", "pyinstaller"])
             if code != 0:
                 self._print_error("Failed to install PyInstaller")
                 return False
@@ -488,9 +486,7 @@ class InstallerBuilder:
             if robot_dir.exists():
                 print(f"  Robot App:     {robot_dir}")
 
-            installer = (
-                self.dist_dir / f"CasareRPA-Robot-{self.version.string}-Setup.exe"
-            )
+            installer = self.dist_dir / f"CasareRPA-Robot-{self.version.string}-Setup.exe"
             if installer.exists():
                 size_mb = installer.stat().st_size / (1024 * 1024)
                 print(f"  Robot Setup:   {installer} ({size_mb:.2f} MB)")

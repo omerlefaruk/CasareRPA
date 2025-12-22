@@ -544,9 +544,7 @@ class NodeResult:
         return cls(success=False, error=error, error_code=code)
 
     @classmethod
-    def retry(
-        cls, error: str, delay_ms: int = 1000, code: str = "RETRY_REQUESTED"
-    ) -> "NodeResult":
+    def retry(cls, error: str, delay_ms: int = 1000, code: str = "RETRY_REQUESTED") -> "NodeResult":
         """Create result requesting retry.
 
         Args:

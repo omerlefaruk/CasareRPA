@@ -153,15 +153,13 @@ class GoogleAPIClient:
 
                     # Update credentials
                     self._credentials.access_token = token_data["access_token"]
-                    self._credentials.token_type = token_data.get(
-                        "token_type", "Bearer"
-                    )
+                    self._credentials.token_type = token_data.get("token_type", "Bearer")
 
                     # Calculate expiration time
                     expires_in = token_data.get("expires_in", 3600)
-                    self._credentials.expires_at = datetime.now(
-                        timezone.utc
-                    ) + timedelta(seconds=expires_in)
+                    self._credentials.expires_at = datetime.now(timezone.utc) + timedelta(
+                        seconds=expires_in
+                    )
 
                     # Update refresh token if provided
                     if "refresh_token" in token_data:
@@ -223,17 +221,13 @@ class GoogleAPIClient:
                 # Token might have expired, try refresh
                 if await self.refresh_token():
                     token = self._credentials.access_token
-                    request_headers["Authorization"] = (
-                        f"{self._credentials.token_type} {token}"
-                    )
+                    request_headers["Authorization"] = f"{self._credentials.token_type} {token}"
                     async with session.get(
                         url, params=params, headers=request_headers
                     ) as retry_response:
                         if retry_response.status != 200:
                             text = await retry_response.text()
-                            raise ValueError(
-                                f"Google API error: {retry_response.status} - {text}"
-                            )
+                            raise ValueError(f"Google API error: {retry_response.status} - {text}")
                         return await retry_response.json()
                 else:
                     raise ValueError("Authentication failed after token refresh")
@@ -275,23 +269,17 @@ class GoogleAPIClient:
         )
         request_headers["Content-Type"] = "application/json"
 
-        async with session.post(
-            url, json=json_data, headers=request_headers
-        ) as response:
+        async with session.post(url, json=json_data, headers=request_headers) as response:
             if response.status == 401:
                 if await self.refresh_token():
                     token = self._credentials.access_token
-                    request_headers["Authorization"] = (
-                        f"{self._credentials.token_type} {token}"
-                    )
+                    request_headers["Authorization"] = f"{self._credentials.token_type} {token}"
                     async with session.post(
                         url, json=json_data, headers=request_headers
                     ) as retry_response:
                         if retry_response.status not in (200, 201):
                             text = await retry_response.text()
-                            raise ValueError(
-                                f"Google API error: {retry_response.status} - {text}"
-                            )
+                            raise ValueError(f"Google API error: {retry_response.status} - {text}")
                         return await retry_response.json()
                 else:
                     raise ValueError("Authentication failed after token refresh")
@@ -472,9 +460,7 @@ class GoogleTriggerBase(BaseTrigger):
             secrets = get_secrets_manager()
             value = secrets.get(credential_name, "")
             if not value:
-                logger.warning(
-                    f"Credential '{credential_name}' not found in secrets manager"
-                )
+                logger.warning(f"Credential '{credential_name}' not found in secrets manager")
             return value
         except ImportError:
             logger.error("Secrets manager not available")
@@ -598,9 +584,7 @@ class GoogleTriggerBase(BaseTrigger):
         config = self.config.config
 
         # Check for credentials
-        has_client_id = bool(
-            config.get("client_id") or config.get("client_id_credential")
-        )
+        has_client_id = bool(config.get("client_id") or config.get("client_id_credential"))
         has_client_secret = bool(
             config.get("client_secret") or config.get("client_secret_credential")
         )
@@ -610,9 +594,7 @@ class GoogleTriggerBase(BaseTrigger):
         if not has_client_secret:
             return False, "client_secret or client_secret_credential is required"
 
-        has_access_token = bool(
-            config.get("access_token") or config.get("access_token_credential")
-        )
+        has_access_token = bool(config.get("access_token") or config.get("access_token_credential"))
         has_refresh_token = bool(
             config.get("refresh_token") or config.get("refresh_token_credential")
         )

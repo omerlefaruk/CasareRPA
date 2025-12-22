@@ -17,7 +17,6 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
-    WINDOW_STATE_PROP,
 )
 
 
@@ -88,14 +87,21 @@ class WindowNodeBase(DesktopNodeBase):
         return window
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     WIDTH_PROP,
     HEIGHT_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
 )
+@node(category="desktop")
 class ResizeWindowNode(WindowNodeBase):
     """
     Resize a Windows desktop window.
@@ -161,19 +167,24 @@ class ResizeWindowNode(WindowNodeBase):
             desktop_ctx.resize_window(window, int(width), int(height))
             return self.success_result()
 
-        return await self.execute_with_retry(
-            do_resize, context, operation_name="resize window"
-        )
+        return await self.execute_with_retry(do_resize, context, operation_name="resize window")
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     POSITION_X_PROP,
     POSITION_Y_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
 )
+@node(category="desktop")
 class MoveWindowNode(WindowNodeBase):
     """
     Move a Windows desktop window.
@@ -239,16 +250,21 @@ class MoveWindowNode(WindowNodeBase):
             desktop_ctx.move_window(window, int(x), int(y))
             return self.success_result()
 
-        return await self.execute_with_retry(
-            do_move, context, operation_name="move window"
-        )
+        return await self.execute_with_retry(do_move, context, operation_name="move window")
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class MaximizeWindowNode(WindowNodeBase):
     """
     Maximize a Windows desktop window.
@@ -289,6 +305,8 @@ class MaximizeWindowNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - maximize window."""
         window = self.get_window_from_input()
+        retry_count = self.get_parameter("retry_count")
+        retry_interval = self.get_parameter("retry_interval")
 
         logger.info(f"[{self.name}] Maximizing window")
 
@@ -299,15 +317,26 @@ class MaximizeWindowNode(WindowNodeBase):
             return self.success_result()
 
         return await self.execute_with_retry(
-            do_maximize, context, operation_name="maximize window"
+            do_maximize,
+            context,
+            retry_count=retry_count,
+            retry_interval=retry_interval,
+            operation_name="maximize window",
         )
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class MinimizeWindowNode(WindowNodeBase):
     """
     Minimize a Windows desktop window.
@@ -348,6 +377,8 @@ class MinimizeWindowNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - minimize window."""
         window = self.get_window_from_input()
+        retry_count = self.get_parameter("retry_count")
+        retry_interval = self.get_parameter("retry_interval")
 
         logger.info(f"[{self.name}] Minimizing window")
 
@@ -358,15 +389,26 @@ class MinimizeWindowNode(WindowNodeBase):
             return self.success_result()
 
         return await self.execute_with_retry(
-            do_minimize, context, operation_name="minimize window"
+            do_minimize,
+            context,
+            retry_count=retry_count,
+            retry_interval=retry_interval,
+            operation_name="minimize window",
         )
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class RestoreWindowNode(WindowNodeBase):
     """
     Restore a Windows desktop window.
@@ -407,6 +449,8 @@ class RestoreWindowNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - restore window."""
         window = self.get_window_from_input()
+        retry_count = self.get_parameter("retry_count")
+        retry_interval = self.get_parameter("retry_interval")
 
         logger.info(f"[{self.name}] Restoring window")
 
@@ -417,10 +461,23 @@ class RestoreWindowNode(WindowNodeBase):
             return self.success_result()
 
         return await self.execute_with_retry(
-            do_restore, context, operation_name="restore window"
+            do_restore,
+            context,
+            retry_count=retry_count,
+            retry_interval=retry_interval,
+            operation_name="restore window",
         )
 
 
+@properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
+)
 @node(category="desktop")
 class GetWindowPropertiesNode(WindowNodeBase):
     """
@@ -504,12 +561,27 @@ class GetWindowPropertiesNode(WindowNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
-    WINDOW_STATE_PROP,
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Desktop window object",
+    ),
+    PropertyDef(
+        "state",
+        PropertyType.CHOICE,
+        default="normal",
+        choices=["normal", "maximized", "minimized"],
+        required=True,
+        label="State",
+        tooltip="Target window state",
+    ),
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class SetWindowStateNode(WindowNodeBase):
     """
     Set the state of a Windows desktop window.
@@ -553,7 +625,7 @@ class SetWindowStateNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - set window state."""
         window = self.get_window_from_input()
-        state = self.get_parameter("window_state", context)
+        state = self.get_parameter("state")
 
         logger.info(f"[{self.name}] Setting window state to '{state}'")
 

@@ -90,6 +90,11 @@ class GoogleScope(Enum):
     CALENDAR_FULL = "https://www.googleapis.com/auth/calendar"
     CALENDAR_EVENTS = "https://www.googleapis.com/auth/calendar.events"
 
+    # Generative AI (Gemini)
+    GENERATIVE_LANGUAGE = "https://www.googleapis.com/auth/generative-language"
+    GENERATIVE_LANGUAGE_RETRIEVER = "https://www.googleapis.com/auth/generative-language.retriever"
+    CLOUD_PLATFORM = "https://www.googleapis.com/auth/cloud-platform"
+
 
 # Scope shortcuts for common use cases
 SCOPES = {
@@ -135,16 +140,12 @@ class GoogleCredentials:
         )
 
     @classmethod
-    def from_service_account(
-        cls, service_account_info: Dict[str, Any]
-    ) -> "GoogleCredentials":
+    def from_service_account(cls, service_account_info: Dict[str, Any]) -> "GoogleCredentials":
         """Create credentials from service account JSON."""
         try:
             from google.oauth2 import service_account
 
-            creds = service_account.Credentials.from_service_account_info(
-                service_account_info
-            )
+            creds = service_account.Credentials.from_service_account_info(service_account_info)
             return cls(
                 access_token=creds.token or "",
                 token_uri=creds._token_uri,
@@ -186,6 +187,7 @@ class GoogleConfig:
     """Configuration for Google API client."""
 
     credentials: Optional[GoogleCredentials] = None
+    credential_id: Optional[str] = None  # For OAuth auto-refresh via GoogleOAuthManager
     service_account_file: Optional[str] = None
     service_account_info: Optional[Dict[str, Any]] = None
     timeout: float = 30.0
@@ -338,9 +340,7 @@ class GoogleAPIClient:
             with open(file_path, "r") as f:
                 info = json.load(f)
 
-            creds = service_account.Credentials.from_service_account_info(
-                info, scopes=scopes
-            )
+            creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
 
             # Get access token
             from google.auth.transport.requests import Request
@@ -374,9 +374,7 @@ class GoogleAPIClient:
             from google.oauth2 import service_account
             from google.auth.transport.requests import Request
 
-            creds = service_account.Credentials.from_service_account_info(
-                info, scopes=scopes
-            )
+            creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
 
             # Get access token
             creds.refresh(Request())
@@ -402,24 +400,43 @@ class GoogleAPIClient:
 
     async def refresh_token(self) -> None:
         """
-        Refresh the OAuth2 access token.
+        Refresh the OAuth2 access token and persist to credential store.
+
+        Uses GoogleOAuthManager if credential_id is available for centralized
+        token management. Falls back to direct refresh if needed.
 
         Raises:
             GoogleAuthError: If token refresh fails or refresh_token not available
         """
+        # Try to use GoogleOAuthManager for centralized refresh (recommended path)
+        if self.config.credential_id:
+            try:
+                from casare_rpa.infrastructure.security.google_oauth import (
+                    get_google_access_token,
+                )
+
+                logger.debug(f"Using GoogleOAuthManager to refresh: {self.config.credential_id}")
+                new_token = await get_google_access_token(self.config.credential_id)
+                self._credentials.access_token = new_token
+                # The OAuth manager already persisted the refreshed tokens
+                logger.info("OAuth2 token refreshed via GoogleOAuthManager")
+                return
+            except ImportError:
+                logger.debug("GoogleOAuthManager not available, using direct refresh")
+            except Exception as e:
+                logger.warning(f"OAuth manager refresh failed, trying direct: {e}")
+
+        # Direct refresh (fallback)
         if not self._credentials:
             raise GoogleAuthError("No credentials available to refresh")
 
         if not self._credentials.refresh_token:
             raise GoogleAuthError(
-                "No refresh_token available. "
-                "For service accounts, re-authenticate instead."
+                "No refresh_token available. " "For service accounts, re-authenticate instead."
             )
 
         if not self._credentials.client_id or not self._credentials.client_secret:
-            raise GoogleAuthError(
-                "client_id and client_secret required for token refresh"
-            )
+            raise GoogleAuthError("client_id and client_secret required for token refresh")
 
         async with self._lock:
             try:
@@ -431,9 +448,7 @@ class GoogleAPIClient:
                     "client_secret": self._credentials.client_secret,
                 }
 
-                async with session.post(
-                    self._credentials.token_uri, data=data
-                ) as response:
+                async with session.post(self._credentials.token_uri, data=data) as response:
                     result = await response.json()
 
                     if "error" in result:
@@ -449,10 +464,58 @@ class GoogleAPIClient:
                     expires_in = result.get("expires_in", 3600)
                     self._credentials.expiry = time.time() + expires_in
 
-                    logger.info("OAuth2 token refreshed successfully")
+                    logger.info("OAuth2 token refreshed successfully (direct)")
+
+                    # Persist refreshed tokens to credential store if credential_id available
+                    if self.config.credential_id:
+                        await self._persist_refreshed_token(expires_in)
 
             except aiohttp.ClientError as e:
                 raise GoogleAuthError(f"Token refresh network error: {e}") from e
+
+    async def _persist_refreshed_token(self, expires_in: int) -> None:
+        """
+        Persist refreshed tokens back to the credential store.
+
+        Args:
+            expires_in: Token expiry time in seconds
+        """
+        try:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+                CredentialType,
+            )
+            from datetime import datetime, timezone, timedelta
+
+            store = get_credential_store()
+            info = store.get_credential_info(self.config.credential_id)
+
+            if info:
+                # Build updated credential data
+                token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+                data = {
+                    "client_id": self._credentials.client_id,
+                    "client_secret": self._credentials.client_secret,
+                    "access_token": self._credentials.access_token,
+                    "refresh_token": self._credentials.refresh_token,
+                    "token_expiry": token_expiry.isoformat(),
+                    "scopes": self._credentials.scopes,
+                }
+
+                store.save_credential(
+                    name=info["name"],
+                    credential_type=CredentialType.GOOGLE_OAUTH,
+                    category=info["category"],
+                    data=data,
+                    description=info.get("description", ""),
+                    tags=info.get("tags", []),
+                    credential_id=self.config.credential_id,
+                )
+                logger.debug(f"Persisted refreshed token: {self.config.credential_id}")
+
+        except Exception as e:
+            # Log but don't fail - the in-memory credentials have the new token
+            logger.warning(f"Failed to persist refreshed token: {e}")
 
     async def _ensure_valid_token(self) -> str:
         """Ensure we have a valid access token, refreshing if needed."""
@@ -555,9 +618,7 @@ class GoogleAPIClient:
                 await self._ensure_valid_token()
 
                 # Execute request (sync, but runs in thread pool internally)
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, request.execute
-                )
+                result = await asyncio.get_event_loop().run_in_executor(None, request.execute)
 
                 return result
 
@@ -576,11 +637,7 @@ class GoogleAPIClient:
                 # Check for auth errors (don't retry)
                 if "401" in error_str or "403" in error_str:
                     # Try token refresh once
-                    if (
-                        attempt == 0
-                        and self._credentials
-                        and self._credentials.refresh_token
-                    ):
+                    if attempt == 0 and self._credentials and self._credentials.refresh_token:
                         logger.debug("Auth error, attempting token refresh...")
                         try:
                             await self.refresh_token()
@@ -650,16 +707,12 @@ class GoogleAPIClient:
 
             # Check for critical errors
             if len(errors) == len(requests):
-                raise GoogleAPIError(
-                    f"All batch requests failed. First error: {errors[0]}"
-                )
+                raise GoogleAPIError(f"All batch requests failed. First error: {errors[0]}")
 
             return results
 
         except ImportError:
-            raise GoogleAPIError(
-                "google-api-python-client not installed for batch requests"
-            )
+            raise GoogleAPIError("google-api-python-client not installed for batch requests")
         except Exception as e:
             raise GoogleAPIError(f"Batch request failed: {e}") from e
 

@@ -110,9 +110,7 @@ class LogTab(QWidget):
         # Filter label and dropdown
         filter_label = QLabel("Level:")
         self._filter_combo = QComboBox()
-        self._filter_combo.addItems(
-            ["All", "Debug", "Info", "Warning", "Error", "Success"]
-        )
+        self._filter_combo.addItems(["All", "Debug", "Info", "Warning", "Error", "Success"])
         self._filter_combo.setFixedWidth(90)
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
         self._filter_combo.setToolTip("Filter logs by level")
@@ -213,12 +211,8 @@ class LogTab(QWidget):
 
         # Configure column sizing
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(
-            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(
-            self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_NODE, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
@@ -546,9 +540,7 @@ class LogTab(QWidget):
         if self._deferred_logs:
             self._flush_deferred_logs()
 
-    def log_message(
-        self, message: str, level: str = "info", node_id: Optional[str] = None
-    ) -> None:
+    def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
         """
         Log a custom message.
 
@@ -575,9 +567,7 @@ class LogTab(QWidget):
         # Add this entry directly
         self._add_log_entry_to_table(message, level, node_id)
 
-    def _add_log_entry_to_table(
-        self, message: str, level: str, node_id: Optional[str]
-    ) -> None:
+    def _add_log_entry_to_table(self, message: str, level: str, node_id: Optional[str]) -> None:
         """Actually add a log entry to the table widget."""
         row = self._table.rowCount()
         self._table.insertRow(row)
@@ -614,10 +604,7 @@ class LogTab(QWidget):
         self._table.setItem(row, self.COL_MESSAGE, msg_item)
 
         # Apply filter to new row
-        if (
-            self._current_filter != "All"
-            and level.upper() != self._current_filter.upper()
-        ):
+        if self._current_filter != "All" and level.upper() != self._current_filter.upper():
             self._table.setRowHidden(row, True)
 
         # Update display state

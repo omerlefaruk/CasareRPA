@@ -7,6 +7,8 @@ PySide6 with asyncio using qasync for async workflow execution.
 Reduced from 3,112 lines to ~400 lines by extracting components.
 """
 
+from __future__ import annotations  # PEP 563: Deferred evaluation of annotations
+
 import sys
 import asyncio
 
@@ -38,10 +40,14 @@ from loguru import logger
 # Store the original handler to chain calls
 _original_qt_handler = None
 
-# Patterns to suppress (Qt CSS properties not supported)
+# Patterns to suppress (known harmless Qt warnings)
 _SUPPRESSED_PATTERNS = (
     "Unknown property box-shadow",
     "Unknown property text-shadow",
+    # Windows DPI scaling can cause minor geometry adjustments - this is normal
+    "QWindowsWindow::setGeometry",
+    # Qt internal warning when font size is invalid (even if we patched Python side)
+    "QFont::setPointSize: Point size <= 0",
 )
 
 
@@ -51,6 +57,11 @@ def _qt_message_handler(msg_type: QtMsgType, context, message: str) -> None:
 
     Suppresses:
     - "Unknown property box-shadow" - Qt CSS doesn't support box-shadow
+    - "Unknown property text-shadow" - Qt CSS doesn't support text-shadow
+    - "QWindowsWindow::setGeometry" - Windows DPI scaling causes minor geometry
+      adjustments when restoring window size/position. The window still functions
+      correctly, the warning is purely informational.
+    - "QFont::setPointSize" - Internal Qt warning when font size is <= 0.
     """
     # Suppress known harmless warnings
     if any(pattern in message for pattern in _SUPPRESSED_PATTERNS):
@@ -75,18 +86,31 @@ from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
 )
 from casare_rpa.presentation.canvas.main_window import MainWindow
+from casare_rpa.presentation.canvas.telemetry import (
+    StartupTimer,
+    IMPORT_START,
+    log_canvas_event,
+)
 
 # Lazy import for litellm cleanup to avoid import if litellm not used
 _litellm_cleanup_registered = False
-from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
-from casare_rpa.presentation.canvas.controllers import (
-    WorkflowController,
-    ExecutionController,
-    NodeController,
-    SelectorController,
-    PreferencesController,
-    AutosaveController,
-)
+
+# C3 PERFORMANCE: NodeGraphWidget imported lazily in _create_ui()
+# C3 PERFORMANCE: Controllers imported lazily in _initialize_components()
+# This defers ~20-40ms of import time until after module load
+
+# TYPE_CHECKING imports for type hints (not imported at runtime)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.presentation.canvas.controllers import (
+        WorkflowController,
+        ExecutionController,
+        NodeController,
+        SelectorController,
+        PreferencesController,
+        AutosaveController,
+    )
 
 # NOTE: ensure_playwright_ready is imported lazily in ensure_playwright_on_demand()
 # to defer the import cost until a browser node is actually used
@@ -168,9 +192,17 @@ class CasareRPAApp:
 
         # Setup logging
         setup_logging()
+        self._startup_timer = StartupTimer(start_time=IMPORT_START)
+        self._startup_timer.mark(
+            "import_complete",
+            {
+                "definition": "module import start -> app init start",
+            },
+        )
 
         # Setup Qt application
         self._setup_qt_application()
+        self._startup_timer.mark("qt_app_created")
 
         # PERFORMANCE: Defer Playwright check to first browser node use
         # This is now handled lazily by ensure_playwright_on_demand()
@@ -186,6 +218,7 @@ class CasareRPAApp:
 
         # Process pending events to ensure window is displayed
         self._app.processEvents()
+        self._startup_timer.mark("window_visible")
 
         # Initialize components in dependency order (node registration is deferred)
         self._initialize_components()
@@ -198,6 +231,15 @@ class CasareRPAApp:
 
         # Restore window title after initialization
         self._main_window.setWindowTitle(APP_NAME)
+        self._startup_timer.mark(
+            "interactive_ready",
+            {
+                "definition": (
+                    "window visible + graph widget created + essential nodes "
+                    "registered + critical controllers initialized + UI signals wired"
+                )
+            },
+        )
 
     def _setup_qt_application(self) -> None:
         """Setup Qt application and event loop."""
@@ -224,11 +266,18 @@ class CasareRPAApp:
 
     def _create_ui(self) -> None:
         """Create main window and central widget."""
+        # C3 PERFORMANCE: Lazy import NodeGraphWidget
+        from casare_rpa.presentation.canvas.graph.node_graph_widget import (
+            NodeGraphWidget,
+        )
+
         # Create main window
         self._main_window = MainWindow()
+        self._startup_timer.mark("main_window_created")
 
         # Create node graph widget
         self._node_graph = NodeGraphWidget()
+        self._startup_timer.mark("graph_widget_created")
 
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
@@ -259,69 +308,70 @@ class CasareRPAApp:
         )
 
         logger.debug("Workflow serializer and runner initialized")
+        self._startup_timer.mark("graph_stack_ready")
 
     def _initialize_components(self) -> None:
         """
         Initialize all application controllers in dependency order.
 
-        PERFORMANCE OPTIMIZATION:
+        PERFORMANCE OPTIMIZATION (Phase A/B/C):
         - Phase 1 (sync): Essential nodes only for fast startup
-        - Phase 2 (deferred): Full registration after window shows
+        - Phase 2 (staggered): Controllers initialized with event loop yields
+        - Phase 3 (deferred): Full registration after window shows
         - Icon preloading moved to background thread
 
-        Initialization Order (Critical):
-        1. NodeController - MUST be first
-           - Registers all node types with NodeGraphQt
-           - Other controllers may need registered nodes during initialization
+        C3: Controllers imported lazily here instead of module level (~20-40ms)
+        A3: Staggered initialization yields to event loop between batches
 
-        2. All other controllers - Can be initialized in any order
-           - They all depend on node registry being ready
-           - No cross-dependencies between these controllers
+        Initialization Order (Critical):
+        1. NodeController - MUST be first (registers all node types)
+        2. Core controllers (Workflow, Execution) - UI functionality
+        3. Support controllers (Selector, Preferences, Autosave) - Less critical
 
         Raises:
             RuntimeError: If controller initialization fails
         """
         from PySide6.QtCore import QTimer
 
+        # C3 PERFORMANCE: Lazy import controllers (deferred from module level)
+        from casare_rpa.presentation.canvas.controllers import (
+            WorkflowController,
+            ExecutionController,
+            NodeController,
+            SelectorController,
+            PreferencesController,
+            AutosaveController,
+        )
+
         # Phase 1: Node registry (essential nodes only for fast startup)
         self._node_controller = NodeController(self._main_window)
         self._node_controller.initialize()
         logger.debug("Essential nodes registered")
+        self._startup_timer.mark(
+            "node_registration_essential_complete",
+            {"phase": "essential"},
+        )
 
         # PERFORMANCE: Defer icon preloading to background
-        # Don't block startup - icons will load as needed
         QTimer.singleShot(500, self._preload_icons_background)
 
-        # Phase 2: All other controllers (depend on node registry)
-        logger.debug("Phase 2: Initializing application controllers...")
+        # Phase 2: Create all controllers (fast - just object creation)
+        logger.debug("Phase 2: Creating application controllers...")
 
-        # Workflow - handles file operations and drag-drop
         self._workflow_controller = WorkflowController(self._main_window)
-
-        # Execution - handles workflow running
         self._execution_controller = ExecutionController(self._main_window)
-
-        # Selector - handles element selection
         self._selector_controller = SelectorController(self._main_window)
-
-        # Preferences - handles settings
         self._preferences_controller = PreferencesController(self._main_window)
-
-        # Autosave - handles automatic saving
         self._autosave_controller = AutosaveController(self._main_window)
 
-        # Note: Triggers are now visual nodes on the canvas
-
-        # Initialize all phase 2 controllers
-        phase_2_controllers = [
+        # A3 PERFORMANCE: Initialize controllers in batches with event loop yields
+        # Batch 1: Critical controllers (needed for basic UI)
+        critical_controllers = [
             self._workflow_controller,
             self._execution_controller,
-            self._selector_controller,
-            self._preferences_controller,
-            self._autosave_controller,
         ]
 
-        for controller in phase_2_controllers:
+        for controller in critical_controllers:
             try:
                 controller.initialize()
                 logger.debug(f"{controller.__class__.__name__} initialized")
@@ -329,18 +379,36 @@ class CasareRPAApp:
                 error_msg = f"Failed to initialize {controller.__class__.__name__}: {e}"
                 logger.error(error_msg)
                 raise RuntimeError(error_msg) from e
+        self._startup_timer.mark("controllers_critical_initialized")
 
-        # Configure execution controller with workflow runner AFTER initialization
+        # Configure execution controller immediately (needed for run button)
         self._execution_controller.set_workflow_runner(self._workflow_runner)
 
-        # Inject configured controllers into MainWindow
-        # This ensures MainWindow uses the same instances that were configured above
+        # Inject critical controllers to make UI functional
         self._main_window.set_controllers(
             workflow_controller=self._workflow_controller,
             execution_controller=self._execution_controller,
             node_controller=self._node_controller,
             selector_controller=self._selector_controller,
         )
+
+        # A3: Defer support controller initialization to next event loop tick
+        # This allows the UI to be responsive sooner
+        def _init_support_controllers():
+            support_controllers = [
+                self._selector_controller,
+                self._preferences_controller,
+                self._autosave_controller,
+            ]
+            for controller in support_controllers:
+                try:
+                    controller.initialize()
+                    logger.debug(f"{controller.__class__.__name__} initialized (deferred)")
+                except Exception as e:
+                    logger.error(f"Failed to initialize {controller.__class__.__name__}: {e}")
+            self._startup_timer.mark("controllers_support_initialized")
+
+        QTimer.singleShot(0, _init_support_controllers)
 
         # PERFORMANCE: Defer full node registration until after window is responsive
         QTimer.singleShot(100, self._complete_deferred_initialization)
@@ -360,7 +428,12 @@ class CasareRPAApp:
 
             get_icon_atlas().initialize()
             preload_node_icons()
+            stats = get_icon_atlas().get_stats()
             logger.debug("Icon atlas preloaded in background")
+            self._startup_timer.mark(
+                "icon_atlas_preload_complete",
+                {"icons_loaded": stats.get("icons_loaded")},
+            )
         except Exception as e:
             logger.warning(f"Failed to preload icon atlas: {e}")
 
@@ -430,8 +503,35 @@ class CasareRPAApp:
         # Edit operations - connect to NodeGraphQt undo stack
         self._main_window.action_undo.setEnabled(True)
         self._main_window.action_redo.setEnabled(True)
-        self._main_window.action_undo.triggered.connect(undo_stack.undo)
-        self._main_window.action_redo.triggered.connect(undo_stack.redo)
+
+        def _undo() -> None:
+            log_canvas_event(
+                "undo_triggered",
+                index=undo_stack.index(),
+                clean=undo_stack.isClean(),
+            )
+            undo_stack.undo()
+            log_canvas_event(
+                "undo_completed",
+                index=undo_stack.index(),
+                clean=undo_stack.isClean(),
+            )
+
+        def _redo() -> None:
+            log_canvas_event(
+                "redo_triggered",
+                index=undo_stack.index(),
+                clean=undo_stack.isClean(),
+            )
+            undo_stack.redo()
+            log_canvas_event(
+                "redo_completed",
+                index=undo_stack.index(),
+                clean=undo_stack.isClean(),
+            )
+
+        self._main_window.action_undo.triggered.connect(_undo)
+        self._main_window.action_redo.triggered.connect(_redo)
 
         # Connect undo stack signals to update action states
         undo_stack.canUndoChanged.connect(self._main_window.action_undo.setEnabled)
@@ -509,9 +609,7 @@ class CasareRPAApp:
 
         # NodeGraphQt expects a dict with 'nodes' key containing a dict
         if not isinstance(data, dict):
-            logger.warning(
-                "Clipboard data is not in NodeGraphQt format (expected dict)"
-            )
+            logger.warning("Clipboard data is not in NodeGraphQt format (expected dict)")
             return
 
         nodes_data = data.get("nodes")
@@ -559,12 +657,8 @@ class CasareRPAApp:
         # Calculate bounding box center of pasted nodes
         min_x = min(node.pos()[0] for node in pasted_nodes)
         min_y = min(node.pos()[1] for node in pasted_nodes)
-        max_x = max(
-            node.pos()[0] + node.view.boundingRect().width() for node in pasted_nodes
-        )
-        max_y = max(
-            node.pos()[1] + node.view.boundingRect().height() for node in pasted_nodes
-        )
+        max_x = max(node.pos()[0] + node.view.boundingRect().width() for node in pasted_nodes)
+        max_y = max(node.pos()[1] + node.view.boundingRect().height() for node in pasted_nodes)
         center_x = (min_x + max_x) / 2
         center_y = (min_y + max_y) / 2
 
@@ -604,9 +698,7 @@ class CasareRPAApp:
                     continue
 
             # Generate new unique ID
-            node_type = (
-                getattr(casare_node, "node_type", None) or type(casare_node).__name__
-            )
+            node_type = getattr(casare_node, "node_type", None) or type(casare_node).__name__
             old_id = casare_node.node_id
             new_id = generate_node_id(node_type)
 
@@ -661,9 +753,7 @@ class CasareRPAApp:
             # SECURITY: Validate path before writing to prevent saving to
             # system directories or unauthorized locations
             try:
-                validated_path = validate_path_security(
-                    file_path, operation="save_workflow"
-                )
+                validated_path = validate_path_security(file_path, operation="save_workflow")
             except PathSecurityError as e:
                 logger.error(f"Security violation saving workflow: {e}")
                 QMessageBox.critical(
@@ -754,7 +844,7 @@ class CasareRPAApp:
 
     def _on_scenario_opened(self, project_path: str, scenario_path: str) -> None:
         """
-        Handle scenario open - read scenario file and load embedded workflow.
+        Handle scenario open - read workflow JSON and load it.
 
         Args:
             project_path: Path to project folder
@@ -781,36 +871,20 @@ class CasareRPAApp:
             with open(path, "rb") as f:
                 scenario_data = orjson.loads(f.read())
 
-            # Extract workflow - handle both scenario format and direct workflow format
-            # Scenario format: {"id": "...", "workflow": {...nodes, connections...}}
-            # Direct workflow format: {"nodes": {...}, "connections": [...]}
-            if "workflow" in scenario_data and isinstance(
-                scenario_data["workflow"], dict
-            ):
-                # Scenario format with embedded workflow
-                workflow = scenario_data["workflow"]
-            elif "nodes" in scenario_data:
-                # Direct workflow format - use the entire file as workflow
-                workflow = scenario_data
-            else:
-                logger.warning(f"Scenario has no workflow data: {scenario_path}")
+            if not isinstance(scenario_data, dict) or "nodes" not in scenario_data:
+                logger.warning(f"Scenario is not a workflow JSON: {scenario_path}")
                 QMessageBox.warning(
                     self._main_window,
                     "Load Warning",
-                    "Scenario has no workflow data to display.",
+                    "Scenario file is not a workflow JSON.",
                 )
                 return
 
             # Deserialize workflow onto canvas
-            success = self._deserializer.deserialize(workflow)
+            success = self._deserializer.deserialize(scenario_data)
 
             if success:
-                # Get name from scenario format or metadata format
-                scenario_name = (
-                    scenario_data.get("name")
-                    or scenario_data.get("metadata", {}).get("name")
-                    or path.stem
-                )
+                scenario_name = scenario_data.get("metadata", {}).get("name") or path.stem
                 logger.info(f"Scenario workflow loaded: {scenario_name}")
                 self._main_window.show_status(f"Loaded scenario: {scenario_name}", 3000)
                 # Mark undo stack as clean after load
@@ -841,15 +915,10 @@ class CasareRPAApp:
 
     def _on_save_as_scenario(self) -> None:
         """
-        Handle save as scenario - show dialog and save workflow in scenario format.
-
-        Scenario format wraps the workflow data in a scenario structure with
-        id, name, project_id, and the workflow itself.
+        Handle save as scenario - save workflow JSON with scenario name metadata.
         """
         import orjson
-        import uuid
         from pathlib import Path
-        from datetime import datetime
         from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
 
         try:
@@ -867,9 +936,7 @@ class CasareRPAApp:
 
             # Get project controller to find current project
             project_controller = self._main_window.get_project_controller()
-            current_project = (
-                project_controller.current_project if project_controller else None
-            )
+            current_project = project_controller.current_project if project_controller else None
 
             # Determine default save directory
             if current_project and current_project.path:
@@ -894,38 +961,15 @@ class CasareRPAApp:
 
             # Serialize current workflow
             workflow_data = self._serializer.serialize()
-
-            # Create scenario structure
-            scenario_id = f"scen_{uuid.uuid4().hex[:8]}"
-            project_id = current_project.id if current_project else ""
-            now = datetime.now()
-
-            scenario_data = {
-                "$schema_version": "1.0.0",
-                "id": scenario_id,
-                "name": name,
-                "project_id": project_id,
-                "description": "",
-                "created_at": now.isoformat(),
-                "modified_at": now.isoformat(),
-                "tags": [],
-                "workflow": workflow_data,
-                "variable_values": {},
-                "credential_bindings": {},
-                "execution_settings": {
-                    "timeout": 120,
-                    "retry_count": 0,
-                    "stop_on_error": True,
-                },
-                "triggers": [],
-            }
+            metadata = workflow_data.setdefault("metadata", {})
+            metadata["name"] = name
 
             # Write to file
             path = Path(file_path)
             path.parent.mkdir(parents=True, exist_ok=True)
 
             with open(path, "wb") as f:
-                f.write(orjson.dumps(scenario_data, option=orjson.OPT_INDENT_2))
+                f.write(orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2))
 
             logger.info(f"Scenario saved successfully: {name}")
             self._main_window.show_status(f"Saved scenario: {name}", 3000)
@@ -1029,9 +1073,7 @@ class CasareRPAApp:
             # We need to use the existing event loop since it's still running
             if self._loop.is_running():
                 # Schedule cleanup and wait for it
-                future = asyncio.run_coroutine_threadsafe(
-                    close_litellm_async_clients(), self._loop
-                )
+                future = asyncio.run_coroutine_threadsafe(close_litellm_async_clients(), self._loop)
                 try:
                     # Wait with a short timeout to avoid blocking shutdown
                     future.result(timeout=2.0)

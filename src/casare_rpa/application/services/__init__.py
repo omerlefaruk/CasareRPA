@@ -9,7 +9,7 @@ from casare_rpa.application.services.orchestrator_client import (
     OrchestratorClient,
     WorkflowSubmissionResult,
     HttpClient,
-    AiohttpClient,
+    UnifiedHttpClientAdapter,
 )
 from casare_rpa.application.services.browser_recording_service import (
     BrowserRecordingService,
@@ -24,7 +24,7 @@ __all__ = [
     "OrchestratorClient",
     "WorkflowSubmissionResult",
     "HttpClient",
-    "AiohttpClient",
+    "UnifiedHttpClientAdapter",
     "BrowserRecordingService",
     "get_browser_recording_service",
     "QueueService",

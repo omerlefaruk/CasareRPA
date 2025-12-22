@@ -64,9 +64,7 @@ class ErrorHandlerRegistry:
         self._node_handlers[node_type].append(handler)
         logger.debug(f"Registered node handler for {node_type}")
 
-    def register_category_handler(
-        self, category: ErrorCategory, handler: ErrorHandler
-    ) -> None:
+    def register_category_handler(self, category: ErrorCategory, handler: ErrorHandler) -> None:
         """
         Register handler for error category.
 
@@ -90,9 +88,7 @@ class ErrorHandlerRegistry:
         self._global_handlers.insert(-1, handler)
         logger.debug("Registered global error handler")
 
-    def register_custom_handler(
-        self, name: str, handler_func: CustomErrorHandlerFunc
-    ) -> None:
+    def register_custom_handler(self, name: str, handler_func: CustomErrorHandlerFunc) -> None:
         """
         Register custom handler function (user-defined).
 

@@ -65,6 +65,8 @@ from casare_rpa.domain.errors import (
     NodeValidationError,
     ErrorContext,
 )
+from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
 
 
 class NodeExecutionResult:
@@ -110,6 +112,7 @@ class NodeExecutor:
         event_bus: Optional[EventBus] = None,
         node_timeout: float = 120.0,
         progress_calculator: Optional[Callable[[], float]] = None,
+        cache_manager: Optional[TieredCacheManager] = None,
     ) -> None:
         """
         Initialize node executor.
@@ -127,6 +130,7 @@ class NodeExecutor:
         self.event_bus = event_bus
         self.node_timeout = node_timeout
         self._calculate_progress = progress_calculator or (lambda: 0.0)
+        self.cache_manager = cache_manager
 
         # PERFORMANCE: Cache metrics instance to avoid singleton lookup on every call
         # Related: See utils.performance.performance_metrics for metrics tracking
@@ -196,6 +200,22 @@ class NodeExecutor:
         # Add spaces before capital letters (e.g., "ClickElement" -> "Click Element")
         return re.sub(r"(?<!^)(?=[A-Z])", " ", node_type)
 
+    def _get_node_cache_key(self, node: INode) -> str:
+        """Generate a cache key for the node based on its inputs and config."""
+        inputs = {}
+        if hasattr(node, "input_ports"):
+            for name in node.input_ports:
+                if not name.startswith("exec"):
+                    inputs[name] = node.get_input_value(name)
+
+        cache_data = {
+            "node_type": node.__class__.__name__,
+            "inputs": inputs,
+            "config": {k: v for k, v in node.config.items() if not k.startswith("_")},
+        }
+        workflow_id = getattr(self.context, "workflow_id", "unknown")
+        return CacheKeyGenerator.generate(f"node:{workflow_id}", cache_data)
+
     async def execute(self, node: INode) -> NodeExecutionResult:
         """
         Execute a single node with full lifecycle management.
@@ -224,12 +244,28 @@ class NodeExecutor:
         if node.config.get("_disabled", False):
             return self._handle_bypassed_node(node)
 
+        # Check cache if node is cacheable (via code or user toggle)
+        cache_key = None
+        is_cacheable = getattr(node, "cacheable", False) or node.config.get("_cache_enabled", False)
+        if self.cache_manager and is_cacheable:
+            cache_key = self._get_node_cache_key(node)
+            cached_result = await self.cache_manager.get(cache_key)
+            if cached_result is not None:
+                logger.info(f"Cache hit for node {node.node_id} ({node.__class__.__name__})")
+                node.status = NodeStatus.SUCCESS
+                node.last_output = cached_result
+                # Set outputs from cache
+                for port_name, value in cached_result.items():
+                    if port_name in node.output_ports:
+                        node.set_output_value(port_name, value)
+                return NodeExecutionResult(success=True, result=cached_result)
+
         # Setup execution tracking
         node.status = NodeStatus.RUNNING
         self.context.set_current_node(node.node_id)
 
         node_type = node.__class__.__name__
-        node_name = self._get_node_display_name(node)
+        self._get_node_display_name(node)
 
         self._publish_node_started(node, node_type)
 
@@ -252,6 +288,12 @@ class NodeExecutor:
             node.execution_count += 1
             node.last_execution_time = execution_time
             node.last_output = result
+
+            # Store in cache if cacheable
+            if cache_key and self.cache_manager and result:
+                await self.cache_manager.set(
+                    cache_key, result, ttl=getattr(node, "cache_ttl", 3600)
+                )
 
             # Handle result
             return self._process_result(node, result, execution_time)
@@ -305,14 +347,10 @@ class NodeExecutor:
                         if out_port in node.output_ports:
                             node.set_output_value(out_port, input_value)
                             passthrough_count += 1
-                            logger.debug(
-                                f"Bypass passthrough: {port_name} -> {out_port}"
-                            )
+                            logger.debug(f"Bypass passthrough: {port_name} -> {out_port}")
 
         if passthrough_count > 0:
-            logger.debug(
-                f"Bypassed node {node.node_id}: passed through {passthrough_count} values"
-            )
+            logger.debug(f"Bypassed node {node.node_id}: passed through {passthrough_count} values")
 
         self._publish_node_completed(
             node,
@@ -331,9 +369,7 @@ class NodeExecutor:
             execution_time=0.0,
         )
 
-    def _validate_node(
-        self, node: INode, start_time: float
-    ) -> Optional[NodeExecutionResult]:
+    def _validate_node(self, node: INode, start_time: float) -> Optional[NodeExecutionResult]:
         """
         Validate node before execution.
 
@@ -398,16 +434,26 @@ class NodeExecutor:
                 f"NodeExecutor: executing {node.__class__.__name__} ({node.node_id}) "
                 f"with context_id={id(self.context)}"
             )
-            result = await asyncio.wait_for(
-                node.execute(self.context), timeout=self.node_timeout
-            )
+
+            # Inject execution context for auto-resolution in get_parameter()
+            # This enables nodes to use get_parameter() without manual resolve_value calls
+            if hasattr(node, "set_execution_context"):
+                node.set_execution_context(self.context)
+
+            try:
+                result = await asyncio.wait_for(
+                    node.execute(self.context), timeout=self.node_timeout
+                )
+            finally:
+                # Clear context to prevent memory leaks and stale references
+                if hasattr(node, "set_execution_context"):
+                    node.set_execution_context(None)
+
             # EDGE CASE: Some nodes may return None instead of proper dict
             # Treat as failure to enforce the contract
             return result or {"success": False, "error": "No result returned"}
         except asyncio.TimeoutError:
-            raise asyncio.TimeoutError(
-                f"Node {node.node_id} timed out after {self.node_timeout}s"
-            )
+            raise asyncio.TimeoutError(f"Node {node.node_id} timed out after {self.node_timeout}s")
 
     def _process_result(
         self, node: INode, result: Optional[Dict[str, Any]], execution_time: float
@@ -532,9 +578,7 @@ class NodeExecutor:
     # RESULT PATTERN - Safe variants for explicit error handling
     # ========================================================================
 
-    async def execute_safe(
-        self, node: INode
-    ) -> Result[NodeExecutionResult, NodeExecutionError]:
+    async def execute_safe(self, node: INode) -> Result[NodeExecutionResult, NodeExecutionError]:
         """
         Execute a single node with Result-based error handling.
 
@@ -636,9 +680,19 @@ class NodeExecutor:
             Err(NodeExecutionError) on other failures
         """
         try:
-            result = await asyncio.wait_for(
-                node.execute(self.context), timeout=self.node_timeout
-            )
+            # Inject execution context for auto-resolution in get_parameter()
+            if hasattr(node, "set_execution_context"):
+                node.set_execution_context(self.context)
+
+            try:
+                result = await asyncio.wait_for(
+                    node.execute(self.context), timeout=self.node_timeout
+                )
+            finally:
+                # Clear context to prevent memory leaks
+                if hasattr(node, "set_execution_context"):
+                    node.set_execution_context(None)
+
             # Handle None result explicitly
             if result is None:
                 return Err(
@@ -760,17 +814,13 @@ class NodeExecutorWithTryCatch(NodeExecutor):
         node_type = node.__class__.__name__
 
         # Check if we're inside a try block - capture error for catch
-        error_captured = self._capture_error(
-            error_msg, type(exception).__name__, exception
-        )
+        error_captured = self._capture_error(error_msg, type(exception).__name__, exception)
 
         if not error_captured:
             self._publish_node_failed(node, node_type, error_msg)
             logger.exception(f"Exception during node execution: {node.node_id}")
         else:
-            logger.info(
-                f"Exception captured by try block: {node.node_id} - {error_msg}"
-            )
+            logger.info(f"Exception captured by try block: {node.node_id} - {error_msg}")
 
         # Record exception in metrics
         self._metrics.record_node_complete(

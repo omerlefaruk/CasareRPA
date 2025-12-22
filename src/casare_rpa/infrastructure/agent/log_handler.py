@@ -125,8 +125,7 @@ class RobotLogHandler:
                 self._send_queue.append(log_data)
             self._has_logs.set()
             logger.debug(
-                f"Log handler reconnected, "
-                f"{len(self._send_queue)} buffered logs queued"
+                f"Log handler reconnected, " f"{len(self._send_queue)} buffered logs queued"
             )
 
     @property

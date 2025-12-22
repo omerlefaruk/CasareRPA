@@ -385,9 +385,7 @@ class AnimationCoordinator:
         if not self._timer.isActive():
             self._timer.start(self._interval)
 
-    def unregister(
-        self, node: "CasareNodeItem", animation_type: str = "running"
-    ) -> None:
+    def unregister(self, node: "CasareNodeItem", animation_type: str = "running") -> None:
         """
         Stop a specific animation for a node.
 
@@ -415,11 +413,7 @@ class AnimationCoordinator:
 
     def _check_stop_timer(self) -> None:
         """Stop timer if no nodes are being animated."""
-        if (
-            not self._running_nodes
-            and not self._selected_nodes
-            and self._timer.isActive()
-        ):
+        if not self._running_nodes and not self._selected_nodes and self._timer.isActive():
             self._timer.stop()
             self._offset = 0
             self._selection_phase = 0.0
@@ -506,6 +500,8 @@ class CasareNodeItem(NodeItem):
 
     def __init__(self, name="node", parent=None):
         super().__init__(name, parent)
+        # Ensure geometry change callbacks fire for culling updates.
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
 
         # Execution state
         self._is_running = False
@@ -518,6 +514,7 @@ class CasareNodeItem(NodeItem):
         self._is_disabled = False  # Gray diagonal lines overlay, 50% opacity
         self._is_skipped = False  # Gray fast-forward icon in corner
         self._has_warning = False  # Yellow triangle, orange border
+        self._cache_enabled = False  # Cache icon overlay
 
         # MMB click detection (for output inspector popup)
         self._mmb_press_pos = None
@@ -628,9 +625,7 @@ class CasareNodeItem(NodeItem):
 
         # Ensure node is wide enough for both labels plus padding
         # Port circles are about 10px each (on left and right edges)
-        min_required_width = (
-            max_input_width + max_output_width + port_label_padding + 20
-        )
+        min_required_width = max_input_width + max_output_width + port_label_padding + 20
 
         if width < min_required_width:
             width = min_required_width
@@ -656,9 +651,7 @@ class CasareNodeItem(NodeItem):
                         qwidget.adjustSize()
                         # Use sizeHint which includes label + content
                         size_hint = qwidget.sizeHint()
-                        widget_width = max(
-                            size_hint.width(), 200
-                        )  # Min 200px for file widgets
+                        widget_width = max(size_hint.width(), 200)  # Min 200px for file widgets
                     else:
                         # Fallback to boundingRect if no QWidget
                         widget_width = widget.boundingRect().width()
@@ -672,6 +665,29 @@ class CasareNodeItem(NodeItem):
             width = min_widget_required
 
         return width, height
+
+    def draw_node(self):
+        """
+        Override to ensure prepareGeometryChange() is called before layout changes.
+
+        CRITICAL FIX: Qt's scene caching requires prepareGeometryChange() to be
+        called BEFORE any changes to the bounding rect. Without this, the scene
+        keeps stale cached data which causes rendering artifacts when:
+        - Node widgets are hidden/shown (expand/collapse)
+        - Node size changes due to port/widget visibility
+        - Panning/scrolling the canvas
+
+        This fix ensures proper scene invalidation before the parent class
+        recalculates and repositions all child items.
+        """
+        self.prepareGeometryChange()
+        super().draw_node()
+        # Notify culling after geometry changes (size/shape updates).
+        if self._on_position_changed:
+            try:
+                self._on_position_changed(self)
+            except Exception:
+                pass
 
     def _align_widgets_horizontal(self, v_offset):
         """
@@ -762,21 +778,8 @@ class CasareNodeItem(NodeItem):
 
         rect = self._get_node_rect()
 
-        # Simple fill with status-aware color
-        if self._has_error:
-            fill_color = _ERROR_RED
-        elif self._has_warning:
-            fill_color = _WARNING_ORANGE
-        elif self._is_completed:
-            fill_color = _SUCCESS_GREEN
-        elif self._is_running:
-            fill_color = self._running_border_color
-        elif self._is_disabled:
-            # Use theme-defined alpha for disabled (grayed out)
-            fill_color = QColor(self._node_bg_color)
-            fill_color.setAlpha(NODE_DISABLED_BG_ALPHA)
-        else:
-            fill_color = self._node_bg_color
+        # Always use normal node background color (status colors removed)
+        fill_color = self._node_bg_color
 
         # ULTRA_LOW: Just fill rect, no rounded corners
         if lod_level == LODLevel.ULTRA_LOW:
@@ -813,6 +816,43 @@ class CasareNodeItem(NodeItem):
             painter.drawLine(rect.topLeft(), rect.bottomRight())
             painter.drawLine(rect.topRight(), rect.bottomLeft())
 
+        # Always draw the node title (LOW level only, ULTRA_LOW too small)
+        if lod_level != LODLevel.ULTRA_LOW:
+            self._draw_text(painter, rect)
+
+        painter.restore()
+
+    def _paint_as_dot(self, painter) -> None:
+        """
+        Paint node as a simple colored dot for ULTRA_LOW semantic zoom.
+
+        When zoomed out < 25%, nodes become simple dots showing just the
+        workflow structure and category colors. This is ideal for navigation
+        and understanding the overall workflow layout.
+        """
+        painter.save()
+        rect = self._get_node_rect()
+
+        # Get category color for the dot (status colors removed)
+        if self._cached_header_color:
+            dot_color = self._cached_header_color
+        else:
+            dot_color = get_category_header_color(self._category)
+
+        # Draw as a centered circle/dot
+        center = rect.center()
+        radius = min(rect.width(), rect.height()) / 3  # Proportional dot size
+
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        painter.setBrush(QBrush(dot_color))
+
+        # Selection ring
+        if self.selected:
+            painter.setPen(QPen(self._selected_border_color, 2))
+        else:
+            painter.setPen(_PEN_STYLE_NONE)
+
+        painter.drawEllipse(center, radius, radius)
         painter.restore()
 
     def paint(self, painter, option, widget):
@@ -847,6 +887,11 @@ class CasareNodeItem(NodeItem):
             self._paint_lod(painter, lod_level)
             return
 
+        # SEMANTIC ZOOM: ULTRA_LOW shows dots/blocks for structure overview
+        if lod_manager.should_show_node_as_dot():
+            self._paint_as_dot(painter)
+            return
+
         painter.save()
         painter.setRenderHint(_ANTIALIASING, True)
 
@@ -857,8 +902,9 @@ class CasareNodeItem(NodeItem):
         # Determine border color and style based on status states
         # Disabled state uses dotted border for clear visual feedback
         if self._is_running:
-            border_color = self._running_border_color
+            border_color = QColor("#FBBF24")  # Amber 400 (brighter running highlight)
             border_style = _PEN_STYLE_DASH
+            border_width = 3
         elif self._has_warning:
             border_color = _WARNING_ORANGE
             border_style = _PEN_STYLE_SOLID
@@ -901,7 +947,8 @@ class CasareNodeItem(NodeItem):
             if self._is_running:
                 # Animated dash pattern for running state
                 pen.setDashOffset(self._animation_offset)
-                pen.setDashPattern([4, 4])
+                pen.setDashPattern([2.5, 2.5])
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
 
         painter.strokePath(path, pen)
 
@@ -932,6 +979,10 @@ class CasareNodeItem(NodeItem):
             self._draw_skipped_icon(painter, rect)
         elif self._is_completed:
             self._draw_checkmark(painter, rect)
+
+        # Draw cache indicator (top-left corner, always visible if enabled)
+        if self._cache_enabled:
+            self._draw_cache_icon(painter, rect)
 
         painter.restore()
 
@@ -992,12 +1043,8 @@ class CasareNodeItem(NodeItem):
             )
         )
         inset = size * 0.3
-        painter.drawLine(
-            QPointF(x + inset, y + inset), QPointF(x + size - inset, y + size - inset)
-        )
-        painter.drawLine(
-            QPointF(x + size - inset, y + inset), QPointF(x + inset, y + size - inset)
-        )
+        painter.drawLine(QPointF(x + inset, y + inset), QPointF(x + size - inset, y + size - inset))
+        painter.drawLine(QPointF(x + size - inset, y + inset), QPointF(x + inset, y + size - inset))
 
     def _draw_warning_icon(self, painter: QPainter, rect: QRectF) -> None:
         """Draw a warning triangle icon above node, next to execution time badge."""
@@ -1062,6 +1109,34 @@ class CasareNodeItem(NodeItem):
         tri2_path.closeSubpath()
         painter.drawPath(tri2_path)
 
+    def _draw_cache_icon(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw a cache/lightning bolt icon in the top-left corner of the node."""
+        size = 14
+        # Position in top-left corner of header area
+        x = rect.left() + 6
+        y = rect.top() + 6
+
+        # Cyan/teal circle background for cache indicator
+        cache_color = QColor(0, 188, 212)  # Cyan/teal color
+        painter.setBrush(QBrush(cache_color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
+
+        # White lightning bolt symbol
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(Qt.GlobalColor.white))
+
+        bolt_path = QPainterPath()
+        # Lightning bolt shape
+        bolt_path.moveTo(x + size * 0.55, y + size * 0.15)  # Top
+        bolt_path.lineTo(x + size * 0.35, y + size * 0.5)  # Middle left
+        bolt_path.lineTo(x + size * 0.5, y + size * 0.5)  # Middle center
+        bolt_path.lineTo(x + size * 0.45, y + size * 0.85)  # Bottom
+        bolt_path.lineTo(x + size * 0.65, y + size * 0.5)  # Middle right
+        bolt_path.lineTo(x + size * 0.5, y + size * 0.5)  # Middle center
+        bolt_path.closeSubpath()
+        painter.drawPath(bolt_path)
+
     def _draw_disabled_overlay(self, painter: QPainter, rect: QRectF) -> None:
         """
         Draw gray wash and diagonal lines overlay for disabled state.
@@ -1109,9 +1184,7 @@ class CasareNodeItem(NodeItem):
 
         painter.restore()
 
-    def _draw_selection_glow(
-        self, painter: QPainter, rect: QRectF, radius: float
-    ) -> None:
+    def _draw_selection_glow(self, painter: QPainter, rect: QRectF, radius: float) -> None:
         """
         Draw pulsing selection glow effect around the node.
 
@@ -1124,9 +1197,7 @@ class CasareNodeItem(NodeItem):
             radius: Corner radius
         """
         # Calculate pulse intensity using sine wave (0.3 to 1.0 range)
-        pulse = 0.3 + 0.7 * (
-            0.5 + 0.5 * math.sin(self._selection_glow_phase * 2 * math.pi)
-        )
+        pulse = 0.3 + 0.7 * (0.5 + 0.5 * math.sin(self._selection_glow_phase * 2 * math.pi))
 
         # Glow color (selection color with pulsing alpha)
         glow_color = QColor(self._selected_border_color)  # From theme
@@ -1184,17 +1255,11 @@ class CasareNodeItem(NodeItem):
         # Draw badge background (using cached color, with fallback)
         badge_path = QPainterPath()
         badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
-        bg_color = (
-            _BADGE_BG_COLOR if _BADGE_BG_COLOR is not None else _get_badge_bg_color()
-        )
+        bg_color = _BADGE_BG_COLOR if _BADGE_BG_COLOR is not None else _get_badge_bg_color()
         painter.fillPath(badge_path, QBrush(bg_color))
 
         # Draw text (using cached color, with fallback)
-        text_color = (
-            _BADGE_TEXT_COLOR
-            if _BADGE_TEXT_COLOR is not None
-            else _get_badge_text_color()
-        )
+        text_color = _BADGE_TEXT_COLOR if _BADGE_TEXT_COLOR is not None else _get_badge_text_color()
         painter.setPen(text_color)
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, time_text)
 
@@ -1221,9 +1286,7 @@ class CasareNodeItem(NodeItem):
         header_path.lineTo(header_rect.right(), header_rect.bottom())
         header_path.lineTo(header_rect.left(), header_rect.bottom())
         header_path.lineTo(header_rect.left(), header_rect.top() + radius)
-        header_path.arcTo(
-            header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90
-        )
+        header_path.arcTo(header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90)
         header_path.closeSubpath()
 
         # Get category-based header color (cached for performance)
@@ -1279,9 +1342,7 @@ class CasareNodeItem(NodeItem):
 
         # Draw +/- symbol (using cached color)
         painter.setPen(
-            QPen(
-                _COLLAPSE_BTN_SYMBOL, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap
-            )
+            QPen(_COLLAPSE_BTN_SYMBOL, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
         )
 
         center_x = x + btn_size / 2
@@ -1302,8 +1363,21 @@ class CasareNodeItem(NodeItem):
             )
 
     def set_collapsed(self, collapsed: bool):
-        """Set collapsed state for visual update."""
+        """Set collapsed state for visual update.
+
+        CRITICAL: Must call prepareGeometryChange() before the geometry changes
+        via post_init()/draw_node() because when widgets are hidden/shown,
+        the node's bounding rect changes size.
+        """
+        if self._is_collapsed == collapsed:
+            return
+
         self._is_collapsed = collapsed
+
+        # CRITICAL: Notify Qt scene that bounding rect will change
+        # This must happen BEFORE draw_node() recalculates the size
+        # Without this, Qt's scene caching causes rendering artifacts during pan/scroll
+        self.prepareGeometryChange()
         self.update()
 
     def mousePressEvent(self, event):
@@ -1351,10 +1425,7 @@ class CasareNodeItem(NodeItem):
 
         # MMB release: Show popup only if it was a click (not a drag/pan)
         if event.button() == Qt.MouseButton.MiddleButton:
-            if (
-                hasattr(self, "_mmb_press_scene_pos")
-                and self._mmb_press_scene_pos is not None
-            ):
+            if hasattr(self, "_mmb_press_scene_pos") and self._mmb_press_scene_pos is not None:
                 # Check distance in scene coords (more accurate if view moved)
                 delta = event.scenePos() - self._mmb_press_scene_pos
                 distance = (delta.x() ** 2 + delta.y() ** 2) ** 0.5
@@ -1362,9 +1433,7 @@ class CasareNodeItem(NodeItem):
                 if distance < 10:
                     # It's a click - show output inspector
                     view = (
-                        self.scene().views()[0]
-                        if self.scene() and self.scene().views()
-                        else None
+                        self.scene().views()[0] if self.scene() and self.scene().views() else None
                     )
                     if view:
                         node_rect = self.sceneBoundingRect()
@@ -1427,22 +1496,16 @@ class CasareNodeItem(NodeItem):
                 # Call the show_output_inspector method
                 if hasattr(parent, "show_output_inspector"):
                     node_id = (
-                        node.get_property("node_id")
-                        if hasattr(node, "get_property")
-                        else node.id
+                        node.get_property("node_id") if hasattr(node, "get_property") else node.id
                     )
                     node_name = node.name() if callable(node.name) else str(node.name)
                     # Pass self (the node item) for position tracking
-                    parent.show_output_inspector(
-                        node_id, node_name, output_data, global_pos, self
-                    )
+                    parent.show_output_inspector(node_id, node_name, output_data, global_pos, self)
                     logger.debug(f"Showing output inspector for {node_name}")
                     return
                 break
             parent = (
-                parent.parent()
-                if hasattr(parent, "parent") and callable(parent.parent)
-                else None
+                parent.parent() if hasattr(parent, "parent") and callable(parent.parent) else None
             )
 
         logger.debug("Could not find NodeGraphWidget to show output inspector")
@@ -1551,6 +1614,29 @@ class CasareNodeItem(NodeItem):
             True if node is disabled
         """
         return self._is_disabled
+
+    def set_cache_enabled(self, enabled: bool) -> None:
+        """
+        Set node cache state.
+
+        Cached nodes show a cyan lightning bolt icon in the top-left corner.
+        Cached nodes store execution results and return them instantly
+        on subsequent calls with the same inputs.
+
+        Args:
+            enabled: True to enable caching, False to disable
+        """
+        self._cache_enabled = enabled
+        self.update()
+
+    def is_cache_enabled(self) -> bool:
+        """
+        Check if node has caching enabled.
+
+        Returns:
+            True if caching is enabled for this node
+        """
+        return self._cache_enabled
 
     def set_skipped(self, skipped: bool) -> None:
         """
@@ -1687,12 +1773,8 @@ class CasareNodeItem(NodeItem):
 
         # Robot antenna
         antenna_x = x + size / 2
-        painter.drawLine(
-            QPointF(antenna_x, head_y), QPointF(antenna_x, head_y - size * 0.12)
-        )
-        painter.drawEllipse(
-            QPointF(antenna_x, head_y - size * 0.15), size * 0.04, size * 0.04
-        )
+        painter.drawLine(QPointF(antenna_x, head_y), QPointF(antenna_x, head_y - size * 0.12))
+        painter.drawEllipse(QPointF(antenna_x, head_y - size * 0.15), size * 0.04, size * 0.04)
 
         # Robot body (rectangle below head)
         body_y = head_y + head_h + size * 0.05
@@ -1700,9 +1782,7 @@ class CasareNodeItem(NodeItem):
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(QRectF(head_x, body_y, head_w, body_h))
 
-    def set_robot_override(
-        self, has_override: bool, is_capability_based: bool = False
-    ) -> None:
+    def set_robot_override(self, has_override: bool, is_capability_based: bool = False) -> None:
         """Set robot override state for this node.
 
         Args:

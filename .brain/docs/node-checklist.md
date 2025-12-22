@@ -2,6 +2,24 @@
 
 > MANDATORY: Every new node MUST include ALL items below.
 
+## Modern Node Standard (2025)
+
+**Schema-Driven Logic** - All 430+ nodes follow this pattern:
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional with default
+```
+
+**NEVER use `self.config.get()` - always use `get_parameter()`**
+
 ## Key Imports
 
 ```python
@@ -23,15 +41,15 @@ Adds exec_in/exec_out ports automatically.
 from casare_rpa.domain.decorators import node
 ```
 
-### 2. @properties decorator
-Defines property schema for auto-widget generation.
+### 2. @properties decorator (REQUIRED)
+Defines property schema for auto-widget generation. **Even empty @properties() is required.**
 
 ```python
 from casare_rpa.domain.decorators import properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 ```
 
-**PropertyTypes:** STRING, TEXT, INTEGER, FLOAT, BOOLEAN, CHOICE, JSON, FILE_PATH, DIRECTORY_PATH, CODE, SELECTOR
+**PropertyTypes:** STRING, TEXT, INTEGER, FLOAT, BOOLEAN, CHOICE, JSON, FILE_PATH, DIRECTORY_PATH, CODE, SELECTOR, ANY
 
 **Tabs:** "connection" (credentials), "properties" (main), "advanced" (optional)
 
@@ -40,7 +58,7 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
     PropertyDef("url", PropertyType.STRING, required=True, label="URL"),
     PropertyDef("timeout", PropertyType.INTEGER, default=30000, tab="advanced"),
 )
-@node
+@node(category="browser")
 class MyNode(BaseNode): ...
 ```
 
@@ -50,15 +68,25 @@ class MyNode(BaseNode): ...
 3. Manual widget code in `__init__()` runs AFTER auto-generation
 4. Use `_replace_widget()` to override auto-generated widgets
 
-### Dual-Source Pattern (Port vs Config)
-Values come from either port connections (runtime) OR config (design-time):
-```python
-# RECOMMENDED: Use get_parameter() - checks port first, then config
-value = self.get_parameter("url", default="")
+### 3. Dual-Source Pattern (CRITICAL)
 
-# DON'T: Access config directly (misses port connections)
-value = self.config.get("url", "")  # BAD
+Values come from either port connections (runtime) OR config (design-time):
+
+```python
+# MODERN: Use get_parameter() - checks port first, then config
+value = self.get_parameter("timeout", 30000)  # with default
+url = self.get_parameter("url")               # required (no default)
+
+# FOR REQUIRED CONNECTION-ONLY PORTS: get_input_value() is acceptable
+element = self.get_input_value("element")  # must come from connection
+
+# LEGACY - NEVER USE:
+value = self.config.get("timeout", 30000)  # BAD - misses port connections
 ```
+
+**When to use which:**
+- Optional properties (have defaults) → MUST use `get_parameter()`
+- Required properties (connection-only) → `get_input_value()` is acceptable
 
 ### 3. Reusable PropertyDef constants
 Create UPPERCASE constants for shared properties. Export from package `__init__.py`.

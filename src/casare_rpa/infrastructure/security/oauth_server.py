@@ -275,9 +275,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         # Check for error response from OAuth provider
         if "error" in query_params:
             error = query_params["error"][0]
-            error_description = query_params.get(
-                "error_description", ["Unknown error"]
-            )[0]
+            error_description = query_params.get("error_description", ["Unknown error"])[0]
             logger.warning(f"OAuth error: {error} - {error_description}")
             self._send_error_response(f"{error}: {error_description}")
             self.server.set_result(None, f"{error}: {error_description}")
@@ -288,9 +286,7 @@ class OAuthCallbackHandler(BaseHTTPRequestHandler):
         expected_state = self.server.expected_state
 
         if expected_state and received_state != expected_state:
-            logger.warning(
-                f"State mismatch: expected={expected_state}, received={received_state}"
-            )
+            logger.warning(f"State mismatch: expected={expected_state}, received={received_state}")
             self._send_error_response("Invalid state parameter (CSRF protection)")
             self.server.set_result(None, "Invalid state parameter")
             return
@@ -538,9 +534,7 @@ class LocalOAuthServer:
         loop = asyncio.get_event_loop()
 
         try:
-            received = await loop.run_in_executor(
-                None, self._server.wait_for_result, timeout
-            )
+            received = await loop.run_in_executor(None, self._server.wait_for_result, timeout)
 
             if not received:
                 return None, "Timeout waiting for OAuth callback"
@@ -728,9 +722,7 @@ async def poll_for_cloud_auth_code(
 
                     else:
                         error_text = await response.text()
-                        logger.warning(
-                            f"Cloud OAuth poll failed: {response.status} - {error_text}"
-                        )
+                        logger.warning(f"Cloud OAuth poll failed: {response.status} - {error_text}")
                         await asyncio.sleep(poll_interval)
                         continue
 

@@ -451,16 +451,17 @@ from casare_rpa.nodes.http import HttpRequestNode
 }
 ```
 
-### Database Nodes
+### HTTP Request Nodes
 
 ```python
-from casare_rpa.nodes.database import SqlQueryNode
+from casare_rpa.nodes.http import HTTPRequestNode
 
 {
-    "type": "SqlQueryNode",
+    "type": "HTTPRequestNode",
     "properties": {
-        "credential_id": "${credentials.db_prod}",
-        "query": "SELECT * FROM users WHERE status = 'active'"
+        "credential_id": "${credentials.api_cred}",
+        "url": "https://api.example.com/data",
+        "method": "GET"
     }
 }
 ```

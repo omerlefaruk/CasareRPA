@@ -128,7 +128,6 @@ USE_GPU_PROP = PropertyDef(
 )
 
 
-@node(category="desktop")
 @properties(
     ELEMENT_TYPE_PROP,
     ELEMENT_INDEX_PROP,
@@ -143,6 +142,7 @@ USE_GPU_PROP = PropertyDef(
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
 )
+@node(category="desktop")
 class YOLOFindElementNode(DesktopNodeBase):
     """
     Find UI elements using YOLO object detection.
@@ -194,11 +194,11 @@ class YOLOFindElementNode(DesktopNodeBase):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Inputs
-        self.add_input_port("exec_in", DataType.EXEC)
+        self.add_exec_input("exec_in")
         self.add_input_port("window_handle", DataType.INTEGER, required=False)
 
         # Outputs
-        self.add_output_port("exec_out", DataType.EXEC)
+        self.add_exec_output("exec_out")
         self.add_output_port("x", DataType.INTEGER)
         self.add_output_port("y", DataType.INTEGER)
         self.add_output_port("width", DataType.INTEGER)
@@ -271,9 +271,7 @@ class YOLOFindElementNode(DesktopNodeBase):
                     save_dc.SelectObject(bitmap)
 
                     # Try PrintWindow for better capture
-                    result = windll.user32.PrintWindow(
-                        window_handle, save_dc.GetSafeHdc(), 2
-                    )
+                    windll.user32.PrintWindow(window_handle, save_dc.GetSafeHdc(), 2)
 
                     bmpinfo = bitmap.GetInfo()
                     bmpstr = bitmap.GetBitmapBits(True)
@@ -308,8 +306,7 @@ class YOLOFindElementNode(DesktopNodeBase):
 
         except ImportError:
             raise ImportError(
-                "Screenshot capture requires Pillow. "
-                "Install with: pip install Pillow"
+                "Screenshot capture requires Pillow. " "Install with: pip install Pillow"
             )
 
     async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
@@ -367,9 +364,7 @@ class YOLOFindElementNode(DesktopNodeBase):
                 return self.error_result(result.error_message or "Detection failed")
 
             # Filter by confidence and get all matching elements
-            matching_elements = [
-                e for e in result.elements if e.confidence >= confidence_threshold
-            ]
+            matching_elements = [e for e in result.elements if e.confidence >= confidence_threshold]
 
             # Convert to list of dicts for output
             all_elements_data = [e.to_dict() for e in matching_elements]

@@ -130,9 +130,7 @@ class WhatsAppTrigger(BaseTrigger):
                         if hasattr(cred, "data") and cred.data:
                             access_token = cred.data.get("access_token")
                             if access_token:
-                                logger.debug(
-                                    f"Using vault credential data: {cred_name}"
-                                )
+                                logger.debug(f"Using vault credential data: {cred_name}")
                                 return access_token
                 finally:
                     await provider.shutdown()
@@ -198,9 +196,7 @@ class WhatsAppTrigger(BaseTrigger):
                     if cred:
                         phone_number_id = getattr(cred, "phone_number_id", None)
                         if phone_number_id:
-                            logger.debug(
-                                f"Using vault credential phone_number_id: {cred_name}"
-                            )
+                            logger.debug(f"Using vault credential phone_number_id: {cred_name}")
                             return phone_number_id
                         if hasattr(cred, "data") and cred.data:
                             phone_number_id = cred.data.get("phone_number_id")
@@ -223,9 +219,7 @@ class WhatsAppTrigger(BaseTrigger):
             if cred_name:
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.phone_number_id:
-                    logger.debug(
-                        f"Using legacy credential phone_number_id: {cred_name}"
-                    )
+                    logger.debug(f"Using legacy credential phone_number_id: {cred_name}")
                     return cred.phone_number_id
 
             # Try default names in legacy system
@@ -276,9 +270,7 @@ class WhatsAppTrigger(BaseTrigger):
         import secrets
 
         self._verify_token = secrets.token_urlsafe(32)
-        logger.warning(
-            f"No verify_token configured, generated: {self._verify_token[:20]}..."
-        )
+        logger.warning(f"No verify_token configured, generated: {self._verify_token[:20]}...")
         return self._verify_token
 
     async def start(self) -> bool:
@@ -287,7 +279,7 @@ class WhatsAppTrigger(BaseTrigger):
 
         try:
             # Verify credentials are available
-            client = await self._get_client()
+            await self._get_client()
 
             # Just ensure we can create a client
             logger.info(f"WhatsApp trigger ready for webhooks: {self.config.name}")
@@ -528,9 +520,7 @@ class WhatsAppTrigger(BaseTrigger):
 
         # Apply filters
         if not self._passes_filters(from_number, message_type):
-            logger.debug(
-                f"Message filtered out: from={from_number}, type={message_type}"
-            )
+            logger.debug(f"Message filtered out: from={from_number}, type={message_type}")
             return
 
         # Build payload

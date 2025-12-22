@@ -237,14 +237,10 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Code signing utility")
-    parser.add_argument(
-        "--check", action="store_true", help="Check if signing is available"
-    )
+    parser.add_argument("--check", action="store_true", help="Check if signing is available")
     parser.add_argument("--sign", type=str, help="Sign a specific executable")
     parser.add_argument("--verify", type=str, help="Verify signature on executable")
-    parser.add_argument(
-        "--sign-all", type=str, help="Sign all executables in directory"
-    )
+    parser.add_argument("--sign-all", type=str, help="Sign all executables in directory")
     args = parser.parse_args()
 
     if args.check:

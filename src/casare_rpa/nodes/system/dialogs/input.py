@@ -5,7 +5,6 @@ Nodes for getting user input via dialogs.
 """
 
 import asyncio
-from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
@@ -20,7 +19,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit, _create_styled_text_edit
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -51,6 +49,7 @@ from .widgets import _create_styled_line_edit, _create_styled_text_edit
         tooltip="Hide input characters",
     ),
 )
+@node(category="system")
 class InputDialogNode(BaseNode):
     """
     Display an input dialog to get user input.
@@ -154,7 +153,6 @@ class InputDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -186,6 +184,7 @@ class InputDialogNode(BaseNode):
         tooltip="Maximum character limit (0 = unlimited)",
     ),
 )
+@node(category="system")
 class MultilineInputDialogNode(BaseNode):
     """
     Display a multi-line text input dialog.
@@ -225,9 +224,6 @@ class MultilineInputDialogNode(BaseNode):
             default_text = self.get_parameter("default_text", "")
             placeholder = self.get_parameter("placeholder", "")
             max_chars = int(self.get_parameter("max_chars", 0) or 0)
-
-            title = context.resolve_value(title)
-            default_text = context.resolve_value(default_text)
 
             try:
                 from PySide6.QtWidgets import (
@@ -271,9 +267,7 @@ class MultilineInputDialogNode(BaseNode):
 
                 text_edit.textChanged.connect(on_text_changed)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -323,7 +317,6 @@ class MultilineInputDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -361,6 +354,7 @@ class MultilineInputDialogNode(BaseNode):
         tooltip="Hide password characters",
     ),
 )
+@node(category="system")
 class CredentialDialogNode(BaseNode):
     """
     Display a username/password credential dialog.
@@ -405,8 +399,6 @@ class CredentialDialogNode(BaseNode):
             show_remember = self.get_parameter("show_remember", True)
             mask_password = self.get_parameter("mask_password", True)
 
-            title = context.resolve_value(title)
-
             try:
                 from PySide6.QtWidgets import (
                     QDialog,
@@ -446,9 +438,7 @@ class CredentialDialogNode(BaseNode):
                     remember_check = QCheckBox("Remember me")
                     layout.addWidget(remember_check)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -458,9 +448,7 @@ class CredentialDialogNode(BaseNode):
                 def on_finished(result):
                     if not future.done():
                         if result == QDialog.Accepted:
-                            remember = (
-                                remember_check.isChecked() if remember_check else False
-                            )
+                            remember = remember_check.isChecked() if remember_check else False
                             future.set_result(
                                 (
                                     username_input.text(),

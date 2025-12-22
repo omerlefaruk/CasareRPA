@@ -180,11 +180,11 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.entities import BaseNode
 from casare_rpa.domain.value_objects import DataType
 
-@node(category="custom")
 @properties(
     PropertyDef("message", PropertyType.STRING, essential=True),
     PropertyDef("count", PropertyType.INTEGER, default=1),
 )
+@node(category="custom")
 class HelloWorldNode(BaseNode):
     """Prints a message multiple times."""
 
@@ -195,8 +195,9 @@ class HelloWorldNode(BaseNode):
 
     # 3. Implement execute method
     async def execute(self, context):
-        message = self.config.get("message", "Hello")
-        count = self.config.get("count", 1)
+        # MODERN: Use get_parameter() for dual-source access
+        message = self.get_parameter("message", "Hello")
+        count = self.get_parameter("count", 1)
 
         result = "\n".join([message] * count)
 
@@ -206,8 +207,8 @@ class HelloWorldNode(BaseNode):
 ```
 
 ```python
-# 5. Register in nodes/__init__.py
-_NODE_REGISTRY = {
+# 5. Register in src/casare_rpa/nodes/registry_data.py
+NODE_REGISTRY = {
     # ... existing nodes ...
     "HelloWorldNode": "custom_nodes",
 }

@@ -21,9 +21,7 @@ _SQL_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 _MAX_IDENTIFIER_LENGTH = 128
 
 
-def validate_sql_identifier(
-    identifier: str, identifier_type: str = "identifier"
-) -> str:
+def validate_sql_identifier(identifier: str, identifier_type: str = "identifier") -> str:
     """
     Validate a SQL identifier (table name, column name, etc.) to prevent SQL injection.
 
@@ -86,6 +84,7 @@ def validate_sql_identifier(
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -104,8 +103,23 @@ if AIOMYSQL_AVAILABLE:
     import aiomysql
 
 
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+    PropertyDef(
+        "table_name",
+        PropertyType.STRING,
+        required=True,
+        label="Table Name",
+        tooltip="Name of the table to check",
+    ),
+)
 @node(category="database")
-@properties()  # Input port driven
 class TableExistsNode(BaseNode):
     """
     Check if a table exists in the database.
@@ -145,12 +159,8 @@ class TableExistsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value(
-                "connection"
-            )
-            table_name = self.get_input_value("table_name") or self.config.get(
-                "table_name", ""
-            )
+            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            table_name = self.get_input_value("table_name") or self.get_parameter("table_name", "")
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -158,7 +168,6 @@ class TableExistsNode(BaseNode):
                 raise ValueError("Table name is required")
 
             # Resolve {{variable}} patterns in table_name
-            table_name = context.resolve_value(table_name)
 
             exists = False
 
@@ -191,9 +200,7 @@ class TableExistsNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": error_msg, "next_nodes": []}
 
-    async def _check_sqlite(
-        self, connection: DatabaseConnection, table_name: str
-    ) -> bool:
+    async def _check_sqlite(self, connection: DatabaseConnection, table_name: str) -> bool:
         """Check if table exists in SQLite."""
         conn = connection.connection
         query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
@@ -207,18 +214,14 @@ class TableExistsNode(BaseNode):
 
         return row is not None
 
-    async def _check_postgresql(
-        self, connection: DatabaseConnection, table_name: str
-    ) -> bool:
+    async def _check_postgresql(self, connection: DatabaseConnection, table_name: str) -> bool:
         """Check if table exists in PostgreSQL."""
         conn = connection.connection
         query = "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = $1)"
         result = await conn.fetchval(query, table_name)
         return result
 
-    async def _check_mysql(
-        self, connection: DatabaseConnection, table_name: str
-    ) -> bool:
+    async def _check_mysql(self, connection: DatabaseConnection, table_name: str) -> bool:
         """Check if table exists in MySQL."""
         conn = connection.connection
         query = "SHOW TABLES LIKE %s"
@@ -230,8 +233,23 @@ class TableExistsNode(BaseNode):
         return row is not None
 
 
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+    PropertyDef(
+        "table_name",
+        PropertyType.STRING,
+        required=True,
+        label="Table Name",
+        tooltip="Name of the table to get columns from",
+    ),
+)
 @node(category="database")
-@properties()  # Input port driven
 class GetTableColumnsNode(BaseNode):
     """
     Get column information for a table.
@@ -253,9 +271,7 @@ class GetTableColumnsNode(BaseNode):
     # @requires: database
     # @ports: connection, table_name -> columns, column_names, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Get Table Columns", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Get Table Columns", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         config.setdefault("table_name", "")
         super().__init__(node_id, config)
@@ -275,12 +291,8 @@ class GetTableColumnsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value(
-                "connection"
-            )
-            table_name = self.get_input_value("table_name") or self.config.get(
-                "table_name", ""
-            )
+            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            table_name = self.get_input_value("table_name") or self.get_parameter("table_name", "")
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -288,7 +300,6 @@ class GetTableColumnsNode(BaseNode):
                 raise ValueError("Table name is required")
 
             # Resolve {{variable}} patterns in table_name
-            table_name = context.resolve_value(table_name)
 
             columns: List[Dict[str, Any]] = []
 

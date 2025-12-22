@@ -17,7 +17,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from loguru import logger
 
 
-@node(category="variable")
 @properties(
     PropertyDef(
         "variable_name",
@@ -54,6 +53,7 @@ from loguru import logger
         tooltip="Type to convert value to",
     ),
 )
+@node(category="variable")
 class SetVariableNode(BaseNode):
     """
     Set variable node - stores a value in the execution context.
@@ -144,9 +144,7 @@ class SetVariableNode(BaseNode):
                                 value = json.loads(value)
                             except json.JSONDecodeError:
                                 # Treat as comma-separated list
-                                value = [
-                                    v.strip() for v in value.split(",") if v.strip()
-                                ]
+                                value = [v.strip() for v in value.split(",") if v.strip()]
                         elif not isinstance(value, list):
                             value = [value]
                     elif variable_type == "DataTable":
@@ -155,9 +153,7 @@ class SetVariableNode(BaseNode):
 
                             value = json.loads(value)
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to convert value '{value}' to {variable_type}: {e}"
-                    )
+                    logger.warning(f"Failed to convert value '{value}' to {variable_type}: {e}")
                     # Keep original value if conversion fails
 
             # Store in context
@@ -167,9 +163,7 @@ class SetVariableNode(BaseNode):
             self.set_output_value("value", value)
 
             self.status = NodeStatus.SUCCESS
-            logger.info(
-                f"Set variable '{variable_name}' = {value} (Type: {type(value).__name__})"
-            )
+            logger.info(f"Set variable '{variable_name}' = {value} (Type: {type(value).__name__})")
 
             return {
                 "success": True,
@@ -187,7 +181,6 @@ class SetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="variable")
 @properties(
     PropertyDef(
         "variable_name",
@@ -205,6 +198,7 @@ class SetVariableNode(BaseNode):
         tooltip="Default value if variable not found",
     ),
 )
+@node(category="variable")
 class GetVariableNode(BaseNode):
     """
     Get variable node - retrieves a value from the execution context.
@@ -283,7 +277,6 @@ class GetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="variable")
 @properties(
     PropertyDef(
         "variable_name",
@@ -301,6 +294,7 @@ class GetVariableNode(BaseNode):
         tooltip="Amount to increment by",
     ),
 )
+@node(category="variable")
 class IncrementVariableNode(BaseNode):
     """
     Increment variable node - increments a numeric variable.

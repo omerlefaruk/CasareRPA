@@ -5,8 +5,8 @@ Typed domain events for workflow execution lifecycle.
 Replaces EventType.WORKFLOW_* enum values with typed classes.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 
 from casare_rpa.domain.events.base import DomainEvent
 from casare_rpa.domain.value_objects.types import ErrorCode, ExecutionMode
@@ -260,7 +260,7 @@ class NodeAdded(DomainEvent):
                 "workflow_id": self.workflow_id,
                 "node_id": self.node_id,
                 "node_type": self.node_type,
-                "position": {"x": self.position_x, "y": self.position_y},
+                "position": [self.position_x, self.position_y],
             }
         )
         return result

@@ -51,7 +51,7 @@ from casare_rpa.infrastructure.ai.registry_dumper import (
     PortManifestEntry,
 )
 
-from casare_rpa.infrastructure.ai.smart_agent import (
+from casare_rpa.infrastructure.ai.agent import (
     SmartWorkflowAgent,
     WorkflowGenerationResult,
     GenerationAttempt,

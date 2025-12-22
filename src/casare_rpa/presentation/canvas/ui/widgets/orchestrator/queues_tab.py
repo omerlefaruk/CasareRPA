@@ -100,9 +100,7 @@ class QueueEditDialog(QDialog):
         layout.addWidget(schema_label)
 
         self._schema_input = QTextEdit()
-        self._schema_input.setPlaceholderText(
-            '{\n  "type": "object",\n  "properties": {}\n}'
-        )
+        self._schema_input.setPlaceholderText('{\n  "type": "object",\n  "properties": {}\n}')
         self._schema_input.setMinimumHeight(120)
         layout.addWidget(self._schema_input)
 
@@ -169,9 +167,7 @@ class QueueEditDialog(QDialog):
             try:
                 json.loads(schema_text)
             except json.JSONDecodeError as e:
-                QMessageBox.warning(
-                    self, "Validation Error", f"Invalid JSON schema: {e}"
-                )
+                QMessageBox.warning(self, "Validation Error", f"Invalid JSON schema: {e}")
                 return
 
         self.accept()
@@ -309,9 +305,7 @@ class QueuesTab(QWidget):
         self._edit_btn.clicked.connect(self._on_edit_queue)
         self._delete_btn.clicked.connect(self._on_delete_queue)
         self._refresh_btn.clicked.connect(self.refresh)
-        self._table.selectionModel().selectionChanged.connect(
-            self._on_selection_changed
-        )
+        self._table.selectionModel().selectionChanged.connect(self._on_selection_changed)
         self._table.customContextMenuRequested.connect(self._on_context_menu)
         self._table.doubleClicked.connect(self._on_double_click)
 

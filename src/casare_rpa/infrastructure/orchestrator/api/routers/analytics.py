@@ -307,18 +307,14 @@ async def get_variants(
         # Build variant info list
         total_count = sum(model.variants.values())
         variants = []
-        for variant_hash, count in sorted(
-            model.variants.items(), key=lambda x: x[1], reverse=True
-        ):
+        for variant_hash, count in sorted(model.variants.items(), key=lambda x: x[1], reverse=True):
             path = model.variant_paths.get(variant_hash, [])
             variants.append(
                 VariantInfo(
                     variant_hash=variant_hash,
                     path=path,
                     count=count,
-                    percentage=round(count / total_count * 100, 2)
-                    if total_count
-                    else 0,
+                    percentage=round(count / total_count * 100, 2) if total_count else 0,
                 )
             )
 
@@ -367,7 +363,7 @@ async def check_conformance(
             )
 
         # First discover the model, then check conformance
-        model = miner.discover_process(workflow_id, limit=limit)
+        miner.discover_process(workflow_id, limit=limit)
         result = miner.check_conformance_batch(workflow_id, limit=limit)
 
         return ConformanceSummaryResponse(
@@ -493,9 +489,7 @@ async def analyze_bottlenecks(
         # Get traces for the analysis period
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(days=days)
-        traces = miner.event_log.get_traces_in_timerange(
-            start_time, end_time, workflow_id
-        )
+        traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
         if not traces:
             raise HTTPException(
@@ -578,9 +572,7 @@ async def get_node_performance(
         # Get traces
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(days=days)
-        traces = miner.event_log.get_traces_in_timerange(
-            start_time, end_time, workflow_id
-        )
+        traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
         if not traces:
             raise HTTPException(
@@ -616,9 +608,7 @@ async def get_node_performance(
         raise
     except Exception as e:
         logger.error(f"Node performance query failed: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Node performance query failed: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"Node performance query failed: {e}")
 
 
 # =============================================================================
@@ -651,9 +641,7 @@ async def analyze_execution(
         # Get traces for analysis
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(days=days)
-        traces = miner.event_log.get_traces_in_timerange(
-            start_time, end_time, workflow_id
-        )
+        traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
         if not traces:
             raise HTTPException(
@@ -743,9 +731,7 @@ async def get_execution_timeline(
 
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(days=days)
-        traces = miner.event_log.get_traces_in_timerange(
-            start_time, end_time, workflow_id
-        )
+        traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
         if not traces:
             raise HTTPException(
@@ -790,9 +776,7 @@ async def get_execution_timeline(
                     "success_rate": round(data["successes"] / data["executions"], 3)
                     if data["executions"]
                     else 0,
-                    "avg_duration_ms": round(
-                        data["total_duration_ms"] / data["executions"], 2
-                    )
+                    "avg_duration_ms": round(data["total_duration_ms"] / data["executions"], 2)
                     if data["executions"]
                     else 0,
                 }
@@ -891,9 +875,7 @@ async def get_traces(
     """
     try:
         miner = get_process_miner()
-        traces = miner.event_log.get_traces_for_workflow(
-            workflow_id, limit=limit, status=status
-        )
+        traces = miner.event_log.get_traces_for_workflow(workflow_id, limit=limit, status=status)
 
         return [trace.to_dict() for trace in traces]
 

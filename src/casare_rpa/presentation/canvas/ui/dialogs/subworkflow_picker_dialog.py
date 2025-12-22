@@ -193,9 +193,7 @@ class PortPreviewWidget(QWidget):
         # Add inputs
         if inputs:
             for port in inputs:
-                label = QLabel(
-                    f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})"
-                )
+                label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-input")
                 required = port.get("required", False)
                 if required:
@@ -209,9 +207,7 @@ class PortPreviewWidget(QWidget):
         # Add outputs
         if outputs:
             for port in outputs:
-                label = QLabel(
-                    f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})"
-                )
+                label = QLabel(f"  {port.get('name', 'unnamed')}  ({port.get('data_type', 'ANY')})")
                 label.setProperty("type", "port-output")
                 label.setStyleSheet("color: #dcdcaa;")
                 self._outputs_layout.addWidget(label)
@@ -368,9 +364,7 @@ class SubworkflowPickerDialog(QDialog):
             self._subflows = self._scan_subflows()
 
         # Extract categories
-        self._categories = sorted(
-            set(sf.get("category", "General") for sf in self._subflows)
-        )
+        self._categories = sorted(set(sf.get("category", "General") for sf in self._subflows))
 
         # Update category combo
         self._category_combo.clear()
@@ -468,9 +462,7 @@ class SubworkflowPickerDialog(QDialog):
             else:
                 item.setHidden(False)
 
-    def _on_selection_changed(
-        self, current: QListWidgetItem, previous: QListWidgetItem
-    ) -> None:
+    def _on_selection_changed(self, current: QListWidgetItem, previous: QListWidgetItem) -> None:
         """Handle selection change."""
         if not current or not isinstance(current, SubworkflowListItem):
             self._select_btn.setEnabled(False)

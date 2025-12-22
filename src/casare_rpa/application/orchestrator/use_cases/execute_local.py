@@ -191,9 +191,7 @@ class ExecuteLocalUseCase:
             # Calculate duration
             duration_ms = 0
             if use_case.start_time and use_case.end_time:
-                duration_ms = int(
-                    (use_case.end_time - use_case.start_time).total_seconds() * 1000
-                )
+                duration_ms = int((use_case.end_time - use_case.start_time).total_seconds() * 1000)
 
             return ExecutionResult(
                 success=success,
@@ -268,29 +266,10 @@ class ExecuteLocalUseCase:
         Raises:
             ValueError: If workflow data is invalid.
         """
-        # WorkflowSchema expects specific format
-        # Try to create from different formats
-
-        # Check if already in correct format
         if "metadata" in workflow_data and "nodes" in workflow_data:
             return WorkflowSchema.from_dict(workflow_data)
 
-        # Legacy format without metadata wrapper
-        if "name" in workflow_data and "nodes" in workflow_data:
-            # Convert to new format
-            converted = {
-                "metadata": {
-                    "name": workflow_data.get("name", "Unnamed"),
-                    "description": workflow_data.get("description", ""),
-                    "version": workflow_data.get("version", "1.0"),
-                },
-                "nodes": workflow_data.get("nodes", {}),
-                "connections": workflow_data.get("connections", []),
-                "variables": workflow_data.get("variables", {}),
-            }
-            return WorkflowSchema.from_dict(converted)
-
-        raise ValueError("Invalid workflow data format")
+        raise ValueError("Invalid workflow data format (expected metadata + nodes)")
 
 
 __all__ = ["ExecuteLocalUseCase", "ExecutionResult"]

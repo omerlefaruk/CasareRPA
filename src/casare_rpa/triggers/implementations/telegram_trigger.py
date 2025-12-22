@@ -131,9 +131,7 @@ class TelegramTrigger(BaseTrigger):
                         if hasattr(cred, "data") and cred.data:
                             bot_token = cred.data.get("bot_token")
                             if bot_token:
-                                logger.debug(
-                                    f"Using vault credential data: {cred_name}"
-                                )
+                                logger.debug(f"Using vault credential data: {cred_name}")
                                 return bot_token
                 finally:
                     await provider.shutdown()
@@ -176,9 +174,7 @@ class TelegramTrigger(BaseTrigger):
 
             # Verify bot token
             bot_info = await client.get_me()
-            logger.info(
-                f"Telegram trigger connecting as @{bot_info.get('username', 'unknown')}"
-            )
+            logger.info(f"Telegram trigger connecting as @{bot_info.get('username', 'unknown')}")
 
             # Determine mode
             mode = self.config.config.get("mode", "auto")
@@ -188,9 +184,7 @@ class TelegramTrigger(BaseTrigger):
                 if success:
                     self._webhook_active = True
                     self._status = TriggerStatus.ACTIVE
-                    logger.info(
-                        f"Telegram trigger started in webhook mode: {self.config.name}"
-                    )
+                    logger.info(f"Telegram trigger started in webhook mode: {self.config.name}")
                     return True
                 elif mode == "webhook":
                     # Webhook mode explicitly requested but failed
@@ -423,9 +417,7 @@ class TelegramTrigger(BaseTrigger):
             },
         )
 
-    def _passes_filters(
-        self, chat_id: Optional[int], user_id: Optional[int], text: str
-    ) -> bool:
+    def _passes_filters(self, chat_id: Optional[int], user_id: Optional[int], text: str) -> bool:
         """Check if message passes configured filters."""
         config = self.config.config
 

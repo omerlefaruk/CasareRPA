@@ -1,4 +1,10 @@
-"""Visual nodes for file_operations category."""
+"""Visual nodes for file_operations category.
+
+This file contains standalone (non-super) visual nodes:
+- Structured data (CSV, JSON, ZIP) atomic nodes (preferred for clarity)
+- XML/PDF/FTP operations (not consolidated)
+- Image Convert node for quick access from the Tab menu
+"""
 
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.domain.value_objects.types import DataType
@@ -31,448 +37,12 @@ def _replace_widget(node: VisualNode, widget) -> None:
     widget.setParentItem(node.view)
 
 
-# Import logic layer nodes
-from casare_rpa.nodes.file import (
-    ReadFileNode,
-    WriteFileNode,
-    AppendFileNode,
-    DeleteFileNode,
-    CopyFileNode,
-    MoveFileNode,
-    FileExistsNode,
-    GetFileSizeNode,
-    GetFileInfoNode,
-    ListFilesNode,
-    ListDirectoryNode,
-    CreateDirectoryNode,
-    ReadCSVNode,
-    WriteCSVNode,
-    ReadJSONFileNode,
-    WriteJSONFileNode,
-    ZipFilesNode,
-    UnzipFilesNode,
-    ImageConvertNode,
-)
-
-
 # =============================================================================
-# Basic File Operations
+# Structured Data Operations (CSV / JSON / ZIP)
 # =============================================================================
 
 
-class VisualReadFileNode(VisualNode):
-    """Visual representation of ReadFileNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Read File"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "ReadFileNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="file_path",
-                label="File Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file to read...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return ReadFileNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("file_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("content", DataType.STRING)
-        self.add_typed_output("size", DataType.INTEGER)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualWriteFileNode(VisualNode):
-    """Visual representation of WriteFileNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Write File"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "WriteFileNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="file_path",
-                label="File Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file to write...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return WriteFileNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("file_path", DataType.STRING)
-        self.add_typed_input("content", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("bytes_written", DataType.INTEGER)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualAppendFileNode(VisualNode):
-    """Visual representation of AppendFileNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Append File"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "AppendFileNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="file_path",
-                label="File Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file to append...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return AppendFileNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("file_path", DataType.STRING)
-        self.add_typed_input("content", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("bytes_written", DataType.INTEGER)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualDeleteFileNode(VisualNode):
-    """Visual representation of DeleteFileNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Delete File"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "DeleteFileNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="file_path",
-                label="File Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file to delete...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return DeleteFileNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("file_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualCopyFileNode(VisualNode):
-    """Visual representation of CopyFileNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Copy File"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "CopyFileNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="source_path",
-                label="Source File",
-                file_filter="All Files (*.*)",
-                placeholder="Select source file...",
-            ),
-        )
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="dest_path",
-                label="Destination",
-                file_filter="All Files (*.*)",
-                placeholder="Select destination...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return CopyFileNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("source_path", DataType.STRING)
-        self.add_typed_input("dest_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("dest_path", DataType.STRING)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualMoveFileNode(VisualNode):
-    """Visual representation of MoveFileNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Move File"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "MoveFileNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="source_path",
-                label="Source File",
-                file_filter="All Files (*.*)",
-                placeholder="Select source file...",
-            ),
-        )
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="dest_path",
-                label="Destination",
-                file_filter="All Files (*.*)",
-                placeholder="Select destination...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return MoveFileNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("source_path", DataType.STRING)
-        self.add_typed_input("dest_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("dest_path", DataType.STRING)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualFileExistsNode(VisualNode):
-    """Visual representation of FileExistsNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "File Exists"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "FileExistsNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="path",
-                label="Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file or folder...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return FileExistsNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("exists", DataType.BOOLEAN)
-        self.add_typed_output("is_file", DataType.BOOLEAN)
-        self.add_typed_output("is_dir", DataType.BOOLEAN)
-
-
-class VisualGetFileSizeNode(VisualNode):
-    """Visual representation of GetFileSizeNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Get File Size"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "GetFileSizeNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="file_path",
-                label="File Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return GetFileSizeNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("file_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("size", DataType.INTEGER)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualGetFileInfoNode(VisualNode):
-    """Visual representation of GetFileInfoNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Get File Info"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "GetFileInfoNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeFilePathWidget(
-                name="file_path",
-                label="File Path",
-                file_filter="All Files (*.*)",
-                placeholder="Select file...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return GetFileInfoNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("file_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("size", DataType.INTEGER)
-        self.add_typed_output("created", DataType.STRING)
-        self.add_typed_output("modified", DataType.STRING)
-        self.add_typed_output("extension", DataType.STRING)
-        self.add_typed_output("name", DataType.STRING)
-        self.add_typed_output("parent", DataType.STRING)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualListFilesNode(VisualNode):
-    """Visual representation of ListFilesNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "List Files"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "ListFilesNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeDirectoryPathWidget(
-                name="directory_path",
-                label="Directory",
-                placeholder="Select directory...",
-            ),
-        )
-
-    def get_node_class(self) -> type:
-        return ListFilesNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("directory_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("files", DataType.LIST)
-        self.add_typed_output("count", DataType.INTEGER)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualListDirectoryNode(VisualNode):
-    """Visual representation of ListDirectoryNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "List Directory"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "ListDirectoryNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeDirectoryPathWidget(
-                name="dir_path",
-                label="Directory",
-                placeholder="Select directory...",
-            ),
-        )
-        # Note: pattern, recursive, files_only, dirs_only are auto-generated
-        # from @properties decorator on ListDirectoryNode - do not add manually
-
-    def get_node_class(self) -> type:
-        return ListDirectoryNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("dir_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("items", DataType.LIST)
-        self.add_typed_output("count", DataType.INTEGER)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-class VisualCreateDirectoryNode(VisualNode):
-    """Visual representation of CreateDirectoryNode."""
-
-    __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Create Directory"
-    NODE_CATEGORY = "file_operations/basic"
-    CASARE_NODE_CLASS = "CreateDirectoryNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        _replace_widget(
-            self,
-            NodeDirectoryPathWidget(
-                name="directory_path",
-                label="Directory",
-                placeholder="Select or enter directory path...",
-            ),
-        )
-        self.add_checkbox(
-            "parents", label="", text="Create Parents", state=True, tab="properties"
-        )
-        self.add_checkbox(
-            "exist_ok", label="", text="Exist OK", state=True, tab="properties"
-        )
-
-    def get_node_class(self) -> type:
-        return CreateDirectoryNode
-
-    def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_typed_input("directory_path", DataType.STRING)
-        self.add_exec_output("exec_out")
-        self.add_typed_output("dir_path", DataType.STRING)
-        self.add_typed_output("success", DataType.BOOLEAN)
-
-
-# =============================================================================
-# CSV Operations
-# =============================================================================
-
-
-class VisualReadCsvNode(VisualNode):
+class VisualReadCSVNode(VisualNode):
     """Visual representation of ReadCSVNode."""
 
     __identifier__ = "casare_rpa.file_operations"
@@ -492,9 +62,6 @@ class VisualReadCsvNode(VisualNode):
             ),
         )
 
-    def get_node_class(self) -> type:
-        return ReadCSVNode
-
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
@@ -505,7 +72,7 @@ class VisualReadCsvNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
-class VisualWriteCsvNode(VisualNode):
+class VisualWriteCSVNode(VisualNode):
     """Visual representation of WriteCSVNode."""
 
     __identifier__ = "casare_rpa.file_operations"
@@ -521,12 +88,9 @@ class VisualWriteCsvNode(VisualNode):
                 name="file_path",
                 label="CSV File",
                 file_filter="CSV Files (*.csv);;All Files (*.*)",
-                placeholder="Select CSV file...",
+                placeholder="Select output CSV file...",
             ),
         )
-
-    def get_node_class(self) -> type:
-        return WriteCSVNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -534,20 +98,17 @@ class VisualWriteCsvNode(VisualNode):
         self.add_typed_input("data", DataType.LIST)
         self.add_typed_input("headers", DataType.LIST)
         self.add_exec_output("exec_out")
-        self.add_typed_output("rows_written", DataType.INTEGER)
+        self.add_typed_output("file_path", DataType.STRING)
+        self.add_typed_output("attachment_file", DataType.LIST)
+        self.add_typed_output("row_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
-# =============================================================================
-# JSON Operations
-# =============================================================================
-
-
-class VisualReadJsonNode(VisualNode):
+class VisualReadJSONFileNode(VisualNode):
     """Visual representation of ReadJSONFileNode."""
 
     __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Read JSON"
+    NODE_NAME = "Read JSON File"
     NODE_CATEGORY = "file_operations/json"
     CASARE_NODE_CLASS = "ReadJSONFileNode"
 
@@ -563,22 +124,19 @@ class VisualReadJsonNode(VisualNode):
             ),
         )
 
-    def get_node_class(self) -> type:
-        return ReadJSONFileNode
-
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("data", DataType.DICT)
+        self.add_typed_output("data", DataType.ANY)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
-class VisualWriteJsonNode(VisualNode):
+class VisualWriteJSONFileNode(VisualNode):
     """Visual representation of WriteJSONFileNode."""
 
     __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Write JSON"
+    NODE_NAME = "Write JSON File"
     NODE_CATEGORY = "file_operations/json"
     CASARE_NODE_CLASS = "WriteJSONFileNode"
 
@@ -590,24 +148,18 @@ class VisualWriteJsonNode(VisualNode):
                 name="file_path",
                 label="JSON File",
                 file_filter="JSON Files (*.json);;All Files (*.*)",
-                placeholder="Select JSON file...",
+                placeholder="Select output JSON file...",
             ),
         )
-
-    def get_node_class(self) -> type:
-        return WriteJSONFileNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
-        self.add_typed_input("data", DataType.DICT)
+        self.add_typed_input("data", DataType.ANY)
         self.add_exec_output("exec_out")
+        self.add_typed_output("file_path", DataType.STRING)
+        self.add_typed_output("attachment_file", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
-
-
-# =============================================================================
-# ZIP Operations
-# =============================================================================
 
 
 class VisualZipFilesNode(VisualNode):
@@ -615,7 +167,7 @@ class VisualZipFilesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Zip Files"
-    NODE_CATEGORY = "file_operations/archive"
+    NODE_CATEGORY = "file_operations/zip"
     CASARE_NODE_CLASS = "ZipFilesNode"
 
     def __init__(self) -> None:
@@ -625,30 +177,46 @@ class VisualZipFilesNode(VisualNode):
             NodeFilePathWidget(
                 name="zip_path",
                 label="ZIP File",
-                file_filter="ZIP Files (*.zip);;All Files (*.*)",
-                placeholder="Select ZIP file path...",
+                file_filter="Zip Archives (*.zip);;All Files (*.*)",
+                placeholder="Select output ZIP file...",
             ),
         )
-
-    def get_node_class(self) -> type:
-        return ZipFilesNode
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="source_path",
+                label="Source (Folder / Glob)",
+                placeholder="Select folder... or type glob pattern...",
+            ),
+        )
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="base_dir",
+                label="Base Directory",
+                placeholder="Optional: base directory for relative paths...",
+            ),
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("zip_path", DataType.STRING)
+        self.add_typed_input("source_path", DataType.STRING)
         self.add_typed_input("files", DataType.LIST)
+        self.add_typed_input("base_dir", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("zip_path", DataType.STRING)
+        self.add_typed_output("attachment_file", DataType.LIST)
         self.add_typed_output("file_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
-class VisualUnzipFileNode(VisualNode):
+class VisualUnzipFilesNode(VisualNode):
     """Visual representation of UnzipFilesNode."""
 
     __identifier__ = "casare_rpa.file_operations"
-    NODE_NAME = "Unzip File"
-    NODE_CATEGORY = "file_operations/archive"
+    NODE_NAME = "Unzip Files"
+    NODE_CATEGORY = "file_operations/zip"
     CASARE_NODE_CLASS = "UnzipFilesNode"
 
     def __init__(self) -> None:
@@ -658,7 +226,7 @@ class VisualUnzipFileNode(VisualNode):
             NodeFilePathWidget(
                 name="zip_path",
                 label="ZIP File",
-                file_filter="ZIP Files (*.zip);;All Files (*.*)",
+                file_filter="Zip Archives (*.zip);;All Files (*.*)",
                 placeholder="Select ZIP file...",
             ),
         )
@@ -667,12 +235,9 @@ class VisualUnzipFileNode(VisualNode):
             NodeDirectoryPathWidget(
                 name="extract_to",
                 label="Extract To",
-                placeholder="Select extraction folder...",
+                placeholder="Select output folder...",
             ),
         )
-
-    def get_node_class(self) -> type:
-        return UnzipFilesNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -702,32 +267,28 @@ class VisualImageConvertNode(VisualNode):
         super().__init__()
         _replace_widget(
             self,
-            NodeFilePathWidget(
+            NodeDirectoryPathWidget(
                 name="source_path",
-                label="Source Image",
-                file_filter="Image Files (*.png *.jpg *.jpeg *.webp *.bmp *.gif);;All Files (*.*)",
-                placeholder="Select image to convert...",
+                label="Source (File or Folder)",
+                placeholder="Select folder... or paste a file path...",
             ),
         )
         _replace_widget(
             self,
-            NodeFilePathWidget(
+            NodeDirectoryPathWidget(
                 name="output_path",
-                label="Output Path",
-                file_filter="Image Files (*.png *.jpg *.jpeg *.webp *.bmp *.gif);;All Files (*.*)",
-                placeholder="Optional - auto-generates if empty...",
+                label="Output Folder / File",
+                placeholder="Optional: select folder or type full file path...",
             ),
         )
-        # Note: output_format is auto-generated from @properties decorator on ImageConvertNode
-
-    def get_node_class(self) -> type:
-        return ImageConvertNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("source_path", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("output_path", DataType.STRING)
+        self.add_typed_output("files", DataType.LIST)
+        self.add_typed_output("file_count", DataType.INTEGER)
         self.add_typed_output("format", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
 
@@ -883,9 +444,7 @@ class VisualXMLToJsonNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "include_attributes", "Include Attributes", state=True, tab="properties"
-        )
+        self.add_checkbox("include_attributes", "Include Attributes", state=True, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1036,9 +595,7 @@ class VisualSplitPDFNode(VisualNode):
                 placeholder="Select output folder...",
             ),
         )
-        self.add_text_input(
-            "pages_per_file", "Pages Per File", text="1", tab="properties"
-        )
+        self.add_text_input("pages_per_file", "Pages Per File", text="1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1115,9 +672,7 @@ class VisualPDFToImagesNode(VisualNode):
                 placeholder="Select output folder...",
             ),
         )
-        self.add_combo_menu(
-            "format", "Format", items=["png", "jpeg", "jpg"], tab="properties"
-        )
+        self.add_combo_menu("format", "Format", items=["png", "jpeg", "jpg"], tab="properties")
         self.add_text_input("dpi", "DPI", text="200", tab="properties")
 
     def setup_ports(self) -> None:
@@ -1144,16 +699,10 @@ class VisualFTPConnectNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "passive", label="", text="Passive Mode", state=True, tab="properties"
-        )
-        self.add_checkbox(
-            "use_tls", label="", text="Use TLS", state=False, tab="properties"
-        )
+        self.add_checkbox("passive", label="", text="Passive Mode", state=True, tab="properties")
+        self.add_checkbox("use_tls", label="", text="Use TLS", state=False, tab="properties")
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -1181,15 +730,11 @@ class VisualFTPUploadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "binary_mode", label="", text="Binary Mode", state=True, tab="properties"
-        )
+        self.add_checkbox("binary_mode", label="", text="Binary Mode", state=True, tab="properties")
         self.add_checkbox(
             "create_dirs", label="", text="Create Dirs", state=False, tab="properties"
         )
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -1215,15 +760,9 @@ class VisualFTPDownloadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "binary_mode", label="", text="Binary Mode", state=True, tab="properties"
-        )
-        self.add_checkbox(
-            "overwrite", label="", text="Overwrite", state=False, tab="properties"
-        )
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_checkbox("binary_mode", label="", text="Binary Mode", state=True, tab="properties")
+        self.add_checkbox("overwrite", label="", text="Overwrite", state=False, tab="properties")
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -1249,9 +788,7 @@ class VisualFTPListNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "detailed", label="", text="Detailed", state=False, tab="properties"
-        )
+        self.add_checkbox("detailed", label="", text="Detailed", state=False, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1284,9 +821,7 @@ class VisualFTPMakeDirNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "parents", label="", text="Create Parents", state=False, tab="properties"
-        )
+        self.add_checkbox("parents", label="", text="Create Parents", state=False, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1350,3 +885,121 @@ class VisualFTPGetSizeNode(VisualNode):
         self.add_exec_output("exec_out")
         self.add_typed_output("size", DataType.INTEGER)
         self.add_typed_output("found", DataType.BOOLEAN)
+
+
+# =============================================================================
+# Directory Operations
+# =============================================================================
+
+
+class VisualListDirectoryNode(VisualNode):
+    """Visual representation of ListDirectoryNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "List Directory"
+    NODE_CATEGORY = "file_operations/directory"
+    CASARE_NODE_CLASS = "ListDirectoryNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="dir_path",
+                label="Directory",
+                placeholder="Select directory to list...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dir_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("items", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualFileExistsNode(VisualNode):
+    """Visual representation of FileExistsNode.
+
+    Checks if a file or directory exists at the given path.
+    Outputs: exists (bool), is_file (bool), is_dir (bool)
+    """
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "File Exists"
+    NODE_CATEGORY = "file_operations/path"
+    CASARE_NODE_CLASS = "FileExistsNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="path",
+                label="Path",
+                file_filter="All Files (*.*)",
+                placeholder="Select file or directory...",
+            ),
+        )
+        self.add_combo_menu(
+            "check_type",
+            "Check Type",
+            items=["any", "file", "directory"],
+            tab="properties",
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("exists", DataType.BOOLEAN)
+        self.add_typed_output("is_file", DataType.BOOLEAN)
+        self.add_typed_output("is_dir", DataType.BOOLEAN)
+
+
+class VisualCreateDirectoryNode(VisualNode):
+    """Visual representation of CreateDirectoryNode.
+
+    Creates a directory at the specified path.
+    Can create parent directories if needed.
+    """
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Create Directory"
+    NODE_CATEGORY = "file_operations/directory"
+    CASARE_NODE_CLASS = "CreateDirectoryNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="dir_path",
+                label="Directory Path",
+                placeholder="Select or enter directory path...",
+            ),
+        )
+        self.add_checkbox(
+            "create_parents",
+            label="",
+            text="Create Parent Directories",
+            state=True,
+            tab="properties",
+        )
+        self.add_checkbox(
+            "exist_ok",
+            label="",
+            text="OK if Exists",
+            state=True,
+            tab="properties",
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dir_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("dir_path", DataType.STRING)
+        self.add_typed_output("created", DataType.BOOLEAN)
+        self.add_typed_output("success", DataType.BOOLEAN)

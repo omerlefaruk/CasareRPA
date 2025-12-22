@@ -81,9 +81,7 @@ class ValidationResult:
         suggestion: Optional[str] = None,
     ) -> None:
         """Add an error."""
-        self.errors.append(
-            ValidationIssue(code, message, location, suggestion, "error")
-        )
+        self.errors.append(ValidationIssue(code, message, location, suggestion, "error"))
 
     def add_warning(
         self,
@@ -93,9 +91,7 @@ class ValidationResult:
         suggestion: Optional[str] = None,
     ) -> None:
         """Add a warning."""
-        self.warnings.append(
-            ValidationIssue(code, message, location, suggestion, "warning")
-        )
+        self.warnings.append(ValidationIssue(code, message, location, suggestion, "warning"))
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
@@ -380,6 +376,20 @@ class WorkflowValidator:
         inputs = list(STANDARD_PORTS["inputs"])
         outputs = list(STANDARD_PORTS["outputs"])
 
+        # Try to get ports from backend node class (schema-driven)
+        backend_ports = self._extract_ports_from_backend_node(node_type)
+        if backend_ports:
+            # Merge with standard ports
+            for inp in backend_ports.get("inputs", []):
+                if inp not in inputs:
+                    inputs.append(inp)
+            for out in backend_ports.get("outputs", []):
+                if out not in outputs:
+                    outputs.append(out)
+            ports = {"inputs": inputs, "outputs": outputs}
+            self._port_cache[node_type] = ports
+            return ports
+
         # Add known data outputs
         if node_type in DATA_OUTPUT_NODES:
             outputs.extend(DATA_OUTPUT_NODES[node_type])
@@ -391,6 +401,69 @@ class WorkflowValidator:
         ports = {"inputs": inputs, "outputs": outputs}
         self._port_cache[node_type] = ports
         return ports
+
+    def _extract_ports_from_backend_node(self, node_type: str) -> Optional[Dict[str, List[str]]]:
+        """
+        Extract port definitions from backend node class using live instantiation.
+
+        This is the most reliable method as it uses the actual node's _define_ports().
+        Also extracts property names from @properties schema for dual-source validation.
+
+        Args:
+            node_type: The node type (e.g., "ClickElementNode")
+
+        Returns:
+            Dict with "inputs", "outputs", and "properties" lists, or None if failed
+        """
+        try:
+            # Import the node class from registry
+            from casare_rpa.nodes.registry_data import NODE_REGISTRY
+            import importlib
+
+            if node_type not in NODE_REGISTRY:
+                return None
+
+            module_info = NODE_REGISTRY[node_type]
+            if isinstance(module_info, tuple):
+                module_path, class_alias = module_info
+            else:
+                module_path = module_info
+                class_alias = node_type
+
+            full_module = f"casare_rpa.nodes.{module_path}"
+            module = importlib.import_module(full_module)
+            node_class = getattr(module, class_alias, None)
+
+            if node_class is None:
+                return None
+
+            # Instantiate to get ports
+            instance = node_class(node_id="__validator_temp")
+
+            inputs = []
+            outputs = []
+
+            for name, port in instance.input_ports.items():
+                inputs.append(name)
+
+            for name, port in instance.output_ports.items():
+                outputs.append(name)
+
+            # Also get property names from schema (for dual-source validation)
+            properties = []
+            schema = getattr(node_class, "__node_schema__", None)
+            if schema:
+                properties = [p.name for p in schema.properties]
+
+            return {
+                "inputs": inputs,
+                "outputs": outputs,
+                "properties": properties,
+            }
+
+        except Exception as e:
+            logger.debug(f"Could not extract ports from backend node {node_type}: {e}")
+            return None
 
     def _extract_ports_from_class(self, node_class: Type) -> Dict[str, List[str]]:
         """
@@ -511,9 +584,7 @@ class WorkflowValidator:
 
         return result
 
-    def _validate_structure(
-        self, workflow_dict: Dict[str, Any], result: ValidationResult
-    ) -> None:
+    def _validate_structure(self, workflow_dict: Dict[str, Any], result: ValidationResult) -> None:
         """Validate basic workflow structure."""
         if not isinstance(workflow_dict, dict):
             result.add_error(
@@ -689,8 +760,7 @@ class WorkflowValidator:
             if node_type == "TryNode":
                 # Check that 'try_body' output is connected
                 try_body_connected = any(
-                    c.get("source_node") == node_id
-                    and c.get("source_port") == "try_body"
+                    c.get("source_node") == node_id and c.get("source_port") == "try_body"
                     for c in connections
                 )
 
@@ -705,8 +775,7 @@ class WorkflowValidator:
             elif node_type == "CatchNode":
                 # Check that 'catch_body' output is connected
                 catch_body_connected = any(
-                    c.get("source_node") == node_id
-                    and c.get("source_port") == "catch_body"
+                    c.get("source_node") == node_id and c.get("source_port") == "catch_body"
                     for c in connections
                 )
 
@@ -721,8 +790,7 @@ class WorkflowValidator:
             elif node_type == "FinallyNode":
                 # Check that 'finally_body' output is connected
                 finally_body_connected = any(
-                    c.get("source_node") == node_id
-                    and c.get("source_port") == "finally_body"
+                    c.get("source_node") == node_id and c.get("source_port") == "finally_body"
                     for c in connections
                 )
 

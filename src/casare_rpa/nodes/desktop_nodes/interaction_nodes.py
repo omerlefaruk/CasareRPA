@@ -118,8 +118,24 @@ class InteractionNodeBase(DesktopNodeBase):
         return "Element"
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Dropdown element",
+    ),
+    PropertyDef(
+        "value",
+        PropertyType.STRING,
+        required=True,
+        label="Value",
+        tooltip="Value to select (text or index)",
+    ),
+    BY_TEXT_PROP,
+)
 @node(category="desktop")
-@properties(BY_TEXT_PROP)
 class SelectFromDropdownNode(InteractionNodeBase):
     """
     Select an item from a dropdown/combobox.
@@ -183,8 +199,17 @@ class SelectFromDropdownNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Checkbox element",
+    ),
+    CHECK_PROP,
+)
 @node(category="desktop")
-@properties(CHECK_PROP)
 class CheckCheckboxNode(InteractionNodeBase):
     """
     Check or uncheck a checkbox.
@@ -244,8 +269,16 @@ class CheckCheckboxNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Radio button element",
+    ),
+)
 @node(category="desktop")
-@properties()
 class SelectRadioButtonNode(InteractionNodeBase):
     """
     Select a radio button.
@@ -299,8 +332,18 @@ class SelectRadioButtonNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "tab_control",
+        PropertyType.ANY,
+        required=True,
+        label="Tab Control",
+        tooltip="Tab control element",
+    ),
+    TAB_NAME_PROP,
+    TAB_INDEX_PROP,
+)
 @node(category="desktop")
-@properties(TAB_NAME_PROP, TAB_INDEX_PROP)
 class SelectTabNode(InteractionNodeBase):
     """
     Select a tab in a tab control.
@@ -359,9 +402,7 @@ class SelectTabNode(InteractionNodeBase):
         if tab_name is None and tab_index is None:
             raise ValueError("Must provide either tab_name or tab_index")
 
-        logger.info(
-            f"[{self.name}] Selecting tab: name='{tab_name}', index={tab_index}"
-        )
+        logger.info(f"[{self.name}] Selecting tab: name='{tab_name}', index={tab_index}")
 
         desktop_ctx = self.get_desktop_context(context)
 
@@ -374,8 +415,17 @@ class SelectTabNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Tree item element",
+    ),
+    EXPAND_PROP,
+)
 @node(category="desktop")
-@properties(EXPAND_PROP)
 class ExpandTreeItemNode(InteractionNodeBase):
     """
     Expand or collapse a tree item.
@@ -435,8 +485,18 @@ class ExpandTreeItemNode(InteractionNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "element",
+        PropertyType.ANY,
+        required=True,
+        label="Element",
+        tooltip="Element to scroll",
+    ),
+    SCROLL_DIRECTION_PROP,
+    SCROLL_AMOUNT_PROP,
+)
 @node(category="desktop")
-@properties(SCROLL_DIRECTION_PROP, SCROLL_AMOUNT_PROP)
 class ScrollElementNode(InteractionNodeBase):
     """
     Scroll an element (scrollbar, list, window, etc.).

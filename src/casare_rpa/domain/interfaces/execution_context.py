@@ -236,9 +236,7 @@ class IExecutionContext(Protocol):
         """
         ...
 
-    def merge_branch_results(
-        self, branch_name: str, branch_variables: Dict[str, Any]
-    ) -> None:
+    def merge_branch_results(self, branch_name: str, branch_variables: Dict[str, Any]) -> None:
         """
         Merge variables from a completed branch back to main context.
 

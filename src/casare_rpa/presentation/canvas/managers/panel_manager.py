@@ -152,11 +152,7 @@ class PanelManager:
     @property
     def validation_panel(self):
         """Get the validation tab from bottom panel."""
-        return (
-            self._mw._bottom_panel.get_validation_tab()
-            if self._mw._bottom_panel
-            else None
-        )
+        return self._mw._bottom_panel.get_validation_tab() if self._mw._bottom_panel else None
 
     def get_validation_panel(self):
         """Get the validation tab (getter method)."""
@@ -198,9 +194,7 @@ class PanelManager:
 
     def get_execution_history_viewer(self):
         """Get the execution history tab from bottom panel."""
-        return (
-            self._mw._bottom_panel.get_history_tab() if self._mw._bottom_panel else None
-        )
+        return self._mw._bottom_panel.get_history_tab() if self._mw._bottom_panel else None
 
     # ==================== Debug Panel ====================
 

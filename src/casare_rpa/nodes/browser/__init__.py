@@ -2,12 +2,11 @@
 Browser automation nodes package.
 
 This package provides browser automation nodes built on Playwright:
-- Browser lifecycle (launch, close) - imported from browser_nodes
+- Browser lifecycle (launch, close)
 - Tab management (new tab, switch tab)
 - Navigation (goto, back, forward, refresh)
 - Interaction (click, type, select)
 - Data extraction (text, attributes, screenshots)
-- Wait operations (element, navigation)
 
 All nodes extend BrowserBaseNode for consistent:
 - Page access from context
@@ -71,6 +70,7 @@ from casare_rpa.nodes.browser.extraction_nodes import (
     GetAllImagesNode,
     DownloadFileNode,
 )
+from casare_rpa.nodes.browser.evaluate_node import BrowserEvaluateNode
 
 __all__ = [
     # Base class
@@ -113,4 +113,6 @@ __all__ = [
     # Extraction
     "GetAllImagesNode",
     "DownloadFileNode",
+    # Evaluate
+    "BrowserEvaluateNode",
 ]

@@ -89,10 +89,8 @@ class ActionRowWidget(QFrame):
         layout.addWidget(self._drag_handle)
 
         # Node type label
-        node_type = self.action_data.get("type", "Unknown")
-        display_info = NODE_DISPLAY_CONFIG.get(
-            node_type, {"name": node_type, "icon": "circle"}
-        )
+        node_type = self.action_data.get("node_type", "Unknown")
+        display_info = NODE_DISPLAY_CONFIG.get(node_type, {"name": node_type, "icon": "circle"})
 
         self._type_label = QLabel(display_info["name"])
         self._type_label.setObjectName("nodeTypeLabel")
@@ -130,9 +128,7 @@ class ActionRowWidget(QFrame):
         self._param_input.setPlaceholderText(param_placeholder)
         self._param_input.setObjectName("paramInput")
         self._param_input.textChanged.connect(self._on_param_changed)
-        self._param_input.setToolTip(
-            str(param_value) if len(str(param_value)) > 40 else ""
-        )
+        self._param_input.setToolTip(str(param_value) if len(str(param_value)) > 40 else "")
         layout.addWidget(self._param_input, stretch=1)
 
         # Separator
@@ -596,13 +592,9 @@ class RecordingReviewDialog(QDialog):
         """Update the info label with current action count."""
         count = len(self._action_rows)
         if count == 0:
-            self._info_label.setText(
-                "No actions recorded. Close this dialog to cancel."
-            )
+            self._info_label.setText("No actions recorded. Close this dialog to cancel.")
         elif count == 1:
-            self._info_label.setText(
-                "1 action recorded. Edit parameters before adding to canvas."
-            )
+            self._info_label.setText("1 action recorded. Edit parameters before adding to canvas.")
         else:
             self._info_label.setText(
                 f"{count} actions recorded. Edit parameters before adding to canvas."
@@ -627,9 +619,7 @@ class RecordingReviewDialog(QDialog):
             self._update_info_label()
             self._update_add_button_state()
 
-            logger.debug(
-                f"Removed action at index {index}, {len(self._action_rows)} remaining"
-            )
+            logger.debug(f"Removed action at index {index}, {len(self._action_rows)} remaining")
 
     def _on_add_waits_toggled(self, checked: bool) -> None:
         """Handle add waits checkbox toggle."""
@@ -656,8 +646,7 @@ class RecordingReviewDialog(QDialog):
         include_waits = self._add_waits_checkbox.isChecked()
 
         logger.info(
-            f"Adding {len(nodes_data)} actions to canvas "
-            f"(include_waits={include_waits})"
+            f"Adding {len(nodes_data)} actions to canvas " f"(include_waits={include_waits})"
         )
 
         self.accepted_with_data.emit(nodes_data, include_waits)

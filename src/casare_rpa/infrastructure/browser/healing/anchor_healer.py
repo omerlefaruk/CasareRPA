@@ -266,9 +266,7 @@ class AnchorHealer:
             )
 
             if not context_data:
-                logger.warning(
-                    f"Could not capture context: element not found: {selector}"
-                )
+                logger.warning(f"Could not capture context: element not found: {selector}")
                 return None
 
             target_rect = BoundingRect.from_dict(context_data["targetRect"])
@@ -362,9 +360,7 @@ class AnchorHealer:
                     continue
 
                 # Generate relative selectors based on the relationship
-                relative_selectors = self._generate_relative_selectors(
-                    anchor, relation, target_tag
-                )
+                relative_selectors = self._generate_relative_selectors(anchor, relation, target_tag)
 
                 for rel_selector, base_conf in relative_selectors:
                     element = await page.query_selector(rel_selector)
@@ -376,12 +372,8 @@ class AnchorHealer:
                         else:
                             adjusted_conf *= max(0.7, 1.0 - (distance / 500))
 
-                        candidates.append(
-                            (rel_selector, adjusted_conf, anchor, relation)
-                        )
-                        logger.debug(
-                            f"Candidate found: {rel_selector} (conf={adjusted_conf:.2f})"
-                        )
+                        candidates.append((rel_selector, adjusted_conf, anchor, relation))
+                        logger.debug(f"Candidate found: {rel_selector} (conf={adjusted_conf:.2f})")
 
             except Exception as e:
                 logger.warning(f"Error testing anchor {anchor.selector}: {e}")
@@ -594,9 +586,7 @@ class AnchorHealer:
         if relation == SpatialRelation.RIGHT_OF:
             # Element to the right - try following sibling
             target = target_tag or "*"
-            selectors.append(
-                (f"xpath={anchor_sel}/../following-sibling::*[1]//{target}", 0.7)
-            )
+            selectors.append((f"xpath={anchor_sel}/../following-sibling::*[1]//{target}", 0.7))
             selectors.append((f"{anchor_sel} ~ {target}:first-of-type", 0.65))
 
         elif relation == SpatialRelation.BELOW:

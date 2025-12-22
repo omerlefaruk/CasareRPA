@@ -30,9 +30,7 @@ try:
     HAS_CRYPTOGRAPHY = True
 except ImportError:
     HAS_CRYPTOGRAPHY = False
-    logger.warning(
-        "cryptography package not installed - TUF signature verification disabled"
-    )
+    logger.warning("cryptography package not installed - TUF signature verification disabled")
 
 
 # =============================================================================
@@ -106,9 +104,7 @@ class TUFRootConfig:
         # Parse expiration
         expires_str = signed.get("expires")
         expires = (
-            datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
-            if expires_str
-            else None
+            datetime.fromisoformat(expires_str.replace("Z", "+00:00")) if expires_str else None
         )
 
         return cls(
@@ -323,8 +319,7 @@ class TUFUpdater:
                     )
 
                 logger.info(
-                    f"Update downloaded and verified: {target_path} "
-                    f"({downloaded:,} bytes)"
+                    f"Update downloaded and verified: {target_path} " f"({downloaded:,} bytes)"
                 )
 
                 return target_path
@@ -405,12 +400,10 @@ class TUFUpdater:
         """Refresh TUF metadata from repository."""
         async with aiohttp.ClientSession() as session:
             # Fetch timestamp (always fetch, short expiry)
-            self._timestamp = await self._fetch_metadata(
-                session, self.TIMESTAMP_METADATA
-            )
+            self._timestamp = await self._fetch_metadata(session, self.TIMESTAMP_METADATA)
 
             # Fetch snapshot (check if changed)
-            snapshot_version = (
+            (
                 self._timestamp.get("signed", {})
                 .get("meta", {})
                 .get(self.SNAPSHOT_METADATA, {})
@@ -458,9 +451,7 @@ class TUFUpdater:
                     return json.load(f)
             raise
 
-    def _verify_metadata_signatures(
-        self, metadata: Dict[str, Any], filename: str
-    ) -> None:
+    def _verify_metadata_signatures(self, metadata: Dict[str, Any], filename: str) -> None:
         """
         Verify cryptographic signatures on TUF metadata.
 
@@ -488,9 +479,9 @@ class TUFUpdater:
             raise SignatureVerificationError(f"No signatures found in {filename}")
 
         # Canonical JSON encoding for verification
-        canonical_signed = json.dumps(
-            signed_data, sort_keys=True, separators=(",", ":")
-        ).encode("utf-8")
+        canonical_signed = json.dumps(signed_data, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
 
         # Count valid signatures
         valid_signatures = 0
@@ -509,15 +500,11 @@ class TUFUpdater:
                 continue
 
             try:
-                if self._verify_single_signature(
-                    canonical_signed, signature_value, key
-                ):
+                if self._verify_single_signature(canonical_signed, signature_value, key):
                     valid_signatures += 1
                     logger.debug(f"Valid signature from key {key_id[:16]}...")
             except Exception as e:
-                logger.warning(
-                    f"Signature verification error for key {key_id[:16]}: {e}"
-                )
+                logger.warning(f"Signature verification error for key {key_id[:16]}: {e}")
 
         # Check threshold
         threshold = self._root_config.threshold
@@ -531,9 +518,7 @@ class TUFUpdater:
             f"Signature verification passed for {filename}: {valid_signatures}/{threshold}"
         )
 
-    def _verify_single_signature(
-        self, data: bytes, signature_hex: str, key: TUFKey
-    ) -> bool:
+    def _verify_single_signature(self, data: bytes, signature_hex: str, key: TUFKey) -> bool:
         """
         Verify a single signature against a key.
 
@@ -554,9 +539,7 @@ class TUFUpdater:
 
             if key.key_type == "ed25519" or key.scheme == "ed25519":
                 # Ed25519 verification
-                public_key = ed25519.Ed25519PublicKey.from_public_bytes(
-                    public_key_bytes
-                )
+                public_key = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes)
                 public_key.verify(signature_bytes, data)
                 return True
 
@@ -589,9 +572,7 @@ class TUFUpdater:
             logger.debug(f"Signature verification failed: {e}")
             return False
 
-    def _check_metadata_expiration(
-        self, metadata: Dict[str, Any], filename: str
-    ) -> None:
+    def _check_metadata_expiration(self, metadata: Dict[str, Any], filename: str) -> None:
         """
         Check if metadata has expired.
 
@@ -613,9 +594,7 @@ class TUFUpdater:
             now = datetime.now(timezone.utc)
 
             if now > expires:
-                raise SignatureVerificationError(
-                    f"Metadata {filename} has expired: {expires_str}"
-                )
+                raise SignatureVerificationError(f"Metadata {filename} has expired: {expires_str}")
 
         except ValueError as e:
             logger.warning(f"Could not parse expiration date in {filename}: {e}")

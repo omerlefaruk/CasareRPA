@@ -45,7 +45,6 @@ from casare_rpa.utils.resilience import retry_operation
 # =============================================================================
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "selector",
@@ -85,6 +84,7 @@ from casare_rpa.utils.resilience import retry_operation
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class ExtractTextNode(BrowserBaseNode):
     """
     Extract text node - extracts text content from an element.
@@ -180,9 +180,7 @@ class ExtractTextNode(BrowserBaseNode):
 
                 except Exception as healing_error:
                     # Fall back to locator-based operations (original behavior)
-                    logger.debug(
-                        f"Healing failed, trying direct locator: {healing_error}"
-                    )
+                    logger.debug(f"Healing failed, trying direct locator: {healing_error}")
                     locator = page.locator(selector)
                     if strict:
                         locator = locator.first
@@ -218,9 +216,7 @@ class ExtractTextNode(BrowserBaseNode):
                     "healing_tier": healing_tier,
                 }
                 if healing_tier != "original":
-                    logger.info(
-                        f"Extract text succeeded with healing: {healing_tier} tier"
-                    )
+                    logger.info(f"Extract text succeeded with healing: {healing_tier} tier")
                 return self.success_result(result_data)
 
             await self.screenshot_on_failure(page, "extract_text_fail")
@@ -235,7 +231,6 @@ class ExtractTextNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "selector",
@@ -268,6 +263,7 @@ class ExtractTextNode(BrowserBaseNode):
     BROWSER_SCREENSHOT_PATH,
     BROWSER_ANCHOR_CONFIG,
 )
+@node(category="browser")
 class GetAttributeNode(BrowserBaseNode):
     """
     Get attribute node - retrieves an attribute value from an element.
@@ -329,7 +325,6 @@ class GetAttributeNode(BrowserBaseNode):
             attribute = self.get_parameter("attribute", "")
             if not attribute:
                 raise ValueError("Attribute name is required")
-            attribute = context.resolve_value(attribute)
 
             # Get other parameters
             variable_name = self.get_parameter("variable_name", "attribute_value")
@@ -361,9 +356,7 @@ class GetAttributeNode(BrowserBaseNode):
                     # Special case: "value" attribute on input elements needs input_value()
                     # because get_attribute("value") returns the initial HTML value, not current
                     if attribute.lower() == "value":
-                        tag_name = await element.evaluate(
-                            "el => el.tagName.toLowerCase()"
-                        )
+                        tag_name = await element.evaluate("el => el.tagName.toLowerCase()")
                         if tag_name in ("input", "textarea", "select"):
                             value = await element.input_value()
                             return value or ""
@@ -374,9 +367,7 @@ class GetAttributeNode(BrowserBaseNode):
 
                 except Exception as healing_error:
                     # Fall back to locator-based operation (original behavior)
-                    logger.debug(
-                        f"Healing failed, trying direct locator: {healing_error}"
-                    )
+                    logger.debug(f"Healing failed, trying direct locator: {healing_error}")
                     locator = page.locator(selector)
                     if strict:
                         locator = locator.first
@@ -413,9 +404,7 @@ class GetAttributeNode(BrowserBaseNode):
                     "healing_tier": healing_tier,
                 }
                 if healing_tier != "original":
-                    logger.info(
-                        f"Get attribute succeeded with healing: {healing_tier} tier"
-                    )
+                    logger.info(f"Get attribute succeeded with healing: {healing_tier} tier")
                 return self.success_result(result_data)
 
             await self.screenshot_on_failure(page, "get_attribute_fail")
@@ -430,7 +419,6 @@ class GetAttributeNode(BrowserBaseNode):
 # =============================================================================
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "file_path",
@@ -508,6 +496,7 @@ class GetAttributeNode(BrowserBaseNode):
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
 )
+@node(category="browser")
 class ScreenshotNode(BrowserBaseNode):
     """
     Screenshot node - captures a screenshot of the page or element.
@@ -571,7 +560,6 @@ class ScreenshotNode(BrowserBaseNode):
             file_path = self.get_parameter("file_path", "")
             if not file_path:
                 raise ValueError("File path is required")
-            file_path = context.resolve_value(file_path)
             file_path = self._normalize_file_path(file_path)
 
             # Get screenshot options
@@ -646,11 +634,7 @@ class ScreenshotNode(BrowserBaseNode):
         ext = f".{img_type}" if img_type in ("png", "jpeg") else ".png"
 
         # If path is a directory, auto-generate filename
-        if (
-            file_path.endswith(os.sep)
-            or file_path.endswith("/")
-            or file_path.endswith("\\")
-        ):
+        if file_path.endswith(os.sep) or file_path.endswith("/") or file_path.endswith("\\"):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
         elif os.path.isdir(file_path):
@@ -707,7 +691,7 @@ class ScreenshotNode(BrowserBaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        file_path = self.config.get("file_path", "")
+        file_path = self.get_parameter("file_path", "")
         if file_path:
             try:
                 Path(file_path).parent.mkdir(parents=True, exist_ok=True)

@@ -20,6 +20,7 @@ from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -116,7 +117,49 @@ def _create_message_with_attachment(
 # =============================================================================
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body content",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        label="CC",
+        tooltip="CC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        label="BCC",
+        tooltip="BCC recipients (comma-separated)",
+    ),
+)
+@node(category="google")
 class GmailSendEmailNode(BaseNode):
     """Send an email via Gmail."""
 
@@ -142,9 +185,7 @@ class GmailSendEmailNode(BaseNode):
         try:
             credential_name = self.get_parameter("credential_name", "google")
             to = self.get_input_value("to") or self.get_parameter("to", "")
-            subject = self.get_input_value("subject") or self.get_parameter(
-                "subject", ""
-            )
+            subject = self.get_input_value("subject") or self.get_parameter("subject", "")
             body = self.get_input_value("body") or self.get_parameter("body", "")
             cc = self.get_input_value("cc") or self.get_parameter("cc", "")
             bcc = self.get_input_value("bcc") or self.get_parameter("bcc", "")
@@ -158,9 +199,7 @@ class GmailSendEmailNode(BaseNode):
             service = await _get_gmail_service(context, credential_name)
             message = _create_message(to, subject, body, cc, bcc, body_type)
 
-            result = (
-                service.users().messages().send(userId="me", body=message).execute()
-            )
+            result = service.users().messages().send(userId="me", body=message).execute()
 
             self.set_output_value("message_id", result.get("id", ""))
             self.set_output_value("thread_id", result.get("threadId", ""))
@@ -178,7 +217,64 @@ class GmailSendEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body content",
+    ),
+    PropertyDef(
+        "attachments",
+        PropertyType.LIST,
+        required=True,
+        label="Attachments",
+        tooltip="List of file paths to attach",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        label="CC",
+        tooltip="CC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        label="BCC",
+        tooltip="BCC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "body_type",
+        PropertyType.CHOICE,
+        default="text",
+        choices=["text", "html"],
+        label="Body Type",
+        tooltip="Type of email body (text or html)",
+    ),
+)
+@node(category="google")
 class GmailSendWithAttachmentNode(BaseNode):
     """Send an email with attachments via Gmail."""
 
@@ -205,9 +301,7 @@ class GmailSendWithAttachmentNode(BaseNode):
         try:
             credential_name = self.get_parameter("credential_name", "google")
             to = self.get_input_value("to") or self.get_parameter("to", "")
-            subject = self.get_input_value("subject") or self.get_parameter(
-                "subject", ""
-            )
+            subject = self.get_input_value("subject") or self.get_parameter("subject", "")
             body = self.get_input_value("body") or self.get_parameter("body", "")
             attachments = self.get_input_value("attachments") or []
             cc = self.get_input_value("cc") or self.get_parameter("cc", "")
@@ -224,9 +318,7 @@ class GmailSendWithAttachmentNode(BaseNode):
                 to, subject, body, attachments, cc, bcc, body_type
             )
 
-            result = (
-                service.users().messages().send(userId="me", body=message).execute()
-            )
+            result = service.users().messages().send(userId="me", body=message).execute()
 
             self.set_output_value("message_id", result.get("id", ""))
             self.set_output_value("thread_id", result.get("threadId", ""))
@@ -244,7 +336,57 @@ class GmailSendWithAttachmentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body content",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        label="CC",
+        tooltip="CC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        label="BCC",
+        tooltip="BCC recipients (comma-separated)",
+    ),
+    PropertyDef(
+        "body_type",
+        PropertyType.CHOICE,
+        default="text",
+        choices=["text", "html"],
+        label="Body Type",
+        tooltip="Type of email body (text or html)",
+    ),
+)
+@node(category="google")
 class GmailCreateDraftNode(BaseNode):
     """Create a draft email in Gmail."""
 
@@ -270,9 +412,7 @@ class GmailCreateDraftNode(BaseNode):
         try:
             credential_name = self.get_parameter("credential_name", "google")
             to = self.get_input_value("to") or self.get_parameter("to", "")
-            subject = self.get_input_value("subject") or self.get_parameter(
-                "subject", ""
-            )
+            subject = self.get_input_value("subject") or self.get_parameter("subject", "")
             body = self.get_input_value("body") or self.get_parameter("body", "")
             cc = self.get_input_value("cc") or self.get_parameter("cc", "")
             bcc = self.get_input_value("bcc") or self.get_parameter("bcc", "")
@@ -282,10 +422,7 @@ class GmailCreateDraftNode(BaseNode):
             message = _create_message(to, subject, body, cc, bcc, body_type)
 
             result = (
-                service.users()
-                .drafts()
-                .create(userId="me", body={"message": message})
-                .execute()
+                service.users().drafts().create(userId="me", body={"message": message}).execute()
             )
 
             self.set_output_value("draft_id", result.get("id", ""))
@@ -304,7 +441,23 @@ class GmailCreateDraftNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "draft_id",
+        PropertyType.STRING,
+        required=True,
+        label="Draft ID",
+        tooltip="ID of the draft to send",
+    ),
+)
+@node(category="google")
 class GmailSendDraftNode(BaseNode):
     """Send an existing draft from Gmail."""
 
@@ -325,21 +478,14 @@ class GmailSendDraftNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            draft_id = self.get_input_value("draft_id") or self.get_parameter(
-                "draft_id", ""
-            )
+            draft_id = self.get_input_value("draft_id") or self.get_parameter("draft_id", "")
 
             if not draft_id:
                 raise ValueError("Draft ID is required")
 
             service = await _get_gmail_service(context, credential_name)
 
-            result = (
-                service.users()
-                .drafts()
-                .send(userId="me", body={"id": draft_id})
-                .execute()
-            )
+            result = service.users().drafts().send(userId="me", body={"id": draft_id}).execute()
 
             self.set_output_value("message_id", result.get("id", ""))
             self.set_output_value("thread_id", result.get("threadId", ""))
@@ -362,7 +508,31 @@ class GmailSendDraftNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to retrieve",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="full",
+        choices=["full", "metadata", "minimal", "raw"],
+        label="Format",
+        tooltip="Format of the returned message",
+    ),
+)
+@node(category="google")
 class GmailGetEmailNode(BaseNode):
     """Get a specific email by ID from Gmail."""
 
@@ -389,9 +559,7 @@ class GmailGetEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
             format_type = self.get_parameter("format", "full")
 
             if not message_id:
@@ -406,10 +574,7 @@ class GmailGetEmailNode(BaseNode):
                 .execute()
             )
 
-            headers = {
-                h["name"]: h["value"]
-                for h in result.get("payload", {}).get("headers", [])
-            }
+            headers = {h["name"]: h["value"] for h in result.get("payload", {}).get("headers", [])}
 
             body = ""
             payload = result.get("payload", {})
@@ -417,9 +582,7 @@ class GmailGetEmailNode(BaseNode):
                 body = base64.urlsafe_b64decode(payload["body"]["data"]).decode()
             elif "parts" in payload:
                 for part in payload["parts"]:
-                    if part.get("mimeType") == "text/plain" and part.get(
-                        "body", {}
-                    ).get("data"):
+                    if part.get("mimeType") == "text/plain" and part.get("body", {}).get("data"):
                         body = base64.urlsafe_b64decode(part["body"]["data"]).decode()
                         break
 
@@ -432,9 +595,7 @@ class GmailGetEmailNode(BaseNode):
                                 "filename": part["filename"],
                                 "mimeType": part.get("mimeType", ""),
                                 "size": part.get("body", {}).get("size", 0),
-                                "attachmentId": part.get("body", {}).get(
-                                    "attachmentId", ""
-                                ),
+                                "attachmentId": part.get("body", {}).get("attachmentId", ""),
                             }
                         )
 
@@ -466,7 +627,38 @@ class GmailGetEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "max_results",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=1,
+        max_value=500,
+        label="Max Results",
+        tooltip="Maximum number of messages to return",
+    ),
+    PropertyDef(
+        "label_ids",
+        PropertyType.LIST,
+        default=["INBOX"],
+        label="Label IDs",
+        tooltip="List of label IDs to filter by (e.g., ['INBOX', 'UNREAD'])",
+    ),
+    PropertyDef(
+        "page_token",
+        PropertyType.STRING,
+        label="Page Token",
+        tooltip="Token for the next page of results",
+    ),
+)
+@node(category="google")
 class GmailListEmailsNode(BaseNode):
     """List emails from Gmail inbox."""
 
@@ -525,7 +717,38 @@ class GmailListEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "query",
+        PropertyType.STRING,
+        required=True,
+        label="Search Query",
+        tooltip="Gmail search query (e.g., 'from:someone@example.com')",
+    ),
+    PropertyDef(
+        "max_results",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=1,
+        max_value=500,
+        label="Max Results",
+        tooltip="Maximum number of messages to return",
+    ),
+    PropertyDef(
+        "page_token",
+        PropertyType.STRING,
+        label="Page Token",
+        tooltip="Token for the next page of results",
+    ),
+)
+@node(category="google")
 class GmailSearchEmailsNode(BaseNode):
     """Search emails in Gmail using query."""
 
@@ -585,7 +808,23 @@ class GmailSearchEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "thread_id",
+        PropertyType.STRING,
+        required=True,
+        label="Thread ID",
+        tooltip="ID of the thread to retrieve",
+    ),
+)
+@node(category="google")
 class GmailGetThreadNode(BaseNode):
     """Get a complete email thread from Gmail."""
 
@@ -607,9 +846,7 @@ class GmailGetThreadNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            thread_id = self.get_input_value("thread_id") or self.get_parameter(
-                "thread_id", ""
-            )
+            thread_id = self.get_input_value("thread_id") or self.get_parameter("thread_id", "")
 
             if not thread_id:
                 raise ValueError("Thread ID is required")
@@ -617,10 +854,7 @@ class GmailGetThreadNode(BaseNode):
             service = await _get_gmail_service(context, credential_name)
 
             result = (
-                service.users()
-                .threads()
-                .get(userId="me", id=thread_id, format="full")
-                .execute()
+                service.users().threads().get(userId="me", id=thread_id, format="full").execute()
             )
 
             messages = result.get("messages", [])
@@ -648,7 +882,35 @@ class GmailGetThreadNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to modify",
+    ),
+    PropertyDef(
+        "add_labels",
+        PropertyType.LIST,
+        label="Add Labels",
+        tooltip="List of label IDs to add",
+    ),
+    PropertyDef(
+        "remove_labels",
+        PropertyType.LIST,
+        label="Remove Labels",
+        tooltip="List of label IDs to remove",
+    ),
+)
+@node(category="google")
 class GmailModifyLabelsNode(BaseNode):
     """Modify labels on a Gmail message."""
 
@@ -670,9 +932,7 @@ class GmailModifyLabelsNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
             add_labels = self.get_input_value("add_labels") or []
             remove_labels = self.get_input_value("remove_labels") or []
 
@@ -688,10 +948,7 @@ class GmailModifyLabelsNode(BaseNode):
                 body["removeLabelIds"] = remove_labels
 
             result = (
-                service.users()
-                .messages()
-                .modify(userId="me", id=message_id, body=body)
-                .execute()
+                service.users().messages().modify(userId="me", id=message_id, body=body).execute()
             )
 
             self.set_output_value("labels", result.get("labelIds", []))
@@ -708,7 +965,23 @@ class GmailModifyLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to move to trash",
+    ),
+)
+@node(category="google")
 class GmailMoveToTrashNode(BaseNode):
     """Move a Gmail message to trash."""
 
@@ -727,9 +1000,7 @@ class GmailMoveToTrashNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -750,7 +1021,23 @@ class GmailMoveToTrashNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to mark as read",
+    ),
+)
+@node(category="google")
 class GmailMarkAsReadNode(BaseNode):
     """Mark a Gmail message as read."""
 
@@ -769,9 +1056,7 @@ class GmailMarkAsReadNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -794,7 +1079,23 @@ class GmailMarkAsReadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to mark as unread",
+    ),
+)
+@node(category="google")
 class GmailMarkAsUnreadNode(BaseNode):
     """Mark a Gmail message as unread."""
 
@@ -813,9 +1114,7 @@ class GmailMarkAsUnreadNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -838,7 +1137,30 @@ class GmailMarkAsUnreadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to star/unstar",
+    ),
+    PropertyDef(
+        "star",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Star",
+        tooltip="Whether to star (True) or unstar (False) the message",
+    ),
+)
+@node(category="google")
 class GmailStarEmailNode(BaseNode):
     """Star or unstar a Gmail message."""
 
@@ -858,9 +1180,7 @@ class GmailStarEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
             star = self.get_input_value("star")
             if star is None:
                 star = self.get_parameter("star", True)
@@ -875,9 +1195,7 @@ class GmailStarEmailNode(BaseNode):
             else:
                 body = {"removeLabelIds": ["STARRED"]}
 
-            service.users().messages().modify(
-                userId="me", id=message_id, body=body
-            ).execute()
+            service.users().messages().modify(userId="me", id=message_id, body=body).execute()
 
             self.set_output_value("success", True)
             self.set_output_value("error", "")
@@ -891,7 +1209,23 @@ class GmailStarEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to archive",
+    ),
+)
+@node(category="google")
 class GmailArchiveEmailNode(BaseNode):
     """Archive a Gmail message (remove from inbox)."""
 
@@ -910,9 +1244,7 @@ class GmailArchiveEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -935,7 +1267,23 @@ class GmailArchiveEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to permanently delete",
+    ),
+)
+@node(category="google")
 class GmailDeleteEmailNode(BaseNode):
     """Permanently delete a Gmail message."""
 
@@ -954,9 +1302,7 @@ class GmailDeleteEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -982,7 +1328,23 @@ class GmailDeleteEmailNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "emails",
+        PropertyType.LIST,
+        required=True,
+        label="Emails",
+        tooltip="List of email objects to send (each with to, subject, body)",
+    ),
+)
+@node(category="google")
 class GmailBatchSendNode(BaseNode):
     """Send multiple emails in batch."""
 
@@ -1025,12 +1387,7 @@ class GmailBatchSendNode(BaseNode):
                     body_type = email.get("body_type", "text")
 
                     message = _create_message(to, subject, body, cc, bcc, body_type)
-                    result = (
-                        service.users()
-                        .messages()
-                        .send(userId="me", body=message)
-                        .execute()
-                    )
+                    result = service.users().messages().send(userId="me", body=message).execute()
 
                     results.append(
                         {
@@ -1075,7 +1432,35 @@ class GmailBatchSendNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Message IDs",
+        tooltip="List of message IDs to modify",
+    ),
+    PropertyDef(
+        "add_labels",
+        PropertyType.LIST,
+        label="Add Labels",
+        tooltip="List of label IDs to add to all messages",
+    ),
+    PropertyDef(
+        "remove_labels",
+        PropertyType.LIST,
+        label="Remove Labels",
+        tooltip="List of label IDs to remove from all messages",
+    ),
+)
+@node(category="google")
 class GmailBatchModifyNode(BaseNode):
     """Modify multiple Gmail messages in batch."""
 
@@ -1128,7 +1513,23 @@ class GmailBatchModifyNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Message IDs",
+        tooltip="List of message IDs to permanently delete",
+    ),
+)
+@node(category="google")
 class GmailBatchDeleteNode(BaseNode):
     """Delete multiple Gmail messages in batch."""
 
@@ -1155,9 +1556,7 @@ class GmailBatchDeleteNode(BaseNode):
 
             service = await _get_gmail_service(context, credential_name)
 
-            service.users().messages().batchDelete(
-                userId="me", body={"ids": message_ids}
-            ).execute()
+            service.users().messages().batchDelete(userId="me", body={"ids": message_ids}).execute()
 
             self.set_output_value("deleted_count", len(message_ids))
             self.set_output_value("success", True)
@@ -1178,7 +1577,30 @@ class GmailBatchDeleteNode(BaseNode):
 # =============================================================================
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to add labels to",
+    ),
+    PropertyDef(
+        "label_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Label IDs",
+        tooltip="List of label IDs to add",
+    ),
+)
+@node(category="google")
 class GmailAddLabelNode(BaseNode):
     """Add label(s) to a Gmail message."""
 
@@ -1199,12 +1621,8 @@ class GmailAddLabelNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
-            label_ids = self.get_input_value("label_ids") or self.get_parameter(
-                "label_ids", []
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
+            label_ids = self.get_input_value("label_ids") or self.get_parameter("label_ids", [])
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1243,7 +1661,30 @@ class GmailAddLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to remove labels from",
+    ),
+    PropertyDef(
+        "label_ids",
+        PropertyType.LIST,
+        required=True,
+        label="Label IDs",
+        tooltip="List of label IDs to remove",
+    ),
+)
+@node(category="google")
 class GmailRemoveLabelNode(BaseNode):
     """Remove label(s) from a Gmail message."""
 
@@ -1264,12 +1705,8 @@ class GmailRemoveLabelNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
-            label_ids = self.get_input_value("label_ids") or self.get_parameter(
-                "label_ids", []
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
+            label_ids = self.get_input_value("label_ids") or self.get_parameter("label_ids", [])
 
             if not message_id:
                 raise ValueError("Message ID is required")
@@ -1308,7 +1745,8 @@ class GmailRemoveLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties()
+@node(category="google")
 class GmailGetLabelsNode(BaseNode):
     """Get all labels from Gmail account."""
 
@@ -1368,7 +1806,23 @@ class GmailGetLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
-@node(category="integration")
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "message_id",
+        PropertyType.STRING,
+        required=True,
+        label="Message ID",
+        tooltip="ID of the message to trash",
+    ),
+)
+@node(category="google")
 class GmailTrashEmailNode(BaseNode):
     """Move a Gmail message to trash (alias for MoveToTrash with clearer name)."""
 
@@ -1387,9 +1841,7 @@ class GmailTrashEmailNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             credential_name = self.get_parameter("credential_name", "google")
-            message_id = self.get_input_value("message_id") or self.get_parameter(
-                "message_id", ""
-            )
+            message_id = self.get_input_value("message_id") or self.get_parameter("message_id", "")
 
             if not message_id:
                 raise ValueError("Message ID is required")

@@ -363,16 +363,10 @@ class AnchorSelectorWidget(QWidget):
                     anchor_data = result.anchor
                     if hasattr(anchor_data, "enabled") and anchor_data.enabled:
                         self._anchor_config.enabled = True
-                        self._anchor_config.selector = getattr(
-                            anchor_data, "selector", ""
-                        )
-                        self._anchor_config.position = getattr(
-                            anchor_data, "position", "near"
-                        )
+                        self._anchor_config.selector = getattr(anchor_data, "selector", "")
+                        self._anchor_config.position = getattr(anchor_data, "position", "near")
                         self._anchor_config.text = getattr(anchor_data, "text", "")
-                        self._anchor_config.tag_name = getattr(
-                            anchor_data, "tag_name", ""
-                        )
+                        self._anchor_config.tag_name = getattr(anchor_data, "tag_name", "")
                         self._anchor_checkbox.setChecked(True)
                         self._update_anchor_visibility()
                         self._emit_anchor_config()

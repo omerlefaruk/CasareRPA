@@ -33,8 +33,8 @@ class LLMProvider(Enum):
 class LLMConfig:
     """Configuration for LLM client."""
 
-    provider: LLMProvider = LLMProvider.OPENAI
-    model: str = "gpt-4o-mini"
+    provider: LLMProvider = LLMProvider.OPENROUTER
+    model: str = "openrouter/google/gemini-3-flash-preview"
     api_key: Optional[str] = None
     api_base: Optional[str] = None
     api_version: Optional[str] = None  # For Azure
@@ -42,6 +42,7 @@ class LLMConfig:
     timeout: float = 60.0
     max_retries: int = 3
     retry_delay: float = 1.0
+    credential_id: Optional[str] = None  # Store credential ID for dynamic token refresh
 
 
 @dataclass
@@ -106,9 +107,7 @@ class ChatMessage:
         """Convert to LiteLLM message format."""
         if self.images:
             # Multi-modal message with text and images
-            content_parts: List[Dict[str, Any]] = [
-                {"type": "text", "text": self.content}
-            ]
+            content_parts: List[Dict[str, Any]] = [{"type": "text", "text": self.content}]
             for img in self.images:
                 content_parts.append(img.to_dict())
             msg: Dict[str, Any] = {"role": self.role, "content": content_parts}
@@ -199,6 +198,8 @@ class LLMResourceManager:
         "llama-": "groq",
         "mixtral-": "groq",
         "deepseek-": "deepseek",
+        "gemini": "google",
+        "google": "google",
         "ollama/": "ollama",
         "openrouter/": "openrouter",
     }
@@ -221,9 +222,7 @@ class LLMResourceManager:
         """
         self._config = config
         self._initialized = False
-        logger.debug(
-            f"LLM configured: provider={config.provider.value}, model={config.model}"
-        )
+        logger.debug(f"LLM configured: provider={config.provider.value}, model={config.model}")
 
     def _ensure_initialized(self) -> Any:
         """Ensure LiteLLM is imported and configured."""
@@ -256,8 +255,7 @@ class LLMResourceManager:
 
         except ImportError as e:
             raise ImportError(
-                "LiteLLM is required for LLM nodes. "
-                "Install it with: pip install litellm"
+                "LiteLLM is required for LLM nodes. " "Install it with: pip install litellm"
             ) from e
 
     def _get_api_key_store(self) -> Any:
@@ -283,6 +281,77 @@ class LLMResourceManager:
                     return None
         return self._api_key_store
 
+    async def _resolve_api_key(self, config: Optional[LLMConfig] = None) -> Optional[str]:
+        """
+        Resolve the API key or Access Token to use.
+
+        Handles:
+        1. Explicit API key in config
+        2. Dynamic OAuth token refresh via Credential ID
+        3. Static API key from Credential Store
+        4. Environment variables (fallback)
+
+        Args:
+            config: Optional config override
+
+        Returns:
+            Valid API key/token or None
+        """
+        cfg = config or self._config
+        if not cfg:
+            return None
+
+        # 1. Explicit API key in config
+        if cfg.api_key:
+            return cfg.api_key
+
+        # 2. Dynamic OAuth Token (if credential_id is present)
+        if cfg.credential_id and cfg.credential_id != "auto":
+            try:
+                # Get credential info to determine type
+                store = self._get_api_key_store()
+                if not store:
+                    return None
+
+                info = store.get_credential_info(cfg.credential_id)
+                if not info:
+                    return None
+
+                cred_type = info.get("type")
+                self._using_google_oauth = cred_type == "google_oauth"  # Track for model string
+
+                # Handle Google OAuth
+                if cred_type == "google_oauth":
+                    from casare_rpa.infrastructure.security.google_oauth import (
+                        get_google_oauth_manager,
+                    )
+
+                    oauth_manager = await get_google_oauth_manager()
+                    access_token = await oauth_manager.get_access_token(cfg.credential_id)
+                    logger.info("Got Google OAuth access token for Vertex AI")
+                    return access_token
+
+                # Handle API Key credential
+                elif cred_type == "api_key":
+                    return store.get_api_key(cfg.credential_id)
+
+                # Handle OpenAI / Azure OAuth
+                elif cred_type == "openai_oauth":
+                    from casare_rpa.infrastructure.security.openai_oauth import (
+                        get_openai_oauth_manager,
+                    )
+
+                    oauth_manager = await get_openai_oauth_manager()
+                    return await oauth_manager.get_access_token(cfg.credential_id)
+
+            except ImportError:
+                pass
+            except Exception as e:
+                logger.warning(f"Failed to resolve OAuth token: {e}")
+
+        # 3. Static API Key from Store (using provider)
+        return self._get_api_key_for_provider(cfg.provider)
+
     def _get_api_key_for_provider(self, provider: LLMProvider) -> Optional[str]:
         """Get API key for a provider from the secure store."""
         provider_map = {
@@ -300,6 +369,10 @@ class LLMResourceManager:
 
         store = self._get_api_key_store()
         if store:
+            # Check if we have a specific credential_id in config to look up directly
+            if self._config and self._config.credential_id and self._config.credential_id != "auto":
+                return store.get_api_key(self._config.credential_id)
+
             return store.get_key(provider_name)
         return None
 
@@ -347,11 +420,38 @@ class LLMResourceManager:
                 # Ollama format: ollama/<model>
                 return f"ollama/{model_name}"
 
+        # Check if using Google OAuth - use Vertex AI format
+        if getattr(self, "_using_google_oauth", False):
+            # For Google OAuth, use vertex_ai format which supports OAuth tokens
+            if "gemini" in model_name.lower():
+                # Extract just the model name (remove any prefix)
+                clean_name = model_name
+                for prefix in ["gemini/", "models/", "vertex_ai/"]:
+                    if clean_name.startswith(prefix):
+                        clean_name = clean_name[len(prefix) :]
+                return f"vertex_ai/{clean_name}"
+
+        # Heuristic for Gemini models (often passed as "gemini-..." but need "gemini/" prefix for LiteLLM)
+        if (
+            (model_name.startswith("gemini") or "gemini" in model_name)
+            and not model_name.startswith("gemini/")
+            and not model_name.startswith("models/")
+            and not model_name.startswith("vertex_ai/")
+        ):
+            return f"gemini/{model_name}"
+
+        # Handle 'models/' prefix (Google AI Studio format) -> map to 'gemini/' for LiteLLM if needed,
+        # but LiteLLM might handle 'vertex_ai/' or just 'gemini/'.
+        # Usually LiteLLM expects `gemini/gemini-pro` etc.
+        # If input is `models/gemini-1.5-pro`, LiteLLM with Google provider often takes just the model name or `gemini/...`.
+        # Let's strip 'models/' and prepend 'gemini/' to be safe for the Google provider path.
+        if model_name.startswith("models/"):
+            clean_name = model_name.replace("models/", "")
+            return f"gemini/{clean_name}"
+
         return model_name
 
-    def _calculate_cost(
-        self, model: str, prompt_tokens: int, completion_tokens: int
-    ) -> float:
+    def _calculate_cost(self, model: str, prompt_tokens: int, completion_tokens: int) -> float:
         """Calculate estimated cost for token usage."""
         # Normalize model name for lookup
         model_key = model.lower().replace("azure/", "").replace("ollama/", "")
@@ -392,10 +492,8 @@ class LLMResourceManager:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
-        # Priority: 1) Configured API key, 2) Auto-detected from model
-        api_key = (
-            self._config.api_key if self._config else None
-        ) or self._get_api_key_for_model(model_str)
+        # Priority: 1) Configured/Resolved API key, 2) Auto-detected from model
+        api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
             # Pass API key directly if we have one for this model
@@ -426,8 +524,7 @@ class LLMResourceManager:
             finish_reason = response["choices"][0].get("finish_reason", "stop")
 
             logger.debug(
-                f"LLM completion: model={model_str}, "
-                f"tokens={total_tokens}, cost=${cost:.4f}"
+                f"LLM completion: model={model_str}, " f"tokens={total_tokens}, cost=${cost:.4f}"
             )
 
             return LLMResponse(
@@ -489,10 +586,8 @@ class LLMResourceManager:
         # Add user message
         conv.add_message("user", message)
 
-        # Priority: 1) Configured API key, 2) Auto-detected from model
-        api_key = (
-            self._config.api_key if self._config else None
-        ) or self._get_api_key_for_model(model_str)
+        # Priority: 1) Configured/Resolved API key, 2) Auto-detected from model
+        api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
             call_kwargs = {
@@ -523,8 +618,7 @@ class LLMResourceManager:
             finish_reason = response["choices"][0].get("finish_reason", "stop")
 
             logger.debug(
-                f"LLM chat: conv={conversation_id}, model={model_str}, "
-                f"tokens={total_tokens}"
+                f"LLM chat: conv={conversation_id}, model={model_str}, " f"tokens={total_tokens}"
             )
 
             return (
@@ -591,10 +685,8 @@ class LLMResourceManager:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_content})
 
-        # Priority: 1) Configured API key, 2) Auto-detected from model
-        api_key = (
-            self._config.api_key if self._config else None
-        ) or self._get_api_key_for_model(model_str)
+        # Priority: 1) Configured/Resolved API key, 2) Auto-detected from model
+        api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
             call_kwargs: Dict[str, Any] = {

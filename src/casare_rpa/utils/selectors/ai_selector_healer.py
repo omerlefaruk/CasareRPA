@@ -164,9 +164,7 @@ class FuzzyMatcher:
                 transpositions += 1
             k += 1
 
-        return (
-            matches / len1 + matches / len2 + (matches - transpositions / 2) / matches
-        ) / 3
+        return (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3
 
     @staticmethod
     def jaro_winkler_similarity(s1: str, s2: str, prefix_weight: float = 0.1) -> float:
@@ -419,9 +417,7 @@ class AISelectorHealer:
             "position": 0.10,
         }
 
-        logger.debug(
-            f"AISelectorHealer initialized (min_conf={min_confidence}, llm={use_llm})"
-        )
+        logger.debug(f"AISelectorHealer initialized (min_conf={min_confidence}, llm={use_llm})")
 
     def fuzzy_text_match(
         self,
@@ -506,9 +502,7 @@ class AISelectorHealer:
                 if pattern_score > 0:
                     per_attr_scores["id"] = pattern_score
                 else:
-                    per_attr_scores["id"] = FuzzyMatcher.levenshtein_similarity(
-                        id1, id2
-                    )
+                    per_attr_scores["id"] = FuzzyMatcher.levenshtein_similarity(id1, id2)
             elif id1 == id2:  # Both empty
                 per_attr_scores["id"] = 1.0
             else:
@@ -714,9 +708,7 @@ class AISelectorHealer:
             return base_score
 
         # Try synonym matching
-        syn_score = self.semantic_matcher.synonym_similarity(
-            original_text, candidate_text
-        )
+        syn_score = self.semantic_matcher.synonym_similarity(original_text, candidate_text)
         if syn_score > base_score:
             return syn_score
 
@@ -727,9 +719,7 @@ class AISelectorHealer:
 
         # Optionally try LLM
         if self.use_llm and base_score < 0.7:
-            llm_score = await self.semantic_matcher.llm_similarity(
-                original_text, candidate_text
-            )
+            llm_score = await self.semantic_matcher.llm_similarity(original_text, candidate_text)
             if llm_score and llm_score > base_score:
                 return llm_score
 

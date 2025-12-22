@@ -167,9 +167,7 @@ class VaultClient:
             VaultAuthenticationError: If authentication fails
         """
         if not HVAC_AVAILABLE:
-            raise VaultConnectionError(
-                "hvac library not installed. Install with: pip install hvac"
-            )
+            raise VaultConnectionError("hvac library not installed. Install with: pip install hvac")
 
         self.config = config
         self._client: Optional[hvac.Client] = None
@@ -185,9 +183,7 @@ class VaultClient:
     def _connect(self) -> None:
         """Establish connection to Vault and authenticate."""
         try:
-            verify = (
-                self.config.ca_cert if self.config.ca_cert else self.config.verify_ssl
-            )
+            verify = self.config.ca_cert if self.config.ca_cert else self.config.verify_ssl
 
             self._client = hvac.Client(
                 url=self.config.url,
@@ -216,9 +212,7 @@ class VaultClient:
         try:
             if method == "approle":
                 if not self.config.role_id or not self.config.secret_id:
-                    raise VaultAuthenticationError(
-                        "AppRole auth requires role_id and secret_id"
-                    )
+                    raise VaultAuthenticationError("AppRole auth requires role_id and secret_id")
                 self._client.auth.approle.login(
                     role_id=self.config.role_id,
                     secret_id=self.config.secret_id,
@@ -244,9 +238,7 @@ class VaultClient:
 
             elif method == "kubernetes":
                 if not self.config.kubernetes_role:
-                    raise VaultAuthenticationError(
-                        "Kubernetes auth requires kubernetes_role"
-                    )
+                    raise VaultAuthenticationError("Kubernetes auth requires kubernetes_role")
                 # Read JWT from service account
                 jwt_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
                 with open(jwt_path) as f:

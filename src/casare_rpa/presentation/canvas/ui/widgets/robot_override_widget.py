@@ -107,9 +107,7 @@ class RobotOverrideWidget(QWidget):
         mode_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self._mode_combo = QComboBox()
         self._mode_combo.addItems(["Specific Robot", "By Capability"])
-        self._mode_combo.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
+        self._mode_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         mode_row.addWidget(mode_label)
         mode_row.addWidget(self._mode_combo)
         content_layout.addLayout(mode_row)
@@ -123,9 +121,7 @@ class RobotOverrideWidget(QWidget):
         robot_label.setMinimumWidth(70)
         robot_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self._robot_combo = QComboBox()
-        self._robot_combo.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
+        self._robot_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._robot_combo.setPlaceholderText("Select robot...")
         robot_layout.addWidget(robot_label)
         robot_layout.addWidget(self._robot_combo)

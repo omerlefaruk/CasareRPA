@@ -28,7 +28,6 @@ from casare_rpa.nodes.desktop_nodes.properties import (
 )
 
 
-@node(category="desktop")
 @properties(
     APPLICATION_PATH_PROP,
     ARGUMENTS_PROP,
@@ -38,6 +37,7 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     WINDOW_STATE_PROP,
     KEEP_OPEN_PROP,
 )
+@node(category="desktop")
 class LaunchApplicationNode(DesktopNodeBase):
     """
     Launch a Windows desktop application.
@@ -95,7 +95,9 @@ class LaunchApplicationNode(DesktopNodeBase):
         keep_open = self.get_parameter("keep_open", context)
 
         if not app_path:
-            error_msg = "Application path is required. Please enter the full path to the executable."
+            error_msg = (
+                "Application path is required. Please enter the full path to the executable."
+            )
             logger.error(f"[{self.name}] {error_msg}")
             self.status = NodeStatus.ERROR
             raise ValueError(error_msg)
@@ -124,9 +126,7 @@ class LaunchApplicationNode(DesktopNodeBase):
         desktop_ctx = self.get_desktop_context(context)
 
         try:
-            logger.info(
-                f"[{self.name}] Calling desktop_ctx.async_launch_application..."
-            )
+            logger.info(f"[{self.name}] Calling desktop_ctx.async_launch_application...")
             window = await desktop_ctx.async_launch_application(
                 path=app_path,
                 args=arguments,
@@ -186,11 +186,11 @@ class LaunchApplicationNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     FORCE_CLOSE_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class CloseApplicationNode(DesktopNodeBase):
     """
     Close a Windows desktop application.
@@ -243,9 +243,7 @@ class CloseApplicationNode(DesktopNodeBase):
         timeout = self.get_parameter("timeout", context)
 
         if not window and not process_id and not window_title:
-            raise ValueError(
-                "Must provide either 'window', 'process_id', or 'window_title'"
-            )
+            raise ValueError("Must provide either 'window', 'process_id', or 'window_title'")
 
         logger.info(f"[{self.name}] Closing application (force={force_close})")
 
@@ -254,7 +252,7 @@ class CloseApplicationNode(DesktopNodeBase):
         try:
             target = window if window else (process_id if process_id else window_title)
 
-            success = await desktop_ctx.async_close_application(
+            await desktop_ctx.async_close_application(
                 window_or_pid=target, force=force_close, timeout=timeout
             )
 
@@ -266,11 +264,11 @@ class CloseApplicationNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     MATCH_PARTIAL_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class ActivateWindowNode(DesktopNodeBase):
     """
     Activate (bring to foreground) a Windows desktop window.
@@ -357,11 +355,11 @@ class ActivateWindowNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     INCLUDE_INVISIBLE_PROP,
     FILTER_TITLE_PROP,
 )
+@node(category="desktop")
 class GetWindowListNode(DesktopNodeBase):
     """
     Get a list of all open Windows desktop windows.
@@ -422,10 +420,7 @@ class GetWindowListNode(DesktopNodeBase):
                 }
 
                 # Apply filter if specified
-                if (
-                    filter_title
-                    and filter_title.lower() not in window_info["title"].lower()
-                ):
+                if filter_title and filter_title.lower() not in window_info["title"].lower():
                     continue
 
                 window_list.append(window_info)

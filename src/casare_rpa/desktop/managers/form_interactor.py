@@ -68,28 +68,19 @@ class FormInteractor:
                     for item in items:
                         if item.ControlTypeName == "ListItemControl":
                             if by_text:
-                                if (
-                                    item.Name == value
-                                    or value.lower() in item.Name.lower()
-                                ):
+                                if item.Name == value or value.lower() in item.Name.lower():
                                     try:
-                                        sel_item_pattern = (
-                                            item.GetSelectionItemPattern()
-                                        )
+                                        sel_item_pattern = item.GetSelectionItemPattern()
                                         if sel_item_pattern:
                                             sel_item_pattern.Select()
-                                            logger.info(
-                                                f"Selected '{item.Name}' from dropdown"
-                                            )
+                                            logger.info(f"Selected '{item.Name}' from dropdown")
                                             return True
                                     except Exception as e:
                                         logger.debug(
                                             f"SelectionItemPattern failed, clicking item: {e}"
                                         )
                                         item.Click()
-                                        logger.info(
-                                            f"Clicked '{item.Name}' in dropdown"
-                                        )
+                                        logger.info(f"Clicked '{item.Name}' in dropdown")
                                         return True
             except Exception as e:
                 logger.debug(f"SelectionPattern failed: {e}")
@@ -126,9 +117,7 @@ class FormInteractor:
             """Select item from popup list."""
             for item in list_control.GetChildren():
                 item_text = item.Name or ""
-                if by_text and (
-                    item_text == value or value.lower() in item_text.lower()
-                ):
+                if by_text and (item_text == value or value.lower() in item_text.lower()):
                     item.Click()
                     logger.info(f"Selected '{item_text}' from dropdown list")
                     return True
@@ -207,9 +196,7 @@ class FormInteractor:
                         toggle_pattern.Toggle()
                         logger.info("Checkbox unchecked")
                     else:
-                        logger.info(
-                            f"Checkbox already {'checked' if check else 'unchecked'}"
-                        )
+                        logger.info(f"Checkbox already {'checked' if check else 'unchecked'}")
 
                     return True
             except Exception as e:
@@ -316,9 +303,7 @@ class FormInteractor:
                 if 0 <= tab_index < len(tab_items):
                     target_tab = tab_items[tab_index]
                 else:
-                    raise ValueError(
-                        f"Tab index {tab_index} out of range (0-{len(tab_items)-1})"
-                    )
+                    raise ValueError(f"Tab index {tab_index} out of range (0-{len(tab_items)-1})")
 
             elif tab_name is not None:
                 for tab in tab_items:
@@ -328,9 +313,7 @@ class FormInteractor:
 
                 if not target_tab:
                     tab_names = [t.Name for t in tab_items]
-                    raise ValueError(
-                        f"Tab '{tab_name}' not found. Available tabs: {tab_names}"
-                    )
+                    raise ValueError(f"Tab '{tab_name}' not found. Available tabs: {tab_names}")
 
             try:
                 sel_item_pattern = target_tab.GetSelectionItemPattern()
@@ -352,9 +335,7 @@ class FormInteractor:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    async def expand_tree_item(
-        self, element: DesktopElement, expand: bool = True
-    ) -> bool:
+    async def expand_tree_item(self, element: DesktopElement, expand: bool = True) -> bool:
         """
         Expand or collapse a tree item.
 
@@ -382,10 +363,7 @@ class FormInteractor:
                     if expand and current_state == auto.ExpandCollapseState.Collapsed:
                         expand_pattern.Expand()
                         logger.info(f"Expanded tree item: {control.Name}")
-                    elif (
-                        not expand
-                        and current_state == auto.ExpandCollapseState.Expanded
-                    ):
+                    elif not expand and current_state == auto.ExpandCollapseState.Expanded:
                         expand_pattern.Collapse()
                         logger.info(f"Collapsed tree item: {control.Name}")
                     else:
@@ -438,9 +416,7 @@ class FormInteractor:
 
         valid_directions = ["up", "down", "left", "right"]
         if direction.lower() not in valid_directions:
-            raise ValueError(
-                f"Invalid direction '{direction}'. Must be one of: {valid_directions}"
-            )
+            raise ValueError(f"Invalid direction '{direction}'. Must be one of: {valid_directions}")
 
         direction = direction.lower()
 
@@ -486,9 +462,7 @@ class FormInteractor:
             center_x = rect.left + rect.width() // 2
             center_y = rect.top + rect.height() // 2
 
-            wheel_delta = (
-                3 if isinstance(amount, str) else max(1, int(float(amount) * 5))
-            )
+            wheel_delta = 3 if isinstance(amount, str) else max(1, int(float(amount) * 5))
 
             if direction == "down":
                 auto.WheelDown(center_x, center_y, wheelTimes=wheel_delta)

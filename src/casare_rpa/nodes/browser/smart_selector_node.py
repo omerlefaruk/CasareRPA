@@ -21,7 +21,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "description",
@@ -68,6 +67,7 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         tooltip="Fail if selector matches multiple elements",
     ),
 )
+@node(category="browser")
 class SmartSelectorNode(BrowserBaseNode):
     """
     AI-powered selector generation from natural language.
@@ -141,7 +141,6 @@ class SmartSelectorNode(BrowserBaseNode):
                 return self.error_result("Element description is required")
 
             # Resolve variables in description
-            description = context.resolve_value(description)
 
             # Get parameters
             model = self.get_parameter("model", "gpt-4o")
@@ -152,8 +151,6 @@ class SmartSelectorNode(BrowserBaseNode):
 
             # Get hints
             hints = self.get_input_value("hints") or ""
-            if hints:
-                hints = context.resolve_value(hints)
 
             logger.info(f"Generating selector for: {description}")
 
@@ -287,7 +284,6 @@ class SmartSelectorNode(BrowserBaseNode):
             )
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "description",
@@ -314,6 +310,7 @@ class SmartSelectorNode(BrowserBaseNode):
         tooltip="LLM model for selector generation",
     ),
 )
+@node(category="browser")
 class SmartSelectorOptionsNode(BrowserBaseNode):
     """
     Generate multiple selector options for user selection.
@@ -372,14 +369,10 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
                 self.status = NodeStatus.ERROR
                 return self.error_result("Element description is required")
 
-            description = context.resolve_value(description)
-
             model = self.get_parameter("model", "gpt-4o")
             option_count = self.get_parameter("option_count", 3)
 
-            logger.info(
-                f"Generating {option_count} selector options for: {description}"
-            )
+            logger.info(f"Generating {option_count} selector options for: {description}")
 
             from casare_rpa.infrastructure.ai.smart_selector_generator import (
                 SmartSelectorGenerator,
@@ -416,7 +409,6 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
             return self.error_result(str(e))
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "original_selector",
@@ -448,6 +440,7 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
         tooltip="LLM model for selector refinement",
     ),
 )
+@node(category="browser")
 class RefineSelectorNode(BrowserBaseNode):
     """
     Refine a problematic selector using AI.
@@ -505,21 +498,16 @@ class RefineSelectorNode(BrowserBaseNode):
         try:
             page = await self.get_page_async(context)
 
-            original_selector = self.get_input_value(
-                "original_selector"
-            ) or self.get_parameter("original_selector", "")
+            original_selector = self.get_input_value("original_selector") or self.get_parameter(
+                "original_selector", ""
+            )
             description = self.get_input_value("description") or self.get_parameter(
                 "description", ""
             )
 
             if not original_selector or not description:
                 self.status = NodeStatus.ERROR
-                return self.error_result(
-                    "Both original_selector and description are required"
-                )
-
-            original_selector = context.resolve_value(original_selector)
-            description = context.resolve_value(description)
+                return self.error_result("Both original_selector and description are required")
 
             model = self.get_parameter("model", "gpt-4o")
             issue = self.get_parameter("issue", "not unique")

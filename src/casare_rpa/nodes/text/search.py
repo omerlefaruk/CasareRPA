@@ -24,6 +24,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
+@properties()
 @node(category="text")
 class TextSubstringNode(BaseNode):
     """
@@ -89,7 +90,6 @@ class TextSubstringNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case_sensitive",
@@ -99,6 +99,7 @@ class TextSubstringNode(BaseNode):
         tooltip="Case-sensitive search",
     ),
 )
+@node(category="text")
 class TextContainsNode(BaseNode):
     """
     Check if a string contains a substring.
@@ -141,7 +142,6 @@ class TextContainsNode(BaseNode):
             search = str(self.get_input_value("search", context) or "")
 
             # Resolve {{variable}} patterns in search
-            search = context.resolve_value(search)
 
             case_sensitive = self.get_parameter("case_sensitive", True)
 
@@ -176,7 +176,6 @@ class TextContainsNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case_sensitive",
@@ -186,6 +185,7 @@ class TextContainsNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
+@node(category="text")
 class TextStartsWithNode(BaseNode):
     """
     Check if a string starts with a prefix.
@@ -224,7 +224,6 @@ class TextStartsWithNode(BaseNode):
             prefix = str(self.get_input_value("prefix", context) or "")
 
             # Resolve {{variable}} patterns in prefix
-            prefix = context.resolve_value(prefix)
 
             case_sensitive = self.get_parameter("case_sensitive", True)
 
@@ -251,7 +250,6 @@ class TextStartsWithNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case_sensitive",
@@ -261,6 +259,7 @@ class TextStartsWithNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
+@node(category="text")
 class TextEndsWithNode(BaseNode):
     """
     Check if a string ends with a suffix.
@@ -299,7 +298,6 @@ class TextEndsWithNode(BaseNode):
             suffix = str(self.get_input_value("suffix", context) or "")
 
             # Resolve {{variable}} patterns in suffix
-            suffix = context.resolve_value(suffix)
 
             case_sensitive = self.get_parameter("case_sensitive", True)
 
@@ -326,8 +324,14 @@ class TextEndsWithNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
+    PropertyDef(
+        "pattern",
+        PropertyType.STRING,
+        required=True,
+        label="Pattern",
+        tooltip="Regex pattern with optional capture groups",
+    ),
     PropertyDef(
         "all_matches",
         PropertyType.BOOLEAN,
@@ -357,6 +361,7 @@ class TextEndsWithNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
+@node(category="text")
 class TextExtractNode(BaseNode):
     """
     Extract text using regex with capture groups.
@@ -391,9 +396,7 @@ class TextExtractNode(BaseNode):
         self.add_input_port("text", DataType.STRING, required=False)
         self.add_input_port("pattern", DataType.STRING, required=True)
         self.add_output_port("match", DataType.ANY)  # String or List[String]
-        self.add_output_port(
-            "groups", DataType.LIST
-        )  # List[String] or List[List[String]]
+        self.add_output_port("groups", DataType.LIST)  # List[String] or List[List[String]]
         self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -404,7 +407,6 @@ class TextExtractNode(BaseNode):
             pattern = str(self.get_input_value("pattern", context) or "")
 
             # Resolve {{variable}} patterns
-            pattern = context.resolve_value(pattern)
 
             all_matches = self.get_parameter("all_matches", False)
 

@@ -62,9 +62,7 @@ class VisualTelegramSendMessageNode(VisualNode):
             items=["", "Markdown", "MarkdownV2", "HTML"],
             tab="properties",
         )
-        self._safe_create_property(
-            "disable_notification", False, widget_type=1, tab="advanced"
-        )
+        self._safe_create_property("disable_notification", False, widget_type=1, tab="advanced")
         self.add_text_input(
             "reply_to_message_id",
             "Reply To Message ID",
@@ -143,9 +141,7 @@ class VisualTelegramSendPhotoNode(VisualNode):
             items=["", "Markdown", "MarkdownV2", "HTML"],
             tab="properties",
         )
-        self._safe_create_property(
-            "disable_notification", False, widget_type=1, tab="advanced"
-        )
+        self._safe_create_property("disable_notification", False, widget_type=1, tab="advanced")
 
     def get_node_class(self) -> type:
         return TelegramSendPhotoNode
@@ -224,9 +220,7 @@ class VisualTelegramSendDocumentNode(VisualNode):
             items=["", "Markdown", "MarkdownV2", "HTML"],
             tab="properties",
         )
-        self._safe_create_property(
-            "disable_notification", False, widget_type=1, tab="advanced"
-        )
+        self._safe_create_property("disable_notification", False, widget_type=1, tab="advanced")
 
     def get_node_class(self) -> type:
         return TelegramSendDocumentNode
@@ -293,9 +287,7 @@ class VisualTelegramSendLocationNode(VisualNode):
             tab="properties",
             placeholder_text="-180 to 180",
         )
-        self._safe_create_property(
-            "disable_notification", False, widget_type=1, tab="advanced"
-        )
+        self._safe_create_property("disable_notification", False, widget_type=1, tab="advanced")
 
     def get_node_class(self) -> type:
         return TelegramSendLocationNode

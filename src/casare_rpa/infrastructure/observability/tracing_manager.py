@@ -165,9 +165,7 @@ class TracingManager:
             )
 
         except ImportError as e:
-            logger.warning(
-                f"OpenTelemetry packages not installed, tracing disabled: {e}"
-            )
+            logger.warning(f"OpenTelemetry packages not installed, tracing disabled: {e}")
             self._config.enabled = False
 
         except Exception as e:

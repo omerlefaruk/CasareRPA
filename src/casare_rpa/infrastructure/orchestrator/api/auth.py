@@ -40,9 +40,7 @@ if _jwt_secret_env is None:
 else:
     JWT_SECRET_KEY = _jwt_secret_env
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
-)
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 # SECURITY: JWT_DEV_MODE defaults to false. Must explicitly enable for development.
 JWT_DEV_MODE = os.getenv("JWT_DEV_MODE", "false").lower() in ("true", "1", "yes")
@@ -84,6 +82,60 @@ class AuthenticatedUser(BaseModel):
 
 # HTTP Bearer token scheme (for JWT)
 security = HTTPBearer(auto_error=False)
+
+
+def _get_admin_api_key() -> Optional[str]:
+    """Return configured admin API key for non-JWT clients (e.g., Canvas).
+
+    This intentionally supports the existing API_SECRET-based deployments.
+    In production, prefer setting ORCHESTRATOR_ADMIN_API_KEY explicitly.
+    """
+    key = os.getenv("ORCHESTRATOR_ADMIN_API_KEY") or os.getenv("API_SECRET")
+    return key.strip() if key else None
+
+
+def _try_admin_api_key(token: str) -> Optional[AuthenticatedUser]:
+    admin_key = _get_admin_api_key()
+    if not admin_key:
+        return None
+
+    # Debug logging
+    if token == admin_key:
+        return AuthenticatedUser(
+            user_id="admin_api_key",
+            roles=["admin"],
+            tenant_id=None,
+            dev_mode=False,
+        )
+
+    # Log mismatch debug info
+    if len(token) > 10:
+        masked_token = f"{token[:4]}...{token[-4:]} (len={len(token)})"
+    else:
+        masked_token = "invalid"
+
+    if len(admin_key) > 10:
+        masked_admin = f"{admin_key[:4]}...{admin_key[-4:]} (len={len(admin_key)})"
+    else:
+        masked_admin = "invalid"
+
+    logger.warning(f"Admin Key Mismatch: Token='{masked_token}' vs Admin='{masked_admin}'")
+    return None
+
+
+def validate_admin_secret(secret: Optional[str]) -> bool:
+    """
+    Validate admin API secret (legacy query param mode).
+    Used primarily for diagnostic WebSocket connections.
+    """
+    if not secret:
+        return False
+    admin_key = _get_admin_api_key()
+    if not admin_key:
+        return False
+    import hmac
+
+    return hmac.compare_digest(secret, admin_key)
 
 
 def create_access_token(
@@ -175,12 +227,14 @@ def decode_token(token: str) -> TokenPayload:
 
 async def verify_token(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
 ) -> AuthenticatedUser:
     """
     Verify JWT token and return authenticated user.
 
     Args:
         credentials: HTTP Bearer credentials from Authorization header
+        x_api_key: Optional API key from header (fallback for admin access)
 
     Returns:
         AuthenticatedUser with user_id, roles, and tenant_id
@@ -190,6 +244,12 @@ async def verify_token(
     """
     # Development mode: bypass authentication if no token provided
     if credentials is None:
+        # Check X-Api-Key fallback for API_SECRET access
+        if x_api_key:
+            admin_user = _try_admin_api_key(x_api_key)
+            if admin_user:
+                return admin_user
+
         if JWT_DEV_MODE:
             logger.debug("JWT dev mode: allowing unauthenticated access as admin")
             return AuthenticatedUser(
@@ -205,6 +265,11 @@ async def verify_token(
         )
 
     token = credentials.credentials
+
+    # Support long-lived admin API key passed as Bearer token
+    admin_user = _try_admin_api_key(token)
+    if admin_user is not None:
+        return admin_user
 
     try:
         payload = decode_token(token)
@@ -262,8 +327,7 @@ def require_role(required_role: str):
         """Check if user has required role."""
         if not user.has_role(required_role):
             logger.warning(
-                f"Access denied: user={user.user_id} required={required_role} "
-                f"has={user.roles}"
+                f"Access denied: user={user.user_id} required={required_role} " f"has={user.roles}"
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -344,6 +408,8 @@ class RobotAuthenticator:
         """
         self._use_database = use_database
         self._db_pool = db_pool
+        self._db_robot_api_keys_cols: Optional[set[str]] = None
+        self._db_robot_api_keys_hash_col: Optional[str] = None
         self._token_hashes = {} if use_database else self._load_token_hashes()
         self._auth_enabled = os.getenv("ROBOT_AUTH_ENABLED", "false").lower() in (
             "true",
@@ -429,13 +495,42 @@ class RobotAuthenticator:
         try:
             if self._db_pool:
                 async with self._db_pool.acquire() as conn:
+                    if self._db_robot_api_keys_cols is None:
+                        cols = await conn.fetch(
+                            """
+                            SELECT column_name
+                            FROM information_schema.columns
+                            WHERE table_schema='public' AND table_name='robot_api_keys'
+                            """
+                        )
+                        self._db_robot_api_keys_cols = {r["column_name"] for r in cols}
+
+                        if "api_key_hash" in self._db_robot_api_keys_cols:
+                            self._db_robot_api_keys_hash_col = "api_key_hash"
+                        elif "key_hash" in self._db_robot_api_keys_cols:
+                            self._db_robot_api_keys_hash_col = "key_hash"
+                        else:
+                            self._db_robot_api_keys_hash_col = "api_key_hash"
+
+                    cols = self._db_robot_api_keys_cols or set()
+                    hash_col = self._db_robot_api_keys_hash_col or "api_key_hash"
+
                     # Check if key is valid (not revoked, not expired)
+                    if "api_key_hash" in cols and "key_hash" in cols:
+                        where = ["(api_key_hash = $1 OR key_hash = $1)"]
+                    else:
+                        where = [f"{hash_col} = $1"]
+                    if "is_revoked" in cols:
+                        where.append("is_revoked = FALSE")
+                    if "is_active" in cols:
+                        where.append("is_active = TRUE")
+                    if "expires_at" in cols:
+                        where.append("(expires_at IS NULL OR expires_at > NOW())")
+
                     result = await conn.fetchrow(
-                        """
+                        f"""
                         SELECT robot_id FROM robot_api_keys
-                        WHERE api_key_hash = $1
-                        AND is_revoked = FALSE
-                        AND (expires_at IS NULL OR expires_at > NOW())
+                        WHERE {' AND '.join(where)}
                         """,
                         token_hash,
                     )
@@ -444,15 +539,27 @@ class RobotAuthenticator:
                         robot_id = str(result["robot_id"])
 
                         # Update last_used timestamp (fire and forget)
-                        await conn.execute(
-                            """
-                            UPDATE robot_api_keys
-                            SET last_used_at = NOW(), last_used_ip = $2::inet
-                            WHERE api_key_hash = $1
-                            """,
-                            token_hash,
-                            client_ip,
-                        )
+                        set_parts = []
+                        if "last_used_at" in cols:
+                            set_parts.append("last_used_at = NOW()")
+                        if "last_used_ip" in cols:
+                            set_parts.append("last_used_ip = $2::inet")
+
+                        if set_parts:
+                            update_where = (
+                                "(api_key_hash = $1 OR key_hash = $1)"
+                                if "api_key_hash" in cols and "key_hash" in cols
+                                else f"{hash_col} = $1"
+                            )
+                            await conn.execute(
+                                f"""
+                                UPDATE robot_api_keys
+                                SET {', '.join(set_parts)}
+                                WHERE {update_where}
+                                """,
+                                token_hash,
+                                client_ip,
+                            )
 
                         logger.debug(f"Database auth: validated robot {robot_id}")
                         return robot_id
@@ -485,9 +592,7 @@ def get_robot_authenticator() -> RobotAuthenticator:
     return _robot_authenticator
 
 
-def configure_robot_authenticator(
-    use_database: bool = False, db_pool=None
-) -> RobotAuthenticator:
+def configure_robot_authenticator(use_database: bool = False, db_pool=None) -> RobotAuthenticator:
     """
     Configure the global robot authenticator.
 
@@ -499,9 +604,7 @@ def configure_robot_authenticator(
         Configured RobotAuthenticator
     """
     global _robot_authenticator
-    _robot_authenticator = RobotAuthenticator(
-        use_database=use_database, db_pool=db_pool
-    )
+    _robot_authenticator = RobotAuthenticator(use_database=use_database, db_pool=db_pool)
     logger.info(f"Robot authenticator configured: database={use_database}")
     return _robot_authenticator
 
@@ -543,9 +646,7 @@ async def verify_robot_token(x_api_key: str = Header(..., alias="X-Api-Key")) ->
     robot_id = await authenticator.verify_token_async(x_api_key)
 
     if not robot_id:
-        logger.warning(
-            f"Failed robot authentication attempt with key: {x_api_key[:12]}..."
-        )
+        logger.warning(f"Failed robot authentication attempt with key: {x_api_key[:12]}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired API key",

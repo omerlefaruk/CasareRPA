@@ -31,7 +31,6 @@ except ImportError:
 # ============================================================================
 
 
-@node(category="desktop")
 @properties(
     PropertyDef(
         "file_path",
@@ -65,6 +64,7 @@ except ImportError:
         tooltip="Create new file if not found",
     ),
 )
+@node(category="desktop")
 class ExcelOpenNode(BaseNode):
     """
     Node to open an Excel workbook.
@@ -116,24 +116,20 @@ class ExcelOpenNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Excel open operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         # Use get_parameter to check both port value and config (properties panel)
         file_path = self.get_parameter("file_path")
         # Check multiple possible config keys for visibility
         visible = (
-            self.config.get("visible", False)
-            or self.config.get("show_window", False)
-            or self.config.get("show_excel", False)
+            self.get_parameter("visible", False)
+            or self.get_parameter("show_window", False)
+            or self.get_parameter("show_excel", False)
         )
-        read_only = self.config.get("read_only", False)
-        create_if_missing = self.config.get("create_if_missing", False)
+        read_only = self.get_parameter("read_only", False)
+        create_if_missing = self.get_parameter("create_if_missing", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         try:
             import os
@@ -172,8 +168,14 @@ class ExcelOpenNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "workbook",
+        PropertyType.ANY,
+        required=True,
+        label="Workbook",
+        tooltip="Excel workbook object",
+    ),
     PropertyDef(
         "sheet",
         PropertyType.STRING,
@@ -194,6 +196,7 @@ class ExcelOpenNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="desktop")
 class ExcelReadCellNode(BaseNode):
     """
     Node to read a cell value from Excel.
@@ -236,15 +239,10 @@ class ExcelReadCellNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Excel read cell operation"""
         workbook = self.get_input_value("workbook")
-        sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
+        sheet = self.get_input_value("sheet") or self.get_parameter("sheet", 1)
         cell = self.get_input_value("cell")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if isinstance(sheet, str):
-                sheet = context.resolve_value(sheet)
-            if cell:
-                cell = context.resolve_value(cell)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -273,8 +271,14 @@ class ExcelReadCellNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "workbook",
+        PropertyType.ANY,
+        required=True,
+        label="Workbook",
+        tooltip="Excel workbook object",
+    ),
     PropertyDef(
         "sheet",
         PropertyType.STRING,
@@ -303,6 +307,7 @@ class ExcelReadCellNode(BaseNode):
         tooltip="Value to write to the cell",
     ),
 )
+@node(category="desktop")
 class ExcelWriteCellNode(BaseNode):
     """
     Node to write a value to an Excel cell.
@@ -345,16 +350,11 @@ class ExcelWriteCellNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Excel write cell operation"""
         workbook = self.get_input_value("workbook")
-        sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
+        sheet = self.get_input_value("sheet") or self.get_parameter("sheet", 1)
         cell = self.get_input_value("cell")
         value = self.get_input_value("value")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if isinstance(sheet, str):
-                sheet = context.resolve_value(sheet)
-            if cell:
-                cell = context.resolve_value(cell)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -382,8 +382,14 @@ class ExcelWriteCellNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "workbook",
+        PropertyType.ANY,
+        required=True,
+        label="Workbook",
+        tooltip="Excel workbook object",
+    ),
     PropertyDef(
         "sheet",
         PropertyType.STRING,
@@ -404,6 +410,7 @@ class ExcelWriteCellNode(BaseNode):
         essential=True,
     ),
 )
+@node(category="desktop")
 class ExcelGetRangeNode(BaseNode):
     """
     Node to read a range of cells from Excel.
@@ -450,15 +457,10 @@ class ExcelGetRangeNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Excel get range operation"""
         workbook = self.get_input_value("workbook")
-        sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
+        sheet = self.get_input_value("sheet") or self.get_parameter("sheet", 1)
         range_ref = self.get_parameter("range")  # Check both port and config
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if isinstance(sheet, str):
-                sheet = context.resolve_value(sheet)
-            if range_ref:
-                range_ref = context.resolve_value(range_ref)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -501,8 +503,14 @@ class ExcelGetRangeNode(BaseNode):
             raise
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "workbook",
+        PropertyType.ANY,
+        required=True,
+        label="Workbook",
+        tooltip="Excel workbook object",
+    ),
     PropertyDef(
         "save",
         PropertyType.BOOLEAN,
@@ -519,6 +527,7 @@ class ExcelGetRangeNode(BaseNode):
         tooltip="Quit the Excel application after closing workbook",
     ),
 )
+@node(category="desktop")
 class ExcelCloseNode(BaseNode):
     """
     Node to close an Excel workbook.
@@ -562,8 +571,8 @@ class ExcelCloseNode(BaseNode):
         """Execute Excel close operation"""
         workbook = self.get_input_value("workbook")
         app = self.get_input_value("app")
-        save = self.config.get("save", True)
-        quit_app = self.config.get("quit_app", True)
+        save = self.get_parameter("save", True)
+        quit_app = self.get_parameter("quit_app", True)
 
         try:
             if workbook:
@@ -592,6 +601,29 @@ class ExcelCloseNode(BaseNode):
 # ============================================================================
 
 
+@properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="File Path",
+        tooltip="Path to Word file (.docx, .doc)",
+    ),
+    PropertyDef(
+        "visible",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Visible",
+        tooltip="Show Word window",
+    ),
+    PropertyDef(
+        "create_if_missing",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Create If Missing",
+        tooltip="Create new document if not found",
+    ),
+)
 @node(category="desktop")
 class WordOpenNode(BaseNode):
     """
@@ -637,18 +669,14 @@ class WordOpenNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Word open operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         # Use get_parameter to check both port value and config (properties panel)
         file_path = self.get_parameter("file_path")
-        visible = self.config.get("visible", False)
-        create_if_missing = self.config.get("create_if_missing", False)
+        visible = self.get_parameter("visible", False)
+        create_if_missing = self.get_parameter("create_if_missing", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         try:
             import os
@@ -680,6 +708,15 @@ class WordOpenNode(BaseNode):
             raise
 
 
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.ANY,
+        required=True,
+        label="Document",
+        tooltip="Word document object",
+    ),
+)
 @node(category="desktop")
 class WordGetTextNode(BaseNode):
     """
@@ -741,6 +778,43 @@ class WordGetTextNode(BaseNode):
             raise
 
 
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.ANY,
+        required=True,
+        label="Document",
+        tooltip="Word document object",
+    ),
+    PropertyDef(
+        "find_text",
+        PropertyType.STRING,
+        required=True,
+        label="Find Text",
+        tooltip="Text to find",
+    ),
+    PropertyDef(
+        "replace_text",
+        PropertyType.STRING,
+        required=True,
+        label="Replace Text",
+        tooltip="Replacement text",
+    ),
+    PropertyDef(
+        "match_case",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Match Case",
+        tooltip="Case-sensitive search",
+    ),
+    PropertyDef(
+        "replace_all",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Replace All",
+        tooltip="Replace all occurrences",
+    ),
+)
 @node(category="desktop")
 class WordReplaceTextNode(BaseNode):
     """
@@ -790,15 +864,10 @@ class WordReplaceTextNode(BaseNode):
         document = self.get_input_value("document")
         find_text = self.get_input_value("find_text")
         replace_text = self.get_input_value("replace_text")
-        match_case = self.config.get("match_case", False)
-        replace_all = self.config.get("replace_all", True)
+        match_case = self.get_parameter("match_case", False)
+        replace_all = self.get_parameter("replace_all", True)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if find_text:
-                find_text = context.resolve_value(find_text)
-            if replace_text:
-                replace_text = context.resolve_value(replace_text)
 
         if not document:
             raise ValueError("Document is required")
@@ -837,6 +906,36 @@ class WordReplaceTextNode(BaseNode):
             raise
 
 
+@properties(
+    PropertyDef(
+        "document",
+        PropertyType.ANY,
+        required=True,
+        label="Document",
+        tooltip="Word document object",
+    ),
+    PropertyDef(
+        "app",
+        PropertyType.ANY,
+        required=False,
+        label="Application",
+        tooltip="Word application (optional)",
+    ),
+    PropertyDef(
+        "save",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Save",
+        tooltip="Save before closing",
+    ),
+    PropertyDef(
+        "quit_app",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Quit App",
+        tooltip="Quit Word application",
+    ),
+)
 @node(category="desktop")
 class WordCloseNode(BaseNode):
     """
@@ -881,8 +980,8 @@ class WordCloseNode(BaseNode):
         """Execute Word close operation"""
         document = self.get_input_value("document")
         app = self.get_input_value("app")
-        save = self.config.get("save", True)
-        quit_app = self.config.get("quit_app", True)
+        save = self.get_parameter("save", True)
+        quit_app = self.get_parameter("quit_app", True)
 
         try:
             if document:
@@ -911,6 +1010,57 @@ class WordCloseNode(BaseNode):
 # ============================================================================
 
 
+@properties(
+    PropertyDef(
+        "to",
+        PropertyType.STRING,
+        required=True,
+        label="To",
+        tooltip="Recipient email address(es)",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        required=True,
+        label="Subject",
+        tooltip="Email subject",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.TEXT,
+        required=True,
+        label="Body",
+        tooltip="Email body",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        required=False,
+        label="CC",
+        tooltip="CC recipients (optional)",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        required=False,
+        label="BCC",
+        tooltip="BCC recipients (optional)",
+    ),
+    PropertyDef(
+        "attachments",
+        PropertyType.LIST,
+        required=False,
+        label="Attachments",
+        tooltip="List of file paths (optional)",
+    ),
+    PropertyDef(
+        "html_body",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="HTML Body",
+        tooltip="Body is HTML format",
+    ),
+)
 @node(category="desktop")
 class OutlookSendEmailNode(BaseNode):
     """
@@ -961,9 +1111,7 @@ class OutlookSendEmailNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook send email operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         to = self.get_input_value("to")
         subject = self.get_input_value("subject")
@@ -971,20 +1119,9 @@ class OutlookSendEmailNode(BaseNode):
         cc = self.get_input_value("cc")
         bcc = self.get_input_value("bcc")
         attachments = self.get_input_value("attachments")
-        html_body = self.config.get("html_body", False)
+        html_body = self.get_parameter("html_body", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if to:
-                to = context.resolve_value(to)
-            if subject:
-                subject = context.resolve_value(subject)
-            if body:
-                body = context.resolve_value(body)
-            if cc:
-                cc = context.resolve_value(cc)
-            if bcc:
-                bcc = context.resolve_value(bcc)
 
         if not to:
             raise ValueError("Recipient is required")
@@ -1027,6 +1164,29 @@ class OutlookSendEmailNode(BaseNode):
             raise
 
 
+@properties(
+    PropertyDef(
+        "folder",
+        PropertyType.STRING,
+        default="Inbox",
+        label="Folder",
+        tooltip="Folder name",
+    ),
+    PropertyDef(
+        "count",
+        PropertyType.INTEGER,
+        default=10,
+        label="Count",
+        tooltip="Number of emails to read",
+    ),
+    PropertyDef(
+        "unread_only",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Unread Only",
+        tooltip="Only read unread emails",
+    ),
+)
 @node(category="desktop")
 class OutlookReadEmailsNode(BaseNode):
     """
@@ -1069,13 +1229,11 @@ class OutlookReadEmailsNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook read emails operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
-        folder_name = self.config.get("folder", "Inbox")
-        max_count = self.config.get("count", 10)
-        unread_only = self.config.get("unread_only", False)
+        folder_name = self.get_parameter("folder", "Inbox")
+        max_count = self.get_parameter("count", 10)
+        unread_only = self.get_parameter("unread_only", False)
 
         try:
             outlook = win32com.client.Dispatch("Outlook.Application")
@@ -1105,9 +1263,7 @@ class OutlookReadEmailsNode(BaseNode):
                     "sender": message.SenderEmailAddress,
                     "sender_name": message.SenderName,
                     "received": str(message.ReceivedTime),
-                    "body": message.Body[:500]
-                    if message.Body
-                    else "",  # First 500 chars
+                    "body": message.Body[:500] if message.Body else "",  # First 500 chars
                     "unread": message.UnRead,
                     "has_attachments": message.Attachments.Count > 0,
                 }
@@ -1129,6 +1285,15 @@ class OutlookReadEmailsNode(BaseNode):
             raise
 
 
+@properties(
+    PropertyDef(
+        "unread_only",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Unread Only",
+        tooltip="Only count unread emails",
+    ),
+)
 @node(category="desktop")
 class OutlookGetInboxCountNode(BaseNode):
     """
@@ -1169,9 +1334,9 @@ class OutlookGetInboxCountNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook get inbox count operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+
+        unread_only = self.get_parameter("unread_only", False)
 
         try:
             outlook = win32com.client.Dispatch("Outlook.Application")
@@ -1181,16 +1346,21 @@ class OutlookGetInboxCountNode(BaseNode):
             total_count = inbox.Items.Count
             unread_count = inbox.UnReadItemCount
 
+            result_count = unread_count if unread_only else total_count
+
             self.set_output_value("total_count", total_count)
             self.set_output_value("unread_count", unread_count)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(f"Inbox: {total_count} total, {unread_count} unread")
+            logger.info(
+                f"Inbox: {total_count} total, {unread_count} unread (Requested: {'unread' if unread_only else 'total'})"
+            )
             return {
                 "success": True,
                 "total_count": total_count,
                 "unread_count": unread_count,
+                "count": result_count,
             }
 
         except Exception as e:

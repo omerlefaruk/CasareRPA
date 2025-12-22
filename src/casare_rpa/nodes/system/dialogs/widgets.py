@@ -5,7 +5,10 @@ These factory functions create themed widgets for runtime dialogs,
 ensuring visual consistency with the CasareRPA theme.
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QLineEdit, QTextEdit
 
 
 def _create_styled_line_edit(

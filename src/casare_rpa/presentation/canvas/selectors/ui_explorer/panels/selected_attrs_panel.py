@@ -246,9 +246,7 @@ class SelectedAttributesPanel(QFrame):
                 except (RuntimeError, TypeError):
                     pass
                 try:
-                    self._model.attribute_toggled.disconnect(
-                        self._on_model_attribute_toggled
-                    )
+                    self._model.attribute_toggled.disconnect(self._on_model_attribute_toggled)
                 except (RuntimeError, TypeError):
                     pass
 
@@ -428,9 +426,7 @@ class SelectedAttributesPanel(QFrame):
         # Emit signal
         self.attribute_toggled.emit(name, is_checked)
 
-    def _move_item_to_section(
-        self, item: QTreeWidgetItem, name: str, is_checked: bool
-    ) -> None:
+    def _move_item_to_section(self, item: QTreeWidgetItem, name: str, is_checked: bool) -> None:
         """
         Move an item between Selected and Unselected sections.
 
@@ -447,9 +443,7 @@ class SelectedAttributesPanel(QFrame):
             self._updating = False
             return
 
-        target_parent = (
-            self._selected_section if is_checked else self._unselected_section
-        )
+        target_parent = self._selected_section if is_checked else self._unselected_section
 
         # Only move if parent is different
         if current_parent != target_parent:
@@ -518,9 +512,7 @@ class SelectedAttributesPanel(QFrame):
                 return  # Cannot uncheck required
 
         self._updating = True
-        item.setCheckState(
-            0, Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
-        )
+        item.setCheckState(0, Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked)
 
         # Move to appropriate section
         self._move_item_to_section(item, name, checked)

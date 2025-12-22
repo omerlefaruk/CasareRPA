@@ -94,9 +94,7 @@ class ParallelExecutionStrategy:
             # Note: Pause handling is managed by main loop or ignored here for simplicity in this refactor
             curr_id = queue.pop(0)
 
-            if curr_id in executed and not self.orchestrator.is_control_flow_node(
-                curr_id
-            ):
+            if curr_id in executed and not self.orchestrator.is_control_flow_node(curr_id):
                 continue
 
             try:
@@ -111,9 +109,7 @@ class ParallelExecutionStrategy:
             # We must manually transfer inputs using the specific context.
             # To fix this properly, VariableResolver should accept context in transfer().
             # Assuming we patch that:
-            self.variable_resolver.transfer_inputs_to_node(
-                curr_id, context_override=context
-            )
+            self.variable_resolver.transfer_inputs_to_node(curr_id, context_override=context)
 
             result = await executor.execute(node)
             if not result.success:
@@ -129,7 +125,7 @@ class ParallelExecutionStrategy:
         """Executes ForkNode branches concurrently."""
         branches = fork_result.get("parallel_branches", [])
         fork_id = fork_result.get("fork_id")
-        fail_fast = fork_result.get("fail_fast", False)
+        fork_result.get("fail_fast", False)
 
         if not branches:
             return
@@ -145,9 +141,7 @@ class ParallelExecutionStrategy:
                 branch_ctx = self.context.clone_for_branch(port)
 
                 # Run until Join
-                await self._run_until_join(
-                    target, branch_ctx, fork_result.get("paired_join_id")
-                )
+                await self._run_until_join(target, branch_ctx, fork_result.get("paired_join_id"))
 
                 return port, branch_ctx.variables, True
             except Exception as e:
@@ -194,9 +188,7 @@ class ParallelExecutionStrategy:
                     return None
 
                 # Execute chain
-                await self._run_until_join(
-                    body_start, item_ctx, None
-                )  # Run until end of chain
+                await self._run_until_join(body_start, item_ctx, None)  # Run until end of chain
                 return item_ctx.variables
             except Exception as e:
                 logger.error(f"Parallel Item {idx} failed: {e}")
@@ -224,9 +216,7 @@ class ParallelExecutionStrategy:
 
             try:
                 node = self.get_node(curr)
-                self.variable_resolver.transfer_inputs_to_node(
-                    curr, context_override=ctx
-                )
+                self.variable_resolver.transfer_inputs_to_node(curr, context_override=ctx)
                 res = await executor.execute(node)
                 if not res.success:
                     break

@@ -91,9 +91,7 @@ class EventBusController(BaseController):
                 self._subscribers[event_type].remove(callback)
                 logger.debug(f"Unsubscribed from event: {event_type}")
 
-    def dispatch(
-        self, event_type: str, source: str, data: Optional[Dict[str, Any]] = None
-    ) -> None:
+    def dispatch(self, event_type: str, source: str, data: Optional[Dict[str, Any]] = None) -> None:
         """
         Dispatch an event to all subscribers.
 

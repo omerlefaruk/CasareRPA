@@ -8,7 +8,11 @@ Project Creation Wizard Dialog.
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.entities.project_template import ProjectTemplate
+    from casare_rpa.domain.entities.project import Project
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -70,9 +74,7 @@ class TemplateCard(QFrame):
         # Icon with color background
         icon_container = QWidget()
         icon_container.setFixedSize(48, 48)
-        icon_container.setStyleSheet(
-            f"background: {self._template.color}; border-radius: 8px;"
-        )
+        icon_container.setStyleSheet(f"background: {self._template.color}; border-radius: 8px;")
 
         icon_layout = QVBoxLayout(icon_container)
         icon_layout.setContentsMargins(0, 0, 0, 0)
@@ -193,15 +195,11 @@ class TemplatePreviewPanel(QFrame):
 
         # Header
         self._header_label = QLabel("Select a Template")
-        self._header_label.setStyleSheet(
-            "font-size: 16px; font-weight: bold; color: #D4D4D4;"
-        )
+        self._header_label.setStyleSheet("font-size: 16px; font-weight: bold; color: #D4D4D4;")
         layout.addWidget(self._header_label)
 
         # Description
-        self._description_label = QLabel(
-            "Choose a template from the list to see its details."
-        )
+        self._description_label = QLabel("Choose a template from the list to see its details.")
         self._description_label.setWordWrap(True)
         self._description_label.setStyleSheet("color: #888888; font-size: 12px;")
         layout.addWidget(self._description_label)
@@ -281,9 +279,7 @@ class TemplatePreviewPanel(QFrame):
         """Update preview with template info."""
         if not template:
             self._header_label.setText("Select a Template")
-            self._description_label.setText(
-                "Choose a template from the list to see its details."
-            )
+            self._description_label.setText("Choose a template from the list to see its details.")
             self._nodes_label.setText("No nodes yet")
             self._vars_label.setText("No variables")
             self._meta_label.setText("")
@@ -296,10 +292,10 @@ class TemplatePreviewPanel(QFrame):
         nodes_count = 0
         node_types = []
         if template.base_workflow:
-            nodes = template.base_workflow.get("nodes", [])
+            nodes = template.base_workflow.get("nodes", {})
             nodes_count = len(nodes)
-            for node in nodes[:5]:
-                node_type = node.get("type", "Unknown")
+            for node in list(nodes.values())[:5]:
+                node_type = node.get("node_type", "Unknown")
                 node_types.append(node_type.replace("Node", ""))
             if nodes_count > 5:
                 node_types.append(f"... +{nodes_count - 5} more")
@@ -307,9 +303,7 @@ class TemplatePreviewPanel(QFrame):
         if node_types:
             self._nodes_label.setText("\n".join(f"- {nt}" for nt in node_types))
         else:
-            self._nodes_label.setText(
-                f"{template.estimated_nodes} nodes (empty starter)"
-            )
+            self._nodes_label.setText(f"{template.estimated_nodes} nodes (empty starter)")
 
         # Show variables
         if template.default_variables:
@@ -615,9 +609,7 @@ class ProjectWizard(QDialog):
             "These will be added to your project variables."
         )
         import_desc.setWordWrap(True)
-        import_desc.setStyleSheet(
-            "color: #888888; font-size: 11px; margin-bottom: 8px;"
-        )
+        import_desc.setStyleSheet("color: #888888; font-size: 11px; margin-bottom: 8px;")
         import_layout.addWidget(import_desc)
 
         import_row = QHBoxLayout()
@@ -993,9 +985,7 @@ class ProjectWizard(QDialog):
                 import qasync
 
                 future = qasync.asyncio.ensure_future(do_create())
-                future.add_done_callback(
-                    lambda f: self._on_project_created(f, project_path)
-                )
+                future.add_done_callback(lambda f: self._on_project_created(f, project_path))
                 return  # Don't close dialog yet, wait for callback
             except RuntimeError:
                 # No running loop, run synchronously
@@ -1050,15 +1040,13 @@ class ProjectWizard(QDialog):
             else:
                 QTimer.singleShot(
                     0,
-                    lambda: self._show_error(
-                        f"Failed to create project:\n{result.error}"
-                    ),
+                    lambda: self._show_error(f"Failed to create project:\n{result.error}"),
                 )
 
         except Exception as e:
             logger.error(f"Project creation failed: {e}")
             QTimer.singleShot(
-                0, lambda: self._show_error(f"Failed to create project:\n{str(e)}")
+                0, lambda err=e: self._show_error(f"Failed to create project:\n{str(err)}")
             )
 
     def _finish_creation(self, project_path: Path) -> None:

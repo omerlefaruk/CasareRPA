@@ -122,19 +122,13 @@ class NodeSelectionHandler:
 
             for node in selected:
                 view = node.view
-                if (
-                    view
-                    and hasattr(view, "set_disabled")
-                    and hasattr(view, "is_disabled")
-                ):
+                if view and hasattr(view, "set_disabled") and hasattr(view, "is_disabled"):
                     current_disabled = view.is_disabled()
                     new_disabled = not current_disabled
                     view.set_disabled(new_disabled)
 
                     casare_node = (
-                        node.get_casare_node()
-                        if hasattr(node, "get_casare_node")
-                        else None
+                        node.get_casare_node() if hasattr(node, "get_casare_node") else None
                     )
                     if casare_node:
                         casare_node.config["_disabled"] = new_disabled

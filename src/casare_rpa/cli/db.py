@@ -54,9 +54,7 @@ async def _setup_postgres(url: str):
 @app.command("setup")
 def setup_db(
     url: str = typer.Option(None, "--url", help="Database connection URL"),
-    supabase: bool = typer.Option(
-        False, "--supabase", help="Use Supabase (requires env vars)"
-    ),
+    supabase: bool = typer.Option(False, "--supabase", help="Use Supabase (requires env vars)"),
 ):
     """
     Initialize the database schema.
@@ -73,9 +71,7 @@ def setup_db(
         url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
 
     if not url:
-        typer.echo(
-            "Error: No database URL provided and DATABASE_URL not set.", err=True
-        )
+        typer.echo("Error: No database URL provided and DATABASE_URL not set.", err=True)
         raise typer.Exit(1)
 
     typer.echo(f"Setting up database at {url.split('@')[-1]}...")  # Mask creds

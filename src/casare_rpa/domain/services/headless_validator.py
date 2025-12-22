@@ -10,13 +10,13 @@ Entry Points:
     - WorkflowValidationError: Structured error information
 
 Key Patterns:
-    - Uses _NODE_REGISTRY for node type validation
+    - Uses NODE_REGISTRY for node type validation
     - Uses _VISUAL_NODE_REGISTRY for visual node validation
     - Uses WorkflowAISchema for schema validation
     - Provides LLM-friendly error messages with suggestions
 
 Related:
-    - casare_rpa.nodes._NODE_REGISTRY: Executable node registry
+    - casare_rpa.nodes.registry_data.NODE_REGISTRY: Executable node registry
     - casare_rpa.presentation.canvas.visual_nodes._VISUAL_NODE_REGISTRY: Visual registry
     - casare_rpa.domain.schemas.workflow_ai.WorkflowAISchema: Schema validation
 """
@@ -94,18 +94,18 @@ class HeadlessWorkflowSandbox:
 
     def __init__(self) -> None:
         """Initialize validator with node registries."""
-        self._node_registry: Optional[Dict[str, str]] = None
+        self._node_registry: Optional[Dict[str, Any]] = None
         self._visual_registry: Optional[Dict[str, str]] = None
         self._node_classes_cache: Dict[str, Type] = {}
         self._node_ports_cache: Dict[str, Dict[str, Any]] = {}
 
-    def _get_node_registry(self) -> Dict[str, str]:
+    def _get_node_registry(self) -> Dict[str, Any]:
         """Lazy load node registry."""
         if self._node_registry is None:
             try:
-                from casare_rpa.nodes import _NODE_REGISTRY
+                from casare_rpa.nodes.registry_data import NODE_REGISTRY
 
-                self._node_registry = _NODE_REGISTRY
+                self._node_registry = NODE_REGISTRY
             except ImportError as e:
                 logger.warning(f"Could not import node registry: {e}")
                 self._node_registry = {}
@@ -135,19 +135,9 @@ class HeadlessWorkflowSandbox:
             return None
 
         try:
-            import importlib
+            from casare_rpa.nodes import get_node_class
 
-            registry_entry = registry[node_type]
-
-            if isinstance(registry_entry, tuple):
-                module_name, class_name = registry_entry
-            else:
-                module_name = registry_entry
-                class_name = node_type
-
-            full_module = f"casare_rpa.nodes.{module_name}"
-            module = importlib.import_module(full_module)
-            cls = getattr(module, class_name)
+            cls = get_node_class(node_type)
             self._node_classes_cache[node_type] = cls
             return cls
         except Exception as e:
@@ -308,17 +298,13 @@ class HeadlessWorkflowSandbox:
     def _suggest_port_names(self, node_type: str, invalid_port: str) -> str:
         """Generate suggestion for invalid port name."""
         ports = self._get_node_ports(node_type)
-        all_ports = list(ports["input_ports"].keys()) + list(
-            ports["output_ports"].keys()
-        )
+        all_ports = list(ports["input_ports"].keys()) + list(ports["output_ports"].keys())
 
         if all_ports:
             return f"Valid ports for {node_type}: {', '.join(all_ports)}"
         return f"Could not determine valid ports for {node_type}."
 
-    def validate_workflow(
-        self, workflow_json: Dict[str, Any]
-    ) -> WorkflowValidationResult:
+    def validate_workflow(self, workflow_json: Dict[str, Any]) -> WorkflowValidationResult:
         """
         Validate workflow JSON structure and contents.
 
@@ -389,9 +375,7 @@ class HeadlessWorkflowSandbox:
             return True
         return False
 
-    def _validate_node_types(
-        self, nodes: Dict[str, Any], result: WorkflowValidationResult
-    ) -> None:
+    def _validate_node_types(self, nodes: Dict[str, Any], result: WorkflowValidationResult) -> None:
         """Validate all node types exist in registry."""
         registry = self._get_node_registry()
 

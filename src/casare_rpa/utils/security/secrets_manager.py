@@ -90,9 +90,7 @@ class SecretsManager:
 
                     # Parse KEY=VALUE format
                     if "=" not in line:
-                        logger.warning(
-                            f"Invalid line {line_num} in {env_path}: missing '='"
-                        )
+                        logger.warning(f"Invalid line {line_num} in {env_path}: missing '='")
                         continue
 
                     key, _, value = line.partition("=")
@@ -125,9 +123,7 @@ class SecretsManager:
         # Environment variables have highest priority
         # They're accessed directly in get() method
 
-        logger.info(
-            f"Secrets manager initialized with {len(self._secrets)} secrets from files"
-        )
+        logger.info(f"Secrets manager initialized with {len(self._secrets)} secrets from files")
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """

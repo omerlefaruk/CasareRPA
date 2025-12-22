@@ -43,17 +43,13 @@ def _setup_paths() -> dict:
     if IS_FROZEN:
         # PyInstaller frozen executable
         _appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-        _localappdata = os.environ.get(
-            "LOCALAPPDATA", str(Path.home() / "AppData" / "Local")
-        )
+        _localappdata = os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))
 
         # User data directory (writable)
         paths["USER_DATA_DIR"] = _appdata / "CasareRPA"
 
         # Playwright browsers path
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(
-            Path(_localappdata) / "ms-playwright"
-        )
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(Path(_localappdata) / "ms-playwright")
 
         # Application installation directory (read-only)
         paths["APP_DIR"] = Path(sys.executable).parent
@@ -133,7 +129,7 @@ DEFAULT_WINDOW_HEIGHT: Final[int] = 900
 MIN_WINDOW_WIDTH: Final[int] = 1024
 MIN_WINDOW_HEIGHT: Final[int] = 768
 GUI_WINDOW_WIDTH: Final[int] = 1280
-GUI_WINDOW_HEIGHT: Final[int] = 768
+GUI_WINDOW_HEIGHT: Final[int] = 720
 GUI_THEME: Final[str] = "dark"
 
 # Execution timeout settings

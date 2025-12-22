@@ -117,12 +117,8 @@ class SelectorEditorPanel(QFrame):
         # Scroll area for attribute rows
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
-        self._scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        self._scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
+        self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
         # Container for rows
@@ -232,9 +228,7 @@ class SelectorEditorPanel(QFrame):
                 except (RuntimeError, TypeError):
                     pass
                 try:
-                    self._model.attribute_toggled.disconnect(
-                        self._on_model_attribute_toggled
-                    )
+                    self._model.attribute_toggled.disconnect(self._on_model_attribute_toggled)
                 except (RuntimeError, TypeError):
                     pass
 

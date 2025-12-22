@@ -104,9 +104,7 @@ def _parse_postgresql_result(result: str) -> int:
         return 0
 
 
-def _check_sql_injection_risk(
-    original_query: str, resolved_query: str, node_name: str
-) -> None:
+def _check_sql_injection_risk(original_query: str, resolved_query: str, node_name: str) -> None:
     """
     Check for potential SQL injection in resolved query variables.
 
@@ -168,9 +166,7 @@ class DatabaseConnection:
         pool: Any = None,
     ) -> None:
         self.db_type = db_type
-        self.connection = (
-            connection  # Single connection or acquired connection from pool
-        )
+        self.connection = connection  # Single connection or acquired connection from pool
         self.connection_string = connection_string
         self.in_transaction = in_transaction
         self.cursor: Optional[Any] = None
@@ -179,9 +175,7 @@ class DatabaseConnection:
         self.last_lastrowid: Optional[int] = None
         self._is_pool = is_pool
         self._pool = pool  # Connection pool (asyncpg.Pool or aiomysql.Pool)
-        self._acquired_conn: Optional[Any] = (
-            None  # Currently acquired connection from pool
-        )
+        self._acquired_conn: Optional[Any] = None  # Currently acquired connection from pool
         self._transaction: Optional[Any] = None  # Active transaction (for asyncpg)
 
     async def acquire(self) -> Any:
@@ -231,7 +225,6 @@ class DatabaseConnection:
             self.connection = None
 
 
-@node(category="database")
 @properties(
     CREDENTIAL_NAME_PROP,  # For vault credential lookup
     PropertyDef(
@@ -357,6 +350,7 @@ class DatabaseConnection:
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
     """
     Establish a database connection.
@@ -400,9 +394,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
     # @requires: database
     # @ports: db_type, host, port, database, username, password, connection_string -> connection, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Database Connect", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Database Connect", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -458,8 +450,6 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
             )
 
             # Resolve {{variable}} patterns in connection parameters
-            host = context.resolve_value(host)
-            database = context.resolve_value(database)
 
             logger.info(f"Connecting to {db_type} database")
 
@@ -512,9 +502,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Database connection failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Database connection failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -629,8 +617,14 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         )
 
 
-@node(category="database")
 @properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
     PropertyDef(
         "query",
         PropertyType.STRING,
@@ -663,6 +657,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class ExecuteQueryNode(BaseNode):
     """
     Execute a SELECT query and return results.
@@ -684,9 +679,7 @@ class ExecuteQueryNode(BaseNode):
     # @requires: database
     # @ports: connection, query, parameters -> results, row_count, columns, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Execute Query", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Execute Query", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -708,9 +701,7 @@ class ExecuteQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value(
-                "connection"
-            )
+            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
             query = self.get_parameter("query", "")
             parameters = self.get_parameter("parameters", [])
             retry_count = self.get_parameter("retry_count", 0)
@@ -723,7 +714,6 @@ class ExecuteQueryNode(BaseNode):
 
             # Resolve {{variable}} patterns in query
             original_query = query
-            query = context.resolve_value(query)
 
             # Security: Check for potential SQL injection from resolved variables
             _check_sql_injection_risk(original_query, query, "ExecuteQueryNode")
@@ -738,25 +728,19 @@ class ExecuteQueryNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for query"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for query")
 
                     results: List[Dict[str, Any]] = []
                     columns: List[str] = []
 
                     if connection.db_type == "sqlite":
-                        results, columns = await self._execute_sqlite(
-                            connection, query, parameters
-                        )
+                        results, columns = await self._execute_sqlite(connection, query, parameters)
                     elif connection.db_type == "postgresql":
                         results, columns = await self._execute_postgresql(
                             connection, query, parameters
                         )
                     elif connection.db_type == "mysql":
-                        results, columns = await self._execute_mysql(
-                            connection, query, parameters
-                        )
+                        results, columns = await self._execute_mysql(connection, query, parameters)
 
                     connection.last_results = results
 
@@ -766,9 +750,7 @@ class ExecuteQueryNode(BaseNode):
                     self.set_output_value("success", True)
                     self.set_output_value("error", "")
 
-                    logger.debug(
-                        f"Query returned {len(results)} rows (attempt {attempts})"
-                    )
+                    logger.debug(f"Query returned {len(results)} rows (attempt {attempts})")
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -780,9 +762,7 @@ class ExecuteQueryNode(BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Query execution failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Query execution failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -811,16 +791,12 @@ class ExecuteQueryNode(BaseNode):
         if AIOSQLITE_AVAILABLE:
             cursor = await conn.execute(query, parameters or [])
             rows = await cursor.fetchall()
-            columns = (
-                [desc[0] for desc in cursor.description] if cursor.description else []
-            )
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
             results = [dict(zip(columns, row)) for row in rows]
         else:
             cursor = conn.execute(query, parameters or [])
             rows = cursor.fetchall()
-            columns = (
-                [desc[0] for desc in cursor.description] if cursor.description else []
-            )
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
             results = [dict(zip(columns, row)) for row in rows]
 
         return results, columns
@@ -833,11 +809,7 @@ class ExecuteQueryNode(BaseNode):
 
         try:
             # asyncpg uses $1, $2 for parameters
-            rows = (
-                await conn.fetch(query, *parameters)
-                if parameters
-                else await conn.fetch(query)
-            )
+            rows = await conn.fetch(query, *parameters) if parameters else await conn.fetch(query)
 
             if rows:
                 columns = list(rows[0].keys())
@@ -860,19 +832,21 @@ class ExecuteQueryNode(BaseNode):
             async with conn.cursor(aiomysql.DictCursor) as cursor:
                 await cursor.execute(query, parameters or [])
                 rows = await cursor.fetchall()
-                columns = (
-                    [desc[0] for desc in cursor.description]
-                    if cursor.description
-                    else []
-                )
+                columns = [desc[0] for desc in cursor.description] if cursor.description else []
 
             return list(rows), columns
         finally:
             await connection.release()
 
 
-@node(category="database")
 @properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
     PropertyDef(
         "query",
         PropertyType.STRING,
@@ -905,6 +879,7 @@ class ExecuteQueryNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class ExecuteNonQueryNode(BaseNode):
     """
     Execute INSERT, UPDATE, DELETE, or DDL statements.
@@ -926,9 +901,7 @@ class ExecuteNonQueryNode(BaseNode):
     # @requires: database
     # @ports: connection, query, parameters -> rows_affected, last_insert_id, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -949,9 +922,7 @@ class ExecuteNonQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value(
-                "connection"
-            )
+            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
             query = self.get_parameter("query", "")
             parameters = self.get_parameter("parameters", [])
             retry_count = self.get_parameter("retry_count", 0)
@@ -964,7 +935,6 @@ class ExecuteNonQueryNode(BaseNode):
 
             # Resolve {{variable}} patterns in query
             original_query = query
-            query = context.resolve_value(query)
 
             # Security: Check for potential SQL injection from resolved variables
             _check_sql_injection_risk(original_query, query, "ExecuteNonQueryNode")
@@ -979,9 +949,7 @@ class ExecuteNonQueryNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for statement"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for statement")
 
                     rows_affected = 0
                     last_insert_id: Optional[int] = None
@@ -1007,9 +975,7 @@ class ExecuteNonQueryNode(BaseNode):
                     self.set_output_value("success", True)
                     self.set_output_value("error", "")
 
-                    logger.debug(
-                        f"Statement affected {rows_affected} rows (attempt {attempts})"
-                    )
+                    logger.debug(f"Statement affected {rows_affected} rows (attempt {attempts})")
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -1021,9 +987,7 @@ class ExecuteNonQueryNode(BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Statement execution failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Statement execution failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -1072,9 +1036,7 @@ class ExecuteNonQueryNode(BaseNode):
         try:
             # asyncpg returns status string like "INSERT 0 1" or "UPDATE 5"
             result = (
-                await conn.execute(query, *parameters)
-                if parameters
-                else await conn.execute(query)
+                await conn.execute(query, *parameters) if parameters else await conn.execute(query)
             )
 
             # Parse rows affected from result
@@ -1105,8 +1067,16 @@ class ExecuteNonQueryNode(BaseNode):
                 await connection.release()
 
 
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
+)
 @node(category="database")
-@properties()  # Input port driven
 class BeginTransactionNode(BaseNode):
     """
     Begin a database transaction.
@@ -1124,9 +1094,7 @@ class BeginTransactionNode(BaseNode):
     # @requires: database
     # @ports: connection -> connection, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Begin Transaction", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Begin Transaction", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1190,8 +1158,16 @@ class BeginTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection with active transaction",
+    ),
+)
 @node(category="database")
-@properties()  # Input port driven
 class CommitTransactionNode(BaseNode):
     """
     Commit the current database transaction.
@@ -1209,9 +1185,7 @@ class CommitTransactionNode(BaseNode):
     # @requires: database
     # @ports: connection -> connection, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Commit Transaction", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Commit Transaction", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1276,8 +1250,16 @@ class CommitTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection with active transaction",
+    ),
+)
 @node(category="database")
-@properties()  # Input port driven
 class RollbackTransactionNode(BaseNode):
     """
     Rollback the current database transaction.
@@ -1295,9 +1277,7 @@ class RollbackTransactionNode(BaseNode):
     # @requires: database
     # @ports: connection -> connection, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Rollback Transaction", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Rollback Transaction", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1362,8 +1342,16 @@ class RollbackTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection to close",
+    ),
+)
 @node(category="database")
-@properties()  # Input port driven
 class CloseDatabaseNode(BaseNode):
     """
     Close a database connection.
@@ -1380,9 +1368,7 @@ class CloseDatabaseNode(BaseNode):
     # @requires: database
     # @ports: connection -> success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Close Database", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Close Database", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1398,9 +1384,7 @@ class CloseDatabaseNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value(
-                "connection"
-            )
+            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -1428,8 +1412,14 @@ class CloseDatabaseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@node(category="database")
 @properties(
+    PropertyDef(
+        "connection",
+        PropertyType.ANY,
+        required=True,
+        label="Connection",
+        tooltip="Database connection",
+    ),
     PropertyDef(
         "statements",
         PropertyType.LIST,
@@ -1461,6 +1451,7 @@ class CloseDatabaseNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="database")
 class ExecuteBatchNode(BaseNode):
     """
     Execute multiple SQL statements as a batch.
@@ -1482,9 +1473,7 @@ class ExecuteBatchNode(BaseNode):
     # @requires: database
     # @ports: connection, statements -> results, total_rows_affected, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "Execute Batch", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Execute Batch", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1503,9 +1492,7 @@ class ExecuteBatchNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value(
-                "connection"
-            )
+            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
             statements = self.get_parameter("statements", [])
             stop_on_error = self.get_parameter("stop_on_error", True)
             retry_count = self.get_parameter("retry_count", 0)
@@ -1616,9 +1603,7 @@ class ExecuteBatchNode(BaseNode):
             self.set_output_value("success", all_success)
             self.set_output_value("error", "; ".join(errors) if errors else "")
 
-            logger.debug(
-                f"Batch executed {len(statements)} statements, {total_rows} rows affected"
-            )
+            logger.debug(f"Batch executed {len(statements)} statements, {total_rows} rows affected")
 
             self.status = NodeStatus.SUCCESS if all_success else NodeStatus.ERROR
             return {

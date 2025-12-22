@@ -117,6 +117,15 @@ from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
     ProfilingEntry,
     PercentageBarDelegate,
 )
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
+    ExpressionEditorPopup,
+    EditorType,
+    CodeExpressionEditor,
+    MarkdownEditor,
+    RichTextEditor,
+    ExpandButton,
+)
+from casare_rpa.presentation.canvas.ui.widgets.toast import ToastNotification
 
 __all__ = [
     "VariableEditorWidget",
@@ -212,4 +221,12 @@ __all__ = [
     "ProfilingTreeWidget",
     "ProfilingEntry",
     "PercentageBarDelegate",
+    # Expression Editor
+    "ExpressionEditorPopup",
+    "EditorType",
+    "CodeExpressionEditor",
+    "MarkdownEditor",
+    "RichTextEditor",
+    "ExpandButton",
+    "ToastNotification",
 ]

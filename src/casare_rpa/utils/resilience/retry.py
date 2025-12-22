@@ -454,14 +454,10 @@ async def retry_operation(
         except Exception as e:
             last_exception = e
             if attempt < max_attempts:
-                logger.warning(
-                    f"{operation_name} failed (attempt {attempt}/{max_attempts}): {e}"
-                )
+                logger.warning(f"{operation_name} failed (attempt {attempt}/{max_attempts}): {e}")
                 if on_retry:
                     on_retry(attempt, e)
                 await asyncio.sleep(current_delay)
                 current_delay *= backoff
 
-    return RetryResult(
-        success=False, value=None, attempts=max_attempts, last_error=last_exception
-    )
+    return RetryResult(success=False, value=None, attempts=max_attempts, last_error=last_exception)

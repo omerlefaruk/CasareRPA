@@ -9,14 +9,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "sse_url",
@@ -64,6 +60,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Connection timeout (0 = no timeout)",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class SSETriggerNode(BaseTriggerNode):
     """
     SSE trigger node that listens to Server-Sent Events.
@@ -105,16 +102,16 @@ class SSETriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get SSE-specific configuration."""
-        event_types_str = self.config.get("event_types", "")
+        event_types_str = self.get_parameter("event_types", "")
         event_types = [e.strip() for e in event_types_str.split(",") if e.strip()]
 
         return {
-            "sse_url": self.config.get("sse_url", ""),
+            "sse_url": self.get_parameter("sse_url", ""),
             "event_types": event_types,
-            "headers": self.config.get("headers", "{}"),
-            "reconnect_delay_seconds": self.config.get("reconnect_delay_seconds", 5),
-            "max_reconnect_attempts": self.config.get("max_reconnect_attempts", 10),
-            "timeout_seconds": self.config.get("timeout_seconds", 0),
+            "headers": self.get_parameter("headers", "{}"),
+            "reconnect_delay_seconds": self.get_parameter("reconnect_delay_seconds", 5),
+            "max_reconnect_attempts": self.get_parameter("max_reconnect_attempts", 10),
+            "timeout_seconds": self.get_parameter("timeout_seconds", 0),
             # Mark as SSE for the trigger implementation
             "_trigger_subtype": "sse",
         }

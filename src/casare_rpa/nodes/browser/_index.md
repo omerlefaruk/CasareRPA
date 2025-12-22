@@ -12,6 +12,7 @@ Browser automation base classes and utilities.
 | `smart_selector_node.py` | AI selectors | SmartSelectorNode |
 | `form_filler_node.py` | Form automation | FormFillerNode |
 | `table_scraper_node.py` | Table extraction | TableScraperNode |
+| `evaluate_node.py` | JavaScript execution | BrowserEvaluateNode |
 | `detect_forms_node.py` | Form detection | DetectFormsNode |
 | `visual_find_node.py` | Visual matching | VisualFindNode |
 

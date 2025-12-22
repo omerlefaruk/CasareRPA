@@ -28,6 +28,8 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 # Import variable picker components
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
     VariableAwareLineEdit,
@@ -142,12 +144,46 @@ class CasareCheckBox:
         group_box = node_widget.widget()
         if group_box:
             group_box.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
-            # Calculate required width: checkbox indicator (14px) + spacing (6px) + text
+
+            # NodeGraphQt's widget sizing is based primarily on the embedded widget,
+            # not the group box title. For boolean properties we often set the
+            # *parameter label* as the group box title and leave the checkbox text
+            # empty, which can make the title get clipped.
             fm = QFontMetrics(font)
-            text_width = fm.horizontalAdvance(checkbox.text())
-            min_width = 14 + 6 + text_width + 8  # indicator + spacing + text + padding
-            checkbox.setMinimumWidth(min_width)
-            group_box.setMinimumWidth(min_width)
+            try:
+                title_text = node_widget.get_label() or ""
+            except Exception:
+                title_text = ""
+
+            checkbox_text = checkbox.text() or ""
+            title_width = fm.horizontalAdvance(title_text) if title_text else 0
+            checkbox_text_width = fm.horizontalAdvance(checkbox_text) if checkbox_text else 0
+
+            # Ensure enough room for either the group box title or the checkbox text.
+            # NodeGraphQt nodes also enforce a practical minimum widget width (~200px)
+            # in our CasareNodeItem sizing logic.
+            indicator_width = 14
+            indicator_spacing = 6
+            horizontal_padding = 18
+            required_width = max(
+                200,
+                title_width + horizontal_padding,
+                indicator_width + indicator_spacing + checkbox_text_width + horizontal_padding,
+            )
+
+            group_box.setMinimumWidth(required_width)
+            group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            checkbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            checkbox.setMinimumWidth(max(0, required_width - horizontal_padding))
+
+            # Also update the proxy widget sizing so boundingRect aligns with the
+            # sizeHint used for node sizing and widget placement.
+            try:
+                node_widget.setMinimumWidth(required_width)
+                node_widget.resize(required_width, group_box.sizeHint().height())
+            except Exception:
+                pass
+
             group_box.adjustSize()
 
         checkmark_path = cls._get_checkmark_path()
@@ -155,30 +191,30 @@ class CasareCheckBox:
         # Dark blue checkbox styling with white checkmark - smaller indicator for 8pt font
         checkbox_style = f"""
             QCheckBox {{
-                color: #a1a1aa;
+                color: {THEME.text_secondary};
                 spacing: 6px;
             }}
             QCheckBox::indicator {{
                 width: 14px;
                 height: 14px;
-                border: 1px solid #52525b;
+                border: 1px solid {THEME.border_light};
                 border-radius: 3px;
-                background-color: #18181b;
+                background-color: {THEME.bg_darkest};
             }}
 
             QCheckBox::indicator:unchecked:hover {{
-                border-color: #6366f1;
+                border-color: {THEME.accent_primary};
             }}
 
             QCheckBox::indicator:checked {{
-                background-color: #6366f1;
-                border-color: #6366f1;
+                background-color: {THEME.accent_primary};
+                border-color: {THEME.accent_primary};
                 image: url({checkmark_path});
             }}
 
             QCheckBox::indicator:checked:hover {{
-                background-color: #4f46e5;
-                border-color: #4f46e5;
+                background-color: {THEME.accent_hover};
+                border-color: {THEME.accent_hover};
             }}
         """
 
@@ -429,9 +465,7 @@ class CasareNodeDataDropFix:
                         converted_urls = []
                         for url in urls:
                             if isinstance(url, QUrl):
-                                converted_urls.append(
-                                    url.toLocalFile() or url.toString()
-                                )
+                                converted_urls.append(url.toLocalFile() or url.toString())
                             else:
                                 converted_urls.append(str(url))
                         # Create modified data with string paths
@@ -510,18 +544,13 @@ class CasareNodeBaseFontFix:
                 text_width = fm.horizontalAdvance(port_name)
 
                 # Truncate if text exceeds max width OR max character count
-                if (
-                    text_width > PORT_LABEL_MAX_WIDTH_PX
-                    or len(port_name) > PORT_LABEL_MAX_LENGTH
-                ):
+                if text_width > PORT_LABEL_MAX_WIDTH_PX or len(port_name) > PORT_LABEL_MAX_LENGTH:
                     # Use the smaller of the two constraints
                     max_width = min(
                         PORT_LABEL_MAX_WIDTH_PX,
                         fm.horizontalAdvance("x" * PORT_LABEL_MAX_LENGTH),
                     )
-                    display_name = fm.elidedText(
-                        port_name, Qt.TextElideMode.ElideRight, max_width
-                    )
+                    display_name = fm.elidedText(port_name, Qt.TextElideMode.ElideRight, max_width)
 
                 text = QGraphicsTextItem(display_name, self)
                 text.setFont(font)
@@ -731,7 +760,6 @@ class CasarePortItemShapeFix:
             from casare_rpa.domain.value_objects.types import DataType
 
             # Store original paint method
-            original_paint = PortItem.paint
 
             def patched_paint(self, painter, option, widget):
                 """
@@ -882,9 +910,7 @@ def _install_widget_init_patches() -> None:
         # Patch NodeCheckBox
         original_checkbox_init = NodeCheckBox.__init__
 
-        def patched_checkbox_init(
-            self, parent=None, name="", label="", text="", state=False
-        ):
+        def patched_checkbox_init(self, parent=None, name="", label="", text="", state=False):
             original_checkbox_init(self, parent, name, label, text, state)
             CasareCheckBox.apply_styling(self)
 
@@ -938,6 +964,7 @@ def create_variable_text_widget(
     text: str = "",
     placeholder_text: str = "",
     tooltip: str = "",
+    show_expand_button: bool = True,
 ):
     """
     Factory function to create a variable-aware text input widget.
@@ -952,6 +979,7 @@ def create_variable_text_widget(
         text: Initial text value
         placeholder_text: Placeholder text when empty
         tooltip: Tooltip text for the widget
+        show_expand_button: Whether to show expand button for expression editor
 
     Returns:
         NodeBaseWidget with VariableAwareLineEdit, or None if unavailable
@@ -965,25 +993,27 @@ def create_variable_text_widget(
         logger.error("NodeGraphQt or variable picker not available")
         return None
 
-    # Create VariableAwareLineEdit directly
-    line_edit = VariableAwareLineEdit()
+    # Create VariableAwareLineEdit directly with expand button option
+    line_edit = VariableAwareLineEdit(show_expand_button=show_expand_button)
     line_edit.setText(text)
     line_edit.setPlaceholderText(placeholder_text)
 
-    # Apply standard styling with padding for {x} button
-    line_edit.setStyleSheet("""
-        QLineEdit {
+    # Apply standard styling with padding for both {x} and ... buttons
+    # Extra padding on right: variable button (16px) + expand button (16px) + spacing (6px) + margin (4px) = 42px
+    right_padding = 46 if show_expand_button else 28
+    line_edit.setStyleSheet(f"""
+        QLineEdit {{
             background: rgb(60, 60, 80);
             border: 1px solid rgb(80, 80, 100);
             border-radius: 3px;
             color: rgba(230, 230, 230, 255);
-            padding: 2px 28px 2px 4px;
+            padding: 2px {right_padding}px 2px 4px;
             selection-background-color: rgba(100, 150, 200, 150);
-        }
-        QLineEdit:focus {
+        }}
+        QLineEdit:focus {{
             background: rgb(70, 70, 90);
             border: 1px solid rgb(100, 150, 200);
-        }
+        }}
     """)
 
     if tooltip:
@@ -1196,9 +1226,7 @@ class NodeFilePathWidget:
         return create_file_path_widget(name, label, file_filter, placeholder, text)
 
 
-def create_directory_path_widget(
-    name: str, label: str, placeholder: str, text: str = ""
-):
+def create_directory_path_widget(name: str, label: str, placeholder: str, text: str = ""):
     """
     Factory function to create a NodeDirectoryPathWidget.
 
@@ -1418,9 +1446,7 @@ def set_variable_picker_node_context(
                 return
 
         # If discovery failed, log debug message
-        logger.debug(
-            "Variable picker: Node context not available (widget not yet in hierarchy)"
-        )
+        logger.debug("Variable picker: Node context not available (widget not yet in hierarchy)")
 
     except Exception as e:
         logger.debug(f"Variable picker: Could not set node context: {e}")
@@ -1583,12 +1609,8 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
                         viewer = graph._viewer
                         if hasattr(viewer, "window"):
                             main_window = viewer.window()
-                            if main_window and hasattr(
-                                main_window, "_selector_controller"
-                            ):
-                                browser_page = (
-                                    main_window._selector_controller.get_browser_page()
-                                )
+                            if main_window and hasattr(main_window, "_selector_controller"):
+                                browser_page = main_window._selector_controller.get_browser_page()
 
             # Determine mode
             mode = "browser" if browser_page else "desktop"
@@ -1612,9 +1634,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
                 if name == "image_template":
                     # Extract cv_template from healing_context
                     image_base64 = None
-                    logger.info(
-                        "ImageTemplate: Processing result for image_template property"
-                    )
+                    logger.info("ImageTemplate: Processing result for image_template property")
                     logger.info(
                         f"ImageTemplate: has healing_context={hasattr(result, 'healing_context')}"
                     )
@@ -1633,9 +1653,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
                                 f"ImageTemplate: image_base64 length={len(image_base64) if image_base64 else 0}"
                             )
                         else:
-                            logger.warning(
-                                "ImageTemplate: cv_template is empty or missing"
-                            )
+                            logger.warning("ImageTemplate: cv_template is empty or missing")
                     else:
                         logger.warning(
                             f"ImageTemplate: No healing_context or empty. Value={getattr(result, 'healing_context', 'N/A')}"
@@ -2312,9 +2330,7 @@ class NodeGoogleSheetWidget:
         spreadsheet_widget=None,
         credential_widget=None,
     ):
-        return create_google_sheet_widget(
-            name, label, spreadsheet_widget, credential_widget
-        )
+        return create_google_sheet_widget(name, label, spreadsheet_widget, credential_widget)
 
 
 class NodeGoogleDriveFileWidget:
@@ -2366,6 +2382,25 @@ class NodeGoogleDriveFolderWidget:
         credential_widget=None,
         enhanced: bool = False,
     ):
-        return create_google_drive_folder_widget(
-            name, label, credential_widget, enhanced
-        )
+        return create_google_drive_folder_widget(name, label, credential_widget, enhanced)
+
+
+class NodeTextWidget:
+    """
+    Text input widget for NodeGraphQt nodes.
+
+    Provides a variable-aware text input (with {x} button).
+
+    Usage:
+        widget = NodeTextWidget(name="my_prop", label="Label")
+        self.add_custom_widget(widget)
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        text: str = "",
+        placeholder_text: str = "",
+    ):
+        return create_variable_text_widget(name, label, text, placeholder_text)

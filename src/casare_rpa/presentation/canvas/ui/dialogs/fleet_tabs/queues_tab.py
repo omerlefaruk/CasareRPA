@@ -19,14 +19,14 @@ from PySide6.QtWidgets import (
     QLabel,
     QComboBox,
     QLineEdit,
-    QGroupBox,
-    QFormLayout,
     QFrame,
 )
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QColor
 
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.base_tab import BaseTabWidget
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class QueuesTabWidget(BaseTabWidget):
@@ -46,7 +46,8 @@ class QueuesTabWidget(BaseTabWidget):
         queue_deleted: Emitted when queue is deleted (queue_id)
         item_selected: Emitted when item is selected (queue_id, item_id)
         item_status_changed: Emitted when item status changes (item_id, new_status)
-        items_bulk_action: Emitted for bulk actions (queue_id, item_ids, action)
+        queue_item_action: Emitted for bulk actions (queue_id, item_ids, action)
+        items_bulk_action: Back-compat alias for queue_item_action
     """
 
     queue_selected = Signal(str)
@@ -54,6 +55,7 @@ class QueuesTabWidget(BaseTabWidget):
     queue_deleted = Signal(str)
     item_selected = Signal(str, str)
     item_status_changed = Signal(str, str)
+    queue_item_action = Signal(str, list, str)
     items_bulk_action = Signal(str, list, str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -89,16 +91,12 @@ class QueuesTabWidget(BaseTabWidget):
         self._queue_table = QTableWidget()
         self._queue_table.setColumnCount(3)
         self._queue_table.setHorizontalHeaderLabels(["Name", "Items", "Status"])
-        self._queue_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self._queue_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._queue_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self._queue_table.setAlternatingRowColors(True)
         self._queue_table.verticalHeader().setVisible(False)
         self._queue_table.horizontalHeader().setStretchLastSection(True)
-        self._queue_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
+        self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         left_layout.addWidget(self._queue_table)
 
         # Queue actions
@@ -125,16 +123,16 @@ class QueuesTabWidget(BaseTabWidget):
         self._total_card = self._create_stat_card("Total", "0")
         stats_layout.addWidget(self._total_card)
 
-        self._new_card = self._create_stat_card("New", "0", "#75BEFF")
+        self._new_card = self._create_stat_card("New", "0", THEME.status_info)
         stats_layout.addWidget(self._new_card)
 
-        self._progress_card = self._create_stat_card("In Progress", "0", "#D7BA7D")
+        self._progress_card = self._create_stat_card("In Progress", "0", THEME.status_warning)
         stats_layout.addWidget(self._progress_card)
 
-        self._completed_card = self._create_stat_card("Completed", "0", "#89D185")
+        self._completed_card = self._create_stat_card("Completed", "0", THEME.status_success)
         stats_layout.addWidget(self._completed_card)
 
-        self._failed_card = self._create_stat_card("Failed", "0", "#F48771")
+        self._failed_card = self._create_stat_card("Failed", "0", THEME.status_error)
         stats_layout.addWidget(self._failed_card)
 
         right_layout.addLayout(stats_layout)
@@ -144,9 +142,7 @@ class QueuesTabWidget(BaseTabWidget):
         filter_layout.addWidget(QLabel("Filter:"))
 
         self._status_filter = QComboBox()
-        self._status_filter.addItems(
-            ["All", "New", "InProgress", "Completed", "Failed"]
-        )
+        self._status_filter.addItems(["All", "New", "InProgress", "Completed", "Failed"])
         self._status_filter.setFixedWidth(120)
         filter_layout.addWidget(self._status_filter)
 
@@ -167,9 +163,7 @@ class QueuesTabWidget(BaseTabWidget):
         self._items_table.setHorizontalHeaderLabels(
             ["Reference", "Status", "Priority", "Created", "Updated"]
         )
-        self._items_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self._items_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._items_table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self._items_table.setAlternatingRowColors(True)
         self._items_table.verticalHeader().setVisible(False)
@@ -210,34 +204,32 @@ class QueuesTabWidget(BaseTabWidget):
         # Connect signals
         self._connect_tab_signals()
 
-    def _create_stat_card(
-        self, title: str, value: str, color: Optional[str] = None
-    ) -> QFrame:
+    def _create_stat_card(self, title: str, value: str, color: Optional[str] = None) -> QFrame:
         """Create a statistics card widget."""
         card = QFrame()
         card.setFrameShape(QFrame.Shape.StyledPanel)
-        card.setStyleSheet("""
-            QFrame {
-                background-color: #2d2d2d;
-                border: 1px solid #3d3d3d;
-                border-radius: 6px;
+        card.setStyleSheet(
+            f"""
+            QFrame {{
+                background-color: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
+                border-radius: 8px;
                 padding: 8px;
-            }
-        """)
+            }}
+            """
+        )
 
         layout = QVBoxLayout(card)
         layout.setContentsMargins(12, 8, 12, 8)
         layout.setSpacing(2)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet("color: #888888; font-size: 11px;")
+        title_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         layout.addWidget(title_label)
 
         value_label = QLabel(value)
-        value_color = color or "#e0e0e0"
-        value_label.setStyleSheet(
-            f"color: {value_color}; font-size: 20px; font-weight: bold;"
-        )
+        value_color = color or THEME.text_primary
+        value_label.setStyleSheet(f"color: {value_color}; font-size: 20px; font-weight: bold;")
         value_label.setObjectName("value_label")
         layout.addWidget(value_label)
 
@@ -254,9 +246,7 @@ class QueuesTabWidget(BaseTabWidget):
         self._queue_table.selectionModel().selectionChanged.connect(
             self._on_queue_selection_changed
         )
-        self._items_table.selectionModel().selectionChanged.connect(
-            self._on_item_selection_changed
-        )
+        self._items_table.selectionModel().selectionChanged.connect(self._on_item_selection_changed)
 
         self._add_queue_btn.clicked.connect(self._on_add_queue)
         self._delete_queue_btn.clicked.connect(self._on_delete_queue)
@@ -318,18 +308,21 @@ class QueuesTabWidget(BaseTabWidget):
         """Handle retry failed items."""
         if self._selected_queue_id:
             item_ids = self._get_selected_item_ids()
+            self.queue_item_action.emit(self._selected_queue_id, item_ids, "retry")
             self.items_bulk_action.emit(self._selected_queue_id, item_ids, "retry")
 
     def _on_mark_complete(self) -> None:
         """Handle mark complete."""
         if self._selected_queue_id:
             item_ids = self._get_selected_item_ids()
+            self.queue_item_action.emit(self._selected_queue_id, item_ids, "complete")
             self.items_bulk_action.emit(self._selected_queue_id, item_ids, "complete")
 
     def _on_bulk_delete(self) -> None:
         """Handle bulk delete."""
         if self._selected_queue_id:
             item_ids = self._get_selected_item_ids()
+            self.queue_item_action.emit(self._selected_queue_id, item_ids, "delete")
             self.items_bulk_action.emit(self._selected_queue_id, item_ids, "delete")
 
     def _get_selected_item_ids(self) -> List[str]:
@@ -368,23 +361,23 @@ class QueuesTabWidget(BaseTabWidget):
         """Apply additional tab styles."""
         self.setStyleSheet(
             self.styleSheet()
-            + """
-            #AddButton {
-                background-color: #0E639C;
-                color: white;
+            + f"""
+            #AddButton {{
+                background-color: {THEME.accent_primary};
+                color: {THEME.text_primary};
                 border: none;
-            }
-            #AddButton:hover {
-                background-color: #1177BB;
-            }
-            #DeleteButton {
-                background-color: #C42B1C;
-                color: white;
+            }}
+            #AddButton:hover {{
+                background-color: {THEME.accent_hover};
+            }}
+            #DeleteButton {{
+                background-color: {THEME.accent_error};
+                color: {THEME.text_primary};
                 border: none;
-            }
-            #DeleteButton:hover {
-                background-color: #D32F2F;
-            }
+            }}
+            #DeleteButton:hover {{
+                background-color: {THEME.status_error};
+            }}
         """
         )
 
@@ -419,11 +412,11 @@ class QueuesTabWidget(BaseTabWidget):
             status = queue.get("status", "active")
             status_item = QTableWidgetItem(status.title())
             if status == "active":
-                status_item.setForeground(QColor("#89D185"))
+                status_item.setForeground(QColor(THEME.status_success))
             elif status == "paused":
-                status_item.setForeground(QColor("#D7BA7D"))
+                status_item.setForeground(QColor(THEME.status_warning))
             else:
-                status_item.setForeground(QColor("#888888"))
+                status_item.setForeground(QColor(THEME.text_secondary))
             self._queue_table.setItem(row, 2, status_item)
 
     def update_queue_items(self, items: List[Dict[str, Any]]) -> None:
@@ -449,12 +442,12 @@ class QueuesTabWidget(BaseTabWidget):
             status = item.get("status", "new")
             status_item = QTableWidgetItem(status.title())
             status_colors = {
-                "new": "#75BEFF",
-                "inprogress": "#D7BA7D",
-                "completed": "#89D185",
-                "failed": "#F48771",
+                "new": THEME.status_info,
+                "inprogress": THEME.status_warning,
+                "completed": THEME.status_success,
+                "failed": THEME.status_error,
             }
-            color = status_colors.get(status.lower(), "#888888")
+            color = status_colors.get(status.lower(), THEME.text_secondary)
             status_item.setForeground(QColor(color))
             self._items_table.setItem(row, 1, status_item)
 

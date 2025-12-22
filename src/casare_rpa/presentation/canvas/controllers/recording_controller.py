@@ -47,9 +47,7 @@ class RecordingController(BaseController):
     action_recorded = Signal(dict)  # Single action data
     workflow_generated = Signal(list)  # List of node configurations
 
-    def __init__(
-        self, main_window: "MainWindow", parent: Optional[QObject] = None
-    ) -> None:
+    def __init__(self, main_window: "MainWindow", parent: Optional[QObject] = None) -> None:
         """
         Initialize the recording controller.
 
@@ -329,25 +327,26 @@ class RecordingController(BaseController):
                 continue
 
             config: Dict[str, Any] = {
-                "id": f"recorded_{idx}",
+                "node_id": f"recorded_{idx}",
+                "node_type": "",
                 "name": f"Recorded Action {idx + 1}",
-                "properties": {},
+                "config": {},
             }
 
             type_str = str(action_type).lower()
             if "click" in type_str:
                 config["node_type"] = "ClickNode"
-                config["properties"]["x"] = getattr(action, "x", 0)
-                config["properties"]["y"] = getattr(action, "y", 0)
+                config["config"]["x"] = getattr(action, "x", 0)
+                config["config"]["y"] = getattr(action, "y", 0)
             elif "type" in type_str or "key" in type_str:
                 config["node_type"] = "TypeTextNode"
-                config["properties"]["text"] = getattr(action, "text", "")
+                config["config"]["text"] = getattr(action, "text", "")
             elif "scroll" in type_str:
                 config["node_type"] = "ScrollNode"
-                config["properties"]["direction"] = getattr(action, "direction", "down")
+                config["config"]["direction"] = getattr(action, "direction", "down")
             else:
                 config["node_type"] = "GenericActionNode"
-                config["properties"]["action_data"] = str(action)
+                config["config"]["action_data"] = str(action)
 
             node_configs.append(config)
 

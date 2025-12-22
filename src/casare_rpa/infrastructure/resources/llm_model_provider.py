@@ -5,6 +5,7 @@ Fetches and caches available models from LLM provider APIs.
 Provides model filtering by provider based on stored credentials.
 """
 
+import asyncio
 import time
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
@@ -12,6 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 
 from loguru import logger
+
+from casare_rpa.infrastructure.http import UnifiedHttpClient, UnifiedHttpClientConfig
 
 
 @dataclass
@@ -186,9 +189,7 @@ class LLMModelProvider:
                 models = self._fetch_models(provider, api_key)
                 if models:
                     self._cache[provider] = ModelCache(
-                        models=[
-                            ModelInfo(id=m, name=m, provider=provider) for m in models
-                        ],
+                        models=[ModelInfo(id=m, name=m, provider=provider) for m in models],
                         last_updated=time.time(),
                     )
                     return models
@@ -260,9 +261,7 @@ class LLMModelProvider:
         return None, None
 
     def _fetch_models(self, provider: str, api_key: str) -> List[str]:
-        """Fetch live models from provider API."""
-        import httpx
-
+        """Fetch live models from provider API using UnifiedHttpClient."""
         fetch_configs = {
             "openai": {
                 "url": "https://api.openai.com/v1/models",
@@ -310,15 +309,43 @@ class LLMModelProvider:
             return DEFAULT_MODELS.get(provider, [])
 
         try:
-            with httpx.Client(timeout=10.0) as client:
-                response = client.get(config["url"], headers=config["headers"])
-                if response.status_code == 200:
-                    data = response.json()
-                    return config["parser"](data)
+            # Run async request in sync context
+            return self._fetch_models_async(config)
         except Exception as e:
             logger.warning(f"API request failed for {provider}: {e}")
+            return DEFAULT_MODELS.get(provider, [])
 
-        return DEFAULT_MODELS.get(provider, [])
+    def _fetch_models_async(self, config: Dict[str, Any]) -> List[str]:
+        """Execute async HTTP request in sync context."""
+
+        async def _do_fetch() -> List[str]:
+            client_config = UnifiedHttpClientConfig(
+                default_timeout=10.0,
+                max_retries=2,
+            )
+            async with UnifiedHttpClient(client_config) as client:
+                response = await client.get(
+                    config["url"],
+                    headers=config["headers"],
+                )
+                if response.status == 200:
+                    data = await response.json()
+                    return config["parser"](data)
+                return []
+
+        # Create new event loop for sync context (called from ThreadPoolExecutor)
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If we're in an async context, use run_coroutine_threadsafe
+
+                future = asyncio.run_coroutine_threadsafe(_do_fetch(), loop)
+                return future.result(timeout=15.0)
+            else:
+                return loop.run_until_complete(_do_fetch())
+        except RuntimeError:
+            # No event loop - create a new one
+            return asyncio.run(_do_fetch())
 
     def _parse_openai_models(self, data: Dict[str, Any]) -> List[str]:
         """Parse OpenAI-style models response."""
@@ -326,10 +353,7 @@ class LLMModelProvider:
         for model in data.get("data", []):
             model_id = model.get("id", "")
             # Filter to chat/completion models only
-            if any(
-                prefix in model_id
-                for prefix in ["gpt-", "o1-", "o3-", "chatgpt-", "text-"]
-            ):
+            if any(prefix in model_id for prefix in ["gpt-", "o1-", "o3-", "chatgpt-", "text-"]):
                 models.append(model_id)
         return sorted(models, reverse=True)[:20]  # Latest first, limit to 20
 

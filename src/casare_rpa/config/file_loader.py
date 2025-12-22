@@ -273,8 +273,7 @@ class ConfigFileLoader:
 
         if errors:
             raise FileConfigurationError(
-                "Configuration validation failed:\n"
-                + "\n".join(f"  - {e}" for e in errors)
+                "Configuration validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
             )
 
         return validated
@@ -349,9 +348,7 @@ class ConfigFileLoader:
 
         return config
 
-    def _deep_merge(
-        self, base: Dict[str, Any], override: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
         """
         Deep merge two dictionaries.
 
@@ -361,11 +358,7 @@ class ConfigFileLoader:
         result = deepcopy(base)
 
         for key, value in override.items():
-            if (
-                key in result
-                and isinstance(result[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                 result[key] = self._deep_merge(result[key], value)
             else:
                 result[key] = deepcopy(value)

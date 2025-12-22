@@ -532,12 +532,12 @@ Prevent repeated failures from overwhelming the system:
     priority: "high"
 ```
 
-### Step 18: Slack/Teams Notification
+### Step 18: Webhook Notification
 
 ```
 [HTTP Request]
     method: "POST"
-    url: "{{slack_webhook_url}}"
+    url: "{{notification_webhook_url}}"
     headers: {"Content-Type": "application/json"}
     body: {
         "text": ":red_circle: Workflow Failed",
@@ -628,7 +628,6 @@ Prevent repeated failures from overwhelming the system:
 [Finally]
     |
 [Close Browser]
-[Close Database Connection]
 [Release File Locks]
 ```
 

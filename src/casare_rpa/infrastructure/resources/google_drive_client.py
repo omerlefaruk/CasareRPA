@@ -255,10 +255,7 @@ class GoogleDriveClient:
                         result = await response.json()
                         error = result.get("error", {})
                         errors = error.get("errors", [])
-                        if (
-                            errors
-                            and errors[0].get("reason") == "userRateLimitExceeded"
-                        ):
+                        if errors and errors[0].get("reason") == "userRateLimitExceeded":
                             wait_time = min(2**attempt, 32)
                             logger.warning(f"Rate limited. Waiting {wait_time}s...")
                             await asyncio.sleep(wait_time)
@@ -305,9 +302,7 @@ class GoogleDriveClient:
             except aiohttp.ClientError as e:
                 if attempt < self.config.max_retries - 1:
                     wait_time = self.config.retry_delay * (attempt + 1)
-                    logger.warning(
-                        f"Network error (attempt {attempt + 1}): {e}. Retrying..."
-                    )
+                    logger.warning(f"Network error (attempt {attempt + 1}): {e}. Retrying...")
                     await asyncio.sleep(wait_time)
                 else:
                     raise DriveAPIError(f"Network error: {e}") from e
@@ -411,9 +406,7 @@ class GoogleDriveClient:
                 file_content,
                 {"Content-Type": mime_type},
             )
-            file_part.set_content_disposition(
-                "form-data", name="file", filename=file_path.name
-            )
+            file_part.set_content_disposition("form-data", name="file", filename=file_path.name)
 
             async with session.post(url, params=params, data=mpwriter) as response:
                 if response.status >= 400:
@@ -447,9 +440,7 @@ class GoogleDriveClient:
             "X-Upload-Content-Length": str(file_size),
         }
 
-        async with session.post(
-            url, params=params, json=metadata, headers=headers
-        ) as response:
+        async with session.post(url, params=params, json=metadata, headers=headers) as response:
             if response.status != 200:
                 error_text = await response.text()
                 raise DriveAPIError(
@@ -473,9 +464,7 @@ class GoogleDriveClient:
                     "Content-Range": f"bytes {offset}-{chunk_end}/{file_size}",
                 }
 
-                async with session.put(
-                    upload_url, data=chunk, headers=headers
-                ) as response:
+                async with session.put(upload_url, data=chunk, headers=headers) as response:
                     if response.status == 200 or response.status == 201:
                         # Upload complete
                         result = await response.json()

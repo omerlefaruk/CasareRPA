@@ -25,8 +25,28 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="PDF File Path",
+        tooltip="Path to the PDF file to read",
+    ),
+    PropertyDef(
+        "start_page",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Start Page",
+        tooltip="First page to extract (1-indexed)",
+    ),
+    PropertyDef(
+        "end_page",
+        PropertyType.INTEGER,
+        label="End Page",
+        tooltip="Last page to extract (leave empty for all pages)",
+    ),
     PropertyDef(
         "page_separator",
         PropertyType.STRING,
@@ -56,6 +76,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Try to preserve text layout (experimental)",
     ),
 )
+@node(category="document")
 class ReadPDFTextNode(BaseNode):
     """
     Extract text from a PDF file.
@@ -179,7 +200,16 @@ class ReadPDFTextNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties(
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="PDF File Path",
+        tooltip="Path to the PDF file to get info from",
+    ),
+)
+@node(category="document")
 class GetPDFInfoNode(BaseNode):
     """
     Get metadata and information from a PDF file.
@@ -250,12 +280,8 @@ class GetPDFInfoNode(BaseNode):
             self.set_output_value("subject", str(metadata.get("/Subject", "") or ""))
             self.set_output_value("creator", str(metadata.get("/Creator", "") or ""))
             self.set_output_value("producer", str(metadata.get("/Producer", "") or ""))
-            self.set_output_value(
-                "creation_date", str(metadata.get("/CreationDate", "") or "")
-            )
-            self.set_output_value(
-                "modification_date", str(metadata.get("/ModDate", "") or "")
-            )
+            self.set_output_value("creation_date", str(metadata.get("/CreationDate", "") or ""))
+            self.set_output_value("modification_date", str(metadata.get("/ModDate", "") or ""))
             self.set_output_value("is_encrypted", reader.is_encrypted)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -275,7 +301,23 @@ class GetPDFInfoNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties(
+    PropertyDef(
+        "input_files",
+        PropertyType.LIST,
+        required=True,
+        label="Input Files",
+        tooltip="List of PDF file paths to merge",
+    ),
+    PropertyDef(
+        "output_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Output Path",
+        tooltip="Path where the merged PDF will be saved",
+    ),
+)
+@node(category="document")
 class MergePDFsNode(BaseNode):
     """
     Merge multiple PDF files into one.
@@ -366,8 +408,21 @@ class MergePDFsNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "input_file",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Input PDF File",
+        tooltip="Path to the PDF file to split",
+    ),
+    PropertyDef(
+        "output_dir",
+        PropertyType.DIRECTORY_PATH,
+        required=True,
+        label="Output Directory",
+        tooltip="Directory where split pages will be saved",
+    ),
     PropertyDef(
         "filename_pattern",
         PropertyType.STRING,
@@ -376,6 +431,7 @@ class MergePDFsNode(BaseNode):
         tooltip="Pattern for output files (use {n} for page number)",
     ),
 )
+@node(category="document")
 class SplitPDFNode(BaseNode):
     """
     Split a PDF into separate files, one per page.
@@ -472,7 +528,30 @@ class SplitPDFNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
+@properties(
+    PropertyDef(
+        "input_file",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Input PDF File",
+        tooltip="Path to the PDF file to extract from",
+    ),
+    PropertyDef(
+        "output_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Output Path",
+        tooltip="Path where the extracted pages will be saved",
+    ),
+    PropertyDef(
+        "pages",
+        PropertyType.LIST,
+        required=True,
+        label="Pages",
+        tooltip="List of page numbers to extract (1-indexed)",
+    ),
+)
+@node(category="document")
 class ExtractPDFPagesNode(BaseNode):
     """
     Extract specific pages from a PDF.
@@ -569,8 +648,35 @@ class ExtractPDFPagesNode(BaseNode):
         return True, ""
 
 
-@node(category="data")
 @properties(
+    PropertyDef(
+        "input_file",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Input PDF File",
+        tooltip="Path to the PDF file to convert",
+    ),
+    PropertyDef(
+        "output_dir",
+        PropertyType.DIRECTORY_PATH,
+        required=True,
+        label="Output Directory",
+        tooltip="Directory where images will be saved",
+    ),
+    PropertyDef(
+        "start_page",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Start Page",
+        tooltip="First page to convert (1-indexed)",
+    ),
+    PropertyDef(
+        "end_page",
+        PropertyType.INTEGER,
+        label="End Page",
+        tooltip="Last page to convert (leave empty for all pages)",
+    ),
     PropertyDef(
         "dpi",
         PropertyType.INTEGER,
@@ -589,6 +695,7 @@ class ExtractPDFPagesNode(BaseNode):
         tooltip="Output image format",
     ),
 )
+@node(category="document")
 class PDFToImagesNode(BaseNode):
     """
     Convert PDF pages to images.

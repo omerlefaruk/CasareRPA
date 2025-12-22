@@ -5,10 +5,7 @@ Visual trigger nodes for workflow entry points.
 Each trigger type has a corresponding node that can be placed on the canvas.
 """
 
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 
 # Trigger node implementations (imported after definition)
 from casare_rpa.nodes.trigger_nodes.webhook_trigger_node import WebhookTriggerNode
@@ -33,12 +30,10 @@ from casare_rpa.nodes.trigger_nodes.whatsapp_trigger_node import WhatsAppTrigger
 from casare_rpa.nodes.trigger_nodes.gmail_trigger_node import GmailTriggerNode
 from casare_rpa.nodes.trigger_nodes.drive_trigger_node import DriveTriggerNode
 from casare_rpa.nodes.trigger_nodes.sheets_trigger_node import SheetsTriggerNode
-from casare_rpa.nodes.trigger_nodes.calendar_trigger_node import CalendarTriggerNode
 
 __all__ = [
     # Base
     "BaseTriggerNode",
-    "trigger_node",
     # General trigger nodes
     "WebhookTriggerNode",
     "ScheduleTriggerNode",
@@ -58,5 +53,4 @@ __all__ = [
     "GmailTriggerNode",
     "DriveTriggerNode",
     "SheetsTriggerNode",
-    "CalendarTriggerNode",
 ]

@@ -111,9 +111,7 @@ class FetchWorker(QObject):
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    items = loop.run_until_complete(
-                        self.fetch_func(*self.args, **self.kwargs)
-                    )
+                    items = loop.run_until_complete(self.fetch_func(*self.args, **self.kwargs))
                 finally:
                     loop.close()
             else:
@@ -427,9 +425,7 @@ class CascadingDropdownBase(QWidget):
         self._fetch_thread.progress.connect(self._on_fetch_progress)
         self._fetch_thread.start()
 
-    def _on_fetch_complete(
-        self, items: Optional[List[DropdownItem]], error: str
-    ) -> None:
+    def _on_fetch_complete(self, items: Optional[List[DropdownItem]], error: str) -> None:
         """Handle fetch completion."""
         self._set_loading(False)
         self._fetch_thread = None
@@ -462,9 +458,7 @@ class CascadingDropdownBase(QWidget):
 
         if not items:
             self._combo.addItem("No items available", "")
-            self._combo.setToolTip(
-                "No items found. Select a credential first or refresh."
-            )
+            self._combo.setToolTip("No items found. Select a credential first or refresh.")
         else:
             for item in items:
                 self._combo.addItem(item.label, item.id)

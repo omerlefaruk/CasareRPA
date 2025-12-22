@@ -73,9 +73,7 @@ class NodeSearchDialog(QDialog):
         """Set up the user interface."""
         self.setWindowTitle("Find Node")
         self.setWindowFlags(
-            Qt.WindowType.Dialog
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.Popup
+            Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup
         )
         self.setModal(True)
         self.setFixedWidth(500)
@@ -191,9 +189,7 @@ class NodeSearchDialog(QDialog):
                 category = "Data"
 
             self._all_nodes.append(
-                NodeSearchResult(
-                    node_id=node_id, name=name, node_type=node_type, category=category
-                )
+                NodeSearchResult(node_id=node_id, name=name, node_type=node_type, category=category)
             )
 
         self._filter_nodes("")

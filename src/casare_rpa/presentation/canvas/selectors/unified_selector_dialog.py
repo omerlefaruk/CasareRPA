@@ -23,7 +23,7 @@ This module serves as the main orchestrator, delegating to specialized component
 
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QFont, QImage, QPixmap, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -118,9 +118,7 @@ class CollapsibleSection(QWidget):
 
         # Title
         self._title_label = QLabel(title)
-        self._title_label.setStyleSheet(
-            f"color: {self._accent_color}; font-weight: bold;"
-        )
+        self._title_label.setStyleSheet(f"color: {self._accent_color}; font-weight: bold;")
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -412,12 +410,8 @@ class SelectorTypeRow(QWidget):
             accuracy_layout.addWidget(self._accuracy_slider)
 
             self._accuracy_value = QLabel("0.80")
-            self._accuracy_value.setStyleSheet(
-                "color: #e0e0e0; font-size: 11px; min-width: 32px;"
-            )
-            self._accuracy_slider.valueChanged.connect(
-                lambda v: self._accuracy_value.setText(f"{v/100:.2f}")
-            )
+            self._accuracy_value.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 32px;")
+            self._accuracy_slider.valueChanged.connect(self._update_accuracy_label)
             accuracy_layout.addWidget(self._accuracy_value)
 
             accuracy_layout.addStretch()
@@ -429,6 +423,13 @@ class SelectorTypeRow(QWidget):
         # Initially disabled appearance
         self._update_enabled_state(False)
 
+    @Slot(int)
+    def _update_accuracy_label(self, value: int) -> None:
+        """Update accuracy label when slider changes."""
+        if self._accuracy_value:
+            self._accuracy_value.setText(f"{value/100:.2f}")
+
+    @Slot(bool)
     def _on_enabled_changed(self, enabled: bool) -> None:
         """Handle checkbox toggle."""
         self._update_enabled_state(enabled)
@@ -684,9 +685,7 @@ class UnifiedSelectorDialog(QDialog):
         # UI Explorer button
         self._explorer_btn = QPushButton("UI Explorer")
         self._explorer_btn.setFixedHeight(36)
-        self._explorer_btn.setToolTip(
-            "Open UI Explorer for advanced element inspection"
-        )
+        self._explorer_btn.setToolTip("Open UI Explorer for advanced element inspection")
         self._explorer_btn.setCursor(Qt.PointingHandCursor)
         self._explorer_btn.setStyleSheet("""
             QPushButton {
@@ -730,9 +729,7 @@ class UnifiedSelectorDialog(QDialog):
         # Wildcard generator button
         self._wildcard_btn = QPushButton("*.*")
         self._wildcard_btn.setFixedSize(40, 36)
-        self._wildcard_btn.setToolTip(
-            "Generate wildcard selector pattern from current selector"
-        )
+        self._wildcard_btn.setToolTip("Generate wildcard selector pattern from current selector")
         self._wildcard_btn.setCursor(Qt.PointingHandCursor)
         self._wildcard_btn.clicked.connect(self._on_generate_wildcard)
         self._wildcard_btn.setStyleSheet("""
@@ -788,9 +785,7 @@ class UnifiedSelectorDialog(QDialog):
         # Status label
         self._status_label = QLabel("Ctrl+Click to pick")
         self._status_label.setStyleSheet("color: #888; font-size: 11px;")
-        self._status_label.setToolTip(
-            "Hold Ctrl and click anywhere to start element picking"
-        )
+        self._status_label.setToolTip("Hold Ctrl and click anywhere to start element picking")
         layout.addWidget(self._status_label)
 
         return toolbar
@@ -817,14 +812,10 @@ class UnifiedSelectorDialog(QDialog):
         warning_layout.setContentsMargins(12, 8, 12, 8)
 
         warning_icon = QLabel("!")
-        warning_icon.setStyleSheet(
-            "color: #fbbf24; font-size: 14px; font-weight: bold;"
-        )
+        warning_icon.setStyleSheet("color: #fbbf24; font-size: 14px; font-weight: bold;")
         warning_layout.addWidget(warning_icon)
 
-        warning_text = QLabel(
-            "No anchor configured. Consider adding one for reliability."
-        )
+        warning_text = QLabel("No anchor configured. Consider adding one for reliability.")
         warning_text.setStyleSheet("color: #fbbf24; font-size: 12px;")
         warning_text.setWordWrap(True)
         warning_layout.addWidget(warning_text, 1)
@@ -845,9 +836,7 @@ class UnifiedSelectorDialog(QDialog):
         success_layout.setContentsMargins(12, 8, 12, 8)
 
         success_icon = QLabel("V")
-        success_icon.setStyleSheet(
-            "color: #10b981; font-size: 14px; font-weight: bold;"
-        )
+        success_icon.setStyleSheet("color: #10b981; font-size: 14px; font-weight: bold;")
         success_layout.addWidget(success_icon)
 
         self._anchor_info_label = QLabel("Anchor: (none)")
@@ -898,9 +887,7 @@ class UnifiedSelectorDialog(QDialog):
         self._auto_anchor_btn = QPushButton("Auto-detect")
         self._auto_anchor_btn.setFixedHeight(32)
         self._auto_anchor_btn.setCursor(Qt.PointingHandCursor)
-        self._auto_anchor_btn.setToolTip(
-            "Automatically find the best anchor for current target"
-        )
+        self._auto_anchor_btn.setToolTip("Automatically find the best anchor for current target")
         self._auto_anchor_btn.setStyleSheet("""
             QPushButton {
                 background: #2a2a2a;
@@ -964,9 +951,7 @@ class UnifiedSelectorDialog(QDialog):
         position_row.addWidget(position_label)
 
         self._anchor_position_combo = QComboBox()
-        self._anchor_position_combo.addItems(
-            ["Left", "Right", "Above", "Below", "Inside", "Near"]
-        )
+        self._anchor_position_combo.addItems(["Left", "Right", "Above", "Below", "Inside", "Near"])
         self._anchor_position_combo.setCurrentText("Left")
         self._anchor_position_combo.setFixedWidth(100)
         self._anchor_position_combo.setStyleSheet("""
@@ -983,9 +968,7 @@ class UnifiedSelectorDialog(QDialog):
                 width: 16px;
             }
         """)
-        self._anchor_position_combo.currentTextChanged.connect(
-            self._on_anchor_position_changed
-        )
+        self._anchor_position_combo.currentTextChanged.connect(self._on_anchor_position_changed)
         position_row.addWidget(self._anchor_position_combo)
 
         position_row.addStretch()
@@ -1071,9 +1054,7 @@ class UnifiedSelectorDialog(QDialog):
 
         text_search_header = QHBoxLayout()
         text_search_label = QLabel("Quick Text Search (case-insensitive)")
-        text_search_label.setStyleSheet(
-            "color: #10b981; font-weight: bold; font-size: 12px;"
-        )
+        text_search_label.setStyleSheet("color: #10b981; font-weight: bold; font-size: 12px;")
         text_search_header.addWidget(text_search_label)
         text_search_header.addStretch()
         text_search_layout.addLayout(text_search_header)
@@ -1097,9 +1078,7 @@ class UnifiedSelectorDialog(QDialog):
                 color: #e0e0e0;
             }
         """)
-        self._text_search_element.currentTextChanged.connect(
-            self._on_text_search_changed
-        )
+        self._text_search_element.currentTextChanged.connect(self._on_text_search_changed)
         text_input_layout.addWidget(self._text_search_element)
 
         self._text_search_input = QLineEdit()
@@ -1342,9 +1321,7 @@ class UnifiedSelectorDialog(QDialog):
 
     def _create_strategies_section(self) -> CollapsibleSection:
         """Create strategies list section."""
-        section = CollapsibleSection(
-            "Generated Selectors", expanded=False, accent_color="#60a5fa"
-        )
+        section = CollapsibleSection("Generated Selectors", expanded=False, accent_color="#60a5fa")
 
         content = section.content_layout()
 
@@ -1515,19 +1492,11 @@ class UnifiedSelectorDialog(QDialog):
         # Mode button group
         self._mode_group.idClicked.connect(self._on_mode_changed)
 
-        # Selector row pick buttons
-        self._strict_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking(self._current_mode)
-        )
-        self._fuzzy_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking(self._current_mode)
-        )
-        self._cv_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking("ocr")
-        )
-        self._image_selector.get_pick_button().clicked.connect(
-            lambda: self._start_picking("image")
-        )
+        # Selector row pick buttons - using named methods instead of lambdas
+        self._strict_selector.get_pick_button().clicked.connect(self._on_strict_pick_clicked)
+        self._fuzzy_selector.get_pick_button().clicked.connect(self._on_fuzzy_pick_clicked)
+        self._cv_selector.get_pick_button().clicked.connect(self._on_cv_pick_clicked)
+        self._image_selector.get_pick_button().clicked.connect(self._on_image_pick_clicked)
 
         # Image buttons
         self._capture_image_btn.clicked.connect(self._on_capture_image)
@@ -1536,9 +1505,7 @@ class UnifiedSelectorDialog(QDialog):
         # Picker component signals
         self._picker.strategies_generated.connect(self._on_strategies_generated)
         self._picker.status_changed.connect(self._on_status_changed)
-        self._picker.element_screenshot_captured.connect(
-            self._on_element_screenshot_captured
-        )
+        self._picker.element_screenshot_captured.connect(self._on_element_screenshot_captured)
         self._picker.anchor_picked.connect(self._on_anchor_picked)
 
         # Preview component signals
@@ -1589,6 +1556,7 @@ class UnifiedSelectorDialog(QDialog):
     # Event Handlers
     # =========================================================================
 
+    @Slot(int)
     def _on_mode_changed(self, mode_id: int) -> None:
         """Handle mode button change."""
         mode_map = {0: "browser", 1: "desktop", 2: "image", 3: "ocr"}
@@ -1602,6 +1570,27 @@ class UnifiedSelectorDialog(QDialog):
 
         logger.debug(f"Mode changed to: {mode}")
 
+    @Slot()
+    def _on_strict_pick_clicked(self) -> None:
+        """Handle strict selector pick button click."""
+        self._start_picking(self._current_mode)
+
+    @Slot()
+    def _on_fuzzy_pick_clicked(self) -> None:
+        """Handle fuzzy selector pick button click."""
+        self._start_picking(self._current_mode)
+
+    @Slot()
+    def _on_cv_pick_clicked(self) -> None:
+        """Handle CV selector pick button click."""
+        self._start_picking("ocr")
+
+    @Slot()
+    def _on_image_pick_clicked(self) -> None:
+        """Handle image selector pick button click."""
+        self._start_picking("image")
+
+    @Slot()
     def _on_open_explorer(self) -> None:
         """Open the UI Explorer dialog."""
         from casare_rpa.presentation.canvas.selectors.ui_explorer import (
@@ -1627,6 +1616,7 @@ class UnifiedSelectorDialog(QDialog):
         logger.info(f"Opening UI Explorer (mode={self._current_mode})")
         dialog.exec()
 
+    @Slot(str)
     def _on_explorer_selector_confirmed(self, selector: str) -> None:
         """Handle selector confirmed from UI Explorer."""
         if selector:
@@ -1634,11 +1624,10 @@ class UnifiedSelectorDialog(QDialog):
             self._strict_selector.set_enabled(True)
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Selector imported from UI Explorer")
-            self._status_label.setStyleSheet(
-                "color: #10b981; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #10b981; font-size: 11px; font-weight: bold;")
             logger.info(f"Imported selector from UI Explorer: {selector[:50]}...")
 
+    @Slot(str)
     def _on_history_selected(self, selector: str) -> None:
         """Apply selected history item to selector input."""
         if selector:
@@ -1646,11 +1635,10 @@ class UnifiedSelectorDialog(QDialog):
             self._strict_selector.set_enabled(True)
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Selector loaded from history")
-            self._status_label.setStyleSheet(
-                "color: #60a5fa; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #60a5fa; font-size: 11px; font-weight: bold;")
             logger.info(f"Loaded selector from history: {selector[:50]}...")
 
+    @Slot()
     def _on_generate_wildcard(self) -> None:
         """Generate wildcard version of current selector."""
         current = self._strict_selector.get_selector()
@@ -1664,9 +1652,7 @@ class UnifiedSelectorDialog(QDialog):
             self._strict_selector.set_selector(wildcard)
             self._confirm_btn.setEnabled(True)
             self._status_label.setText("Generated wildcard selector")
-            self._status_label.setStyleSheet(
-                "color: #f59e0b; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #f59e0b; font-size: 11px; font-weight: bold;")
         else:
             self._status_label.setText("Selector has no patterns to convert")
             self._status_label.setStyleSheet("color: #888; font-size: 11px;")
@@ -1677,9 +1663,7 @@ class UnifiedSelectorDialog(QDialog):
 
         if mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("Run a Navigate node first to open browser")
-            self._status_label.setStyleSheet(
-                "color: #fbbf24; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
             self._preview.set_test_result(
                 "Browser element picking requires an active browser.\n"
                 "Run a workflow with a Navigate node first, then try again.",
@@ -1699,6 +1683,7 @@ class UnifiedSelectorDialog(QDialog):
             self._status_label.setText(f"Error: {e}")
             self._status_label.setStyleSheet("color: #ef4444; font-size: 11px;")
 
+    @Slot(list)
     def _on_strategies_generated(self, strategies: List[SelectorStrategy]) -> None:
         """Handle strategies generated from picker."""
         logger.info(f"Dialog received {len(strategies)} strategies")
@@ -1711,12 +1696,11 @@ class UnifiedSelectorDialog(QDialog):
             self._strict_selector.set_selector(best.value)
             self._confirm_btn.setEnabled(True)
             self._status_label.setText(f"{len(strategies)} selectors generated")
-            self._status_label.setStyleSheet(
-                "color: #10b981; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #10b981; font-size: 11px; font-weight: bold;")
         else:
             self._confirm_btn.setEnabled(False)
 
+    @Slot(object)
     def _on_strategy_selected(self, strategy: SelectorStrategy) -> None:
         """Handle strategy selection from preview."""
         self._strict_selector.set_selector(strategy.value)
@@ -1724,6 +1708,7 @@ class UnifiedSelectorDialog(QDialog):
         self._picker.update_result_from_strategy(strategy)
         self._current_result = self._picker.current_result
 
+    @Slot(str)
     def _on_status_changed(self, message: str) -> None:
         """Handle status message from picker."""
         self._status_label.setText(message)
@@ -1744,9 +1729,7 @@ class UnifiedSelectorDialog(QDialog):
 
             self._image_selector.set_enabled(True)
             self._status_label.setText("Element image captured for template matching")
-            self._status_label.setStyleSheet(
-                "color: #ec4899; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #ec4899; font-size: 11px; font-weight: bold;")
 
         except Exception as e:
             logger.error(f"Failed to display element screenshot: {e}")
@@ -1803,9 +1786,7 @@ class UnifiedSelectorDialog(QDialog):
         if self._fuzzy_selector.is_enabled():
             result.metadata["fuzzy_accuracy"] = self._fuzzy_selector.get_accuracy()
             result.metadata["fuzzy_innertext"] = self._fuzzy_innertext_value.text()
-            result.metadata["fuzzy_match_type"] = (
-                self._fuzzy_innertext_combo.currentText()
-            )
+            result.metadata["fuzzy_match_type"] = self._fuzzy_innertext_combo.currentText()
 
         if self._cv_selector.is_enabled():
             result.metadata["cv_accuracy"] = self._cv_selector.get_accuracy()
@@ -1873,9 +1854,7 @@ class UnifiedSelectorDialog(QDialog):
 
                 image = QImage.fromData(image_bytes)
                 pixmap = QPixmap.fromImage(image)
-                scaled = pixmap.scaled(
-                    110, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation
-                )
+                scaled = pixmap.scaled(110, 70, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self._image_preview_label.setPixmap(scaled)
 
                 image_tab = self._tabs.get("image")
@@ -1911,12 +1890,8 @@ class UnifiedSelectorDialog(QDialog):
             self._confirm_btn.setEnabled(True)
             self._current_result = result
 
-            self._status_label.setText(
-                f"Generated text selector: {result.selector_value}"
-            )
-            self._status_label.setStyleSheet(
-                "color: #10b981; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setText(f"Generated text selector: {result.selector_value}")
+            self._status_label.setStyleSheet("color: #10b981; font-size: 11px; font-weight: bold;")
 
         except ValueError as e:
             logger.error(f"Failed to generate text selector: {e}")
@@ -1931,15 +1906,11 @@ class UnifiedSelectorDialog(QDialog):
 
         if self._current_mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("Run a Navigate node first to open browser")
-            self._status_label.setStyleSheet(
-                "color: #fbbf24; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
             return
 
         self._status_label.setText("ANCHOR MODE: Ctrl+Click a reference element...")
-        self._status_label.setStyleSheet(
-            "color: #fbbf24; font-size: 11px; font-weight: bold;"
-        )
+        self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
         self._pick_anchor_btn.setText("Picking...")
         self._pick_anchor_btn.setEnabled(False)
 
@@ -1987,23 +1958,17 @@ class UnifiedSelectorDialog(QDialog):
 
         if self._current_mode == "browser" and not self._picker.has_browser_page():
             self._status_label.setText("No browser open - cannot auto-detect anchor")
-            self._status_label.setStyleSheet(
-                "color: #fbbf24; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
             return
 
         target_selector = self._strict_selector.get_selector()
         if not target_selector:
             self._status_label.setText("Select a target element first")
-            self._status_label.setStyleSheet(
-                "color: #fbbf24; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
             return
 
         self._status_label.setText("Auto-detecting anchor...")
-        self._status_label.setStyleSheet(
-            "color: #fbbf24; font-size: 11px; font-weight: bold;"
-        )
+        self._status_label.setStyleSheet("color: #fbbf24; font-size: 11px; font-weight: bold;")
         self._auto_anchor_btn.setEnabled(False)
 
         try:
@@ -2098,9 +2063,7 @@ class UnifiedSelectorDialog(QDialog):
 
         logger.info(f"Anchor set: {tag} - {text[:30] if text else selector[:30]}")
 
-    def set_anchor_from_element(
-        self, element_data: Dict[str, Any], position: str = "left"
-    ) -> None:
+    def set_anchor_from_element(self, element_data: Dict[str, Any], position: str = "left") -> None:
         """Set anchor from picked element data."""
         from casare_rpa.presentation.canvas.selectors.ui_explorer.models.anchor_model import (
             calculate_anchor_stability,
@@ -2154,9 +2117,7 @@ class UnifiedSelectorDialog(QDialog):
         if event.key() == Qt.Key_Control:
             self._ctrl_pressed = True
             self._status_label.setText("Ctrl held - click to pick element")
-            self._status_label.setStyleSheet(
-                "color: #60a5fa; font-size: 11px; font-weight: bold;"
-            )
+            self._status_label.setStyleSheet("color: #60a5fa; font-size: 11px; font-weight: bold;")
         elif event.key() == Qt.Key_Escape:
             self.reject()
 
@@ -2175,9 +2136,7 @@ class UnifiedSelectorDialog(QDialog):
         """Handle mouse press events."""
         from PySide6.QtCore import Qt as QtCore
 
-        if event.button() == QtCore.LeftButton and getattr(
-            self, "_ctrl_pressed", False
-        ):
+        if event.button() == QtCore.LeftButton and getattr(self, "_ctrl_pressed", False):
             self._start_picking(self._current_mode)
             event.accept()
             return

@@ -130,22 +130,16 @@ class AzureKeyVaultProvider(VaultProvider):
             except StopIteration:
                 pass  # Empty vault is valid
 
-            logger.info(
-                f"Connected to Azure Key Vault at {self._config.azure_vault_url}"
-            )
+            logger.info(f"Connected to Azure Key Vault at {self._config.azure_vault_url}")
 
         except _HttpResponseError as e:
             if e.status_code == 401 or e.status_code == 403:
                 raise VaultAuthenticationError(
                     f"Azure Key Vault authentication failed: {e.message}"
                 ) from e
-            raise VaultConnectionError(
-                f"Failed to connect to Azure Key Vault: {e.message}"
-            ) from e
+            raise VaultConnectionError(f"Failed to connect to Azure Key Vault: {e.message}") from e
         except Exception as e:
-            raise VaultConnectionError(
-                f"Failed to connect to Azure Key Vault: {e}"
-            ) from e
+            raise VaultConnectionError(f"Failed to connect to Azure Key Vault: {e}") from e
 
     def _create_credential(self) -> Any:
         """Create appropriate Azure credential based on config."""
@@ -228,9 +222,7 @@ class AzureKeyVaultProvider(VaultProvider):
             data = {"value": secret.value}
 
             # Parse content type for credential type hints
-            credential_type = self._infer_credential_type(
-                secret.properties.content_type or ""
-            )
+            credential_type = self._infer_credential_type(secret.properties.content_type or "")
 
             # Build metadata
             metadata = SecretMetadata(
@@ -254,9 +246,7 @@ class AzureKeyVaultProvider(VaultProvider):
             raise SecretNotFoundError(f"Secret not found: {path}", path=path) from e
         except _HttpResponseError as e:
             if e.status_code == 403:
-                raise SecretAccessDeniedError(
-                    f"Access denied to secret: {path}", path=path
-                ) from e
+                raise SecretAccessDeniedError(f"Access denied to secret: {path}", path=path) from e
             logger.error(f"Failed to read secret {path}: {e}")
             raise
         except Exception as e:
@@ -311,9 +301,7 @@ class AzureKeyVaultProvider(VaultProvider):
 
         except _HttpResponseError as e:
             if e.status_code == 403:
-                raise SecretAccessDeniedError(
-                    f"Access denied writing to: {path}", path=path
-                ) from e
+                raise SecretAccessDeniedError(f"Access denied writing to: {path}", path=path) from e
             logger.error(f"Failed to write secret {path}: {e}")
             raise
         except Exception as e:
@@ -337,9 +325,7 @@ class AzureKeyVaultProvider(VaultProvider):
             return False
         except _HttpResponseError as e:
             if e.status_code == 403:
-                raise SecretAccessDeniedError(
-                    f"Access denied deleting: {path}", path=path
-                ) from e
+                raise SecretAccessDeniedError(f"Access denied deleting: {path}", path=path) from e
             logger.error(f"Failed to delete secret {path}: {e}")
             raise
         except Exception as e:
@@ -382,9 +368,7 @@ class AzureKeyVaultProvider(VaultProvider):
         current = await self.get_secret(path)
 
         # Generate new values based on credential type
-        new_data = self._generate_rotated_values(
-            current.data, current.metadata.credential_type
-        )
+        new_data = self._generate_rotated_values(current.data, current.metadata.credential_type)
 
         # Store new version
         return await self.put_secret(
@@ -424,9 +408,7 @@ class AzureKeyVaultProvider(VaultProvider):
         """Generate a secure random password."""
         import secrets as secrets_module
 
-        alphabet = (
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-        )
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return "".join(secrets_module.choice(alphabet) for _ in range(length))
 
     def _infer_credential_type(self, content_type: str) -> CredentialType:
@@ -488,19 +470,15 @@ class AzureKeyVaultProvider(VaultProvider):
             return SecretMetadata(
                 path=path,
                 version=1,
-                created_at=recovered.properties.created_on
-                or datetime.now(timezone.utc),
-                updated_at=recovered.properties.updated_on
-                or datetime.now(timezone.utc),
+                created_at=recovered.properties.created_on or datetime.now(timezone.utc),
+                updated_at=recovered.properties.updated_on or datetime.now(timezone.utc),
                 credential_type=self._infer_credential_type(
                     recovered.properties.content_type or ""
                 ),
             )
 
         except _ResourceNotFoundError as e:
-            raise SecretNotFoundError(
-                f"Deleted secret not found: {path}", path=path
-            ) from e
+            raise SecretNotFoundError(f"Deleted secret not found: {path}", path=path) from e
         except Exception as e:
             logger.error(f"Failed to recover secret {path}: {e}")
             raise

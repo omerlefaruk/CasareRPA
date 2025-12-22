@@ -17,9 +17,9 @@ from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
     get_log_streaming_service,
     get_robot_manager,
 )
-from casare_rpa.infrastructure.orchestrator.server_auth import (
+from casare_rpa.infrastructure.orchestrator.api.auth import (
     validate_admin_secret,
-    validate_websocket_api_key,
+    get_robot_authenticator,
 )
 
 
@@ -38,19 +38,21 @@ async def robot_websocket(
     Example: ws://host/ws/robot/robot-123?api_key=crpa_xxxxx
     """
     # Validate API key before accepting connection
-    validated_robot_id = await validate_websocket_api_key(api_key)
-    if validated_robot_id is None:
-        logger.warning(f"Robot WebSocket auth failed for robot_id={robot_id}")
-        await websocket.close(code=4001)  # 4001 = Unauthorized
-        return
+    authenticator = get_robot_authenticator()
+    if authenticator.is_enabled:
+        validated_robot_id = await authenticator.verify_token_async(api_key)
+        if validated_robot_id is None:
+            logger.warning(f"Robot WebSocket auth failed for robot_id={robot_id}: Invalid API key")
+            await websocket.close(code=4001)  # 4001 = Unauthorized
+            return
 
-    # Verify robot_id matches the API key's robot (if database validation succeeded)
-    if validated_robot_id != "unverified" and validated_robot_id != robot_id:
-        logger.warning(
-            f"Robot ID mismatch: URL={robot_id}, API key={validated_robot_id}"
-        )
-        await websocket.close(code=4003)  # 4003 = Forbidden
-        return
+        # Verify robot_id matches the API key's robot (if database validation succeeded)
+        if validated_robot_id != "unverified" and validated_robot_id != robot_id:
+            logger.warning(f"Robot ID mismatch: URL={robot_id}, API key={validated_robot_id}")
+            await websocket.close(code=4003)  # 4003 = Forbidden
+            return
+    else:
+        logger.warning(f"Robot auth disabled, allowing connection for {robot_id}")
 
     await websocket.accept()
     logger.info(f"Robot WebSocket connected: {robot_id}")
@@ -133,9 +135,7 @@ async def robot_websocket(
                         )
                         logger.debug(f"Received {count} logs from {robot_id}")
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to process log batch from {robot_id}: {e}"
-                        )
+                        logger.warning(f"Failed to process log batch from {robot_id}: {e}")
 
             else:
                 logger.warning(f"Unknown message type from {robot_id}: {msg_type}")

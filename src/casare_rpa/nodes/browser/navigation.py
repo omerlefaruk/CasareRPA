@@ -27,7 +27,6 @@ from casare_rpa.utils import safe_int
 from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "url",
@@ -101,6 +100,7 @@ from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
         tooltip="Ignore HTTPS certificate errors",
     ),
 )
+@node(category="browser")
 class GoToURLNode(BrowserBaseNode):
     """
     Go to URL node - navigates to a specified URL.
@@ -135,9 +135,7 @@ class GoToURLNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "GoToURLNode"
 
     def _define_ports(self) -> None:
@@ -184,12 +182,9 @@ class GoToURLNode(BrowserBaseNode):
             logger.info(f"URL from parameter: '{url}'")
 
             # Resolve {{variable}} patterns in url
-            url = context.resolve_value(url)
 
             if not url:
-                logger.error(
-                    f"URL validation failed. url='{url}', config={self.config}"
-                )
+                logger.error(f"URL validation failed. url='{url}', config={self.config}")
                 raise ValueError("URL is required")
 
             # Add protocol if missing
@@ -207,8 +202,6 @@ class GoToURLNode(BrowserBaseNode):
             screenshot_path = self.get_parameter("screenshot_path", "")
 
             # Resolve {{variable}} patterns in referer and screenshot_path
-            referer = context.resolve_value(referer)
-            screenshot_path = context.resolve_value(screenshot_path)
 
             logger.info(f"Navigating to URL: {url} (wait_until={wait_until})")
 
@@ -225,9 +218,7 @@ class GoToURLNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}")
 
                     # Navigate to URL
                     response = await page.goto(url, **goto_options)
@@ -250,9 +241,7 @@ class GoToURLNode(BrowserBaseNode):
                                 node_id=getattr(self, "node_id", None),
                             )
                         )
-                        logger.debug(
-                            "BrowserPageReady event published from GoToURLNode"
-                        )
+                        logger.debug("BrowserPageReady event published from GoToURLNode")
                     except Exception as e:
                         logger.debug(f"Could not emit BrowserPageReady event: {e}")
 
@@ -314,7 +303,6 @@ class GoToURLNode(BrowserBaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -349,6 +337,7 @@ class GoToURLNode(BrowserBaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class GoBackNode(BrowserBaseNode):
     """
     Go back node - navigates back in browser history.
@@ -373,9 +362,7 @@ class GoBackNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "GoBackNode"
 
     def _define_ports(self) -> None:
@@ -418,9 +405,7 @@ class GoBackNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for go back"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go back")
 
                     await page.go_back(timeout=timeout, wait_until=wait_until)
 
@@ -455,7 +440,6 @@ class GoBackNode(BrowserBaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -490,6 +474,7 @@ class GoBackNode(BrowserBaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class GoForwardNode(BrowserBaseNode):
     """
     Go forward node - navigates forward in browser history.
@@ -514,9 +499,7 @@ class GoForwardNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "GoForwardNode"
 
     def _define_ports(self) -> None:
@@ -559,9 +542,7 @@ class GoForwardNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for go forward"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go forward")
 
                     await page.go_forward(timeout=timeout, wait_until=wait_until)
 
@@ -596,7 +577,6 @@ class GoForwardNode(BrowserBaseNode):
         return True, ""
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "timeout",
@@ -631,6 +611,7 @@ class GoForwardNode(BrowserBaseNode):
         min_value=0,
     ),
 )
+@node(category="browser")
 class RefreshPageNode(BrowserBaseNode):
     """
     Refresh page node - reloads the current page.
@@ -655,9 +636,7 @@ class RefreshPageNode(BrowserBaseNode):
             No manual config merging needed!
         """
         # Config automatically populated by @properties decorator
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, name=name, **kwargs)
         self.node_type = "RefreshPageNode"
 
     def _define_ports(self) -> None:
@@ -700,9 +679,7 @@ class RefreshPageNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for page refresh"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for page refresh")
 
                     await page.reload(timeout=timeout, wait_until=wait_until)
 

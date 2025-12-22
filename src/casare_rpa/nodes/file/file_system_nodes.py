@@ -29,7 +29,6 @@ from casare_rpa.nodes.file.file_security import (
 )
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "file_path",
@@ -54,6 +53,7 @@ from casare_rpa.nodes.file.file_security import (
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class DeleteFileNode(BaseNode):
     """
     Delete a file.
@@ -98,7 +98,6 @@ class DeleteFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before delete operation
@@ -149,7 +148,6 @@ class DeleteFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "source_path",
@@ -189,6 +187,7 @@ class DeleteFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class CopyFileNode(BaseNode):
     """
     Copy a file to a new location.
@@ -241,9 +240,7 @@ class CopyFileNode(BaseNode):
                 raise ValueError("source_path and dest_path are required")
 
             # Resolve {{variable}} patterns and environment variables in paths
-            source_path = context.resolve_value(source_path)
             source_path = os.path.expandvars(source_path)
-            dest_path = context.resolve_value(dest_path)
             dest_path = os.path.expandvars(dest_path)
 
             # SECURITY: Validate paths before any operation
@@ -289,7 +286,6 @@ class CopyFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
     PropertyDef(
         "source_path",
@@ -329,6 +325,7 @@ class CopyFileNode(BaseNode):
         tooltip="Allow access to system directories",
     ),
 )
+@node(category="file")
 class MoveFileNode(BaseNode):
     """
     Move or rename a file.
@@ -379,9 +376,7 @@ class MoveFileNode(BaseNode):
                 raise ValueError("source_path and dest_path are required")
 
             # Resolve {{variable}} patterns and environment variables in paths
-            source_path = context.resolve_value(source_path)
             source_path = os.path.expandvars(source_path)
-            dest_path = context.resolve_value(dest_path)
             dest_path = os.path.expandvars(dest_path)
 
             # SECURITY: Validate paths before any operation

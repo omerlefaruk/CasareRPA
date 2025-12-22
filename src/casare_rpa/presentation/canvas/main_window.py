@@ -6,7 +6,16 @@ GUI container for the RPA platform.
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QDialog
+    from .ui.panels.bottom_panel_dock import BottomPanelDock
+    from .ui.panels.debug_panel import DebugPanel
+    from .search.command_palette import CommandPalette
+    from .ui.panels.ai_assistant_dock import AIAssistantDock
+    from .controllers.ui_state_controller import UIStateController
+    from casare_rpa.domain.validation import ValidationResult
 
 from PySide6.QtCore import Qt, Signal, Slot, QTimer
 from PySide6.QtWidgets import (
@@ -173,12 +182,8 @@ class MainWindow(QMainWindow):
         self.resize(GUI_WINDOW_WIDTH, GUI_WINDOW_HEIGHT)
         self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
 
-        self.setCorner(
-            Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea
-        )
-        self.setCorner(
-            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea
-        )
+        self.setCorner(Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
+        self.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea)
 
         from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet
 
@@ -250,9 +255,7 @@ class MainWindow(QMainWindow):
         cp.register_action(self.action_restart, "Run", "Restart workflow")
         cp.register_action(self.action_validate, "Automation", "Validate workflow")
         cp.register_action(self.action_record_workflow, "Automation", "Record actions")
-        cp.register_action(
-            self.action_pick_selector, "Automation", "Pick browser element"
-        )
+        cp.register_action(self.action_pick_selector, "Automation", "Pick browser element")
         cp.register_action(
             self.action_desktop_selector_builder, "Automation", "Pick desktop element"
         )
@@ -436,8 +439,7 @@ class MainWindow(QMainWindow):
 
                 if casare_node:
                     node_type = (
-                        getattr(casare_node, "node_type", None)
-                        or type(casare_node).__name__
+                        getattr(casare_node, "node_type", None) or type(casare_node).__name__
                     )
                 else:
                     node_type = node_id.rsplit("_", 1)[0] if "_" in node_id else "Node"
@@ -456,9 +458,7 @@ class MainWindow(QMainWindow):
 
         if repairs_made > 0:
             self.set_modified(True)
-            self.statusBar().showMessage(
-                f"Repaired {repairs_made} duplicate node ID(s)", 5000
-            )
+            self.statusBar().showMessage(f"Repaired {repairs_made} duplicate node ID(s)", 5000)
             self.validate_current_workflow()
         else:
             self.statusBar().showMessage("No repairs needed", 3000)
@@ -522,15 +522,11 @@ class MainWindow(QMainWindow):
 
         if result.is_valid:
             if result.warning_count > 0:
-                self.statusBar().showMessage(
-                    f"Validation: {result.warning_count} warning(s)", 5000
-                )
+                self.statusBar().showMessage(f"Validation: {result.warning_count} warning(s)", 5000)
             else:
                 self.statusBar().showMessage("Validation: OK", 3000)
         else:
-            self.statusBar().showMessage(
-                f"Validation: {result.error_count} error(s)", 5000
-            )
+            self.statusBar().showMessage(f"Validation: {result.error_count} error(s)", 5000)
 
         return result
 
@@ -555,9 +551,7 @@ class MainWindow(QMainWindow):
         else:
             result = self.validate_current_workflow(show_panel=False)
             if not result.is_valid:
-                self.statusBar().showMessage(
-                    f"Validation: {result.error_count} error(s)", 0
-                )
+                self.statusBar().showMessage(f"Validation: {result.error_count} error(s)", 0)
 
     def set_auto_validate(self, enabled: bool) -> None:
         self._auto_validate = enabled
@@ -725,15 +719,9 @@ class MainWindow(QMainWindow):
             settings = get_settings_manager()
             self._auto_connect_enabled = settings.get("canvas.auto_connect", True)
 
-            if self._central_widget and hasattr(
-                self._central_widget, "set_auto_connect_enabled"
-            ):
-                self._central_widget.set_auto_connect_enabled(
-                    self._auto_connect_enabled
-                )
-                logger.debug(
-                    f"Auto-connect preference loaded: {self._auto_connect_enabled}"
-                )
+            if self._central_widget and hasattr(self._central_widget, "set_auto_connect_enabled"):
+                self._central_widget.set_auto_connect_enabled(self._auto_connect_enabled)
+                logger.debug(f"Auto-connect preference loaded: {self._auto_connect_enabled}")
 
             if hasattr(self, "action_auto_connect"):
                 self.action_auto_connect.setChecked(self._auto_connect_enabled)
@@ -749,22 +737,14 @@ class MainWindow(QMainWindow):
             self.on_workflow_changed()
 
     def is_modified(self) -> bool:
-        return (
-            self._workflow_controller.is_modified
-            if self._workflow_controller
-            else False
-        )
+        return self._workflow_controller.is_modified if self._workflow_controller else False
 
     def set_current_file(self, file_path: Optional[Path]) -> None:
         if self._workflow_controller:
             self._workflow_controller.set_current_file(file_path)
 
     def get_current_file(self) -> Optional[Path]:
-        return (
-            self._workflow_controller.current_file
-            if self._workflow_controller
-            else None
-        )
+        return self._workflow_controller.current_file if self._workflow_controller else None
 
     def _update_actions(self) -> None:
         """Update action enabled states based on controller availability."""
@@ -797,6 +777,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_open_workflow(self) -> None:
         self._signal_coordinator.on_open_workflow()
+
+    @Slot()
+    def _on_reload_workflow(self) -> None:
+        self._signal_coordinator.on_reload_workflow()
 
     @Slot()
     def _on_import_workflow(self) -> None:
@@ -921,6 +905,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_disable_all_selected(self) -> None:
         self._signal_coordinator.on_disable_all_selected()
+
+    @Slot()
+    def _on_toggle_cache_node(self) -> None:
+        self._signal_coordinator.on_toggle_cache_node()
 
     @Slot()
     def _on_rename_node(self) -> None:

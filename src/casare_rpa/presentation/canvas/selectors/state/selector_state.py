@@ -158,9 +158,7 @@ class ElementSelectorState:
                 "id": self.element_id,
                 "classes": self.element_classes.copy(),
                 "text": self.element_text[:100] if self.element_text else "",
-                "attributes": {
-                    row.name: row.value for row in self.attribute_rows if row.enabled
-                },
+                "attributes": {row.name: row.value for row in self.attribute_rows if row.enabled},
             }
 
         if self.capture_spatial and self.has_anchor():

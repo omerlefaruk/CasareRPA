@@ -215,9 +215,7 @@ class AgentTunnel:
             self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
             self._receive_task = asyncio.create_task(self._receive_loop())
 
-            logger.info(
-                f"Tunnel connected: {self.config.robot_name} ({self.config.robot_id})"
-            )
+            logger.info(f"Tunnel connected: {self.config.robot_name} ({self.config.robot_id})")
             return True
 
         except Exception as e:
@@ -376,7 +374,7 @@ class AgentTunnel:
     async def _handle_job_assignment(self, message: Dict[str, Any]) -> None:
         """Handle job assignment from control plane."""
         job_id = message.get("job_id")
-        workflow_json = message.get("workflow_json")
+        message.get("workflow_json")
 
         logger.info(f"Job assigned: {job_id}")
 
@@ -489,9 +487,7 @@ class AgentTunnel:
             }
         )
 
-    async def update_status(
-        self, status: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> None:
+    async def update_status(self, status: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Update robot status on control plane.
 
@@ -514,12 +510,8 @@ class AgentTunnel:
         return {
             "state": self._state.value,
             "robot_id": self.config.robot_id,
-            "connected_at": self._connected_at.isoformat()
-            if self._connected_at
-            else None,
-            "last_heartbeat": self._last_heartbeat.isoformat()
-            if self._last_heartbeat
-            else None,
+            "connected_at": self._connected_at.isoformat() if self._connected_at else None,
+            "last_heartbeat": self._last_heartbeat.isoformat() if self._last_heartbeat else None,
             "jobs_received": self._jobs_received,
             "reconnect_count": self._reconnect_count,
         }

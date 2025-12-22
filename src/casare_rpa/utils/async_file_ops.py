@@ -107,9 +107,7 @@ class AsyncFileOperations:
             async with aiofiles.open(path, "w", encoding=encoding, errors=errors) as f:
                 return await f.write(content)
         else:
-            return await asyncio.to_thread(
-                _sync_write_text, path, content, encoding, errors
-            )
+            return await asyncio.to_thread(_sync_write_text, path, content, encoding, errors)
 
     @staticmethod
     async def append_text(
@@ -143,9 +141,7 @@ class AsyncFileOperations:
             async with aiofiles.open(path, "a", encoding=encoding, errors=errors) as f:
                 return await f.write(content)
         else:
-            return await asyncio.to_thread(
-                _sync_append_text, path, content, encoding, errors
-            )
+            return await asyncio.to_thread(_sync_append_text, path, content, encoding, errors)
 
     @staticmethod
     async def read_binary(path: Union[str, Path]) -> bytes:
@@ -322,12 +318,8 @@ class AsyncFileOperations:
             Number of rows written
         """
         # CPU-bound CSV formatting in thread pool
-        content = await asyncio.to_thread(
-            _format_csv, data, headers, delimiter, write_header
-        )
-        await AsyncFileOperations.write_text(
-            path, content, encoding, create_dirs=create_dirs
-        )
+        content = await asyncio.to_thread(_format_csv, data, headers, delimiter, write_header)
+        await AsyncFileOperations.write_text(path, content, encoding, create_dirs=create_dirs)
         return len(data)
 
 

@@ -67,9 +67,7 @@ class WildcardSelector:
         original = pattern
 
         # Handle tag#id-* patterns: input#field-* -> input[id^="field-"]
-        tag_id_match = re.match(
-            r"^([a-zA-Z][a-zA-Z0-9]*)?#([a-zA-Z_-][a-zA-Z0-9_-]*)\*$", result
-        )
+        tag_id_match = re.match(r"^([a-zA-Z][a-zA-Z0-9]*)?#([a-zA-Z_-][a-zA-Z0-9_-]*)\*$", result)
         if tag_id_match:
             tag = tag_id_match.group(1) or ""
             prefix = tag_id_match.group(2)
@@ -129,9 +127,7 @@ class WildcardSelector:
             return result
 
         # Handle prefix-*-suffix patterns: nav-*-item -> [class*="nav-"][class*="-item"]
-        middle_wildcard_match = re.match(
-            r"^([a-zA-Z_-][a-zA-Z0-9_-]*)\*([a-zA-Z0-9_-]+)$", result
-        )
+        middle_wildcard_match = re.match(r"^([a-zA-Z_-][a-zA-Z0-9_-]*)\*([a-zA-Z0-9_-]+)$", result)
         if middle_wildcard_match:
             prefix = middle_wildcard_match.group(1)
             suffix = middle_wildcard_match.group(2)
@@ -140,9 +136,7 @@ class WildcardSelector:
             return result
 
         # Handle attribute wildcards: [name=field*] -> [name^="field"]
-        attr_prefix_match = re.match(
-            r"^\[([a-zA-Z_-][a-zA-Z0-9_-]*)=([^\]]+)\*\]$", result
-        )
+        attr_prefix_match = re.match(r"^\[([a-zA-Z_-][a-zA-Z0-9_-]*)=([^\]]+)\*\]$", result)
         if attr_prefix_match:
             attr_name = attr_prefix_match.group(1)
             attr_value = attr_prefix_match.group(2).strip("\"'")
@@ -151,9 +145,7 @@ class WildcardSelector:
             return result
 
         # Handle attribute suffix wildcards: [name=*field] -> [name$="field"]
-        attr_suffix_match = re.match(
-            r"^\[([a-zA-Z_-][a-zA-Z0-9_-]*)=\*([^\]]+)\]$", result
-        )
+        attr_suffix_match = re.match(r"^\[([a-zA-Z_-][a-zA-Z0-9_-]*)=\*([^\]]+)\]$", result)
         if attr_suffix_match:
             attr_name = attr_suffix_match.group(1)
             attr_value = attr_suffix_match.group(2).strip("\"'")

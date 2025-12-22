@@ -39,12 +39,8 @@ class AnalyzedConnections:
     """Result of analyzing connections for selected nodes."""
 
     internal_connections: List[Dict[str, Any]]  # Connections between selected nodes
-    external_inputs: List[
-        ExternalConnection
-    ]  # External -> internal (become subflow inputs)
-    external_outputs: List[
-        ExternalConnection
-    ]  # Internal -> external (become subflow outputs)
+    external_inputs: List[ExternalConnection]  # External -> internal (become subflow inputs)
+    external_outputs: List[ExternalConnection]  # Internal -> external (become subflow outputs)
 
 
 class CreateSubflowAction(QObject):
@@ -127,9 +123,7 @@ class CreateSubflowAction(QObject):
             # Step 8: Reconnect external connections
             self._reconnect_external(subflow_node, analysis)
 
-            logger.info(
-                f"Subflow '{name}' created successfully with {len(selected_nodes)} nodes"
-            )
+            logger.info(f"Subflow '{name}' created successfully with {len(selected_nodes)} nodes")
             return subflow_node
 
         except Exception as e:
@@ -396,9 +390,14 @@ class CreateSubflowAction(QObject):
                 )
             )
 
-        # Serialize and add nodes
+        # Serialize and add nodes using the canonical workflow serializer
+        from casare_rpa.presentation.canvas.serialization.workflow_serializer import (
+            WorkflowSerializer,
+        )
+
+        serializer = WorkflowSerializer(self._graph, None)
         for node in selected_nodes:
-            node_data = self._serialize_node(node)
+            node_data = serializer._serialize_node(node)
             if node_data:
                 subflow.add_node(node_data)
 
@@ -483,67 +482,6 @@ class CreateSubflowAction(QObject):
             return (True, DataType.ANY)
 
         return (False, DataType.ANY)
-
-    def _serialize_node(self, node) -> Optional[Dict[str, Any]]:
-        """
-        Serialize a visual node to dictionary.
-
-        Args:
-            node: Visual node to serialize
-
-        Returns:
-            Serialized node data or None
-        """
-        try:
-            # Get casare node for proper node_id and type
-            casare_node = (
-                node.get_casare_node() if hasattr(node, "get_casare_node") else None
-            )
-
-            # Get node_id - prefer casare_node.node_id, fallback to property
-            node_id = None
-            if casare_node and hasattr(casare_node, "node_id"):
-                node_id = casare_node.node_id
-            if not node_id or node_id.startswith("0x"):
-                prop_id = node.get_property("node_id")
-                if (
-                    prop_id
-                    and isinstance(prop_id, str)
-                    and prop_id.strip()
-                    and not prop_id.startswith("0x")
-                ):
-                    node_id = prop_id
-            if not node_id or node_id.startswith("0x"):
-                node_id = node.id  # Last resort
-
-            # Get node type
-            node_type = node.__class__.__name__
-            if casare_node:
-                node_type = getattr(casare_node, "node_type", node_type)
-
-            # Collect properties
-            properties = {}
-            if hasattr(node, "model") and node.model:
-                for prop_name in node.model.custom_properties.keys():
-                    try:
-                        properties[prop_name] = node.get_property(prop_name)
-                    except Exception:
-                        pass
-
-            # Get position
-            pos = node.pos()
-
-            return {
-                "node_id": node_id,
-                "type": node_type,
-                "name": node.name() if hasattr(node, "name") else node_type,
-                "position": {"x": pos[0], "y": pos[1]},
-                "properties": properties,
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to serialize node: {e}")
-            return None
 
     def _get_selection_center(self, selected_nodes: List) -> Tuple[float, float]:
         """
@@ -704,17 +642,13 @@ class CreateSubflowAction(QObject):
                 # Find external node
                 external_node = self._graph.get_node_by_id(ext_input.external_node_id)
                 if not external_node:
-                    logger.warning(
-                        f"External node not found: {ext_input.external_node_id}"
-                    )
+                    logger.warning(f"External node not found: {ext_input.external_node_id}")
                     continue
 
                 # Get external output port
                 external_port = external_node.get_output(ext_input.external_port_name)
                 if not external_port:
-                    logger.warning(
-                        f"External port not found: {ext_input.external_port_name}"
-                    )
+                    logger.warning(f"External port not found: {ext_input.external_port_name}")
                     continue
 
                 # Get subflow input port
@@ -738,17 +672,13 @@ class CreateSubflowAction(QObject):
                 # Find external node
                 external_node = self._graph.get_node_by_id(ext_output.external_node_id)
                 if not external_node:
-                    logger.warning(
-                        f"External node not found: {ext_output.external_node_id}"
-                    )
+                    logger.warning(f"External node not found: {ext_output.external_node_id}")
                     continue
 
                 # Get external input port
                 external_port = external_node.get_input(ext_output.external_port_name)
                 if not external_port:
-                    logger.warning(
-                        f"External port not found: {ext_output.external_port_name}"
-                    )
+                    logger.warning(f"External port not found: {ext_output.external_port_name}")
                     continue
 
                 # Get subflow output port

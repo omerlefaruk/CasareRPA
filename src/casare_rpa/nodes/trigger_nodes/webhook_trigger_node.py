@@ -10,14 +10,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     # Basic settings
     PropertyDef(
@@ -149,6 +145,7 @@ from casare_rpa.triggers.base import TriggerType
         label="Max Payload Size (bytes)",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class WebhookTriggerNode(BaseTriggerNode):
     """
     Webhook trigger node that listens for HTTP requests.
@@ -190,41 +187,41 @@ class WebhookTriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get webhook-specific configuration."""
-        methods_str = self.config.get("methods", "POST")
+        methods_str = self.get_parameter("methods", "POST")
         methods = [m.strip().upper() for m in methods_str.split(",") if m.strip()]
 
-        cors_origins_str = self.config.get("cors_origins", "*")
+        cors_origins_str = self.get_parameter("cors_origins", "*")
         cors_origins = [o.strip() for o in cors_origins_str.split(",") if o.strip()]
 
-        ip_whitelist_str = self.config.get("ip_whitelist", "")
+        ip_whitelist_str = self.get_parameter("ip_whitelist", "")
         ip_whitelist = [ip.strip() for ip in ip_whitelist_str.split(",") if ip.strip()]
 
-        ip_blacklist_str = self.config.get("ip_blacklist", "")
+        ip_blacklist_str = self.get_parameter("ip_blacklist", "")
         ip_blacklist = [ip.strip() for ip in ip_blacklist_str.split(",") if ip.strip()]
 
         return {
-            "endpoint": self.config.get("endpoint", ""),
+            "endpoint": self.get_parameter("endpoint", ""),
             "methods": methods,
             # Auth
-            "auth_type": self.config.get("auth_type", "none"),
-            "auth_header_name": self.config.get("auth_header_name", "X-API-Key"),
-            "auth_header_value": self.config.get("auth_header_value", ""),
-            "basic_username": self.config.get("basic_username", ""),
-            "basic_password": self.config.get("basic_password", ""),
-            "jwt_secret": self.config.get("jwt_secret", ""),
+            "auth_type": self.get_parameter("auth_type", "none"),
+            "auth_header_name": self.get_parameter("auth_header_name", "X-API-Key"),
+            "auth_header_value": self.get_parameter("auth_header_value", ""),
+            "basic_username": self.get_parameter("basic_username", ""),
+            "basic_password": self.get_parameter("basic_password", ""),
+            "jwt_secret": self.get_parameter("jwt_secret", ""),
             # CORS
-            "cors_enabled": self.config.get("cors_enabled", False),
+            "cors_enabled": self.get_parameter("cors_enabled", False),
             "cors_origins": cors_origins,
             # IP filtering
             "ip_whitelist": ip_whitelist,
             "ip_blacklist": ip_blacklist,
             # Response
-            "response_mode": self.config.get("response_mode", "immediate"),
-            "response_code": self.config.get("response_code", 200),
-            "response_body": self.config.get("response_body", '{"status": "received"}'),
+            "response_mode": self.get_parameter("response_mode", "immediate"),
+            "response_code": self.get_parameter("response_code", 200),
+            "response_body": self.get_parameter("response_body", '{"status": "received"}'),
             # Advanced
-            "binary_data_enabled": self.config.get("binary_data_enabled", False),
-            "max_payload_size": self.config.get("max_payload_size", 16777216),
+            "binary_data_enabled": self.get_parameter("binary_data_enabled", False),
+            "max_payload_size": self.get_parameter("max_payload_size", 16777216),
         }
 
     def get_webhook_url(self, base_url: str = "http://localhost:8766") -> str:
@@ -237,7 +234,7 @@ class WebhookTriggerNode(BaseTriggerNode):
         Returns:
             Full webhook URL
         """
-        endpoint = self.config.get("endpoint", "")
+        endpoint = self.get_parameter("endpoint", "")
         if endpoint:
             return f"{base_url}/webhooks{endpoint}"
         # Auto-generated URL based on node ID

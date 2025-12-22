@@ -9,10 +9,7 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
@@ -20,7 +17,6 @@ from casare_rpa.triggers.base import TriggerType
 # For now, we'll use a placeholder that maps to WEBHOOK or create custom handling
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "feed_url",
@@ -68,6 +64,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Include full description in output",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class RSSFeedTriggerNode(BaseTriggerNode):
     """
     RSS Feed trigger node that fires when new items are published.
@@ -111,16 +108,16 @@ class RSSFeedTriggerNode(BaseTriggerNode):
 
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get RSS-specific configuration."""
-        keywords_str = self.config.get("filter_keywords", "")
+        keywords_str = self.get_parameter("filter_keywords", "")
         keywords = [k.strip() for k in keywords_str.split(",") if k.strip()]
 
         return {
-            "feed_url": self.config.get("feed_url", ""),
-            "poll_interval_minutes": self.config.get("poll_interval_minutes", 15),
+            "feed_url": self.get_parameter("feed_url", ""),
+            "poll_interval_minutes": self.get_parameter("poll_interval_minutes", 15),
             "filter_keywords": keywords,
-            "filter_mode": self.config.get("filter_mode", "any"),
-            "max_items_per_check": self.config.get("max_items_per_check", 10),
-            "include_description": self.config.get("include_description", True),
+            "filter_mode": self.get_parameter("filter_mode", "any"),
+            "max_items_per_check": self.get_parameter("max_items_per_check", 10),
+            "include_description": self.get_parameter("include_description", True),
             # Mark as RSS feed for the trigger implementation
             "_trigger_subtype": "rss_feed",
         }

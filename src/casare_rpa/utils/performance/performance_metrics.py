@@ -151,9 +151,7 @@ class Histogram:
             "p50": self.percentile(50),
             "p90": self.percentile(90),
             "p99": self.percentile(99),
-            "buckets": {
-                f"le_{b}": c for b, c in zip(self._buckets, self._bucket_counts)
-            },
+            "buckets": {f"le_{b}": c for b, c in zip(self._buckets, self._bucket_counts)},
         }
 
 
@@ -241,9 +239,7 @@ class PerformanceMetrics:
         key = self._make_key(name, labels)
         with self._metrics_lock:
             self._gauges[key] = value
-            self._timeseries[key].append(
-                MetricValue(name=name, value=value, labels=labels or {})
-            )
+            self._timeseries[key].append(MetricValue(name=name, value=value, labels=labels or {}))
 
     def observe(
         self,
@@ -369,9 +365,7 @@ class PerformanceMetrics:
                 metrics["system_cpu_percent"] = psutil.cpu_percent()
                 sys_mem = psutil.virtual_memory()
                 metrics["system_memory_percent"] = sys_mem.percent
-                metrics["system_memory_available_mb"] = sys_mem.available / (
-                    1024 * 1024
-                )
+                metrics["system_memory_available_mb"] = sys_mem.available / (1024 * 1024)
             except Exception as e:
                 logger.debug(f"Failed to sample system metrics: {e}")
 
@@ -454,16 +448,11 @@ class PerformanceMetrics:
                 "timestamp": datetime.now().isoformat(),
                 "counters": dict(self._counters),
                 "gauges": dict(self._gauges),
-                "histograms": {
-                    name: hist.to_dict() for name, hist in self._histograms.items()
-                },
+                "histograms": {name: hist.to_dict() for name, hist in self._histograms.items()},
                 "nodes": {
                     "execution_counts": dict(self._node_counts),
                     "error_counts": dict(self._node_errors),
-                    "timings": {
-                        name: hist.to_dict()
-                        for name, hist in self._node_timings.items()
-                    },
+                    "timings": {name: hist.to_dict() for name, hist in self._node_timings.items()},
                 },
                 "workflows": {
                     "counts": self._workflow_counts.copy(),
@@ -515,9 +504,7 @@ class PerformanceMetrics:
             averages = {name: value / count for name, value in metrics_sum.items()}
 
             return {
-                "current": dict(self._system_samples[-1])
-                if self._system_samples
-                else {},
+                "current": dict(self._system_samples[-1]) if self._system_samples else {},
                 "average": averages,
                 "sample_count": count,
             }

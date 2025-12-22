@@ -106,9 +106,7 @@ class ROIEstimator:
             config: Configuration for ROI calculations. Uses defaults if not provided.
         """
         self.config = config or ROIConfig()
-        logger.debug(
-            f"ROIEstimator initialized (hourly_cost=${self.config.hourly_labor_cost})"
-        )
+        logger.debug(f"ROIEstimator initialized (hourly_cost=${self.config.hourly_labor_cost})")
 
     def estimate_roi(
         self,
@@ -136,10 +134,8 @@ class ROIEstimator:
 
         # Time savings calculation
         manual_time_per_exec_hours = pattern.avg_duration / 3600000  # ms to hours
-        automated_time_factor = 1 - self.config.automation_efficiency
-        time_saved_per_exec = (
-            manual_time_per_exec_hours * self.config.automation_efficiency
-        )
+        1 - self.config.automation_efficiency
+        time_saved_per_exec = manual_time_per_exec_hours * self.config.automation_efficiency
 
         annual_hours_saved = time_saved_per_exec * annual_execs
 
@@ -273,9 +269,7 @@ class ROIEstimator:
         else:
             return ComplexityLevel.VERY_HIGH
 
-    def _estimate_dev_hours(
-        self, pattern: RecognizedPattern, complexity: ComplexityLevel
-    ) -> float:
+    def _estimate_dev_hours(self, pattern: RecognizedPattern, complexity: ComplexityLevel) -> float:
         """Estimate development hours for automation."""
         base_hours = len(pattern.activity_sequence) * self.config.dev_hours_per_activity
 
@@ -306,18 +300,11 @@ class ROIEstimator:
         """Categorize a node type for complexity estimation."""
         node_type_lower = node_type.lower()
 
-        if any(
-            kw in node_type_lower
-            for kw in ["browser", "navigate", "click", "type", "page"]
-        ):
+        if any(kw in node_type_lower for kw in ["browser", "navigate", "click", "type", "page"]):
             return "browser"
-        elif any(
-            kw in node_type_lower for kw in ["desktop", "window", "ui", "element"]
-        ):
+        elif any(kw in node_type_lower for kw in ["desktop", "window", "ui", "element"]):
             return "desktop"
-        elif any(
-            kw in node_type_lower for kw in ["file", "read", "write", "csv", "excel"]
-        ):
+        elif any(kw in node_type_lower for kw in ["file", "read", "write", "csv", "excel"]):
             return "file"
         elif any(kw in node_type_lower for kw in ["api", "http", "rest", "request"]):
             return "api"
@@ -325,9 +312,7 @@ class ROIEstimator:
             return "database"
         elif any(kw in node_type_lower for kw in ["variable", "set", "get"]):
             return "variable"
-        elif any(
-            kw in node_type_lower for kw in ["if", "loop", "for", "while", "switch"]
-        ):
+        elif any(kw in node_type_lower for kw in ["if", "loop", "for", "while", "switch"]):
             return "control_flow"
         elif any(kw in node_type_lower for kw in ["data", "transform", "convert"]):
             return "data"
@@ -395,9 +380,7 @@ class ROIEstimator:
         else:
             return RecommendationLevel.NOT_RECOMMENDED
 
-    def _calculate_confidence(
-        self, pattern: RecognizedPattern, annual_execs: int
-    ) -> float:
+    def _calculate_confidence(self, pattern: RecognizedPattern, annual_execs: int) -> float:
         """
         Calculate confidence in the ROI estimate (0-1).
 
@@ -494,9 +477,7 @@ class ROIEstimator:
                 "total_annual_hours_saved": round(total_annual_hours, 1),
                 "total_annual_cost_savings": round(total_annual_savings, 2),
                 "total_dev_hours_needed": round(total_dev_hours, 1),
-                "avg_roi_score": round(
-                    sum(e.roi_score for e in estimates) / len(estimates), 1
-                ),
+                "avg_roi_score": round(sum(e.roi_score for e in estimates) / len(estimates), 1),
                 "avg_payback_months": round(
                     sum(min(e.payback_months, 36) for e in estimates) / len(estimates),
                     1,

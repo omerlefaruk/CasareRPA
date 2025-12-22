@@ -8,6 +8,8 @@ Nodes for efficient batch operations on spreadsheets:
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 import json
 from typing import Any, Dict, List
@@ -25,6 +27,8 @@ from casare_rpa.infrastructure.resources.google_sheets_client import (
 from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
+@properties()
+@node(category="google")
 class SheetsBatchUpdateNode(SheetsBaseNode):
     """
     Update multiple ranges in a single API call.
@@ -88,8 +92,6 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         # Get updates data
         updates = self.get_parameter("updates")
         if isinstance(updates, str):
-            if hasattr(context, "resolve_value"):
-                updates = context.resolve_value(updates)
             # Try to parse as JSON if string
             if isinstance(updates, str):
                 try:
@@ -111,16 +113,12 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
             }
 
         value_input_option = self.get_parameter("value_input_option", "USER_ENTERED")
-        if hasattr(context, "resolve_value"):
-            value_input_option = context.resolve_value(value_input_option)
 
         # Validate and transform updates format
         data: List[Dict[str, Any]] = []
         for update in updates:
             if not isinstance(update, dict):
-                self._set_error_outputs(
-                    "Each update must be an object with 'range' and 'values'"
-                )
+                self._set_error_outputs("Each update must be an object with 'range' and 'values'")
                 return {
                     "success": False,
                     "error": "Each update must be an object with 'range' and 'values'",
@@ -131,9 +129,7 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
             values = update.get("values")
 
             if not range_notation or values is None:
-                self._set_error_outputs(
-                    "Each update must have 'range' and 'values' keys"
-                )
+                self._set_error_outputs("Each update must have 'range' and 'values' keys")
                 return {
                     "success": False,
                     "error": "Each update must have 'range' and 'values' keys",
@@ -185,6 +181,8 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsBatchGetNode(SheetsBaseNode):
     """
     Read multiple ranges in a single API call.
@@ -246,8 +244,6 @@ class SheetsBatchGetNode(SheetsBaseNode):
         # Get ranges
         ranges = self.get_parameter("ranges")
         if isinstance(ranges, str):
-            if hasattr(context, "resolve_value"):
-                ranges = context.resolve_value(ranges)
             # Try to parse as JSON if string
             if isinstance(ranges, str):
                 try:
@@ -268,11 +264,7 @@ class SheetsBatchGetNode(SheetsBaseNode):
                 "next_nodes": [],
             }
 
-        value_render_option = self.get_parameter(
-            "value_render_option", "FORMATTED_VALUE"
-        )
-        if hasattr(context, "resolve_value"):
-            value_render_option = context.resolve_value(value_render_option)
+        value_render_option = self.get_parameter("value_render_option", "FORMATTED_VALUE")
 
         # Execute batch get
         result = await client.batch_get_values(
@@ -299,6 +291,8 @@ class SheetsBatchGetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsBatchClearNode(SheetsBaseNode):
     """
     Clear multiple ranges in a single API call.
@@ -355,8 +349,6 @@ class SheetsBatchClearNode(SheetsBaseNode):
         # Get ranges
         ranges = self.get_parameter("ranges")
         if isinstance(ranges, str):
-            if hasattr(context, "resolve_value"):
-                ranges = context.resolve_value(ranges)
             # Try to parse as JSON if string
             if isinstance(ranges, str):
                 try:

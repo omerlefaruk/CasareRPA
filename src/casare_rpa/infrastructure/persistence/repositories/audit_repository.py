@@ -176,9 +176,7 @@ class AuditRepository:
         row = await cursor.fetchone()
         return row["hash_chain"] if row else None
 
-    def _calculate_hash_chain(
-        self, event: AuditEvent, previous_hash: Optional[str]
-    ) -> str:
+    def _calculate_hash_chain(self, event: AuditEvent, previous_hash: Optional[str]) -> str:
         """
         Calculate hash chain value for tamper detection.
 
@@ -246,9 +244,7 @@ class AuditRepository:
             # Update last hash
             self._last_hash = hash_chain
 
-            logger.debug(
-                f"Audit event logged: {event.event_id} ({event.event_type.value})"
-            )
+            logger.debug(f"Audit event logged: {event.event_id} ({event.event_type.value})")
             return event.event_id
 
     async def log_events_batch(self, events: List[AuditEvent]) -> int:
@@ -643,9 +639,7 @@ class AuditRepository:
                 )
                 await self._connection.commit()
 
-            duration_ms = int(
-                (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-            )
+            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 
             # Log cleanup
             await self._connection.execute(
@@ -671,9 +665,7 @@ class AuditRepository:
             }
 
         except Exception as e:
-            duration_ms = int(
-                (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-            )
+            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 
             await self._connection.execute(
                 """

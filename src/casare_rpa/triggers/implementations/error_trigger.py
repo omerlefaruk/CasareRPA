@@ -61,9 +61,7 @@ class ErrorTrigger(BaseTrigger):
             event_bus = get_event_bus()
 
             # Create event handler
-            self._event_handler = lambda event: asyncio.create_task(
-                self._on_workflow_error(event)
-            )
+            self._event_handler = lambda event: asyncio.create_task(self._on_workflow_error(event))
 
             # Subscribe to workflow error events
             event_bus.subscribe(WorkflowFailed, self._event_handler)
@@ -131,10 +129,8 @@ class ErrorTrigger(BaseTrigger):
         # Check severity filter
         min_severity = config.get("min_severity", "error")
         severity_levels = {"info": 0, "warning": 1, "error": 2, "critical": 3}
-        event_severity = error_data.get("severity", "error")
-        if severity_levels.get(event_severity, 2) < severity_levels.get(
-            min_severity, 2
-        ):
+        event_severity = getattr(event, "severity", "error")
+        if severity_levels.get(event_severity, 2) < severity_levels.get(min_severity, 2):
             return
 
         # Build payload

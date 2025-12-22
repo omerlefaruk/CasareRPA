@@ -10,14 +10,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     # Connection settings
     PropertyDef(
@@ -104,6 +100,7 @@ from casare_rpa.triggers.base import TriggerType
         tab="advanced",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class SheetsTriggerNode(BaseTriggerNode):
     """
     Google Sheets trigger node that monitors for spreadsheet changes.
@@ -161,20 +158,18 @@ class SheetsTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get Sheets-specific configuration."""
         # Parse comma-separated columns
-        watch_columns_str = self.config.get("watch_columns", "")
-        watch_columns = [
-            c.strip().upper() for c in watch_columns_str.split(",") if c.strip()
-        ]
+        watch_columns_str = self.get_parameter("watch_columns", "")
+        watch_columns = [c.strip().upper() for c in watch_columns_str.split(",") if c.strip()]
 
         return {
-            "credential_name": self.config.get("credential_name", "google"),
-            "spreadsheet_id": self.config.get("spreadsheet_id", ""),
-            "sheet_name": self.config.get("sheet_name", "Sheet1"),
-            "range": self.config.get("range", ""),
-            "polling_interval": self.config.get("polling_interval", 30),
-            "trigger_on_new_row": self.config.get("trigger_on_new_row", True),
-            "trigger_on_cell_change": self.config.get("trigger_on_cell_change", True),
-            "trigger_on_delete": self.config.get("trigger_on_delete", False),
+            "credential_name": self.get_parameter("credential_name", "google"),
+            "spreadsheet_id": self.get_parameter("spreadsheet_id", ""),
+            "sheet_name": self.get_parameter("sheet_name", "Sheet1"),
+            "range": self.get_parameter("range", ""),
+            "polling_interval": self.get_parameter("polling_interval", 30),
+            "trigger_on_new_row": self.get_parameter("trigger_on_new_row", True),
+            "trigger_on_cell_change": self.get_parameter("trigger_on_cell_change", True),
+            "trigger_on_delete": self.get_parameter("trigger_on_delete", False),
             "watch_columns": watch_columns,
-            "ignore_empty_rows": self.config.get("ignore_empty_rows", True),
+            "ignore_empty_rows": self.get_parameter("ignore_empty_rows", True),
         }

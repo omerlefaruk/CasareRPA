@@ -186,9 +186,7 @@ class SSETrigger(BaseTrigger):
 
                 self._reconnect_count += 1
                 if max_reconnects > 0 and self._reconnect_count > max_reconnects:
-                    logger.error(
-                        f"SSE trigger max reconnects exceeded: {self.config.name}"
-                    )
+                    logger.error(f"SSE trigger max reconnects exceeded: {self.config.name}")
                     self._status = TriggerStatus.ERROR
                     break
 

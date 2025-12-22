@@ -145,12 +145,12 @@ class VisualFindElementNode(BrowserBaseNode):
     def _define_ports(self) -> None:
         """Define input and output ports."""
         # Inputs
-        self.add_input_port("exec_in", DataType.EXEC)
+        self.add_exec_input("exec_in")
         self.add_input_port("page", DataType.PAGE, required=False)
         self.add_input_port("description", DataType.STRING, required=False)
 
         # Outputs
-        self.add_output_port("exec_out", DataType.EXEC)
+        self.add_exec_output("exec_out")
         self.add_output_port("x", DataType.INTEGER)
         self.add_output_port("y", DataType.INTEGER)
         self.add_output_port("width", DataType.INTEGER)
@@ -170,8 +170,7 @@ class VisualFindElementNode(BrowserBaseNode):
                 self._vision_finder = VisionElementFinder()
             except ImportError as e:
                 raise ImportError(
-                    "VisionElementFinder not available. "
-                    "Install with: pip install litellm"
+                    "VisionElementFinder not available. " "Install with: pip install litellm"
                 ) from e
         return self._vision_finder
 
@@ -185,7 +184,6 @@ class VisualFindElementNode(BrowserBaseNode):
             description = self.get_input_value("description")
             if not description:
                 description = self.get_parameter("element_description", "")
-                description = context.resolve_value(description)
 
             if not description:
                 return self.error_result("Element description is required")
@@ -194,8 +192,6 @@ class VisualFindElementNode(BrowserBaseNode):
             model = self.get_parameter("vision_model", "gpt-4o")
             confidence_threshold = self.get_parameter("confidence_threshold", 0.6)
             context_hint = self.get_parameter("context_hint", "")
-            if context_hint:
-                context_hint = context.resolve_value(context_hint)
             click_after = self.get_parameter("click_after_find", False)
 
             logger.info(f"[{self.name}] Finding element: '{description}' using {model}")
@@ -223,9 +219,7 @@ class VisualFindElementNode(BrowserBaseNode):
 
                 # Click if requested
                 if click_after:
-                    logger.info(
-                        f"[{self.name}] Clicking at ({result.center_x}, {result.center_y})"
-                    )
+                    logger.info(f"[{self.name}] Clicking at ({result.center_x}, {result.center_y})")
                     await page.mouse.click(result.center_x, result.center_y)
 
                 self.set_output_value("page", page)
@@ -245,8 +239,7 @@ class VisualFindElementNode(BrowserBaseNode):
 
             # Element not found
             logger.warning(
-                f"[{self.name}] Element not found: '{description}' - "
-                f"{result.error_message}"
+                f"[{self.name}] Element not found: '{description}' - " f"{result.error_message}"
             )
 
             # Screenshot on fail

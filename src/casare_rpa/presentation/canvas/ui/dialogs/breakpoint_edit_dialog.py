@@ -184,9 +184,7 @@ class BreakpointEditDialog(QDialog):
         condition_layout = QVBoxLayout(condition_group)
 
         self._condition_edit = QTextEdit()
-        self._condition_edit.setPlaceholderText(
-            "Python expression (e.g., len(items) > 10)"
-        )
+        self._condition_edit.setPlaceholderText("Python expression (e.g., len(items) > 10)")
         self._condition_edit.setMinimumHeight(60)
         self._condition_edit.setMaximumHeight(80)
         condition_layout.addWidget(self._condition_edit)
@@ -259,9 +257,7 @@ class BreakpointEditDialog(QDialog):
         log_layout = QVBoxLayout(log_group)
 
         self._log_message_edit = QTextEdit()
-        self._log_message_edit.setPlaceholderText(
-            "Processing item {index} of {total}..."
-        )
+        self._log_message_edit.setPlaceholderText("Processing item {index} of {total}...")
         self._log_message_edit.setMinimumHeight(60)
         self._log_message_edit.setMaximumHeight(80)
         log_layout.addWidget(self._log_message_edit)

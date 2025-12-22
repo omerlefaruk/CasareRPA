@@ -21,7 +21,6 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "branch_count",
@@ -40,6 +39,7 @@ from casare_rpa.domain.value_objects.types import (
         tooltip="If True, stop all branches when one fails. If False, continue other branches.",
     ),
 )
+@node(category="control_flow")
 class ForkNode(BaseNode):
     """
     Fork node that splits execution into multiple parallel branches.
@@ -127,7 +127,6 @@ class ForkNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "merge_strategy",
@@ -138,6 +137,7 @@ class ForkNode(BaseNode):
         tooltip="How to merge branch results: all (combine), first (first to complete), last (last to complete)",
     ),
 )
+@node(category="control_flow")
 class JoinNode(BaseNode):
     """
     Join node that synchronizes parallel branches from a ForkNode.
@@ -222,9 +222,7 @@ class JoinNode(BaseNode):
                 if isinstance(branch_vars, dict):
                     context.merge_branch_results(branch_name, branch_vars)
 
-            logger.info(
-                f"Join completed: {len(branch_results)} branches merged ({merge_strategy})"
-            )
+            logger.info(f"Join completed: {len(branch_results)} branches merged ({merge_strategy})")
 
             self.status = NodeStatus.SUCCESS
 
@@ -243,8 +241,14 @@ class JoinNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
+    PropertyDef(
+        "items",
+        PropertyType.LIST,
+        required=True,
+        label="Items",
+        tooltip="List of items to process",
+    ),
     PropertyDef(
         "batch_size",
         PropertyType.INTEGER,
@@ -270,6 +274,7 @@ class JoinNode(BaseNode):
         tooltip="Maximum time in seconds for each item's processing",
     ),
 )
+@node(category="control_flow", exec_outputs=["body", "completed"])
 class ParallelForEachNode(BaseNode):
     """
     Parallel ForEach node that processes list items concurrently.
@@ -396,9 +401,7 @@ class ParallelForEachNode(BaseNode):
             state["index"] = batch_end
             context.set_variable(state_key, state)
 
-            logger.info(
-                f"ParallelForEach batch: items {index}-{batch_end-1} of {len(items)}"
-            )
+            logger.info(f"ParallelForEach batch: items {index}-{batch_end-1} of {len(items)}")
 
             self.status = NodeStatus.RUNNING
 

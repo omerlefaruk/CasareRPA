@@ -36,13 +36,6 @@ try:
 except ImportError:
     HAS_DISPATCHER = False
 
-try:
-    from casare_rpa.infrastructure.orchestrator.communication.websocket_server import (
-        OrchestratorServer,
-    )
-
-    HAS_SERVER = True
-except ImportError:
     HAS_SERVER = False
     logger.warning("websockets not installed. Server features disabled.")
 
@@ -138,7 +131,7 @@ class OrchestratorEngine:
 
         # WebSocket server
         # SECURITY: Default to localhost only. Use configure_server() to enable network access.
-        self._server: Optional["OrchestratorServer"] = None
+        self._server: Any = None
         self._server_host: str = "127.0.0.1"
         self._server_port: int = 8765
 
@@ -164,9 +157,7 @@ class OrchestratorEngine:
 
         # Start scheduler
         try:
-            self._scheduler = JobScheduler(
-                on_schedule_trigger=self._on_schedule_trigger
-            )
+            self._scheduler = JobScheduler(on_schedule_trigger=self._on_schedule_trigger)
             await self._scheduler.start()
         except ImportError:
             logger.warning("APScheduler not available, scheduling disabled")
@@ -201,9 +192,8 @@ class OrchestratorEngine:
         self._background_tasks.clear()
 
         # Stop server
-        if self._server:
-            await self._server.stop()
-            self._server = None
+        # Stop server - Removed
+        self._server = None
 
         # Stop trigger manager
         if self._trigger_manager:
@@ -234,18 +224,15 @@ class OrchestratorEngine:
         self._server_host = host
         self._server_port = port
 
-        self._server = OrchestratorServer(host=host, port=port)
+        logger.warning(f"OrchestratorServer has been removed. Cannot start server on {host}:{port}")
+        self._server = None
 
         # Wire callbacks from server to engine
-        self._server.set_callbacks(
-            on_robot_connect=self._on_server_robot_connect,
-            on_robot_disconnect=self._on_server_robot_disconnect,
-            on_job_progress=self._on_server_job_progress,
-            on_job_complete=self._on_server_job_complete,
-            on_job_failed=self._on_server_job_failed,
-        )
+        # Wire callbacks from server to engine - Removed
+        # self._server.set_callbacks(...)
 
-        await self._server.start()
+        # await self._server.start()
+        logger.warning("Orchestrator server not available (component removed)")
         logger.info(f"Orchestrator server started on ws://{host}:{port}")
 
     async def _on_server_robot_connect(self, robot: Robot):
@@ -271,9 +258,7 @@ class OrchestratorEngine:
 
         await self._service.update_robot_status(robot_id, RobotStatus.OFFLINE)
 
-    async def _on_server_job_progress(
-        self, job_id: str, progress: int, current_node: str
-    ):
+    async def _on_server_job_progress(self, job_id: str, progress: int, current_node: str):
         """Handle job progress from robot."""
         await self.update_job_progress(job_id, progress, current_node)
 
@@ -301,7 +286,9 @@ class OrchestratorEngine:
             return False
 
         # Send job via WebSocket
-        result = await self._server.send_job(robot_id, job)
+        # Send job via WebSocket
+        # result = await self._server.send_job(robot_id, job)
+        result = {"accepted": False, "reason": "Server component removed"}
 
         if result.get("accepted"):
             job.status = JobStatus.RUNNING
@@ -324,14 +311,16 @@ class OrchestratorEngine:
     def connected_robots(self) -> List[str]:
         """Get list of connected robot IDs."""
         if self._server:
-            return [r.id for r in self._server.get_connected_robots()]
+            # return [r.id for r in self._server.get_connected_robots()]
+            return []
         return []
 
     @property
     def available_robots(self) -> List[Robot]:
         """Get list of available robots."""
         if self._server:
-            return self._server.get_available_robots()
+            # return self._server.get_available_robots()
+            return []
         return []
 
     async def _load_robots(self):
@@ -500,9 +489,7 @@ class OrchestratorEngine:
             check_duplicate=False,  # Allow retry
         )
 
-    async def update_job_progress(
-        self, job_id: str, progress: int, current_node: str = ""
-    ) -> bool:
+    async def update_job_progress(self, job_id: str, progress: int, current_node: str = "") -> bool:
         """
         Update job progress (called by robot).
 
@@ -745,9 +732,7 @@ class OrchestratorEngine:
 
     # ==================== EVENT HANDLERS ====================
 
-    def _on_job_state_change(
-        self, job: Job, old_status: JobStatus, new_status: JobStatus
-    ):
+    def _on_job_state_change(self, job: Job, old_status: JobStatus, new_status: JobStatus):
         """Handle job state changes from queue."""
         logger.debug(f"Job {job.id[:8]}: {old_status.value} -> {new_status.value}")
 
@@ -828,9 +813,7 @@ class OrchestratorEngine:
             "workflow_name": job.workflow_name,
             "robot_id": job.robot_id,
             "robot_name": job.robot_name,
-            "status": job.status.value
-            if isinstance(job.status, JobStatus)
-            else job.status,
+            "status": job.status.value if isinstance(job.status, JobStatus) else job.status,
             "priority": job.priority.value
             if isinstance(job.priority, JobPriority)
             else job.priority,
@@ -940,9 +923,7 @@ class OrchestratorEngine:
             return True
         return False
 
-    async def fire_trigger_manually(
-        self, trigger_id: str, payload: Optional[Dict] = None
-    ) -> bool:
+    async def fire_trigger_manually(self, trigger_id: str, payload: Optional[Dict] = None) -> bool:
         """
         Manually fire a trigger.
 
@@ -990,9 +971,7 @@ class OrchestratorEngine:
         # Get workflow for this trigger
         # The workflow_id should be stored in the trigger config
         trigger = (
-            self._trigger_manager.get_trigger(event.trigger_id)
-            if self._trigger_manager
-            else None
+            self._trigger_manager.get_trigger(event.trigger_id) if self._trigger_manager else None
         )
         if not trigger:
             logger.error(f"Trigger {event.trigger_id} not found")
@@ -1004,9 +983,7 @@ class OrchestratorEngine:
         # Load workflow
         workflow = await self._service.get_workflow(workflow_id)
         if not workflow:
-            logger.error(
-                f"Workflow {workflow_id} not found for trigger {event.trigger_id}"
-            )
+            logger.error(f"Workflow {workflow_id} not found for trigger {event.trigger_id}")
             return
 
         # Submit job with trigger payload as input
@@ -1014,9 +991,7 @@ class OrchestratorEngine:
             workflow_id=workflow.id,
             workflow_name=workflow.name,
             workflow_json=workflow.json_definition,
-            priority=JobPriority(event.priority)
-            if event.priority <= 3
-            else JobPriority.NORMAL,
+            priority=JobPriority(event.priority) if event.priority <= 3 else JobPriority.NORMAL,
             input_data={
                 "trigger_id": event.trigger_id,
                 "trigger_type": event.trigger_type,

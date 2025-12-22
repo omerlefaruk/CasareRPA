@@ -23,6 +23,7 @@ from casare_rpa.infrastructure.observability.metrics import get_metrics_collecto
 from casare_rpa.infrastructure.orchestrator.api.auth import (
     decode_token,
     get_robot_authenticator,
+    _get_admin_api_key,
     JWT_DEV_MODE,
 )
 from casare_rpa.infrastructure.orchestrator.api.models import (
@@ -68,6 +69,11 @@ async def verify_websocket_token(
         return None
 
     # Try JWT token first
+    admin_key = _get_admin_api_key()
+    if admin_key and token == admin_key:
+        logger.debug("WebSocket authenticated via admin API key")
+        return "admin_api_key"
+
     try:
         payload = decode_token(token)
         if payload.type == "access":
@@ -106,16 +112,12 @@ class ConnectionManager:
         """Accept new WebSocket connection."""
         await websocket.accept()
         self.active_connections.add(websocket)
-        logger.info(
-            f"WebSocket connected. Total connections: {len(self.active_connections)}"
-        )
+        logger.info(f"WebSocket connected. Total connections: {len(self.active_connections)}")
 
     def disconnect(self, websocket: WebSocket):
         """Remove disconnected WebSocket."""
         self.active_connections.discard(websocket)
-        logger.info(
-            f"WebSocket disconnected. Total connections: {len(self.active_connections)}"
-        )
+        logger.info(f"WebSocket disconnected. Total connections: {len(self.active_connections)}")
 
     async def broadcast(self, message: dict):
         """
@@ -313,9 +315,7 @@ async def broadcast_job_update(job_id: str, status: str):
     logger.debug(f"Broadcasted job update: {job_id} → {status}")
 
 
-async def broadcast_robot_status(
-    robot_id: str, status: str, cpu_percent: float, memory_mb: float
-):
+async def broadcast_robot_status(robot_id: str, status: str, cpu_percent: float, memory_mb: float):
     """
     Broadcast robot status update to all connected clients.
 

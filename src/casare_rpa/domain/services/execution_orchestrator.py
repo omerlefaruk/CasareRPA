@@ -74,9 +74,7 @@ class ExecutionOrchestrator:
         # Instead of O(n) scans through all connections for every node execution
         self._outgoing_connections: Dict[NodeId, List] = {}
         self._incoming_connections: Dict[NodeId, List] = {}
-        self._port_connections: Dict[
-            tuple, List
-        ] = {}  # (node_id, port_name) -> connections
+        self._port_connections: Dict[tuple, List] = {}  # (node_id, port_name) -> connections
         self._build_connection_indexes()
 
     def _build_connection_indexes(self) -> None:
@@ -120,8 +118,7 @@ class ExecutionOrchestrator:
         for node_id, node_data in self.workflow.nodes.items():
             # Handle both dict (serialized) and node instance formats
             if isinstance(node_data, dict):
-                # Support both "node_type" and "type" keys for compatibility
-                node_type = node_data.get("node_type") or node_data.get("type", "")
+                node_type = node_data.get("node_type", "")
             else:
                 # Node instance - check node_type attribute
                 node_type = getattr(node_data, "node_type", "")
@@ -159,7 +156,7 @@ class ExecutionOrchestrator:
         for node_id, node_data in self.workflow.nodes.items():
             # Handle both dict (serialized) and node instance formats
             if isinstance(node_data, dict):
-                node_type = node_data.get("node_type") or node_data.get("type", "")
+                node_type = node_data.get("node_type", "")
             else:
                 node_type = getattr(node_data, "node_type", "")
 
@@ -178,7 +175,7 @@ class ExecutionOrchestrator:
         """
         for node_id, node_data in self.workflow.nodes.items():
             if isinstance(node_data, dict):
-                node_type = node_data.get("node_type") or node_data.get("type", "")
+                node_type = node_data.get("node_type", "")
             else:
                 node_type = getattr(node_data, "node_type", "")
 
@@ -226,15 +223,11 @@ class ExecutionOrchestrator:
         # Check for dynamic routing (control flow nodes return next_nodes)
         if execution_result and "next_nodes" in execution_result:
             next_port_names = execution_result["next_nodes"]
-            logger.debug(
-                f"Dynamic routing from {current_node_id}: ports={next_port_names}"
-            )
+            logger.debug(f"Dynamic routing from {current_node_id}: ports={next_port_names}")
 
             # Find connections from specified ports with validation
             for port_name in next_port_names:
-                connections = self._get_connections_from_port(
-                    current_node_id, port_name
-                )
+                connections = self._get_connections_from_port(current_node_id, port_name)
 
                 if not connections:
                     # Log warning for missing connections
@@ -271,9 +264,7 @@ class ExecutionOrchestrator:
             # Only follow execution connections (not data connections)
             if "exec" in connection.source_port.lower():
                 next_nodes.append(connection.target_node)
-                logger.debug(
-                    f"Exec connection: {current_node_id} -> {connection.target_node}"
-                )
+                logger.debug(f"Exec connection: {current_node_id} -> {connection.target_node}")
 
         return next_nodes
 
@@ -330,9 +321,7 @@ class ExecutionOrchestrator:
         logger.info(f"Calculated execution path: {len(reachable)} nodes reachable")
         return reachable
 
-    def _calculate_subgraph(
-        self, start_node_id: NodeId, target_node_id: NodeId
-    ) -> Set[NodeId]:
+    def _calculate_subgraph(self, start_node_id: NodeId, target_node_id: NodeId) -> Set[NodeId]:
         """
         Calculate subgraph of nodes required to reach target from start.
 
@@ -348,9 +337,7 @@ class ExecutionOrchestrator:
         """
         # First, check if target is reachable
         if not self.is_reachable(start_node_id, target_node_id):
-            logger.error(
-                f"Target {target_node_id} is not reachable from {start_node_id}"
-            )
+            logger.error(f"Target {target_node_id} is not reachable from {start_node_id}")
             return set()
 
         # Build reverse graph for backtracking (using pre-built index)
@@ -453,9 +440,7 @@ class ExecutionOrchestrator:
         # For now, stop on all errors unless continue_on_error is set
         return True
 
-    def handle_control_flow(
-        self, node_id: NodeId, result: Dict[str, Any]
-    ) -> Optional[str]:
+    def handle_control_flow(self, node_id: NodeId, result: Dict[str, Any]) -> Optional[str]:
         """
         Process control flow signals (break/continue/return).
 
@@ -603,8 +588,7 @@ class ExecutionOrchestrator:
         if node_data:
             # Handle both dict (serialized) and node instance formats
             if isinstance(node_data, dict):
-                # Support both "node_type" and "type" keys for compatibility
-                return node_data.get("node_type") or node_data.get("type", "")
+                return node_data.get("node_type", "")
             else:
                 # Node instance - check node_type attribute
                 return getattr(node_data, "node_type", "")
@@ -632,9 +616,7 @@ class ExecutionOrchestrator:
         node_type = self.get_node_type(node_id)
         return node_type in CONTROL_FLOW_TYPES
 
-    def find_loop_body_nodes(
-        self, loop_start_id: NodeId, loop_end_id: NodeId
-    ) -> Set[NodeId]:
+    def find_loop_body_nodes(self, loop_start_id: NodeId, loop_end_id: NodeId) -> Set[NodeId]:
         """
         Find all nodes in a loop body between start and end nodes.
 
@@ -680,8 +662,7 @@ class ExecutionOrchestrator:
         body_nodes.discard(loop_end_id)
 
         logger.debug(
-            f"Found {len(body_nodes)} loop body nodes between "
-            f"{loop_start_id} and {loop_end_id}"
+            f"Found {len(body_nodes)} loop body nodes between " f"{loop_start_id} and {loop_end_id}"
         )
         return body_nodes
 

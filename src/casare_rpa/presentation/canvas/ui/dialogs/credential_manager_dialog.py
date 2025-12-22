@@ -51,15 +51,20 @@ class ApiKeyTestWorker(QObject):
 
     def run(self) -> None:
         """Test the API key by making a minimal API call."""
+        import asyncio
+
         try:
-            success, message = self._test_provider(self.provider, self.api_key)
+            success, message = asyncio.run(self._test_provider_async(self.provider, self.api_key))
             self.finished.emit(success, message)
         except Exception as e:
             self.finished.emit(False, f"Test failed: {str(e)}")
 
-    def _test_provider(self, provider: str, api_key: str) -> tuple[bool, str]:
-        """Test API key for specific provider."""
-        import httpx
+    async def _test_provider_async(self, provider: str, api_key: str) -> tuple[bool, str]:
+        """Test API key for specific provider using UnifiedHttpClient."""
+        from casare_rpa.infrastructure.http import (
+            UnifiedHttpClient,
+            UnifiedHttpClientConfig,
+        )
 
         # Provider-specific test endpoints and headers
         test_configs = {
@@ -146,44 +151,48 @@ class ApiKeyTestWorker(QObject):
                 )
             return False, "API key appears to be invalid (too short)."
 
+        client_config = UnifiedHttpClientConfig(
+            default_timeout=15.0,
+            max_retries=1,  # Don't retry for test - we want fast feedback
+        )
+
         try:
-            with httpx.Client(timeout=15.0) as client:
+            async with UnifiedHttpClient(client_config) as client:
                 if config["method"] == "GET":
-                    response = client.get(config["url"], headers=config["headers"])
+                    response = await client.get(config["url"], headers=config["headers"])
                 else:
-                    response = client.post(
+                    response = await client.post(
                         config["url"],
                         headers=config["headers"],
                         json=config.get("body", {}),
                     )
 
-                if response.status_code == 200:
+                status_code = response.status
+                if status_code == 200:
                     return True, "Connection successful! API key is valid."
-                elif response.status_code == 401:
+                elif status_code == 401:
                     return False, "Authentication failed. Invalid API key."
-                elif response.status_code == 403:
+                elif status_code == 403:
                     return False, "Access forbidden. Check API key permissions."
-                elif response.status_code == 429:
+                elif status_code == 429:
                     return True, "API key valid (rate limited - try again later)."
                 else:
                     # Some APIs return 400 for minimal requests but key is still valid
-                    error_text = response.text[:200] if response.text else ""
-                    if (
-                        "invalid" in error_text.lower()
-                        or "unauthorized" in error_text.lower()
-                    ):
+                    response_text = await response.text()
+                    error_text = response_text[:200] if response_text else ""
+                    if "invalid" in error_text.lower() or "unauthorized" in error_text.lower():
                         return (
                             False,
-                            f"API error ({response.status_code}): {error_text}",
+                            f"API error ({status_code}): {error_text}",
                         )
                     return (
                         True,
-                        f"API key appears valid (status: {response.status_code}).",
+                        f"API key appears valid (status: {status_code}).",
                     )
 
-        except httpx.ConnectError:
+        except ConnectionError:
             return False, "Connection failed. Check your internet connection."
-        except httpx.TimeoutException:
+        except TimeoutError:
             return False, "Connection timed out. The API server may be slow."
         except Exception as e:
             return False, f"Test error: {str(e)}"
@@ -290,9 +299,7 @@ class CredentialManagerDialog(QDialog):
                 logger.debug("Stopping API test thread on dialog close")
                 self._test_thread.quit()
                 if not self._test_thread.wait(1000):  # Wait up to 1 second
-                    logger.warning(
-                        "API test thread did not stop gracefully, terminating"
-                    )
+                    logger.warning("API test thread did not stop gracefully, terminating")
                     self._test_thread.terminate()
                     self._test_thread.wait(500)
             self._test_thread = None
@@ -303,9 +310,7 @@ class CredentialManagerDialog(QDialog):
                 logger.debug("Stopping token refresh thread on dialog close")
                 self._token_refresh_thread.quit()
                 if not self._token_refresh_thread.wait(1000):  # Wait up to 1 second
-                    logger.warning(
-                        "Token refresh thread did not stop gracefully, terminating"
-                    )
+                    logger.warning("Token refresh thread did not stop gracefully, terminating")
                     self._token_refresh_thread.terminate()
                     self._token_refresh_thread.wait(500)
             self._token_refresh_thread = None
@@ -438,6 +443,10 @@ class CredentialManagerDialog(QDialog):
         self._api_delete_btn = QPushButton("Delete")
         self._api_delete_btn.clicked.connect(self._delete_api_key)
         btn_layout.addWidget(self._api_delete_btn)
+
+        self._api_oauth_btn = QPushButton("Add OAuth (Beta)")
+        self._api_oauth_btn.clicked.connect(self._add_oauth_credential)
+        btn_layout.addWidget(self._api_oauth_btn)
 
         self._api_test_btn = QPushButton("Test Connection")
         self._api_test_btn.clicked.connect(self._test_api_key)
@@ -767,10 +776,7 @@ class CredentialManagerDialog(QDialog):
             return
 
         # Don't start another refresh if one is already running
-        if (
-            self._token_refresh_thread is not None
-            and self._token_refresh_thread.isRunning()
-        ):
+        if self._token_refresh_thread is not None and self._token_refresh_thread.isRunning():
             logger.debug("Token refresh already in progress")
             return
 
@@ -877,9 +883,7 @@ class CredentialManagerDialog(QDialog):
 
         # Credentials list
         self._all_credentials_list = QListWidget()
-        self._all_credentials_list.itemDoubleClicked.connect(
-            self._on_credential_double_clicked
-        )
+        self._all_credentials_list.itemDoubleClicked.connect(self._on_credential_double_clicked)
         layout.addWidget(self._all_credentials_list)
 
         # Info panel
@@ -894,7 +898,7 @@ class CredentialManagerDialog(QDialog):
 
     def _load_credentials(self) -> None:
         """Load credentials into the UI."""
-        store = self._get_store()
+        self._get_store()
 
         # Load API keys status
         self._refresh_api_status()
@@ -919,9 +923,7 @@ class CredentialManagerDialog(QDialog):
 
         from casare_rpa.infrastructure.security.credential_store import CredentialType
 
-        credentials = store.list_credentials(
-            credential_type=CredentialType.USERNAME_PASSWORD
-        )
+        credentials = store.list_credentials(credential_type=CredentialType.USERNAME_PASSWORD)
         for cred in credentials:
             item = QListWidgetItem(f"{cred['name']} ({cred['category']})")
             item.setData(Qt.ItemDataRole.UserRole, cred["id"])
@@ -934,9 +936,7 @@ class CredentialManagerDialog(QDialog):
 
         credentials = store.list_credentials()
         for cred in credentials:
-            item = QListWidgetItem(
-                f"{cred['name']} [{cred['type']}] - {cred['category']}"
-            )
+            item = QListWidgetItem(f"{cred['name']} [{cred['type']}] - {cred['category']}")
             item.setData(Qt.ItemDataRole.UserRole, cred["id"])
             self._all_credentials_list.addItem(item)
 
@@ -1011,9 +1011,7 @@ class CredentialManagerDialog(QDialog):
         try:
             store.save_credential(
                 name=name,
-                credential_type=store._credentials.get(
-                    self._current_credential_id
-                ).credential_type
+                credential_type=store._credentials.get(self._current_credential_id).credential_type
                 if self._current_credential_id
                 else __import__(
                     "casare_rpa.infrastructure.security.credential_store",
@@ -1058,6 +1056,26 @@ class CredentialManagerDialog(QDialog):
             self._api_status_label.setStyleSheet("color: #f44336;")
             self.credentials_changed.emit()
             self._refresh_all_credentials()
+
+    def _add_oauth_credential(self) -> None:
+        """Open OpenAI/Generic OAuth dialog."""
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs.openai_oauth_dialog import (
+                OpenAIOAuthDialog,
+            )
+
+            dialog = OpenAIOAuthDialog(self)
+            dialog.credential_created.connect(self._on_oauth_credential_created)
+            dialog.exec()
+        except ImportError as e:
+            logger.error(f"OAuth dialog error: {e}")
+            QMessageBox.critical(self, "Error", f"Could not load OAuth dialog: {e}")
+
+    def _on_oauth_credential_created(self, credential_id: str) -> None:
+        """Handle new OAuth credential."""
+        self._refresh_all_credentials()
+        self.credentials_changed.emit()
+        QMessageBox.information(self, "Success", "OAuth credential added!")
 
     def _test_api_key(self) -> None:
         """Test API key connection."""
@@ -1203,9 +1221,7 @@ class CredentialManagerDialog(QDialog):
 
         self._all_credentials_list.clear()
         for cred in results:
-            item = QListWidgetItem(
-                f"{cred['name']} [{cred['type']}] - {cred['category']}"
-            )
+            item = QListWidgetItem(f"{cred['name']} [{cred['type']}] - {cred['category']}")
             item.setData(Qt.ItemDataRole.UserRole, cred["id"])
             self._all_credentials_list.addItem(item)
 

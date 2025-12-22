@@ -116,9 +116,7 @@ class NodeCreationHelper(QObject):
                 node_identifier = getattr(visual_class, "__identifier__", identifier)
                 node_name = getattr(visual_class, "NODE_NAME", node_type)
 
-                full_type = (
-                    f"{node_identifier}.{node_name}" if node_identifier else node_name
-                )
+                full_type = f"{node_identifier}.{node_name}" if node_identifier else node_name
                 logger.debug(f"Creating node with type: {full_type}")
 
                 # Create the node
@@ -130,9 +128,7 @@ class NodeCreationHelper(QObject):
                 else:
                     logger.warning(f"create_node returned None for: {full_type}")
             else:
-                logger.warning(
-                    f"Could not find visual class for node type: {node_type}"
-                )
+                logger.warning(f"Could not find visual class for node type: {node_type}")
 
             return None
 
@@ -153,9 +149,14 @@ class NodeCreationHelper(QObject):
         """
         try:
             from NodeGraphQt.constants import PortTypeEnum
+            from casare_rpa.application.services.port_type_service import (
+                get_port_type_registry,
+            )
 
             # Determine if source is input or output
             is_source_output = source_port_item.port_type == PortTypeEnum.OUT.value
+            registry = get_port_type_registry()
+            source_type = self._get_port_data_type_from_port_item(source_port_item)
 
             logger.debug(
                 f"Auto-connecting from {'output' if is_source_output else 'input'} "
@@ -165,34 +166,62 @@ class NodeCreationHelper(QObject):
             # Find compatible port on new node and connect
             if is_source_output:
                 # Source is output, find input on new node
+                best_target_item = None
+                best_score = -1
+
                 for port in new_node.input_ports():
-                    target_port_item = port.view
+                    target_port_item = getattr(port, "view", None)
+                    if target_port_item is None:
+                        continue
+
+                    target_type = self._get_node_port_type(new_node, port.name())
+                    score = self._score_connection(
+                        source_type=source_type,
+                        target_type=target_type,
+                        registry=registry,
+                    )
+                    if score > best_score:
+                        best_score = score
+                        best_target_item = target_port_item
+
+                if best_target_item is not None and best_score >= 0:
                     try:
-                        source_port_item.connect_to(target_port_item)
+                        source_port_item.connect_to(best_target_item)
                         logger.info(
-                            f"Auto-connected {source_port_item.name} -> {target_port_item.name}"
+                            f"Auto-connected {source_port_item.name} -> {best_target_item.name}"
                         )
                         return True
                     except Exception as e:
-                        logger.debug(
-                            f"Could not connect to {target_port_item.name}: {e}"
-                        )
-                        continue
+                        logger.debug(f"Could not connect to {best_target_item.name}: {e}")
             else:
                 # Source is input, find output on new node
+                best_source_item = None
+                best_score = -1
+
                 for port in new_node.output_ports():
-                    target_port_item = port.view
+                    candidate_source_item = getattr(port, "view", None)
+                    if candidate_source_item is None:
+                        continue
+
+                    candidate_type = self._get_node_port_type(new_node, port.name())
+                    score = self._score_connection(
+                        source_type=candidate_type,
+                        target_type=source_type,
+                        registry=registry,
+                    )
+                    if score > best_score:
+                        best_score = score
+                        best_source_item = candidate_source_item
+
+                if best_source_item is not None and best_score >= 0:
                     try:
-                        target_port_item.connect_to(source_port_item)
+                        best_source_item.connect_to(source_port_item)
                         logger.info(
-                            f"Auto-connected {target_port_item.name} -> {source_port_item.name}"
+                            f"Auto-connected {best_source_item.name} -> {source_port_item.name}"
                         )
                         return True
                     except Exception as e:
-                        logger.debug(
-                            f"Could not connect to {target_port_item.name}: {e}"
-                        )
-                        continue
+                        logger.debug(f"Could not connect to {best_source_item.name}: {e}")
 
             return False
 
@@ -202,6 +231,72 @@ class NodeCreationHelper(QObject):
 
             logger.error(traceback.format_exc())
             return False
+
+    def _get_node_port_type(self, node, port_name: str):
+        """Get port type from a node if available (None for exec, DataType for data)."""
+        try:
+            if hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+                return node.get_port_type(port_name)
+        except Exception:
+            pass
+        if "exec" in str(port_name).lower():
+            return None
+        try:
+            from casare_rpa.domain.value_objects.types import DataType
+
+            return DataType.ANY
+        except Exception:
+            return None
+
+    def _get_port_data_type_from_port_item(self, port_item):
+        """
+        Get DataType for a PortItem (None for exec).
+
+        Best-effort: uses attached visual node's get_port_type when available.
+        """
+        try:
+            port_name = getattr(port_item, "name", "")
+            node_item = port_item.parentItem() if hasattr(port_item, "parentItem") else None
+            node = None
+            if node_item is not None:
+                node = getattr(node_item, "node", None) or getattr(node_item, "_node", None)
+            if node and hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+                return node.get_port_type(port_name)
+        except Exception:
+            pass
+
+        try:
+            port_name = getattr(port_item, "name", "")
+            if "exec" in str(port_name).lower():
+                return None
+        except Exception:
+            pass
+
+        try:
+            from casare_rpa.domain.value_objects.types import DataType
+
+            return DataType.ANY
+        except Exception:
+            return None
+
+    def _score_connection(self, source_type, target_type, registry) -> int:
+        """Score a potential connection (higher is better)."""
+        try:
+            from casare_rpa.domain.value_objects.types import DataType
+
+            if source_type is None and target_type is None:
+                return 100
+            if source_type is None or target_type is None:
+                return -1
+            if source_type == target_type and source_type != DataType.ANY:
+                return 90
+            if target_type == DataType.ANY:
+                return 60
+            if registry.is_compatible(source_type, target_type):
+                return 70
+        except Exception:
+            pass
+        return -1
 
     def create_set_variable_for_port(self, source_port_item) -> Optional[object]:
         """
@@ -227,9 +322,7 @@ class NodeCreationHelper(QObject):
             logger.info(f"Creating SetVariable for port: {node_name}.{port_name}")
 
             # Calculate position
-            source_scene_pos, source_width = self._get_node_position_and_width(
-                source_node
-            )
+            source_scene_pos, source_width = self._get_node_position_and_width(source_node)
             port_scene_pos = source_port_item.scenePos()
             port_y = port_scene_pos.y()
 
@@ -253,9 +346,7 @@ class NodeCreationHelper(QObject):
             # Set default_value from source port's last output (if available)
             # source_node may be NodeItem (graphics) or VisualNode - handle both
             visual_node = source_node
-            if not hasattr(visual_node, "get_last_output") and hasattr(
-                source_node, "node"
-            ):
+            if not hasattr(visual_node, "get_last_output") and hasattr(source_node, "node"):
                 visual_node = source_node.node
 
             if hasattr(visual_node, "get_last_output"):
@@ -264,9 +355,7 @@ class NodeCreationHelper(QObject):
                     port_value = last_output[port_name]
                     value_str = str(port_value) if port_value is not None else ""
                     set_var_node.set_property("default_value", value_str)
-                    logger.debug(
-                        f"Set default_value from port output: {value_str[:100]}"
-                    )
+                    logger.debug(f"Set default_value from port output: {value_str[:100]}")
 
             logger.debug(
                 f"SetVariable node created at ({initial_x}, {initial_y}) "
@@ -274,9 +363,7 @@ class NodeCreationHelper(QObject):
             )
 
             # Refine position to avoid overlaps
-            self._refine_node_position(
-                set_var_node, source_scene_pos, source_width, port_y
-            )
+            self._refine_node_position(set_var_node, source_scene_pos, source_width, port_y)
 
             # Connect the source output port to the "value" input
             self._connect_to_set_variable(source_port_item, set_var_node)
@@ -329,9 +416,7 @@ class NodeCreationHelper(QObject):
 
         # Fallback to node.pos property
         raw_pos = (
-            node.pos()
-            if callable(getattr(node, "pos", None))
-            else getattr(node, "pos", (0, 0))
+            node.pos() if callable(getattr(node, "pos", None)) else getattr(node, "pos", (0, 0))
         )
         if isinstance(raw_pos, (list, tuple)):
             return QPointF(raw_pos[0], raw_pos[1]), 200
@@ -375,8 +460,7 @@ class NodeCreationHelper(QObject):
                 colliding_items = [
                     it
                     for it in scene.items(new_rect)
-                    if it is not new_view
-                    and it.__class__.__name__ == new_view.__class__.__name__
+                    if it is not new_view and it.__class__.__name__ == new_view.__class__.__name__
                 ]
                 colliding_nodes = [it for it in colliding_items if hasattr(it, "node")]
 
@@ -386,9 +470,7 @@ class NodeCreationHelper(QObject):
                 # Bump to the right
                 target_x += new_width + 50
                 self._set_node_position(set_var_node, new_view, target_x, target_y)
-                logger.debug(
-                    f"Adjusted SetVariable position: attempt {attempt + 1}, x={target_x}"
-                )
+                logger.debug(f"Adjusted SetVariable position: attempt {attempt + 1}, x={target_x}")
 
             # Select the new node
             self._graph.clear_selection()

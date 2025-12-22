@@ -1,6 +1,30 @@
 # Nodes Package Index
 
-Quick reference for automation nodes. 413+ nodes across 18 categories.
+Quick reference for automation nodes. 430+ nodes across 18 categories.
+
+## Modern Node Standard (2025)
+
+**All nodes follow Schema-Driven Logic:**
+
+```python
+@properties(
+    PropertyDef("url", PropertyType.STRING, required=True),
+    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
+)
+@node(category="browser")
+class MyNode(BaseNode):
+    async def execute(self, context):
+        url = self.get_parameter("url")              # required
+        timeout = self.get_parameter("timeout", 30000)  # optional
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source: port → config)
+- Explicit DataType on all ports (ANY is valid)
+- NO `self.config.get()` calls (LEGACY)
+
+**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
 
 ## Directory Structure
 
@@ -15,7 +39,7 @@ Quick reference for automation nodes. 413+ nodes across 18 categories.
 | `document/` | PDF, Office | PDFReaderNode |
 | `email/` | Email automation | SendEmailNode, IMAPNode |
 | `error_handling/` | Error recovery | TryCatchNode, RetryNode |
-| `file/` | File I/O | ReadFileNode, WriteFileNode, ImageConvertNode |
+| `file/` | File I/O, **Super Nodes** | ReadFileNode, WriteFileNode, **FileSystemSuperNode**, **StructuredDataSuperNode** |
 | `google/` | Google services | SheetsNode, DriveNode, DocsNode |
 | `http/` | HTTP requests | HttpRequestNode |
 | `llm/` | AI/LLM nodes | LLMNode, PromptNode |
@@ -24,17 +48,25 @@ Quick reference for automation nodes. 413+ nodes across 18 categories.
 | `trigger_nodes/` | Workflow triggers | ScheduleNode, WebhookNode |
 | `workflow/` | Subflows | SubflowNode |
 
+## Super Nodes
+
+Super Nodes are consolidated action-based nodes that replace multiple atomic nodes with a single configurable node. They use dynamic ports and conditional widget visibility.
+
+| Super Node | Actions | File |
+|------------|---------|------|
+| `FileSystemSuperNode` | Read/Write/Append/Delete/Copy/Move File, File Exists, Get File Size/Info, Create Directory, List Files/Directory (12 actions) | `file/super_node.py` |
+| `StructuredDataSuperNode` | Read/Write CSV, Read/Write JSON, Zip/Unzip Files, Image Convert (7 actions) | `file/super_node.py` |
+
+See [Super Node Pattern Documentation](../../../../.brain/docs/super-node-pattern.md) for implementation guide.
+
 ## Key Files (Root)
 
 | File | Contains | Lines |
 |------|----------|-------|
 | `__init__.py` | Lazy-load registry | ~1400 |
-| `browser_nodes.py` | Browser lifecycle | ~1540 |
-| `interaction_nodes.py` | Click, type, scroll | ~1200 |
-| `navigation_nodes.py` | Goto, back, forward | ~700 |
-| `text_nodes.py` | Text extraction | ~1200 |
-| `data_nodes.py` | Data transforms | ~700 |
-| `wait_nodes.py` | Wait operations | ~400 |
+| `registry_data.py` | `NODE_REGISTRY` (single source of truth) | ~25000 |
+| `data_nodes.py` | Browser extraction nodes (legacy file placement) | ~700 |
+| `wait_nodes.py` | Wait operations (legacy file placement) | ~400 |
 | `variable_nodes.py` | Variables | ~400 |
 
 ## Entry Points
@@ -52,22 +84,23 @@ from casare_rpa.nodes.control_flow import IfNode, ForLoopStartNode, BreakNode
 
 ## Node Registry
 
-Nodes are registered in `_NODE_REGISTRY` dict in `__init__.py`:
+Nodes are registered in `NODE_REGISTRY` in `registry_data.py` (single source of truth):
 ```python
-_NODE_REGISTRY = {
-    "LaunchBrowserNode": "browser_nodes",
-    "ClickElementNode": "interaction_nodes",
+NODE_REGISTRY = {
+    "LaunchBrowserNode": "browser.lifecycle",
+    "ClickElementNode": "browser.interaction",
     # ...
 }
 ```
 
 ## Creating New Nodes
 
-See `agent-rules/rules/10-node-workflow.md` for full protocol:
+See `.brain/docs/node-checklist.md` for the canonical checklist:
 1. Check existing nodes first
-2. Create node file with `@node` decorator
-3. Add to `_NODE_REGISTRY`
-4. Create tests in `tests/nodes/`
+2. Implement with `@properties(...)` + `@node(category="...")`
+3. Use `get_parameter()` for optional properties (NOT `config.get()`)
+4. Add to `src/casare_rpa/nodes/registry_data.py`
+5. Create tests in `tests/nodes/`
 
 ## Related Indexes
 

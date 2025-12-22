@@ -16,7 +16,6 @@ CollapsibleSection widget for grouped/advanced properties.
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from loguru import logger
-from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
@@ -89,9 +88,7 @@ class PropertyRenderer:
         # Render ungrouped properties first (group=None)
         ungrouped = grouped.pop(None, [])
         visible_ungrouped = [
-            p
-            for p in self._filter_visible_properties(ungrouped)
-            if self._should_display(p)
+            p for p in self._filter_visible_properties(ungrouped) if self._should_display(p)
         ]
 
         for prop in visible_ungrouped:
@@ -102,16 +99,12 @@ class PropertyRenderer:
         # Render each named group in a CollapsibleSection
         for group_name, props in grouped.items():
             visible_props = [
-                p
-                for p in self._filter_visible_properties(props)
-                if self._should_display(p)
+                p for p in self._filter_visible_properties(props) if self._should_display(p)
             ]
             if visible_props:
                 # Determine if group should start collapsed
                 # Use group_collapsed from first property in group
-                start_collapsed = (
-                    visible_props[0].group_collapsed if visible_props else True
-                )
+                start_collapsed = visible_props[0].group_collapsed if visible_props else True
 
                 section = self._render_group(
                     group_name, visible_props, container, collapsed=start_collapsed
@@ -131,9 +124,7 @@ class PropertyRenderer:
         layout.addStretch()
         return container
 
-    def _filter_visible_properties(
-        self, props: List["PropertyDef"]
-    ) -> List["PropertyDef"]:
+    def _filter_visible_properties(self, props: List["PropertyDef"]) -> List["PropertyDef"]:
         """
         Filter out internal and advanced properties.
 
@@ -163,9 +154,7 @@ class PropertyRenderer:
         """
         return self._schema.should_display(prop.name, self._config)
 
-    def _render_property(
-        self, prop: "PropertyDef", parent: QWidget
-    ) -> Optional[QWidget]:
+    def _render_property(self, prop: "PropertyDef", parent: QWidget) -> Optional[QWidget]:
         """
         Render a single property widget.
 
@@ -182,7 +171,7 @@ class PropertyRenderer:
 
             # Handle dynamic choices - resolve them before widget creation
             if prop.dynamic_choices:
-                choices = self._schema.get_dynamic_choices(prop.name, self._config)
+                self._schema.get_dynamic_choices(prop.name, self._config)
                 # Widget factory should handle the resolved choices
                 # This is a hint - actual implementation depends on widget_factory
 
@@ -208,9 +197,7 @@ class PropertyRenderer:
                         )
                     elif hasattr(widget, "stateChanged"):
                         widget.stateChanged.connect(
-                            lambda v, name=prop.name: self._handle_value_change(
-                                name, bool(v)
-                            )
+                            lambda v, name=prop.name: self._handle_value_change(name, bool(v))
                         )
 
             return widget
@@ -319,9 +306,7 @@ class PropertyRenderer:
         return self._sections.get(name)
 
 
-def create_property_section_label(
-    text: str, parent: Optional[QWidget] = None
-) -> QLabel:
+def create_property_section_label(text: str, parent: Optional[QWidget] = None) -> QLabel:
     """
     Create a styled section header label.
 

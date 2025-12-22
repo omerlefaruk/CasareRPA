@@ -107,9 +107,7 @@ class ScheduledTrigger(BaseTrigger):
             elif frequency == "weekly":
                 hour = self._to_int(config.get("time_hour"), 9)
                 minute = self._to_int(config.get("time_minute"), 0)
-                day_of_week = config.get(
-                    "day_of_week", "mon"
-                )  # APScheduler accepts string
+                day_of_week = config.get("day_of_week", "mon")  # APScheduler accepts string
                 trigger = CronTrigger(
                     day_of_week=day_of_week, hour=hour, minute=minute, timezone=timezone
                 )
@@ -118,9 +116,7 @@ class ScheduledTrigger(BaseTrigger):
                 hour = self._to_int(config.get("time_hour"), 9)
                 minute = self._to_int(config.get("time_minute"), 0)
                 day = self._to_int(config.get("day_of_month"), 1)
-                trigger = CronTrigger(
-                    day=day, hour=hour, minute=minute, timezone=timezone
-                )
+                trigger = CronTrigger(day=day, hour=hour, minute=minute, timezone=timezone)
 
             elif frequency == "cron":
                 cron_expr = config.get("cron_expression", "0 9 * * *")
@@ -155,9 +151,7 @@ class ScheduledTrigger(BaseTrigger):
             return True
 
         except ImportError:
-            logger.error(
-                "APScheduler not installed. Install with: pip install apscheduler"
-            )
+            logger.error("APScheduler not installed. Install with: pip install apscheduler")
             self._status = TriggerStatus.ERROR
             self._error_message = "APScheduler not installed"
             return False
@@ -186,9 +180,7 @@ class ScheduledTrigger(BaseTrigger):
         # Check max_runs limit
         max_runs = self._to_int(self.config.config.get("max_runs"), 0)
         if max_runs > 0 and self.config.trigger_count >= max_runs:
-            logger.info(
-                f"Trigger {self.config.name} reached max_runs ({max_runs}), stopping"
-            )
+            logger.info(f"Trigger {self.config.name} reached max_runs ({max_runs}), stopping")
             await self.stop()
             return
 
@@ -207,18 +199,14 @@ class ScheduledTrigger(BaseTrigger):
                 else None
             ),
             "max_runs": max_runs,
-            "runs_remaining": max_runs - self.config.trigger_count - 1
-            if max_runs > 0
-            else None,
+            "runs_remaining": max_runs - self.config.trigger_count - 1 if max_runs > 0 else None,
         }
 
         await self.emit(payload, metadata)
 
         # Check if we just reached max_runs (after emit incremented count)
         if max_runs > 0 and self.config.trigger_count >= max_runs:
-            logger.info(
-                f"Trigger {self.config.name} completed {max_runs} runs, stopping"
-            )
+            logger.info(f"Trigger {self.config.name} completed {max_runs} runs, stopping")
             await self.stop()
 
     def validate_config(self) -> tuple[bool, Optional[str]]:

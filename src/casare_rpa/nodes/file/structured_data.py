@@ -21,7 +21,6 @@ from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     DataType,
@@ -31,6 +30,25 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
     validate_path_security,
+)
+from casare_rpa.nodes.file.property_constants import (
+    FILE_PATH_INPUT,
+    FILE_PATH_OUTPUT,
+    FILE_ENCODING,
+    CSV_DELIMITER,
+    CSV_HAS_HEADER,
+    CSV_WRITE_HEADER,
+    CSV_QUOTECHAR,
+    CSV_SKIP_ROWS,
+    CSV_MAX_ROWS,
+    CSV_STRICT,
+    JSON_INDENT,
+    JSON_ENSURE_ASCII,
+    ZIP_PATH,
+    ZIP_SOURCE_PATH,
+    ZIP_BASE_DIR,
+    ZIP_COMPRESSION,
+    ZIP_EXTRACT_TO,
 )
 
 
@@ -62,43 +80,17 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
     return target_path
 
 
-@node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\file.csv",
-    ),
-    PropertyDef("delimiter", PropertyType.STRING, default=",", label="Delimiter"),
-    PropertyDef("has_header", PropertyType.BOOLEAN, default=True, label="Has Header"),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
-    PropertyDef(
-        "quotechar",
-        PropertyType.STRING,
-        default='"',
-        label="Quote Char",
-        tab="advanced",
-    ),
-    PropertyDef(
-        "skip_rows", PropertyType.INTEGER, default=0, label="Skip Rows", tab="advanced"
-    ),
-    PropertyDef(
-        "max_rows",
-        PropertyType.INTEGER,
-        default=0,
-        label="Max Rows (0=unlimited)",
-        tab="advanced",
-    ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict Mode",
-        tab="advanced",
-    ),
+    FILE_PATH_INPUT,
+    CSV_DELIMITER,
+    CSV_HAS_HEADER,
+    FILE_ENCODING,
+    CSV_QUOTECHAR,
+    CSV_SKIP_ROWS,
+    CSV_MAX_ROWS,
+    CSV_STRICT,
 )
+@node(category="file")
 class ReadCSVNode(BaseNode):
     """
     Read and parse a CSV file.
@@ -136,25 +128,24 @@ class ReadCSVNode(BaseNode):
         try:
             # Use get_parameter to check both port value and config
             file_path = self.get_parameter("file_path")
-            delimiter = self.config.get("delimiter", ",")
-            has_header = self.config.get("has_header", True)
-            encoding = self.config.get("encoding", "utf-8")
-            quotechar = self.config.get("quotechar", '"')
-            skip_rows = self.config.get("skip_rows", 0)
-            max_rows = self.config.get("max_rows", 0)
-            strict = self.config.get("strict", False)
-            doublequote = self.config.get("doublequote", True)
-            escapechar = self.config.get("escapechar", None)
+            delimiter = self.get_parameter("delimiter", ",")
+            has_header = self.get_parameter("has_header", True)
+            encoding = self.get_parameter("encoding", "utf-8")
+            quotechar = self.get_parameter("quotechar", '"')
+            skip_rows = self.get_parameter("skip_rows", 0)
+            max_rows = self.get_parameter("max_rows", 0)
+            strict = self.get_parameter("strict", False)
+            self.get_parameter("doublequote", True)
+            self.get_parameter("escapechar", None)
 
             if not file_path:
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "read", allow_dangerous)
 
             if not path.exists():
@@ -163,9 +154,7 @@ class ReadCSVNode(BaseNode):
             data = []
             headers = []
 
-            logger.info(
-                f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})"
-            )
+            logger.info(f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})")
 
             # Use async file operations for non-blocking I/O
             data, headers = await AsyncFileOperations.read_csv(
@@ -185,9 +174,7 @@ class ReadCSVNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(
-                f"CSV read successfully: {len(data)} rows, {len(headers)} columns"
-            )
+            logger.info(f"CSV read successfully: {len(data)} rows, {len(headers)} columns")
 
             return {
                 "success": True,
@@ -204,21 +191,13 @@ class ReadCSVNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\output.csv",
-    ),
-    PropertyDef("delimiter", PropertyType.STRING, default=",", label="Delimiter"),
-    PropertyDef(
-        "write_header", PropertyType.BOOLEAN, default=True, label="Write Header"
-    ),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+    FILE_PATH_OUTPUT,
+    CSV_DELIMITER,
+    CSV_WRITE_HEADER,
+    FILE_ENCODING,
 )
+@node(category="file")
 class WriteCSVNode(BaseNode):
     """
     Write data to a CSV file.
@@ -261,21 +240,20 @@ class WriteCSVNode(BaseNode):
             file_path = self.get_parameter("file_path")
             data = self.get_parameter("data") or []
             headers = self.get_parameter("headers")
-            delimiter = self.config.get("delimiter", ",")
-            write_header = self.config.get("write_header", True)
-            encoding = self.config.get("encoding", "utf-8")
+            delimiter = self.get_parameter("delimiter", ",")
+            write_header = self.get_parameter("write_header", True)
+            encoding = self.get_parameter("encoding", "utf-8")
 
             if not file_path:
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            data = context.resolve_value(data) or []
-            headers = context.resolve_value(headers) if headers else None
+            data = data or []
+            headers = headers if headers else None
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "write", allow_dangerous)
 
             if path.parent:
@@ -313,17 +291,11 @@ class WriteCSVNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\file.json",
-    ),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+    FILE_PATH_INPUT,
+    FILE_ENCODING,
 )
+@node(category="file")
 class ReadJSONFileNode(BaseNode):
     """
     Read and parse a JSON file.
@@ -357,17 +329,16 @@ class ReadJSONFileNode(BaseNode):
         try:
             # Use get_parameter to check both port value and config
             file_path = self.get_parameter("file_path")
-            encoding = self.config.get("encoding", "utf-8")
+            encoding = self.get_parameter("encoding", "utf-8")
 
             if not file_path:
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "read", allow_dangerous)
 
             if not path.exists():
@@ -393,8 +364,7 @@ class ReadJSONFileNode(BaseNode):
             import json
 
             if isinstance(e, json.JSONDecodeError) or (
-                hasattr(e, "__cause__")
-                and isinstance(e.__cause__, json.JSONDecodeError)
+                hasattr(e, "__cause__") and isinstance(e.__cause__, json.JSONDecodeError)
             ):
                 return {
                     "success": False,
@@ -407,21 +377,13 @@ class ReadJSONFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
-    PropertyDef(
-        "file_path",
-        PropertyType.STRING,
-        required=True,
-        label="File Path",
-        placeholder="C:\\path\\to\\output.json",
-    ),
-    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
-    PropertyDef("indent", PropertyType.INTEGER, default=2, label="Indent"),
-    PropertyDef(
-        "ensure_ascii", PropertyType.BOOLEAN, default=False, label="Ensure ASCII"
-    ),
+    FILE_PATH_OUTPUT,
+    FILE_ENCODING,
+    JSON_INDENT,
+    JSON_ENSURE_ASCII,
 )
+@node(category="file")
 class WriteJSONFileNode(BaseNode):
     """
     Write data to a JSON file.
@@ -459,20 +421,18 @@ class WriteJSONFileNode(BaseNode):
             # Use get_parameter to check both port value and config
             file_path = self.get_parameter("file_path")
             data = self.get_parameter("data")
-            encoding = self.config.get("encoding", "utf-8")
-            indent = self.config.get("indent", 2)
-            ensure_ascii = self.config.get("ensure_ascii", False)
+            encoding = self.get_parameter("encoding", "utf-8")
+            indent = self.get_parameter("indent", 2)
+            ensure_ascii = self.get_parameter("ensure_ascii", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path and data
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            data = context.resolve_value(data)
 
             # SECURITY: Validate path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
             path = validate_path_security(file_path, "write", allow_dangerous)
 
             if path.parent:
@@ -508,39 +468,13 @@ class WriteJSONFileNode(BaseNode):
         return True, ""
 
 
-@node(category="file")
 @properties(
-    PropertyDef(
-        "zip_path",
-        PropertyType.STRING,
-        required=True,
-        label="ZIP Path",
-        placeholder="C:\\output\\archive.zip",
-    ),
-    PropertyDef(
-        "source_path",
-        PropertyType.STRING,
-        default="",
-        label="Source Path",
-        placeholder="C:\\folder\\to\\zip or C:\\folder\\*.txt",
-        tooltip="Folder path (zips entire folder) or glob pattern (e.g., *.txt)",
-    ),
-    PropertyDef(
-        "base_dir",
-        PropertyType.STRING,
-        default="",
-        label="Base Directory",
-        placeholder="C:\\source\\folder",
-        tooltip="Base directory for relative paths in archive (auto-set if source_path is folder)",
-    ),
-    PropertyDef(
-        "compression",
-        PropertyType.CHOICE,
-        default="ZIP_DEFLATED",
-        choices=["ZIP_STORED", "ZIP_DEFLATED"],
-        label="Compression",
-    ),
+    ZIP_PATH,
+    ZIP_SOURCE_PATH,
+    ZIP_BASE_DIR,
+    ZIP_COMPRESSION,
 )
+@node(category="file")
 class ZipFilesNode(BaseNode):
     """
     Create a ZIP archive from files.
@@ -599,26 +533,21 @@ class ZipFilesNode(BaseNode):
             source_path = self.get_parameter("source_path")
             files = self.get_parameter("files") or []
             base_dir = self.get_parameter("base_dir")
-            compression = self.config.get("compression", "ZIP_DEFLATED")
+            compression = self.get_parameter("compression", "ZIP_DEFLATED")
 
             if not zip_path:
                 raise ValueError("zip_path is required")
 
             # Resolve {{variable}} patterns and environment variables
-            zip_path = context.resolve_value(zip_path)
             zip_path = os.path.expandvars(zip_path)
             if source_path:
-                source_path = context.resolve_value(source_path)
                 source_path = os.path.expandvars(source_path)
             if base_dir:
-                base_dir = context.resolve_value(base_dir)
                 base_dir = os.path.expandvars(base_dir)
 
             # SECURITY: Validate output zip path before access
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
-            zip_validated_path = validate_path_security(
-                zip_path, "write", allow_dangerous
-            )
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
+            zip_validated_path = validate_path_security(zip_path, "write", allow_dangerous)
 
             # Auto-discover files from source_path if files list is empty
             if not files and source_path:
@@ -630,16 +559,10 @@ class ZipFilesNode(BaseNode):
                     # Auto-set base_dir to the folder if not specified
                     if not base_dir:
                         base_dir = str(source)
-                    logger.info(
-                        f"Auto-discovered {len(files)} files from folder: {source}"
-                    )
+                    logger.info(f"Auto-discovered {len(files)} files from folder: {source}")
                 elif "*" in source_path or "?" in source_path:
                     # It's a glob pattern
-                    files = [
-                        f
-                        for f in glob.glob(source_path, recursive=True)
-                        if Path(f).is_file()
-                    ]
+                    files = [f for f in glob.glob(source_path, recursive=True) if Path(f).is_file()]
                     # For glob patterns, use parent of the pattern as base_dir if not specified
                     if not base_dir:
                         # Find the first non-glob part of the path
@@ -668,9 +591,7 @@ class ZipFilesNode(BaseNode):
                 )
 
             zip_compression = (
-                zipfile.ZIP_DEFLATED
-                if compression == "ZIP_DEFLATED"
-                else zipfile.ZIP_STORED
+                zipfile.ZIP_DEFLATED if compression == "ZIP_DEFLATED" else zipfile.ZIP_STORED
             )
 
             # Use the security-validated path
@@ -680,9 +601,7 @@ class ZipFilesNode(BaseNode):
             file_count = 0
             base = Path(base_dir) if base_dir else None
 
-            with zipfile.ZipFile(
-                zip_validated_path, "w", compression=zip_compression
-            ) as zf:
+            with zipfile.ZipFile(zip_validated_path, "w", compression=zip_compression) as zf:
                 for file_path in files:
                     fp = Path(file_path)
                     if not fp.exists():
@@ -702,9 +621,7 @@ class ZipFilesNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(
-                f"Created ZIP archive: {zip_validated_path} with {file_count} files"
-            )
+            logger.info(f"Created ZIP archive: {zip_validated_path} with {file_count} files")
 
             return {
                 "success": True,
@@ -718,29 +635,17 @@ class ZipFilesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
-        compression = self.config.get("compression", "ZIP_DEFLATED")
+        compression = self.get_parameter("compression", "ZIP_DEFLATED")
         if compression not in ["ZIP_STORED", "ZIP_DEFLATED"]:
             return False, "compression must be 'ZIP_STORED' or 'ZIP_DEFLATED'"
         return True, ""
 
 
-@node(category="file")
 @properties(
-    PropertyDef(
-        "zip_path",
-        PropertyType.STRING,
-        required=True,
-        label="ZIP Path",
-        placeholder="C:\\input\\archive.zip",
-    ),
-    PropertyDef(
-        "extract_to",
-        PropertyType.STRING,
-        required=True,
-        label="Extract To",
-        placeholder="C:\\output\\extracted",
-    ),
+    ZIP_PATH,
+    ZIP_EXTRACT_TO,
 )
+@node(category="file")
 class UnzipFilesNode(BaseNode):
     """
     Extract files from a ZIP archive.
@@ -781,7 +686,7 @@ class UnzipFilesNode(BaseNode):
             # Use get_parameter to check both port value and config
             zip_path = self.get_parameter("zip_path")
             extract_to = self.get_parameter("extract_to")
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
 
             if not zip_path:
                 raise ValueError("zip_path is required")
@@ -789,9 +694,7 @@ class UnzipFilesNode(BaseNode):
                 raise ValueError("extract_to is required")
 
             # Resolve {{variable}} patterns and environment variables in zip_path and extract_to
-            zip_path = context.resolve_value(zip_path)
             zip_path = os.path.expandvars(zip_path)
-            extract_to = context.resolve_value(extract_to)
             extract_to = os.path.expandvars(extract_to)
 
             # SECURITY: Validate paths

@@ -41,7 +41,13 @@ from casare_rpa.utils.resilience import retry_operation
 # JavaScript code for table extraction - kept separate for readability
 TABLE_EXTRACTION_JS = """
 (params) => {
-    const table = document.querySelector(params.selector);
+    let table = document.querySelector(params.selector);
+
+    // Smart fallback for generic 'table' selector
+    if (!table && params.selector === "table") {
+        table = document.querySelector('[role="grid"], [role="table"], .data-table, .market-table');
+    }
+
     if (!table) {
         return {error: "Table not found with selector: " + params.selector};
     }
@@ -109,7 +115,6 @@ TABLE_EXTRACTION_JS = """
 """
 
 
-@node(category="browser")
 @properties(
     PropertyDef(
         "table_selector",
@@ -166,6 +171,7 @@ TABLE_EXTRACTION_JS = """
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
 )
+@node(category="browser")
 class TableScraperNode(BrowserBaseNode):
     """
     Table Scraper Node - extracts structured data from HTML tables.
@@ -230,7 +236,6 @@ class TableScraperNode(BrowserBaseNode):
             selector = self.get_input_value("table_selector")
             if not selector:
                 selector = self.get_parameter("table_selector", "table")
-            selector = context.resolve_value(selector)
 
             # Get extraction parameters
             include_headers = self.get_parameter("include_headers", True)
@@ -248,9 +253,7 @@ class TableScraperNode(BrowserBaseNode):
             async def perform_extraction() -> Dict[str, Any]:
                 """Execute table extraction via JavaScript."""
                 # Wait for table element to be present
-                await page.wait_for_selector(
-                    selector, timeout=timeout, state="attached"
-                )
+                await page.wait_for_selector(selector, timeout=timeout, state="attached")
 
                 # Extract table data via JavaScript
                 raw_data = await page.evaluate(
@@ -283,9 +286,7 @@ class TableScraperNode(BrowserBaseNode):
                 column_count = raw_data.get("columnCount", 0)
 
                 # Format output according to requested format
-                formatted_data = self._format_output(
-                    headers, rows, output_format, include_headers
-                )
+                formatted_data = self._format_output(headers, rows, output_format, include_headers)
 
                 # Store in context variable
                 context.set_variable(output_variable, formatted_data)
@@ -295,9 +296,7 @@ class TableScraperNode(BrowserBaseNode):
                 self.set_output_value("row_count", row_count)
                 self.set_output_value("headers", headers)
 
-                logger.info(
-                    f"Extracted {row_count} rows, {column_count} columns from table"
-                )
+                logger.info(f"Extracted {row_count} rows, {column_count} columns from table")
 
                 return self.success_result(
                     {
@@ -342,9 +341,7 @@ class TableScraperNode(BrowserBaseNode):
                 return [dict(zip(headers, row)) for row in rows]
             else:
                 # If no headers, use column indices as keys
-                return [
-                    {f"col_{i}": cell for i, cell in enumerate(row)} for row in rows
-                ]
+                return [{f"col_{i}": cell for i, cell in enumerate(row)} for row in rows]
 
         elif output_format == "list_of_lists":
             # Return as list of lists, optionally with headers as first row
@@ -365,18 +362,16 @@ class TableScraperNode(BrowserBaseNode):
 
         else:
             # Default to list of lists
-            logger.warning(
-                f"Unknown output format '{output_format}', using list_of_lists"
-            )
+            logger.warning(f"Unknown output format '{output_format}', using list_of_lists")
             return rows
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        table_selector = self.config.get("table_selector", "")
+        table_selector = self.get_parameter("table_selector", "")
         if not table_selector:
             return False, "Table selector is required"
 
-        output_format = self.config.get("output_format", "list_of_dicts")
+        output_format = self.get_parameter("output_format", "list_of_dicts")
         valid_formats = ["list_of_dicts", "list_of_lists", "csv_string"]
         if output_format not in valid_formats:
             return False, f"Invalid output format. Must be one of: {valid_formats}"

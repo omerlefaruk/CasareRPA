@@ -131,9 +131,7 @@ class StatusBarManager:
         )
         status_bar.addPermanentWidget(self._btn_variables)
 
-        self._btn_output = self._create_toggle_button(
-            "Out", "Toggle Output tab", "output"
-        )
+        self._btn_output = self._create_toggle_button("Out", "Toggle Output tab", "output")
         status_bar.addPermanentWidget(self._btn_output)
 
         self._btn_log = self._create_toggle_button("Log", "Toggle Log tab", "log")
@@ -233,9 +231,7 @@ class StatusBarManager:
         sep.setStyleSheet(f"color: {c.border_light};")
         status_bar.addPermanentWidget(sep)
 
-    def _create_toggle_button(
-        self, text: str, tooltip: str, tab_name: str
-    ) -> QPushButton:
+    def _create_toggle_button(self, text: str, tooltip: str, tab_name: str) -> QPushButton:
         """
         Create a toggle button for panel tabs.
 

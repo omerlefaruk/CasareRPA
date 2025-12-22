@@ -69,9 +69,7 @@ class CommandPalette(QDialog):
         """Set up the user interface."""
         self.setWindowTitle("Command Palette")
         self.setWindowFlags(
-            Qt.WindowType.Dialog
-            | Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.Popup
+            Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Popup
         )
         self.setModal(True)
         self.setFixedWidth(600)

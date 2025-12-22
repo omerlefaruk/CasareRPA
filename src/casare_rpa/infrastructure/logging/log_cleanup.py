@@ -115,18 +115,14 @@ class LogCleanupJob:
 
         try:
             # Step 1: Drop old partitions
-            cleanup_result = await self._repository.cleanup_old_logs(
-                self._retention_days
-            )
+            cleanup_result = await self._repository.cleanup_old_logs(self._retention_days)
             result["cleanup"] = cleanup_result
 
             dropped_count = len(cleanup_result.get("partitions_dropped", []))
             self._total_partitions_dropped += dropped_count
 
             # Step 2: Ensure future partitions exist
-            partitions = await self._repository.ensure_partitions(
-                self._ensure_partitions_months
-            )
+            partitions = await self._repository.ensure_partitions(self._ensure_partitions_months)
             result["partitions_ensured"] = partitions
 
             # Update statistics

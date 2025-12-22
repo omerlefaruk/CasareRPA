@@ -1,0 +1,16 @@
+Trim trailing whitespace.................................................Passed
+Fix end of files.........................................................Passed
+Check YAML syntax........................................................Passed
+Check JSON syntax........................................................Passed
+Check for large files....................................................Passed
+Check for merge conflicts................................................Passed
+Check for debug statements...............................................Passed
+Ruff linter (with selective ignores).....................................Passed
+Ruff formatter...........................................................Failed
+- hook id: ruff-format
+- files were modified by this hook
+
+189 files reformatted, 411 files left unchanged
+163 files reformatted, 336 files left unchanged
+7 files reformatted, 79 files left unchanged
+

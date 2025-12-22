@@ -1,135 +1,151 @@
-"""
-CasareRPA Cloud Orchestrator Server.
-
-FastAPI server that manages robot fleet connections via WebSocket.
-Designed for deployment on Railway, Render, or Fly.io.
-
-Features:
-- WebSocket endpoint for robot connections
-- WebSocket endpoint for admin dashboard
-- REST endpoints for job submission and robot management
-- Supabase integration for presence sync
-- API key authentication for robots
-
-This module serves as the main entry point and composes the following modules:
-- robot_manager.py: Robot/job state management
-- server_lifecycle.py: Configuration, state, lifespan
-- server_auth.py: API key and admin authentication
-- websocket_handlers.py: WebSocket endpoints
-- health_endpoints.py: Health check endpoints
-- rest_endpoints.py: REST API endpoints
-"""
-
-from fastapi import FastAPI
+import uuid
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
 from loguru import logger
 
-# Import lifecycle management
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
-    OrchestratorConfig,
     get_config,
-    get_robot_manager,
     lifespan,
-    reset_orchestrator_state,
 )
 
-# Import routers
-from casare_rpa.infrastructure.orchestrator import health_endpoints
-from casare_rpa.infrastructure.orchestrator import rest_endpoints
+# Core Routers
 from casare_rpa.infrastructure.orchestrator import websocket_handlers
 
-# Re-export for backward compatibility
-from casare_rpa.infrastructure.orchestrator.robot_manager import (
-    ConnectedRobot,
-    PendingJob,
-    RobotManager,
+# Monitoring Routers
+from casare_rpa.infrastructure.orchestrator.api.routers import (
+    health,
+    analytics,
+    auth,
+    dlq,
+    jobs,
+    metrics,
+    robot_api_keys,
+    robots,
+    schedules,
+    websockets,
+    workflows,
 )
-from casare_rpa.infrastructure.orchestrator.rest_endpoints import (
-    JobResponse,
-    JobSubmission,
-    RobotInfo,
-    RobotRegistration,
-)
-from casare_rpa.infrastructure.orchestrator.server_auth import (
-    validate_admin_secret,
-    validate_websocket_api_key,
-    verify_admin_api_key,
-    verify_api_key,
-)
+from casare_rpa.infrastructure.orchestrator.api.rate_limit import setup_rate_limiting
+from casare_rpa.infrastructure.orchestrator.api.responses import error_response, ErrorCode
 
-__all__ = [
-    # Configuration
-    "OrchestratorConfig",
-    "get_config",
-    "get_robot_manager",
-    "reset_orchestrator_state",
-    # Models
-    "ConnectedRobot",
-    "PendingJob",
-    "RobotManager",
-    "JobResponse",
-    "JobSubmission",
-    "RobotInfo",
-    "RobotRegistration",
-    # Auth
-    "validate_admin_secret",
-    "validate_websocket_api_key",
-    "verify_admin_api_key",
-    "verify_api_key",
-    # App
-    "create_app",
-    "app",
-    "main",
-]
+
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    """Add unique request ID to all requests/responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex[:16]}"
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+
+from fastapi import HTTPException
+
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    request_id = getattr(request.state, "request_id", "unknown")
+    details = {
+        "validation_errors": [
+            {"field": ".".join(str(loc) for loc in err["loc"]), "message": err["msg"]}
+            for err in exc.errors()
+        ]
+    }
+    return JSONResponse(
+        status_code=422,
+        content=error_response(
+            code=ErrorCode.VALIDATION_ERROR,
+            message="Request validation failed",
+            request_id=request_id,
+            details=details,
+        ),
+    )
+
+
+async def http_exception_handler(request: Request, exc: HTTPException):
+    request_id = getattr(request.state, "request_id", "unknown")
+    status_to_code = {
+        401: ErrorCode.AUTH_TOKEN_INVALID,
+        403: ErrorCode.AUTH_INSUFFICIENT_PERMISSIONS,
+        404: ErrorCode.RESOURCE_NOT_FOUND,
+        409: ErrorCode.RESOURCE_CONFLICT,
+        429: ErrorCode.RATE_LIMIT_EXCEEDED,
+        503: ErrorCode.SERVICE_UNAVAILABLE,
+    }
+    error_code = status_to_code.get(exc.status_code, ErrorCode.INTERNAL_ERROR)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(code=error_code, message=exc.detail, request_id=request_id),
+        headers=exc.headers,
+    )
+
+
+async def generic_exception_handler(request: Request, exc: Exception):
+    request_id = getattr(request.state, "request_id", "unknown")
+    logger.exception(f"Unhandled exception: {request.url.path} - {exc}")
+    return JSONResponse(
+        status_code=500,
+        content=error_response(
+            code=ErrorCode.INTERNAL_ERROR,
+            message="An unexpected error occurred",
+            request_id=request_id,
+        ),
+    )
 
 
 def create_app() -> FastAPI:
-    """Create FastAPI application with composed routers."""
+    """Create the unified CasareRPA Orchestrator FastAPI application."""
     config = get_config()
 
     app = FastAPI(
-        title="CasareRPA Cloud Orchestrator",
-        description="Robot fleet management and job orchestration service",
-        version="1.0.0",
+        title="CasareRPA Orchestrator",
+        description="Unified fleet management, job orchestration, and monitoring analytics",
+        version=config.api_version,
         lifespan=lifespan,
     )
 
-    # CORS - restrictive by default
-    origins = config.cors_origins
-    if not origins:
-        logger.warning(
-            "CORS_ORIGINS not configured - using restrictive default. "
-            "Set CORS_ORIGINS environment variable for production."
-        )
-        origins = []
-
-    # Warn if using wildcard with credentials
-    if "*" in origins:
-        logger.warning(
-            "CORS configured with '*' - this is insecure for production! "
-            "Set specific origins in CORS_ORIGINS."
-        )
-        allow_credentials = False
-    else:
-        allow_credentials = True
-
+    # 1. Middleware
+    origins = config.cors_origins or ["*"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_credentials=allow_credentials,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Api-Key", "X-Request-ID"],
+        allow_credentials=True if "*" not in origins else False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
     )
+    app.add_middleware(RequestIdMiddleware)
 
-    # Include routers
-    app.include_router(health_endpoints.router, tags=["Health"])
-    app.include_router(rest_endpoints.router, prefix="/api", tags=["API"])
-    app.include_router(websocket_handlers.router, prefix="/ws", tags=["WebSocket"])
+    if config.rate_limit_enabled:
+        setup_rate_limiting(app)
+
+    # 2. Exception Handlers
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(Exception, generic_exception_handler)
+
+    # 3. Core Fleet Routers
+    app.include_router(health.router)
+    app.include_router(websocket_handlers.router, prefix="/ws", tags=["Robot WebSocket"])
+
+    # 4. Monitoring Dashboard Routers (v1)
+    app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
+    app.include_router(metrics.router, prefix="/api/v1", tags=["Metrics"])
+    app.include_router(robots.router, prefix="/api/v1", tags=["Robots Manager"])
+    app.include_router(robot_api_keys.router, prefix="/api/v1", tags=["API Keys"])
+    app.include_router(jobs.router, prefix="/api/v1", tags=["Jobs Manager"])
+    app.include_router(workflows.router, prefix="/api/v1", tags=["Workflows"])
+    app.include_router(schedules.router, prefix="/api/v1", tags=["Schedules"])
+    app.include_router(analytics.router, prefix="/api/v1", tags=["Analytics"])
+    app.include_router(dlq.router, prefix="/api/v1", tags=["DLQ"])
+    app.include_router(websockets.router, prefix="/ws/monitoring", tags=["Dashboard WebSocket"])
 
     return app
 
 
-# Create application instance
 app = create_app()
 
 
@@ -138,12 +154,12 @@ def main() -> None:
     import uvicorn
 
     config = get_config()
+    logger.info(f"Starting unified orchestrator on {config.host}:{config.port}")
     uvicorn.run(
         "casare_rpa.infrastructure.orchestrator.server:app",
         host=config.host,
         port=config.port,
         workers=config.workers,
-        log_level="info",
     )
 
 

@@ -128,15 +128,9 @@ class SecretMetadata(BaseModel):
     is_dynamic: bool = Field(
         default=False, description="Whether this is a dynamically generated secret"
     )
-    lease_id: Optional[str] = Field(
-        default=None, description="Lease ID for dynamic secrets"
-    )
-    lease_duration: Optional[int] = Field(
-        default=None, description="Lease duration in seconds"
-    )
-    renewable: bool = Field(
-        default=False, description="Whether the lease can be renewed"
-    )
+    lease_id: Optional[str] = Field(default=None, description="Lease ID for dynamic secrets")
+    lease_duration: Optional[int] = Field(default=None, description="Lease duration in seconds")
+    renewable: bool = Field(default=False, description="Whether the lease can be renewed")
     custom_metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @property
@@ -221,17 +215,11 @@ class AuditEvent(BaseModel):
 class VaultConfig(BaseModel):
     """Configuration for vault client."""
 
-    backend: VaultBackend = Field(
-        default=VaultBackend.SQLITE, description="Vault backend to use"
-    )
+    backend: VaultBackend = Field(default=VaultBackend.SQLITE, description="Vault backend to use")
 
     # HashiCorp Vault settings
-    hashicorp_url: Optional[str] = Field(
-        default=None, description="HashiCorp Vault server URL"
-    )
-    hashicorp_token: Optional[SecretStr] = Field(
-        default=None, description="HashiCorp Vault token"
-    )
+    hashicorp_url: Optional[str] = Field(default=None, description="HashiCorp Vault server URL")
+    hashicorp_token: Optional[SecretStr] = Field(default=None, description="HashiCorp Vault token")
     hashicorp_namespace: Optional[str] = Field(
         default=None, description="Vault namespace for enterprise"
     )
@@ -243,12 +231,8 @@ class VaultConfig(BaseModel):
     )
 
     # Supabase Vault settings
-    supabase_url: Optional[str] = Field(
-        default=None, description="Supabase project URL"
-    )
-    supabase_key: Optional[SecretStr] = Field(
-        default=None, description="Supabase service role key"
-    )
+    supabase_url: Optional[str] = Field(default=None, description="Supabase project URL")
+    supabase_key: Optional[SecretStr] = Field(default=None, description="Supabase service role key")
 
     # SQLite fallback settings
     sqlite_path: str = Field(
@@ -260,34 +244,22 @@ class VaultConfig(BaseModel):
 
     # Cache settings
     cache_enabled: bool = Field(default=True, description="Enable secret caching")
-    cache_ttl_seconds: int = Field(
-        default=300, ge=0, description="Cache TTL in seconds"
-    )
+    cache_ttl_seconds: int = Field(default=300, ge=0, description="Cache TTL in seconds")
     cache_max_size: int = Field(default=1000, ge=1, description="Maximum cache entries")
 
     # Retry settings
     max_retries: int = Field(default=3, ge=0, description="Max retry attempts")
-    retry_delay_seconds: float = Field(
-        default=1.0, ge=0, description="Delay between retries"
-    )
+    retry_delay_seconds: float = Field(default=1.0, ge=0, description="Delay between retries")
 
     # Audit settings
     audit_enabled: bool = Field(default=True, description="Enable audit logging")
-    audit_log_reads: bool = Field(
-        default=True, description="Log secret read operations"
-    )
+    audit_log_reads: bool = Field(default=True, description="Log secret read operations")
 
     # TLS settings
     tls_verify: bool = Field(default=True, description="Verify TLS certificates")
-    tls_ca_cert: Optional[str] = Field(
-        default=None, description="Path to CA certificate"
-    )
-    tls_client_cert: Optional[str] = Field(
-        default=None, description="Path to client certificate"
-    )
-    tls_client_key: Optional[str] = Field(
-        default=None, description="Path to client private key"
-    )
+    tls_ca_cert: Optional[str] = Field(default=None, description="Path to CA certificate")
+    tls_client_cert: Optional[str] = Field(default=None, description="Path to client certificate")
+    tls_client_key: Optional[str] = Field(default=None, description="Path to client private key")
 
     # Azure Key Vault settings
     azure_vault_url: Optional[str] = Field(
@@ -311,9 +283,7 @@ class VaultConfig(BaseModel):
     )
 
     # AWS Secrets Manager settings
-    aws_region: Optional[str] = Field(
-        default=None, description="AWS region for Secrets Manager"
-    )
+    aws_region: Optional[str] = Field(default=None, description="AWS region for Secrets Manager")
     aws_access_key_id: Optional[str] = Field(
         default=None,
         description="AWS access key ID (optional, uses env/IAM if not set)",
@@ -406,9 +376,7 @@ class SecretCache:
             self._hits += 1
             return entry.value
 
-    async def set(
-        self, path: str, value: SecretValue, ttl: Optional[int] = None
-    ) -> None:
+    async def set(self, path: str, value: SecretValue, ttl: Optional[int] = None) -> None:
         """Store secret in cache."""
         async with self._lock:
             # Evict if at capacity
@@ -571,9 +539,7 @@ class VaultProvider(ABC):
         Raises:
             NotImplementedError: If backend doesn't support dynamic secrets
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support dynamic secrets"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} does not support dynamic secrets")
 
     async def renew_lease(self, lease_id: str, increment: Optional[int] = None) -> int:
         """
@@ -589,9 +555,7 @@ class VaultProvider(ABC):
         Raises:
             NotImplementedError: If backend doesn't support leases
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support lease renewal"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} does not support lease renewal")
 
     async def revoke_lease(self, lease_id: str) -> None:
         """
@@ -603,9 +567,7 @@ class VaultProvider(ABC):
         Raises:
             NotImplementedError: If backend doesn't support leases
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support lease revocation"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} does not support lease revocation")
 
     async def rotate_secret(self, path: str) -> SecretMetadata:
         """
@@ -620,9 +582,7 @@ class VaultProvider(ABC):
         Raises:
             NotImplementedError: If backend doesn't support rotation
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} does not support secret rotation"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} does not support secret rotation")
 
 
 # =============================================================================
@@ -780,9 +740,7 @@ class AuditLogger:
         """Log cache hit or miss."""
         self.log(
             AuditEvent(
-                event_type=AuditEventType.CACHE_HIT
-                if hit
-                else AuditEventType.CACHE_MISS,
+                event_type=AuditEventType.CACHE_HIT if hit else AuditEventType.CACHE_MISS,
                 path=path,
             )
         )
@@ -983,9 +941,7 @@ class VaultClient:
         try:
             await self._provider.connect()
             self._connected = True
-            logger.info(
-                f"Connected to vault backend: {self._config.get_backend_display_name()}"
-            )
+            logger.info(f"Connected to vault backend: {self._config.get_backend_display_name()}")
             self._audit.log(
                 AuditEvent(
                     event_type=AuditEventType.AUTH_SUCCESS,
@@ -1123,9 +1079,7 @@ class VaultClient:
             raise VaultConnectionError("Not connected to vault")
 
         try:
-            result = await self._provider.put_secret(
-                path, data, credential_type, metadata
-            )
+            result = await self._provider.put_secret(path, data, credential_type, metadata)
             await self._cache.invalidate(path)
             self._audit.log_write(path=path, success=True)
             logger.info(f"Secret stored at {path} (version {result.version})")

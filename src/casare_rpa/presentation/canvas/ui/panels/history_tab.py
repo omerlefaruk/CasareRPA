@@ -325,9 +325,7 @@ class HistoryTab(QWidget):
         # Execution Time (right-aligned)
         exec_time = entry.get("execution_time", 0)
         time_item = QTableWidgetItem(f"{exec_time:.4f}")
-        time_item.setTextAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
+        time_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         time_item.setToolTip(f"Execution time: {exec_time:.6f} seconds")
         self._table.setItem(row, 4, time_item)
 
@@ -358,9 +356,7 @@ class HistoryTab(QWidget):
         # Calculate statistics from full history
         total_time = sum(e.get("execution_time", 0) for e in self._full_history)
         avg_time = total_time / len(self._full_history)
-        success_count = sum(
-            1 for e in self._full_history if e.get("status") == "success"
-        )
+        success_count = sum(1 for e in self._full_history if e.get("status") == "success")
         success_rate = (success_count / len(self._full_history)) * 100
 
         self._total_time_label.setText(f"{total_time:.3f}s")
@@ -383,9 +379,7 @@ class HistoryTab(QWidget):
         visible_count = self._table.rowCount()
         total_count = len(self._full_history)
         if visible_count == total_count:
-            self._count_label.setText(
-                f"{total_count} entr{'ies' if total_count != 1 else 'y'}"
-            )
+            self._count_label.setText(f"{total_count} entr{'ies' if total_count != 1 else 'y'}")
         else:
             self._count_label.setText(f"{visible_count} of {total_count}")
 
@@ -448,9 +442,7 @@ class HistoryTab(QWidget):
         node_id_item = self._table.item(row, 2)
         if node_id_item:
             copy_id = menu.addAction("Copy Node ID")
-            copy_id.triggered.connect(
-                lambda: QApplication.clipboard().setText(node_id_item.text())
-            )
+            copy_id.triggered.connect(lambda: QApplication.clipboard().setText(node_id_item.text()))
 
         # Copy entire row
         copy_row = menu.addAction("Copy Entry")
@@ -460,9 +452,7 @@ class HistoryTab(QWidget):
         if node_id_item and node_id_item.text():
             menu.addSeparator()
             nav_action = menu.addAction("Go to Node")
-            nav_action.triggered.connect(
-                lambda: self.node_selected.emit(node_id_item.text())
-            )
+            nav_action.triggered.connect(lambda: self.node_selected.emit(node_id_item.text()))
 
         menu.exec_(self._table.mapToGlobal(pos))
 

@@ -126,16 +126,12 @@ class PromptRules:
 
         if self.required_node_types:
             lines.append("## Required Node Types")
-            lines.append(
-                f"You MUST include these nodes: {', '.join(self.required_node_types)}"
-            )
+            lines.append(f"You MUST include these nodes: {', '.join(self.required_node_types)}")
             lines.append("")
 
         if self.forbidden_node_types:
             lines.append("## Forbidden Node Types")
-            lines.append(
-                f"NEVER use these nodes: {', '.join(self.forbidden_node_types)}"
-            )
+            lines.append(f"NEVER use these nodes: {', '.join(self.forbidden_node_types)}")
             lines.append("")
 
         if self.selector_priority:
@@ -152,9 +148,7 @@ class PromptRules:
 
         if not self.allow_loops:
             lines.append("## No Loops")
-            lines.append(
-                "Do NOT use ForLoopStartNode, WhileLoopNode, or any loop constructs."
-            )
+            lines.append("Do NOT use ForLoopStartNode, WhileLoopNode, or any loop constructs.")
             lines.append("")
 
         if not self.allow_branching:
@@ -348,7 +342,7 @@ class AgentConfig:
     error_handling: ErrorHandlingMode = ErrorHandlingMode.CRITICAL_ONLY
 
     # LLM model to use
-    model: str = "gpt-4o-mini"
+    model: str = "openrouter/google/gemini-3-flash-preview"
 
     # Base temperature for generation
     temperature: float = 0.2
@@ -476,12 +470,8 @@ class AgentConfig:
 
         return cls(
             performance=PerformanceConfig(
-                wait_strategy=WaitStrategy(
-                    perf_data.get("wait_strategy", "smart_waits")
-                ),
-                parallelization=ParallelizationMode(
-                    perf_data.get("parallelization", "optimized")
-                ),
+                wait_strategy=WaitStrategy(perf_data.get("wait_strategy", "smart_waits")),
+                parallelization=ParallelizationMode(perf_data.get("parallelization", "optimized")),
                 max_hardcoded_wait_ms=perf_data.get("max_hardcoded_wait_ms", 0),
                 element_wait_timeout_ms=perf_data.get("element_wait_timeout_ms", 5000),
             ),
@@ -495,10 +485,8 @@ class AgentConfig:
                 max_generation_retries=retry_data.get("max_generation_retries", 3),
                 max_repair_attempts=retry_data.get("max_repair_attempts", 2),
             ),
-            error_handling=ErrorHandlingMode(
-                data.get("error_handling", "critical_only")
-            ),
-            model=data.get("model", "gpt-4o-mini"),
+            error_handling=ErrorHandlingMode(data.get("error_handling", "critical_only")),
+            model=data.get("model", "openrouter/google/gemini-3-flash-preview"),
             temperature=data.get("temperature", 0.2),
             max_tokens=data.get("max_tokens", 4000),
         )

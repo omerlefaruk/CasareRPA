@@ -40,7 +40,6 @@ class WebhookAuthenticator:
         "github": "X-Hub-Signature-256",
         "github_legacy": "X-Hub-Signature",
         "stripe": "Stripe-Signature",
-        "slack": "X-Slack-Signature",
         "generic": "X-Webhook-Signature",
     }
 
@@ -87,15 +86,11 @@ class WebhookAuthenticator:
             return False, f"Unknown auth_type: {auth_type}"
 
     @classmethod
-    def _verify_api_key(
-        cls, secret: str, headers: Dict[str, str]
-    ) -> Tuple[bool, Optional[str]]:
+    def _verify_api_key(cls, secret: str, headers: Dict[str, str]) -> Tuple[bool, Optional[str]]:
         """Verify API key authentication."""
         # Check common API key header locations
         api_key = (
-            headers.get("x-api-key")
-            or headers.get("x-webhook-secret")
-            or headers.get("api-key")
+            headers.get("x-api-key") or headers.get("x-webhook-secret") or headers.get("api-key")
         )
 
         if not api_key:
@@ -107,9 +102,7 @@ class WebhookAuthenticator:
         return True, None
 
     @classmethod
-    def _verify_bearer(
-        cls, secret: str, headers: Dict[str, str]
-    ) -> Tuple[bool, Optional[str]]:
+    def _verify_bearer(cls, secret: str, headers: Dict[str, str]) -> Tuple[bool, Optional[str]]:
         """Verify Bearer token authentication."""
         auth_header = headers.get("authorization", "")
 

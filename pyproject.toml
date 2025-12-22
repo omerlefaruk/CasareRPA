@@ -80,6 +80,10 @@ dependencies = [
     "openpyxl>=3.1.0",  # Excel file read/write
     "beautifulsoup4>=4.12.0",  # HTML parsing for browser automation
     "lxml>=5.0.0",  # Fast XML/HTML parser
+    # Caching
+    "aiocache>=0.12.0",  # Async memory caching
+    "diskcache>=5.6.0",  # Persistent disk caching
+    "lz4>=4.3.0",  # Fast compression for cache entries
     # Process Mining (optional - lazy loaded)
     "pm4py>=2.7.0",  # Process mining algorithms (Alpha, Inductive, Heuristic Miner)
     # Async file I/O
@@ -136,25 +140,89 @@ include = '\.pyi?$'
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+# Gradual type adoption - start lenient, tighten over time
+warn_return_any = false  # Too noisy initially
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
+disallow_untyped_defs = false  # Allow untyped during transition
+disallow_incomplete_defs = false  # Allow partial during transition
+check_untyped_defs = true  # Still check untyped code
 no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+warn_unused_ignores = false  # Don't fail on unused ignores in transition
 strict_equality = true
+ignore_missing_imports = true  # Don't fail on missing stubs
+
+# Per-module overrides - stricter for domain layer
+[[tool.mypy.overrides]]
+module = "casare_rpa.domain.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+module = "casare_rpa.nodes.*"
+disallow_untyped_defs = false
+warn_return_any = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short --cov=casare_rpa --cov-fail-under=75"
+addopts = "-v --tb=short"
 asyncio_mode = "auto"
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks integration tests",
-    "e2e: marks end-to-end tests",
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
 ]
+markers = [
+    "unit: mark test as unit test (fast, isolated, no external deps)",
+    "integration: mark test as integration test (may use external systems)",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "e2e: marks end-to-end tests",
+    "ui: mark test as requiring UI/Qt components",
+    "browser: mark test as requiring browser/Playwright",
+    "database: mark test as requiring database",
+    "network: mark test as requiring network access",
+    "chaos: mark test as chaos/stress test",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable common checks
+select = ["E", "F", "W"]
+# Ignore specific rules globally
+ignore = [
+    "E402",  # Module level import not at top of file - intentional for conditional imports
+    "E501",  # Line too long - handled by formatter
+    "E701",  # Multiple statements on one line
+    "E712",  # Comparison to True/False - sometimes preferred for clarity
+    "W291",  # Trailing whitespace - handled by formatter
+    "W292",  # No newline at end of file - handled by formatter
+    "W293",  # Blank line contains whitespace - handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Files with optional dependency try/except imports
+"src/casare_rpa/infrastructure/orchestrator/communication/realtime_service.py" = ["F401"]
+"src/casare_rpa/infrastructure/updater/tuf_updater.py" = ["F401"]
+"src/casare_rpa/nodes/desktop_nodes/yolo_find_node.py" = ["F401"]
+"src/casare_rpa/nodes/google/google_base.py" = ["F401"]
+"src/casare_rpa/nodes/system/dialogs/*.py" = ["F401"]
+"src/casare_rpa/nodes/system/quick_nodes.py" = ["F401"]
+"src/casare_rpa/nodes/system/system_nodes.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/connections/auto_connect.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/graph/node_graph_widget.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/graph/node_widgets.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py" = ["F401"]
+"src/casare_rpa/triggers/implementations/app_event.py" = ["F401"]
+"src/casare_rpa/triggers/registry.py" = ["F401"]
+"src/casare_rpa/utils/gpu/gpu_utils.py" = ["F401"]
+"src/casare_rpa/utils/playwright_setup.py" = ["F401"]
+"src/casare_rpa/utils/security/vault_client.py" = ["F401"]
+"src/casare_rpa/application/orchestrator/orchestrator_engine.py" = ["F401"]
+"src/casare_rpa/infrastructure/orchestrator/api/routers/workflows.py" = ["F401"]

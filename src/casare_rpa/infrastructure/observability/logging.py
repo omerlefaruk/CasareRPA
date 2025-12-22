@@ -475,9 +475,7 @@ class SpanLogger:
                         "log.level": level,
                         "log.component": self.name,
                         **{
-                            k: str(v)
-                            if not isinstance(v, (str, int, float, bool))
-                            else v
+                            k: str(v) if not isinstance(v, (str, int, float, bool)) else v
                             for k, v in attributes.items()
                         },
                     },
@@ -499,9 +497,7 @@ class SpanLogger:
         """Log error message."""
         self._log_with_span("ERROR", message, **attributes)
 
-    def exception(
-        self, message: str, exc: Optional[Exception] = None, **attributes: Any
-    ) -> None:
+    def exception(self, message: str, exc: Optional[Exception] = None, **attributes: Any) -> None:
         """Log exception with traceback."""
         self._logger.exception(message)
 
@@ -517,9 +513,7 @@ class SpanLogger:
                         "exception.type": type(exc).__name__,
                         "exception.message": str(exc),
                         **{
-                            k: str(v)
-                            if not isinstance(v, (str, int, float, bool))
-                            else v
+                            k: str(v) if not isinstance(v, (str, int, float, bool)) else v
                             for k, v in attributes.items()
                         },
                     },

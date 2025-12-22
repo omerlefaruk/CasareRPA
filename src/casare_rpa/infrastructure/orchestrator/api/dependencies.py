@@ -70,9 +70,7 @@ class DatabaseConfig:
             min_size=int(os.getenv("DB_POOL_MIN_SIZE", "2")),
             max_size=int(os.getenv("DB_POOL_MAX_SIZE", "10")),
             command_timeout=float(os.getenv("DB_COMMAND_TIMEOUT", "60.0")),
-            max_inactive_connection_lifetime=float(
-                os.getenv("DB_MAX_INACTIVE_LIFETIME", "300.0")
-            ),
+            max_inactive_connection_lifetime=float(os.getenv("DB_MAX_INACTIVE_LIFETIME", "300.0")),
         )
 
 
@@ -115,9 +113,7 @@ class DatabasePoolManager:
             RuntimeError: If pool creation fails after all retries
         """
         if not self._config.password:
-            logger.warning(
-                "DB_PASSWORD not set - database connections will fail authentication"
-            )
+            logger.warning("DB_PASSWORD not set - database connections will fail authentication")
 
         last_error: Optional[Exception] = None
 
@@ -155,9 +151,7 @@ class DatabasePoolManager:
             except asyncpg.InvalidCatalogNameError as e:
                 # Database doesn't exist - don't retry
                 logger.error(f"Database '{self._config.database}' does not exist: {e}")
-                raise RuntimeError(
-                    f"Database '{self._config.database}' does not exist"
-                ) from e
+                raise RuntimeError(f"Database '{self._config.database}' does not exist") from e
 
             except asyncpg.InvalidPasswordError as e:
                 # Auth failed - don't retry

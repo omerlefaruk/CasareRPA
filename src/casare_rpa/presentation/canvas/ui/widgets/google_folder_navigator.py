@@ -91,9 +91,7 @@ class FolderNavigatorState:
     """State for the folder navigator widget."""
 
     current_folder_id: str = ROOT_FOLDER_ID
-    current_path: List[Tuple[str, str]] = field(
-        default_factory=list
-    )  # [(id, name), ...]
+    current_path: List[Tuple[str, str]] = field(default_factory=list)  # [(id, name), ...]
     selected_folder_id: Optional[str] = None
     selected_folder_name: str = ""
     search_query: str = ""
@@ -218,9 +216,7 @@ async def fetch_folder_children(
 
         # Build query for folders in parent
         parent_query = (
-            "'root' in parents"
-            if folder_id == ROOT_FOLDER_ID
-            else f"'{folder_id}' in parents"
+            "'root' in parents" if folder_id == ROOT_FOLDER_ID else f"'{folder_id}' in parents"
         )
         query = f"mimeType='{FOLDER_MIME_TYPE}' and {parent_query} and trashed=false"
 
@@ -235,9 +231,7 @@ async def fetch_folder_children(
 
         async with aiohttp.ClientSession() as session:
             url = f"{DRIVE_API_BASE}/files"
-            async with session.get(
-                url, params=params, headers=headers, timeout=30.0
-            ) as response:
+            async with session.get(url, params=params, headers=headers, timeout=30.0) as response:
                 if response.status == 401:
                     raise Exception("Authentication failed - token may be expired")
                 if response.status != 200:
@@ -366,9 +360,7 @@ async def search_folders(
 
         async with aiohttp.ClientSession() as session:
             url = f"{DRIVE_API_BASE}/files"
-            async with session.get(
-                url, params=params, headers=headers, timeout=30.0
-            ) as response:
+            async with session.get(url, params=params, headers=headers, timeout=30.0) as response:
                 if response.status != 200:
                     error_text = await response.text()
                     raise Exception(f"API error ({response.status}): {error_text}")
@@ -435,9 +427,7 @@ async def validate_folder_id(
 
         async with aiohttp.ClientSession() as session:
             url = f"{DRIVE_API_BASE}/files/{folder_id}"
-            async with session.get(
-                url, params=params, headers=headers, timeout=15.0
-            ) as response:
+            async with session.get(url, params=params, headers=headers, timeout=15.0) as response:
                 if response.status == 404:
                     return False, "Folder not found"
                 if response.status != 200:
@@ -907,9 +897,7 @@ class GraphicsSceneDropdownButton(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
         )
         menu.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        menu.setStyleSheet(
-            "QMenu { background: #252526; border: 1px solid #3c3c3c; padding: 0; }"
-        )
+        menu.setStyleSheet("QMenu { background: #252526; border: 1px solid #3c3c3c; padding: 0; }")
 
         # Create list widget
         list_widget = QListWidget()
@@ -1140,9 +1128,7 @@ class PathBreadcrumb(QWidget):
 
             # Capture values for lambda
             fid, depth = folder_id, i
-            btn.clicked.connect(
-                lambda checked, f=fid, d=depth: self._on_segment_clicked(f, d)
-            )
+            btn.clicked.connect(lambda checked, f=fid, d=depth: self._on_segment_clicked(f, d))
 
             self._layout.addWidget(btn)
 
@@ -1242,9 +1228,7 @@ class FolderFetchWorker(QObject):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                result = loop.run_until_complete(
-                    self.fetch_func(*self.args, **self.kwargs)
-                )
+                result = loop.run_until_complete(self.fetch_func(*self.args, **self.kwargs))
                 self.finished.emit(result, "")
             finally:
                 loop.close()
@@ -1514,9 +1498,7 @@ class GoogleDriveFolderNavigator(QWidget):
         validate_row.addWidget(self._validate_btn)
 
         self._validation_status = QLabel("")
-        self._validation_status.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px;"
-        )
+        self._validation_status.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         validate_row.addWidget(self._validation_status, 1)
 
         manual_layout.addLayout(validate_row)
@@ -1563,9 +1545,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._folder_combo.currentIndexChanged.connect(self._on_folder_selected)
 
         self._search_input.search_triggered.connect(self._on_search_triggered)
-        self._search_results_combo.currentIndexChanged.connect(
-            self._on_search_result_selected
-        )
+        self._search_results_combo.currentIndexChanged.connect(self._on_search_result_selected)
 
         self._manual_input.returnPressed.connect(self._validate_manual_id)
         self._validate_btn.clicked.connect(self._validate_manual_id)
@@ -1639,9 +1619,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._fetch_thread.finished.connect(self._on_browse_fetch_complete)
         self._fetch_thread.start()
 
-    def _on_browse_fetch_complete(
-        self, folders: Optional[List[FolderInfo]], error: str
-    ) -> None:
+    def _on_browse_fetch_complete(self, folders: Optional[List[FolderInfo]], error: str) -> None:
         """Handle browse fetch completion."""
         self._set_loading(False)
         self._fetch_thread = None
@@ -1665,12 +1643,8 @@ class GoogleDriveFolderNavigator(QWidget):
         self._folder_combo.clear()
 
         # Add "Select this folder" option at top
-        current_name = (
-            self._state.current_path[-1][1] if self._state.current_path else "My Drive"
-        )
-        self._folder_combo.addItem(
-            f"[Select] {current_name}", self._state.current_folder_id
-        )
+        current_name = self._state.current_path[-1][1] if self._state.current_path else "My Drive"
+        self._folder_combo.addItem(f"[Select] {current_name}", self._state.current_folder_id)
 
         if not folders:
             self._folder_combo.addItem("(No subfolders)", "")
@@ -1861,9 +1835,7 @@ class GoogleDriveFolderNavigator(QWidget):
             return
 
         self._validation_status.setText("Validating...")
-        self._validation_status.setStyleSheet(
-            f"color: {THEME.warning}; font-style: italic;"
-        )
+        self._validation_status.setStyleSheet(f"color: {THEME.warning}; font-style: italic;")
 
         self._fetch_thread = FolderFetchThread(
             fetch_func=validate_folder_id,
@@ -2070,10 +2042,7 @@ class GoogleDriveFolderNavigator(QWidget):
 
     def is_valid(self) -> bool:
         """Check if a valid folder is selected."""
-        return (
-            self._state.selected_folder_id is not None
-            and self._state.selected_folder_id != ""
-        )
+        return self._state.selected_folder_id is not None and self._state.selected_folder_id != ""
 
     def navigate_to(self, folder_id: str) -> None:
         """

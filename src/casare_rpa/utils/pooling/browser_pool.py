@@ -134,9 +134,7 @@ class BrowserContextPool:
                     break
 
             self._initialized = True
-            logger.info(
-                f"Browser context pool initialized with {len(self._available)} contexts"
-            )
+            logger.info(f"Browser context pool initialized with {len(self._available)} contexts")
 
     async def _create_context(self) -> PooledContext:
         """Create a new pooled context."""
@@ -186,9 +184,7 @@ class BrowserContextPool:
                     pooled.mark_used()
                     self._in_use.add(pooled)
                     self._stats["contexts_recycled"] += 1
-                    logger.debug(
-                        f"Acquired recycled context (use count: {pooled.use_count})"
-                    )
+                    logger.debug(f"Acquired recycled context (use count: {pooled.use_count})")
                     return pooled.context
 
                 # No available context - can we create a new one?
@@ -264,9 +260,7 @@ class BrowserContextPool:
             else:
                 # Return to available pool
                 self._available.append(pooled)
-                logger.debug(
-                    f"Released context back to pool (available: {len(self._available)})"
-                )
+                logger.debug(f"Released context back to pool (available: {len(self._available)})")
 
     async def _close_context(self, pooled: PooledContext) -> None:
         """Close a pooled context and update stats."""
@@ -294,9 +288,7 @@ class BrowserContextPool:
 
                 pooled = self._available[0]
 
-                if pooled.is_idle(self._idle_timeout) or pooled.is_stale(
-                    self._max_context_age
-                ):
+                if pooled.is_idle(self._idle_timeout) or pooled.is_stale(self._max_context_age):
                     self._available.popleft()
                     await self._close_context(pooled)
                     cleaned += 1
@@ -428,9 +420,7 @@ class BrowserPoolManager:
             self._initialized = True
             logger.info(f"BrowserPoolManager initialized with {browser_type} pool")
 
-    async def get_pool(
-        self, browser_type: str = "chromium"
-    ) -> Optional[BrowserContextPool]:
+    async def get_pool(self, browser_type: str = "chromium") -> Optional[BrowserContextPool]:
         """Get the context pool for a browser type."""
         return self._pools.get(browser_type)
 
@@ -498,9 +488,7 @@ class BrowserPoolManager:
 
     def get_stats(self) -> Dict[str, Any]:
         """Get statistics for all pools."""
-        return {
-            browser_type: pool.get_stats() for browser_type, pool in self._pools.items()
-        }
+        return {browser_type: pool.get_stats() for browser_type, pool in self._pools.items()}
 
     @property
     def is_initialized(self) -> bool:

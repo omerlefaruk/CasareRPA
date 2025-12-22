@@ -216,9 +216,7 @@ class VectorStore:
                 )
 
             self._metrics.add_operation("add", len(documents))
-            logger.debug(
-                f"Added {len(documents)} documents to collection '{collection}'"
-            )
+            logger.debug(f"Added {len(documents)} documents to collection '{collection}'")
             return len(documents)
 
         except Exception as e:
@@ -375,12 +373,8 @@ class VectorStore:
                 return Document(
                     id=results["ids"][0],
                     content=results["documents"][0] if results.get("documents") else "",
-                    metadata=(
-                        results["metadatas"][0] if results.get("metadatas") else {}
-                    ),
-                    embedding=(
-                        results["embeddings"][0] if results.get("embeddings") else None
-                    ),
+                    metadata=(results["metadatas"][0] if results.get("metadatas") else {}),
+                    embedding=(results["embeddings"][0] if results.get("embeddings") else None),
                 )
             return None
 

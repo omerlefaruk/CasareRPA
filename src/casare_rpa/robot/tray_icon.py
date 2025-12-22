@@ -4,6 +4,9 @@ System Tray Icon for CasareRPA Robot
 
 import sys
 import asyncio
+from dotenv import load_dotenv
+
+load_dotenv()
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QObject

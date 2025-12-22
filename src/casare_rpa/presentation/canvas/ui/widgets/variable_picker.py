@@ -262,9 +262,7 @@ class VariableInfo:
     value: Optional[Any] = None
     children: List["VariableInfo"] = field(default_factory=list)
     path: Optional[str] = None
-    insertion_path: Optional[str] = (
-        None  # Actual path for {{}} insertion (uses node_id)
-    )
+    insertion_path: Optional[str] = None  # Actual path for {{}} insertion (uses node_id)
     is_expandable: bool = False
     indent_level: int = 0
 
@@ -511,11 +509,7 @@ class VariableProvider:
             current_node = None
             for node in graph.all_nodes():
                 node_id = node.id() if hasattr(node, "id") else None
-                prop_id = (
-                    node.get_property("node_id")
-                    if hasattr(node, "get_property")
-                    else None
-                )
+                prop_id = node.get_property("node_id") if hasattr(node, "get_property") else None
                 if node_id == current_node_id or prop_id == current_node_id:
                     current_node = node
                     break
@@ -528,11 +522,7 @@ class VariableProvider:
 
             # Get output ports from each upstream node
             for upstream_node in upstream_nodes:
-                node_name = (
-                    upstream_node.name()
-                    if hasattr(upstream_node, "name")
-                    else "Unknown"
-                )
+                node_name = upstream_node.name() if hasattr(upstream_node, "name") else "Unknown"
 
                 # Get node_id for variable resolution (stored outputs use node_id)
                 # Priority: get_property("node_id") first - id() returns Qt object ID which won't work
@@ -614,9 +604,7 @@ class VariableProvider:
                         upstream.append(connected_node)
 
                         # Recursively get nodes upstream of this one
-                        further_upstream = self._get_upstream_nodes(
-                            connected_node, visited
-                        )
+                        further_upstream = self._get_upstream_nodes(connected_node, visited)
                         upstream.extend(further_upstream)
 
         except Exception as e:
@@ -659,9 +647,7 @@ class VariableProvider:
             if hasattr(node, "get_port_type"):
                 data_type = node.get_port_type(port_name)
                 if data_type is not None:
-                    return (
-                        data_type.name if hasattr(data_type, "name") else str(data_type)
-                    )
+                    return data_type.name if hasattr(data_type, "name") else str(data_type)
 
             # Try to get from casare node's output ports
             if hasattr(node, "_casare_node") and node._casare_node:
@@ -978,9 +964,7 @@ class VariablePickerPopup(QWidget):
         self._provider: Optional[VariableProvider] = None
         self._current_node_id: Optional[str] = None
         self._graph: Optional[Any] = None
-        self._selected_item: Optional[QTreeWidgetItem] = (
-            None  # Track selection ourselves
-        )
+        self._selected_item: Optional[QTreeWidgetItem] = None  # Track selection ourselves
         self._delegate: Optional[HighlightDelegate] = None
         self._app_filter_installed: bool = False
 
@@ -1134,9 +1118,7 @@ class VariablePickerPopup(QWidget):
             # Get best child score
             child_best_score = 0
             if filtered_children_with_scores:
-                child_best_score = max(
-                    score for _, score in filtered_children_with_scores
-                )
+                child_best_score = max(score for _, score in filtered_children_with_scores)
 
             if best_score > 0 or filtered_children_with_scores:
                 # Create a copy with filtered children
@@ -1528,16 +1510,24 @@ class VariableAwareLineEdit(QLineEdit):
 
     variable_inserted = Signal(str)
     validation_changed = Signal(object)  # ValidationResult
+    expand_clicked = Signal()  # Emitted when expand button is clicked
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initialize the widget."""
+    def __init__(self, parent: Optional[QWidget] = None, show_expand_button: bool = True) -> None:
+        """Initialize the widget.
+
+        Args:
+            parent: Optional parent widget
+            show_expand_button: Whether to show the expand button for expression editor
+        """
         super().__init__(parent)
 
         self._variable_button: Optional[VariableButton] = None
+        self._expand_button: Optional[QPushButton] = None
         self._popup: Optional[VariablePickerPopup] = None
         self._provider: Optional[VariableProvider] = None
         self._always_show_button = True  # Button always visible, not just on hover
         self._autocomplete_trigger = "{{"
+        self._show_expand_button = show_expand_button
 
         # Node context for upstream variable detection
         self._current_node_id: Optional[str] = None
@@ -1553,6 +1543,7 @@ class VariableAwareLineEdit(QLineEdit):
         self.setAcceptDrops(True)
 
         self._setup_variable_button()
+        self._setup_expand_button()
         self._connect_signals()
 
     def _setup_variable_button(self) -> None:
@@ -1569,6 +1560,44 @@ class VariableAwareLineEdit(QLineEdit):
         # Position button on right side
         self._update_button_position()
 
+    def _setup_expand_button(self) -> None:
+        """Set up the expand button for expression editor."""
+        if not self._show_expand_button:
+            return
+
+        c = Theme.get_colors()
+        self._expand_button = QPushButton("...", self)
+        self._expand_button.setFixedSize(16, 16)
+        self._expand_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._expand_button.setToolTip("Open expression editor (Ctrl+E)")
+        self._expand_button.setStyleSheet(f"""
+            QPushButton {{
+                background: {c.surface};
+                border: 1px solid {c.border};
+                border-radius: 3px;
+                color: {c.text_secondary};
+                font-size: 8px;
+                font-weight: bold;
+                font-family: Consolas, monospace;
+                padding: 0px;
+            }}
+            QPushButton:hover {{
+                background: {c.accent};
+                border-color: {c.accent};
+                color: {c.text_primary};
+            }}
+            QPushButton:pressed {{
+                background: {c.accent_hover};
+                border-color: {c.accent_hover};
+            }}
+        """)
+        self._expand_button.clicked.connect(self._on_expand_clicked)
+        self._expand_button.show()
+
+    def _on_expand_clicked(self) -> None:
+        """Handle expand button click."""
+        self.expand_clicked.emit()
+
     def _connect_signals(self) -> None:
         """Connect internal signals."""
         self.textChanged.connect(self._on_text_changed)
@@ -1576,11 +1605,24 @@ class VariableAwareLineEdit(QLineEdit):
         self.editingFinished.connect(self._run_validation)
 
     def _update_button_position(self) -> None:
-        """Update variable button position."""
+        """Update variable and expand button positions."""
+        right_margin = 4
+        button_spacing = 2
+
+        # Position expand button first (rightmost)
+        if self._expand_button:
+            exp_width = self._expand_button.width()
+            exp_height = self._expand_button.height()
+            exp_x = self.width() - exp_width - right_margin
+            exp_y = (self.height() - exp_height) // 2
+            self._expand_button.move(exp_x, exp_y)
+            right_margin = exp_x - button_spacing  # Next button goes to the left
+
+        # Position variable button
         if self._variable_button:
             btn_width = self._variable_button.width()
             btn_height = self._variable_button.height()
-            x = self.width() - btn_width - 4
+            x = right_margin - btn_width
             y = (self.height() - btn_height) // 2
             self._variable_button.move(x, y)
 
@@ -1682,11 +1724,7 @@ class VariableAwareLineEdit(QLineEdit):
         """Handle leave event."""
         super().leaveEvent(event)
         # Don't hide if button should always be visible
-        if (
-            not self._always_show_button
-            and self._variable_button
-            and not self._popup_is_visible()
-        ):
+        if not self._always_show_button and self._variable_button and not self._popup_is_visible():
             self._variable_button.hide()
 
     def _popup_is_visible(self) -> bool:
@@ -1791,9 +1829,7 @@ class VariableAwareLineEdit(QLineEdit):
         # Check if we should replace {{ prefix
         if cursor_pos >= 2 and current_text[cursor_pos - 2 : cursor_pos] == "{{":
             # Remove the {{ and insert variable
-            new_text = (
-                current_text[: cursor_pos - 2] + var_text + current_text[cursor_pos:]
-            )
+            new_text = current_text[: cursor_pos - 2] + var_text + current_text[cursor_pos:]
             self.setText(new_text)
             self.setCursorPosition(cursor_pos - 2 + len(var_text))
         else:
@@ -1933,9 +1969,7 @@ class VariableAwareLineEdit(QLineEdit):
                 "invalid": ValidationStatus.INVALID,
                 "warning": ValidationStatus.WARNING,
             }.get(status, ValidationStatus.VALID)
-            self.validation_changed.emit(
-                ValidationResult(status=status_enum, message=message)
-            )
+            self.validation_changed.emit(ValidationResult(status=status_enum, message=message))
         except ImportError:
             pass  # Emit raw data if ValidationResult not available
 

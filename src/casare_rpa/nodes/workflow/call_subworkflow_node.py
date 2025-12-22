@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 MAX_CALL_DEPTH = 10
 
 
-@node(category="workflow")
 @properties(
     PropertyDef(
         "subworkflow_id",
@@ -79,6 +78,7 @@ MAX_CALL_DEPTH = 10
         max_value=60,
     ),
 )
+@node(category="workflow", exec_outputs=["exec_out", "error"])
 class CallSubworkflowNode(BaseNode):
     """
     Calls a subworkflow by reference with sync or async execution.
@@ -437,9 +437,7 @@ class CallSubworkflowNode(BaseNode):
 
         except ImportError:
             # Orchestrator not available - fall back to sync execution
-            logger.warning(
-                "Orchestrator client not available, falling back to sync execution"
-            )
+            logger.warning("Orchestrator client not available, falling back to sync execution")
             result = await self._execute_sync(
                 subworkflow, inputs, context, timeout_seconds, call_depth
             )
@@ -454,8 +452,8 @@ class CallSubworkflowNode(BaseNode):
             if value is not None:
                 inputs[port_name] = value
             else:
-                # Check config for default
-                value = self.config.get(port_name)
+                # Check config for default using dual-source accessor
+                value = self.get_parameter(port_name)
                 if value is not None:
                     inputs[port_name] = value
         return inputs
@@ -477,7 +475,7 @@ class CallSubworkflowNode(BaseNode):
             return subworkflow
         except ImportError:
             # Try loading from file path in config
-            subworkflow_path = self.config.get("subworkflow_path", "")
+            subworkflow_path = self.get_parameter("subworkflow_path", "")
             if subworkflow_path:
                 try:
                     subworkflow = Subflow.load_from_file(subworkflow_path)
@@ -543,7 +541,5 @@ class CallSubworkflowNode(BaseNode):
         }
 
     def __repr__(self) -> str:
-        subworkflow_name = (
-            self._subworkflow.name if self._subworkflow else "not configured"
-        )
+        subworkflow_name = self._subworkflow.name if self._subworkflow else "not configured"
         return f"CallSubworkflowNode(id='{self.node_id}', subworkflow='{subworkflow_name}')"

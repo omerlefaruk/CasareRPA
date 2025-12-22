@@ -116,9 +116,7 @@ class FilePathWidget(QWidget):
 
         # Path input field
         self._path_input = QLineEdit()
-        self._path_input.setPlaceholderText(
-            self._placeholder or self._get_default_placeholder()
-        )
+        self._path_input.setPlaceholderText(self._placeholder or self._get_default_placeholder())
         self._path_input.textChanged.connect(self._on_text_changed)
         layout.addWidget(self._path_input, 1)  # Stretch factor 1
 
@@ -225,25 +223,18 @@ class FilePathWidget(QWidget):
                 self,
                 "Select Directory",
                 start_dir,
-                QFileDialog.Option.ShowDirsOnly
-                | QFileDialog.Option.DontResolveSymlinks,
+                QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks,
             )
         elif self._path_type == PathType.SAVE_FILE:
-            path, _ = QFileDialog.getSaveFileName(
-                self, "Save File As", start_dir, self._filter
-            )
+            path, _ = QFileDialog.getSaveFileName(self, "Save File As", start_dir, self._filter)
         else:  # PathType.FILE
-            path, _ = QFileDialog.getOpenFileName(
-                self, "Select File", start_dir, self._filter
-            )
+            path, _ = QFileDialog.getOpenFileName(self, "Select File", start_dir, self._filter)
 
         if path:
             # Remember directory for next time
             import os
 
-            self._last_directory = (
-                os.path.dirname(path) if os.path.isfile(path) else path
-            )
+            self._last_directory = os.path.dirname(path) if os.path.isfile(path) else path
 
             # Update input and emit signal
             self._path_input.setText(path)
@@ -311,9 +302,7 @@ def get_filter_for_property(property_name: str) -> str:
     name_lower = property_name.lower()
 
     # Excel-related
-    if any(
-        x in name_lower for x in ["excel", "xlsx", "xls", "workbook", "spreadsheet"]
-    ):
+    if any(x in name_lower for x in ["excel", "xlsx", "xls", "workbook", "spreadsheet"]):
         return FilePathWidget.FILTER_EXCEL
 
     # CSV-related

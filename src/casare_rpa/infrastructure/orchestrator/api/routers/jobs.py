@@ -1,18 +1,21 @@
-"""
-REST API endpoints for job management.
+"""REST API endpoints for job management.
 
-Provides operations for job control: cancel, retry, status updates.
+Provides:
+- Admin/user operations: cancel, retry
+- Robot operations (internet-safe): claim, complete, fail, release
 """
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from loguru import logger
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+
+from casare_rpa.infrastructure.orchestrator.api.auth import verify_robot_token
 
 
 router = APIRouter()
@@ -62,7 +65,337 @@ class JobProgressUpdate(BaseModel):
     message: Optional[str] = None
 
 
+class JobClaimRequest(BaseModel):
+    """Request for robots to claim a job."""
+
+    environment: str = Field(default="default", max_length=64)
+    limit: int = Field(default=1, ge=1, le=10)
+    visibility_timeout_seconds: int = Field(default=30, ge=5, le=3600)
+
+
+class JobClaimResponse(BaseModel):
+    """Response payload for claimed job."""
+
+    job_id: str
+    workflow_id: str
+    workflow_name: str
+    workflow_json: str
+    priority: int
+    environment: str
+    variables: Dict[str, Any]
+    created_at: datetime
+    claimed_at: datetime
+    retry_count: int
+    max_retries: int
+
+
+class JobCompleteRequest(BaseModel):
+    """Request body for completing a job."""
+
+    result: Dict[str, Any] = Field(default_factory=dict)
+
+
+class JobFailRequest(BaseModel):
+    """Request body for failing a job."""
+
+    error_message: str = Field(..., min_length=1, max_length=5000)
+
+
+class JobExtendLeaseRequest(BaseModel):
+    """Request body for extending job visibility lease."""
+
+    extension_seconds: int = Field(default=30, ge=5, le=3600)
+
+
 # ==================== ENDPOINTS ====================
+
+
+@router.post(
+    "/jobs/claim",
+    response_model=Optional[JobClaimResponse],
+    dependencies=[Depends(verify_robot_token)],
+)
+@limiter.limit("120/minute")
+async def claim_job(
+    request: Request,
+    payload: JobClaimRequest,
+    robot_id: str = Depends(verify_robot_token),
+):
+    """Claim the next available job for an authenticated robot.
+
+    This endpoint allows robots to run without direct database access.
+    It uses SKIP LOCKED semantics in a single UPDATE statement.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE job_queue
+                SET status = 'running',
+                    robot_id = $3,
+                    started_at = NOW(),
+                    visible_after = NOW() + INTERVAL '1 second' * $4
+                WHERE id IN (
+                    SELECT id
+                    FROM job_queue
+                    WHERE status = 'pending'
+                      AND visible_after <= NOW()
+                      AND (environment = $1 OR environment = 'default' OR $1 = 'default')
+                    ORDER BY priority DESC, created_at ASC
+                    LIMIT $2
+                    FOR UPDATE SKIP LOCKED
+                )
+                RETURNING id,
+                          workflow_id,
+                          workflow_name,
+                          workflow_json,
+                          priority,
+                          environment,
+                          variables,
+                          created_at,
+                          retry_count,
+                          max_retries,
+                          started_at;
+                """,
+                payload.environment,
+                payload.limit,
+                robot_id,
+                payload.visibility_timeout_seconds,
+            )
+
+            if row is None:
+                return None
+
+            return JobClaimResponse(
+                job_id=str(row["id"]),
+                workflow_id=str(row.get("workflow_id") or ""),
+                workflow_name=str(row.get("workflow_name") or ""),
+                workflow_json=str(row.get("workflow_json") or ""),
+                priority=int(row.get("priority") or 0),
+                environment=str(row.get("environment") or "default"),
+                variables=row.get("variables") or {},
+                created_at=row.get("created_at") or datetime.utcnow(),
+                claimed_at=row.get("started_at") or datetime.utcnow(),
+                retry_count=int(row.get("retry_count") or 0),
+                max_retries=int(row.get("max_retries") or 0),
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to claim job for robot {robot_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to claim job: {e}")
+
+
+@router.post(
+    "/jobs/{job_id}/complete",
+    dependencies=[Depends(verify_robot_token)],
+)
+@limiter.limit("120/minute")
+async def complete_job(
+    request: Request,
+    payload: JobCompleteRequest,
+    job_id: str = Path(..., min_length=1, max_length=64),
+    robot_id: str = Depends(verify_robot_token),
+):
+    """Mark a running job as completed (robot-authenticated)."""
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    try:
+        import orjson
+
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE job_queue
+                SET status = 'completed',
+                    completed_at = NOW(),
+                    result = $2::jsonb
+                WHERE id = $1::uuid
+                  AND status = 'running'
+                  AND robot_id = $3
+                RETURNING id;
+                """,
+                job_id,
+                orjson.dumps(payload.result).decode(),
+                robot_id,
+            )
+
+            if row is None:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Job not running for this robot (already finished or claimed elsewhere)",
+                )
+
+            return {"job_id": job_id, "completed": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to complete job {job_id} for robot {robot_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to complete job: {e}")
+
+
+@router.post(
+    "/jobs/{job_id}/fail",
+    dependencies=[Depends(verify_robot_token)],
+)
+@limiter.limit("120/minute")
+async def fail_job(
+    request: Request,
+    payload: JobFailRequest,
+    job_id: str = Path(..., min_length=1, max_length=64),
+    robot_id: str = Depends(verify_robot_token),
+):
+    """Mark a running job as failed (robot-authenticated).
+
+    If retry_count < max_retries, the job is returned to pending.
+    Otherwise, it becomes failed.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE job_queue
+                SET status = CASE
+                        WHEN retry_count < max_retries THEN 'pending'
+                        ELSE 'failed'
+                    END,
+                    error_message = $2,
+                    retry_count = retry_count + 1,
+                    robot_id = CASE
+                        WHEN retry_count < max_retries THEN NULL
+                        ELSE robot_id
+                    END,
+                    visible_after = CASE
+                        WHEN retry_count < max_retries THEN NOW() + INTERVAL '5 seconds'
+                        ELSE visible_after
+                    END
+                WHERE id = $1::uuid
+                  AND status = 'running'
+                  AND robot_id = $3
+                RETURNING id, status;
+                """,
+                job_id,
+                payload.error_message,
+                robot_id,
+            )
+
+            if row is None:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Job not running for this robot (already finished or claimed elsewhere)",
+                )
+
+            return {"job_id": job_id, "status": row["status"]}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fail job {job_id} for robot {robot_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fail job: {e}")
+
+
+@router.post(
+    "/jobs/{job_id}/release",
+    dependencies=[Depends(verify_robot_token)],
+)
+@limiter.limit("120/minute")
+async def release_job(
+    request: Request,
+    job_id: str = Path(..., min_length=1, max_length=64),
+    robot_id: str = Depends(verify_robot_token),
+):
+    """Release a running job back to pending (robot-authenticated)."""
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE job_queue
+                SET status = 'pending',
+                    robot_id = NULL,
+                    started_at = NULL,
+                    visible_after = NOW()
+                WHERE id = $1::uuid
+                  AND status = 'running'
+                  AND robot_id = $2
+                RETURNING id;
+                """,
+                job_id,
+                robot_id,
+            )
+
+            if row is None:
+                raise HTTPException(status_code=409, detail="Job not running for this robot")
+
+            return {"job_id": job_id, "released": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to release job {job_id} for robot {robot_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to release job: {e}")
+
+
+@router.post(
+    "/jobs/{job_id}/extend-lease",
+    dependencies=[Depends(verify_robot_token)],
+)
+@limiter.limit("240/minute")
+async def extend_job_lease(
+    request: Request,
+    payload: JobExtendLeaseRequest,
+    job_id: str = Path(..., min_length=1, max_length=64),
+    robot_id: str = Depends(verify_robot_token),
+):
+    """Extend the visibility lease for a running job (robot-authenticated)."""
+    pool = get_db_pool()
+    if pool is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE job_queue
+                SET visible_after = NOW() + INTERVAL '1 second' * $2
+                WHERE id = $1::uuid
+                  AND status = 'running'
+                  AND robot_id = $3
+                RETURNING id;
+                """,
+                job_id,
+                payload.extension_seconds,
+                robot_id,
+            )
+
+            if row is None:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Job not running for this robot (already finished or claimed elsewhere)",
+                )
+
+            return {"job_id": job_id, "extended": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to extend lease for job {job_id} (robot {robot_id}): {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to extend lease: {e}")
 
 
 @router.post("/jobs/{job_id}/cancel", response_model=JobCancelResponse)

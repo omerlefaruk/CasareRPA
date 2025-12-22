@@ -19,8 +19,10 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
 )
-from PySide6.QtCore import Signal, QTimer
+from PySide6.QtCore import Signal, QTimer, Qt
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 if TYPE_CHECKING:
@@ -32,15 +34,19 @@ if TYPE_CHECKING:
 class StatCard(QFrame):
     """Card widget displaying a single statistic."""
 
+    clicked = Signal(str)
+
     def __init__(
         self,
+        key: str,
         title: str,
         value: str = "-",
         subtitle: str = "",
-        color: QColor = QColor(0x4C, 0xAF, 0x50),
+        color: QColor = QColor(THEME.status_success),
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
+        self._key = key
         self._title = title
         self._value = value
         self._subtitle = subtitle
@@ -57,7 +63,7 @@ class StatCard(QFrame):
         layout.setSpacing(4)
 
         title_label = QLabel(self._title)
-        title_label.setStyleSheet("color: #888888; font-size: 11px;")
+        title_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         layout.addWidget(title_label)
 
         self._value_label = QLabel(self._value)
@@ -67,22 +73,34 @@ class StatCard(QFrame):
         layout.addWidget(self._value_label)
 
         self._subtitle_label = QLabel(self._subtitle)
-        self._subtitle_label.setStyleSheet("color: #666666; font-size: 10px;")
+        self._subtitle_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
         layout.addWidget(self._subtitle_label)
 
-        self.setStyleSheet("""
-            StatCard {
-                background: #2a2a2a;
-                border: 1px solid #3d3d3d;
-                border-radius: 6px;
-            }
-        """)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self.setStyleSheet(
+            f"""
+            StatCard {{
+                background: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
+                border-radius: 8px;
+            }}
+            StatCard:hover {{
+                border-color: {THEME.border_light};
+                background: {THEME.bg_hover};
+            }}
+            """
+        )
 
     def set_value(self, value: str, subtitle: str = "") -> None:
         """Update card value and subtitle."""
         self._value_label.setText(value)
         if subtitle:
             self._subtitle_label.setText(subtitle)
+
+    def mousePressEvent(self, event) -> None:
+        self.clicked.emit(self._key)
+        super().mousePressEvent(event)
 
 
 class BarChart(QWidget):
@@ -116,15 +134,15 @@ class BarChart(QWidget):
         width = self.width()
         height = self.height()
 
-        painter.fillRect(0, 0, width, height, QColor("#2a2a2a"))
+        painter.fillRect(0, 0, width, height, QColor(THEME.bg_panel))
 
         if self._title:
-            painter.setPen(QPen(QColor("#888888")))
+            painter.setPen(QPen(QColor(THEME.text_secondary)))
             painter.setFont(QFont("", 11))
             painter.drawText(10, 20, self._title)
 
         if not self._data:
-            painter.setPen(QPen(QColor("#666666")))
+            painter.setPen(QPen(QColor(THEME.text_muted)))
             painter.drawText(width // 2 - 30, height // 2, "No data")
             return
 
@@ -137,22 +155,16 @@ class BarChart(QWidget):
         for i, (label, value, color) in enumerate(self._data):
             y = y_offset + i * (bar_height + 5)
 
-            painter.setPen(QPen(QColor("#e0e0e0")))
+            painter.setPen(QPen(QColor(THEME.text_primary)))
             painter.setFont(QFont("", 9))
             painter.drawText(5, int(y + bar_height * 0.7), label[:15])
 
-            bar_width = (
-                int((value / self._max_value) * chart_width)
-                if self._max_value > 0
-                else 0
-            )
+            bar_width = int((value / self._max_value) * chart_width) if self._max_value > 0 else 0
             painter.fillRect(chart_left, int(y), bar_width, bar_height, QColor(color))
 
-            painter.setPen(QPen(QColor("#e0e0e0")))
+            painter.setPen(QPen(QColor(THEME.text_primary)))
             value_str = f"{value:.0f}" if isinstance(value, float) else str(value)
-            painter.drawText(
-                chart_left + bar_width + 5, int(y + bar_height * 0.7), value_str
-            )
+            painter.drawText(chart_left + bar_width + 5, int(y + bar_height * 0.7), value_str)
 
 
 class PieChart(QWidget):
@@ -181,21 +193,21 @@ class PieChart(QWidget):
         width = self.width()
         height = self.height()
 
-        painter.fillRect(0, 0, width, height, QColor("#2a2a2a"))
+        painter.fillRect(0, 0, width, height, QColor(THEME.bg_panel))
 
         if self._title:
-            painter.setPen(QPen(QColor("#888888")))
+            painter.setPen(QPen(QColor(THEME.text_secondary)))
             painter.setFont(QFont("", 11))
             painter.drawText(10, 20, self._title)
 
         if not self._data:
-            painter.setPen(QPen(QColor("#666666")))
+            painter.setPen(QPen(QColor(THEME.text_muted)))
             painter.drawText(width // 2 - 30, height // 2, "No data")
             return
 
         total = sum(d[1] for d in self._data)
         if total == 0:
-            painter.setPen(QPen(QColor("#666666")))
+            painter.setPen(QPen(QColor(THEME.text_muted)))
             painter.drawText(width // 2 - 30, height // 2, "No data")
             return
 
@@ -208,7 +220,7 @@ class PieChart(QWidget):
         for label, value, color in self._data:
             span_angle = int((value / total) * 360 * 16)
             painter.setBrush(QBrush(QColor(color)))
-            painter.setPen(QPen(QColor("#2a2a2a"), 2))
+            painter.setPen(QPen(QColor(THEME.bg_panel), 2))
             painter.drawPie(x, y, size, size, start_angle, span_angle)
             start_angle += span_angle
 
@@ -219,7 +231,7 @@ class PieChart(QWidget):
         for i, (label, value, color) in enumerate(self._data):
             ly = legend_y + i * 20
             painter.fillRect(legend_x, ly, 12, 12, QColor(color))
-            painter.setPen(QPen(QColor("#e0e0e0")))
+            painter.setPen(QPen(QColor(THEME.text_primary)))
             pct = (value / total * 100) if total > 0 else 0
             painter.drawText(legend_x + 18, ly + 10, f"{label}: {pct:.1f}%")
 
@@ -240,6 +252,7 @@ class AnalyticsTabWidget(QWidget):
     """
 
     refresh_requested = Signal()
+    drilldown_requested = Signal(str, object)  # (target, payload)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -260,7 +273,7 @@ class AnalyticsTabWidget(QWidget):
         toolbar.addStretch()
 
         self._last_updated_label = QLabel("Last updated: -")
-        self._last_updated_label.setStyleSheet("color: #888888;")
+        self._last_updated_label.setStyleSheet(f"color: {THEME.text_secondary};")
         toolbar.addWidget(self._last_updated_label)
 
         self._refresh_btn = QPushButton("Refresh")
@@ -281,29 +294,58 @@ class AnalyticsTabWidget(QWidget):
         cards_layout.setSpacing(12)
 
         self._card_robots_online = StatCard(
-            "Robots Online", "-", "of total", QColor(0x4C, 0xAF, 0x50)
+            "robots",
+            "Robots Online",
+            "-",
+            "of total",
+            QColor(THEME.status_success),
         )
         cards_layout.addWidget(self._card_robots_online)
 
         self._card_jobs_today = StatCard(
-            "Jobs Today", "-", "completed", QColor(0x21, 0x96, 0xF3)
+            "jobs",
+            "Jobs Today",
+            "-",
+            "completed",
+            QColor(THEME.status_info),
         )
         cards_layout.addWidget(self._card_jobs_today)
 
         self._card_success_rate = StatCard(
-            "Success Rate", "-", "last 7 days", QColor(0x00, 0xC8, 0x53)
+            "jobs",
+            "Success Rate",
+            "-",
+            "last 7 days",
+            QColor(THEME.status_success),
         )
         cards_layout.addWidget(self._card_success_rate)
 
         self._card_avg_duration = StatCard(
-            "Avg Duration", "-", "per job", QColor(0xFF, 0x98, 0x00)
+            "jobs",
+            "Avg Duration",
+            "-",
+            "per job",
+            QColor(THEME.status_warning),
         )
         cards_layout.addWidget(self._card_avg_duration)
 
         self._card_queue_depth = StatCard(
-            "Queue Depth", "-", "pending jobs", QColor(0x9C, 0x27, 0xB0)
+            "queues",
+            "Queue Depth",
+            "-",
+            "pending jobs",
+            QColor(THEME.accent_primary),
         )
         cards_layout.addWidget(self._card_queue_depth)
+
+        for card in [
+            self._card_robots_online,
+            self._card_jobs_today,
+            self._card_success_rate,
+            self._card_avg_duration,
+            self._card_queue_depth,
+        ]:
+            card.clicked.connect(self._on_card_clicked)
 
         content_layout.addLayout(cards_layout)
 
@@ -344,13 +386,11 @@ class AnalyticsTabWidget(QWidget):
         percentiles_group = QGroupBox("Duration Percentiles (Last 7 Days)")
         percentiles_layout = QHBoxLayout(percentiles_group)
 
-        self._p50_card = StatCard("P50", "-", "median", QColor(0x4C, 0xAF, 0x50))
+        self._p50_card = StatCard("jobs", "P50", "-", "median", QColor(THEME.status_success))
         self._p90_card = StatCard(
-            "P90", "-", "90th percentile", QColor(0xFF, 0xC1, 0x07)
+            "jobs", "P90", "-", "90th percentile", QColor(THEME.status_warning)
         )
-        self._p99_card = StatCard(
-            "P99", "-", "99th percentile", QColor(0xF4, 0x43, 0x36)
-        )
+        self._p99_card = StatCard("jobs", "P99", "-", "99th percentile", QColor(THEME.status_error))
 
         percentiles_layout.addWidget(self._p50_card)
         percentiles_layout.addWidget(self._p90_card)
@@ -363,38 +403,42 @@ class AnalyticsTabWidget(QWidget):
         layout.addWidget(scroll_area)
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QGroupBox {
-                background: #2a2a2a;
-                border: 1px solid #3d3d3d;
-                border-radius: 6px;
+        self.setStyleSheet(
+            f"""
+            QGroupBox {{
+                background: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
+                border-radius: 8px;
                 margin-top: 14px;
                 padding-top: 10px;
-                font-weight: bold;
-            }
-            QGroupBox::title {
+                font-weight: 700;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 8px;
-                color: #e0e0e0;
-            }
-            QScrollArea {
+                color: {THEME.text_primary};
+            }}
+            QScrollArea {{
                 background: transparent;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
+            }}
+            QPushButton {{
+                background: {THEME.bg_dark};
+                border: 1px solid {THEME.border};
+                border-radius: 6px;
+                color: {THEME.text_primary};
                 padding: 6px 16px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-        """)
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+            """
+        )
 
     def update_analytics(self, analytics: Dict[str, Any]) -> None:
         """Update all analytics widgets with new data."""
@@ -425,10 +469,10 @@ class AnalyticsTabWidget(QWidget):
         self._card_queue_depth.set_value(str(queue_depth), "pending jobs")
 
         job_status_data = [
-            ("Completed", jobs.get("completed", 0), "#00C853"),
-            ("Running", jobs.get("running", 0), "#4CAF50"),
-            ("Pending", jobs.get("pending", 0), "#9E9E9E"),
-            ("Failed", jobs.get("failed", 0), "#F44336"),
+            ("Completed", jobs.get("completed", 0), THEME.status_success),
+            ("Running", jobs.get("running", 0), THEME.status_running),
+            ("Pending", jobs.get("pending", 0), THEME.text_muted),
+            ("Failed", jobs.get("failed", 0), THEME.status_error),
         ]
         self._job_status_chart.set_data(job_status_data)
 
@@ -437,7 +481,13 @@ class AnalyticsTabWidget(QWidget):
         for r in robot_util[:8]:
             name = r.get("name", "Robot")[:12]
             util = r.get("utilization", 0)
-            color = "#4CAF50" if util < 70 else "#FFC107" if util < 90 else "#F44336"
+            color = (
+                THEME.status_success
+                if util < 70
+                else THEME.status_warning
+                if util < 90
+                else THEME.status_error
+            )
             robot_data.append((name, util, color))
         self._robot_util_chart.set_data(robot_data, 100)
 
@@ -446,7 +496,7 @@ class AnalyticsTabWidget(QWidget):
         for e in error_dist[:6]:
             error_type = e.get("error_type", "Unknown")[:20]
             count = e.get("count", 0)
-            error_data.append((error_type, count, "#F44336"))
+            error_data.append((error_type, count, THEME.status_error))
         self._error_dist_chart.set_data(error_data)
 
         slowest = analytics.get("slowest_workflows", [])
@@ -454,7 +504,7 @@ class AnalyticsTabWidget(QWidget):
         for w in slowest[:5]:
             name = w.get("workflow_name", "Workflow")[:15]
             duration = w.get("average_duration_ms", 0) / 1000
-            slowest_data.append((name, duration, "#FF9800"))
+            slowest_data.append((name, duration, THEME.status_warning))
         self._slowest_chart.set_data(slowest_data)
 
         p50 = analytics.get("p50_duration_ms", 0) / 1000
@@ -465,9 +515,7 @@ class AnalyticsTabWidget(QWidget):
         self._p90_card.set_value(f"{p90:.1f}s" if p90 < 60 else f"{p90/60:.1f}m")
         self._p99_card.set_value(f"{p99:.1f}s" if p99 < 60 else f"{p99/60:.1f}m")
 
-        self._last_updated_label.setText(
-            f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
-        )
+        self._last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
 
     def _request_refresh(self) -> None:
         """Request analytics refresh."""
@@ -477,6 +525,9 @@ class AnalyticsTabWidget(QWidget):
         """Set refresh button state."""
         self._refresh_btn.setEnabled(not refreshing)
         self._refresh_btn.setText("Refreshing..." if refreshing else "Refresh")
+
+    def _on_card_clicked(self, key: str) -> None:
+        self.drilldown_requested.emit(key, None)
 
     # ==================== Real-Time Updates ====================
 
@@ -492,9 +543,7 @@ class AnalyticsTabWidget(QWidget):
         self._card_queue_depth.set_value(str(update.depth), "pending jobs")
 
         # Update last updated timestamp
-        self._last_updated_label.setText(
-            f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
-        )
+        self._last_updated_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
 
     def update_fleet_status(self, active_robots: int, total_robots: int) -> None:
         """
@@ -504,9 +553,7 @@ class AnalyticsTabWidget(QWidget):
             active_robots: Number of online robots
             total_robots: Total number of robots
         """
-        self._card_robots_online.set_value(
-            str(active_robots), f"of {total_robots} total"
-        )
+        self._card_robots_online.set_value(str(active_robots), f"of {total_robots} total")
 
     def update_active_jobs(self, running: int, completed_today: int) -> None:
         """

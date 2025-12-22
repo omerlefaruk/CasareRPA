@@ -12,6 +12,9 @@ Nodes for managing spreadsheets and worksheets:
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
 
 from typing import Any, Dict
 
@@ -28,6 +31,36 @@ from casare_rpa.infrastructure.resources.google_sheets_client import (
 from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        required=True,
+        label="Title",
+        tooltip="Title for the new spreadsheet",
+    ),
+    PropertyDef(
+        "sheets",
+        PropertyType.LIST,
+        label="Sheets",
+        tooltip="List of sheet names to create",
+    ),
+    PropertyDef(
+        "locale",
+        PropertyType.STRING,
+        default="en_US",
+        label="Locale",
+        tooltip="Locale string (e.g., en_US)",
+    ),
+)
+@node(category="google")
 class SheetsCreateSpreadsheetNode(SheetsBaseNode):
     """
     Create a new Google Spreadsheet.
@@ -77,22 +110,16 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
         """Create a new spreadsheet."""
         # Get parameters
         title = self.get_parameter("title")
-        if hasattr(context, "resolve_value"):
-            title = context.resolve_value(title)
 
         if not title:
             self._set_error_outputs("Spreadsheet title is required")
             return {"success": False, "error": "Title is required", "next_nodes": []}
 
         sheets = self.get_parameter("sheets")
-        if isinstance(sheets, str) and hasattr(context, "resolve_value"):
-            sheets = context.resolve_value(sheets)
         if not sheets:
             sheets = ["Sheet1"]
 
         locale = self.get_parameter("locale", "en_US")
-        if hasattr(context, "resolve_value"):
-            locale = context.resolve_value(locale)
 
         # Create spreadsheet
         result = await client.create_spreadsheet(
@@ -116,9 +143,7 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
                 "title": result.title,
                 "locale": result.locale,
                 "time_zone": result.time_zone,
-                "sheets": [
-                    s.get("properties", {}).get("title", "") for s in result.sheets
-                ],
+                "sheets": [s.get("properties", {}).get("title", "") for s in result.sheets],
             },
         )
 
@@ -131,6 +156,8 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsGetSpreadsheetNode(SheetsBaseNode):
     """
     Get spreadsheet metadata.
@@ -215,6 +242,8 @@ class SheetsGetSpreadsheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsAddSheetNode(SheetsBaseNode):
     """
     Add a new sheet (worksheet) to an existing spreadsheet.
@@ -271,8 +300,6 @@ class SheetsAddSheetNode(SheetsBaseNode):
             }
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value"):
-            sheet_name = context.resolve_value(sheet_name)
 
         if not sheet_name:
             self._set_error_outputs("Sheet name is required")
@@ -316,6 +343,8 @@ class SheetsAddSheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsDeleteSheetNode(SheetsBaseNode):
     """
     Delete a sheet from a spreadsheet.
@@ -364,8 +393,6 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
             }
 
         sheet_id = self.get_parameter("sheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
 
         if sheet_id is None:
             self._set_error_outputs("Sheet ID is required")
@@ -394,6 +421,37 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
         }
 
 
+@properties(
+    PropertyDef(
+        "credential_name",
+        PropertyType.STRING,
+        default="google",
+        label="Credential Name",
+        tooltip="Name of the Google credential to use",
+    ),
+    PropertyDef(
+        "source_spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Source Spreadsheet ID",
+        tooltip="ID of the source spreadsheet",
+    ),
+    PropertyDef(
+        "source_sheet_id",
+        PropertyType.INTEGER,
+        required=True,
+        label="Source Sheet ID",
+        tooltip="ID of the sheet to copy",
+    ),
+    PropertyDef(
+        "destination_spreadsheet_id",
+        PropertyType.STRING,
+        required=True,
+        label="Destination Spreadsheet ID",
+        tooltip="ID of the destination spreadsheet",
+    ),
+)
+@node(category="google")
 class SheetsCopySheetNode(SheetsBaseNode):
     """
     Copy a sheet to another spreadsheet.
@@ -426,9 +484,7 @@ class SheetsCopySheetNode(SheetsBaseNode):
 
         self.add_input_port("source_spreadsheet_id", DataType.STRING, required=True)
         self.add_input_port("source_sheet_id", DataType.INTEGER, required=True)
-        self.add_input_port(
-            "destination_spreadsheet_id", DataType.STRING, required=True
-        )
+        self.add_input_port("destination_spreadsheet_id", DataType.STRING, required=True)
 
         self._define_common_output_ports()
         self.add_output_port("new_sheet_id", DataType.INTEGER)
@@ -441,8 +497,6 @@ class SheetsCopySheetNode(SheetsBaseNode):
     ) -> ExecutionResult:
         """Copy a sheet to another spreadsheet."""
         source_id = self.get_parameter("source_spreadsheet_id")
-        if hasattr(context, "resolve_value"):
-            source_id = context.resolve_value(source_id)
 
         if not source_id:
             self._set_error_outputs("Source spreadsheet ID is required")
@@ -453,8 +507,6 @@ class SheetsCopySheetNode(SheetsBaseNode):
             }
 
         sheet_id = self.get_parameter("source_sheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
 
         if sheet_id is None:
             self._set_error_outputs("Source sheet ID is required")
@@ -465,8 +517,6 @@ class SheetsCopySheetNode(SheetsBaseNode):
             }
 
         dest_id = self.get_parameter("destination_spreadsheet_id")
-        if hasattr(context, "resolve_value"):
-            dest_id = context.resolve_value(dest_id)
 
         if not dest_id:
             self._set_error_outputs("Destination spreadsheet ID is required")
@@ -504,6 +554,8 @@ class SheetsCopySheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsDuplicateSheetNode(SheetsBaseNode):
     """
     Duplicate a sheet within the same spreadsheet.
@@ -560,8 +612,6 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
             }
 
         source_sheet_id = self.get_parameter("source_sheet_id")
-        if hasattr(context, "resolve_value"):
-            source_sheet_id = context.resolve_value(source_sheet_id)
 
         if source_sheet_id is None:
             self._set_error_outputs("Source sheet ID is required")
@@ -572,8 +622,6 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
             }
 
         new_name = self.get_parameter("new_sheet_name")
-        if new_name and hasattr(context, "resolve_value"):
-            new_name = context.resolve_value(new_name)
 
         insert_index = self.get_parameter("insert_index")
 
@@ -614,6 +662,8 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
         }
 
 
+@properties()
+@node(category="google")
 class SheetsRenameSheetNode(SheetsBaseNode):
     """
     Rename a sheet in a spreadsheet.
@@ -664,16 +714,12 @@ class SheetsRenameSheetNode(SheetsBaseNode):
             }
 
         sheet_id = self.get_parameter("sheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
 
         if sheet_id is None:
             self._set_error_outputs("Sheet ID is required")
             return {"success": False, "error": "Sheet ID is required", "next_nodes": []}
 
         new_name = self.get_parameter("new_name")
-        if hasattr(context, "resolve_value"):
-            new_name = context.resolve_value(new_name)
 
         if not new_name:
             self._set_error_outputs("New name is required")

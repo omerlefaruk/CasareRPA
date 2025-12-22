@@ -87,9 +87,7 @@ class VisualRandomUUIDNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu(
-            "format", "Format", items=["standard", "hex", "urn"], tab="properties"
-        )
+        self.add_combo_menu("format", "Format", items=["standard", "hex", "urn"], tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -125,9 +123,7 @@ class VisualGetCurrentDateTimeNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input(
-            "format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties"
-        )
+        self.add_text_input("format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -170,9 +166,7 @@ class VisualParseDateTimeNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input(
-            "format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties"
-        )
+        self.add_text_input("format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

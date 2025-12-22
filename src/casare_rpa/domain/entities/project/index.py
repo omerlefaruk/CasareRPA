@@ -131,9 +131,7 @@ class ProjectsIndex:
                 return p
         return None
 
-    def get_recent_projects(
-        self, limit: Optional[int] = None
-    ) -> List[ProjectIndexEntry]:
+    def get_recent_projects(self, limit: Optional[int] = None) -> List[ProjectIndexEntry]:
         """
         Get recently opened projects.
 

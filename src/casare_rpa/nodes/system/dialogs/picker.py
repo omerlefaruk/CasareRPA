@@ -5,14 +5,12 @@ Nodes for selecting files, folders, colors, dates, and items from lists.
 """
 
 import asyncio
-from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -21,7 +19,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .widgets import _create_styled_line_edit
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -52,6 +49,7 @@ from .widgets import _create_styled_line_edit
         tooltip="Initial directory",
     ),
 )
+@node(category="system")
 class FilePickerDialogNode(BaseNode):
     """
     Display a file picker dialog.
@@ -90,9 +88,6 @@ class FilePickerDialogNode(BaseNode):
             multi_select = self.get_parameter("multi_select", False)
             start_dir = self.get_parameter("start_directory", "")
 
-            title = context.resolve_value(title)
-            start_dir = context.resolve_value(start_dir)
-
             try:
                 from PySide6.QtWidgets import QFileDialog, QApplication
                 from PySide6.QtCore import Qt
@@ -123,9 +118,7 @@ class FilePickerDialogNode(BaseNode):
                             if multi_select:
                                 future.set_result((files, True))
                             else:
-                                future.set_result(
-                                    (files[0] if files else "", bool(files))
-                                )
+                                future.set_result((files[0] if files else "", bool(files)))
                         else:
                             future.set_result(("" if not multi_select else [], False))
 
@@ -157,7 +150,6 @@ class FilePickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -174,6 +166,7 @@ class FilePickerDialogNode(BaseNode):
         tooltip="Initial directory",
     ),
 )
+@node(category="system")
 class FolderPickerDialogNode(BaseNode):
     """
     Display a folder picker dialog.
@@ -208,9 +201,6 @@ class FolderPickerDialogNode(BaseNode):
             title = self.get_parameter("title", "Select Folder")
             start_dir = self.get_parameter("start_directory", "")
 
-            title = context.resolve_value(title)
-            start_dir = context.resolve_value(start_dir)
-
             try:
                 from PySide6.QtWidgets import QFileDialog, QApplication
                 from PySide6.QtCore import Qt
@@ -234,9 +224,7 @@ class FolderPickerDialogNode(BaseNode):
                     if not future.done():
                         if result == QFileDialog.Accepted:
                             folders = dialog.selectedFiles()
-                            future.set_result(
-                                (folders[0] if folders else "", bool(folders))
-                            )
+                            future.set_result((folders[0] if folders else "", bool(folders)))
                         else:
                             future.set_result(("", False))
 
@@ -268,7 +256,6 @@ class FolderPickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -292,6 +279,7 @@ class FolderPickerDialogNode(BaseNode):
         tooltip="Show alpha channel slider",
     ),
 )
+@node(category="system")
 class ColorPickerDialogNode(BaseNode):
     """
     Display a color picker dialog.
@@ -330,9 +318,6 @@ class ColorPickerDialogNode(BaseNode):
             initial_color = self.get_parameter("initial_color", "#ffffff")
             show_alpha = self.get_parameter("show_alpha", False)
 
-            title = context.resolve_value(title)
-            initial_color = context.resolve_value(initial_color)
-
             try:
                 from PySide6.QtWidgets import QColorDialog, QApplication
                 from PySide6.QtGui import QColor
@@ -358,9 +343,7 @@ class ColorPickerDialogNode(BaseNode):
                     if not future.done():
                         if result == QColorDialog.Accepted:
                             color = dialog.currentColor()
-                            hex_color = color.name(
-                                QColor.HexArgb if show_alpha else QColor.HexRgb
-                            )
+                            hex_color = color.name(QColor.HexArgb if show_alpha else QColor.HexRgb)
                             rgb_dict = {
                                 "r": color.red(),
                                 "g": color.green(),
@@ -402,7 +385,6 @@ class ColorPickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -441,6 +423,7 @@ class ColorPickerDialogNode(BaseNode):
         tooltip="Maximum date (YYYY-MM-DD)",
     ),
 )
+@node(category="system")
 class DateTimePickerDialogNode(BaseNode):
     """
     Display a date/time picker dialog.
@@ -482,8 +465,6 @@ class DateTimePickerDialogNode(BaseNode):
             format_str = self.get_parameter("format", "yyyy-MM-dd HH:mm:ss")
             min_date = self.get_parameter("min_date", "")
             max_date = self.get_parameter("max_date", "")
-
-            title = context.resolve_value(title)
 
             try:
                 from PySide6.QtWidgets import (
@@ -530,9 +511,7 @@ class DateTimePickerDialogNode(BaseNode):
                 picker.setDisplayFormat(format_str)
                 layout.addWidget(picker)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -589,7 +568,6 @@ class DateTimePickerDialogNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -628,6 +606,7 @@ class DateTimePickerDialogNode(BaseNode):
         tooltip="Default selected item(s)",
     ),
 )
+@node(category="system")
 class ListPickerDialogNode(BaseNode):
     """
     Display a list picker dialog for single/multi-select.
@@ -677,19 +656,14 @@ class ListPickerDialogNode(BaseNode):
             search_enabled = self.get_parameter("search_enabled", True)
             default_selection = self.get_parameter("default_selection", "")
 
-            title = context.resolve_value(title)
-
             # Parse items - can be list, comma-separated string, or JSON array
             if isinstance(items_input, list):
                 items = items_input
             elif isinstance(items_input, str):
-                items_input = context.resolve_value(items_input)
                 try:
                     items = json.loads(items_input)
                 except json.JSONDecodeError:
-                    items = [
-                        item.strip() for item in items_input.split(",") if item.strip()
-                    ]
+                    items = [item.strip() for item in items_input.split(",") if item.strip()]
             else:
                 items = []
 
@@ -743,10 +717,7 @@ class ListPickerDialogNode(BaseNode):
                     list_item = QListWidgetItem(str(item))
                     list_widget.addItem(list_item)
                     if default_selection:
-                        if (
-                            str(item) == default_selection
-                            or str(item) in default_selection
-                        ):
+                        if str(item) == default_selection or str(item) in default_selection:
                             list_item.setSelected(True)
 
                 layout.addWidget(list_widget)
@@ -762,9 +733,7 @@ class ListPickerDialogNode(BaseNode):
                     search_box.textChanged.connect(filter_items)
 
                 # Buttons
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -774,9 +743,7 @@ class ListPickerDialogNode(BaseNode):
                 def on_finished(result):
                     if not future.done():
                         if result == QDialog.Accepted:
-                            selected_items = [
-                                item.text() for item in list_widget.selectedItems()
-                            ]
+                            selected_items = [item.text() for item in list_widget.selectedItems()]
                             if multi_select:
                                 future.set_result((selected_items, True))
                             else:

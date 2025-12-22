@@ -49,8 +49,7 @@ def create_vault_provider(
         except ImportError as e:
             last_error = e
             logger.warning(
-                f"HashiCorp Vault provider unavailable: {e}. "
-                f"Install with: pip install hvac"
+                f"HashiCorp Vault provider unavailable: {e}. " f"Install with: pip install hvac"
             )
 
     elif backend == VaultBackend.SUPABASE:
@@ -62,8 +61,7 @@ def create_vault_provider(
         except ImportError as e:
             last_error = e
             logger.warning(
-                f"Supabase Vault provider unavailable: {e}. "
-                f"Install with: pip install asyncpg"
+                f"Supabase Vault provider unavailable: {e}. " f"Install with: pip install asyncpg"
             )
 
     elif backend == VaultBackend.SQLITE:

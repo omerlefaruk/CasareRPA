@@ -177,9 +177,7 @@ class RerouteNodeItem(NodeItem):
         # Accept hover events
         self.setAcceptHoverEvents(True)
 
-    def post_init(
-        self, viewer: Optional[object] = None, selected: bool = False
-    ) -> None:
+    def post_init(self, viewer: Optional[object] = None, selected: bool = False) -> None:
         """
         Post-initialization to center ports.
 
@@ -230,14 +228,10 @@ class RerouteNodeItem(NodeItem):
             port_class = type(port_item).__name__
             if "PortIn" in port_class or "Input" in port_class:
                 port_item.setPos(_INPUT_PORT_X, port_y)
-                port_item.setFlag(
-                    QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent, True
-                )
+                port_item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent, True)
             elif "PortOut" in port_class or "Output" in port_class:
                 port_item.setPos(_OUTPUT_PORT_X, port_y)
-                port_item.setFlag(
-                    QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent, True
-                )
+                port_item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent, True)
 
     def boundingRect(self) -> QRectF:
         """
@@ -255,9 +249,7 @@ class RerouteNodeItem(NodeItem):
         meant for the port circles on the sides.
         """
         path = QPainterPath()
-        center = QPointF(
-            _NODE_CENTER_X + _DIAMOND_OFFSET_X, _NODE_CENTER_Y + _DIAMOND_OFFSET_Y
-        )
+        center = QPointF(_NODE_CENTER_X + _DIAMOND_OFFSET_X, _NODE_CENTER_Y + _DIAMOND_OFFSET_Y)
         path.moveTo(center.x(), center.y() - _REROUTE_HALF)  # Top
         path.lineTo(center.x() + _REROUTE_HALF, center.y())  # Right
         path.lineTo(center.x(), center.y() + _REROUTE_HALF)  # Bottom
@@ -284,9 +276,7 @@ class RerouteNodeItem(NodeItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Diamond center with offset
-        center = QPointF(
-            _NODE_CENTER_X + _DIAMOND_OFFSET_X, _NODE_CENTER_Y + _DIAMOND_OFFSET_Y
-        )
+        center = QPointF(_NODE_CENTER_X + _DIAMOND_OFFSET_X, _NODE_CENTER_Y + _DIAMOND_OFFSET_Y)
 
         # Create diamond path
         diamond = QPainterPath()

@@ -320,8 +320,7 @@ class PgQueuerConsumer:
         """
         if not HAS_ASYNCPG:
             raise ImportError(
-                "asyncpg is required for PgQueuerConsumer. "
-                "Install with: pip install asyncpg"
+                "asyncpg is required for PgQueuerConsumer. " "Install with: pip install asyncpg"
             )
 
         # SECURITY: Validate robot_id to prevent SQL injection and impersonation attacks
@@ -461,8 +460,15 @@ class PgQueuerConsumer:
                 self._config.postgres_url,
                 min_size=self._config.pool_min_size,
                 max_size=self._config.pool_max_size,
-                command_timeout=30,
+                command_timeout=60,
                 statement_cache_size=0,  # Required for pgbouncer/Supabase
+                # Enable keepalive to prevent load balancer disconnects
+                server_settings={
+                    "keepalives": "1",
+                    "keepalives_idle": "30",
+                    "keepalives_interval": "10",
+                    "keepalives_count": "5",
+                },
             )
 
             # Test connection
@@ -493,16 +499,13 @@ class PgQueuerConsumer:
         self._reconnect_attempts += 1
 
         if self._reconnect_attempts > self._config.max_reconnect_attempts:
-            logger.error(
-                f"Max reconnect attempts ({self._config.max_reconnect_attempts}) exceeded"
-            )
+            logger.error(f"Max reconnect attempts ({self._config.max_reconnect_attempts}) exceeded")
             self._set_state(ConnectionState.FAILED)
             return False
 
         # Exponential backoff with jitter
         delay = min(
-            self._config.reconnect_base_delay_seconds
-            * (2 ** (self._reconnect_attempts - 1)),
+            self._config.reconnect_base_delay_seconds * (2 ** (self._reconnect_attempts - 1)),
             self._config.reconnect_max_delay_seconds,
         )
         # Add jitter (10-30% of delay)
@@ -575,9 +578,7 @@ class PgQueuerConsumer:
                     result: Sequence[DatabaseRecord] = await conn.fetch(query, *args)
                     return list(result)
             except asyncpg.exceptions.ConnectionDoesNotExistError:
-                logger.warning(
-                    f"Connection lost, attempting reconnect (attempt {attempt + 1})"
-                )
+                logger.warning(f"Connection lost, attempting reconnect (attempt {attempt + 1})")
                 last_error = ConnectionError("Connection lost")
                 await self._reconnect()
             except asyncpg.exceptions.InterfaceError as e:
@@ -880,9 +881,7 @@ class PgQueuerConsumer:
             try:
                 await self.release_job(job_id)
             except Exception as e:
-                logger.warning(
-                    f"Failed to release job {job_id[:8]}... during shutdown: {e}"
-                )
+                logger.warning(f"Failed to release job {job_id[:8]}... during shutdown: {e}")
 
     async def requeue_timed_out_jobs(self) -> int:
         """
@@ -937,9 +936,7 @@ class PgQueuerConsumer:
                 "id": str(row["id"]),
                 "status": row["status"],
                 "robot_id": row["robot_id"],
-                "visible_after": row["visible_after"].isoformat()
-                if row["visible_after"]
-                else None,
+                "visible_after": row["visible_after"].isoformat() if row["visible_after"] else None,
             }
             return status_info
 

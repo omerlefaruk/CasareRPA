@@ -4,12 +4,17 @@ Orchestrator API client service.
 Application layer service that abstracts HTTP communication with the Orchestrator API.
 This prevents Presentation layer from directly depending on Infrastructure (aiohttp).
 
-Architecture: Presentation → Application (this) → Infrastructure (aiohttp)
+Architecture: Presentation → Application (this) → Infrastructure (UnifiedHttpClient)
 """
 
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol
 from loguru import logger
+
+from casare_rpa.infrastructure.http import (
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+)
 
 
 @dataclass
@@ -27,9 +32,7 @@ class WorkflowSubmissionResult:
 class HttpClient(Protocol):
     """Protocol for HTTP client abstraction (for testing)."""
 
-    async def post(
-        self, url: str, json: Dict[str, Any]
-    ) -> tuple[int, Dict[str, Any], str]:
+    async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
         """
         POST request to URL with JSON payload.
 
@@ -43,53 +46,44 @@ class HttpClient(Protocol):
         ...
 
 
-class AiohttpClient:
-    """Default HTTP client implementation using aiohttp."""
+class UnifiedHttpClientAdapter:
+    """
+    Adapter for UnifiedHttpClient to match HttpClient protocol.
+
+    Wraps UnifiedHttpClient with configuration for local Orchestrator API
+    communication (allows localhost/private IPs).
+    """
 
     def __init__(self) -> None:
-        self._session = None
+        # Configure for localhost/LAN communication with Orchestrator
+        config = UnifiedHttpClientConfig(
+            default_timeout=30.0,
+            connect_timeout=10.0,
+            max_retries=3,
+            # Allow private IPs for local Orchestrator communication
+            enable_ssrf_protection=True,
+            allow_private_ips=True,
+        )
+        self._client = UnifiedHttpClient(config)
 
-    async def _get_session(self):
-        """Get or create aiohttp session with connection pooling."""
-        if self._session is None or self._session.closed:
-            import aiohttp
-
-            timeout = aiohttp.ClientTimeout(total=30, connect=10)
-            connector = aiohttp.TCPConnector(
-                limit=10,
-                limit_per_host=5,
-                keepalive_timeout=30,
-            )
-            self._session = aiohttp.ClientSession(
-                timeout=timeout,
-                connector=connector,
-            )
-        return self._session
-
-    async def post(
-        self, url: str, json: Dict[str, Any]
-    ) -> tuple[int, Dict[str, Any], str]:
+    async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
         """POST request with JSON payload."""
-        import aiohttp
-
-        session = await self._get_session()
         try:
-            async with session.post(url, json=json) as resp:
-                status = resp.status
-                try:
-                    json_response = await resp.json()
-                except Exception:
-                    json_response = {}
-                error_text = await resp.text() if status != 200 else ""
-                return status, json_response, error_text
-        except aiohttp.ClientError as e:
+            response = await self._client.post(url, json=json)
+            status = response.status
+            try:
+                json_response = await response.json()
+            except Exception:
+                json_response = {}
+            error_text = await response.text() if status != 200 else ""
+            return status, json_response, error_text
+        except Exception as e:
+            logger.error(f"HTTP request failed: {e}")
             raise ConnectionError(f"HTTP request failed: {e}") from e
 
     async def close(self) -> None:
-        """Close the HTTP session."""
-        if self._session and not self._session.closed:
-            await self._session.close()
-            self._session = None
+        """Close the HTTP client."""
+        await self._client.close()
 
 
 class OrchestratorClient:
@@ -120,10 +114,10 @@ class OrchestratorClient:
 
         Args:
             orchestrator_url: Base URL for Orchestrator API
-            http_client: Optional HTTP client (for testing). Uses AiohttpClient by default.
+            http_client: Optional HTTP client (for testing). Uses UnifiedHttpClientAdapter by default.
         """
         self._base_url = orchestrator_url.rstrip("/")
-        self._http_client = http_client or AiohttpClient()
+        self._http_client = http_client or UnifiedHttpClientAdapter()
 
     async def submit_workflow(
         self,
@@ -133,6 +127,7 @@ class OrchestratorClient:
         trigger_type: str = "manual",
         priority: int = 10,
         metadata: Optional[Dict[str, Any]] = None,
+        schedule_cron: Optional[str] = None,
     ) -> WorkflowSubmissionResult:
         """
         Submit a workflow to the Orchestrator for execution.
@@ -144,14 +139,16 @@ class OrchestratorClient:
             trigger_type: "manual", "scheduled", or "webhook"
             priority: Job priority (0=highest, 20=lowest)
             metadata: Additional metadata for the job
+            schedule_cron: Cron expression for scheduled workflows (required if trigger_type="scheduled")
 
         Returns:
             WorkflowSubmissionResult with success status and IDs
         """
         logger.info(
-            "Submitting workflow '{}' to Orchestrator (mode={})",
+            "Submitting workflow '{}' to Orchestrator (mode={}, trigger={})",
             workflow_name,
             execution_mode,
+            trigger_type,
         )
 
         payload = {
@@ -163,11 +160,13 @@ class OrchestratorClient:
             "metadata": metadata or {},
         }
 
+        # Include cron expression for scheduled workflows
+        if schedule_cron and trigger_type == "scheduled":
+            payload["schedule_cron"] = schedule_cron
+
         try:
             url = f"{self._base_url}/api/v1/workflows"
-            status, json_response, error_text = await self._http_client.post(
-                url, json=payload
-            )
+            status, json_response, error_text = await self._http_client.post(url, json=payload)
 
             if status == 200:
                 workflow_id = json_response.get("workflow_id", "unknown")
@@ -189,9 +188,7 @@ class OrchestratorClient:
                     message=json_response.get("message", "Workflow submitted"),
                 )
             else:
-                logger.error(
-                    "Workflow submission failed: {} - {}", status, error_text[:200]
-                )
+                logger.error("Workflow submission failed: {} - {}", status, error_text[:200])
                 return WorkflowSubmissionResult(
                     success=False,
                     message=f"Submission failed with status {status}",

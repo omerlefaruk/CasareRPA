@@ -38,6 +38,8 @@ from casare_rpa.robot.circuit_breaker import (
     CircuitBreakerOpenError,
     CircuitBreakerRegistry,
 )
+from casare_rpa.infrastructure.cache.manager import TieredCacheManager, CacheConfig
+from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
 
 
 # HTTP status codes that trigger retry
@@ -104,6 +106,11 @@ class UnifiedHttpClientConfig:
     allow_private_ips: bool = False  # Set True to allow internal network requests
     additional_blocked_hosts: Optional[List[str]] = None
 
+    # Caching settings
+    cache_enabled: bool = False
+    cache_ttl: int = 300  # 5 minutes
+    cache_methods: Set[str] = field(default_factory=lambda: {"GET"})
+
 
 @dataclass
 class RequestStats:
@@ -138,6 +145,94 @@ class RequestStats:
         }
 
 
+class CachingResponseWrapper:
+    """Wraps aiohttp.ClientResponse to cache the body once read."""
+
+    def __init__(
+        self,
+        response: "aiohttp.ClientResponse",
+        cache: TieredCacheManager,
+        key: str,
+        ttl: int,
+    ):
+        self._response = response
+        self._cache = cache
+        self._key = key
+        self._ttl = ttl
+        self._body: Optional[bytes] = None
+
+    @property
+    def status(self):
+        return self._response.status
+
+    @property
+    def headers(self):
+        return self._response.headers
+
+    async def read(self) -> bytes:
+        if self._body is None:
+            self._body = await self._response.read()
+            if self.status < 400:  # Only cache successful responses
+                await self._cache.set(
+                    self._key,
+                    {
+                        "status": self.status,
+                        "body": self._body,
+                        "headers": dict(self.headers),
+                    },
+                    ttl=self._ttl,
+                )
+        return self._body
+
+    async def json(self, **kwargs) -> Any:
+        data = await self.read()
+        import orjson
+
+        return orjson.loads(data)
+
+    async def text(self, encoding: Optional[str] = None) -> str:
+        data = await self.read()
+        return data.decode(encoding or "utf-8")
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._response.__aexit__(exc_type, exc_val, exc_tb)
+
+    def release(self):
+        self._response.release()
+
+
+class CachedResponse:
+    """A mock response object that mimics aiohttp.ClientResponse for cached data."""
+
+    def __init__(self, status: int, body: bytes, headers: Dict[str, str]):
+        self.status = status
+        self._body = body
+        self.headers = headers
+
+    async def json(self, **kwargs) -> Any:
+        import orjson
+
+        return orjson.loads(self._body)
+
+    async def text(self, encoding: Optional[str] = None) -> str:
+        return self._body.decode(encoding or "utf-8")
+
+    async def read(self) -> bytes:
+        return self._body
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def release(self):
+        pass
+
+
 class UnifiedHttpClient:
     """
     Unified HTTP client with resilience patterns.
@@ -163,17 +258,22 @@ class UnifiedHttpClient:
             await client.close()
     """
 
-    def __init__(self, config: Optional[UnifiedHttpClientConfig] = None) -> None:
+    def __init__(
+        self,
+        config: Optional[UnifiedHttpClientConfig] = None,
+        cache_manager: Optional[TieredCacheManager] = None,
+    ) -> None:
         """
         Initialize UnifiedHttpClient.
 
         Args:
             config: Client configuration. Uses defaults if None.
+            cache_manager: Optional cache manager. If None and config.cache_enabled,
+                          a new one will be created.
         """
         if not AIOHTTP_AVAILABLE:
             raise ImportError(
-                "aiohttp is required for UnifiedHttpClient. "
-                "Install with: pip install aiohttp"
+                "aiohttp is required for UnifiedHttpClient. " "Install with: pip install aiohttp"
             )
 
         self._config = config or UnifiedHttpClientConfig()
@@ -183,6 +283,11 @@ class UnifiedHttpClient:
         self._stats = RequestStats()
         self._started = False
         self._lock = asyncio.Lock()
+
+        # Initialize cache manager
+        self._cache = cache_manager
+        if self._cache is None and self._config.cache_enabled:
+            self._cache = TieredCacheManager(CacheConfig(enabled=True))
 
         logger.debug(
             f"UnifiedHttpClient initialized with config: "
@@ -307,9 +412,7 @@ class UnifiedHttpClient:
                 ip = ipaddress.ip_address(hostname)
                 for blocked_range in BLOCKED_IP_RANGES:
                     if ip in blocked_range:
-                        raise ValueError(
-                            f"SSRF Protection: Blocked IP range for '{hostname}'"
-                        )
+                        raise ValueError(f"SSRF Protection: Blocked IP range for '{hostname}'")
             except ValueError as e:
                 # Re-raise if it's our SSRF protection error
                 if "SSRF Protection" in str(e):
@@ -330,6 +433,21 @@ class UnifiedHttpClient:
             backoff_multiplier=self._config.retry_backoff_multiplier,
             jitter=self._config.retry_jitter,
         )
+
+    def _get_cache_key(
+        self,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]],
+        json: Any,
+        data: Any,
+    ) -> str:
+        """Generate a cache key for the request."""
+        # Filter headers to only include those that affect the response (e.g., Accept)
+        # For now, we'll just use the URL and method for simplicity,
+        # but in production we might want to include some headers.
+        cache_data = {"method": method, "url": url, "json": json, "data": data}
+        return CacheKeyGenerator.generate("api", cache_data)
 
     async def request(
         self,
@@ -369,6 +487,15 @@ class UnifiedHttpClient:
             CircuitBreakerOpenError: If circuit breaker is open
             aiohttp.ClientError: On request failure after all retries
         """
+        # Check cache first
+        cache_key = None
+        if self._cache and method.upper() in self._config.cache_methods:
+            cache_key = self._get_cache_key(method, url, headers, json, data)
+            cached = await self._cache.get(cache_key)
+            if cached:
+                logger.debug(f"Cache hit for {method} {url}")
+                return CachedResponse(cached["status"], cached["body"], cached["headers"])
+
         # SSRF Protection - validate URL before any processing
         self._validate_url_for_ssrf(url)
 
@@ -391,9 +518,7 @@ class UnifiedHttpClient:
                 raise
 
         # Get circuit breaker
-        circuit = (
-            self._get_circuit_breaker(base_url) if not skip_circuit_breaker else None
-        )
+        circuit = self._get_circuit_breaker(base_url) if not skip_circuit_breaker else None
 
         # Build request kwargs
         request_kwargs: Dict[str, Any] = {}
@@ -440,6 +565,12 @@ class UnifiedHttpClient:
                         continue
 
                 self._stats.successful_requests += 1
+
+                if cache_key:
+                    return CachingResponseWrapper(
+                        response, self._cache, cache_key, self._config.cache_ttl
+                    )
+
                 return response
 
             except CircuitBreakerOpenError:
@@ -474,9 +605,7 @@ class UnifiedHttpClient:
             raise last_exception
         raise RuntimeError("Request failed with no exception recorded")
 
-    async def _do_request(
-        self, method: str, url: str, **kwargs: Any
-    ) -> "aiohttp.ClientResponse":
+    async def _do_request(self, method: str, url: str, **kwargs: Any) -> "aiohttp.ClientResponse":
         """Execute the actual HTTP request using the session pool."""
         return await self._pool.request(method, url, **kwargs)
 
@@ -516,10 +645,7 @@ class UnifiedHttpClient:
 
     def get_rate_limiter_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get rate limiter statistics for all domains."""
-        return {
-            domain: limiter.stats.to_dict()
-            for domain, limiter in self._rate_limiters.items()
-        }
+        return {domain: limiter.stats.to_dict() for domain, limiter in self._rate_limiters.items()}
 
     def get_circuit_breaker_status(self) -> Dict[str, Dict[str, Any]]:
         """Get circuit breaker status for all base URLs."""

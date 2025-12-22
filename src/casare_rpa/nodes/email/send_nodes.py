@@ -34,7 +34,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP
 
 
-@node(category="email")
 @properties(
     CREDENTIAL_NAME_PROP,
     SMTP_SERVER_PROP,
@@ -157,6 +156,7 @@ from .email_base import EMAIL_PASSWORD_PROP, EMAIL_USERNAME_PROP
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@node(category="email")
 class SendEmailNode(CredentialAwareMixin, BaseNode):
     """
     Send an email via SMTP.
@@ -213,7 +213,6 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
             timeout = self.get_parameter("timeout", 30)
 
             # Resolve {{variable}} patterns in connection parameters
-            smtp_server = context.resolve_value(smtp_server)
 
             # Resolve credentials using CredentialAwareMixin
             username, password = await self.resolve_username_password(
@@ -238,12 +237,6 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
             bcc = self.get_parameter("bcc", "")
 
             # Resolve {{variable}} patterns in email content
-            from_email = context.resolve_value(from_email)
-            to_email = context.resolve_value(to_email)
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
-            cc = context.resolve_value(cc)
-            bcc = context.resolve_value(bcc)
 
             # Get attachments from port or config, resolve {{variables}}
             attachments = self.get_input_value("attachments")
@@ -252,17 +245,13 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
 
             # Resolve {{variable}} patterns in attachments
             if isinstance(attachments, str):
-                attachments = context.resolve_value(attachments)
                 if attachments:
-                    attachments = [
-                        p.strip() for p in attachments.split(",") if p.strip()
-                    ]
+                    attachments = [p.strip() for p in attachments.split(",") if p.strip()]
                 else:
                     attachments = []
             elif isinstance(attachments, list):
                 attachments = [
-                    context.resolve_value(p) if isinstance(p, str) else p
-                    for p in attachments
+                    context.resolve_value(p) if isinstance(p, str) else p for p in attachments
                 ]
 
             is_html = self.get_parameter("is_html", False)
@@ -348,9 +337,7 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
                 server = None
                 try:
                     if use_ssl:
-                        server = smtplib.SMTP_SSL(
-                            smtp_server, smtp_port, timeout=timeout
-                        )
+                        server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=timeout)
                     else:
                         server = smtplib.SMTP(smtp_server, smtp_port, timeout=timeout)
                         if use_tls:
@@ -374,17 +361,13 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for send email"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for send email")
 
                     message_id = await loop.run_in_executor(None, _send_email_sync)
                     self.set_output_value("success", True)
                     self.set_output_value("message_id", message_id)
 
-                    logger.info(
-                        f"Email sent successfully to {to_email} (attempt {attempts})"
-                    )
+                    logger.info(f"Email sent successfully to {to_email} (attempt {attempts})")
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,

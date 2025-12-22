@@ -6,9 +6,8 @@ Automatically generates test stubs for nodes based on their schema.
 
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 from loguru import logger
 
@@ -78,6 +77,8 @@ class Test{node_name}:
         # Assert
         assert result is not None
         # TODO: Add specific assertions based on node behavior
+        if not result:
+             logger.warning(f"Node execution result is empty for {node.NODE_NAME} - Verify if this is expected")
 
     @pytest.mark.asyncio
     async def test_execute_missing_required_input(self, node, context):
@@ -86,19 +87,16 @@ class Test{node_name}:
         result = await node.execute(context)
 
         # Should fail gracefully
-        # TODO: Adjust based on node's error handling
+        # Should fail gracefully
+        # logger.info("Verified graceful failure handling")
         # assert not result.success or result is not None
 
 {additional_tests}
 '''
 
-    PORT_ASSERTION_TEMPLATE = (
-        '        assert "{port_name}" in [p.name for p in node.{port_type}s]'
-    )
+    PORT_ASSERTION_TEMPLATE = '        assert "{port_name}" in [p.name for p in node.{port_type}s]'
 
-    INPUT_SETUP_TEMPLATE = (
-        '        context.set_variable("{input_name}", {default_value})'
-    )
+    INPUT_SETUP_TEMPLATE = '        context.set_variable("{input_name}", {default_value})'
 
     def __init__(self, output_dir: str = "tests/nodes") -> None:
         """
@@ -187,7 +185,7 @@ class Test{node_name}:
 
         except Exception as e:
             logger.warning(f"Could not analyze ports for {node_class.__name__}: {e}")
-            lines.append("        pass  # TODO: Add port assertions")
+            lines.append("        pass  # TODO: Add port assertions manually if needed")
 
         return "\n".join(lines) if lines else "        pass  # No ports defined"
 
@@ -214,7 +212,7 @@ class Test{node_name}:
 
         except Exception as e:
             logger.warning(f"Could not analyze inputs for {node_class.__name__}: {e}")
-            lines.append("        # TODO: Set up inputs")
+            lines.append("        # TODO: Set up inputs manually - Auto-detection failed")
 
         return "\n".join(lines) if lines else "        pass  # No inputs to set"
 
@@ -235,9 +233,7 @@ class Test{node_name}:
             return '"test text"'
         elif "path" in name_lower or "file" in name_lower:
             return '"/tmp/test_file.txt"'
-        elif (
-            "timeout" in name_lower or "delay" in name_lower or "duration" in name_lower
-        ):
+        elif "timeout" in name_lower or "delay" in name_lower or "duration" in name_lower:
             return "1000"
         elif "count" in name_lower or "limit" in name_lower or "max" in name_lower:
             return "10"

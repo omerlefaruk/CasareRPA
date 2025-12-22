@@ -9,14 +9,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "provider",
@@ -123,6 +119,7 @@ from casare_rpa.triggers.base import TriggerType
         placeholder="C:\\Downloads\\Attachments",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class EmailTriggerNode(BaseTriggerNode):
     """
     Email trigger node that fires when new emails arrive.
@@ -167,18 +164,18 @@ class EmailTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get email-specific configuration."""
         return {
-            "provider": self.config.get("provider", "imap"),
-            "server": self.config.get("server", ""),
-            "port": self.config.get("port", 993),
-            "username": self.config.get("username", ""),
-            "password": self.config.get("password", ""),
-            "use_ssl": self.config.get("use_ssl", True),
-            "folder": self.config.get("folder", "INBOX"),
-            "filter_subject": self.config.get("filter_subject", ""),
-            "filter_from": self.config.get("filter_from", ""),
-            "unread_only": self.config.get("unread_only", True),
-            "mark_as_read": self.config.get("mark_as_read", True),
-            "poll_interval_seconds": self.config.get("poll_interval_seconds", 60),
-            "download_attachments": self.config.get("download_attachments", False),
-            "attachment_dir": self.config.get("attachment_dir", ""),
+            "provider": self.get_parameter("provider", "imap"),
+            "server": self.get_parameter("server", ""),
+            "port": self.get_parameter("port", 993),
+            "username": self.get_parameter("username", ""),
+            "password": self.get_parameter("password", ""),
+            "use_ssl": self.get_parameter("use_ssl", True),
+            "folder": self.get_parameter("folder", "INBOX"),
+            "filter_subject": self.get_parameter("filter_subject", ""),
+            "filter_from": self.get_parameter("filter_from", ""),
+            "unread_only": self.get_parameter("unread_only", True),
+            "mark_as_read": self.get_parameter("mark_as_read", True),
+            "poll_interval_seconds": self.get_parameter("poll_interval_seconds", 60),
+            "download_attachments": self.get_parameter("download_attachments", False),
+            "attachment_dir": self.get_parameter("attachment_dir", ""),
         }

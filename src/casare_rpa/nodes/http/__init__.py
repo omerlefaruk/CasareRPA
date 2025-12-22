@@ -9,6 +9,7 @@ Modules:
     - http_basic: Unified HttpRequestNode (supports GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
     - http_advanced: Advanced operations (headers, JSON parsing, file transfer, URL building)
     - http_auth: Authentication nodes (Bearer, Basic, API Key)
+    - http_super_node: Unified HttpSuperNode with action-based dynamic ports
 """
 
 from casare_rpa.nodes.http.http_base import HttpBaseNode
@@ -21,10 +22,13 @@ from casare_rpa.nodes.http.http_advanced import (
     BuildUrlNode,
 )
 from casare_rpa.nodes.http.http_auth import HttpAuthNode
+from casare_rpa.nodes.http.http_super_node import HttpSuperNode
 
 __all__ = [
     # Base class
     "HttpBaseNode",
+    # Super node (consolidated operations)
+    "HttpSuperNode",
     # HTTP request (all methods via dropdown)
     "HttpRequestNode",
     # Advanced operations

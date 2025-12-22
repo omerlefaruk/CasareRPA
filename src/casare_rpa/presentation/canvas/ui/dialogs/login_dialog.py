@@ -139,9 +139,7 @@ class LoginDialog(QDialog):
 
         # Spacer
         layout.addSpacerItem(
-            QSpacerItem(
-                20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-            )
+            QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         )
 
         # Footer links
@@ -180,9 +178,7 @@ class LoginDialog(QDialog):
 
         # Password field
         password_label = QLabel("Password")
-        password_label.setStyleSheet(
-            f"color: {COLORS.text_secondary}; font-size: 12px;"
-        )
+        password_label.setStyleSheet(f"color: {COLORS.text_secondary}; font-size: 12px;")
         layout.addWidget(password_label)
 
         password_container = QHBoxLayout()
@@ -390,9 +386,7 @@ class LoginDialog(QDialog):
 
                 if result.success:
                     self._authenticated_user = result.user
-                    self._access_token = token_manager.generate_access_token(
-                        result.user
-                    )
+                    self._access_token = token_manager.generate_access_token(result.user)
                     self.accept()
                 elif result.needs_mfa:
                     self._authenticated_user = result.user

@@ -142,12 +142,29 @@ class VariableResolutionCache:
 
             entry = self._result_cache[template]
 
-            # Check if any referenced variable has changed
+            # Check if any referenced variable or its parents have changed
             for var_name in entry.var_refs:
+                # Check version of the full path
                 cached_version = entry.var_versions.get(var_name, 0)
                 current_version = self._var_versions.get(var_name, 0)
 
                 if cached_version != current_version:
+                    invalidate = True
+                else:
+                    # Check versions of all parent prefixes (e.g. for 'a.b.c', check 'a' and 'a.b')
+                    invalidate = False
+                    if "." in var_name:
+                        parts = var_name.split(".")
+                        prefix = ""
+                        for r in range(len(parts) - 1):
+                            prefix = (prefix + "." + parts[r]) if prefix else parts[r]
+                            if self._var_versions.get(prefix, 0) != entry.var_versions.get(
+                                prefix, 0
+                            ):
+                                invalidate = True
+                                break
+
+                if invalidate:
                     # Version mismatch - invalidate this entry
                     del self._result_cache[template]
                     self._stats.invalidations += 1
@@ -178,9 +195,7 @@ class VariableResolutionCache:
             var_refs = self.extract_variable_refs(template)
 
             # Capture current versions of referenced variables
-            var_versions = {
-                var_name: self._var_versions.get(var_name, 0) for var_name in var_refs
-            }
+            var_versions = {var_name: self._var_versions.get(var_name, 0) for var_name in var_refs}
 
             # Create cache entry
             entry = CacheEntry(

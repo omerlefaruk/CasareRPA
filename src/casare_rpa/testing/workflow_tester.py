@@ -32,10 +32,7 @@ class NodeCallAssertion:
     @property
     def failure_message(self) -> str:
         """Get failure message."""
-        return (
-            f"Expected node '{self.node_name}' to be called {self.expected_calls} "
-            f"time(s)"
-        )
+        return f"Expected node '{self.node_name}' to be called {self.expected_calls} " f"time(s)"
 
 
 @dataclass
@@ -155,9 +152,7 @@ class WorkflowTester:
 
         self._mock_services: Dict[str, Any] = {}
         self._variables: Dict[str, Any] = {}
-        self._assertions: List[
-            Union[NodeCallAssertion, OutputAssertion, VariableAssertion]
-        ] = []
+        self._assertions: List[Union[NodeCallAssertion, OutputAssertion, VariableAssertion]] = []
         self._setup_hooks: List[Callable[[MockExecutionContext], None]] = []
         self._teardown_hooks: List[Callable[[MockExecutionContext], None]] = []
 
@@ -281,14 +276,10 @@ class WorkflowTester:
         Returns:
             Self for chaining
         """
-        self._assertions.append(
-            VariableAssertion(variable_name=name, expected_value=value)
-        )
+        self._assertions.append(VariableAssertion(variable_name=name, expected_value=value))
         return self
 
-    def on_setup(
-        self, hook: Callable[[MockExecutionContext], None]
-    ) -> "WorkflowTester":
+    def on_setup(self, hook: Callable[[MockExecutionContext], None]) -> "WorkflowTester":
         """
         Add setup hook called before execution.
 
@@ -301,9 +292,7 @@ class WorkflowTester:
         self._setup_hooks.append(hook)
         return self
 
-    def on_teardown(
-        self, hook: Callable[[MockExecutionContext], None]
-    ) -> "WorkflowTester":
+    def on_teardown(self, hook: Callable[[MockExecutionContext], None]) -> "WorkflowTester":
         """
         Add teardown hook called after execution.
 

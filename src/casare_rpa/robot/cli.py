@@ -132,11 +132,7 @@ def _get_postgres_url() -> str:
     For frozen apps (installed exe), returns empty string and the
     RobotAgent will fetch credentials from Supabase Vault at runtime.
     """
-    url = (
-        os.getenv("PGQUEUER_DB_URL")
-        or os.getenv("DATABASE_URL")
-        or os.getenv("POSTGRES_URL")
-    )
+    url = os.getenv("PGQUEUER_DB_URL") or os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
     if url:
         return url
 
@@ -165,9 +161,7 @@ def _ensure_playwright_browsers() -> bool:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        console.print(
-            "[red]Playwright module not installed. Run: pip install playwright[/red]"
-        )
+        console.print("[red]Playwright module not installed. Run: pip install playwright[/red]")
         return False
 
     try:
@@ -227,19 +221,13 @@ def _ensure_playwright_browsers() -> bool:
                     )
 
                 if result.returncode == 0:
-                    console.print(
-                        "[green]Playwright browsers installed successfully![/green]"
-                    )
+                    console.print("[green]Playwright browsers installed successfully![/green]")
                     return True
                 else:
                     stderr_preview = (
-                        result.stderr[:200] + "..."
-                        if len(result.stderr) > 200
-                        else result.stderr
+                        result.stderr[:200] + "..." if len(result.stderr) > 200 else result.stderr
                     )
-                    console.print(
-                        f"[red]Failed to install browsers: {stderr_preview}[/red]"
-                    )
+                    console.print(f"[red]Failed to install browsers: {stderr_preview}[/red]")
                     logger.error(f"Full Playwright install error: {result.stderr}")
                     return False
             except subprocess.TimeoutExpired:
@@ -496,15 +484,11 @@ def start(
         raise typer.Exit(code=1)
 
     if is_frozen and not postgres_url:
-        console.print(
-            "[dim]Frozen app: Database URL will be built from DB_PASSWORD[/dim]"
-        )
+        console.print("[dim]Frozen app: Database URL will be built from DB_PASSWORD[/dim]")
 
     # Daemon mode
     if daemon:
-        console.print(
-            "[yellow]Daemon mode not yet implemented on this platform.[/yellow]"
-        )
+        console.print("[yellow]Daemon mode not yet implemented on this platform.[/yellow]")
         console.print("Use a process manager like nssm or start as Windows Service.")
         raise typer.Exit(code=1)
 
@@ -598,8 +582,7 @@ def stop(
 
     if not pid_file.exists():
         console.print(
-            f"[red]Error:[/red] No PID file found for robot '{robot_id}'.\n"
-            f"Expected: {pid_file}"
+            f"[red]Error:[/red] No PID file found for robot '{robot_id}'.\n" f"Expected: {pid_file}"
         )
         raise typer.Exit(code=1)
 
@@ -623,17 +606,13 @@ def stop(
             console.print(f"[yellow]Force killing process {pid}...[/yellow]")
             process.kill()
         else:
-            console.print(
-                f"[yellow]Sending terminate signal to process {pid}...[/yellow]"
-            )
+            console.print(f"[yellow]Sending terminate signal to process {pid}...[/yellow]")
             process.terminate()
 
             # Wait for graceful shutdown
             try:
                 process.wait(timeout=timeout)
-                console.print(
-                    f"[green]Robot '{robot_id}' stopped successfully.[/green]"
-                )
+                console.print(f"[green]Robot '{robot_id}' stopped successfully.[/green]")
             except psutil.TimeoutExpired:
                 console.print("[yellow]Timeout waiting for graceful shutdown.[/yellow]")
                 if typer.confirm("Force kill the process?"):
@@ -655,21 +634,16 @@ def stop(
             console.print(f"[yellow]Sending SIGTERM to process {pid}...[/yellow]")
             os.kill(pid, signal.SIGTERM)
 
-        console.print(
-            f"[green]Shutdown signal sent to robot '{robot_id}' (PID: {pid})[/green]"
-        )
+        console.print(f"[green]Shutdown signal sent to robot '{robot_id}' (PID: {pid})[/green]")
 
     except ProcessLookupError:
         console.print(
-            f"[yellow]Warning:[/yellow] Process {pid} not found. "
-            "Robot may have already stopped."
+            f"[yellow]Warning:[/yellow] Process {pid} not found. " "Robot may have already stopped."
         )
         pid_file.unlink(missing_ok=True)
         raise typer.Exit(code=0)
     except PermissionError:
-        console.print(
-            f"[red]Error:[/red] Permission denied when sending signal to process {pid}."
-        )
+        console.print(f"[red]Error:[/red] Permission denied when sending signal to process {pid}.")
         raise typer.Exit(code=1)
 
 
@@ -713,9 +687,7 @@ def status(
 
     def get_status_data() -> dict:
         pid_file = _get_pid_file(target_robot_id)
-        status_file = (
-            Path.home() / ".casare_rpa" / f"robot_{target_robot_id}_status.json"
-        )
+        status_file = Path.home() / ".casare_rpa" / f"robot_{target_robot_id}_status.json"
 
         status_data = {
             "robot_id": target_robot_id,
@@ -739,15 +711,11 @@ def status(
                         status_data["pid"] = pid
                         status_data["process"] = {
                             "cpu_percent": process.cpu_percent(),
-                            "memory_mb": round(
-                                process.memory_info().rss / (1024 * 1024), 2
-                            ),
+                            "memory_mb": round(process.memory_info().rss / (1024 * 1024), 2),
                             "uptime_seconds": int(
                                 (
                                     datetime.now(timezone.utc)
-                                    - datetime.fromtimestamp(
-                                        process.create_time(), timezone.utc
-                                    )
+                                    - datetime.fromtimestamp(process.create_time(), timezone.utc)
                                 ).total_seconds()
                             ),
                         }
@@ -778,9 +746,7 @@ def status(
             "[green]Running[/green]" if status_data["running"] else "[red]Stopped[/red]"
         )
 
-        table = Table(
-            title=f"Robot Status: {status_data['robot_id']}", border_style="blue"
-        )
+        table = Table(title=f"Robot Status: {status_data['robot_id']}", border_style="blue")
         table.add_column("Property", style="bold")
         table.add_column("Value")
 
@@ -864,7 +830,7 @@ def logs(
     """
     import socket
 
-    target_robot_id = robot_id or f"robot-{socket.gethostname()}"
+    robot_id or f"robot-{socket.gethostname()}"
     log_dir = Path.home() / ".casare_rpa" / "logs"
 
     if audit:
@@ -878,9 +844,7 @@ def logs(
         raise typer.Exit(code=0)
 
     # Find most recent log file
-    log_files = sorted(
-        log_dir.glob(pattern), key=lambda f: f.stat().st_mtime, reverse=True
-    )
+    log_files = sorted(log_dir.glob(pattern), key=lambda f: f.stat().st_mtime, reverse=True)
 
     if not log_files:
         console.print(f"[yellow]No log files found in {log_dir}[/yellow]")
@@ -994,9 +958,7 @@ def config(
             )
         )
     else:
-        console.print(
-            "Use --generate to create sample config or --show to view current."
-        )
+        console.print("Use --generate to create sample config or --show to view current.")
 
 
 def main() -> None:

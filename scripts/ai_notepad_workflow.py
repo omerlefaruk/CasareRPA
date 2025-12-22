@@ -65,9 +65,7 @@ async def generate_notepad_workflow_with_agent():
         print(json.dumps(result.workflow, indent=2))
 
         # Save the workflow
-        output_path = (
-            Path(__file__).parent.parent / "templates" / "ai_notepad_automation.json"
-        )
+        output_path = Path(__file__).parent.parent / "templates" / "ai_notepad_automation.json"
         output_path.parent.mkdir(exist_ok=True)
         output_path.write_text(json.dumps(result.workflow, indent=2))
         print(f"\nWorkflow saved to: {output_path}")
@@ -115,9 +113,7 @@ async def generate_notepad_workflow_simple():
     print("Using generate_smart_workflow() convenience function...")
     print("=" * 60)
 
-    result = await generate_smart_workflow(
-        prompt=prompt, max_retries=3, model="gpt-4o-mini"
-    )
+    result = await generate_smart_workflow(prompt=prompt, max_retries=3, model="gpt-4o-mini")
 
     if result.success:
         print(f"\n[SUCCESS] Generated in {result.generation_time_ms:.2f}ms")
@@ -268,9 +264,7 @@ async def main():
     print("\n" + "-" * 60)
     print("Creating manual workflow for comparison...")
     manual_workflow = create_manual_workflow()
-    manual_path = (
-        Path(__file__).parent.parent / "templates" / "manual_notepad_workflow.json"
-    )
+    manual_path = Path(__file__).parent.parent / "templates" / "manual_notepad_workflow.json"
     manual_path.write_text(json.dumps(manual_workflow, indent=2))
     print(f"Manual workflow saved to: {manual_path}")
 

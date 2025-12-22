@@ -13,11 +13,13 @@ from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from loguru import logger
-from pydantic import ValidationError
 
 from casare_rpa.application.services import OrchestratorClient
 from casare_rpa.config import WORKFLOWS_DIR
-from casare_rpa.infrastructure.security.workflow_schema import validate_workflow_json
+from casare_rpa.domain.validation import (
+    WorkflowValidationError,
+    validate_workflow_json,
+)
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
@@ -95,11 +97,152 @@ class WorkflowController(BaseController):
 
         if self._orchestrator_client is None:
             orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:8000")
-            self._orchestrator_client = OrchestratorClient(
-                orchestrator_url=orchestrator_url
-            )
+            self._orchestrator_client = OrchestratorClient(orchestrator_url=orchestrator_url)
             logger.debug("Created OrchestratorClient for API calls")
         return self._orchestrator_client
+
+    def _extract_schedule_trigger_info(self, workflow_json: dict) -> tuple[str | None, dict | None]:
+        """
+        Extract schedule trigger configuration from workflow JSON.
+
+        Searches for ScheduleTriggerNode in the workflow and extracts its config.
+
+        Args:
+            workflow_json: Serialized workflow data
+
+        Returns:
+            Tuple of (trigger_type, schedule_config) where:
+            - trigger_type: "scheduled" if Schedule Trigger found, None otherwise
+            - schedule_config: Dict with 'cron_expression' and original config, or None
+        """
+
+        nodes = workflow_json.get("nodes", {})
+        if not isinstance(nodes, dict):
+            logger.warning(f"[SCHEDULE_DETECT] Invalid nodes format: {type(nodes).__name__}")
+            return None, None
+
+        logger.info(f"[SCHEDULE_DETECT] Searching {len(nodes)} nodes")
+        nodes_iter = nodes.items()
+
+        for node_id, node_data in nodes_iter:
+            # Check for ScheduleTriggerNode
+            node_type = node_data.get("node_type", "")
+
+            # LOG: Show each node type for troubleshooting
+            logger.info(f"[SCHEDULE_DETECT] Node {node_id}: type='{node_type}'")
+
+            if "ScheduleTrigger" in node_type:
+                # Extract config from canonical payload
+                config = node_data.get("config", {})
+
+                # Convert to cron expression
+                cron_expr = self._schedule_config_to_cron(config)
+
+                logger.info(
+                    f"Found ScheduleTriggerNode: {node_id}, "
+                    f"frequency={config.get('frequency')}, cron={cron_expr}"
+                )
+
+                return "scheduled", {
+                    "cron_expression": cron_expr,
+                    "original_config": config,
+                    "trigger_node_id": node_id,
+                }
+
+        logger.debug("[SCHEDULE_DETECT] No ScheduleTriggerNode found in workflow")
+        return None, None
+
+    def _schedule_config_to_cron(self, config: dict) -> str:
+        """
+        Convert ScheduleTriggerNode config to cron expression.
+
+        Cron format: minute hour day month weekday
+
+        Supports:
+        - interval: Every N seconds (min 60s → */1 * * * *)
+        - hourly: At minute M every hour
+        - daily: At H:M every day
+        - weekly: At H:M on specific weekday
+        - monthly: At H:M on specific day of month
+        - cron: Use provided cron expression directly
+
+        Args:
+            config: ScheduleTriggerNode configuration dict
+
+        Returns:
+            Cron expression string
+        """
+        frequency = config.get("frequency", "daily")
+
+        # Parse time settings with defaults
+        hour = int(config.get("time_hour", 9))
+        minute = int(config.get("time_minute", 0))
+
+        # Clamp to valid ranges
+        hour = max(0, min(23, hour))
+        minute = max(0, min(59, minute))
+
+        if frequency == "cron":
+            # Use provided cron expression directly
+            return config.get("cron_expression", "0 9 * * *")
+
+        elif frequency == "interval":
+            # Convert interval to cron (minimum 1 minute)
+            seconds = int(config.get("interval_seconds", 60))
+            if seconds < 60:
+                logger.warning(
+                    f"Interval {seconds}s is less than 1 minute. "
+                    f"Using minimum interval of 1 minute for cron scheduling."
+                )
+                seconds = 60
+
+            minutes = seconds // 60
+            if minutes >= 60:
+                # Run every N hours
+                hours = minutes // 60
+                return f"0 */{hours} * * *"
+            else:
+                # Run every N minutes
+                return f"*/{minutes} * * * *"
+
+        elif frequency == "hourly":
+            # At minute M every hour
+            return f"{minute} * * * *"
+
+        elif frequency == "daily":
+            # At H:M every day
+            return f"{minute} {hour} * * *"
+
+        elif frequency == "weekly":
+            # Convert day name to cron weekday number (0=Sun or mon,tue,wed...)
+            day_map = {
+                "sun": 0,
+                "mon": 1,
+                "tue": 2,
+                "wed": 3,
+                "thu": 4,
+                "fri": 5,
+                "sat": 6,
+            }
+            day = config.get("day_of_week", "mon").lower()
+            weekday = day_map.get(day, 1)
+            return f"{minute} {hour} * * {weekday}"
+
+        elif frequency == "monthly":
+            # At H:M on day D of month
+            day = int(config.get("day_of_month", 1))
+            day = max(1, min(31, day))
+            return f"{minute} {hour} {day} * *"
+
+        elif frequency == "once":
+            # For 'once', we still create a schedule but it will be disabled after run
+            # Default to daily at specified time
+            return f"{minute} {hour} * * *"
+
+        else:
+            # Fallback: daily at 9:00
+            logger.warning(f"Unknown frequency '{frequency}', defaulting to daily 9:00")
+            return "0 9 * * *"
 
     def new_workflow(self) -> None:
         """Create a new empty workflow."""
@@ -139,6 +282,35 @@ class WorkflowController(BaseController):
             from PySide6.QtCore import QTimer
 
             QTimer.singleShot(500, self._validate_after_open)
+
+    def reload_workflow(self) -> None:
+        """
+        Reload the current workflow from disk.
+
+        This allows live editing of workflow JSON files with external tools
+        like WorkflowBuilder. The canvas will be updated with the latest
+        file contents without needing to use File > Open.
+        """
+        logger.info("Reloading workflow from disk")
+
+        if not self._current_file:
+            self.main_window.show_status("No workflow file to reload", 3000)
+            return
+
+        if not self._current_file.exists():
+            self.main_window.show_status(f"File not found: {self._current_file}", 3000)
+            return
+
+        # Emit signal to reload (app will handle the actual loading)
+        self.workflow_loaded.emit(str(self._current_file))
+        # Don't change modified state - user might have made changes
+
+        self.main_window.show_status(f"Reloaded: {self._current_file.name}", 3000)
+
+        # Schedule validation after reloading
+        from PySide6.QtCore import QTimer
+
+        QTimer.singleShot(500, self._validate_after_open)
 
     def import_workflow(self) -> None:
         """Import nodes from another workflow."""
@@ -185,9 +357,7 @@ class WorkflowController(BaseController):
 
         if file_path:
             self.workflow_exported.emit(file_path)
-            self.main_window.show_status(
-                f"Exporting {len(selected_nodes)} nodes...", 3000
-            )
+            self.main_window.show_status(f"Exporting {len(selected_nodes)} nodes...", 3000)
 
     def save_workflow(self) -> None:
         """Save the current workflow."""
@@ -515,18 +685,14 @@ class WorkflowController(BaseController):
             try:
                 validate_workflow_json(data)
                 logger.debug("Clipboard workflow schema validation passed")
-            except ValidationError as e:
+            except WorkflowValidationError as e:
                 logger.error(f"Clipboard workflow schema validation failed: {e}")
                 QMessageBox.warning(
                     self.main_window,
                     "Invalid Workflow",
-                    f"The clipboard content failed security validation:\n\n"
-                    f"{str(e)[:500]}",
+                    f"The clipboard content failed security validation:\n\n" f"{str(e)[:500]}",
                 )
                 return
-            except Exception as e:
-                # Log but continue for backwards compatibility
-                logger.warning(f"Schema validation skipped (non-standard format): {e}")
 
             # Emit signal with the JSON string for app to handle
             self.workflow_imported_json.emit(text)
@@ -558,9 +724,7 @@ class WorkflowController(BaseController):
                 import orjson
                 from pathlib import Path
 
-                logger.info(
-                    f"Importing dropped file: {file_path} at position {position}"
-                )
+                logger.info(f"Importing dropped file: {file_path} at position {position}")
 
                 # Load workflow data
                 data = orjson.loads(Path(file_path).read_bytes())
@@ -569,20 +733,14 @@ class WorkflowController(BaseController):
                 try:
                     validate_workflow_json(data)
                     logger.debug("Dropped workflow schema validation passed")
-                except ValidationError as e:
+                except WorkflowValidationError as e:
                     logger.error(f"Dropped workflow schema validation failed: {e}")
                     QMessageBox.warning(
                         self.main_window,
                         "Invalid Workflow",
-                        f"The dropped file failed security validation:\n\n"
-                        f"{str(e)[:500]}",
+                        f"The dropped file failed security validation:\n\n" f"{str(e)[:500]}",
                     )
                     return
-                except Exception as e:
-                    # Log but continue for backwards compatibility
-                    logger.warning(
-                        f"Schema validation skipped (non-standard format): {e}"
-                    )
 
                 # Signal workflow import with file path
                 self.workflow_imported.emit(file_path)
@@ -607,29 +765,21 @@ class WorkflowController(BaseController):
                 try:
                     validate_workflow_json(data)
                     logger.debug("Dropped JSON data schema validation passed")
-                except ValidationError as e:
+                except WorkflowValidationError as e:
                     logger.error(f"Dropped JSON data schema validation failed: {e}")
                     QMessageBox.warning(
                         self.main_window,
                         "Invalid Workflow",
-                        f"The dropped data failed security validation:\n\n"
-                        f"{str(e)[:500]}",
+                        f"The dropped data failed security validation:\n\n" f"{str(e)[:500]}",
                     )
                     return
-                except Exception as e:
-                    # Log but continue for backwards compatibility
-                    logger.warning(
-                        f"Schema validation skipped (non-standard format): {e}"
-                    )
 
                 # Convert to JSON string and signal
                 json_str = orjson.dumps(data).decode("utf-8")
                 self.workflow_imported_json.emit(json_str)
                 self.main_window.set_modified(True)
 
-                self.main_window.show_status(
-                    f"Imported {len(data.get('nodes', {}))} nodes", 5000
-                )
+                self.main_window.show_status(f"Imported {len(data.get('nodes', {}))} nodes", 5000)
             except Exception as e:
                 logger.error(f"Failed to import dropped JSON: {e}")
                 self.main_window.show_status(f"Error importing JSON: {str(e)}", 5000)
@@ -661,9 +811,7 @@ class WorkflowController(BaseController):
             if validation_errors:
                 # Count errors vs warnings
                 error_count = sum(
-                    1
-                    for e in validation_errors
-                    if getattr(e, "severity", "error") == "error"
+                    1 for e in validation_errors if getattr(e, "severity", "error") == "error"
                 )
                 warning_count = len(validation_errors) - error_count
 
@@ -732,20 +880,40 @@ class WorkflowController(BaseController):
         # Note: Keep nodes as dict - Robot's workflow_loader expects dict format
         # keyed by node_id. API accepts both dict and list formats.
 
-        self.main_window.show_status("Submitting workflow to robot...", 3000)
+        # Detect Schedule Trigger nodes and extract scheduling info
+        trigger_type, schedule_config = self._extract_schedule_trigger_info(workflow_json)
+        schedule_cron = None
+
+        if trigger_type == "scheduled" and schedule_config:
+            schedule_cron = schedule_config.get("cron_expression")
+            self.main_window.show_status(
+                f"Creating scheduled workflow (cron: {schedule_cron})...", 3000
+            )
+        else:
+            trigger_type = "manual"
+            self.main_window.show_status("Submitting workflow to robot...", 3000)
 
         # Submit via OrchestratorClient (Application layer)
         client = self._get_orchestrator_client()
+
+        # Build metadata with workflow_json for scheduled execution
+        metadata = {
+            "submitted_from": "canvas",
+            "canvas_file": str(self._current_file) if self._current_file else None,
+        }
+        if schedule_config:
+            metadata["schedule_config"] = schedule_config
+            # Include workflow_json in metadata for schedule execution
+            metadata["workflow_json"] = workflow_json
+
         result = await client.submit_workflow(
             workflow_name=self._current_file.stem if self._current_file else "Untitled",
             workflow_json=workflow_json,
             execution_mode="lan",
-            trigger_type="manual",
+            trigger_type=trigger_type,
             priority=10,
-            metadata={
-                "submitted_from": "canvas",
-                "canvas_file": str(self._current_file) if self._current_file else None,
-            },
+            metadata=metadata,
+            schedule_cron=schedule_cron,
         )
 
         if result.success:
@@ -757,15 +925,27 @@ class WorkflowController(BaseController):
                 5000,
             )
 
-            # Show success dialog
-            QMessageBox.information(
-                self.main_window,
-                "Workflow Submitted",
-                f"Workflow submitted to LAN robot successfully!\n\n"
-                f"Workflow ID: {workflow_id}\n"
-                f"Job ID: {job_id}\n\n"
-                f"Monitor execution in the Monitoring Dashboard.",
-            )
+            # Show success dialog with schedule info if applicable
+            schedule_id = result.schedule_id
+            if schedule_id:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Scheduled",
+                    f"Workflow scheduled on LAN robot successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Schedule ID: {schedule_id}\n"
+                    f"Cron: {schedule_cron}\n\n"
+                    f"View and manage in Fleet Dashboard → Schedules tab.",
+                )
+            else:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Submitted",
+                    f"Workflow submitted to LAN robot successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Job ID: {job_id}\n\n"
+                    f"Monitor execution in the Monitoring Dashboard.",
+                )
         else:
             self.main_window.show_status(f"Submission failed: {result.message}", 5000)
 
@@ -798,9 +978,7 @@ class WorkflowController(BaseController):
         3. Orchestrator queues job for internet robots
         4. Show confirmation with workflow_id
         """
-        logger.info(
-            "Submit for Internet Robots selected - queuing for remote execution"
-        )
+        logger.info("Submit for Internet Robots selected - queuing for remote execution")
 
         # Check if workflow has been saved
         if not self._current_file:
@@ -826,20 +1004,41 @@ class WorkflowController(BaseController):
         # Note: Keep nodes as dict - Robot's workflow_loader expects dict format
         # keyed by node_id. API accepts both dict and list formats.
 
-        self.main_window.show_status("Submitting workflow for internet robots...", 3000)
+        # Detect Schedule Trigger nodes and extract scheduling info
+        trigger_type, schedule_config = self._extract_schedule_trigger_info(workflow_json)
+        schedule_cron = None
+
+        if trigger_type == "scheduled" and schedule_config:
+            schedule_cron = schedule_config.get("cron_expression")
+            self.main_window.show_status(
+                f"Creating scheduled workflow for internet robots (cron: {schedule_cron})...",
+                3000,
+            )
+        else:
+            trigger_type = "manual"
+            self.main_window.show_status("Submitting workflow for internet robots...", 3000)
 
         # Submit via OrchestratorClient (Application layer)
         client = self._get_orchestrator_client()
+
+        # Build metadata with workflow_json for scheduled execution
+        metadata = {
+            "submitted_from": "canvas",
+            "canvas_file": str(self._current_file) if self._current_file else None,
+        }
+        if schedule_config:
+            metadata["schedule_config"] = schedule_config
+            # Include workflow_json in metadata for schedule execution
+            metadata["workflow_json"] = workflow_json
+
         result = await client.submit_workflow(
             workflow_name=self._current_file.stem if self._current_file else "Untitled",
             workflow_json=workflow_json,
             execution_mode="internet",
-            trigger_type="manual",
+            trigger_type=trigger_type,
             priority=10,
-            metadata={
-                "submitted_from": "canvas",
-                "canvas_file": str(self._current_file) if self._current_file else None,
-            },
+            metadata=metadata,
+            schedule_cron=schedule_cron,
         )
 
         if result.success:
@@ -851,16 +1050,28 @@ class WorkflowController(BaseController):
                 5000,
             )
 
-            # Show success dialog
-            QMessageBox.information(
-                self.main_window,
-                "Workflow Queued",
-                f"Workflow queued for internet robots successfully!\n\n"
-                f"Workflow ID: {workflow_id}\n"
-                f"Job ID: {job_id}\n\n"
-                f"The first available internet robot will claim and execute this job.\n\n"
-                f"Monitor execution in the Monitoring Dashboard.",
-            )
+            # Show success dialog with schedule info if applicable
+            schedule_id = result.schedule_id
+            if schedule_id:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Scheduled",
+                    f"Workflow scheduled for internet robots successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Schedule ID: {schedule_id}\n"
+                    f"Cron: {schedule_cron}\n\n"
+                    f"View and manage in Fleet Dashboard → Schedules tab.",
+                )
+            else:
+                QMessageBox.information(
+                    self.main_window,
+                    "Workflow Queued",
+                    f"Workflow queued for internet robots successfully!\n\n"
+                    f"Workflow ID: {workflow_id}\n"
+                    f"Job ID: {job_id}\n\n"
+                    f"The first available internet robot will claim and execute this job.\n\n"
+                    f"Monitor execution in the Monitoring Dashboard.",
+                )
         else:
             self.main_window.show_status(f"Submission failed: {result.message}", 5000)
 
@@ -963,9 +1174,7 @@ class WorkflowController(BaseController):
                     "nodes": [],
                     "connections": [],
                     "metadata": {
-                        "name": self._current_file.stem
-                        if self._current_file
-                        else "Untitled"
+                        "name": self._current_file.stem if self._current_file else "Untitled"
                     },
                 }
         except Exception as e:
@@ -977,9 +1186,7 @@ class WorkflowController(BaseController):
         try:
             import orjson
 
-            path.write_bytes(
-                orjson.dumps(history.to_dict(), option=orjson.OPT_INDENT_2)
-            )
+            path.write_bytes(orjson.dumps(history.to_dict(), option=orjson.OPT_INDENT_2))
             logger.debug(f"Saved version history to {path}")
         except Exception as e:
             logger.warning(f"Failed to save version history: {e}")

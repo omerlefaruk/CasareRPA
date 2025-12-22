@@ -242,9 +242,7 @@ class VisualCallSubworkflowNode(VisualNode):
         if casare_node and hasattr(casare_node, "configure_from_subworkflow"):
             casare_node.configure_from_subworkflow(subflow)
 
-        logger.info(
-            f"Configured VisualCallSubworkflowNode from subflow entity '{subflow.name}'"
-        )
+        logger.info(f"Configured VisualCallSubworkflowNode from subflow entity '{subflow.name}'")
 
     def _parse_data_type(self, type_str: str) -> DataType:
         """Parse data type string to enum."""

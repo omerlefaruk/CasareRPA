@@ -50,7 +50,6 @@ DRIVE_FILE_ID = PropertyDef(
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -107,6 +106,7 @@ DRIVE_FILE_ID = PropertyDef(
         tooltip="Transfer ownership to this user (requires role=owner)",
     ),
 )
+@node(category="google")
 class DriveShareFileNode(DriveBaseNode):
     """
     Add a permission to a Google Drive file or folder.
@@ -141,7 +141,7 @@ class DriveShareFileNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Share File", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -244,7 +244,6 @@ class DriveShareFileNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -257,6 +256,7 @@ class DriveShareFileNode(DriveBaseNode):
         tooltip="ID of the permission to remove",
     ),
 )
+@node(category="google")
 class DriveRemoveShareNode(DriveBaseNode):
     """
     Remove a permission from a Google Drive file or folder.
@@ -283,7 +283,7 @@ class DriveRemoveShareNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Remove Share", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -301,9 +301,7 @@ class DriveRemoveShareNode(DriveBaseNode):
     ) -> ExecutionResult:
         """Remove a permission from a file in Google Drive."""
         file_id = self._resolve_value(context, self.get_parameter("file_id"))
-        permission_id = self._resolve_value(
-            context, self.get_parameter("permission_id")
-        )
+        permission_id = self._resolve_value(context, self.get_parameter("permission_id"))
 
         if not file_id:
             self._set_error_outputs("File ID is required")
@@ -344,7 +342,6 @@ class DriveRemoveShareNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -355,6 +352,7 @@ class DriveRemoveShareNode(DriveBaseNode):
         tooltip="Include permissions for published files",
     ),
 )
+@node(category="google")
 class DriveGetPermissionsNode(DriveBaseNode):
     """
     List all permissions on a Google Drive file or folder.
@@ -382,7 +380,7 @@ class DriveGetPermissionsNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Get Permissions", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -455,7 +453,6 @@ class DriveGetPermissionsNode(DriveBaseNode):
 # ============================================================================
 
 
-@node(category="integration")
 @properties(
     DRIVE_FILE_ID,
     PropertyDef(
@@ -482,6 +479,7 @@ class DriveGetPermissionsNode(DriveBaseNode):
         tooltip="Allow file to appear in search results",
     ),
 )
+@node(category="google")
 class DriveCreateShareLinkNode(DriveBaseNode):
     """
     Create a shareable link for a Google Drive file or folder.
@@ -509,7 +507,7 @@ class DriveCreateShareLinkNode(DriveBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Drive Create Share Link", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""

@@ -19,8 +19,19 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
+
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        required=True,
+        label="Text",
+        tooltip="Text to copy to clipboard",
+    ),
+)
 @node(category="system")
-@properties()  # Input port driven
 class ClipboardCopyNode(BaseNode):
     """
     Copy text to the clipboard.
@@ -81,9 +92,7 @@ class ClipboardCopyNode(BaseNode):
 
                     user32.CloseClipboard()
                 else:
-                    raise RuntimeError(
-                        "pyperclip not installed and no native clipboard support"
-                    )
+                    raise RuntimeError("pyperclip not installed and no native clipboard support")
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -103,8 +112,8 @@ class ClipboardCopyNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties()  # No config - output only
+@node(category="system")
 class ClipboardPasteNode(BaseNode):
     """
     Get text from the clipboard.
@@ -159,9 +168,7 @@ class ClipboardPasteNode(BaseNode):
                     finally:
                         user32.CloseClipboard()
                 else:
-                    raise RuntimeError(
-                        "pyperclip not installed and no native clipboard support"
-                    )
+                    raise RuntimeError("pyperclip not installed and no native clipboard support")
 
             self.set_output_value("text", text)
             self.set_output_value("success", True)
@@ -183,8 +190,8 @@ class ClipboardPasteNode(BaseNode):
         return True, ""
 
 
-@node(category="system")
 @properties()  # No config
+@node(category="system")
 class ClipboardClearNode(BaseNode):
     """
     Clear the clipboard.
@@ -223,9 +230,7 @@ class ClipboardClearNode(BaseNode):
                     user32.EmptyClipboard()
                     user32.CloseClipboard()
                 else:
-                    raise RuntimeError(
-                        "pyperclip not installed and no native clipboard support"
-                    )
+                    raise RuntimeError("pyperclip not installed and no native clipboard support")
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS

@@ -140,9 +140,7 @@ class RobotRepository:
             "last_seen": robot.last_seen,
             "last_heartbeat": robot.last_heartbeat,
             "created_at": robot.created_at or datetime.utcnow(),
-            "capabilities": orjson.dumps(
-                [cap.value for cap in robot.capabilities]
-            ).decode(),
+            "capabilities": orjson.dumps([cap.value for cap in robot.capabilities]).decode(),
             "tags": orjson.dumps(robot.tags).decode(),
             "metrics": orjson.dumps(robot.metrics).decode(),
             "assigned_workflows": orjson.dumps(robot.assigned_workflows).decode(),
@@ -224,9 +222,7 @@ class RobotRepository:
         """
         conn = await self._get_connection()
         try:
-            row = await conn.fetchrow(
-                "SELECT * FROM robots WHERE robot_id = $1", robot_id
-            )
+            row = await conn.fetchrow("SELECT * FROM robots WHERE robot_id = $1", robot_id)
             if row is None:
                 return None
             return self._row_to_robot(dict(row))
@@ -248,9 +244,7 @@ class RobotRepository:
         """
         conn = await self._get_connection()
         try:
-            row = await conn.fetchrow(
-                "SELECT * FROM robots WHERE hostname = $1", hostname
-            )
+            row = await conn.fetchrow("SELECT * FROM robots WHERE hostname = $1", hostname)
             if row is None:
                 return None
             return self._row_to_robot(dict(row))
@@ -353,9 +347,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_capabilities(
-        self, capabilities: Set[RobotCapability]
-    ) -> List[Robot]:
+    async def get_by_capabilities(self, capabilities: Set[RobotCapability]) -> List[Robot]:
         """
         Get robots with all specified capabilities.
 
@@ -552,9 +544,7 @@ class RobotRepository:
         """
         conn = await self._get_connection()
         try:
-            result = await conn.execute(
-                "DELETE FROM robots WHERE robot_id = $1", robot_id
-            )
+            result = await conn.execute("DELETE FROM robots WHERE robot_id = $1", robot_id)
             deleted = result.split()[-1] != "0"
             if deleted:
                 logger.info(f"Deleted robot: {robot_id}")

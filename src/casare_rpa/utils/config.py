@@ -19,9 +19,7 @@ IS_FROZEN: Final[bool] = getattr(sys, "frozen", False)
 if IS_FROZEN:
     # When running as executable, use AppData for user-writable directories
     _appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-    _localappdata = os.environ.get(
-        "LOCALAPPDATA", str(Path.home() / "AppData" / "Local")
-    )
+    _localappdata = os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))
     USER_DATA_DIR: Final[Path] = _appdata / "CasareRPA"
 
     # CRITICAL: Set Playwright browsers path BEFORE any Playwright imports
@@ -88,7 +86,7 @@ MIN_WINDOW_HEIGHT: Final[int] = 768
 
 # Aliases for backward compatibility and convenience
 GUI_WINDOW_WIDTH: Final[int] = 1280
-GUI_WINDOW_HEIGHT: Final[int] = 768
+GUI_WINDOW_HEIGHT: Final[int] = 720
 GUI_THEME: Final[str] = "dark"
 
 # ============================================================================

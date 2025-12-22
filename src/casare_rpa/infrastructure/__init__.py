@@ -29,16 +29,16 @@ Depends on: Domain layer (via protocols)
 Independent of: Presentation layer
 """
 
-# Agent exports (lazy import to avoid circular dependencies)
+# Agent exports
 from casare_rpa.infrastructure.agent import (
-    RobotConfig,
-    RobotAgent,
     JobExecutor,
     HeartbeatService,
-    ConfigurationError,
-    RobotAgentError,
     JobExecutionError,
+    JobExecutionResult,
 )
+
+# Robot agent (canonical location)
+from casare_rpa.robot.agent import RobotAgent, RobotConfig
 
 # Auth exports
 from casare_rpa.infrastructure.auth import (
@@ -105,15 +105,20 @@ from casare_rpa.infrastructure.http import (
     close_unified_http_client,
 )
 
+# Caching exports
+from casare_rpa.infrastructure.caching import (
+    WorkflowCache,
+    get_workflow_cache,
+)
+
 __all__ = [
     # Agent
     "RobotConfig",
     "RobotAgent",
     "JobExecutor",
-    "HeartbeatService",
-    "ConfigurationError",
-    "RobotAgentError",
     "JobExecutionError",
+    "JobExecutionResult",
+    "HeartbeatService",
     # Auth
     "RobotApiKey",
     "RobotApiKeyService",
@@ -152,4 +157,7 @@ __all__ = [
     "RequestStats",
     "get_unified_http_client",
     "close_unified_http_client",
+    # Caching
+    "WorkflowCache",
+    "get_workflow_cache",
 ]

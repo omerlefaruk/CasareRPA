@@ -561,10 +561,8 @@ class AnchorLocator:
             if not (
                 anchor_box["x"] <= target_box["x"]
                 and anchor_box["y"] <= target_box["y"]
-                and anchor_box["x"] + anchor_box["width"]
-                >= target_box["x"] + target_box["width"]
-                and anchor_box["y"] + anchor_box["height"]
-                >= target_box["y"] + target_box["height"]
+                and anchor_box["x"] + anchor_box["width"] >= target_box["x"] + target_box["width"]
+                and anchor_box["y"] + anchor_box["height"] >= target_box["y"] + target_box["height"]
             ):
                 penalty = distance * 2
 

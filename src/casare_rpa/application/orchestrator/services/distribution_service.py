@@ -95,9 +95,7 @@ class RobotSelector:
 
         # Filter by required tags
         if required_tags:
-            candidates = [
-                r for r in candidates if all(tag in r.tags for tag in required_tags)
-            ]
+            candidates = [r for r in candidates if all(tag in r.tags for tag in required_tags)]
 
         # Filter out excluded robots
         if excluded_robots:
@@ -330,9 +328,7 @@ class WorkflowDistributor:
             # Select robot
             robot = self._selector.select(
                 job=job,
-                available_robots=[
-                    r for r in available_robots if r.id not in attempted_robots
-                ],
+                available_robots=[r for r in available_robots if r.id not in attempted_robots],
                 strategy=use_strategy,
                 required_tags=required_tags,
                 preferred_robots=preferred_robots,
@@ -364,9 +360,7 @@ class WorkflowDistributor:
 
                     if self._on_distribution_success:
                         try:
-                            callback_result = self._on_distribution_success(
-                                job.id, robot.id
-                            )
+                            callback_result = self._on_distribution_success(job.id, robot.id)
                             if asyncio.iscoroutine(callback_result):
                                 await callback_result
                         except Exception as e:
@@ -383,9 +377,7 @@ class WorkflowDistributor:
 
             except asyncio.TimeoutError:
                 retry_count += 1
-                logger.warning(
-                    f"Timeout distributing job {job.id[:8]} to robot {robot.id}"
-                )
+                logger.warning(f"Timeout distributing job {job.id[:8]} to robot {robot.id}")
 
             except Exception as e:
                 retry_count += 1
@@ -406,9 +398,7 @@ class WorkflowDistributor:
 
         if self._on_distribution_failure:
             try:
-                callback_result = self._on_distribution_failure(
-                    job.id, dist_result.message
-                )
+                callback_result = self._on_distribution_failure(job.id, dist_result.message)
                 if asyncio.iscoroutine(callback_result):
                     await callback_result
             except Exception as e:
@@ -447,8 +437,7 @@ class WorkflowDistributor:
                 available_robots = [
                     r
                     for r in available_robots
-                    if r.id != result.robot_id
-                    or r.current_jobs < r.max_concurrent_jobs - 1
+                    if r.id != result.robot_id or r.current_jobs < r.max_concurrent_jobs - 1
                 ]
 
         return results
@@ -459,9 +448,7 @@ class WorkflowDistributor:
 
         # Trim history
         if len(self._distribution_history) > self._max_history:
-            self._distribution_history = self._distribution_history[
-                -self._max_history :
-            ]
+            self._distribution_history = self._distribution_history[-self._max_history :]
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get distribution statistics."""
@@ -475,9 +462,7 @@ class WorkflowDistributor:
             "failed": failed,
             "success_rate": successful / total if total > 0 else 0.0,
             "avg_retry_count": (
-                sum(r.retry_count for r in self._distribution_history) / total
-                if total > 0
-                else 0.0
+                sum(r.retry_count for r in self._distribution_history) / total if total > 0 else 0.0
             ),
             "rules_count": len(self._rules),
         }

@@ -250,12 +250,8 @@ class BreakpointsPanel(QDockWidget):
             return
 
         try:
-            self._debug_controller.breakpoint_added.disconnect(
-                self._on_breakpoint_added
-            )
-            self._debug_controller.breakpoint_removed.disconnect(
-                self._on_breakpoint_removed
-            )
+            self._debug_controller.breakpoint_added.disconnect(self._on_breakpoint_added)
+            self._debug_controller.breakpoint_removed.disconnect(self._on_breakpoint_removed)
         except RuntimeError:
             pass
 
@@ -407,11 +403,7 @@ class BreakpointsPanel(QDockWidget):
 
         # Store context data for slot methods
         self._context_node_id = node_id
-        bp = (
-            self._debug_controller.get_breakpoint(node_id)
-            if self._debug_controller
-            else None
-        )
+        bp = self._debug_controller.get_breakpoint(node_id) if self._debug_controller else None
         self._context_bp_enabled = bp.enabled if bp else False
 
         menu = QMenu(self)
@@ -482,9 +474,7 @@ class BreakpointsPanel(QDockWidget):
     def _on_context_toggle_breakpoint(self) -> None:
         """Toggle breakpoint from context menu."""
         if hasattr(self, "_context_node_id") and self._context_node_id:
-            self._toggle_breakpoint_enabled(
-                self._context_node_id, not self._context_bp_enabled
-            )
+            self._toggle_breakpoint_enabled(self._context_node_id, not self._context_bp_enabled)
 
     @Slot()
     def _on_context_delete_breakpoint(self) -> None:

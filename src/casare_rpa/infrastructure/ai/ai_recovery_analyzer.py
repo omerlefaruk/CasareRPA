@@ -265,16 +265,10 @@ Consider:
         """Sanitize object for JSON serialization (remove non-serializable items)."""
         if isinstance(obj, dict):
             return {
-                k: self._sanitize_for_json(v)
-                for k, v in obj.items()
-                if self._is_serializable(v)
+                k: self._sanitize_for_json(v) for k, v in obj.items() if self._is_serializable(v)
             }
         elif isinstance(obj, (list, tuple)):
-            return [
-                self._sanitize_for_json(item)
-                for item in obj
-                if self._is_serializable(item)
-            ]
+            return [self._sanitize_for_json(item) for item in obj if self._is_serializable(item)]
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj
         else:
@@ -480,9 +474,7 @@ Consider:
             )
 
         # Element not found - might need selector update
-        if "element" in error_msg and (
-            "not found" in error_msg or "not exist" in error_msg
-        ):
+        if "element" in error_msg and ("not found" in error_msg or "not exist" in error_msg):
             return RecoveryRecommendation(
                 strategy=RecoveryStrategy.FALLBACK,
                 confidence=0.6,
@@ -491,9 +483,7 @@ Consider:
             )
 
         # Network errors - retry with backoff
-        if any(
-            x in error_msg for x in ["network", "connection", "refused", "unreachable"]
-        ):
+        if any(x in error_msg for x in ["network", "connection", "refused", "unreachable"]):
             return RecoveryRecommendation(
                 strategy=RecoveryStrategy.RETRY,
                 confidence=0.8,
@@ -503,10 +493,7 @@ Consider:
             )
 
         # Authentication errors - escalate
-        if any(
-            x in error_msg
-            for x in ["auth", "login", "permission", "forbidden", "401", "403"]
-        ):
+        if any(x in error_msg for x in ["auth", "login", "permission", "forbidden", "401", "403"]):
             return RecoveryRecommendation(
                 strategy=RecoveryStrategy.ESCALATE,
                 confidence=0.8,

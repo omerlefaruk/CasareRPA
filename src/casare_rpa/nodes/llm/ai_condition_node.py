@@ -12,6 +12,8 @@ from typing import Any
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -21,6 +23,41 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@properties(
+    PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Context data for AI evaluation",
+    ),
+    PropertyDef(
+        "condition",
+        PropertyType.TEXT,
+        default="",
+        label="Condition",
+        placeholder="Is the email about a complaint?",
+        tooltip="Natural language condition to evaluate",
+        essential=True,
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model for condition evaluation",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.0,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature for consistent evaluation",
+    ),
+)
+@node(category="llm")
 class AIConditionNode(LLMBaseNode):
     """
     Evaluate a condition using natural language with AI.
@@ -45,9 +82,9 @@ class AIConditionNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_exec_input_port("exec_in")
-        self.add_exec_output_port("exec_true")
-        self.add_exec_output_port("exec_false")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_true")
+        self.add_exec_output("exec_false")
 
         # Data inputs
         self.add_input_port("condition", DataType.STRING)
@@ -70,10 +107,6 @@ class AIConditionNode(LLMBaseNode):
         condition = self.get_parameter("condition")
         eval_context = self.get_parameter("context")
 
-        if hasattr(context, "resolve_value"):
-            condition = context.resolve_value(condition)
-            eval_context = context.resolve_value(eval_context)
-
         if not condition:
             self._set_condition_error("Condition is required")
             return {
@@ -93,9 +126,6 @@ class AIConditionNode(LLMBaseNode):
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.0
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         prompt = f"""Evaluate the following condition against the given context.
 

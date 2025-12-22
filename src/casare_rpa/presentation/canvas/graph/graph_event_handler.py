@@ -7,6 +7,7 @@ Handles:
 - Keyboard shortcuts (Tab, Delete, X, Ctrl+D, Ctrl+E, F1, F2, V, C, Escape)
 - Mouse events (Alt+drag duplicate, right-click context menu)
 - Drag-drop operations (node library, workflow files, variables)
+- Chain selection (Shift+Click, Ctrl+Shift+Click)
 """
 
 from typing import TYPE_CHECKING, Optional, Callable
@@ -168,8 +169,22 @@ class GraphEventHandler(QObject):
             if self._on_close_output_popup:
                 self._on_close_output_popup()
 
+            modifiers = event.modifiers()
+
+            # Ctrl+Shift+LMB: Select entire chain (upstream + downstream)
+            if (modifiers & Qt.KeyboardModifier.ControlModifier) and (
+                modifiers & Qt.KeyboardModifier.ShiftModifier
+            ):
+                if self._handle_chain_selection(event, full_chain=True):
+                    return True
+
+            # Shift+LMB: Select downstream chain only
+            elif modifiers & Qt.KeyboardModifier.ShiftModifier:
+                if self._handle_chain_selection(event, full_chain=False):
+                    return True
+
             # Alt+LMB: Houdini-style drag duplicate
-            if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+            elif modifiers & Qt.KeyboardModifier.AltModifier:
                 if self._handle_alt_drag_duplicate(event):
                     return True
 
@@ -177,6 +192,69 @@ class GraphEventHandler(QObject):
             return self._handle_right_click(event)
 
         return False
+
+    def _handle_chain_selection(self, event, full_chain: bool = False) -> bool:
+        """
+        Handle chain selection (Shift+Click or Ctrl+Shift+Click).
+
+        Selects connected nodes based on the logical flow:
+        - Shift+Click: Select downstream chain (nodes that depend on clicked node)
+        - Ctrl+Shift+Click: Select full chain (upstream + downstream)
+
+        Args:
+            event: The mouse event
+            full_chain: If True, select upstream + downstream. If False, downstream only.
+
+        Returns:
+            True if chain selection was performed
+        """
+        try:
+            viewer = self._graph.viewer()
+            view_pos = event.position().toPoint()
+            scene_pos = viewer.mapToScene(view_pos)
+
+            # Find node at click position
+            item = viewer.scene().itemAt(scene_pos, viewer.transform())
+            if not item:
+                return False
+
+            # Walk up parent chain to find NodeItem
+            from NodeGraphQt.qgraphics.node_base import NodeItem
+
+            node_item = None
+            current = item
+            while current:
+                if isinstance(current, NodeItem):
+                    node_item = current
+                    break
+                current = current.parentItem()
+
+            if not node_item:
+                return False
+
+            # Find the actual node object
+            clicked_node = None
+            for node in self._graph.all_nodes():
+                if hasattr(node, "view") and node.view == node_item:
+                    clicked_node = node
+                    break
+
+            if not clicked_node:
+                return False
+
+            # Perform chain selection
+            if full_chain:
+                chain = self._chain_selector.select_full_chain(clicked_node)
+                logger.info(f"Selected full chain: {len(chain)} nodes")
+            else:
+                chain = self._chain_selector.select_downstream_chain(clicked_node)
+                logger.info(f"Selected downstream chain: {len(chain)} nodes")
+
+            return len(chain) > 0
+
+        except Exception as e:
+            logger.debug(f"Chain selection error: {e}")
+            return False
 
     def _handle_right_click(self, event) -> bool:
         """
@@ -244,9 +322,7 @@ class GraphEventHandler(QObject):
                 return True
             if self._selection_handler.delete_selected_nodes():
                 return True
-        elif not text_has_focus and (
-            key == Qt.Key.Key_X or event.text().lower() == "x"
-        ):
+        elif not text_has_focus and (key == Qt.Key.Key_X or event.text().lower() == "x"):
             if self._on_delete_frames and self._on_delete_frames():
                 return True
             if self._selection_handler.delete_selected_nodes():
@@ -356,9 +432,7 @@ class GraphEventHandler(QObject):
             if view_item:
                 view_item.setSelected(True)
 
-            logger.debug(
-                f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}"
-            )
+            logger.debug(f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}")
             return True
 
         except Exception as e:

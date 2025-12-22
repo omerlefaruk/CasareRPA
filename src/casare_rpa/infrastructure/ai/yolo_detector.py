@@ -362,10 +362,7 @@ class YOLOElementDetector:
                     if torch.cuda.is_available():
                         self._model.to("cuda")
                         logger.debug("Using CUDA GPU for inference")
-                    elif (
-                        hasattr(torch.backends, "mps")
-                        and torch.backends.mps.is_available()
-                    ):
+                    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
                         self._model.to("mps")
                         logger.debug("Using MPS (Apple Silicon) for inference")
                 except ImportError:
@@ -541,10 +538,7 @@ class YOLOElementDetector:
 
                 # Apply type filter
                 if type_filter:
-                    if (
-                        class_name not in type_filter
-                        and element_type.value not in type_filter
-                    ):
+                    if class_name not in type_filter and element_type.value not in type_filter:
                         continue
 
                 elements.append(

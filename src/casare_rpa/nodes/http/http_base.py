@@ -13,6 +13,8 @@ PERFORMANCE: Uses UnifiedHttpClient for:
 """
 
 from __future__ import annotations
+from casare_rpa.domain.decorators import node, properties
+
 
 import asyncio
 import json
@@ -133,6 +135,8 @@ async def close_shared_http_session() -> None:
     await close_unified_http_client()
 
 
+@properties()
+@node(category="http")
 class HttpBaseNode(BaseNode):
     """
     Abstract base class for HTTP request nodes.
@@ -268,7 +272,6 @@ class HttpBaseNode(BaseNode):
             retry_count = self.get_parameter("retry_count", 0)
 
             # Resolve URL from context
-            url = context.resolve_value(url)
             if not url:
                 raise ValueError("URL is required")
 
@@ -280,12 +283,8 @@ class HttpBaseNode(BaseNode):
             request_json = None
             if self._has_request_body():
                 body = self.get_parameter("body", "")
-                if isinstance(body, str):
-                    body = context.resolve_value(body)
 
-                content_type = self.get_parameter(
-                    "content_type", self.DEFAULT_CONTENT_TYPE
-                )
+                content_type = self.get_parameter("content_type", self.DEFAULT_CONTENT_TYPE)
 
                 prepared_body = self._prepare_request_body(body)
 
@@ -316,9 +315,7 @@ class HttpBaseNode(BaseNode):
                     json=request_json,
                     data=request_body,
                     timeout=float(timeout_seconds),
-                    retry_count=max(
-                        1, retry_count + 1
-                    ),  # UnifiedHttpClient uses attempts
+                    retry_count=max(1, retry_count + 1),  # UnifiedHttpClient uses attempts
                 )
 
                 # Read response

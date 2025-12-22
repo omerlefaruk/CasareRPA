@@ -190,9 +190,7 @@ class RemoteRobotDialog(QDialog):
         info_layout = QFormLayout(info_group)
 
         self._detail_id = QLabel("-")
-        self._detail_id.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self._detail_id.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         info_layout.addRow("Robot ID:", self._detail_id)
 
         self._detail_name = QLabel("-")
@@ -523,9 +521,7 @@ class RemoteRobotDialog(QDialog):
         self._detail_hostname.setText(data.get("hostname", "-"))
         self._detail_environment.setText(data.get("environment", "-"))
         self._detail_status.setText(status.title())
-        self._detail_status.setStyleSheet(
-            f"color: {STATUS_COLORS.get(status, '#888888')};"
-        )
+        self._detail_status.setStyleSheet(f"color: {STATUS_COLORS.get(status, '#888888')};")
 
         # Capabilities
         caps = data.get("capabilities", [])
@@ -539,9 +535,7 @@ class RemoteRobotDialog(QDialog):
         connected_at = data.get("connected_at")
         if connected_at:
             if isinstance(connected_at, datetime):
-                self._detail_connected.setText(
-                    connected_at.strftime("%Y-%m-%d %H:%M:%S")
-                )
+                self._detail_connected.setText(connected_at.strftime("%Y-%m-%d %H:%M:%S"))
             else:
                 self._detail_connected.setText(str(connected_at))
         else:
@@ -550,9 +544,7 @@ class RemoteRobotDialog(QDialog):
         last_heartbeat = data.get("last_heartbeat")
         if last_heartbeat:
             if isinstance(last_heartbeat, datetime):
-                self._detail_last_heartbeat.setText(
-                    last_heartbeat.strftime("%Y-%m-%d %H:%M:%S")
-                )
+                self._detail_last_heartbeat.setText(last_heartbeat.strftime("%Y-%m-%d %H:%M:%S"))
             else:
                 self._detail_last_heartbeat.setText(str(last_heartbeat))
         else:
@@ -581,27 +573,17 @@ class RemoteRobotDialog(QDialog):
         self._populate_metrics(metrics)
 
         # Update timestamp
-        self._last_update_label.setText(
-            f"Last update: {datetime.now().strftime('%H:%M:%S')}"
-        )
+        self._last_update_label.setText(f"Last update: {datetime.now().strftime('%H:%M:%S')}")
 
     def _populate_jobs(self, jobs: List[Dict[str, Any]]) -> None:
         """Populate jobs table."""
         self._jobs_table.setRowCount(len(jobs))
 
         for row, job in enumerate(jobs):
-            self._jobs_table.setItem(
-                row, 0, QTableWidgetItem(job.get("id", "-")[:8] + "...")
-            )
-            self._jobs_table.setItem(
-                row, 1, QTableWidgetItem(job.get("workflow_name", "-"))
-            )
-            self._jobs_table.setItem(
-                row, 2, QTableWidgetItem(job.get("status", "-").title())
-            )
-            self._jobs_table.setItem(
-                row, 3, QTableWidgetItem(f"{job.get('progress', 0)}%")
-            )
+            self._jobs_table.setItem(row, 0, QTableWidgetItem(job.get("id", "-")[:8] + "..."))
+            self._jobs_table.setItem(row, 1, QTableWidgetItem(job.get("workflow_name", "-")))
+            self._jobs_table.setItem(row, 2, QTableWidgetItem(job.get("status", "-").title()))
+            self._jobs_table.setItem(row, 3, QTableWidgetItem(f"{job.get('progress', 0)}%"))
 
             started = job.get("started_at")
             if started:

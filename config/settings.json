@@ -32,7 +32,7 @@
   },
   "ai": {
     "provider": "OpenRouter",
-    "model": "openrouter/deepseek/deepseek-v3.2",
+    "model": "openrouter/google/gemini-3-flash-preview",
     "credential_id": "cred_6ec90107cce8",
     "debug_mode": true
   },

@@ -7,6 +7,7 @@ plus shared PropertyDef constants for email-related nodes.
 
 from __future__ import annotations
 
+
 from email.header import decode_header
 from email.message import Message as EmailMessage
 from email.utils import parsedate_to_datetime
@@ -141,16 +142,12 @@ def parse_email_message(msg: EmailMessage) -> Dict[str, Any]:
                     )
             elif content_type == "text/plain":
                 try:
-                    body_text = part.get_payload(decode=True).decode(
-                        "utf-8", errors="replace"
-                    )
+                    body_text = part.get_payload(decode=True).decode("utf-8", errors="replace")
                 except (AttributeError, UnicodeDecodeError):
                     body_text = str(part.get_payload())
             elif content_type == "text/html":
                 try:
-                    body_html = part.get_payload(decode=True).decode(
-                        "utf-8", errors="replace"
-                    )
+                    body_html = part.get_payload(decode=True).decode("utf-8", errors="replace")
                 except (AttributeError, UnicodeDecodeError):
                     body_html = str(part.get_payload())
     else:

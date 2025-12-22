@@ -136,9 +136,7 @@ async def init_global_scheduler(
 
     with _scheduler_lock:
         if _scheduler_initialized and _scheduler_instance is not None:
-            logger.warning(
-                "Global scheduler already initialized, returning existing instance"
-            )
+            logger.warning("Global scheduler already initialized, returning existing instance")
             return _scheduler_instance
 
     try:

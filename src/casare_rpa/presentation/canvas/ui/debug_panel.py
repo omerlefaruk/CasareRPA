@@ -187,8 +187,7 @@ class DebugPanel(QDockWidget):
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
         self.setAllowedAreas(
-            Qt.DockWidgetArea.BottomDockWidgetArea
-            | Qt.DockWidgetArea.RightDockWidgetArea
+            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
         )
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
@@ -264,9 +263,7 @@ class DebugPanel(QDockWidget):
         self._btn_step_into.clicked.connect(self.step_into_requested.emit)
 
         self._btn_step_out = QPushButton("Step Out")
-        self._btn_step_out.setToolTip(
-            "Continue until exiting current scope (Shift+F11)"
-        )
+        self._btn_step_out.setToolTip("Continue until exiting current scope (Shift+F11)")
         self._btn_step_out.setFixedWidth(80)
         self._btn_step_out.clicked.connect(self.step_out_requested.emit)
 
@@ -327,25 +324,15 @@ class DebugPanel(QDockWidget):
         self._log_table.setColumnCount(4)
         self._log_table.setHorizontalHeaderLabels(["Time", "Level", "Node", "Message"])
         self._log_table.setAlternatingRowColors(True)
-        self._log_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._log_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
+        self._log_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._log_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._log_table.itemDoubleClicked.connect(self._on_log_double_click)
         self._log_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         header = self._log_table.horizontalHeader()
-        header.setSectionResizeMode(
-            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(
-            self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(
-            self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
         layout.addWidget(self._log_table)
@@ -386,9 +373,7 @@ class DebugPanel(QDockWidget):
         self._var_tree.setHeaderLabels(["Name", "Value", "Type"])
         self._var_tree.setAlternatingRowColors(True)
         self._var_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._var_tree.customContextMenuRequested.connect(
-            self._show_variable_context_menu
-        )
+        self._var_tree.customContextMenuRequested.connect(self._show_variable_context_menu)
 
         header = self._var_tree.header()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
@@ -408,19 +393,11 @@ class DebugPanel(QDockWidget):
 
         self._call_stack_table = QTableWidget()
         self._call_stack_table.setColumnCount(4)
-        self._call_stack_table.setHorizontalHeaderLabels(
-            ["#", "Node", "Type", "Entry Time"]
-        )
+        self._call_stack_table.setHorizontalHeaderLabels(["#", "Node", "Type", "Entry Time"])
         self._call_stack_table.setAlternatingRowColors(True)
-        self._call_stack_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._call_stack_table.itemDoubleClicked.connect(
-            self._on_call_stack_double_click
-        )
-        self._call_stack_table.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
+        self._call_stack_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._call_stack_table.itemDoubleClicked.connect(self._on_call_stack_double_click)
+        self._call_stack_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         header = self._call_stack_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -461,9 +438,7 @@ class DebugPanel(QDockWidget):
         self._watch_table.setColumnCount(3)
         self._watch_table.setHorizontalHeaderLabels(["Expression", "Value", "Error"])
         self._watch_table.setAlternatingRowColors(True)
-        self._watch_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._watch_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._watch_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         header = self._watch_table.horizontalHeader()
@@ -508,14 +483,10 @@ class DebugPanel(QDockWidget):
             ["Enabled", "Node", "Type", "Condition", "Hit Count"]
         )
         self._bp_table.setAlternatingRowColors(True)
-        self._bp_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._bp_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._bp_table.itemDoubleClicked.connect(self._on_bp_double_click)
         self._bp_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._bp_table.customContextMenuRequested.connect(
-            self._show_breakpoint_context_menu
-        )
+        self._bp_table.customContextMenuRequested.connect(self._show_breakpoint_context_menu)
 
         header = self._bp_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -611,16 +582,10 @@ class DebugPanel(QDockWidget):
 
         self._snapshot_table = QTableWidget()
         self._snapshot_table.setColumnCount(4)
-        self._snapshot_table.setHorizontalHeaderLabels(
-            ["ID", "Node", "Time", "Description"]
-        )
+        self._snapshot_table.setHorizontalHeaderLabels(["ID", "Node", "Time", "Description"])
         self._snapshot_table.setAlternatingRowColors(True)
-        self._snapshot_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._snapshot_table.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
+        self._snapshot_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._snapshot_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         header = self._snapshot_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
@@ -897,9 +862,7 @@ class DebugPanel(QDockWidget):
         self._bp_table.insertRow(row)
 
         enabled_item = QTableWidgetItem()
-        enabled_item.setCheckState(
-            Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked
-        )
+        enabled_item.setCheckState(Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked)
         enabled_item.setData(Qt.ItemDataRole.UserRole, node_id)
         self._bp_table.setItem(row, 0, enabled_item)
 
@@ -940,9 +903,7 @@ class DebugPanel(QDockWidget):
     def _on_auto_scroll_toggled(self) -> None:
         """Handle auto-scroll toggle."""
         self._auto_scroll = self._auto_scroll_btn.isChecked()
-        self._auto_scroll_btn.setText(
-            f"Auto-scroll: {'ON' if self._auto_scroll else 'OFF'}"
-        )
+        self._auto_scroll_btn.setText(f"Auto-scroll: {'ON' if self._auto_scroll else 'OFF'}")
 
     def _on_log_double_click(self, item: QTableWidgetItem) -> None:
         """Handle log entry double-click to navigate to node."""
@@ -1101,9 +1062,7 @@ class DebugPanel(QDockWidget):
 
         edit_condition_action = QAction("Edit Condition...", self)
         edit_condition_action.setData({"node_id": node_id, "row": row})
-        edit_condition_action.triggered.connect(
-            self._on_edit_condition_action_triggered
-        )
+        edit_condition_action.triggered.connect(self._on_edit_condition_action_triggered)
         menu.addAction(edit_condition_action)
 
         menu.addSeparator()
@@ -1252,9 +1211,7 @@ class DebugPanel(QDockWidget):
         """Restore selected snapshot."""
         row = self._snapshot_table.currentRow()
         if row < 0:
-            QMessageBox.information(
-                self, "Restore", "Please select a snapshot to restore."
-            )
+            QMessageBox.information(self, "Restore", "Please select a snapshot to restore.")
             return
 
         id_item = self._snapshot_table.item(row, 0)
@@ -1377,9 +1334,7 @@ class DebugPanel(QDockWidget):
         node_id = data.get("node_id", "") if isinstance(data, dict) else ""
         node_name = data.get("node_name", "") if isinstance(data, dict) else ""
         duration = data.get("duration_ms", 0) if isinstance(data, dict) else 0
-        self.add_log(
-            "Success", f"Completed: {node_name} ({duration}ms)", node_id, node_name
-        )
+        self.add_log("Success", f"Completed: {node_name} ({duration}ms)", node_id, node_name)
 
     def _on_node_execution_failed(self, event: "Event") -> None:
         """Handle node execution failed event."""

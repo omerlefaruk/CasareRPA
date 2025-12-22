@@ -31,6 +31,7 @@ class VisualScheduleTriggerNode(VisualTriggerNode):
     __identifier__ = "casare_rpa.triggers"
     NODE_NAME = "Schedule Trigger"
     NODE_CATEGORY = "triggers/general"
+    CASARE_NODE_CLASS = "ScheduleTriggerNode"
 
     def _setup_payload_ports(self) -> None:
         """Setup schedule-specific output ports."""

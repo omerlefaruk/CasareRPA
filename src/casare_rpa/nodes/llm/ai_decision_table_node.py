@@ -12,6 +12,8 @@ from typing import Any, Dict, List
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -21,6 +23,41 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResource
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
+@properties(
+    PropertyDef(
+        "context",
+        PropertyType.ANY,
+        required=True,
+        label="Context",
+        tooltip="Context data for decision matching",
+    ),
+    PropertyDef(
+        "decision_table",
+        PropertyType.TEXT,
+        default="",
+        label="Decision Table",
+        placeholder='{"rules": [...], "default_action": "..."}',
+        tooltip="JSON decision table with rules and default action",
+        essential=True,
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model for fuzzy matching",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.0,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature for consistent matching",
+    ),
+)
+@node(category="llm")
 class AIDecisionTableNode(LLMBaseNode):
     """
     Evaluate a decision table using AI fuzzy matching.
@@ -53,8 +90,8 @@ class AIDecisionTableNode(LLMBaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         # Execution ports
-        self.add_exec_input_port("exec_in")
-        self.add_exec_output_port("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
 
         # Data inputs
         self.add_input_port("decision_table", DataType.DICT)
@@ -78,10 +115,6 @@ class AIDecisionTableNode(LLMBaseNode):
         """Execute decision table evaluation."""
         decision_table = self.get_parameter("decision_table")
         eval_context = self.get_parameter("context")
-
-        if hasattr(context, "resolve_value"):
-            decision_table = context.resolve_value(decision_table)
-            eval_context = context.resolve_value(eval_context)
 
         # Parse decision table if string
         if isinstance(decision_table, str):
@@ -121,9 +154,6 @@ class AIDecisionTableNode(LLMBaseNode):
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.0
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         # Format rules for prompt
         rules_str = self._format_rules_for_prompt(rules)
@@ -223,9 +253,7 @@ Return ONLY the JSON, no other text."""
             priority = rule.get("priority", 0)
 
             cond_str = ", ".join(f"{k}={v}" for k, v in conditions.items())
-            lines.append(
-                f"Rule {i}: IF ({cond_str}) THEN action='{action}' [priority={priority}]"
-            )
+            lines.append(f"Rule {i}: IF ({cond_str}) THEN action='{action}' [priority={priority}]")
 
         return "\n".join(lines)
 

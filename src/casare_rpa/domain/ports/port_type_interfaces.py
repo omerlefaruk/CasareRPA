@@ -73,9 +73,7 @@ class TypeCompatibilityRule(Protocol):
         """
         ...
 
-    def get_incompatibility_reason(
-        self, source: DataType, target: DataType
-    ) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
         """
         Get human-readable reason why types are incompatible.
 
@@ -118,9 +116,7 @@ class PortTypeRegistryProtocol(Protocol):
         """Check if source type can connect to target type."""
         ...
 
-    def get_incompatibility_reason(
-        self, source: DataType, target: DataType
-    ) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
         """Get reason why types are incompatible."""
         ...
 
@@ -223,9 +219,7 @@ class DefaultCompatibilityRule:
         # Default: incompatible
         return False
 
-    def get_incompatibility_reason(
-        self, source: DataType, target: DataType
-    ) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
         """
         Get human-readable reason why types are incompatible.
 
@@ -242,8 +236,7 @@ class DefaultCompatibilityRule:
         # Provide helpful error messages
         if source in self.STRICT_TYPES:
             return (
-                f"'{source.name}' requires exact type match. "
-                f"Cannot convert to '{target.name}'."
+                f"'{source.name}' requires exact type match. " f"Cannot convert to '{target.name}'."
             )
 
         if target in self.STRICT_TYPES:

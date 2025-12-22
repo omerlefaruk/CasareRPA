@@ -69,9 +69,7 @@ class CredentialAwareMixin:
         if cred_name:
             cred_name = context.resolve_value(cred_name)
             if cred_name:
-                resolved = await self._get_from_vault(
-                    context, cred_name, credential_field
-                )
+                resolved = await self._get_from_vault(context, cred_name, credential_field)
                 if resolved:
                     return resolved
 
@@ -146,9 +144,7 @@ class CredentialAwareMixin:
             password = password or os.environ.get(f"{env_prefix}_PASSWORD")
 
         if required and (not username or not password):
-            raise ValueError(
-                f"Required username/password not found (prefix: {env_prefix})"
-            )
+            raise ValueError(f"Required username/password not found (prefix: {env_prefix})")
 
         return username, password
 
@@ -193,9 +189,7 @@ class CredentialAwareMixin:
             secret = secret or os.environ.get(f"{env_prefix}_CLIENT_SECRET")
 
         if required and not cid:
-            raise ValueError(
-                f"Required OAuth credentials not found (prefix: {env_prefix})"
-            )
+            raise ValueError(f"Required OAuth credentials not found (prefix: {env_prefix})")
 
         return cid, secret
 
@@ -254,10 +248,13 @@ class CredentialAwareMixin:
             logger.warning(f"Vault resolution error: {e}")
             return None
 
-    # Protocol Stub (Dynamic Mixin)
+    # Protocol Stub - MUST delegate to base class via super()
+    # This stub is for type checkers but MUST NOT shadow BaseNode.get_parameter!
+    # Using NotImplementedError ensures we detect if MRO is wrong
     def get_parameter(self, name: str, default: Any = None) -> Any:
-        """Stub for type checkers; implemented by Host Node."""
-        ...
+        """Delegate to actual implementation in Host Node (BaseNode)."""
+        # Use super() to call the next class in MRO (BaseNode.get_parameter)
+        return super().get_parameter(name, default)  # type: ignore[misc]
 
 
 async def resolve_node_credential(
@@ -318,9 +315,7 @@ async def _get_provider(
             return cast(CredentialProviderProtocol, p)
 
     if hasattr(context, "resources") and "credential_provider" in context.resources:
-        return cast(
-            CredentialProviderProtocol, context.resources["credential_provider"]
-        )
+        return cast(CredentialProviderProtocol, context.resources["credential_provider"])
 
     return None
 

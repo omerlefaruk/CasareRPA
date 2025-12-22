@@ -32,8 +32,35 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
 
 
-@node(category="integration")
 @properties(
+    PropertyDef(
+        "host",
+        PropertyType.STRING,
+        required=True,
+        label="Host",
+        tooltip="FTP server hostname",
+    ),
+    PropertyDef(
+        "port",
+        PropertyType.INTEGER,
+        default=21,
+        label="Port",
+        tooltip="FTP server port",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        required=True,
+        label="Username",
+        tooltip="FTP username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        required=True,
+        label="Password",
+        tooltip="FTP password",
+    ),
     PropertyDef(
         "passive",
         PropertyType.BOOLEAN,
@@ -73,6 +100,7 @@ from casare_rpa.utils import safe_int
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@node(category="file")
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -140,9 +168,7 @@ class FTPConnectNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for FTP connect"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP connect")
 
                     # Create FTP connection
                     if use_tls:
@@ -165,9 +191,7 @@ class FTPConnectNode(BaseNode):
                     self.set_output_value("server_message", welcome)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(
-                        f"FTP connected successfully to {host} (attempt {attempts})"
-                    )
+                    logger.info(f"FTP connected successfully to {host} (attempt {attempts})")
 
                     return {
                         "success": True,
@@ -202,8 +226,21 @@ class FTPConnectNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
+    PropertyDef(
+        "local_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Local Path",
+        tooltip="Local file path to upload",
+    ),
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote destination path on FTP server",
+    ),
     PropertyDef(
         "binary_mode",
         PropertyType.BOOLEAN,
@@ -235,6 +272,7 @@ class FTPConnectNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@node(category="file")
 class FTPUploadNode(BaseNode):
     """
     Upload a file to FTP server.
@@ -317,9 +355,7 @@ class FTPUploadNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for FTP upload"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP upload")
 
                     # Upload file
                     with open(local, "rb") as f:
@@ -332,9 +368,7 @@ class FTPUploadNode(BaseNode):
                     self.set_output_value("bytes_sent", file_size)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(
-                        f"FTP upload completed: {remote_path} (attempt {attempts})"
-                    )
+                    logger.info(f"FTP upload completed: {remote_path} (attempt {attempts})")
 
                     return {
                         "success": True,
@@ -363,8 +397,21 @@ class FTPUploadNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote file path on FTP server to download",
+    ),
+    PropertyDef(
+        "local_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Local Path",
+        tooltip="Local destination path",
+    ),
     PropertyDef(
         "binary_mode",
         PropertyType.BOOLEAN,
@@ -396,6 +443,7 @@ class FTPUploadNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@node(category="file")
 class FTPDownloadNode(BaseNode):
     """
     Download a file from FTP server.
@@ -468,9 +516,7 @@ class FTPDownloadNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for FTP download"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP download")
 
                     # Download file
                     bytes_received = 0
@@ -528,8 +574,15 @@ class FTPDownloadNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        default=".",
+        label="Remote Path",
+        tooltip="Remote directory path to list",
+    ),
     PropertyDef(
         "detailed",
         PropertyType.BOOLEAN,
@@ -538,6 +591,7 @@ class FTPDownloadNode(BaseNode):
         tooltip="Get detailed file information instead of just names",
     ),
 )
+@node(category="file")
 class FTPListNode(BaseNode):
     """
     List contents of a directory on FTP server.
@@ -608,8 +662,16 @@ class FTPListNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote file path to delete",
+    ),
+)
+@node(category="file")
 class FTPDeleteNode(BaseNode):
     """
     Delete a file on FTP server.
@@ -668,8 +730,14 @@ class FTPDeleteNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote directory path to create",
+    ),
     PropertyDef(
         "parents",
         PropertyType.BOOLEAN,
@@ -678,6 +746,7 @@ class FTPDeleteNode(BaseNode):
         tooltip="Create parent directories if they don't exist",
     ),
 )
+@node(category="file")
 class FTPMakeDirNode(BaseNode):
     """
     Create a directory on FTP server.
@@ -755,8 +824,16 @@ class FTPMakeDirNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote directory path to remove",
+    ),
+)
+@node(category="file")
 class FTPRemoveDirNode(BaseNode):
     """
     Remove a directory on FTP server.
@@ -815,8 +892,23 @@ class FTPRemoveDirNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "old_path",
+        PropertyType.STRING,
+        required=True,
+        label="Old Path",
+        tooltip="Current remote path",
+    ),
+    PropertyDef(
+        "new_path",
+        PropertyType.STRING,
+        required=True,
+        label="New Path",
+        tooltip="New remote path",
+    ),
+)
+@node(category="file")
 class FTPRenameNode(BaseNode):
     """
     Rename a file or directory on FTP server.
@@ -878,8 +970,8 @@ class FTPRenameNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
 @properties()  # No config
+@node(category="file")
 class FTPDisconnectNode(BaseNode):
     """
     Disconnect from FTP server.
@@ -931,8 +1023,16 @@ class FTPDisconnectNode(BaseNode):
         return True, ""
 
 
-@node(category="integration")
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "remote_path",
+        PropertyType.STRING,
+        required=True,
+        label="Remote Path",
+        tooltip="Remote file path to get size of",
+    ),
+)
+@node(category="file")
 class FTPGetSizeNode(BaseNode):
     """
     Get the size of a file on FTP server.

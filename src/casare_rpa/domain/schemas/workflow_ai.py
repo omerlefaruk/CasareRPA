@@ -87,9 +87,7 @@ def _validate_config_recursive(value: Any, path: str = "config", depth: int = 0)
         ValueError: If validation fails
     """
     if depth > MAX_CONFIG_DEPTH:
-        raise ValueError(
-            f"Config at '{path}' exceeds maximum depth of {MAX_CONFIG_DEPTH}"
-        )
+        raise ValueError(f"Config at '{path}' exceeds maximum depth of {MAX_CONFIG_DEPTH}")
 
     if value is None:
         return value
@@ -99,9 +97,7 @@ def _validate_config_recursive(value: Any, path: str = "config", depth: int = 0)
 
     if isinstance(value, str):
         if len(value) > MAX_STRING_LENGTH:
-            raise ValueError(
-                f"String at '{path}' exceeds max length {MAX_STRING_LENGTH}"
-            )
+            raise ValueError(f"String at '{path}' exceeds max length {MAX_STRING_LENGTH}")
         _check_dangerous_patterns(value, path)
         return value
 
@@ -115,13 +111,9 @@ def _validate_config_recursive(value: Any, path: str = "config", depth: int = 0)
         validated = {}
         for k, v in value.items():
             if not isinstance(k, str):
-                raise ValueError(
-                    f"Config key at '{path}' must be string, got {type(k).__name__}"
-                )
+                raise ValueError(f"Config key at '{path}' must be string, got {type(k).__name__}")
             if len(k) > MAX_NODE_ID_LENGTH:
-                raise ValueError(
-                    f"Config key at '{path}' exceeds max length {MAX_NODE_ID_LENGTH}"
-                )
+                raise ValueError(f"Config key at '{path}' exceeds max length {MAX_NODE_ID_LENGTH}")
             validated[k] = _validate_config_recursive(v, f"{path}.{k}", depth + 1)
         return validated
 
@@ -560,9 +552,7 @@ class WorkflowAISchema(BaseModel):
 
         # Check connection count
         if len(self.connections) > MAX_CONNECTIONS:
-            raise ValueError(
-                f"Workflow exceeds maximum of {MAX_CONNECTIONS} connections"
-            )
+            raise ValueError(f"Workflow exceeds maximum of {MAX_CONNECTIONS} connections")
 
         # Validate node_id consistency (dict key must match node.node_id)
         for node_id, node in self.nodes.items():
@@ -575,13 +565,9 @@ class WorkflowAISchema(BaseModel):
         node_ids = set(self.nodes.keys())
         for i, conn in enumerate(self.connections):
             if conn.source_node not in node_ids:
-                raise ValueError(
-                    f"Connection {i}: source_node '{conn.source_node}' not found"
-                )
+                raise ValueError(f"Connection {i}: source_node '{conn.source_node}' not found")
             if conn.target_node not in node_ids:
-                raise ValueError(
-                    f"Connection {i}: target_node '{conn.target_node}' not found"
-                )
+                raise ValueError(f"Connection {i}: target_node '{conn.target_node}' not found")
 
         # Validate variables for security
         self._validate_variables()
@@ -631,7 +617,7 @@ class WorkflowAISchema(BaseModel):
                         "node_id": "string (must match dict key)",
                         "node_type": "string (PascalCase + Node suffix)",
                         "config": "dict (node-specific parameters)",
-                        "position": {"x": "float", "y": "float"},
+                        "position": "[float, float]",
                     }
                 },
                 "connections": [

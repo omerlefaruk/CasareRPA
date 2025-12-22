@@ -91,9 +91,7 @@ class JsonUnitOfWork(AbstractUnitOfWork):
         try:
             self._storage_path.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            logger.error(
-                f"Failed to create storage directory {self._storage_path}: {e}"
-            )
+            logger.error(f"Failed to create storage directory {self._storage_path}: {e}")
             raise
 
         self._pending_events.clear()
@@ -121,9 +119,7 @@ class JsonUnitOfWork(AbstractUnitOfWork):
             exc_tb: Exception traceback if an error occurred.
         """
         if exc_type is not None:
-            logger.warning(
-                f"Unit of Work exiting with exception: {exc_type.__name__}: {exc_val}"
-            )
+            logger.warning(f"Unit of Work exiting with exception: {exc_type.__name__}: {exc_val}")
             await self.rollback()
         elif not self._committed:
             logger.debug("Unit of Work exiting without commit, rolling back")
@@ -147,9 +143,7 @@ class JsonUnitOfWork(AbstractUnitOfWork):
 
         # Mark as committed (persistence is assumed successful at this point)
         self._committed = True
-        logger.debug(
-            f"Unit of Work committed with {len(self._pending_events)} pending events"
-        )
+        logger.debug(f"Unit of Work committed with {len(self._pending_events)} pending events")
 
         # Publish domain events
         if self._event_bus and self._pending_events:
@@ -220,9 +214,7 @@ class JsonUnitOfWork(AbstractUnitOfWork):
                 self._event_bus.publish(event)
                 published_count += 1
             except Exception as e:
-                logger.error(
-                    f"Failed to publish domain event {type(event).__name__}: {e}"
-                )
+                logger.error(f"Failed to publish domain event {type(event).__name__}: {e}")
 
         if published_count > 0:
             logger.debug(f"Published {published_count} domain events")

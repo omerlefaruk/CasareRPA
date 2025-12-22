@@ -1,18 +1,29 @@
 """
 CasareRPA Configuration Module.
 
-Provides centralized, typed configuration management using Pydantic.
+Provides centralized, typed configuration management using Pydantic and frozen dataclasses.
 
 This is the single source of truth for all configuration in CasareRPA.
 Do NOT use casare_rpa.utils.config - use this module instead.
 
+Configuration Hierarchy:
+    - AppConfig: Unified frozen dataclass combining all domain configs
+    - Config: Pydantic model for environment-based service configuration
+
 Usage:
+    # Unified application config (frozen dataclasses)
+    from casare_rpa.config import get_app_config
+
+    config = get_app_config()
+    print(config.timeouts.http_timeout_s)
+    print(config.ports.orchestrator)
+    print(config.retry.max_attempts)
+    print(config.limits.workflow_max_nodes)
+
+    # Legacy Pydantic config (for service configuration)
     from casare_rpa.config import get_config, Config
 
-    # Load configuration (cached singleton)
     config = get_config()
-
-    # Access typed settings
     print(config.database.url)
     print(config.orchestrator.port)
 
@@ -122,6 +133,58 @@ from casare_rpa.config.file_loader import (
     load_config_file_with_env,
 )
 
+# Frozen dataclass configs (new unified config system)
+from casare_rpa.config.timeout_config import (
+    TimeoutConfig as TimeoutConfigFrozen,
+    get_timeout_config,
+    reset_timeout_config,
+    DEFAULT_HTTP_TIMEOUT_S,
+    DEFAULT_BROWSER_DOWNLOAD_S,
+    DEFAULT_PAGE_LOAD_MS,
+    DEFAULT_NODE_TIMEOUT_S,
+)
+from casare_rpa.config.port_config import (
+    PortConfig,
+    get_port_config,
+    reset_port_config,
+    DEFAULT_ORCHESTRATOR_PORT,
+    DEFAULT_DATABASE_PORT,
+    DEFAULT_VAULT_PORT,
+    DEFAULT_VITE_DEV_PORT,
+)
+from casare_rpa.config.retry_config import (
+    RetryConfig,
+    get_retry_config,
+    reset_retry_config,
+    DEFAULT_MAX_ATTEMPTS,
+    DEFAULT_BASE_DELAY_MS,
+    DEFAULT_MAX_DELAY_MS,
+    DEFAULT_BACKOFF_MULTIPLIER,
+)
+from casare_rpa.config.limits_config import (
+    LimitsConfig,
+    get_limits_config,
+    reset_limits_config,
+    DEFAULT_WORKFLOW_MAX_NODES,
+    DEFAULT_WORKFLOW_MAX_CONNECTIONS,
+    DEFAULT_HTML_MAX_LENGTH,
+    DEFAULT_LLM_MAX_TOKENS,
+    DEFAULT_LLM_CONTEXT_CHARS,
+)
+from casare_rpa.config.app_config import (
+    AppConfig,
+    get_app_config,
+    reset_app_config,
+    validate_app_config,
+)
+
+# Crypto security configuration (PBKDF2 iterations, etc.)
+from casare_rpa.config.security_config import (
+    CryptoSecurityConfig,
+    get_crypto_security_config,
+    reset_crypto_security_config,
+)
+
 
 __all__ = [
     # Main config class
@@ -208,4 +271,46 @@ __all__ = [
     "load_config_file_with_env",
     "YAML_AVAILABLE",
     "TOML_AVAILABLE",
+    # Unified app config (frozen dataclasses)
+    "AppConfig",
+    "get_app_config",
+    "reset_app_config",
+    "validate_app_config",
+    # Timeout config
+    "TimeoutConfigFrozen",
+    "get_timeout_config",
+    "reset_timeout_config",
+    "DEFAULT_HTTP_TIMEOUT_S",
+    "DEFAULT_BROWSER_DOWNLOAD_S",
+    "DEFAULT_PAGE_LOAD_MS",
+    "DEFAULT_NODE_TIMEOUT_S",
+    # Port config
+    "PortConfig",
+    "get_port_config",
+    "reset_port_config",
+    "DEFAULT_ORCHESTRATOR_PORT",
+    "DEFAULT_DATABASE_PORT",
+    "DEFAULT_VAULT_PORT",
+    "DEFAULT_VITE_DEV_PORT",
+    # Retry config
+    "RetryConfig",
+    "get_retry_config",
+    "reset_retry_config",
+    "DEFAULT_MAX_ATTEMPTS",
+    "DEFAULT_BASE_DELAY_MS",
+    "DEFAULT_MAX_DELAY_MS",
+    "DEFAULT_BACKOFF_MULTIPLIER",
+    # Limits config
+    "LimitsConfig",
+    "get_limits_config",
+    "reset_limits_config",
+    "DEFAULT_WORKFLOW_MAX_NODES",
+    "DEFAULT_WORKFLOW_MAX_CONNECTIONS",
+    "DEFAULT_HTML_MAX_LENGTH",
+    "DEFAULT_LLM_MAX_TOKENS",
+    "DEFAULT_LLM_CONTEXT_CHARS",
+    # Crypto security config (PBKDF2 iterations)
+    "CryptoSecurityConfig",
+    "get_crypto_security_config",
+    "reset_crypto_security_config",
 ]

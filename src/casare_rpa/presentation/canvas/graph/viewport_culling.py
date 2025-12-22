@@ -16,6 +16,7 @@ from typing import Dict, Set, Tuple, Optional, List
 from PySide6.QtCore import QRectF, QObject, Signal
 
 from loguru import logger
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 
 # ============================================================================
@@ -166,15 +167,13 @@ class ViewportCullingManager(QObject):
     # Signal emitted when visibility changes
     visibility_changed = Signal(set, set)  # (visible_ids, hidden_ids)
 
-    def __init__(
-        self, cell_size: int = 500, margin: int = 200, parent: Optional[QObject] = None
-    ):
+    def __init__(self, cell_size: int = 500, margin: int = 1000, parent: Optional[QObject] = None):
         """
         Initialize the viewport culling manager.
 
         Args:
             cell_size: Size of spatial hash cells (larger = fewer cells)
-            margin: Extra margin around viewport for culling
+            margin: Extra margin around viewport for culling (default 1000 for smoother panning)
             parent: Optional parent QObject
         """
         super().__init__(parent)
@@ -327,7 +326,8 @@ class ViewportCullingManager(QObject):
         self._apply_visibility_changes(newly_visible, newly_hidden)
 
         # Update pipe visibility
-        visible_pipes = self._update_pipe_visibility()
+        # Pass expanded_rect to check intersection for pipes
+        visible_pipes = self._update_pipe_visibility(expanded_rect)
 
         # Update stats
         elapsed = (time.perf_counter() - start) * 1000
@@ -338,6 +338,13 @@ class ViewportCullingManager(QObject):
         # Emit signal if there were changes
         if newly_visible or newly_hidden:
             self.visibility_changed.emit(newly_visible, newly_hidden)
+            log_canvas_event(
+                "viewport_cull_update",
+                newly_visible=len(newly_visible),
+                newly_hidden=len(newly_hidden),
+                visible_nodes=len(self._visible_nodes),
+                total_nodes=len(self._all_nodes),
+            )
 
         return newly_visible, newly_hidden
 
@@ -365,27 +372,45 @@ class ViewportCullingManager(QObject):
                 if item.scene() is not None:
                     item.setVisible(False)
 
-    def _update_pipe_visibility(self) -> int:
+    def _update_pipe_visibility(self, viewport_rect: QRectF) -> int:
         """
-        Update visibility of pipes based on connected node visibility.
+        Update visibility of pipes based on viewport intersection.
 
-        A pipe is visible only if BOTH its source and target nodes are visible.
+        FIXED: Previously only showed pipe if BOTH nodes were visible.
+        Now shows pipe if it intersects the viewport rect, or if EITHER
+        node is visible as a fallback.
+
+        Args:
+            viewport_rect: The expanded viewport rectangle to check against
 
         Returns:
             Number of visible pipes
         """
         visible_count = 0
         for pipe_id, (source_id, target_id, pipe_item) in self._pipes.items():
-            # Pipe is visible if both endpoints are visible
-            should_be_visible = (
-                source_id in self._visible_nodes and target_id in self._visible_nodes
-            )
+            should_be_visible = False
 
+            # Check 1: Intersection with viewport (Most accurate)
             if (
                 pipe_item
-                and hasattr(pipe_item, "setVisible")
+                and hasattr(pipe_item, "sceneBoundingRect")
                 and hasattr(pipe_item, "scene")
+                and pipe_item.scene() is not None
             ):
+                # If pipe has a valid scene rect, check intersection
+                # We use the expanded rect (with margin) to ensure smooth panning
+                if pipe_item.sceneBoundingRect().intersects(viewport_rect):
+                    should_be_visible = True
+
+            # Check 2: Fallback to node visibility if intersection check fails/unavailable
+            # Relaxed condition: Visible if EITHER source OR target is visible
+            # (Old logic was AND, which caused long wires to disappear)
+            if not should_be_visible:
+                should_be_visible = (
+                    source_id in self._visible_nodes or target_id in self._visible_nodes
+                )
+
+            if pipe_item and hasattr(pipe_item, "setVisible") and hasattr(pipe_item, "scene"):
                 if pipe_item.scene() is not None:
                     pipe_item.setVisible(should_be_visible)
 
@@ -397,11 +422,7 @@ class ViewportCullingManager(QObject):
     def _show_all_pipes(self) -> None:
         """Show all pipes (used when culling is disabled)."""
         for pipe_id, (_, _, pipe_item) in self._pipes.items():
-            if (
-                pipe_item
-                and hasattr(pipe_item, "setVisible")
-                and hasattr(pipe_item, "scene")
-            ):
+            if pipe_item and hasattr(pipe_item, "setVisible") and hasattr(pipe_item, "scene"):
                 if pipe_item.scene() is not None:
                     pipe_item.setVisible(True)
 
@@ -441,7 +462,7 @@ class ViewportCullingManager(QObject):
 
 
 def create_viewport_culler_for_graph(
-    graph_widget, cell_size: int = 500, margin: int = 200
+    graph_widget, cell_size: int = 500, margin: int = 1000
 ) -> ViewportCullingManager:
     """
     Create and integrate a ViewportCullingManager with a NodeGraphWidget.

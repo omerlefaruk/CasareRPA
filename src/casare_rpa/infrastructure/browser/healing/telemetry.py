@@ -310,9 +310,7 @@ class HealingTelemetry:
 
         # Update selector-specific stats
         if event.selector not in self._selector_stats:
-            self._selector_stats[event.selector] = SelectorStats(
-                selector=event.selector
-            )
+            self._selector_stats[event.selector] = SelectorStats(selector=event.selector)
 
         stats = self._selector_stats[event.selector]
         stats.total_uses += 1
@@ -359,12 +357,8 @@ class HealingTelemetry:
             healing_attempts = self._total_healed_success + self._total_failures
             if healing_attempts > 0:
                 healing_rate = (healing_attempts / self._total_uses) * 100
-                healing_success_rate = (
-                    self._total_healed_success / healing_attempts
-                ) * 100
-                avg_healing_time = self._total_healing_time_ms / max(
-                    1, self._total_healed_success
-                )
+                healing_success_rate = (self._total_healed_success / healing_attempts) * 100
+                avg_healing_time = self._total_healing_time_ms / max(1, self._total_healed_success)
 
         return {
             "total_uses": self._total_uses,
@@ -482,8 +476,7 @@ class HealingTelemetry:
             "tier_breakdown": self.get_tier_stats(),
             "problematic_selectors": [s.to_dict() for s in problematic[:20]],
             "recent_failures": [
-                e.to_dict()
-                for e in self.get_recent_events(limit=50, success_only=False)
+                e.to_dict() for e in self.get_recent_events(limit=50, success_only=False)
             ],
         }
 

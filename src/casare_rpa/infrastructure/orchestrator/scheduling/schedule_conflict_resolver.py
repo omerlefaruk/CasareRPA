@@ -93,9 +93,7 @@ class DependencyTracker:
             for event in waiters:
                 event.set()
 
-        logger.debug(
-            f"Recorded completion for schedule {schedule_id}: success={success}"
-        )
+        logger.debug(f"Recorded completion for schedule {schedule_id}: success={success}")
 
     def is_dependency_satisfied(
         self,
@@ -215,9 +213,7 @@ class DependencyTracker:
 
         # Create wait tasks
         tasks = {
-            dep_id: asyncio.create_task(
-                self.wait_for_dependency(dep_id, timeout_seconds)
-            )
+            dep_id: asyncio.create_task(self.wait_for_dependency(dep_id, timeout_seconds))
             for dep_id in dependency_ids
         }
 
@@ -447,9 +443,7 @@ class DependencyGraphValidator:
         """
         self._graph = graph
 
-    def build_graph_from_dependencies(
-        self, dependencies: Dict[str, DependencyConfig]
-    ) -> None:
+    def build_graph_from_dependencies(self, dependencies: Dict[str, DependencyConfig]) -> None:
         """
         Build graph from dependency configurations.
 

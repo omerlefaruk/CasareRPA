@@ -87,9 +87,7 @@ def validate_sql_identifier(value: str, name: str = "identifier") -> str:
     for keyword in SQL_KEYWORDS:
         # Match whole words only (not partial matches)
         if re.search(rf"\b{re.escape(keyword)}\b", value_upper):
-            raise ValidationError(
-                f"Invalid {name}: '{value}' contains SQL keyword '{keyword}'"
-            )
+            raise ValidationError(f"Invalid {name}: '{value}' contains SQL keyword '{keyword}'")
 
     return value
 

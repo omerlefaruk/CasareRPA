@@ -141,9 +141,7 @@ class FileSystemProjectRepository(ProjectRepository):
     # Scenario Operations
     # =========================================================================
 
-    async def get_scenario(
-        self, project_id: str, scenario_id: str
-    ) -> Optional[Scenario]:
+    async def get_scenario(self, project_id: str, scenario_id: str) -> Optional[Scenario]:
         """Get scenario by ID."""
         try:
             project = await self.get_by_id(project_id)
@@ -239,9 +237,7 @@ class FileSystemProjectRepository(ProjectRepository):
             logger.error(f"Failed to get project variables: {e}")
             return VariablesFile(scope=VariableScope.PROJECT)
 
-    async def save_project_variables(
-        self, project_id: str, variables: VariablesFile
-    ) -> None:
+    async def save_project_variables(self, project_id: str, variables: VariablesFile) -> None:
         """Save project-level variables."""
         try:
             project = await self.get_by_id(project_id)
@@ -292,9 +288,7 @@ class FileSystemProjectRepository(ProjectRepository):
         """Get global credential bindings."""
         return self._storage.load_global_credentials()
 
-    async def save_global_credentials(
-        self, credentials: CredentialBindingsFile
-    ) -> None:
+    async def save_global_credentials(self, credentials: CredentialBindingsFile) -> None:
         """Save global credential bindings."""
         self._storage.save_global_credentials(credentials)
 

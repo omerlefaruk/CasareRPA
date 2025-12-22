@@ -395,17 +395,13 @@ class CVHealer:
         try:
             element = await page.query_selector(selector)
             if not element:
-                logger.warning(
-                    f"Cannot capture CV context: element not found: {selector}"
-                )
+                logger.warning(f"Cannot capture CV context: element not found: {selector}")
                 return None
 
             # Get element properties
             bounding_box = await element.bounding_box()
             if not bounding_box:
-                logger.warning(
-                    f"Cannot capture CV context: no bounding box: {selector}"
-                )
+                logger.warning(f"Cannot capture CV context: no bounding box: {selector}")
                 return None
 
             text_content = await element.text_content() or ""
@@ -511,9 +507,7 @@ class CVHealer:
             )
             if ocr_result.success:
                 return ocr_result
-            remaining_budget = self._budget_ms - (
-                (time.perf_counter() - start_time) * 1000
-            )
+            remaining_budget = self._budget_ms - ((time.perf_counter() - start_time) * 1000)
 
         # Strategy 2: Template matching
         if template_bytes and remaining_budget > 300:
@@ -522,9 +516,7 @@ class CVHealer:
             )
             if template_result.success:
                 return template_result
-            remaining_budget = self._budget_ms - (
-                (time.perf_counter() - start_time) * 1000
-            )
+            remaining_budget = self._budget_ms - ((time.perf_counter() - start_time) * 1000)
 
         # Load template from file if provided
         if template_path and template_path.exists() and remaining_budget > 300:
@@ -534,9 +526,7 @@ class CVHealer:
             )
             if template_result.success:
                 return template_result
-            remaining_budget = self._budget_ms - (
-                (time.perf_counter() - start_time) * 1000
-            )
+            remaining_budget = self._budget_ms - ((time.perf_counter() - start_time) * 1000)
 
         # Strategy 3: Visual element detection (for buttons, inputs)
         if ctx and ctx.element_type and remaining_budget > 200:
@@ -545,9 +535,7 @@ class CVHealer:
             )
             if visual_result.success:
                 return visual_result
-            remaining_budget = self._budget_ms - (
-                (time.perf_counter() - start_time) * 1000
-            )
+            remaining_budget = self._budget_ms - ((time.perf_counter() - start_time) * 1000)
 
         # Strategy 4: Pixel fallback (last resort)
         if ctx and ctx.expected_position:
@@ -555,9 +543,7 @@ class CVHealer:
 
         # All strategies failed
         healing_time = (time.perf_counter() - start_time) * 1000
-        logger.warning(
-            f"CV healing failed for: {selector} (time: {healing_time:.1f}ms)"
-        )
+        logger.warning(f"CV healing failed for: {selector} (time: {healing_time:.1f}ms)")
 
         return CVHealingResult(
             success=False,
@@ -589,9 +575,7 @@ class CVHealer:
         """
         try:
             # Run OCR in thread pool to avoid blocking
-            matches = await asyncio.to_thread(
-                self._perform_ocr, screenshot, search_text
-            )
+            matches = await asyncio.to_thread(self._perform_ocr, screenshot, search_text)
 
             if matches:
                 best_match = max(matches, key=lambda m: m.confidence)
@@ -812,9 +796,7 @@ class CVHealer:
         try:
             template = self._bytes_to_cv_image(template_bytes)
 
-            matches = await asyncio.to_thread(
-                self._perform_template_matching, screenshot, template
-            )
+            matches = await asyncio.to_thread(self._perform_template_matching, screenshot, template)
 
             if matches:
                 best_match = max(matches, key=lambda m: m.similarity)
@@ -885,10 +867,7 @@ class CVHealer:
         template_h, template_w = gray_template.shape[:2]
 
         # Skip if template larger than screenshot
-        if (
-            template_h > gray_screenshot.shape[0]
-            or template_w > gray_screenshot.shape[1]
-        ):
+        if template_h > gray_screenshot.shape[0] or template_w > gray_screenshot.shape[1]:
             return []
 
         # Perform template matching with multiple methods
@@ -902,9 +881,7 @@ class CVHealer:
         for method in methods:
             # Use GPU-accelerated template matching if available
             if _gpu_template_match is not None:
-                result, backend = _gpu_template_match(
-                    gray_screenshot, gray_template, method
-                )
+                result, backend = _gpu_template_match(gray_screenshot, gray_template, method)
             else:
                 result = _cv2.matchTemplate(gray_screenshot, gray_template, method)
 
@@ -1083,9 +1060,7 @@ class CVHealer:
         dilated = _cv2.dilate(edges, kernel, iterations=2)
 
         # Find contours
-        contours, _ = _cv2.findContours(
-            dilated, _cv2.RETR_EXTERNAL, _cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = _cv2.findContours(dilated, _cv2.RETR_EXTERNAL, _cv2.CHAIN_APPROX_SIMPLE)
 
         exp_w, exp_h = expected_size
         candidates: List[Dict[str, Any]] = []
@@ -1156,9 +1131,7 @@ class CVHealer:
             click_x = x + w // 2
             click_y = y + h // 2
 
-            logger.warning(
-                f"Using pixel fallback for {selector}: ({click_x}, {click_y})"
-            )
+            logger.warning(f"Using pixel fallback for {selector}: ({click_x}, {click_y})")
 
             return CVHealingResult(
                 success=True,
@@ -1269,9 +1242,7 @@ class CVHealer:
                 logger.error(f"Could not load template: {template_path}")
                 return []
 
-            matches = await asyncio.to_thread(
-                self._perform_template_matching, screenshot, template
-            )
+            matches = await asyncio.to_thread(self._perform_template_matching, screenshot, template)
 
             return [m for m in matches if m.similarity >= self._template_threshold]
 

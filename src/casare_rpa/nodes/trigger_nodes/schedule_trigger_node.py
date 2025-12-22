@@ -4,19 +4,15 @@ CasareRPA - Schedule Trigger Node
 Trigger node that fires on a schedule (cron, interval, once).
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "frequency",
@@ -25,6 +21,7 @@ from casare_rpa.triggers.base import TriggerType
         choices=["once", "interval", "hourly", "daily", "weekly", "monthly", "cron"],
         label="Frequency",
         tooltip="How often to trigger",
+        essential=True,
     ),
     # Time settings
     PropertyDef(
@@ -33,6 +30,7 @@ from casare_rpa.triggers.base import TriggerType
         default=9,
         label="Hour (0-23)",
         tooltip="Hour of day (for daily/weekly/monthly)",
+        display_when={"frequency": ["daily", "weekly", "monthly"]},
     ),
     PropertyDef(
         "time_minute",
@@ -40,6 +38,7 @@ from casare_rpa.triggers.base import TriggerType
         default=0,
         label="Minute (0-59)",
         tooltip="Minute of hour",
+        display_when={"frequency": ["hourly", "daily", "weekly", "monthly"]},
     ),
     # Interval settings
     PropertyDef(
@@ -48,6 +47,7 @@ from casare_rpa.triggers.base import TriggerType
         default=60,
         label="Interval (seconds)",
         tooltip="Interval in seconds (for interval mode)",
+        display_when={"frequency": "interval"},
     ),
     # Weekly/Monthly settings
     PropertyDef(
@@ -57,6 +57,7 @@ from casare_rpa.triggers.base import TriggerType
         choices=["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
         label="Day of Week",
         tooltip="Day of week (for weekly)",
+        display_when={"frequency": "weekly"},
     ),
     PropertyDef(
         "day_of_month",
@@ -64,6 +65,7 @@ from casare_rpa.triggers.base import TriggerType
         default=1,
         label="Day of Month (1-31)",
         tooltip="Day of month (for monthly)",
+        display_when={"frequency": "monthly"},
     ),
     # Cron
     PropertyDef(
@@ -73,6 +75,7 @@ from casare_rpa.triggers.base import TriggerType
         label="Cron Expression",
         placeholder="0 9 * * *",
         tooltip="Cron expression (minute hour day month weekday)",
+        display_when={"frequency": "cron"},
     ),
     # Advanced
     PropertyDef(
@@ -97,8 +100,10 @@ from casare_rpa.triggers.base import TriggerType
         label="Start Time",
         placeholder="2024-01-01T09:00:00",
         tooltip="When to start (for once mode)",
+        display_when={"frequency": "once"},
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class ScheduleTriggerNode(BaseTriggerNode):
     """
     Schedule trigger node that fires on a time-based schedule.
@@ -118,8 +123,8 @@ class ScheduleTriggerNode(BaseTriggerNode):
     trigger_icon = "schedule"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
-        super().__init__(node_id, config)
+    def __init__(self, node_id: str, **kwargs) -> None:
+        super().__init__(node_id, **kwargs)
         self.name = "Schedule Trigger"
         self.node_type = "ScheduleTriggerNode"
 
@@ -135,14 +140,14 @@ class ScheduleTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get schedule-specific configuration."""
         return {
-            "frequency": self.config.get("frequency", "daily"),
-            "time_hour": self.config.get("time_hour", 9),
-            "time_minute": self.config.get("time_minute", 0),
-            "interval_seconds": self.config.get("interval_seconds", 60),
-            "day_of_week": self.config.get("day_of_week", "mon"),
-            "day_of_month": self.config.get("day_of_month", 1),
-            "cron_expression": self.config.get("cron_expression", "0 9 * * *"),
-            "timezone": self.config.get("timezone", "UTC"),
-            "max_runs": self.config.get("max_runs", 0),
-            "start_time": self.config.get("start_time", ""),
+            "frequency": self.get_parameter("frequency", "daily"),
+            "time_hour": self.get_parameter("time_hour", 9),
+            "time_minute": self.get_parameter("time_minute", 0),
+            "interval_seconds": self.get_parameter("interval_seconds", 60),
+            "day_of_week": self.get_parameter("day_of_week", "mon"),
+            "day_of_month": self.get_parameter("day_of_month", 1),
+            "cron_expression": self.get_parameter("cron_expression", "0 9 * * *"),
+            "timezone": self.get_parameter("timezone", "UTC"),
+            "max_runs": self.get_parameter("max_runs", 0),
+            "start_time": self.get_parameter("start_time", ""),
         }

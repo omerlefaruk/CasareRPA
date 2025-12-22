@@ -42,12 +42,19 @@ PROPERTY_NAME_PROP = PropertyDef(
 )
 
 
-@node(category="desktop")
 @properties(
+    PropertyDef(
+        "window",
+        PropertyType.ANY,
+        required=True,
+        label="Window",
+        tooltip="Parent window object",
+    ),
     SELECTOR_PROP,
     TIMEOUT_PROP,
     THROW_ON_NOT_FOUND_PROP,
 )
+@node(category="desktop")
 class FindElementNode(DesktopNodeBase):
     """
     Find a desktop UI element within a window.
@@ -104,7 +111,9 @@ class FindElementNode(DesktopNodeBase):
             raise ValueError(error_msg)
 
         if not selector:
-            error_msg = "Selector is required. Provide a selector dictionary with 'strategy' and 'value'."
+            error_msg = (
+                "Selector is required. Provide a selector dictionary with 'strategy' and 'value'."
+            )
             logger.error(f"[{self.name}] {error_msg}")
             self.status = NodeStatus.ERROR
             raise ValueError(error_msg)
@@ -135,7 +144,6 @@ class FindElementNode(DesktopNodeBase):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     SELECTOR_PROP,
     SIMULATE_PROP,
@@ -143,6 +151,7 @@ class FindElementNode(DesktopNodeBase):
     Y_OFFSET_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Click a desktop UI element.
@@ -209,9 +218,7 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
         y_offset = self.get_parameter("y_offset", context)
 
         logger.info(f"[{self.name}] Clicking element: {element}")
-        logger.debug(
-            f"[{self.name}] simulate={simulate}, offset=({x_offset}, {y_offset})"
-        )
+        logger.debug(f"[{self.name}] simulate={simulate}, offset=({x_offset}, {y_offset})")
 
         try:
             element.click(simulate=simulate, x_offset=x_offset, y_offset=y_offset)
@@ -222,7 +229,6 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     TEXT_PROP,
     SELECTOR_PROP,
@@ -230,6 +236,7 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     INTERVAL_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Type text into a desktop UI element.
@@ -301,9 +308,7 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
         interval = self.get_parameter("interval", context)
 
         logger.info(f"[{self.name}] Typing text into element: {element}")
-        logger.debug(
-            f"[{self.name}] Text length: {len(text)}, clear_first={clear_first}"
-        )
+        logger.debug(f"[{self.name}] Text length: {len(text)}, clear_first={clear_first}")
 
         try:
             element.type_text(text=text, clear_first=clear_first, interval=interval)
@@ -314,12 +319,12 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     SELECTOR_PROP,
     VARIABLE_NAME_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get text content from a desktop UI element.
@@ -382,11 +387,7 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
         try:
             text = element.get_text()
 
-            log_text = (
-                f"'{text[:50]}...' ({len(text)} chars)"
-                if len(text) > 50
-                else f"'{text}'"
-            )
+            log_text = f"'{text[:50]}...' ({len(text)} chars)" if len(text) > 50 else f"'{text}'"
             logger.info(f"[{self.name}] Got text: {log_text}")
 
             # Store in context variable if specified
@@ -401,12 +402,12 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
             return {"success": False, "data": {}, "next_nodes": []}
 
 
-@node(category="desktop")
 @properties(
     PROPERTY_NAME_PROP,
     SELECTOR_PROP,
     TIMEOUT_PROP,
 )
+@node(category="desktop")
 class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get a property value from a desktop UI element.
@@ -467,9 +468,7 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
             self.status = NodeStatus.ERROR
             raise
 
-        logger.info(
-            f"[{self.name}] Getting property '{property_name}' from element: {element}"
-        )
+        logger.info(f"[{self.name}] Getting property '{property_name}' from element: {element}")
 
         try:
             value = element.get_property(property_name)

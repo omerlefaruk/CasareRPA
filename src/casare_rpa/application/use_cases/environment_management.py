@@ -104,9 +104,7 @@ class CreateEnvironmentUseCase:
 
             # Check if environment type already exists (for standard types)
             if env_type != EnvironmentType.CUSTOM:
-                existing = EnvironmentStorage.load_environment_by_type(
-                    env_type, environments_dir
-                )
+                existing = EnvironmentStorage.load_environment_by_type(env_type, environments_dir)
                 if existing:
                     return EnvironmentResult(
                         success=False,
@@ -164,9 +162,7 @@ class CreateDefaultEnvironmentsUseCase:
                 )
 
             environments_dir = project.environments_dir
-            environments = EnvironmentStorage.create_default_environments(
-                environments_dir
-            )
+            environments = EnvironmentStorage.create_default_environments(environments_dir)
 
             # Update project
             project.environment_ids = [e.id for e in environments]
@@ -213,9 +209,7 @@ class UpdateEnvironmentUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            environment = EnvironmentStorage.load_environment(
-                environment_id, environments_dir
-            )
+            environment = EnvironmentStorage.load_environment(environment_id, environments_dir)
 
             if not environment:
                 return EnvironmentResult(
@@ -281,9 +275,7 @@ class DeleteEnvironmentUseCase:
                 )
 
             # Delete
-            deleted = EnvironmentStorage.delete_environment(
-                environment_id, environments_dir
-            )
+            deleted = EnvironmentStorage.delete_environment(environment_id, environments_dir)
 
             if not deleted:
                 return EnvironmentResult(
@@ -332,9 +324,7 @@ class SwitchEnvironmentUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            environment = EnvironmentStorage.load_environment(
-                environment_id, environments_dir
-            )
+            environment = EnvironmentStorage.load_environment(environment_id, environments_dir)
 
             if not environment:
                 return EnvironmentResult(
@@ -380,9 +370,7 @@ class CloneEnvironmentUseCase:
         """
         try:
             environments_dir = project.environments_dir
-            source = EnvironmentStorage.load_environment(
-                source_environment_id, environments_dir
-            )
+            source = EnvironmentStorage.load_environment(source_environment_id, environments_dir)
 
             if not source:
                 return EnvironmentResult(

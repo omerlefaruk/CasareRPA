@@ -33,7 +33,7 @@ class WebhookTrigger(BaseTrigger):
             - hmac_sha512: HMAC-SHA512 signature
         secret: Secret key for authentication
         hmac_header: Custom header name for HMAC signature
-        hmac_provider: HMAC provider (github, stripe, slack, generic)
+        hmac_provider: HMAC provider (github, stripe, generic)
         methods: Allowed HTTP methods (default: ["POST"])
         payload_mapping: JSONPath mappings for extracting data from payload
         headers_filter: Required headers for the request
@@ -151,7 +151,7 @@ class WebhookTrigger(BaseTrigger):
                 },
                 "hmac_provider": {
                     "type": "string",
-                    "enum": ["github", "stripe", "slack", "generic"],
+                    "enum": ["github", "stripe", "generic"],
                     "default": "generic",
                     "description": "HMAC provider format (affects header parsing)",
                 },

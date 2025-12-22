@@ -6,29 +6,45 @@ Quick reference for visual node implementations. Use for fast discovery.
 
 | Directory | Purpose | Node Count | Key Exports |
 |-----------|---------|------------|-------------|
-| `ai_ml/` | AI/ML nodes | 6 | LLMCompletion, LLMChat, LLMExtractData, LLMSummarize, LLMClassify, LLMTranslate |
 | `basic/` | Core workflow nodes | 3 | VisualStartNode, VisualEndNode, VisualCommentNode |
+
 | `browser/` | Web automation | 23 | LaunchBrowser, CloseBrowser, GoToURL, ClickElement, TypeText, ExtractText, TableScraper |
 | `control_flow/` | Flow control | 16 | If, ForLoop, WhileLoop, Switch, Break, Continue, Merge, TryCatchFinally |
 | `data_operations/` | Data manipulation | 33 | Concatenate, Regex, Math, List ops, Dict ops, DataCompare |
-| `database/` | SQL operations | 10 | DatabaseConnect, ExecuteQuery, Transaction, TableExists |
 | `desktop_automation/` | Windows UI automation | 36 | LaunchApplication, ActivateWindow, ClickElement, TypeText, SendKeys, OCR |
-| `document/` | Document AI | 5 | ClassifyDocument, ExtractForm, ExtractInvoice, ExtractTable |
 | `email/` | Email operations | 8 | SendEmail, ReadEmails, GetEmailContent, FilterEmails |
+
 | `error_handling/` | Error recovery | 9 | Retry, ThrowError, OnError, ErrorRecovery, Assert |
-| `file_operations/` | File I/O | 40 | ReadFile, WriteFile, CSV, JSON, XML, PDF, FTP |
-| `google/` | Google services | 79 | Calendar (12), Gmail (21), Sheets (21), Docs (8), Drive (17) |
+| `file_operations/` | File I/O, **Super Nodes** | 42 | ReadFile, WriteFile, CSV, JSON, XML, PDF, FTP, **VisualFileSystemSuperNode** |
+| `google/` | Google services | 62 | Gmail (21), Sheets (21), Drive (20) |
 | `messaging/` | Chat platforms | 16 | Telegram (9), WhatsApp (7) |
 | `office_automation/` | MS Office | 12 | Excel, Word, Outlook |
 | `rest_api/` | HTTP/REST | 7 | HttpRequest, SetHeaders, HttpAuth, DownloadFile |
 | `scripts/` | Code execution | 5 | RunPythonScript, RunBatchScript, RunJavaScript, EvalExpression |
 | `subflows/` | Reusable workflows | 1 | VisualSubflowNode |
 | `system/` | System operations | 67 | Clipboard, Dialogs, Services, Process, FileWatcher, QRCode |
-| `triggers/` | Event triggers | 17 | Webhook, Schedule, FileWatch, Email, Telegram, Calendar |
+| `triggers/` | Event triggers | 16 | Webhook, Schedule, FileWatch, Email, Telegram, Drive |
 | `utility/` | Helpers | 27 | Random, DateTime, Text operations, Reroute |
 | `variable/` | Variable management | 3 | SetVariable, GetVariable, IncrementVariable |
 
-**Total: 405 visual nodes across 21 categories**
+**Total: hundreds of visual nodes across categories**
+
+
+## Super Nodes (Mixins)
+
+Super Nodes use the `SuperNodeMixin` to provide dynamic port management based on action selection.
+
+| Mixin/File | Purpose |
+|------------|---------|
+| `mixins/super_node_mixin.py` | Base mixin for dynamic ports and conditional widget visibility |
+| `file_operations/super_nodes.py` | Visual implementation for FileSystemSuperNode |
+
+**Super Node Features:**
+- Dynamic port creation/deletion based on action dropdown
+- Conditional widget visibility via `display_when`/`hidden_when`
+- Port schema defined in domain layer (`DynamicPortSchema`)
+
+See [Super Node Pattern Documentation](../../../../../.brain/docs/super-node-pattern.md) for implementation guide.
 
 ## Key Files
 
@@ -65,7 +81,7 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 | Category | Count | Description |
 |----------|-------|-------------|
 | system | 67 | Dialogs, clipboard, services, processes |
-| google | 79 | Gmail, Sheets, Drive, Docs, Calendar |
+| google | 62 | Gmail, Sheets, Drive |
 | file_operations | 40 | File I/O, CSV, JSON, XML, PDF, FTP |
 | desktop_automation | 36 | Windows UI automation |
 | data_operations | 33 | String, list, dict operations |
@@ -75,12 +91,11 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 | control_flow | 16 | If/Loop/Switch/TryCatch |
 | messaging | 16 | Telegram, WhatsApp |
 | office_automation | 12 | Excel, Word, Outlook |
-| database | 10 | SQL connections and queries |
 | error_handling | 9 | Retry, error recovery |
 | email | 8 | SMTP/IMAP operations |
+| email | 8 | SMTP/IMAP operations |
 | rest_api | 7 | HTTP requests |
-| ai_ml | 6 | LLM integrations |
-| document | 5 | Document AI extraction |
+
 | scripts | 5 | Python/JS/Batch execution |
 | basic | 3 | Start, End, Comment |
 | variable | 3 | Variable get/set/increment |

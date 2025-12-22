@@ -146,9 +146,7 @@ class PatternRecognizer:
         cluster_labels = dbscan.fit_predict(scaled_features)
 
         # Group traces by cluster
-        clusters: Dict[int, List[Tuple[ExecutionTrace, PatternFeatures]]] = defaultdict(
-            list
-        )
+        clusters: Dict[int, List[Tuple[ExecutionTrace, PatternFeatures]]] = defaultdict(list)
         for trace, features, label in zip(traces, features_list, cluster_labels):
             if label != -1:  # Ignore noise points
                 clusters[label].append((trace, features))
@@ -156,9 +154,7 @@ class PatternRecognizer:
         # Build patterns from clusters
         patterns = []
         for cluster_id, cluster_traces in clusters.items():
-            pattern = self._build_pattern_from_cluster(
-                cluster_id, cluster_traces, ngram_vocab
-            )
+            pattern = self._build_pattern_from_cluster(cluster_id, cluster_traces, ngram_vocab)
             if pattern:
                 patterns.append(pattern)
 
@@ -200,9 +196,7 @@ class PatternRecognizer:
 
         # Success rate
         if activities:
-            success_count = sum(
-                1 for a in activities if a.status == ActivityStatus.COMPLETED
-            )
+            success_count = sum(1 for a in activities if a.status == ActivityStatus.COMPLETED)
             success_rate = success_count / len(activities)
         else:
             success_rate = 1.0
@@ -398,9 +392,7 @@ class PatternRecognizer:
 
         return None
 
-    def _fallback_pattern_extraction(
-        self, traces: List[ExecutionTrace]
-    ) -> List[RecognizedPattern]:
+    def _fallback_pattern_extraction(self, traces: List[ExecutionTrace]) -> List[RecognizedPattern]:
         """
         Fallback pattern extraction without sklearn.
 

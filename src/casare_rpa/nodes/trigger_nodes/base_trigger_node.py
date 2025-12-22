@@ -6,7 +6,7 @@ that have NO exec_in port (they START workflows) and output trigger payload data
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
@@ -22,6 +22,8 @@ from casare_rpa.triggers.base import (
 )
 
 
+@properties()
+@node(category="triggers", exec_inputs=[])
 class BaseTriggerNode(BaseNode):
     """
     Abstract base class for all trigger nodes.
@@ -166,14 +168,14 @@ class BaseTriggerNode(BaseNode):
         """
         return BaseTriggerConfig(
             id=trigger_id or f"trig_{self.node_id}",
-            name=self.config.get("name", self.trigger_display_name),
+            name=self.get_parameter("name", self.trigger_display_name),
             trigger_type=self.get_trigger_type(),
             scenario_id=scenario_id,
             workflow_id=workflow_id,
-            enabled=self.config.get("enabled", True),
-            priority=self.config.get("priority", 1),
-            cooldown_seconds=self.config.get("cooldown_seconds", 0),
-            description=self.config.get("description", ""),
+            enabled=self.get_parameter("enabled", True),
+            priority=self.get_parameter("priority", 1),
+            cooldown_seconds=self.get_parameter("cooldown_seconds", 0),
+            description=self.get_parameter("description", ""),
             config=self.get_trigger_config(),
         )
 
@@ -216,25 +218,3 @@ class BaseTriggerNode(BaseNode):
     def get_trigger_instance(self) -> Optional[BaseTrigger]:
         """Get the trigger instance if created."""
         return self._trigger_instance
-
-
-def trigger_node(cls: Type) -> Type:
-    """
-    Decorator to mark a class as a trigger node.
-
-    Unlike @node, this only adds exec_out (no exec_in).
-    Trigger nodes start workflows, they don't receive execution flow.
-
-    Usage:
-        @trigger_node
-        class WebhookTriggerNode(BaseTriggerNode):
-            def _define_payload_ports(self) -> None:
-                self.add_output_port("payload", DataType.DICT)
-    """
-    # Mark class as trigger node
-    cls.is_trigger_node = True
-
-    # Ensure _define_ports adds exec_out (already handled in BaseTriggerNode)
-    # This decorator mainly serves as documentation/validation
-
-    return cls

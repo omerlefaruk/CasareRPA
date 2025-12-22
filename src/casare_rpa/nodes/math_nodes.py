@@ -52,7 +52,6 @@ def _resolve_numeric_param(
     return float(param) if param is not None else default
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "operation",
@@ -114,6 +113,7 @@ def _resolve_numeric_param(
         tooltip="Variable name to store result (optional)",
     ),
 )
+@node(category="data")
 class MathOperationNode(BaseNode):
     """Node that performs math operations."""
 
@@ -126,6 +126,8 @@ class MathOperationNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "MathOperationNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("a", DataType.FLOAT)
@@ -210,7 +212,6 @@ class MathOperationNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="data")
 @properties(
     PropertyDef(
         "a",
@@ -248,6 +249,7 @@ class MathOperationNode(BaseNode):
         tooltip="Comparison operator to use",
     ),
 )
+@node(category="data")
 class ComparisonNode(BaseNode):
     """Node that compares two values."""
 
@@ -260,6 +262,8 @@ class ComparisonNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ComparisonNode"
+        self.cacheable = True
+        self.cache_ttl = 3600
 
     def _define_ports(self) -> None:
         self.add_input_port("a", DataType.ANY)

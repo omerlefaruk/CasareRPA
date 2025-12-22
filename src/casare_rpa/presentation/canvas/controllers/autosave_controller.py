@@ -73,9 +73,7 @@ class AutosaveController(BaseController):
         self._update_timer_from_settings()
 
         # Subscribe to EventBus events
-        self._event_bus.subscribe(
-            EventType.PREFERENCES_UPDATED, self._on_preferences_updated
-        )
+        self._event_bus.subscribe(EventType.PREFERENCES_UPDATED, self._on_preferences_updated)
         self._event_bus.subscribe(EventType.WORKFLOW_SAVED, self._on_workflow_saved)
         self._event_bus.subscribe(EventType.WORKFLOW_OPENED, self._on_workflow_opened)
         self._event_bus.subscribe(EventType.WORKFLOW_CLOSED, self._on_workflow_closed)
@@ -88,9 +86,7 @@ class AutosaveController(BaseController):
             self._autosave_timer = None
 
         # Unsubscribe from events
-        self._event_bus.unsubscribe(
-            EventType.PREFERENCES_UPDATED, self._on_preferences_updated
-        )
+        self._event_bus.unsubscribe(EventType.PREFERENCES_UPDATED, self._on_preferences_updated)
         self._event_bus.unsubscribe(EventType.WORKFLOW_SAVED, self._on_workflow_saved)
         self._event_bus.unsubscribe(EventType.WORKFLOW_OPENED, self._on_workflow_opened)
         self._event_bus.unsubscribe(EventType.WORKFLOW_CLOSED, self._on_workflow_closed)
@@ -274,7 +270,7 @@ class AutosaveController(BaseController):
             QTimer.singleShot(0, lambda: self._finalize_autosave_success(file_path))
         except Exception as e:
             logger.error(f"Background autosave failed: {e}")
-            QTimer.singleShot(0, lambda: self._finalize_autosave_failure(str(e)))
+            QTimer.singleShot(0, lambda err=e: self._finalize_autosave_failure(str(err)))
 
     def _finalize_autosave_success(self, file_path: str) -> None:
         """Finalize successful autosave (runs on main thread)."""

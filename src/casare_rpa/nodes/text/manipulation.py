@@ -58,7 +58,6 @@ def _resolve_string_param(
     return str(param) if param is not None else default
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "max_split",
@@ -68,6 +67,7 @@ def _resolve_string_param(
         tooltip="Maximum number of splits (-1 for unlimited)",
     ),
 )
+@node(category="text")
 class TextSplitNode(BaseNode):
     """
     Split a string into a list.
@@ -110,13 +110,9 @@ class TextSplitNode(BaseNode):
             max_split = safe_int(self.get_parameter("max_split", -1), -1)
 
             # Resolve {{variable}} patterns in separator
-            if separator is not None:
-                separator = context.resolve_value(separator)
 
             if separator is None or separator == "":
-                result = (
-                    text.split(maxsplit=max_split) if max_split >= 0 else text.split()
-                )
+                result = text.split(maxsplit=max_split) if max_split >= 0 else text.split()
             else:
                 result = (
                     text.split(separator, maxsplit=max_split)
@@ -143,7 +139,6 @@ class TextSplitNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "count",
@@ -181,6 +176,7 @@ class TextSplitNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
+@node(category="text")
 class TextReplaceNode(BaseNode):
     """
     Replace occurrences in a string.
@@ -228,8 +224,6 @@ class TextReplaceNode(BaseNode):
             new_value = str(self.get_input_value("new_value", context) or "")
 
             # Resolve {{variable}} patterns
-            old_value = context.resolve_value(old_value)
-            new_value = context.resolve_value(new_value)
 
             count = safe_int(self.get_parameter("count", -1), -1)
             use_regex = self.get_parameter("use_regex", False)
@@ -249,9 +243,7 @@ class TextReplaceNode(BaseNode):
                         old_value, new_value, text, count=count, flags=flags
                     )
                 else:
-                    result, replacements = re.subn(
-                        old_value, new_value, text, flags=flags
-                    )
+                    result, replacements = re.subn(old_value, new_value, text, flags=flags)
             else:
                 original_count = text.count(old_value)
                 if count >= 0:
@@ -279,7 +271,6 @@ class TextReplaceNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -297,6 +288,7 @@ class TextReplaceNode(BaseNode):
         tooltip="Characters to trim (default: whitespace)",
     ),
 )
+@node(category="text")
 class TextTrimNode(BaseNode):
     """
     Trim whitespace from a string.
@@ -336,7 +328,6 @@ class TextTrimNode(BaseNode):
 
             # Resolve {{variable}} patterns in characters
             if chars:
-                chars = context.resolve_value(chars)
                 chars_arg = chars
             else:
                 chars_arg = None
@@ -366,7 +357,6 @@ class TextTrimNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "case",
@@ -377,6 +367,7 @@ class TextTrimNode(BaseNode):
         tooltip="Case transformation to apply",
     ),
 )
+@node(category="text")
 class TextCaseNode(BaseNode):
     """
     Change the case of a string.
@@ -442,7 +433,6 @@ class TextCaseNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -460,6 +450,7 @@ class TextCaseNode(BaseNode):
         tooltip="Character to use for padding",
     ),
 )
+@node(category="text")
 class TextPadNode(BaseNode):
     """
     Pad a string to a certain length.
@@ -501,7 +492,6 @@ class TextPadNode(BaseNode):
             fill_char = self.get_parameter("fill_char", " ")
 
             # Resolve {{variable}} patterns in fill_char
-            fill_char = context.resolve_value(fill_char)
 
             if len(fill_char) != 1:
                 fill_char = " "
@@ -531,6 +521,7 @@ class TextPadNode(BaseNode):
         return True, ""
 
 
+@properties()
 @node(category="text")
 class TextReverseNode(BaseNode):
     """
@@ -582,7 +573,6 @@ class TextReverseNode(BaseNode):
         return True, ""
 
 
-@node(category="text")
 @properties(
     PropertyDef(
         "mode",
@@ -608,6 +598,7 @@ class TextReverseNode(BaseNode):
         tooltip="Remove empty lines when splitting",
     ),
 )
+@node(category="text")
 class TextLinesNode(BaseNode):
     """
     Split text into lines or join lines into text.

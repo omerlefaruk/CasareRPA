@@ -891,9 +891,7 @@ class ElementSelectorDialog(QDialog):
 
         # Element type dropdown - explicit 28px height
         self._text_element = QComboBox()
-        self._text_element.addItems(
-            ["Any", "Button", "Link", "Input", "Label", "Div", "Span"]
-        )
+        self._text_element.addItems(["Any", "Button", "Link", "Input", "Label", "Div", "Span"])
         self._text_element.setFixedWidth(80)
         self._text_element.setFixedHeight(28)
         self._text_element.setStyleSheet(f"""
@@ -983,9 +981,7 @@ class ElementSelectorDialog(QDialog):
 
     def _create_target_section(self) -> CardSection:
         """Create target selector section."""
-        section = CardSection(
-            "Target Element", "🎯", expanded=True, accent=THEME.accent_primary
-        )
+        section = CardSection("Target Element", "🎯", expanded=True, accent=THEME.accent_primary)
         content = section.content_layout()
 
         # Strict selector row
@@ -994,9 +990,7 @@ class ElementSelectorDialog(QDialog):
         content.addWidget(self._strict_row)
 
         # Fuzzy selector row
-        self._fuzzy_row = SelectorRow(
-            "Fuzzy Matching", THEME.accent_orange, has_accuracy=True
-        )
+        self._fuzzy_row = SelectorRow("Fuzzy Matching", THEME.accent_orange, has_accuracy=True)
         content.addWidget(self._fuzzy_row)
 
         # Fuzzy options
@@ -1133,16 +1127,12 @@ class ElementSelectorDialog(QDialog):
 
     def _create_anchor_section(self) -> CardSection:
         """Create anchor configuration section."""
-        section = CardSection(
-            "Anchor Element", "⚓", expanded=False, accent=THEME.accent_primary
-        )
+        section = CardSection("Anchor Element", "⚓", expanded=False, accent=THEME.accent_primary)
         self._anchor_section = section
         content = section.content_layout()
 
         # Info text
-        info = QLabel(
-            "Use a nearby stable element as a reference point for reliable selection."
-        )
+        info = QLabel("Use a nearby stable element as a reference point for reliable selection.")
         info.setWordWrap(True)
         info.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         content.addWidget(info)
@@ -1223,9 +1213,7 @@ class ElementSelectorDialog(QDialog):
         details_layout.addWidget(pos_lbl)
 
         self._anchor_position = QComboBox()
-        self._anchor_position.addItems(
-            ["Left of", "Right of", "Above", "Below", "Inside"]
-        )
+        self._anchor_position.addItems(["Left of", "Right of", "Above", "Below", "Inside"])
         self._anchor_position.setStyleSheet(COMBO_STYLE)
         details_layout.addWidget(self._anchor_position)
 
@@ -1252,12 +1240,8 @@ class ElementSelectorDialog(QDialog):
         self._strategies_section = section
         content = section.content_layout()
 
-        self._strategies_info = QLabel(
-            "Pick an element to generate selector alternatives."
-        )
-        self._strategies_info.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 11px;"
-        )
+        self._strategies_info = QLabel("Pick an element to generate selector alternatives.")
+        self._strategies_info.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 11px;")
         content.addWidget(self._strategies_info)
 
         self._strategies_list = QListWidget()
@@ -1301,9 +1285,7 @@ class ElementSelectorDialog(QDialog):
 
     def _create_options_section(self) -> CardSection:
         """Create advanced options section."""
-        section = CardSection(
-            "Options", "⚙️", expanded=False, accent=THEME.accent_primary
-        )
+        section = CardSection("Options", "⚙️", expanded=False, accent=THEME.accent_primary)
         content = section.content_layout()
 
         # Window selector
@@ -1460,9 +1442,7 @@ class ElementSelectorDialog(QDialog):
             self._browser_tab = BrowserSelectorTab(self)
             self._browser_tab.selectors_generated.connect(self._on_strategies_generated)
             self._browser_tab.status_changed.connect(self._on_status_changed)
-            self._browser_tab.element_screenshot_captured.connect(
-                self._on_element_screenshot
-            )
+            self._browser_tab.element_screenshot_captured.connect(self._on_element_screenshot)
             self._browser_tab.hide()
             self._tabs["browser"] = self._browser_tab
             if self._browser_page:
@@ -1496,12 +1476,8 @@ class ElementSelectorDialog(QDialog):
         self._fuzzy_row.get_pick_button().clicked.connect(
             lambda: self._start_picking(self._current_mode)
         )
-        self._cv_row.get_pick_button().clicked.connect(
-            lambda: self._start_picking("ocr")
-        )
-        self._image_row.get_pick_button().clicked.connect(
-            lambda: self._start_picking("image")
-        )
+        self._cv_row.get_pick_button().clicked.connect(lambda: self._start_picking("ocr"))
+        self._image_row.get_pick_button().clicked.connect(lambda: self._start_picking("image"))
 
     def _select_mode(self, mode: str):
         mode_map = {
@@ -1636,20 +1612,10 @@ class ElementSelectorDialog(QDialog):
         self._set_status(f"✓ {len(strategies)} found", "success")
 
         for strategy in strategies:
-            score_icon = (
-                "🟢"
-                if strategy.score >= 80
-                else ("🟡" if strategy.score >= 60 else "🔴")
-            )
+            score_icon = "🟢" if strategy.score >= 80 else ("🟡" if strategy.score >= 60 else "🔴")
             unique_badge = " ✓" if strategy.is_unique else ""
-            val = (
-                strategy.value[:45] + "..."
-                if len(strategy.value) > 45
-                else strategy.value
-            )
-            item = QListWidgetItem(
-                f"{score_icon} {strategy.score:.0f}% │ {val}{unique_badge}"
-            )
+            val = strategy.value[:45] + "..." if len(strategy.value) > 45 else strategy.value
+            item = QListWidgetItem(f"{score_icon} {strategy.score:.0f}% │ {val}{unique_badge}")
             item.setData(Qt.ItemDataRole.UserRole, strategy)
             self._strategies_list.addItem(item)
 
@@ -1687,9 +1653,7 @@ class ElementSelectorDialog(QDialog):
 
     def _on_status_changed(self, message: str):
         self._status_label.setText(message)
-        if self._picking_anchor and (
-            "stopped" in message.lower() or "error" in message.lower()
-        ):
+        if self._picking_anchor and ("stopped" in message.lower() or "error" in message.lower()):
             self._picking_anchor = False
             self._pick_anchor_btn.setText("🎯 Pick Anchor")
             self._pick_anchor_btn.setEnabled(True)
@@ -1791,11 +1755,7 @@ class ElementSelectorDialog(QDialog):
             # After waiting, sync healing_context from tab's result to ensure we have latest data
             # This handles case where dialog created a different SelectorResult object
             tab_result = tab.get_current_selector()
-            if (
-                tab_result
-                and self._current_result
-                and tab_result is not self._current_result
-            ):
+            if tab_result and self._current_result and tab_result is not self._current_result:
                 logger.info("Syncing healing_context from tab result to dialog result")
                 self._current_result.healing_context.update(tab_result.healing_context)
                 logger.info(
@@ -1810,22 +1770,16 @@ class ElementSelectorDialog(QDialog):
             target_selector = self._current_result.selector_value
             anchor_selector = self._anchor_data.get("selector", "")
             position = self._anchor_position.currentText().lower().replace(" ", "_")
-            combined = self._build_combined_selector(
-                anchor_selector, target_selector, position
-            )
+            combined = self._build_combined_selector(anchor_selector, target_selector, position)
             self._current_result.selector_value = combined
 
         if self._fuzzy_row.is_enabled():
-            self._current_result.metadata["fuzzy_accuracy"] = (
-                self._fuzzy_row.get_accuracy()
-            )
+            self._current_result.metadata["fuzzy_accuracy"] = self._fuzzy_row.get_accuracy()
             self._current_result.metadata["fuzzy_text"] = self._fuzzy_text.text()
         if self._cv_row.is_enabled():
             self._current_result.metadata["cv_accuracy"] = self._cv_row.get_accuracy()
         if self._image_row.is_enabled():
-            self._current_result.metadata["image_accuracy"] = (
-                self._image_row.get_accuracy()
-            )
+            self._current_result.metadata["image_accuracy"] = self._image_row.get_accuracy()
         if self._anchor_data:
             self._current_result.metadata["anchor"] = self._anchor_data
             # Also populate the anchor field with AnchorData object
@@ -1903,8 +1857,7 @@ class ElementSelectorDialog(QDialog):
             if anchor:
                 self._anchor_data = anchor
                 self._anchor_display.setText(
-                    anchor.get("text_content", "")[:30]
-                    or anchor.get("selector", "")[:30]
+                    anchor.get("text_content", "")[:30] or anchor.get("selector", "")[:30]
                 )
                 self._anchor_details.show()
                 self._clear_anchor_btn.setEnabled(True)
@@ -1921,9 +1874,7 @@ class ElementSelectorDialog(QDialog):
         self._anchor_details.hide()
         self._clear_anchor_btn.setEnabled(False)
 
-    def _build_combined_selector(
-        self, anchor: str, target: str, position: str = "left_of"
-    ) -> str:
+    def _build_combined_selector(self, anchor: str, target: str, position: str = "left_of") -> str:
         """Build combined anchor + target selector."""
         import re
 

@@ -147,10 +147,7 @@ class CollapsibleSection(QWidget):
 
     def _animate_toggle(self) -> None:
         """Animate expand/collapse."""
-        if (
-            self._animation
-            and self._animation.state() == QPropertyAnimation.State.Running
-        ):
+        if self._animation and self._animation.state() == QPropertyAnimation.State.Running:
             self._animation.stop()
 
         # Update arrow
@@ -174,6 +171,4 @@ class CollapsibleSection(QWidget):
     def _instant_toggle(self) -> None:
         """Instant toggle without animation."""
         self._arrow_label.setText("\u25bc" if self._expanded else "\u25b6")
-        self._content_frame.setMaximumHeight(
-            self._content_height if self._expanded else 0
-        )
+        self._content_frame.setMaximumHeight(self._content_height if self._expanded else 0)

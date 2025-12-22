@@ -32,6 +32,16 @@ Usage:
     from casare_rpa.nodes.file.structured_data import ZipFilesNode
 """
 
+# Super Nodes (consolidated operations)
+from casare_rpa.nodes.file.super_node import (
+    FileSystemSuperNode,
+    FileSystemAction,
+    FILE_SYSTEM_PORT_SCHEMA,
+    StructuredDataSuperNode,
+    StructuredDataAction,
+    STRUCTURED_DATA_PORT_SCHEMA,
+)
+
 # Security utilities
 from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
@@ -84,6 +94,13 @@ from casare_rpa.nodes.file.structured_data import (
 from casare_rpa.nodes.file.image_nodes import ImageConvertNode
 
 __all__ = [
+    # Super Nodes (consolidated operations)
+    "FileSystemSuperNode",
+    "FileSystemAction",
+    "FILE_SYSTEM_PORT_SCHEMA",
+    "StructuredDataSuperNode",
+    "StructuredDataAction",
+    "STRUCTURED_DATA_PORT_SCHEMA",
     # Security utilities
     "PathSecurityError",
     "validate_path_security",

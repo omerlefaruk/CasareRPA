@@ -65,9 +65,7 @@ class RateLimitStats:
             "total_delay_time": round(self.total_delay_time, 3),
             "requests_rejected": self.requests_rejected,
             "avg_delay": round(
-                self.total_delay_time / self.requests_delayed
-                if self.requests_delayed > 0
-                else 0,
+                self.total_delay_time / self.requests_delayed if self.requests_delayed > 0 else 0,
                 3,
             ),
         }
@@ -248,9 +246,7 @@ class SlidingWindowRateLimiter:
         self._sync_lock = threading.Lock()
         self._stats = RateLimitStats()
 
-        logger.debug(
-            f"SlidingWindowRateLimiter initialized: {max_requests} req/{window_seconds}s"
-        )
+        logger.debug(f"SlidingWindowRateLimiter initialized: {max_requests} req/{window_seconds}s")
 
     @property
     def stats(self) -> RateLimitStats:
@@ -350,9 +346,7 @@ def rate_limited(requests_per_second: float = 10.0, burst_size: int = 1) -> Call
         async def call_api():
             ...
     """
-    config = RateLimitConfig(
-        requests_per_second=requests_per_second, burst_size=burst_size
-    )
+    config = RateLimitConfig(requests_per_second=requests_per_second, burst_size=burst_size)
     limiter = RateLimiter(config)
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
@@ -370,9 +364,7 @@ def rate_limited(requests_per_second: float = 10.0, burst_size: int = 1) -> Call
 # Use OrderedDict for LRU-like eviction when max size reached
 from collections import OrderedDict
 
-_global_limiters: OrderedDict[str, Union[RateLimiter, SlidingWindowRateLimiter]] = (
-    OrderedDict()
-)
+_global_limiters: OrderedDict[str, Union[RateLimiter, SlidingWindowRateLimiter]] = OrderedDict()
 _MAX_GLOBAL_LIMITERS = 100  # Prevent unbounded growth
 
 
@@ -398,13 +390,9 @@ def get_rate_limiter(
     # Evict oldest if at capacity
     if len(_global_limiters) >= _MAX_GLOBAL_LIMITERS:
         _global_limiters.popitem(last=False)
-        logger.debug(
-            f"Evicted oldest rate limiter (max {_MAX_GLOBAL_LIMITERS} reached)"
-        )
+        logger.debug(f"Evicted oldest rate limiter (max {_MAX_GLOBAL_LIMITERS} reached)")
 
-    config = RateLimitConfig(
-        requests_per_second=requests_per_second, burst_size=burst_size
-    )
+    config = RateLimitConfig(requests_per_second=requests_per_second, burst_size=burst_size)
     _global_limiters[name] = RateLimiter(config)
     return _global_limiters[name]
 

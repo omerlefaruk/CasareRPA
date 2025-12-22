@@ -10,14 +10,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "call_alias",
@@ -58,6 +54,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Maximum time to wait for completion",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class WorkflowCallTriggerNode(BaseTriggerNode):
     """
     Workflow call trigger node for sub-workflow invocation.
@@ -96,9 +93,9 @@ class WorkflowCallTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get workflow call-specific configuration."""
         return {
-            "call_alias": self.config.get("call_alias", ""),
-            "input_schema": self.config.get("input_schema", "{}"),
-            "output_schema": self.config.get("output_schema", "{}"),
-            "wait_for_completion": self.config.get("wait_for_completion", True),
-            "timeout_seconds": self.config.get("timeout_seconds", 300),
+            "call_alias": self.get_parameter("call_alias", ""),
+            "input_schema": self.get_parameter("input_schema", "{}"),
+            "output_schema": self.get_parameter("output_schema", "{}"),
+            "wait_for_completion": self.get_parameter("wait_for_completion", True),
+            "timeout_seconds": self.get_parameter("timeout_seconds", 300),
         }

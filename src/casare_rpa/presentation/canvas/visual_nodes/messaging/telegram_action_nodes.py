@@ -178,9 +178,7 @@ class VisualTelegramSendMediaGroupNode(VisualNode):
             tab="properties",
             placeholder_text='[{"type":"photo","media":"url"}]',
         )
-        self._safe_create_property(
-            "disable_notification", False, widget_type=1, tab="advanced"
-        )
+        self._safe_create_property("disable_notification", False, widget_type=1, tab="advanced")
 
     def get_node_class(self) -> type:
         return TelegramSendMediaGroupNode

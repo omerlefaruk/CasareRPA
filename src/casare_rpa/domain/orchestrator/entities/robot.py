@@ -62,9 +62,7 @@ class Robot:
         if not self.name or not self.name.strip():
             raise ValueError("Robot name cannot be empty")
         if self.max_concurrent_jobs < 0:
-            raise ValueError(
-                f"max_concurrent_jobs must be >= 0, got {self.max_concurrent_jobs}"
-            )
+            raise ValueError(f"max_concurrent_jobs must be >= 0, got {self.max_concurrent_jobs}")
         if len(self.current_job_ids) > self.max_concurrent_jobs:
             raise ValueError(
                 f"current_job_ids count ({len(self.current_job_ids)}) cannot exceed "
@@ -87,10 +85,7 @@ class Robot:
         Returns:
             True if robot is online and has capacity for more jobs.
         """
-        return (
-            self.status == RobotStatus.ONLINE
-            and self.current_jobs < self.max_concurrent_jobs
-        )
+        return self.status == RobotStatus.ONLINE and self.current_jobs < self.max_concurrent_jobs
 
     @property
     def utilization(self) -> float:
@@ -181,9 +176,7 @@ class Robot:
         from casare_rpa.domain.orchestrator.errors import InvalidRobotStateError
 
         if job_id not in self.current_job_ids:
-            raise InvalidRobotStateError(
-                f"Job {job_id} is not assigned to robot {self.id}"
-            )
+            raise InvalidRobotStateError(f"Job {job_id} is not assigned to robot {self.id}")
 
         self.current_job_ids.remove(job_id)
 
@@ -284,9 +277,7 @@ class Robot:
             "current_jobs": self.current_jobs,  # For backward compatibility
             "current_job_ids": self.current_job_ids,
             "last_seen": self.last_seen.isoformat() if self.last_seen else None,
-            "last_heartbeat": self.last_heartbeat.isoformat()
-            if self.last_heartbeat
-            else None,
+            "last_heartbeat": self.last_heartbeat.isoformat() if self.last_heartbeat else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "tags": self.tags,
             "metrics": self.metrics,

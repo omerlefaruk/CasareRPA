@@ -369,9 +369,7 @@ class SchemaItemWidget(QWidget):
             logger.debug(f"Drag ended with result: {result}")
         finally:
             # Always decrement drag count
-            SchemaItemWidget._active_drag_count = max(
-                0, SchemaItemWidget._active_drag_count - 1
-            )
+            SchemaItemWidget._active_drag_count = max(0, SchemaItemWidget._active_drag_count - 1)
 
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         self._drag_start_pos = None
@@ -774,6 +772,464 @@ class OutputJsonView(QWidget):
 
 
 # ============================================================================
+# VARIABLE ITEM WIDGET (for Variables tab)
+# ============================================================================
+
+
+class VariableItemWidget(QFrame):
+    """
+    Widget for displaying a single variable in the Variables view.
+
+    Supports drag-and-drop to insert variable references into input fields.
+    Uses the same MIME type as SchemaItemWidget for compatibility.
+    """
+
+    MIME_TYPE = "application/x-casare-variable"
+    _active_drag_count = 0
+
+    @classmethod
+    def is_dragging(cls) -> bool:
+        """Check if any VariableItemWidget is currently being dragged."""
+        return cls._active_drag_count > 0
+
+    def __init__(
+        self,
+        var_name: str,
+        var_type: str,
+        value: Any,
+        source: str = "workflow",
+        insertion_text: str = None,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        """
+        Initialize variable item widget.
+
+        Args:
+            var_name: Variable name
+            var_type: Type string (String, Integer, etc.)
+            value: Current value (for preview)
+            source: Where the variable comes from
+            insertion_text: Text to insert when dragged (defaults to {{var_name}})
+            parent: Parent widget
+        """
+        super().__init__(parent)
+        self._var_name = var_name
+        self._var_type = var_type
+        self._value = value
+        self._source = source
+        self._insertion_text = insertion_text or f"{{{{{var_name}}}}}"
+        self._drag_start_pos: Optional[QPoint] = None
+
+        self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self._setup_ui()
+        self._apply_styles()
+
+    def _setup_ui(self) -> None:
+        """Setup the widget UI."""
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(6, 0, 6, 0)  # Tighter margins like SchemaItemWidget
+        layout.setSpacing(6)  # Reduced spacing
+
+        # Type badge - smaller and more subtle
+        badge_text = self._get_type_badge()
+        badge = QLabel(badge_text)
+        badge.setFixedSize(22, 14)  # Smaller badge like SchemaItemWidget
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge.setStyleSheet(f"""
+            QLabel {{
+                background-color: {self._get_type_color()};
+                color: #e0e0e0;
+                border-radius: 2px;
+                font-size: 9px;
+                font-weight: 600;
+                font-family: "Consolas", "Courier New", monospace;
+            }}
+        """)
+        layout.addWidget(badge)
+
+        # Variable name (bright white, bold) - stands out
+        name_label = QLabel(self._var_name)
+        name_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        name_label.setStyleSheet("color: #ffffff;")
+        layout.addWidget(name_label)
+
+        # Value preview (muted gray) - distinct from name
+        preview = self._get_value_preview()
+        if preview:
+            preview_label = QLabel(preview)
+            preview_label.setFont(QFont("Consolas", 9))
+            preview_label.setStyleSheet("color: #888888;")
+            layout.addWidget(preview_label)
+
+        # Stretch at the END - keeps name/value together on the left
+        layout.addStretch()
+
+    def _apply_styles(self) -> None:
+        """Apply hover styles."""
+        self.setStyleSheet(f"""
+            VariableItemWidget {{
+                background-color: transparent;
+                border-radius: 4px;
+            }}
+            VariableItemWidget:hover {{
+                background-color: {PopupColors.TABLE_HOVER.name()};
+            }}
+        """)
+
+    def _get_type_badge(self) -> str:
+        """Get the badge text for this type."""
+        badges = {
+            "String": "AB",
+            "Integer": "#",
+            "Float": "#.#",
+            "Boolean": "Y/N",
+            "List": "[]",
+            "Dict": "{}",
+            "DataTable": "📊",
+            "Any": "?",
+        }
+        return badges.get(self._var_type, "?")
+
+    def _get_type_color(self) -> str:
+        """Get the badge color for this type."""
+        colors = {
+            "String": PopupColors.TYPE_STRING.name(),
+            "Integer": PopupColors.TYPE_NUMBER.name(),
+            "Float": PopupColors.TYPE_NUMBER.name(),
+            "Boolean": PopupColors.TYPE_BOOLEAN.name(),
+            "List": PopupColors.TYPE_ARRAY.name(),
+            "Dict": PopupColors.TYPE_OBJECT.name(),
+            "DataTable": PopupColors.TYPE_OBJECT.name(),
+            "Any": PopupColors.TYPE_NULL.name(),
+        }
+        return colors.get(self._var_type, PopupColors.TYPE_NULL.name())
+
+    def _get_value_preview(self) -> str:
+        """Get a truncated preview of the value."""
+        if self._value is None:
+            return ""
+        preview = str(self._value)
+        if len(preview) > 30:
+            preview = preview[:27] + "..."
+        return preview
+
+    def get_insertion_text(self) -> str:
+        """Get the text to insert when dragged."""
+        return self._insertion_text
+
+    def get_drag_data(self) -> dict:
+        """Get the drag data as a dictionary."""
+        return {
+            "variable": self._insertion_text,
+            "var_name": self._var_name,
+            "var_type": self._var_type,
+            "source": self._source,
+        }
+
+    def mousePressEvent(self, event) -> None:
+        """Handle mouse press for drag start."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start_pos = event.pos()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        """Handle mouse move for drag."""
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
+            super().mouseMoveEvent(event)
+            return
+
+        if self._drag_start_pos is None:
+            super().mouseMoveEvent(event)
+            return
+
+        # Check if moved enough to start drag
+        distance = (event.pos() - self._drag_start_pos).manhattanLength()
+        if distance < QApplication.startDragDistance():
+            super().mouseMoveEvent(event)
+            return
+
+        # Start drag
+        self.setCursor(Qt.CursorShape.ClosedHandCursor)
+
+        drag = QDrag(self)
+        mime_data = QMimeData()
+
+        # Set drag data as JSON
+        drag_data = json.dumps(self.get_drag_data())
+        mime_data.setData(self.MIME_TYPE, drag_data.encode("utf-8"))
+
+        # Also set as plain text for non-aware targets
+        mime_data.setText(self._insertion_text)
+
+        drag.setMimeData(mime_data)
+
+        logger.debug(f"Starting drag for variable: {self._insertion_text}")
+
+        # Track active drag
+        VariableItemWidget._active_drag_count += 1
+
+        try:
+            result = drag.exec(Qt.DropAction.CopyAction)
+            logger.debug(f"Drag ended with result: {result}")
+        finally:
+            VariableItemWidget._active_drag_count = max(
+                0, VariableItemWidget._active_drag_count - 1
+            )
+
+        self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self._drag_start_pos = None
+
+    def mouseReleaseEvent(self, event) -> None:
+        """Handle mouse release."""
+        self._drag_start_pos = None
+        super().mouseReleaseEvent(event)
+
+
+# ============================================================================
+# VARIABLES VIEW
+# ============================================================================
+
+
+class VariablesView(QWidget):
+    """
+    View showing all available workflow variables.
+
+    Displays variables from:
+    - Workflow variables (from Variables panel)
+    - System variables ($currentDate, etc.)
+
+    Each row shows:
+    - Type badge
+    - Variable name
+    - Value preview
+    - Drag support for insertion
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the variables view."""
+        super().__init__(parent)
+        self._main_window = None
+        self._items: List[VariableItemWidget] = []
+
+        self._setup_ui()
+        self._apply_styles()
+
+    def _setup_ui(self) -> None:
+        """Setup the UI layout."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Create scrollable list container
+        from PySide6.QtWidgets import QScrollArea
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+
+        # Content widget
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(8, 8, 8, 8)
+        self._content_layout.setSpacing(2)
+        self._content_layout.addStretch()
+
+        scroll.setWidget(self._content)
+        layout.addWidget(scroll)
+
+    def _apply_styles(self) -> None:
+        """Apply dark theme styling."""
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {PopupColors.BACKGROUND.name()};
+            }}
+            QScrollArea {{
+                background-color: transparent;
+            }}
+        """)
+
+    def set_main_window(self, main_window) -> None:
+        """
+        Set the main window reference for variable access.
+
+        Args:
+            main_window: MainWindow instance
+        """
+        self._main_window = main_window
+
+    def refresh(self) -> None:
+        """Refresh the variable list from providers."""
+        # Clear existing items
+        for item in self._items:
+            item.deleteLater()
+        self._items.clear()
+
+        # Remove stretch and re-add later
+        while self._content_layout.count():
+            child = self._content_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        # Get variables from provider
+        try:
+            from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+                VariableProvider,
+                VariableInfo,
+            )
+
+            provider = VariableProvider.get_instance()
+
+            # Make sure provider has main_window for panel access
+            if self._main_window:
+                provider.set_main_window(self._main_window)
+
+            # Get graph from main window
+            graph = None
+            if self._main_window:
+                graph = self._main_window.get_graph()
+
+            variables = provider.get_all_variables(None, graph)
+
+            # Also scan for SetVariable nodes in the graph
+            setvariable_vars = []
+            if graph:
+                try:
+                    for node in graph.all_nodes():
+                        # Check if this is a SetVariable node
+                        node_type = node.type_ if hasattr(node, "type_") else ""
+                        if "SetVariable" in node_type or "SetVariableNode" in node_type:
+                            # Get variable name from node properties
+                            var_name = None
+                            var_value = None
+                            var_type = "String"
+
+                            if hasattr(node, "get_property"):
+                                var_name = node.get_property("variable_name")
+                                var_value = node.get_property("default_value")
+                                var_type = node.get_property("variable_type") or "String"
+
+                            if not var_name and hasattr(node, "_casare_node"):
+                                casare_node = node._casare_node
+                                if hasattr(casare_node, "variable_name"):
+                                    var_name = casare_node.variable_name
+                                if hasattr(casare_node, "default_value"):
+                                    var_value = casare_node.default_value
+                                if hasattr(casare_node, "variable_type"):
+                                    var_type = casare_node.variable_type
+
+                            if var_name:
+                                # Get node_id for insertion path
+                                node_id = None
+                                if hasattr(node, "get_property"):
+                                    node_id = node.get_property("node_id")
+                                if not node_id and hasattr(node, "id"):
+                                    node_id = node.id()
+
+                                insertion_path = f"{node_id}.value" if node_id else var_name
+                                var_info = VariableInfo(
+                                    name=var_name,
+                                    var_type=var_type,
+                                    source="setvariable",
+                                    value=var_value,
+                                    path=var_name,
+                                    insertion_path=insertion_path,
+                                )
+                                setvariable_vars.append(var_info)
+                except Exception as e:
+                    logger.debug(f"Error scanning SetVariable nodes: {e}")
+
+            # Combine all variables
+            all_vars = list(variables) + setvariable_vars
+
+            if not all_vars:
+                # Show empty state
+                empty_label = QLabel(
+                    "No variables defined\n\nCreate variables in the Variables panel\nor use SetVariable nodes"
+                )
+                empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                empty_label.setStyleSheet(f"""
+                    color: {PopupColors.TEXT_SECONDARY.name()};
+                    font-size: 12px;
+                    padding: 40px;
+                """)
+                self._content_layout.addWidget(empty_label)
+            else:
+                # Group by source
+                workflow_vars = [v for v in all_vars if v.source == "workflow"]
+                setvariable_list = [v for v in all_vars if v.source == "setvariable"]
+                node_vars = [v for v in all_vars if v.source.startswith("node:")]
+                system_vars = [v for v in all_vars if v.source == "system"]
+
+                # Add workflow variables section
+                if workflow_vars:
+                    self._add_section_header("WORKFLOW VARIABLES")
+                    for var in workflow_vars:
+                        self._add_variable_item(var)
+
+                # Add SetVariable nodes section
+                if setvariable_list:
+                    self._add_section_header("SET VARIABLES")
+                    for var in setvariable_list:
+                        self._add_variable_item(var)
+
+                # Add node output variables section
+                if node_vars:
+                    self._add_section_header("NODE OUTPUTS")
+                    for var in node_vars:
+                        self._add_variable_item(var)
+
+                # Add system variables section
+                if system_vars:
+                    self._add_section_header("SYSTEM")
+                    for var in system_vars:
+                        self._add_variable_item(var)
+
+        except Exception as e:
+            logger.error(f"Error refreshing variables: {e}")
+            error_label = QLabel(f"Error loading variables:\n{e}")
+            error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            error_label.setStyleSheet(f"color: {PopupColors.ERROR.name()};")
+            self._content_layout.addWidget(error_label)
+
+        self._content_layout.addStretch()
+
+    def _add_section_header(self, text: str) -> None:
+        """Add a section header label."""
+        header = QLabel(text)
+        header.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
+        header.setStyleSheet(f"""
+            color: {PopupColors.TEXT_SECONDARY.name()};
+            padding: 6px 6px 2px 6px;
+        """)
+        self._content_layout.addWidget(header)
+
+    def _add_variable_item(self, var_info) -> None:
+        """Add a variable item widget."""
+        item = VariableItemWidget(
+            var_name=var_info.display_name,
+            var_type=var_info.var_type,
+            value=var_info.value,
+            source=var_info.source,
+            insertion_text=var_info.insertion_text,
+        )
+        self._content_layout.addWidget(item)
+        self._items.append(item)
+
+    def filter_items(self, search_text: str) -> None:
+        """
+        Filter items by search text.
+
+        Args:
+            search_text: Text to filter by (case-insensitive)
+        """
+        search_lower = search_text.lower()
+        for item in self._items:
+            match = search_lower in item._var_name.lower()
+            item.setVisible(match)
+
+
+# ============================================================================
 # HEADER BUTTON (Icon-only)
 # ============================================================================
 
@@ -781,9 +1237,7 @@ class OutputJsonView(QWidget):
 class HeaderButton(QPushButton):
     """Compact icon button for header."""
 
-    def __init__(
-        self, text: str, tooltip: str, parent: Optional[QWidget] = None
-    ) -> None:
+    def __init__(self, text: str, tooltip: str, parent: Optional[QWidget] = None) -> None:
         super().__init__(text, parent)
         self.setFixedSize(24, 24)
         self.setToolTip(tooltip)
@@ -861,6 +1315,7 @@ class ViewModeButton(QPushButton):
         super().__init__(text, parent)
         self.setCheckable(True)
         self.setFixedHeight(22)
+        self.setFixedWidth(44)  # Fixed width so all buttons are same size
         self._update_style()
 
     def _update_style(self) -> None:
@@ -928,10 +1383,10 @@ class NodeOutputPopup(QFrame):
     closed = Signal()
     pin_changed = Signal(bool)
 
-    # Default size (narrower, resizable)
-    DEFAULT_WIDTH = 340
+    # Default size (wider to fit all tab buttons)
+    DEFAULT_WIDTH = 420
     DEFAULT_HEIGHT = 300
-    MIN_WIDTH = 280
+    MIN_WIDTH = 380
     MIN_HEIGHT = 200
 
     # Resize edge margin
@@ -951,9 +1406,7 @@ class NodeOutputPopup(QFrame):
         self._search_visible: bool = False
 
         # Resize state
-        self._resize_edge: Optional[str] = (
-            None  # 'left', 'right', 'top', 'bottom', or corners
-        )
+        self._resize_edge: Optional[str] = None  # 'left', 'right', 'top', 'bottom', or corners
         self._resize_start_pos: Optional[QPoint] = None
         self._resize_start_geometry = None
 
@@ -1017,24 +1470,26 @@ class NodeOutputPopup(QFrame):
         self._schema_view = OutputSchemaView()
         self._table_view = OutputTableView()
         self._json_view = OutputJsonView()
+        self._variables_view = VariablesView()
 
         self._stack.addWidget(self._schema_view)  # Index 0 - Schema (default)
         self._stack.addWidget(self._table_view)  # Index 1 - Table
         self._stack.addWidget(self._json_view)  # Index 2 - JSON
+        self._stack.addWidget(self._variables_view)  # Index 3 - Variables
 
         container_layout.addWidget(self._stack, 1)
 
         # Empty state widget
         self._empty_widget = self._create_empty_state()
-        self._stack.addWidget(self._empty_widget)  # Index 3
+        self._stack.addWidget(self._empty_widget)  # Index 4
 
         # Error state widget
         self._error_widget = self._create_error_state()
-        self._stack.addWidget(self._error_widget)  # Index 4
+        self._stack.addWidget(self._error_widget)  # Index 5
 
         # Loading state widget
         self._loading_widget = self._create_loading_state()
-        self._stack.addWidget(self._loading_widget)  # Index 5
+        self._stack.addWidget(self._loading_widget)  # Index 6
 
         main_layout.addWidget(container)
 
@@ -1088,6 +1543,10 @@ class NodeOutputPopup(QFrame):
         self._json_btn = ViewModeButton("JSON")
         self._json_btn.clicked.connect(lambda: self._switch_view(2))
         layout.addWidget(self._json_btn)
+
+        self._variables_btn = ViewModeButton("Vars")
+        self._variables_btn.clicked.connect(lambda: self._switch_view(3))
+        layout.addWidget(self._variables_btn)
 
         # Small gap
         layout.addSpacing(8)
@@ -1274,6 +1733,8 @@ class NodeOutputPopup(QFrame):
             return 1
         elif self._json_btn.isChecked():
             return 2
+        elif self._variables_btn.isChecked():
+            return 3
         return 0  # Default to Schema
 
     def _switch_view(self, index: int) -> None:
@@ -1281,12 +1742,19 @@ class NodeOutputPopup(QFrame):
         Switch to a specific view.
 
         Args:
-            index: View index (0=Schema, 1=Table, 2=JSON)
+            index: View index (0=Schema, 1=Table, 2=JSON, 3=Variables)
         """
         # Update button states
         self._schema_btn.setChecked(index == 0)
         self._table_btn.setChecked(index == 1)
         self._json_btn.setChecked(index == 2)
+        self._variables_btn.setChecked(index == 3)
+
+        # Show Variables view (always available, doesn't depend on node data)
+        if index == 3:
+            self._variables_view.refresh()
+            self._stack.setCurrentWidget(self._variables_view)
+            return
 
         # Show the view if we have data
         if self._data:
@@ -1313,6 +1781,7 @@ class NodeOutputPopup(QFrame):
         """Handle search input change."""
         self._schema_view.filter_items(text)
         self._table_view.filter_items(text)
+        self._variables_view.filter_items(text)
 
     def set_loading(self, loading: bool) -> None:
         """
@@ -1371,9 +1840,7 @@ class NodeOutputPopup(QFrame):
         self.show()
         self._animate_fade_in()
 
-    def start_tracking_node(
-        self, node_item: QGraphicsItem, view: QGraphicsView
-    ) -> None:
+    def start_tracking_node(self, node_item: QGraphicsItem, view: QGraphicsView) -> None:
         """
         Start tracking a node item to follow it on pan/zoom.
 
@@ -1401,11 +1868,7 @@ class NodeOutputPopup(QFrame):
 
     def _update_tracked_position(self) -> None:
         """Update popup position based on tracked node's current screen position."""
-        if (
-            self._tracked_node_item is None
-            or self._tracked_view is None
-            or not self.isVisible()
-        ):
+        if self._tracked_node_item is None or self._tracked_view is None or not self.isVisible():
             return
 
         try:
@@ -1459,9 +1922,7 @@ class NodeOutputPopup(QFrame):
 
         if self._is_pinned:
             # Convert to regular window when pinned (no StaysOnTop)
-            self.setWindowFlags(
-                Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint
-            )
+            self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
         else:
             # Back to Tool window (closing handled by eventFilter)
             self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
@@ -1601,10 +2062,7 @@ class NodeOutputPopup(QFrame):
                 new_geo.setBottom(geo.bottom() + delta.y())
 
             # Enforce minimum size
-            if (
-                new_geo.width() >= self.MIN_WIDTH
-                and new_geo.height() >= self.MIN_HEIGHT
-            ):
+            if new_geo.width() >= self.MIN_WIDTH and new_geo.height() >= self.MIN_HEIGHT:
                 try:
                     # Clamp geometry to primary screen available area to avoid
                     # QWindowsWindow::setGeometry warnings when requested geometry

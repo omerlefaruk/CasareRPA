@@ -115,9 +115,7 @@ class DriveTrigger(GoogleTriggerBase):
             params["supportsAllDrives"] = "true"
             params["includeItemsFromAllDrives"] = "true"
 
-        response = await client.get(
-            f"{self.DRIVE_API_BASE}/changes/startPageToken", params=params
-        )
+        response = await client.get(f"{self.DRIVE_API_BASE}/changes/startPageToken", params=params)
         self._start_page_token = response.get("startPageToken")
 
         # Build initial list of known files if monitoring specific folder
@@ -125,9 +123,7 @@ class DriveTrigger(GoogleTriggerBase):
         if folder_id:
             await self._build_known_files_list(client, folder_id)
 
-        logger.debug(
-            f"Drive change tracking initialized with token: {self._start_page_token}"
-        )
+        logger.debug(f"Drive change tracking initialized with token: {self._start_page_token}")
 
     async def _build_known_files_list(self, client, folder_id: str) -> None:
         """Build initial list of known file IDs in folder."""
@@ -181,8 +177,7 @@ class DriveTrigger(GoogleTriggerBase):
             else:
                 # Watch all changes with page token
                 watch_url = (
-                    f"{self.DRIVE_API_BASE}/changes/watch"
-                    f"?pageToken={self._start_page_token}"
+                    f"{self.DRIVE_API_BASE}/changes/watch" f"?pageToken={self._start_page_token}"
                 )
 
             watch_body = {
@@ -234,9 +229,7 @@ class DriveTrigger(GoogleTriggerBase):
         """Poll Google Drive for changes."""
         # Check if push notification channel needs renewal
         if self._use_push and self._channel_expiration:
-            if datetime.now(timezone.utc) >= (
-                self._channel_expiration - timedelta(hours=1)
-            ):
+            if datetime.now(timezone.utc) >= (self._channel_expiration - timedelta(hours=1)):
                 logger.debug("Renewing push notification channel")
                 await self._stop_push_notifications()
                 await self._setup_push_notifications()
@@ -302,9 +295,7 @@ class DriveTrigger(GoogleTriggerBase):
                         continue
 
             # Determine change type
-            change_type = self._determine_change_type(
-                change_file_id, removed, file_info
-            )
+            change_type = self._determine_change_type(change_file_id, removed, file_info)
 
             # Filter by watch type
             if watch_type != "all" and change_type != watch_type:
@@ -330,9 +321,7 @@ class DriveTrigger(GoogleTriggerBase):
         if new_token:
             self._start_page_token = new_token
 
-    def _determine_change_type(
-        self, file_id: str, removed: bool, file_info: Dict[str, Any]
-    ) -> str:
+    def _determine_change_type(self, file_id: str, removed: bool, file_info: Dict[str, Any]) -> str:
         """Determine the type of change."""
         if removed or file_info.get("trashed", False):
             return "delete"
@@ -381,13 +370,9 @@ class DriveTrigger(GoogleTriggerBase):
         }
 
         await self.emit(payload, metadata)
-        logger.info(
-            f"Drive trigger fired: {change_type} - {file_info.get('name', file_id)}"
-        )
+        logger.info(f"Drive trigger fired: {change_type} - {file_info.get('name', file_id)}")
 
-    async def handle_push_notification(
-        self, headers: Dict[str, str], body: bytes
-    ) -> bool:
+    async def handle_push_notification(self, headers: Dict[str, str], body: bytes) -> bool:
         """
         Handle incoming push notification from Google Drive.
 

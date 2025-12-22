@@ -144,9 +144,7 @@ class PlaywrightMCPClient:
             return success
 
         except FileNotFoundError as e:
-            logger.error(
-                f"Failed to find npx: {e}. Install Node.js and ensure npx is in PATH"
-            )
+            logger.error(f"Failed to find npx: {e}. Install Node.js and ensure npx is in PATH")
             return False
         except Exception as e:
             logger.error(f"Failed to start Playwright MCP server: {e}")
@@ -302,10 +300,7 @@ class PlaywrightMCPClient:
             # Send initialized notification
             if self._process and self._process.stdin:
                 notification = (
-                    json.dumps(
-                        {"jsonrpc": "2.0", "method": "notifications/initialized"}
-                    )
-                    + "\n"
+                    json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n"
                 )
                 self._process.stdin.write(notification.encode("utf-8"))
                 await self._process.stdin.drain()
@@ -401,9 +396,7 @@ class PlaywrightMCPClient:
             timeout=self.DEFAULT_SNAPSHOT_TIMEOUT,
         )
 
-    async def click(
-        self, ref: str, element_description: str = "element"
-    ) -> MCPToolResult:
+    async def click(self, ref: str, element_description: str = "element") -> MCPToolResult:
         """
         Click an element.
 
@@ -493,9 +486,7 @@ class PlaywrightMCPClient:
             args["time"] = time_seconds
         return await self.call_tool("browser_wait_for", args)
 
-    async def evaluate(
-        self, js_function: str, ref: Optional[str] = None
-    ) -> MCPToolResult:
+    async def evaluate(self, js_function: str, ref: Optional[str] = None) -> MCPToolResult:
         """
         Evaluate JavaScript on the page.
 

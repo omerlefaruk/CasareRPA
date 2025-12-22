@@ -170,9 +170,7 @@ class PromptTemplate:
         if self.examples:
             examples_text = "\n\nExamples:\n"
             for i, example in enumerate(self.examples, 1):
-                examples_text += (
-                    f"\n--- Example {i} ---\n{example.to_prompt_format()}\n"
-                )
+                examples_text += f"\n--- Example {i} ---\n{example.to_prompt_format()}\n"
             rendered = examples_text + "\n" + rendered
 
         return rendered

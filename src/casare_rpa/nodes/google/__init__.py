@@ -4,9 +4,10 @@ Google Workspace nodes for CasareRPA.
 This package provides nodes for interacting with Google Workspace services:
 - Gmail: Email sending, reading, managing
 - Sheets: Spreadsheet operations
-- Docs: Document operations
 - Drive: File storage operations
-- Calendar: Event and calendar management
+
+Note: Google Calendar and Docs nodes have been removed.
+Use the Drive export functionality for document operations.
 
 Base classes and utilities:
 - GoogleBaseNode: Abstract base for all Google nodes
@@ -124,41 +125,8 @@ from casare_rpa.nodes.google.sheets import (
     SheetsBatchClearNode,
 )
 
-from casare_rpa.nodes.google.docs_nodes import (
-    # Document operations (legacy - require pre-authenticated google_client)
-    DocsCreateDocumentNode,
-    DocsGetDocumentNode,
-    DocsGetContentNode,
-    # Text operations
-    DocsInsertTextNode,
-    DocsDeleteContentNode,
-    DocsReplaceTextNode,
-    # Formatting
-    DocsInsertTableNode,
-    DocsInsertImageNode,
-    DocsUpdateStyleNode,
-    DocsBatchUpdateNode,
-)
-
-# Standalone Docs nodes from docs/ subpackage (with own OAuth handling)
-from casare_rpa.nodes.google.docs import (
-    DocsBaseNode,
-    # Read operations (standalone)
-    DocsGetDocumentNode as DocsGetDocumentStandaloneNode,
-    DocsGetTextNode,
-    DocsExportNode,
-    # Write operations (standalone)
-    DocsCreateDocumentNode as DocsCreateDocumentStandaloneNode,
-    DocsInsertTextNode as DocsInsertTextStandaloneNode,
-    DocsAppendTextNode,
-    DocsReplaceTextNode as DocsReplaceTextStandaloneNode,
-    DocsInsertTableNode as DocsInsertTableStandaloneNode,
-    DocsInsertImageNode as DocsInsertImageStandaloneNode,
-    DocsApplyStyleNode,
-)
-
 from casare_rpa.nodes.google.drive_nodes import (
-    # File operations
+    # File operations - Single file
     DriveUploadFileNode,
     DriveDownloadFileNode,
     DriveDeleteFileNode,
@@ -166,6 +134,9 @@ from casare_rpa.nodes.google.drive_nodes import (
     DriveMoveFileNode,
     DriveRenameFileNode,
     DriveGetFileNode,
+    # File operations - Bulk download
+    DriveDownloadFolderNode,
+    DriveBatchDownloadNode,
     # Folder operations
     DriveCreateFolderNode,
     DriveListFilesNode,
@@ -182,26 +153,6 @@ from casare_rpa.nodes.google.drive_nodes import (
     DriveBatchDeleteNode,
     DriveBatchMoveNode,
     DriveBatchCopyNode,
-)
-
-# Calendar nodes from calendar/ subpackage
-from casare_rpa.nodes.google.calendar import (
-    # Base
-    CalendarBaseNode,
-    # Event nodes (8)
-    CalendarListEventsNode,
-    CalendarGetEventNode,
-    CalendarCreateEventNode,
-    CalendarUpdateEventNode,
-    CalendarDeleteEventNode,
-    CalendarQuickAddNode,
-    CalendarMoveEventNode,
-    CalendarGetFreeBusyNode,
-    # Management nodes (4)
-    CalendarListCalendarsNode,
-    CalendarGetCalendarNode,
-    CalendarCreateCalendarNode,
-    CalendarDeleteCalendarNode,
 )
 
 __all__ = [
@@ -296,32 +247,7 @@ __all__ = [
     "SheetsBatchUpdateNode",
     "SheetsBatchGetNode",
     "SheetsBatchClearNode",
-    # Docs - Document operations (3) - Legacy
-    "DocsCreateDocumentNode",
-    "DocsGetDocumentNode",
-    "DocsGetContentNode",
-    # Docs - Text operations (3) - Legacy
-    "DocsInsertTextNode",
-    "DocsDeleteContentNode",
-    "DocsReplaceTextNode",
-    # Docs - Formatting (4) - Legacy
-    "DocsInsertTableNode",
-    "DocsInsertImageNode",
-    "DocsUpdateStyleNode",
-    "DocsBatchUpdateNode",
-    # Docs - Standalone (new, with own OAuth handling)
-    "DocsBaseNode",
-    "DocsGetDocumentStandaloneNode",
-    "DocsGetTextNode",
-    "DocsExportNode",
-    "DocsCreateDocumentStandaloneNode",
-    "DocsInsertTextStandaloneNode",
-    "DocsAppendTextNode",
-    "DocsReplaceTextStandaloneNode",
-    "DocsInsertTableStandaloneNode",
-    "DocsInsertImageStandaloneNode",
-    "DocsApplyStyleNode",
-    # Drive - File operations (7)
+    # Drive - File operations - Single file (7)
     "DriveUploadFileNode",
     "DriveDownloadFileNode",
     "DriveDeleteFileNode",
@@ -329,6 +255,9 @@ __all__ = [
     "DriveMoveFileNode",
     "DriveRenameFileNode",
     "DriveGetFileNode",
+    # Drive - File operations - Bulk download (2)
+    "DriveDownloadFolderNode",
+    "DriveBatchDownloadNode",
     # Drive - Folder operations (3)
     "DriveCreateFolderNode",
     "DriveListFilesNode",
@@ -345,20 +274,4 @@ __all__ = [
     "DriveBatchDeleteNode",
     "DriveBatchMoveNode",
     "DriveBatchCopyNode",
-    # Calendar - Base
-    "CalendarBaseNode",
-    # Calendar - Event nodes (8)
-    "CalendarListEventsNode",
-    "CalendarGetEventNode",
-    "CalendarCreateEventNode",
-    "CalendarUpdateEventNode",
-    "CalendarDeleteEventNode",
-    "CalendarQuickAddNode",
-    "CalendarMoveEventNode",
-    "CalendarGetFreeBusyNode",
-    # Calendar - Management nodes (4)
-    "CalendarListCalendarsNode",
-    "CalendarGetCalendarNode",
-    "CalendarCreateCalendarNode",
-    "CalendarDeleteCalendarNode",
 ]

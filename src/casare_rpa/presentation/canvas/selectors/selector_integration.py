@@ -1,22 +1,25 @@
 """
-Selector Integration Module
-Connects selector picking to the main application and node graph
+Selector Integration Module.
+
+Connects selector picking to the main application and node graph.
+Uses the unified SelectorFacade for consistent selector management.
 """
 
 import asyncio
-from typing import Dict, Any
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 
-from casare_rpa.utils.selectors.selector_manager import SelectorManager
-from casare_rpa.utils.selectors.selector_generator import ElementFingerprint
-from .selector_dialog import SelectorDialog
+from casare_rpa.utils.selectors import SelectorFacade
+from casare_rpa.domain.entities.selector import ElementFingerprint
+from .unified_selector_dialog import UnifiedSelectorDialog
 
 
 class SelectorIntegration(QObject):
     """
-    Integrates selector picking with the main application
-    Manages global hotkeys and node property updates
+    Integrates selector picking with the main application.
+
+    Uses the singleton SelectorFacade for all selector operations
+    to ensure consistent behavior across the application.
     """
 
     selector_picked = Signal(str, str)  # (selector_value, selector_type)
@@ -25,7 +28,8 @@ class SelectorIntegration(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.selector_manager = SelectorManager()
+        # Use singleton facade - ensures consistent state across app
+        self._facade = SelectorFacade.get_instance()
         self._active_page = None
         self._target_node = None  # Node that will receive the selector
         self._target_property = None  # Property name to update
@@ -40,7 +44,7 @@ class SelectorIntegration(QObject):
             page: Playwright Page object
         """
         self._active_page = page
-        await self.selector_manager.inject_into_page(page)
+        await self._facade.inject_picker(page)
         logger.info("Selector integration initialized for page")
 
     async def start_picking(self, target_node=None, target_property: str = "selector"):
@@ -59,8 +63,8 @@ class SelectorIntegration(QObject):
         self._target_property = target_property
         self._is_picking = True
 
-        # Start selector mode in browser
-        await self.selector_manager.activate_selector_mode(
+        # Start selector mode in browser via facade
+        await self._facade.activate_picker(
             recording=False, on_element_selected=self._handle_element_selected
         )
 
@@ -74,8 +78,8 @@ class SelectorIntegration(QObject):
 
         self._is_recording = True
 
-        # Start recording mode in browser
-        await self.selector_manager.activate_selector_mode(
+        # Start recording mode in browser via facade
+        await self._facade.activate_picker(
             recording=True, on_recording_complete=self._handle_recording_complete
         )
 
@@ -86,7 +90,7 @@ class SelectorIntegration(QObject):
         if not self._is_picking and not self._is_recording:
             return
 
-        await self.selector_manager.deactivate_selector_mode()
+        await self._facade.deactivate_picker()
 
         self._is_picking = False
         self._is_recording = False
@@ -102,41 +106,23 @@ class SelectorIntegration(QObject):
         """
         logger.info(f"Element selected: {fingerprint.tag_name}")
 
-        # Create test callback that works with the selector manager
-        def test_callback(selector_value: str, selector_type: str) -> Dict[str, Any]:
-            # This needs to be called in async context
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Create a future to get the result
-                future = asyncio.ensure_future(
-                    self.selector_manager.test_selector(selector_value, selector_type)
-                )
-                # Wait briefly for result
-                try:
-                    return loop.run_until_complete(
-                        asyncio.wait_for(future, timeout=2.0)
-                    )
-                except asyncio.TimeoutError:
-                    return {"success": False, "error": "Timeout"}
-            return {"success": False, "error": "No event loop"}
-
-        # Show selector dialog with target node for auto-pasting
-        dialog = SelectorDialog(
-            fingerprint,
-            test_callback=test_callback,
+        # Show the unified selector dialog
+        dialog = UnifiedSelectorDialog(
+            parent=None,  # Will use default parent
+            initial_fingerprint=fingerprint,
             target_node=self._target_node,
             target_property=self._target_property,
         )
 
-        # Connect highlight signal
-        dialog.selector_selected.connect(self._handle_dialog_action)
-
         # Show dialog
         if dialog.exec():
-            selector_value, selector_type = dialog.get_selected_selector()
+            result = dialog.get_result()
+            if result and result.primary_selector:
+                selector_value = result.primary_selector
+                selector_type = result.selector_type or "css"
 
-            # Emit signal (node already updated by dialog if target was provided)
-            self.selector_picked.emit(selector_value, selector_type)
+                # Emit signal (node already updated by dialog if target was provided)
+                self.selector_picked.emit(selector_value, selector_type)
 
             logger.info(f"Selector confirmed: {selector_value}")
 
@@ -152,9 +138,7 @@ class SelectorIntegration(QObject):
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 asyncio.ensure_future(
-                    self.selector_manager.highlight_elements(
-                        selector_value, selector_type
-                    )
+                    self.selector_manager.highlight_elements(selector_value, selector_type)
                 )
 
     def _handle_recording_complete(self, actions: list):

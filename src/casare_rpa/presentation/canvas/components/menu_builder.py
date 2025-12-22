@@ -58,6 +58,7 @@ class MenuBuilder:
         # --- File Access ---
         file_menu.addAction(mw.action_new)
         file_menu.addAction(mw.action_open)
+        file_menu.addAction(mw.action_reload)
         mw._recent_files_menu = file_menu.addMenu("Recent Files")
 
         file_menu.addSeparator()

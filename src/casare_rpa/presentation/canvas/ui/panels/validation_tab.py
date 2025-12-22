@@ -327,24 +327,18 @@ class ValidationTab(QWidget):
 
         # Copy message
         copy_msg = menu.addAction("Copy Message")
-        copy_msg.triggered.connect(
-            lambda: QApplication.clipboard().setText(item.text(0))
-        )
+        copy_msg.triggered.connect(lambda: QApplication.clipboard().setText(item.text(0)))
 
         # Copy location
         if data.get("location"):
             copy_loc = menu.addAction("Copy Location")
-            copy_loc.triggered.connect(
-                lambda: QApplication.clipboard().setText(data["location"])
-            )
+            copy_loc.triggered.connect(lambda: QApplication.clipboard().setText(data["location"]))
 
             menu.addSeparator()
 
             # Navigate to location
             nav_action = menu.addAction("Go to Node")
-            nav_action.triggered.connect(
-                lambda: self.issue_clicked.emit(data["location"])
-            )
+            nav_action.triggered.connect(lambda: self.issue_clicked.emit(data["location"]))
 
         menu.exec_(self._tree.mapToGlobal(pos))
 
@@ -393,9 +387,7 @@ class ValidationTab(QWidget):
 
         for issue in result.issues:
             severity = (
-                issue.severity.name
-                if hasattr(issue.severity, "name")
-                else str(issue.severity)
+                issue.severity.name if hasattr(issue.severity, "name") else str(issue.severity)
             )
             if severity.upper() == "ERROR":
                 errors.append(issue)
@@ -438,9 +430,7 @@ class ValidationTab(QWidget):
 
             # Format message
             sev_name = (
-                issue.severity.name
-                if hasattr(issue.severity, "name")
-                else str(issue.severity)
+                issue.severity.name if hasattr(issue.severity, "name") else str(issue.severity)
             )
             message = f"{issue.code}: {issue.message}"
             if issue.suggestion:
@@ -449,9 +439,7 @@ class ValidationTab(QWidget):
             item.setText(0, message)
             item.setText(1, issue.location or "")
             item.setForeground(0, QBrush(color))
-            item.setToolTip(
-                0, f"{issue.message}\n\nSuggestion: {issue.suggestion or 'None'}"
-            )
+            item.setToolTip(0, f"{issue.message}\n\nSuggestion: {issue.suggestion or 'None'}")
 
             # Location column with accent color
             if issue.location:
@@ -480,9 +468,7 @@ class ValidationTab(QWidget):
         if result.is_valid:
             if result.warning_count > 0:
                 self._status_badge.set_status("warning", "WARNINGS")
-                self._status_label.setText(
-                    f"Valid with {result.warning_count} warning(s)"
-                )
+                self._status_label.setText(f"Valid with {result.warning_count} warning(s)")
             else:
                 self._status_badge.set_status("success", "VALID")
                 self._status_label.setText("No issues found")

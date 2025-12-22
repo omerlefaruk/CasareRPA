@@ -121,6 +121,45 @@ class JobData:
         )
 
 
+@dataclass
+class RobotApiKeyData:
+    """Robot API key metadata (raw key only available on create/rotate)."""
+
+    id: str
+    robot_id: str
+    robot_name: str = ""
+    name: str = ""
+    description: str = ""
+    status: str = "active"
+    created_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    last_used_at: Optional[datetime] = None
+    last_used_ip: Optional[str] = None
+
+    @classmethod
+    def from_api(cls, data: Dict[str, Any]) -> "RobotApiKeyData":
+        def parse_dt(val):
+            if isinstance(val, str):
+                try:
+                    return datetime.fromisoformat(val.replace("Z", "+00:00"))
+                except (ValueError, TypeError):
+                    return None
+            return val
+
+        return cls(
+            id=data.get("id") or data.get("key_id") or "",
+            robot_id=data.get("robot_id") or "",
+            robot_name=data.get("robot_name") or "",
+            name=data.get("key_name") or data.get("name") or "",
+            description=data.get("description") or "",
+            status=data.get("status") or "active",
+            created_at=parse_dt(data.get("created_at")),
+            expires_at=parse_dt(data.get("expires_at")),
+            last_used_at=parse_dt(data.get("last_used_at")),
+            last_used_ip=data.get("last_used_ip"),
+        )
+
+
 class OrchestratorClient:
     """
     Client for communicating with CasareRPA Orchestrator API.
@@ -138,6 +177,7 @@ class OrchestratorClient:
         self._ws: Optional[aiohttp.ClientWebSocketResponse] = None
         self._ws_task: Optional[asyncio.Task] = None
         self._connected = False
+        self._last_http_status: Optional[int] = None
         self._callbacks: Dict[str, List[Callable]] = {
             "robot_status": [],
             "job_update": [],
@@ -152,6 +192,16 @@ class OrchestratorClient:
         """Check if client is connected."""
         return self._connected and self._session is not None
 
+    @property
+    def last_http_status(self) -> Optional[int]:
+        """
+        Last HTTP status code returned by the orchestrator API.
+
+        Useful for distinguishing 404 Not Found (e.g. robot deleted) from
+        transient network/5xx failures when methods only return bool/None.
+        """
+        return self._last_http_status
+
     async def connect(self) -> bool:
         """
         Establish connection to orchestrator.
@@ -159,19 +209,20 @@ class OrchestratorClient:
         Returns:
             True if connected successfully.
         """
+        created_session = False
         try:
             if self._session is None:
                 timeout = aiohttp.ClientTimeout(total=self.config.timeout)
                 headers = {}
                 if self.config.api_key:
                     headers["Authorization"] = f"Bearer {self.config.api_key}"
+                    headers["X-Api-Key"] = self.config.api_key
 
                 self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
+                created_session = True
 
             # Test connection with health check
-            async with self._session.get(
-                urljoin(self.config.base_url, "/health")
-            ) as resp:
+            async with self._session.get(urljoin(self.config.base_url, "/health")) as resp:
                 if resp.status == 200:
                     self._connected = True
                     logger.info(f"Connected to orchestrator at {self.config.base_url}")
@@ -179,15 +230,24 @@ class OrchestratorClient:
                     return True
                 else:
                     logger.warning(f"Orchestrator health check failed: {resp.status}")
+                    if created_session and self._session:
+                        await self._session.close()
+                        self._session = None
                     return False
 
         except aiohttp.ClientError as e:
             logger.error(f"Failed to connect to orchestrator: {e}")
             await self._notify("error", {"error": str(e)})
+            if created_session and self._session:
+                await self._session.close()
+                self._session = None
             return False
         except Exception as e:
             logger.error(f"Unexpected error connecting to orchestrator: {e}")
             await self._notify("error", {"error": str(e)})
+            if created_session and self._session:
+                await self._session.close()
+                self._session = None
             return False
 
     async def disconnect(self) -> None:
@@ -234,19 +294,59 @@ class OrchestratorClient:
                 async with self._session.request(
                     method, url, params=params, json=json_data
                 ) as resp:
-                    if resp.status == 200:
-                        return await resp.json()
+                    self._last_http_status = resp.status
+                    if 200 <= resp.status < 300:
+                        # Handle 204 No Content
+                        if resp.status == 204:
+                            return {}
+                        # Try to parse JSON, fallback to empty dict if not JSON
+                        try:
+                            json_resp = await resp.json()
+                            return json_resp if json_resp is not None else {}
+                        except Exception:
+                            return {}
+
                     elif resp.status == 404:
                         return None
                     else:
-                        logger.warning(f"API request failed: {resp.status} {url}")
-                        if attempt < self.config.retry_attempts - 1:
+                        resp_text = await resp.text()
+                        await self._notify(
+                            "error",
+                            {
+                                "status": resp.status,
+                                "method": method,
+                                "url": url,
+                                "body": resp_text[:500],
+                            },
+                        )
+
+                        retryable = resp.status in (429, 502, 503, 504)
+                        if not retryable or attempt >= self.config.retry_attempts - 1:
+                            logger.error(
+                                f"API request failed: {resp.status} {url} | Body: {resp_text[:200]}"
+                            )
+                            return None
+
+                        if resp.status == 429:
+                            retry_after = resp.headers.get("Retry-After")
+                            try:
+                                delay = float(retry_after) if retry_after else None
+                            except (TypeError, ValueError):
+                                delay = None
+                            await asyncio.sleep(
+                                delay if delay is not None else self.config.retry_delay
+                            )
+                        else:
                             await asyncio.sleep(self.config.retry_delay * (attempt + 1))
 
             except aiohttp.ClientError as e:
-                logger.error(
-                    f"Request error ({attempt + 1}/{self.config.retry_attempts}): {e}"
-                )
+                self._last_http_status = None
+                logger.error(f"Request error ({attempt + 1}/{self.config.retry_attempts}): {e}")
+                if attempt < self.config.retry_attempts - 1:
+                    await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+            except Exception as e:
+                self._last_http_status = None
+                logger.error(f"Unexpected request error: {e}")
                 if attempt < self.config.retry_attempts - 1:
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
 
@@ -289,6 +389,7 @@ class OrchestratorClient:
         capabilities: List[str],
         environment: str = "default",
         max_concurrent_jobs: int = 1,
+        tags: Optional[List[str]] = None,
     ) -> bool:
         """
         Register a new robot with the orchestrator.
@@ -314,6 +415,7 @@ class OrchestratorClient:
                 "capabilities": capabilities,
                 "environment": environment,
                 "max_concurrent_jobs": max_concurrent_jobs,
+                "tags": tags or [],
             },
         )
         return data is not None
@@ -327,10 +429,108 @@ class OrchestratorClient:
         )
         return data is not None
 
+    async def update_robot(self, robot_id: str, robot_data: Dict[str, Any]) -> bool:
+        """Update robot metadata (name/environment/capabilities/etc)."""
+        data = await self._request(
+            "PUT",
+            f"/api/v1/robots/{robot_id}",
+            json_data=robot_data,
+        )
+        return data is not None
+
+    async def send_robot_heartbeat(
+        self,
+        robot_id: str,
+        metrics: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Send robot heartbeat with optional metrics payload."""
+        data = await self._request(
+            "POST",
+            f"/api/v1/robots/{robot_id}/heartbeat",
+            json_data=metrics or {},
+        )
+        return data is not None
+
     async def delete_robot(self, robot_id: str) -> bool:
         """Delete/deregister a robot."""
-        data = await self._request("DELETE", f"/api/v1/robots/{robot_id}")
+        if not self._session:
+            await self.connect()
+        if not self._session:
+            return False
+
+        url = urljoin(self.config.base_url, f"/api/v1/robots/{robot_id}")
+        try:
+            async with self._session.delete(url) as resp:
+                if 200 <= resp.status < 300:
+                    return True
+                if resp.status == 404:
+                    logger.info(
+                        f"Robot {robot_id} not found (404) during deletion, treating as success"
+                    )
+                    return True
+
+                text = await resp.text()
+                logger.warning(f"Delete robot failed: {resp.status} - {text[:200]}")
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting robot: {e}")
+            return False
+
+    # ==================== ROBOT API KEY ENDPOINTS ====================
+
+    async def list_robot_api_keys(
+        self,
+        robot_id: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> List[RobotApiKeyData]:
+        params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        if robot_id:
+            params["robot_id"] = robot_id
+        if status:
+            params["status"] = status
+
+        data = await self._request("GET", "/api/v1/robot-api-keys", params=params)
+        if not data:
+            return []
+
+        items = data.get("keys") if isinstance(data, dict) else None
+        if not isinstance(items, list):
+            return []
+        return [RobotApiKeyData.from_api(item) for item in items]
+
+    async def create_robot_api_key(
+        self,
+        robot_id: str,
+        name: str,
+        description: str = "",
+        expires_at: Optional[datetime] = None,
+    ) -> Optional[Dict[str, Any]]:
+        payload: Dict[str, Any] = {
+            "robot_id": robot_id,
+            "name": name,
+            "description": description or None,
+            "expires_at": expires_at.isoformat() if expires_at else None,
+        }
+
+        data = await self._request("POST", "/api/v1/robot-api-keys", json_data=payload)
+        return data if isinstance(data, dict) else None
+
+    async def revoke_robot_api_key(self, key_id: str, reason: str = "") -> bool:
+        data = await self._request(
+            "POST",
+            f"/api/v1/robot-api-keys/{key_id}/revoke",
+            json_data={"reason": reason or None},
+        )
         return data is not None
+
+    async def rotate_robot_api_key(self, key_id: str) -> Optional[Dict[str, Any]]:
+        data = await self._request(
+            "POST",
+            f"/api/v1/robot-api-keys/{key_id}/rotate",
+        )
+        return data if isinstance(data, dict) else None
 
     # ==================== JOB ENDPOINTS ====================
 
@@ -395,9 +595,7 @@ class OrchestratorClient:
 
     async def get_analytics(self, days: int = 7) -> Dict[str, Any]:
         """Get aggregated analytics."""
-        data = await self._request(
-            "GET", "/api/v1/metrics/analytics", params={"days": days}
-        )
+        data = await self._request("GET", "/api/v1/metrics/analytics", params={"days": days})
         return data or {}
 
     async def get_activity(

@@ -97,9 +97,7 @@ class RecordedActionsPanel(QDockWidget):
         header_layout.setSpacing(8)
 
         self._count_label = QLabel("0 actions recorded")
-        self._count_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-weight: bold;"
-        )
+        self._count_label.setStyleSheet(f"color: {THEME.text_secondary}; font-weight: bold;")
         header_layout.addWidget(self._count_label)
 
         header_layout.addStretch()

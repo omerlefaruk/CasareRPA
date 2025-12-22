@@ -23,7 +23,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "expression",
@@ -34,6 +33,7 @@ from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
         placeholder="{{variable}} > 10",
     ),
 )
+@node(category="control_flow", exec_outputs=["true", "false"])
 class IfNode(BaseNode):
     """
     Conditional node that executes different paths based on condition.
@@ -54,10 +54,10 @@ class IfNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in")
+        # Note: exec_in/exec_out are added by @node decorator
         self.add_input_port("condition", DataType.ANY, required=False)
-        self.add_output_port("true")
-        self.add_output_port("false")
+        self.add_exec_output("true")
+        self.add_exec_output("false")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -86,14 +86,10 @@ class IfNode(BaseNode):
                         resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
 
                         if not is_safe_expression(resolved_expr):
-                            raise ValueError(
-                                f"Unsafe expression detected: {resolved_expr}"
-                            )
+                            raise ValueError(f"Unsafe expression detected: {resolved_expr}")
                         condition = safe_eval(resolved_expr, context.variables)
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to evaluate expression '{expression}': {e}"
-                        )
+                        logger.warning(f"Failed to evaluate expression '{expression}': {e}")
                         condition = False
                 else:
                     condition = False
@@ -119,7 +115,6 @@ class IfNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="control_flow")
 @properties(
     PropertyDef(
         "cases",
@@ -137,6 +132,7 @@ class IfNode(BaseNode):
         placeholder="{{status}}",
     ),
 )
+@node(category="control_flow", exec_outputs=["exec_out", "default"])
 class SwitchNode(BaseNode):
     """
     Multi-way branching node based on value matching.
@@ -157,15 +153,15 @@ class SwitchNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in")
+        # Note: exec_in/exec_out are added by @node decorator
         self.add_input_port("value", DataType.ANY, required=False)
 
         # Get cases from config (e.g., ["success", "error", "pending"])
         cases = self.get_parameter("cases", [])
         for case in cases:
-            self.add_output_port(f"case_{case}")
+            self.add_exec_output(f"case_{case}")
 
-        self.add_output_port("default")
+        self.add_exec_output("default")
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -231,8 +227,8 @@ class SwitchNode(BaseNode):
             }
 
 
-@node(category="control_flow")
 @properties()  # Pass-through node
+@node(category="control_flow")
 class MergeNode(BaseNode):
     """
     Merge node that allows multiple execution paths to converge.

@@ -23,14 +23,17 @@ class TooltipBlocker(QObject):
 
 class OutputPortMMBFilter(QObject):
     """
-    Event filter to detect middle mouse button clicks on output ports.
+    Event filter to detect middle mouse button clicks on output ports and node bodies.
 
-    Creates a SetVariable node connected to the clicked output port.
+    Creates a SetVariable node connected to the clicked output port,
+    or shows the output inspector when clicking on a node body.
     Excludes exec ports (exec_in, exec_out, etc.)
 
     Behavior:
         - LMB: Normal behavior (drag connection)
         - MMB on output port: Create SetVariable node
+        - MMB on node body: Show output inspector popup
+        - MMB on empty space: Pan viewport (default behavior)
     """
 
     # Common exec port names to exclude
@@ -58,7 +61,7 @@ class OutputPortMMBFilter(QObject):
         self._widget = widget
 
     def eventFilter(self, obj, event):
-        """Handle middle mouse button click to create SetVariable node."""
+        """Handle middle mouse button click."""
         # Only handle MouseButtonPress
         if event.type() != QEvent.Type.MouseButtonPress:
             return False
@@ -72,28 +75,35 @@ class OutputPortMMBFilter(QObject):
 
         # Get scene position
         scene_pos = viewer.mapToScene(event.pos())
+
+        # First, check if click is on an output port
         port_item = self._find_port_at_position(viewer, scene_pos)
 
-        if not port_item:
-            return False  # Not on a port, let panning happen
+        if port_item:
+            # Check if this is an output port (not input)
+            from NodeGraphQt.constants import PortTypeEnum
 
-        # Check if this is an output port (not input)
-        from NodeGraphQt.constants import PortTypeEnum
+            if port_item.port_type == PortTypeEnum.OUT.value:
+                # Check if this is an exec port - skip those
+                if not self._is_exec_port(port_item):
+                    # Create SetVariable node
+                    try:
+                        self._widget._create_set_variable_for_port(port_item)
+                    except Exception as e:
+                        logger.error(f"Failed to create SetVariable: {e}")
+                    return True  # Block the event to prevent panning
 
-        if port_item.port_type != PortTypeEnum.OUT.value:
-            return False
+        # If not on a port, check if click is on a node body
+        node_item = self._find_node_at_position(viewer, scene_pos)
+        if node_item:
+            # Show output inspector for this node
+            try:
+                self._show_output_inspector_for_node(node_item, event)
+            except Exception as e:
+                logger.error(f"Failed to show output inspector: {e}")
+            return True  # Block the event to prevent panning
 
-        # Check if this is an exec port - skip those
-        if self._is_exec_port(port_item):
-            return False
-
-        # Create SetVariable node
-        try:
-            self._widget._create_set_variable_for_port(port_item)
-        except Exception as e:
-            logger.error(f"Failed to create SetVariable: {e}")
-
-        return True  # Block the event to prevent panning
+        return False  # Not on a port or node, let panning happen
 
     def _find_port_at_position(self, viewer, scene_pos):
         """Find a port item at the given scene position."""
@@ -104,6 +114,45 @@ class OutputPortMMBFilter(QObject):
             if "Port" in class_name or class_name == "PortItem":
                 return item
         return None
+
+    def _find_node_at_position(self, viewer, scene_pos):
+        """Find a node item at the given scene position."""
+        items = viewer.scene().items(scene_pos)
+
+        for item in items:
+            class_name = item.__class__.__name__
+            # Check for CasareNodeItem, SubflowNodeItem, or generic NodeItem
+            if "NodeItem" in class_name and "Reroute" not in class_name:
+                return item
+        return None
+
+    def _show_output_inspector_for_node(self, node_item, event):
+        """Show the output inspector popup for a node."""
+        # Get the VisualNode instance
+        node = getattr(node_item, "_node", None)
+        if not node:
+            logger.debug("Cannot show output inspector: no visual node attached")
+            return
+
+        # Get output data from the visual node
+        output_data = None
+        if hasattr(node, "_last_output"):
+            output_data = node._last_output
+
+        # Get node ID and name
+        node_id = node.get_property("node_id") if hasattr(node, "get_property") else node.id
+        node_name = node.name() if callable(node.name) else str(node.name)
+
+        # Calculate popup position (bottom-left of node)
+        viewer = self._graph.viewer()
+        node_rect = node_item.sceneBoundingRect()
+        bottom_left_scene = node_rect.bottomLeft()
+        view_pos = viewer.mapFromScene(bottom_left_scene)
+        global_pos = viewer.mapToGlobal(view_pos)
+
+        # Show the output inspector
+        self._widget.show_output_inspector(node_id, node_name, output_data, global_pos, node_item)
+        logger.debug(f"Showing output inspector for {node_name}")
 
     def _is_exec_port(self, port_item) -> bool:
         """
@@ -178,9 +227,7 @@ class ConnectionDropFilter(QObject):
             class_name = item.__class__.__name__
             if "Port" in class_name or class_name == "PortItem":
                 has_port = True
-                logger.debug(
-                    f"ConnectionDropFilter: Found port ({class_name}) at drop location"
-                )
+                logger.debug(f"ConnectionDropFilter: Found port ({class_name}) at drop location")
                 break
 
         if has_port:
@@ -217,17 +264,7 @@ class ConnectionDropFilter(QObject):
         # Double-check: if a connection was made by NodeGraphQt, don't show menu
         try:
             if source_port is None or not hasattr(source_port, "connected_pipes"):
-                logger.debug(
-                    "ConnectionDropFilter: Source port no longer valid, skipping search"
-                )
-                return
-
-            pipes = source_port.connected_pipes
-            if pipes:
-                logger.debug(
-                    f"ConnectionDropFilter: Port already has {len(pipes)} "
-                    f"connection(s), skipping search"
-                )
+                logger.debug("ConnectionDropFilter: Source port no longer valid, skipping search")
                 return
         except Exception as e:
             logger.debug(f"ConnectionDropFilter: Error checking connections: {e}")

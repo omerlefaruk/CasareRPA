@@ -86,9 +86,7 @@ class AnalyticsPanel(QDockWidget):
     bottleneck_clicked = Signal(dict)
     insight_clicked = Signal(dict)
 
-    def __init__(
-        self, parent: Optional[QWidget] = None, embedded: bool = False
-    ) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
         """Initialize the analytics panel.
 
         Args:
@@ -178,10 +176,13 @@ class AnalyticsPanel(QDockWidget):
         Args:
             url: Base URL for orchestrator (e.g., https://tunnel.example.com)
         """
-        if not url.endswith("/api/v1"):
-            url = f"{url}/api/v1"
-        self._api_base_url = url
-        logger.info(f"Analytics API URL updated to: {url}")
+        base = url.replace("ws://", "http://").replace("wss://", "https://").rstrip("/")
+        if base.endswith("/ws"):
+            base = base[: -len("/ws")]
+        if not base.endswith("/api/v1"):
+            base = f"{base}/api/v1"
+        self._api_base_url = base
+        logger.info(f"Analytics API URL updated to: {base}")
 
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
@@ -293,33 +294,21 @@ class AnalyticsPanel(QDockWidget):
         self._exec_count_label = QLabel("0")
         self._exec_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         exec_layout = QVBoxLayout()
-        exec_layout.addWidget(
-            self._exec_count_label, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        exec_layout.addWidget(
-            QLabel("Executions"), alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        exec_layout.addWidget(self._exec_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        exec_layout.addWidget(QLabel("Executions"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._bottleneck_count_label = QLabel("0")
         self._bottleneck_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         bn_layout = QVBoxLayout()
-        bn_layout.addWidget(
-            self._bottleneck_count_label, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        bn_layout.addWidget(
-            QLabel("Bottlenecks"), alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        bn_layout.addWidget(self._bottleneck_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        bn_layout.addWidget(QLabel("Bottlenecks"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         self._critical_count_label = QLabel("0")
         self._critical_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         self._critical_count_label.setStyleSheet(f"color: {THEME.status_error};")
         crit_layout = QVBoxLayout()
-        crit_layout.addWidget(
-            self._critical_count_label, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        crit_layout.addWidget(
-            QLabel("Critical"), alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        crit_layout.addWidget(self._critical_count_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        crit_layout.addWidget(QLabel("Critical"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         summary_layout.addLayout(exec_layout)
         summary_layout.addLayout(bn_layout)
@@ -333,12 +322,8 @@ class AnalyticsPanel(QDockWidget):
             ["Node", "Type", "Severity", "Impact", "Frequency"]
         )
         self._bottlenecks_table.setAlternatingRowColors(True)
-        self._bottlenecks_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
-        self._bottlenecks_table.itemSelectionChanged.connect(
-            self._on_bottleneck_selected
-        )
+        self._bottlenecks_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._bottlenecks_table.itemSelectionChanged.connect(self._on_bottleneck_selected)
 
         header = self._bottlenecks_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -375,12 +360,8 @@ class AnalyticsPanel(QDockWidget):
         self._duration_trend_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self._duration_trend_icon = QLabel("📊")
         self._duration_trend_icon.setFont(QFont("Segoe UI", 18))
-        dur_layout.addWidget(
-            self._duration_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        dur_layout.addWidget(
-            self._duration_trend_label, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        dur_layout.addWidget(self._duration_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter)
+        dur_layout.addWidget(self._duration_trend_label, alignment=Qt.AlignmentFlag.AlignCenter)
         dur_layout.addWidget(QLabel("Duration"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Success trend
@@ -389,15 +370,9 @@ class AnalyticsPanel(QDockWidget):
         self._success_trend_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         self._success_trend_icon = QLabel("📊")
         self._success_trend_icon.setFont(QFont("Segoe UI", 18))
-        success_layout.addWidget(
-            self._success_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        success_layout.addWidget(
-            self._success_trend_label, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        success_layout.addWidget(
-            QLabel("Success Rate"), alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        success_layout.addWidget(self._success_trend_icon, alignment=Qt.AlignmentFlag.AlignCenter)
+        success_layout.addWidget(self._success_trend_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        success_layout.addWidget(QLabel("Success Rate"), alignment=Qt.AlignmentFlag.AlignCenter)
 
         trends_layout.addLayout(dur_layout)
         trends_layout.addLayout(success_layout)
@@ -418,13 +393,9 @@ class AnalyticsPanel(QDockWidget):
 
         self._insights_table = QTableWidget()
         self._insights_table.setColumnCount(3)
-        self._insights_table.setHorizontalHeaderLabels(
-            ["Insight", "Type", "Significance"]
-        )
+        self._insights_table.setHorizontalHeaderLabels(["Insight", "Type", "Significance"])
         self._insights_table.setAlternatingRowColors(True)
-        self._insights_table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._insights_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._insights_table.itemSelectionChanged.connect(self._on_insight_selected)
 
         header = self._insights_table.horizontalHeader()
@@ -578,9 +549,7 @@ class AnalyticsPanel(QDockWidget):
         self._refresh_timer.timeout.connect(self._auto_refresh)
         self._refresh_timer.setInterval(60000)  # 1 minute
 
-    def _run_in_background(
-        self, url: str, on_success, on_error=None, timeout: float = 5.0
-    ) -> None:
+    def _run_in_background(self, url: str, on_success, on_error=None, timeout: float = 5.0) -> None:
         """Run API call in background thread to avoid UI freeze."""
         thread = QThread()
         worker = ApiWorker(url, timeout=timeout)
@@ -698,9 +667,7 @@ class AnalyticsPanel(QDockWidget):
             logger.error(f"Failed to load bottlenecks: {err}")
             self._bottleneck_detail.setText(f"Error loading bottlenecks: {err}")
 
-        self._run_in_background(
-            url, self._update_bottlenecks_ui, on_error, timeout=15.0
-        )
+        self._run_in_background(url, self._update_bottlenecks_ui, on_error, timeout=15.0)
 
     def _update_bottlenecks_ui(self, data: Dict[str, Any]) -> None:
         """Update bottlenecks UI with API data."""
@@ -846,9 +813,7 @@ class AnalyticsPanel(QDockWidget):
             self._insights_table.setItem(row, 0, title_item)
 
             # Type
-            type_item = QTableWidgetItem(
-                insight.get("type", "").replace("_", " ").title()
-            )
+            type_item = QTableWidgetItem(insight.get("type", "").replace("_", " ").title())
             self._insights_table.setItem(row, 1, type_item)
 
             # Significance
@@ -877,9 +842,7 @@ class AnalyticsPanel(QDockWidget):
             detail = f"**{insight.get('title', '')}**\n\n"
             detail += f"{insight.get('description', '')}\n\n"
             if insight.get("recommended_action"):
-                detail += (
-                    f"**Recommended Action:**\n{insight.get('recommended_action')}\n"
-                )
+                detail += f"**Recommended Action:**\n{insight.get('recommended_action')}\n"
 
             self._insight_detail.setText(detail)
             self.insight_clicked.emit(insight)

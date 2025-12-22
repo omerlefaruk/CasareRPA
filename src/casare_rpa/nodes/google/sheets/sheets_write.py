@@ -85,7 +85,6 @@ SHEETS_VALUE_INPUT_OPTION = PropertyDef(
 )
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -112,6 +111,7 @@ SHEETS_VALUE_INPUT_OPTION = PropertyDef(
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsWriteCellNode(SheetsBaseNode):
     """
     Write a single cell value to Google Sheets.
@@ -138,7 +138,7 @@ class SheetsWriteCellNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Write Cell", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -163,13 +163,9 @@ class SheetsWriteCellNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         cell = self.get_parameter("cell")
-        if hasattr(context, "resolve_value") and cell:
-            cell = context.resolve_value(cell)
 
         if not cell:
             self._set_error_outputs("Cell reference is required")
@@ -180,8 +176,6 @@ class SheetsWriteCellNode(SheetsBaseNode):
             }
 
         value = self.get_parameter("value")
-        if hasattr(context, "resolve_value") and value is not None:
-            value = context.resolve_value(value)
 
         value_input_option = self.get_parameter("value_input_option") or "USER_ENTERED"
 
@@ -198,9 +192,7 @@ class SheetsWriteCellNode(SheetsBaseNode):
         updated_cells = result.get("updatedCells", 1)
         updated_range = result.get("updatedRange", range_notation)
 
-        self._set_success_outputs(
-            {"updated_cells": updated_cells, "updated_range": updated_range}
-        )
+        self._set_success_outputs({"updated_cells": updated_cells, "updated_range": updated_range})
         self.set_output_value("updated_cells", updated_cells)
         self.set_output_value("updated_range", updated_range)
 
@@ -214,7 +206,6 @@ class SheetsWriteCellNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -240,6 +231,7 @@ class SheetsWriteCellNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsWriteRangeNode(SheetsBaseNode):
     """
     Write a range of values to Google Sheets.
@@ -267,7 +259,7 @@ class SheetsWriteRangeNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Write Range", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -293,16 +285,12 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         range_notation = self.get_parameter("range")
-        if hasattr(context, "resolve_value") and range_notation:
-            range_notation = context.resolve_value(range_notation)
 
         if not range_notation:
             self._set_error_outputs("Range is required")
             return {"success": False, "error": "Range is required", "next_nodes": []}
 
         values = self.get_parameter("values")
-        if hasattr(context, "resolve_value") and values:
-            values = context.resolve_value(values)
 
         if not values or not isinstance(values, list):
             self._set_error_outputs("Values must be a 2D array")
@@ -328,9 +316,7 @@ class SheetsWriteRangeNode(SheetsBaseNode):
 
         updated_cells = result.get("updatedCells", 0)
         updated_rows = result.get("updatedRows", len(values))
-        updated_columns = result.get(
-            "updatedColumns", max(len(r) for r in values) if values else 0
-        )
+        updated_columns = result.get("updatedColumns", max(len(r) for r in values) if values else 0)
         updated_range = result.get("updatedRange", range_notation)
 
         self._set_success_outputs(
@@ -357,7 +343,6 @@ class SheetsWriteRangeNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -375,6 +360,7 @@ class SheetsWriteRangeNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsAppendRowNode(SheetsBaseNode):
     """
     Append a row to the end of data in a Google Sheet.
@@ -401,7 +387,7 @@ class SheetsAppendRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Append Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -426,13 +412,9 @@ class SheetsAppendRowNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         values = self.get_parameter("values")
-        if hasattr(context, "resolve_value") and values:
-            values = context.resolve_value(values)
 
         if not values or not isinstance(values, list):
             self._set_error_outputs("Values must be an array")
@@ -486,7 +468,6 @@ class SheetsAppendRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -522,6 +503,7 @@ class SheetsAppendRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsUpdateRowNode(SheetsBaseNode):
     """
     Update an existing row in Google Sheets.
@@ -549,7 +531,7 @@ class SheetsUpdateRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Update Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -575,13 +557,9 @@ class SheetsUpdateRowNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         row_num = self.get_parameter("row_num")
-        if hasattr(context, "resolve_value"):
-            row_num = context.resolve_value(row_num)
         row_num = int(row_num) if row_num else 1
 
         if row_num < 1:
@@ -593,8 +571,6 @@ class SheetsUpdateRowNode(SheetsBaseNode):
             }
 
         values = self.get_parameter("values")
-        if hasattr(context, "resolve_value") and values:
-            values = context.resolve_value(values)
 
         if not values or not isinstance(values, list):
             self._set_error_outputs("Values must be an array")
@@ -643,7 +619,6 @@ class SheetsUpdateRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -671,6 +646,7 @@ class SheetsUpdateRowNode(SheetsBaseNode):
     ),
     SHEETS_VALUE_INPUT_OPTION,
 )
+@node(category="google")
 class SheetsInsertRowNode(SheetsBaseNode):
     """
     Insert a new row at a specific position in Google Sheets.
@@ -699,7 +675,7 @@ class SheetsInsertRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Insert Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -723,13 +699,9 @@ class SheetsInsertRowNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         row_num = self.get_parameter("row_num")
-        if hasattr(context, "resolve_value"):
-            row_num = context.resolve_value(row_num)
         row_num = int(row_num) if row_num else 1
 
         if row_num < 1:
@@ -771,13 +743,9 @@ class SheetsInsertRowNode(SheetsBaseNode):
         await client.batch_update(spreadsheet_id, insert_request["requests"])
 
         values = self.get_parameter("values")
-        if hasattr(context, "resolve_value") and values:
-            values = context.resolve_value(values)
 
         if values and isinstance(values, list):
-            value_input_option = (
-                self.get_parameter("value_input_option") or "USER_ENTERED"
-            )
+            value_input_option = self.get_parameter("value_input_option") or "USER_ENTERED"
             end_col_idx = len(values) - 1
             end_col = self.index_to_column_letter(end_col_idx)
             range_notation = f"{sheet_name}!A{row_num}:{end_col}{row_num}"
@@ -801,7 +769,6 @@ class SheetsInsertRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -828,6 +795,7 @@ class SheetsInsertRowNode(SheetsBaseNode):
         min_value=1,
     ),
 )
+@node(category="google")
 class SheetsDeleteRowNode(SheetsBaseNode):
     """
     Delete one or more rows from Google Sheets.
@@ -854,7 +822,7 @@ class SheetsDeleteRowNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Delete Row", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -877,13 +845,9 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         row_num = self.get_parameter("row_num")
-        if hasattr(context, "resolve_value"):
-            row_num = context.resolve_value(row_num)
         row_num = int(row_num) if row_num else 1
 
         if row_num < 1:
@@ -895,13 +859,9 @@ class SheetsDeleteRowNode(SheetsBaseNode):
             }
 
         num_rows = self.get_parameter("num_rows")
-        if hasattr(context, "resolve_value"):
-            num_rows = context.resolve_value(num_rows)
         num_rows = int(num_rows) if num_rows else 1
 
-        logger.debug(
-            f"Deleting {num_rows} row(s) starting at {row_num} in {spreadsheet_id}"
-        )
+        logger.debug(f"Deleting {num_rows} row(s) starting at {row_num} in {spreadsheet_id}")
 
         sheet_info = await client.get_sheet_by_name(spreadsheet_id, sheet_name)
         if not sheet_info:
@@ -943,7 +903,6 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         }
 
 
-@node(category="integration")
 @properties(
     SHEETS_SERVICE_ACCOUNT,
     SHEETS_ACCESS_TOKEN,
@@ -959,6 +918,7 @@ class SheetsDeleteRowNode(SheetsBaseNode):
         tooltip="Range in A1 notation to clear (e.g., 'Sheet1!A1:Z1000')",
     ),
 )
+@node(category="google")
 class SheetsClearRangeNode(SheetsBaseNode):
     """
     Clear values from a range in Google Sheets.
@@ -985,7 +945,7 @@ class SheetsClearRangeNode(SheetsBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name="Sheets Clear Range", **kwargs)
-        self._define_ports()
+        # Note: _define_ports() is called by BaseNode.__init__
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
@@ -1006,8 +966,6 @@ class SheetsClearRangeNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         range_notation = self.get_parameter("range")
-        if hasattr(context, "resolve_value") and range_notation:
-            range_notation = context.resolve_value(range_notation)
 
         if not range_notation:
             self._set_error_outputs("Range is required")

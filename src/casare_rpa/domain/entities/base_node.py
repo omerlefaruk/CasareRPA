@@ -45,10 +45,18 @@ class BaseNode(ABC):
     """
     Abstract base class for all automation nodes.
 
+    AI-HINT: This is the inheritance root for ALL 400+ automation nodes.
+    AI-CONTEXT: Subclass this for any new node. Use @node decorator for registration.
+    AI-WARNING: Changes here affect the entire node system. Test thoroughly.
+
     All nodes must implement:
     - execute(): Core execution logic
-    - validate(): Input validation
     - _define_ports(): Port definitions
+
+    Key patterns:
+    - Use add_exec_input()/add_exec_output() for execution ports
+    - Use get_parameter() for dual-source config (port OR config)
+    - Return ExecutionResult dict from execute(), don't raise exceptions
     """
 
     def __init__(self, node_id: NodeId, config: Optional[NodeConfig] = None) -> None:
@@ -78,6 +86,14 @@ class BaseNode(ABC):
         self.execution_count: int = 0
         self.last_execution_time: Optional[float] = None
         self.last_output: Optional[Dict[str, Any]] = None
+
+        # Caching support
+        self.cacheable: bool = False
+        self.cache_ttl: int = 3600  # 1 hour default
+
+        # Execution context reference for auto-resolution in get_parameter()
+        # Set during execute() lifecycle, cleared after execution
+        self._execution_context: Optional["IExecutionContext"] = None
 
         # Initialize ports
         self._define_ports()
@@ -210,9 +226,7 @@ class BaseNode(ABC):
     def set_input_value(self, port_name: str, value: Any) -> None:
         """Set the value of an input port."""
         if port_name not in self.input_ports:
-            raise ValueError(
-                f"Input port '{port_name}' does not exist on {self.node_type}"
-            )
+            raise ValueError(f"Input port '{port_name}' does not exist on {self.node_type}")
         self.input_ports[port_name].set_value(value)
 
     def get_input_value(self, port_name: str, default: Any = None) -> Any:
@@ -224,9 +238,7 @@ class BaseNode(ABC):
     def set_output_value(self, port_name: str, value: Any) -> None:
         """Set the value of an output port."""
         if port_name not in self.output_ports:
-            raise ValueError(
-                f"Output port '{port_name}' does not exist on {self.node_type}"
-            )
+            raise ValueError(f"Output port '{port_name}' does not exist on {self.node_type}")
         self.output_ports[port_name].set_value(value)
 
     def get_output_value(self, port_name: str, default: Any = None) -> Any:
@@ -235,12 +247,16 @@ class BaseNode(ABC):
             return default
         return self.output_ports[port_name].get_value()
 
-    def get_parameter(self, name: str, default: Any = None) -> Any:
+    def get_parameter(self, name: str, default: Any = None, *, resolve: bool = True) -> Any:
         """
         Get parameter value from port (runtime) or config (design-time).
 
         Unified accessor for the dual-source pattern used by many nodes.
         Prefers port value over config value to support runtime overrides.
+
+        **NEW in 2025**: Automatically resolves {{variable}} patterns if the
+        execution context is available. This eliminates the need for manual
+        `context.resolve_value()` calls in most cases.
 
         This is the recommended way to access node parameters that can come
         from either port connections OR the properties panel.
@@ -248,24 +264,66 @@ class BaseNode(ABC):
         Args:
             name: Parameter name (must match both port name and config key)
             default: Default value if parameter not found in either source
+            resolve: If True (default), auto-resolve {{variable}} patterns.
+                     Set to False to get raw un-resolved value.
 
         Returns:
-            Value from port if connected, otherwise from config, otherwise default
+            Value from port if connected, otherwise from config, otherwise default.
+            If resolve=True and context is available, {{variables}} are resolved.
 
         Example:
-            # Old pattern (fragile):
-            file_path = self.config.get("file_path") or self.get_input_value("file_path")
-
-            # New pattern (recommended):
+            # Old pattern (manual resolution required):
             file_path = self.get_parameter("file_path")
+            file_path = context.resolve_value(file_path)
+
+            # New pattern (auto-resolved):
+            file_path = self.get_parameter("file_path")  # Already resolved!
+
+            # Get raw value without resolution:
+            raw_template = self.get_parameter("template", resolve=False)
         """
         # Check port first (runtime value from connection)
         port_value = self.get_input_value(name)
         if port_value is not None:
-            return port_value
+            value = port_value
+        else:
+            # Fallback to config (design-time value from properties panel)
+            value = self.config.get(name, default)
 
-        # Fallback to config (design-time value from properties panel)
-        return self.config.get(name, default)
+        # Auto-resolve {{variables}} if context is available and resolve=True
+        if resolve and value is not None and self._execution_context is not None:
+            if hasattr(self._execution_context, "resolve_value"):
+                value = self._execution_context.resolve_value(value)
+
+        return value
+
+    def get_raw_parameter(self, name: str, default: Any = None) -> Any:
+        """
+        Get parameter value WITHOUT variable resolution.
+
+        Use this when you need the raw template string, not the resolved value.
+        For example, when building error messages that should show the template.
+
+        Args:
+            name: Parameter name
+            default: Default value if parameter not found
+
+        Returns:
+            Raw value without {{variable}} resolution
+        """
+        return self.get_parameter(name, default, resolve=False)
+
+    def set_execution_context(self, context: Optional["IExecutionContext"]) -> None:
+        """
+        Set the execution context for auto-resolution in get_parameter().
+
+        This is called automatically by the execution engine before execute().
+        Nodes generally don't need to call this directly.
+
+        Args:
+            context: The execution context, or None to clear
+        """
+        self._execution_context = context
 
     def serialize(self) -> SerializedNode:
         """
@@ -279,12 +337,8 @@ class BaseNode(ABC):
             "node_type": self.node_type,
             "category": self.category,
             "config": self.config,
-            "input_ports": {
-                name: port.to_dict() for name, port in self.input_ports.items()
-            },
-            "output_ports": {
-                name: port.to_dict() for name, port in self.output_ports.items()
-            },
+            "input_ports": {name: port.to_dict() for name, port in self.input_ports.items()},
+            "output_ports": {name: port.to_dict() for name, port in self.output_ports.items()},
         }
 
     @classmethod
@@ -302,9 +356,7 @@ class BaseNode(ABC):
         config = data.get("config", {})
         return cls(node_id, config)
 
-    def set_status(
-        self, status: NodeStatus, error_message: Optional[str] = None
-    ) -> None:
+    def set_status(self, status: NodeStatus, error_message: Optional[str] = None) -> None:
         """Update node status."""
         self.status = status
         self.error_message = error_message
@@ -334,9 +386,7 @@ class BaseNode(ABC):
             enabled: True to enable breakpoint, False to disable
         """
         self.breakpoint_enabled = enabled
-        logger.debug(
-            f"Breakpoint {'enabled' if enabled else 'disabled'} on node {self.node_id}"
-        )
+        logger.debug(f"Breakpoint {'enabled' if enabled else 'disabled'} on node {self.node_id}")
 
     def has_breakpoint(self) -> bool:
         """Check if this node has a breakpoint set."""
@@ -357,12 +407,8 @@ class BaseNode(ABC):
             "execution_count": self.execution_count,
             "last_execution_time": self.last_execution_time,
             "last_output": self.last_output,
-            "input_values": {
-                name: port.get_value() for name, port in self.input_ports.items()
-            },
-            "output_values": {
-                name: port.get_value() for name, port in self.output_ports.items()
-            },
+            "input_values": {name: port.get_value() for name, port in self.input_ports.items()},
+            "output_values": {name: port.get_value() for name, port in self.output_ports.items()},
         }
 
     def __repr__(self) -> str:

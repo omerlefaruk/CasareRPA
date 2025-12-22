@@ -15,7 +15,7 @@ from enum import Enum, auto
 from functools import partial
 from typing import Dict, Optional, TYPE_CHECKING, List
 
-from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal
 from loguru import logger
 
 if TYPE_CHECKING:

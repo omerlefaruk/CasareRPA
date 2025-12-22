@@ -86,9 +86,7 @@ class CircuitBreaker:
     - Testing recovery with half-open state
     """
 
-    def __init__(
-        self, name: str, config: Optional[CircuitBreakerConfig] = None
-    ) -> None:
+    def __init__(self, name: str, config: Optional[CircuitBreakerConfig] = None) -> None:
         """
         Initialize circuit breaker.
 
@@ -463,17 +461,11 @@ class FallbackStrategy(RecoveryStrategy):
         if fallback_value is not None:
             if fallback_variable:
                 execution_context.set_variable(fallback_variable, fallback_value)
-                logger.info(
-                    f"Fallback: set variable '{fallback_variable}' = {fallback_value}"
-                )
+                logger.info(f"Fallback: set variable '{fallback_variable}' = {fallback_value}")
             else:
                 # Store as output of failed node
-                execution_context.set_variable(
-                    f"_fallback_{context.node_id}", fallback_value
-                )
-                logger.info(
-                    f"Fallback: stored fallback value for node {context.node_id}"
-                )
+                execution_context.set_variable(f"_fallback_{context.node_id}", fallback_value)
+                logger.info(f"Fallback: stored fallback value for node {context.node_id}")
             return True
 
         if decision.continue_from_node or self.config.fallback_node_id:
@@ -484,8 +476,7 @@ class FallbackStrategy(RecoveryStrategy):
             return True
 
         logger.warning(
-            f"Fallback strategy has no fallback value or node configured "
-            f"for {context.node_id}"
+            f"Fallback strategy has no fallback value or node configured " f"for {context.node_id}"
         )
         return False
 
@@ -549,9 +540,7 @@ class CompensateStrategy(RecoveryStrategy):
         Returns:
             True if compensation succeeded, False otherwise.
         """
-        nodes_to_compensate = (
-            decision.compensate_nodes or self.config.compensation_nodes
-        )
+        nodes_to_compensate = decision.compensate_nodes or self.config.compensation_nodes
 
         logger.info(
             f"Starting compensation for node {context.node_id} - "
@@ -621,9 +610,7 @@ class AbortStrategy(RecoveryStrategy):
         Returns:
             True (abort always "succeeds" in the sense of being handled).
         """
-        logger.error(
-            f"ABORTING workflow due to error in node {context.node_id}: {context.message}"
-        )
+        logger.error(f"ABORTING workflow due to error in node {context.node_id}: {context.message}")
 
         # Signal stop to execution context
         execution_context.stop_execution()
@@ -738,9 +725,7 @@ class EscalateStrategy(RecoveryStrategy):
             self._pending_escalations[escalation_id] = response_event
 
             try:
-                await asyncio.wait_for(
-                    response_event.wait(), timeout=self.config.timeout_seconds
-                )
+                await asyncio.wait_for(response_event.wait(), timeout=self.config.timeout_seconds)
 
                 # Check response
                 if escalation_id in self._escalation_responses:
@@ -752,9 +737,7 @@ class EscalateStrategy(RecoveryStrategy):
                     execution_context.set_variable(
                         f"_escalation_{context.node_id}",
                         {
-                            **execution_context.get_variable(
-                                f"_escalation_{context.node_id}"
-                            ),
+                            **execution_context.get_variable(f"_escalation_{context.node_id}"),
                             "status": "resolved",
                             "resolution": response_action.name,
                         },
@@ -770,9 +753,7 @@ class EscalateStrategy(RecoveryStrategy):
                 execution_context.set_variable(
                     f"_escalation_{context.node_id}",
                     {
-                        **execution_context.get_variable(
-                            f"_escalation_{context.node_id}"
-                        ),
+                        **execution_context.get_variable(f"_escalation_{context.node_id}"),
                         "status": "timeout",
                         "default_action": self.config.default_action_on_timeout.name,
                     },
@@ -957,9 +938,7 @@ class RecoveryStrategyRegistry:
         self._strategies[RecoveryAction.ABORT] = AbortStrategy()
         self._strategies[RecoveryAction.ESCALATE] = EscalateStrategy()
 
-    def register_strategy(
-        self, action: RecoveryAction, strategy: RecoveryStrategy
-    ) -> None:
+    def register_strategy(self, action: RecoveryAction, strategy: RecoveryStrategy) -> None:
         """
         Register or replace a recovery strategy.
 

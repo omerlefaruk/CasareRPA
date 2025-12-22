@@ -111,9 +111,7 @@ class PortShapeIcon(QWidget):
             painter.drawPolygon(QPolygonF(points))
 
         elif self._shape == PortShape.CIRCLE:
-            painter.drawEllipse(
-                int(cx - half), int(cy - half), int(half * 2), int(half * 2)
-            )
+            painter.drawEllipse(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
 
         elif self._shape == PortShape.DIAMOND:
             from PySide6.QtGui import QPolygonF
@@ -128,9 +126,7 @@ class PortShapeIcon(QWidget):
             painter.drawPolygon(QPolygonF(points))
 
         elif self._shape == PortShape.SQUARE:
-            painter.drawRect(
-                int(cx - half), int(cy - half), int(half * 2), int(half * 2)
-            )
+            painter.drawRect(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
 
         elif self._shape == PortShape.HEXAGON:
             from PySide6.QtGui import QPolygonF
@@ -151,9 +147,7 @@ class PortShapeIcon(QWidget):
             from PySide6.QtGui import QPen
 
             painter.setPen(QPen(self._color, 2))
-            painter.drawEllipse(
-                int(cx - half), int(cy - half), int(half * 2), int(half * 2)
-            )
+            painter.drawEllipse(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
 
         elif self._shape == PortShape.ROUNDED_SQUARE:
             from PySide6.QtCore import QRectF
@@ -176,9 +170,7 @@ class PortShapeIcon(QWidget):
 
         elif self._shape == PortShape.CIRCLE_DOT:
             # Outer circle
-            painter.drawEllipse(
-                int(cx - half), int(cy - half), int(half * 2), int(half * 2)
-            )
+            painter.drawEllipse(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
             # Inner dot
             from PySide6.QtGui import QPen
 
@@ -486,9 +478,7 @@ class PortLegendPanel(QFrame):
         self._update_pin_button()
 
         # Check if first time
-        first_time_shown = settings.value(
-            self.SETTINGS_KEY_FIRST_TIME, False, type=bool
-        )
+        first_time_shown = settings.value(self.SETTINGS_KEY_FIRST_TIME, False, type=bool)
         self._is_first_time = not first_time_shown
 
         # Load position if saved
@@ -641,12 +631,8 @@ class PortLegendPanel(QFrame):
             # Constrain to parent bounds
             if self.parent():
                 parent_rect = self.parent().rect()
-                new_pos.setX(
-                    max(0, min(new_pos.x(), parent_rect.width() - self.width()))
-                )
-                new_pos.setY(
-                    max(0, min(new_pos.y(), parent_rect.height() - self.height()))
-                )
+                new_pos.setX(max(0, min(new_pos.x(), parent_rect.width() - self.width())))
+                new_pos.setY(max(0, min(new_pos.y(), parent_rect.height() - self.height())))
             self.move(new_pos)
             event.accept()
         else:

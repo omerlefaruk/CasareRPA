@@ -46,6 +46,7 @@ class NodeController(BaseController):
     def __init__(self, main_window: "MainWindow"):
         """Initialize node controller."""
         super().__init__(main_window)
+        self._registration_complete_logged = False
 
     def initialize(self) -> None:
         """Initialize controller."""
@@ -59,11 +60,12 @@ class NodeController(BaseController):
 
         PERFORMANCE: Only registers ~8 essential nodes at startup.
         Full registration is deferred via complete_node_registration().
+        Node mapping is built lazily on first node creation.
 
         Extracted from: canvas/components/node_registry_component.py
         """
         try:
-            from ..graph.node_registry import get_node_registry, get_casare_node_mapping
+            from ..graph.node_registry import get_node_registry
 
             # Get the graph from main window
             graph = self._get_graph()
@@ -75,10 +77,8 @@ class NodeController(BaseController):
             node_registry = get_node_registry()
             node_registry.register_essential_nodes(graph)
 
-            # Pre-build node mapping (still needed for node creation)
-            get_casare_node_mapping()
-
-            logger.debug("Essential nodes registered - full registration deferred")
+            # PERFORMANCE: Removed get_casare_node_mapping() call - built lazily on demand
+            logger.debug("Essential nodes registered - mapping deferred to first use")
 
         except ImportError as e:
             logger.error(f"Failed to import node registry: {e}")
@@ -89,8 +89,9 @@ class NodeController(BaseController):
         """
         Complete node registration (called after window is shown).
 
-        PERFORMANCE: This is called via QTimer.singleShot to defer
-        the expensive full node registration until after the UI is responsive.
+        PERFORMANCE: Uses incremental registration to spread node loading
+        across multiple event loop cycles, avoiding UI freeze.
+        Registers nodes in batches of 40, yielding to event loop between batches.
         """
         try:
             from ..graph.node_registry import get_node_registry
@@ -101,12 +102,28 @@ class NodeController(BaseController):
                 return
 
             node_registry = get_node_registry()
-            node_registry.register_remaining_nodes(graph)
 
-            logger.info("Full node registration completed")
+            # B1: Use incremental registration for smoother startup
+            node_registry.register_remaining_nodes_incremental(
+                graph,
+                batch_size=40,
+                callback=self._on_registration_progress,
+            )
 
         except Exception as e:
             logger.error(f"Failed to complete node registration: {e}")
+
+    def _on_registration_progress(self, completed: int, total: int) -> None:
+        """
+        Handle registration progress updates.
+
+        Args:
+            completed: Number of nodes registered so far
+            total: Total number of nodes to register
+        """
+        if completed == total and not self._registration_complete_logged:
+            self._registration_complete_logged = True
+            logger.info(f"Node registration completed: {total} nodes")
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -240,9 +257,7 @@ class NodeController(BaseController):
 
             # Also sync to casare node config for execution
             casare_node = (
-                nearest_node.get_casare_node()
-                if hasattr(nearest_node, "get_casare_node")
-                else None
+                nearest_node.get_casare_node() if hasattr(nearest_node, "get_casare_node") else None
             )
             if casare_node:
                 casare_node.config["_disabled"] = new_disabled
@@ -269,6 +284,57 @@ class NodeController(BaseController):
         else:
             # Fallback for nodes without set_disabled method
             self.main_window.show_status("Cannot disable this node type", 2000)
+
+    def toggle_cache_node(self) -> None:
+        """
+        Toggle cache state on nearest node to mouse (hotkey Ctrl+K).
+
+        Cached nodes store execution results and return them instantly
+        on subsequent calls with the same inputs.
+        """
+        logger.debug("Toggling cache on nearest node")
+
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        nearest_node = self._get_nearest_node(max_distance=300.0)
+        if not nearest_node:
+            self.main_window.show_status("No node nearby", 2000)
+            return
+
+        # Select and toggle cache on the nearest node
+        graph.clear_selection()
+        nearest_node.set_selected(True)
+
+        # Use view.set_cache_enabled() for proper visual overlay
+        view = nearest_node.view
+        if view and hasattr(view, "set_cache_enabled") and hasattr(view, "is_cache_enabled"):
+            # Toggle the cache state using view methods
+            current_cached = view.is_cache_enabled()
+            new_cached = not current_cached
+            view.set_cache_enabled(new_cached)
+
+            # Also sync to casare node config for execution
+            casare_node = (
+                nearest_node.get_casare_node() if hasattr(nearest_node, "get_casare_node") else None
+            )
+            if casare_node:
+                casare_node.config["_cache_enabled"] = new_cached
+
+            # Also set on visual node property for serialization
+            try:
+                nearest_node.set_property("_cache_enabled", new_cached)
+            except Exception:
+                pass  # Property might not exist, that's OK
+
+            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
+            state = "cache enabled" if new_cached else "cache disabled"
+
+            self.main_window.show_status(f"{node_name} {state}", 2000)
+        else:
+            # Fallback for nodes without set_cache_enabled method
+            self.main_window.show_status("Cannot toggle cache on this node type", 2000)
 
     def navigate_to_node(self, node_id: str) -> None:
         """
@@ -472,9 +538,7 @@ class NodeController(BaseController):
         # Check if any node is currently enabled
         any_enabled = False
         for node in selected_nodes:
-            casare_node = (
-                node.get_casare_node() if hasattr(node, "get_casare_node") else None
-            )
+            casare_node = node.get_casare_node() if hasattr(node, "get_casare_node") else None
             if casare_node:
                 if not casare_node.config.get("_disabled", False):
                     any_enabled = True
@@ -485,9 +549,7 @@ class NodeController(BaseController):
 
         count = 0
         for node in selected_nodes:
-            casare_node = (
-                node.get_casare_node() if hasattr(node, "get_casare_node") else None
-            )
+            casare_node = node.get_casare_node() if hasattr(node, "get_casare_node") else None
             if casare_node:
                 casare_node.config["_disabled"] = new_disabled
 

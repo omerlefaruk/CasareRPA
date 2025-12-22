@@ -30,7 +30,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from .email_base import decode_header_value
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -61,6 +60,13 @@ from .email_base import decode_header_value
         tooltip="Email account password",
     ),
     PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="UID of the email to save attachments from",
+    ),
+    PropertyDef(
         "folder",
         PropertyType.STRING,
         default="INBOX",
@@ -75,6 +81,7 @@ from .email_base import decode_header_value
         tooltip="Directory path to save attachments",
     ),
 )
+@node(category="email")
 class SaveAttachmentNode(BaseNode):
     """
     Save email attachments to disk.
@@ -117,12 +124,6 @@ class SaveAttachmentNode(BaseNode):
             folder = self.get_parameter("folder", "INBOX")
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            save_path = context.resolve_value(save_path)
-            folder = context.resolve_value(folder)
 
             if not email_uid:
                 self.set_output_value("saved_files", [])
@@ -163,9 +164,7 @@ class SaveAttachmentNode(BaseNode):
                                 # SECURITY: Sanitize filename to prevent path traversal
                                 safe_filename = Path(filename).name
                                 if not safe_filename:
-                                    logger.warning(
-                                        f"Skipping invalid filename: {filename}"
-                                    )
+                                    logger.warning(f"Skipping invalid filename: {filename}")
                                     continue
                                 filepath = os.path.join(save_path, safe_filename)
 
@@ -212,7 +211,6 @@ class SaveAttachmentNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -243,6 +241,13 @@ class SaveAttachmentNode(BaseNode):
         tooltip="Email account password",
     ),
     PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="UID of the email to mark",
+    ),
+    PropertyDef(
         "folder",
         PropertyType.STRING,
         default="INBOX",
@@ -258,6 +263,7 @@ class SaveAttachmentNode(BaseNode):
         tooltip="Flag to set on the email",
     ),
 )
+@node(category="email")
 class MarkEmailNode(BaseNode):
     """
     Mark an email as read, unread, or flagged.
@@ -299,12 +305,6 @@ class MarkEmailNode(BaseNode):
             mark_as = self.get_parameter("mark_as", "read")
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            folder = context.resolve_value(folder)
-            mark_as = context.resolve_value(mark_as)
 
             if not email_uid:
                 self.set_output_value("success", False)
@@ -357,7 +357,6 @@ class MarkEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -388,6 +387,13 @@ class MarkEmailNode(BaseNode):
         tooltip="Email account password",
     ),
     PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="UID of the email to delete",
+    ),
+    PropertyDef(
         "folder",
         PropertyType.STRING,
         default="INBOX",
@@ -402,6 +408,7 @@ class MarkEmailNode(BaseNode):
         tooltip="Permanently delete (expunge) instead of just marking deleted",
     ),
 )
+@node(category="email")
 class DeleteEmailNode(BaseNode):
     """
     Delete an email from the mailbox.
@@ -442,11 +449,6 @@ class DeleteEmailNode(BaseNode):
             permanent = self.get_parameter("permanent", False)
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            folder = context.resolve_value(folder)
 
             if not email_uid:
                 self.set_output_value("success", False)
@@ -491,7 +493,6 @@ class DeleteEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@node(category="email")
 @properties(
     PropertyDef(
         "imap_server",
@@ -506,6 +507,13 @@ class DeleteEmailNode(BaseNode):
         default=993,
         label="IMAP Port",
         tooltip="IMAP server port",
+    ),
+    PropertyDef(
+        "email_uid",
+        PropertyType.STRING,
+        required=True,
+        label="Email UID",
+        tooltip="Unique identifier of the email to move",
     ),
     PropertyDef(
         "username",
@@ -536,6 +544,7 @@ class DeleteEmailNode(BaseNode):
         tooltip="Target mailbox folder",
     ),
 )
+@node(category="email")
 class MoveEmailNode(BaseNode):
     """
     Move an email to a different folder.
@@ -577,12 +586,6 @@ class MoveEmailNode(BaseNode):
             target_folder = self.get_parameter("target_folder", "")
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            source_folder = context.resolve_value(source_folder)
-            target_folder = context.resolve_value(target_folder)
 
             if not email_uid or not target_folder:
                 self.set_output_value("success", False)

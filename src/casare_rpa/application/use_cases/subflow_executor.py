@@ -15,7 +15,6 @@ Design:
 """
 
 import time
-from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
@@ -24,18 +23,25 @@ from loguru import logger
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.events import (
     EventBus,
-    WorkflowStarted,
-    WorkflowCompleted,
-    WorkflowFailed,
 )
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.value_objects.types import NodeId, ExecutionMode
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.application.use_cases.node_executor import (
-    NodeExecutor,
+from casare_rpa.application.use_cases.node_executor import NodeExecutor
+from casare_rpa.application.use_cases.variable_resolver import (
+    VariableResolver,
+    TryCatchErrorHandler,
 )
-from casare_rpa.application.use_cases.variable_resolver import VariableResolver
-from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP
+from casare_rpa.application.use_cases.execution_state_manager import (
+    ExecutionSettings,
+    ExecutionStateManager,
+)
+from casare_rpa.application.use_cases.execution_handlers import ExecutionResultHandler
+from casare_rpa.application.use_cases.execution_strategies_parallel import (
+    ParallelExecutionStrategy,
+)
+from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
+from casare_rpa.nodes import get_node_class
 
 
 @dataclass
@@ -153,13 +159,16 @@ def _create_node_from_dict(node_data: dict) -> Any:
     Raises:
         ValueError: If node type is unknown
     """
-    node_type = node_data.get("type") or node_data.get("node_type")
+    node_type = node_data.get("node_type")
     node_id = node_data.get("node_id")
     config = node_data.get("config", {})
 
-    node_class = NODE_TYPE_MAP.get(node_type)
-    if not node_class:
-        raise ValueError(f"Unknown node type: {node_type}")
+    if not node_type:
+        raise ValueError("Subflow node is missing 'node_type'.")
+    try:
+        node_class = get_node_class(node_type)
+    except AttributeError as e:
+        raise ValueError(f"Unknown node type: {node_type}") from e
 
     return node_class(node_id=node_id, config=config)
 
@@ -313,9 +322,7 @@ class SubflowExecutor:
 
             # Step 2.5: Inject promoted parameters if provided
             if param_values:
-                self._inject_promoted_parameters(
-                    subflow, param_values, internal_context
-                )
+                self._inject_promoted_parameters(subflow, param_values, internal_context)
 
             # Step 3: Find start node(s) within subflow
             orchestrator = ExecutionOrchestrator(subflow.workflow)
@@ -331,40 +338,79 @@ class SubflowExecutor:
                     execution_time=time.time() - start_time,
                 )
 
-            # Step 4: Execute nodes in topological order
+            # Step 4: Execute nodes via canonical execution engine
             variable_resolver = VariableResolver(
                 workflow=subflow.workflow,
                 node_getter=self._get_node_instance,
             )
-
             node_executor = NodeExecutor(
                 context=internal_context,
                 event_bus=self.event_bus,
                 node_timeout=self.node_timeout,
                 progress_calculator=lambda: self._calculate_progress(subflow),
             )
-
-            execution_error = await self._execute_nodes(
-                start_node_id=start_node_id,
+            error_handler = TryCatchErrorHandler(internal_context)
+            settings = ExecutionSettings(node_timeout=self.node_timeout)
+            state_manager = ExecutionStateManager(
+                workflow=subflow.workflow,
+                orchestrator=orchestrator,
+                event_bus=self.event_bus,
+                settings=settings,
+                pause_event=internal_context.pause_event,
+            )
+            parallel_strategy = ParallelExecutionStrategy(
+                context=internal_context,
+                event_bus=self.event_bus,
+                node_getter=self._get_node_instance,
+                state_manager=state_manager,
+                variable_resolver=variable_resolver,
+                node_executor_factory=lambda ctx: NodeExecutor(
+                    ctx, self.event_bus, self.node_timeout
+                ),
+                orchestrator=orchestrator,
+            )
+            result_handler = ExecutionResultHandler(
+                orchestrator=orchestrator,
+                state_manager=state_manager,
+                error_handler=error_handler,
+                settings=settings,
+                parallel_strategy=parallel_strategy,
+            )
+            engine = WorkflowExecutionEngine(
                 orchestrator=orchestrator,
                 node_executor=node_executor,
                 variable_resolver=variable_resolver,
+                state_manager=state_manager,
+                node_getter=self._get_node_instance,
                 context=internal_context,
+                result_handler=result_handler,
+                parallel_strategy=parallel_strategy,
             )
 
-            if execution_error:
+            state_manager.start_execution()
+            await engine.run_from_node(start_node_id)
+            state_manager.mark_completed()
+            self._executed_nodes = set(state_manager.executed_nodes)
+
+            if state_manager.is_failed or state_manager.is_stopped:
                 execution_time = time.time() - start_time
+                error_message = (
+                    state_manager.execution_error
+                    if state_manager.is_failed
+                    else "Subflow execution stopped"
+                )
+                error_node_id = state_manager.current_node_id
                 self._publish_workflow_failed(
                     subflow_name=subflow.name,
-                    error=execution_error[0],
+                    error=error_message or "Subflow execution failed",
                     nodes_executed=len(self._executed_nodes),
-                    error_node_id=execution_error[1],
+                    error_node_id=error_node_id,
                 )
                 return SubflowExecutionResult.error_result(
-                    error=execution_error[0],
+                    error=error_message or "Subflow execution failed",
                     execution_time=execution_time,
                     nodes_executed=len(self._executed_nodes),
-                    error_node_id=execution_error[1],
+                    error_node_id=error_node_id,
                 )
 
             # Step 5: Collect output values from designated output ports
@@ -521,11 +567,7 @@ class SubflowExecutor:
                 continue  # No value to inject, let node use its own default
 
             # Handle variable references like ${variable_name}
-            if (
-                isinstance(value, str)
-                and value.startswith("${")
-                and value.endswith("}")
-            ):
+            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
                 var_name = value[2:-1]
                 resolved = context.get_variable(var_name)
                 if resolved is not None:
@@ -635,114 +677,6 @@ class SubflowExecutor:
         if total == 0:
             return 100.0
         return (len(self._executed_nodes) / total) * 100.0
-
-    async def _execute_nodes(
-        self,
-        start_node_id: NodeId,
-        orchestrator: ExecutionOrchestrator,
-        node_executor: NodeExecutor,
-        variable_resolver: VariableResolver,
-        context: ExecutionContext,
-    ) -> Optional[tuple[str, Optional[NodeId]]]:
-        """
-        Execute nodes starting from start_node_id.
-
-        Args:
-            start_node_id: Node ID to start from
-            orchestrator: Execution orchestrator for routing
-            node_executor: Node executor for individual nodes
-            variable_resolver: For data transfer between nodes
-            context: Execution context
-
-        Returns:
-            Tuple of (error_message, error_node_id) if failed, None if success
-        """
-        nodes_to_execute: deque[NodeId] = deque([start_node_id])
-
-        while nodes_to_execute and not context.is_stopped():
-            current_node_id = nodes_to_execute.popleft()
-
-            # Skip if already executed (except control flow nodes)
-            is_control_flow = orchestrator.is_control_flow_node(current_node_id)
-            if current_node_id in self._executed_nodes and not is_control_flow:
-                continue
-
-            # Get node instance
-            try:
-                node = self._get_node_instance(current_node_id)
-            except ValueError as e:
-                return (str(e), current_node_id)
-
-            # Transfer data from connected input ports
-            variable_resolver.transfer_inputs_to_node(current_node_id)
-
-            # Execute the node
-            exec_result = await node_executor.execute(node)
-
-            if not exec_result.success:
-                error_msg = (
-                    exec_result.result.get("error", "Unknown error")
-                    if exec_result.result
-                    else "Node execution failed"
-                )
-                return (error_msg, current_node_id)
-
-            # Mark as executed
-            self._executed_nodes.add(current_node_id)
-
-            # Store node outputs in context
-            self._store_node_outputs(current_node_id, node, context)
-
-            # Handle loop_back_to
-            if exec_result.result and "loop_back_to" in exec_result.result:
-                loop_start_id = exec_result.result["loop_back_to"]
-                # Clear loop body nodes for re-execution
-                body_nodes = orchestrator.find_loop_body_nodes(
-                    loop_start_id, current_node_id
-                )
-                for body_node_id in body_nodes:
-                    self._executed_nodes.discard(body_node_id)
-                nodes_to_execute.appendleft(loop_start_id)
-                continue
-
-            # Get next nodes
-            next_node_ids = orchestrator.get_next_nodes(
-                current_node_id, exec_result.result
-            )
-            for next_id in next_node_ids:
-                if next_id not in nodes_to_execute:
-                    nodes_to_execute.append(next_id)
-
-        # Check if stopped
-        if context.is_stopped():
-            return ("Execution stopped by user", None)
-
-        return None
-
-    def _store_node_outputs(
-        self,
-        node_id: str,
-        node: Any,
-        context: ExecutionContext,
-    ) -> None:
-        """Store node output values in context for variable resolution."""
-        if not hasattr(node, "output_ports"):
-            return
-
-        output_ports = getattr(node, "output_ports", {})
-        if not output_ports:
-            return
-
-        data_outputs = {}
-        for port_name, port in output_ports.items():
-            if port_name.startswith("exec") or port_name.startswith("_exec"):
-                continue
-            value = port.get_value() if hasattr(port, "get_value") else None
-            if value is not None:
-                data_outputs[port_name] = value
-
-        if data_outputs:
-            context.set_variable(node_id, data_outputs)
 
     def _collect_outputs(
         self,

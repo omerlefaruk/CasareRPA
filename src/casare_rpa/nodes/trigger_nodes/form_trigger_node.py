@@ -9,14 +9,10 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
-    BaseTriggerNode,
-    trigger_node,
-)
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
 
-@trigger_node
 @properties(
     PropertyDef(
         "form_title",
@@ -59,6 +55,7 @@ from casare_rpa.triggers.base import TriggerType
         tooltip="Require user to be logged in",
     ),
 )
+@node(category="triggers", exec_inputs=[])
 class FormTriggerNode(BaseTriggerNode):
     """
     Form trigger node that fires when a form is submitted.
@@ -97,12 +94,10 @@ class FormTriggerNode(BaseTriggerNode):
     def get_trigger_config(self) -> Dict[str, Any]:
         """Get form-specific configuration."""
         return {
-            "form_title": self.config.get("form_title", "Submit Data"),
-            "form_description": self.config.get("form_description", ""),
-            "form_fields": self.config.get("form_fields", "[]"),
-            "submit_button_text": self.config.get("submit_button_text", "Submit"),
-            "success_message": self.config.get(
-                "success_message", "Form submitted successfully"
-            ),
-            "require_auth": self.config.get("require_auth", False),
+            "form_title": self.get_parameter("form_title", "Submit Data"),
+            "form_description": self.get_parameter("form_description", ""),
+            "form_fields": self.get_parameter("form_fields", "[]"),
+            "submit_button_text": self.get_parameter("submit_button_text", "Submit"),
+            "success_message": self.get_parameter("success_message", "Form submitted successfully"),
+            "require_auth": self.get_parameter("require_auth", False),
         }

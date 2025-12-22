@@ -20,9 +20,7 @@ except ImportError:
     # Fallback with security mitigations
     import xml.etree.ElementTree as ET
 
-    logger.warning(
-        "defusedxml not installed - using stdlib XML parser with limited XXE protection"
-    )
+    logger.warning("defusedxml not installed - using stdlib XML parser with limited XXE protection")
 
 from casare_rpa.triggers.base import BaseTrigger, TriggerStatus, TriggerType
 from casare_rpa.triggers.registry import register_trigger
@@ -81,9 +79,7 @@ class RSSFeedTrigger(BaseTrigger):
             self._status = TriggerStatus.STARTING
 
             # Create HTTP session
-            self._session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=30)
-            )
+            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
 
             # Do initial fetch to populate seen items (avoid triggering on old items)
             await self._initial_fetch()
@@ -160,9 +156,7 @@ class RSSFeedTrigger(BaseTrigger):
             for item in items:
                 item_id = self._get_item_id(item)
                 self._add_seen_item(item_id)
-            logger.debug(
-                f"RSS trigger initialized with {len(self._seen_items)} existing items"
-            )
+            logger.debug(f"RSS trigger initialized with {len(self._seen_items)} existing items")
         except Exception as e:
             logger.warning(f"Initial RSS fetch failed: {e}")
 
@@ -289,8 +283,7 @@ class RSSFeedTrigger(BaseTrigger):
                 "description": self._get_text(item, "description"),
                 "guid": self._get_text(item, "guid"),
                 "published": self._get_text(item, "pubDate"),
-                "author": self._get_text(item, "author")
-                or self._get_text(item, "dc:creator"),
+                "author": self._get_text(item, "author") or self._get_text(item, "dc:creator"),
                 "categories": [c.text for c in item.findall("category") if c.text],
                 "content": self._get_text(item, "content:encoded"),
             }
@@ -306,9 +299,7 @@ class RSSFeedTrigger(BaseTrigger):
         ns = {"atom": "http://www.w3.org/2005/Atom"}
 
         for entry in root.findall(".//atom:entry", ns) or root.findall(".//entry"):
-            link_elem = entry.find("atom:link[@rel='alternate']", ns) or entry.find(
-                "link"
-            )
+            link_elem = entry.find("atom:link[@rel='alternate']", ns) or entry.find("link")
             link = link_elem.get("href", "") if link_elem is not None else ""
 
             parsed = {
@@ -321,8 +312,7 @@ class RSSFeedTrigger(BaseTrigger):
                 "author": self._get_author_atom(entry, ns),
                 "categories": [
                     c.get("term", "")
-                    for c in entry.findall("atom:category", ns)
-                    or entry.findall("category")
+                    for c in entry.findall("atom:category", ns) or entry.findall("category")
                 ],
                 "content": self._get_text_ns(entry, "content", ns),
             }

@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from casare_rpa.config.security_config import get_crypto_security_config
 from casare_rpa.infrastructure.security.vault_client import (
     VaultProvider,
     VaultConfig,
@@ -153,11 +154,12 @@ class EncryptedSQLiteProvider(VaultProvider):
             password = machine_id.encode()
 
         # Derive a proper key using PBKDF2
+        crypto_config = get_crypto_security_config()
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=self.DEFAULT_SALT,
-            iterations=480000,  # OWASP recommended minimum
+            iterations=crypto_config.pbkdf2_owasp_iterations,
         )
 
         key = base64.urlsafe_b64encode(kdf.derive(password))
@@ -223,9 +225,7 @@ class EncryptedSQLiteProvider(VaultProvider):
             decrypted = fernet.decrypt(encrypted)
             return json.loads(decrypted.decode())
         except InvalidToken as e:
-            raise VaultConnectionError(
-                "Failed to decrypt secret. Invalid encryption key."
-            ) from e
+            raise VaultConnectionError("Failed to decrypt secret. Invalid encryption key.") from e
 
     async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
         """Get secret from SQLite vault."""
@@ -409,9 +409,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         current = await self.get_secret(path)
 
         # Generate new values based on credential type
-        new_data = self._generate_rotated_values(
-            current.data, current.metadata.credential_type
-        )
+        new_data = self._generate_rotated_values(current.data, current.metadata.credential_type)
 
         # Store with incremented version
         return await self.put_secret(
@@ -443,8 +441,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         elif cred_type == CredentialType.OAUTH2_TOKEN:
             # Can't rotate OAuth tokens automatically
             logger.warning(
-                "OAuth2 tokens cannot be rotated automatically. "
-                "Re-authentication required."
+                "OAuth2 tokens cannot be rotated automatically. " "Re-authentication required."
             )
 
         else:
@@ -458,9 +455,7 @@ class EncryptedSQLiteProvider(VaultProvider):
     def _generate_password(self, length: int = 32) -> str:
         """Generate a secure random password."""
         # Mix of letters, digits, and special chars
-        alphabet = (
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-        )
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return "".join(secrets.choice(alphabet) for _ in range(length))
 
     def _generate_api_key(self, length: int = 32) -> str:

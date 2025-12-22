@@ -227,9 +227,7 @@ class SelectorHealingChain:
             f"cv_budget={cv_budget_ms}ms, vision_budget={vision_budget_ms}ms)"
         )
 
-    def _store_fingerprint(
-        self, selector: str, fingerprint: ElementFingerprint
-    ) -> None:
+    def _store_fingerprint(self, selector: str, fingerprint: ElementFingerprint) -> None:
         """Store fingerprint with LRU-style eviction when at capacity."""
         if len(self._fingerprints) >= self.MAX_FINGERPRINTS:
             oldest = next(iter(self._fingerprints))
@@ -285,17 +283,13 @@ class SelectorHealingChain:
         """
         try:
             # Capture heuristic fingerprint
-            fingerprint = await self._heuristic_healer.capture_fingerprint(
-                page, selector
-            )
+            fingerprint = await self._heuristic_healer.capture_fingerprint(page, selector)
             if fingerprint:
                 self._store_fingerprint(selector, fingerprint)
                 self._heuristic_healer.store_fingerprint(selector, fingerprint)
 
             # Capture spatial context for anchor healing
-            spatial_context = await self._anchor_healer.capture_spatial_context(
-                page, selector
-            )
+            spatial_context = await self._anchor_healer.capture_spatial_context(page, selector)
             if spatial_context:
                 self._store_spatial_context(selector, spatial_context)
                 self._anchor_healer.store_context(selector, spatial_context)
@@ -311,9 +305,7 @@ class SelectorHealingChain:
             # Capture vision context (element description) for Vision AI
             vision_description = None
             if self._enable_vision_fallback:
-                vision_description = await self._capture_vision_description(
-                    page, selector
-                )
+                vision_description = await self._capture_vision_description(page, selector)
                 if vision_description:
                     self._store_vision_context(selector, vision_description)
 
@@ -397,15 +389,11 @@ class SelectorHealingChain:
         tiers_attempted.append("original")
         tier_results["original"] = {"success": False}
 
-        remaining_budget = self._healing_budget_ms - (
-            (time.perf_counter() - start_time) * 1000
-        )
+        remaining_budget = self._healing_budget_ms - ((time.perf_counter() - start_time) * 1000)
 
         # Tier 1: Heuristic healing
         if remaining_budget > 50:
-            heuristic_result = await self._try_heuristic_healing(
-                page, selector, remaining_budget
-            )
+            heuristic_result = await self._try_heuristic_healing(page, selector, remaining_budget)
             tier_results["heuristic"] = heuristic_result
             tiers_attempted.append("heuristic")
 
@@ -436,17 +424,13 @@ class SelectorHealingChain:
                         element=element,
                     )
 
-        remaining_budget = self._healing_budget_ms - (
-            (time.perf_counter() - start_time) * 1000
-        )
+        remaining_budget = self._healing_budget_ms - ((time.perf_counter() - start_time) * 1000)
 
         # Tier 2: Anchor healing
         if remaining_budget > 50:
             anchor_result = await self._try_anchor_healing(page, selector, target_tag)
             tier_results["anchor"] = (
-                anchor_result.to_dict()
-                if hasattr(anchor_result, "to_dict")
-                else anchor_result
+                anchor_result.to_dict() if hasattr(anchor_result, "to_dict") else anchor_result
             )
             tiers_attempted.append("anchor")
 
@@ -481,12 +465,8 @@ class SelectorHealingChain:
             cv_context = self._cv_contexts.get(selector)
             search_text = cv_context.text_content if cv_context else None
 
-            cv_result = await self._try_cv_healing(
-                page, selector, search_text, cv_context
-            )
-            tier_results["cv"] = (
-                cv_result.to_dict() if hasattr(cv_result, "to_dict") else cv_result
-            )
+            cv_result = await self._try_cv_healing(page, selector, search_text, cv_context)
+            tier_results["cv"] = cv_result.to_dict() if hasattr(cv_result, "to_dict") else cv_result
             tiers_attempted.append("cv")
 
             if isinstance(cv_result, CVHealingResult) and cv_result.success:
@@ -517,9 +497,7 @@ class SelectorHealingChain:
         if self._enable_vision_fallback and self._vision_finder:
             vision_description = self._vision_contexts.get(selector)
 
-            vision_result = await self._try_vision_healing(
-                page, selector, vision_description
-            )
+            vision_result = await self._try_vision_healing(page, selector, vision_description)
             tier_results["vision"] = vision_result
             tiers_attempted.append("vision")
 

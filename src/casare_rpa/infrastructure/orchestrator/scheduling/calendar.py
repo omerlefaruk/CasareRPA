@@ -194,9 +194,7 @@ class BlackoutPeriod:
     recurring: bool = False
     affects_workflows: List[str] = field(default_factory=list)
 
-    def is_active(
-        self, check_time: datetime, workflow_id: Optional[str] = None
-    ) -> bool:
+    def is_active(self, check_time: datetime, workflow_id: Optional[str] = None) -> bool:
         """
         Check if blackout is active at given time.
 
@@ -362,9 +360,7 @@ class BusinessCalendar:
         self._cache_lock = threading.Lock()
         self._custom_dates: Set[date] = set()
 
-        logger.info(
-            f"BusinessCalendar initialized with timezone: {self._config.timezone}"
-        )
+        logger.info(f"BusinessCalendar initialized with timezone: {self._config.timezone}")
 
     @property
     def timezone(self) -> str:
@@ -415,9 +411,7 @@ class BusinessCalendar:
             blackout: Blackout period to add
         """
         self._config.blackouts.append(blackout)
-        logger.debug(
-            f"Added blackout: {blackout.name} ({blackout.start} - {blackout.end})"
-        )
+        logger.debug(f"Added blackout: {blackout.name} ({blackout.start} - {blackout.end})")
 
     def remove_blackout(self, name: str) -> bool:
         """

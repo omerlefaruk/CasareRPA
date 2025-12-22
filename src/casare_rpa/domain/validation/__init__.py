@@ -39,6 +39,10 @@ from casare_rpa.domain.validation.validators import (
     validate_connections,
     quick_validate,
 )
+from casare_rpa.domain.validation.workflow_json import (
+    WorkflowValidationError,
+    validate_workflow_json,
+)
 
 # Rules (helper functions for graph analysis)
 from casare_rpa.domain.validation.rules import (
@@ -48,15 +52,6 @@ from casare_rpa.domain.validation.rules import (
     is_exec_input_port,
     has_circular_dependency,
     find_entry_points_and_reachable,
-    find_reachable_nodes,
-    # Legacy aliases (with underscore) for backwards compatibility
-    _parse_connection,
-    _is_exec_port,
-    _is_exec_input_port,
-    _has_circular_dependency,
-    _find_entry_points_and_reachable,
-    _find_reachable_nodes,
-    _is_exec_port_name,
 )
 
 
@@ -76,19 +71,12 @@ __all__ = [
     "validate_node",
     "validate_connections",
     "quick_validate",
+    "validate_workflow_json",
+    "WorkflowValidationError",
     # Rules (public API)
     "parse_connection",
     "is_exec_port",
     "is_exec_input_port",
     "has_circular_dependency",
     "find_entry_points_and_reachable",
-    "find_reachable_nodes",
-    # Legacy aliases
-    "_parse_connection",
-    "_is_exec_port",
-    "_is_exec_input_port",
-    "_has_circular_dependency",
-    "_find_entry_points_and_reachable",
-    "_find_reachable_nodes",
-    "_is_exec_port_name",
 ]

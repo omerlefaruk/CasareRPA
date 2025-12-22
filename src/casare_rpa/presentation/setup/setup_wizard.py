@@ -231,9 +231,7 @@ class SetupWizard(QWizard):
         """Gather configuration from all pages."""
         # Orchestrator page
         self.config.orchestrator.url = self.orchestrator_page.url_edit.text().strip()
-        self.config.orchestrator.api_key = (
-            self.orchestrator_page.api_key_edit.text().strip()
-        )
+        self.config.orchestrator.api_key = self.orchestrator_page.api_key_edit.text().strip()
 
         # Robot page
         self.config.robot.name = self.robot_page.name_edit.text().strip()
@@ -261,9 +259,7 @@ class SetupWizard(QWizard):
         # Tags
         tags_text = self.capabilities_page.tags_edit.text().strip()
         if tags_text:
-            self.config.robot.tags = [
-                t.strip() for t in tags_text.split(",") if t.strip()
-            ]
+            self.config.robot.tags = [t.strip() for t in tags_text.split(",") if t.strip()]
 
 
 class WelcomePage(QWizardPage):
@@ -356,9 +352,7 @@ class OrchestratorPage(QWizardPage):
         conn_layout.addRow("Orchestrator URL:", self.url_edit)
 
         # URL help text
-        url_help = QLabel(
-            "WebSocket URL provided by your administrator (ws:// or wss://)"
-        )
+        url_help = QLabel("WebSocket URL provided by your administrator (ws:// or wss://)")
         url_help.setStyleSheet("color: #808080; font-size: 11px;")
         conn_layout.addRow("", url_help)
 
@@ -516,9 +510,7 @@ class RobotConfigPage(QWizardPage):
         self.name_edit.setPlaceholderText("Enter robot name")
         identity_layout.addRow("Robot Name:", self.name_edit)
 
-        name_help = QLabel(
-            "Unique name for this robot. Used in orchestrator dashboard."
-        )
+        name_help = QLabel("Unique name for this robot. Used in orchestrator dashboard.")
         name_help.setStyleSheet("color: #808080; font-size: 11px;")
         identity_layout.addRow("", name_help)
 
@@ -542,9 +534,7 @@ class RobotConfigPage(QWizardPage):
         self.concurrent_spin.setValue(2)
         exec_layout.addRow("Max Concurrent Jobs:", self.concurrent_spin)
 
-        concurrent_help = QLabel(
-            "Number of workflows this robot can execute simultaneously"
-        )
+        concurrent_help = QLabel("Number of workflows this robot can execute simultaneously")
         concurrent_help.setStyleSheet("color: #808080; font-size: 11px;")
         exec_layout.addRow("", concurrent_help)
 
@@ -743,9 +733,7 @@ class SummaryPage(QWizardPage):
         lines.append("-" * 40)
         lines.append(f"Name: {wizard.robot_page.name_edit.text()}")
         lines.append(f"Environment: {wizard.robot_page.env_combo.currentText()}")
-        lines.append(
-            f"Max Concurrent Jobs: {wizard.robot_page.concurrent_spin.value()}"
-        )
+        lines.append(f"Max Concurrent Jobs: {wizard.robot_page.concurrent_spin.value()}")
         lines.append(f"Log Level: {wizard.robot_page.log_level_combo.currentText()}")
 
         lines.append("")

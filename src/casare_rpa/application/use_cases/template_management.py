@@ -271,17 +271,13 @@ class CreateProjectFromTemplateUseCase:
 
             # Save project.json
             project_file = project.project_file
-            project_file.write_bytes(
-                orjson.dumps(project.to_dict(), option=orjson.OPT_INDENT_2)
-            )
+            project_file.write_bytes(orjson.dumps(project.to_dict(), option=orjson.OPT_INDENT_2))
 
             # Create .casare_project marker
             marker = project_path / ".casare_project"
             marker.touch()
 
-            logger.info(
-                f"Created project '{project_name}' from template '{template.name}'"
-            )
+            logger.info(f"Created project '{project_name}' from template '{template.name}'")
             return ProjectFromTemplateResult(
                 success=True,
                 project=project,

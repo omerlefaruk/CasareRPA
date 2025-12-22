@@ -14,7 +14,7 @@ CasareRPA nodes follow a three-layer architecture:
 
 The `@node` decorator automatically adds `exec_in` and `exec_out` ports to enable workflow execution flow.
 
-## 8-Step Implementation Checklist
+## 7-Step Implementation Checklist
 
 Every new node must complete all steps:
 
@@ -24,8 +24,7 @@ Every new node must complete all steps:
 4. Create visual node class
 5. Write unit tests
 6. Export from `__init__.py` files
-7. Register in `_NODE_REGISTRY`
-8. Register in `NODE_TYPE_MAP`
+7. Register in `NODE_REGISTRY`
 
 ## Step 1: Define the Node Class
 
@@ -421,12 +420,12 @@ __all__ = [
 
 Without this export, the node will not appear in the canvas palette.
 
-## Step 7: Register in _NODE_REGISTRY
+## Step 7: Register in NODE_REGISTRY
 
-In `src/casare_rpa/nodes/__init__.py`, add to the registry:
+In `src/casare_rpa/nodes/registry_data.py`, add to the registry:
 
 ```python
-_NODE_REGISTRY = {
+NODE_REGISTRY = {
     # ... existing nodes ...
 
     # Simple registration: class name matches key
@@ -438,23 +437,6 @@ _NODE_REGISTRY = {
 ```
 
 The registry uses lazy loading - nodes are only imported when first accessed.
-
-## Step 8: Register in NODE_TYPE_MAP
-
-In `src/casare_rpa/utils/workflow/workflow_loader.py`:
-
-```python
-# Add import
-from casare_rpa.nodes.mycategory.my_operation_node import MyOperationNode
-
-# Add to NODE_TYPE_MAP
-NODE_TYPE_MAP = {
-    # ... existing mappings ...
-    "MyOperationNode": MyOperationNode,
-}
-```
-
-This is required for deserializing saved workflows.
 
 ## Common Property Constants
 

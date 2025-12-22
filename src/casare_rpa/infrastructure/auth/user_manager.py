@@ -575,9 +575,7 @@ class UserManager:
             "mfa_secret": user.mfa_secret,
             "email_verified": user.email_verified,
             "failed_login_attempts": user.failed_login_attempts,
-            "locked_until": user.locked_until.isoformat()
-            if user.locked_until
-            else None,
+            "locked_until": user.locked_until.isoformat() if user.locked_until else None,
             "created_at": user.created_at.isoformat(),
             "updated_at": user.updated_at.isoformat(),
         }
@@ -624,22 +622,16 @@ class UserManager:
             "mfa_secret": user.mfa_secret,
             "email_verified": user.email_verified,
             "failed_login_attempts": user.failed_login_attempts,
-            "locked_until": user.locked_until.isoformat()
-            if user.locked_until
-            else None,
+            "locked_until": user.locked_until.isoformat() if user.locked_until else None,
             "last_login": user.last_login.isoformat() if user.last_login else None,
             "last_password_change": (
-                user.last_password_change.isoformat()
-                if user.last_password_change
-                else None
+                user.last_password_change.isoformat() if user.last_password_change else None
             ),
             "updated_at": user.updated_at.isoformat(),
         }
 
         if hasattr(self._client, "table"):
-            self._client.table(self._table_name).update(data).eq(
-                "id", str(user.id)
-            ).execute()
+            self._client.table(self._table_name).update(data).eq("id", str(user.id)).execute()
         elif hasattr(self._client, "acquire"):
             async with self._client.acquire() as conn:
                 await conn.execute(
@@ -673,10 +665,7 @@ class UserManager:
         """Get user by ID from database."""
         if hasattr(self._client, "table"):
             response = (
-                self._client.table(self._table_name)
-                .select("*")
-                .eq("id", str(user_id))
-                .execute()
+                self._client.table(self._table_name).select("*").eq("id", str(user_id)).execute()
             )
             if not response.data:
                 return None
@@ -697,12 +686,7 @@ class UserManager:
     async def _get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email from database."""
         if hasattr(self._client, "table"):
-            response = (
-                self._client.table(self._table_name)
-                .select("*")
-                .eq("email", email)
-                .execute()
-            )
+            response = self._client.table(self._table_name).select("*").eq("email", email).execute()
             if not response.data:
                 return None
             return self._row_to_user(response.data[0])
@@ -785,10 +769,8 @@ class UserManager:
             locked_until=self._parse_datetime(row.get("locked_until")),
             last_login=self._parse_datetime(row.get("last_login")),
             last_password_change=self._parse_datetime(row.get("last_password_change")),
-            created_at=self._parse_datetime(row.get("created_at"))
-            or datetime.now(timezone.utc),
-            updated_at=self._parse_datetime(row.get("updated_at"))
-            or datetime.now(timezone.utc),
+            created_at=self._parse_datetime(row.get("created_at")) or datetime.now(timezone.utc),
+            updated_at=self._parse_datetime(row.get("updated_at")) or datetime.now(timezone.utc),
         )
 
     def _parse_datetime(self, value: Any) -> Optional[datetime]:

@@ -31,18 +31,12 @@ class LocalRobotRepository(RobotRepository):
     async def get_all_online(self) -> List[Robot]:
         """Get all online robots."""
         robots = self._storage.get_robots()
-        return [
-            Robot.from_dict(r)
-            for r in robots
-            if r.get("status") == RobotStatus.ONLINE.value
-        ]
+        return [Robot.from_dict(r) for r in robots if r.get("status") == RobotStatus.ONLINE.value]
 
     async def get_by_environment(self, environment: str) -> List[Robot]:
         """Get robots in specific environment."""
         robots = self._storage.get_robots()
-        return [
-            Robot.from_dict(r) for r in robots if r.get("environment") == environment
-        ]
+        return [Robot.from_dict(r) for r in robots if r.get("environment") == environment]
 
     async def save(self, robot: Robot) -> None:
         """Save or update robot."""

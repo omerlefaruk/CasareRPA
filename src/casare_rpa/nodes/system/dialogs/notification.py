@@ -6,21 +6,19 @@ Nodes for displaying tooltips, notifications, snackbars, and playing sounds.
 
 import sys
 import asyncio
-from typing import Optional, Tuple
+from typing import Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -100,6 +98,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Enable fade in/out animation",
     ),
 )
+@node(category="system")
 class TooltipNode(BaseNode):
     """
     Display a tooltip at a specified position.
@@ -195,9 +194,7 @@ class TooltipNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _format_message_with_variables(
-        self, original: str, context: "ExecutionContext"
-    ) -> str:
+    def _format_message_with_variables(self, original: str, context: "ExecutionContext") -> str:
         """Format message with variable values highlighted in bold blue."""
         import re
         import html
@@ -242,12 +239,6 @@ class TooltipNode(BaseNode):
         if app is None:
             return
 
-        icon_map = {
-            "info": "information",
-            "warning": "warning",
-            "error": "critical",
-            "success": "check",
-        }
         icon_char = {
             "info": "\u2139",
             "warning": "\u26a0",
@@ -256,9 +247,7 @@ class TooltipNode(BaseNode):
         }
 
         container = QWidget()
-        container.setWindowFlags(
-            Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-        )
+        container.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
 
         layout = QHBoxLayout(container)
         layout.setContentsMargins(8, 6, 8, 6)
@@ -390,7 +379,6 @@ class TooltipNode(BaseNode):
         await asyncio.sleep(0.1)
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "title",
@@ -448,6 +436,7 @@ class TooltipNode(BaseNode):
         tooltip="Notification priority",
     ),
 )
+@node(category="system")
 class SystemNotificationNode(BaseNode):
     """
     Display a Windows system notification (toast).
@@ -474,9 +463,7 @@ class SystemNotificationNode(BaseNode):
     # @requires: none
     # @ports: title, message -> success, click_action
 
-    def __init__(
-        self, node_id: str, name: str = "System Notification", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "System Notification", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -505,9 +492,6 @@ class SystemNotificationNode(BaseNode):
             duration = int(self.get_parameter("duration", 5) or 5)
             icon_type = self.get_parameter("icon_type", "info")
             play_sound = self.get_parameter("play_sound", True)
-
-            title = context.resolve_value(title)
-            message = context.resolve_value(message)
 
             if not message and not title:
                 self.set_output_value("success", False)
@@ -611,7 +595,6 @@ class SystemNotificationNode(BaseNode):
         return False, False
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -653,6 +636,7 @@ class SystemNotificationNode(BaseNode):
         tooltip="Background color (hex)",
     ),
 )
+@node(category="system")
 class SnackbarNode(BaseNode):
     """
     Display a Material-style snackbar notification.
@@ -697,9 +681,6 @@ class SnackbarNode(BaseNode):
             position = self.get_parameter("position", "bottom_center")
             action_text = self.get_parameter("action_text", "")
             bg_color = self.get_parameter("bg_color", "#323232")
-
-            message = context.resolve_value(message)
-            action_text = context.resolve_value(action_text)
 
             if not message:
                 self.set_output_value("action_clicked", False)
@@ -755,9 +736,7 @@ class SnackbarNode(BaseNode):
             return False
 
         snackbar = QWidget()
-        snackbar.setWindowFlags(
-            Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
-        )
+        snackbar.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         snackbar.setAttribute(Qt.WA_TranslucentBackground)
 
         layout = QHBoxLayout(snackbar)
@@ -853,7 +832,6 @@ class SnackbarNode(BaseNode):
         return await future
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "message",
@@ -902,6 +880,7 @@ class SnackbarNode(BaseNode):
         tooltip="Balloon icon type",
     ),
 )
+@node(category="system")
 class BalloonTipNode(BaseNode):
     """
     Display a balloon tooltip at a screen position.
@@ -946,9 +925,6 @@ class BalloonTipNode(BaseNode):
             y = int(self.get_parameter("y", 0) or 0)
             duration = int(self.get_parameter("duration", 5000) or 5000)
             icon_type = self.get_parameter("icon_type", "info")
-
-            message = context.resolve_value(message)
-            title = context.resolve_value(title)
 
             if not message:
                 self.set_output_value("success", False)
@@ -996,9 +972,7 @@ class BalloonTipNode(BaseNode):
         class BalloonWidget(QWidget):
             def __init__(self):
                 super().__init__()
-                self.setWindowFlags(
-                    Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
-                )
+                self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
                 self.setAttribute(Qt.WA_TranslucentBackground)
                 self._tail_pos = "bottom"
 
@@ -1046,9 +1020,7 @@ class BalloonTipNode(BaseNode):
             if icon_type != "none" and icon_type in icon_chars:
                 icon_label = QLabel(icon_chars[icon_type])
                 icon_label.setFont(QFont("Segoe UI", 14))
-                icon_label.setStyleSheet(
-                    f"color: {icon_colors.get(icon_type, '#000')};"
-                )
+                icon_label.setStyleSheet(f"color: {icon_colors.get(icon_type, '#000')};")
                 title_layout.addWidget(icon_label)
 
             if title:
@@ -1111,7 +1083,6 @@ class BalloonTipNode(BaseNode):
         await asyncio.sleep(0.1)
 
 
-@node(category="system")
 @properties(
     PropertyDef(
         "file_path",
@@ -1153,6 +1124,7 @@ class BalloonTipNode(BaseNode):
         tooltip="Loop audio playback",
     ),
 )
+@node(category="system")
 class AudioAlertNode(BaseNode):
     """
     Play an audio file or system beep.
@@ -1191,8 +1163,6 @@ class AudioAlertNode(BaseNode):
             file_path = self.get_input_value("file_path")
             if file_path is None:
                 file_path = self.get_parameter("file_path", "")
-            if file_path:
-                file_path = context.resolve_value(str(file_path))
 
             use_beep = self.get_parameter("use_beep", False)
             frequency = int(self.get_parameter("frequency", 440) or 440)

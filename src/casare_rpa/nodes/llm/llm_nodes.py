@@ -11,6 +11,8 @@ from typing import Any
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -18,8 +20,23 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
+from casare_rpa.nodes.llm.property_constants import (
+    LLM_MODEL,
+    LLM_TEMPERATURE,
+    LLM_MAX_TOKENS,
+    LLM_SYSTEM_PROMPT,
+    LLM_PROMPT,
+)
 
 
+@properties(
+    LLM_PROMPT,
+    LLM_MODEL,
+    LLM_SYSTEM_PROMPT,
+    LLM_TEMPERATURE,
+    LLM_MAX_TOKENS,
+)
+@node(category="llm")
 class LLMCompletionNode(LLMBaseNode):
     """
     Generate text completion from a prompt.
@@ -56,8 +73,6 @@ class LLMCompletionNode(LLMBaseNode):
         """Execute completion request."""
         # Get parameters
         prompt = self.get_parameter("prompt")
-        if hasattr(context, "resolve_value"):
-            prompt = context.resolve_value(prompt)
 
         if not prompt:
             self._set_error_outputs("Prompt is required")
@@ -67,12 +82,6 @@ class LLMCompletionNode(LLMBaseNode):
         temperature = self.get_parameter("temperature") or self.DEFAULT_TEMPERATURE
         max_tokens = self.get_parameter("max_tokens") or self.DEFAULT_MAX_TOKENS
         system_prompt = self.get_parameter("system_prompt")
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
-            system_prompt = (
-                context.resolve_value(system_prompt) if system_prompt else None
-            )
 
         try:
             response = await manager.completion(
@@ -107,16 +116,62 @@ class LLMCompletionNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "message",
+        PropertyType.TEXT,
+        default="",
+        label="Message",
+        placeholder="Enter your message...",
+        tooltip="The message to send to the LLM",
+        essential=True,
+    ),
+    PropertyDef(
+        "conversation_id",
+        PropertyType.STRING,
+        default="",
+        label="Conversation ID",
+        tooltip="Optional ID to continue a conversation",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "system_prompt",
+        PropertyType.TEXT,
+        default="",
+        label="System Prompt",
+        tooltip="Optional system prompt for context",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.7,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Creativity/randomness (0-2)",
+    ),
+    PropertyDef(
+        "max_tokens",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=1,
+        label="Max Tokens",
+        tooltip="Maximum response length",
+    ),
+)
+@node(category="llm")
 class LLMChatNode(LLMBaseNode):
     """
     Multi-turn chat conversation with an LLM.
 
     Maintains conversation history across multiple messages.
     """
-
-    # @category: integration
-    # @requires: none
-    # @ports: message, conversation_id -> conversation_id
 
     NODE_NAME = "LLM Chat"
     NODE_CATEGORY = "AI/ML"
@@ -145,8 +200,6 @@ class LLMChatNode(LLMBaseNode):
         """Execute chat message."""
         # Get parameters
         message = self.get_parameter("message")
-        if hasattr(context, "resolve_value"):
-            message = context.resolve_value(message)
 
         if not message:
             self._set_error_outputs("Message is required")
@@ -157,15 +210,6 @@ class LLMChatNode(LLMBaseNode):
         temperature = self.get_parameter("temperature") or self.DEFAULT_TEMPERATURE
         max_tokens = self.get_parameter("max_tokens") or self.DEFAULT_MAX_TOKENS
         system_prompt = self.get_parameter("system_prompt")
-
-        if hasattr(context, "resolve_value"):
-            conversation_id = (
-                context.resolve_value(conversation_id) if conversation_id else None
-            )
-            model = context.resolve_value(model)
-            system_prompt = (
-                context.resolve_value(system_prompt) if system_prompt else None
-            )
 
         try:
             response, conv_id = await manager.chat(
@@ -202,16 +246,49 @@ class LLMChatNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        label="Text",
+        placeholder="Text to extract data from...",
+        tooltip="The unstructured text to parse",
+        essential=True,
+    ),
+    PropertyDef(
+        "schema",
+        PropertyType.TEXT,
+        default="",
+        label="JSON Schema",
+        placeholder='{"name": "string", "age": "integer"}',
+        tooltip="JSON schema defining the structure to extract",
+        essential=True,
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.0,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature recommended for extraction",
+    ),
+)
+@node(category="llm")
 class LLMExtractDataNode(LLMBaseNode):
     """
     Extract structured data from text using JSON schema.
 
     Uses LLM to parse unstructured text into structured JSON.
     """
-
-    # @category: integration
-    # @requires: none
-    # @ports: text, schema, model, temperature -> extracted_data, raw_response, tokens_used, success, error
 
     NODE_NAME = "LLM Extract Data"
     NODE_CATEGORY = "AI/ML"
@@ -245,9 +322,6 @@ class LLMExtractDataNode(LLMBaseNode):
         # Get parameters
         text = self.get_parameter("text")
         schema = self.get_parameter("schema")
-
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -315,16 +389,56 @@ class LLMExtractDataNode(LLMBaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        label="Text",
+        placeholder="Text to summarize...",
+        tooltip="The text to summarize",
+        essential=True,
+    ),
+    PropertyDef(
+        "max_length",
+        PropertyType.INTEGER,
+        default=200,
+        min_value=10,
+        label="Max Length (words)",
+        tooltip="Maximum length of summary in words",
+    ),
+    PropertyDef(
+        "style",
+        PropertyType.CHOICE,
+        default="paragraph",
+        choices=["paragraph", "bullet_points", "key_points"],
+        label="Style",
+        tooltip="Summarization style",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.5,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Creativity/randomness (0-2)",
+    ),
+)
+@node(category="llm")
 class LLMSummarizeNode(LLMBaseNode):
     """
     Summarize text using an LLM.
 
     Supports different summarization styles (bullet points, paragraph, key points).
     """
-
-    # @category: integration
-    # @requires: none
-    # @ports: text, max_length, style, model, temperature -> summary, original_length, summary_length, tokens_used, success, error
 
     NODE_NAME = "LLM Summarize"
     NODE_CATEGORY = "AI/ML"
@@ -359,8 +473,6 @@ class LLMSummarizeNode(LLMBaseNode):
         """Execute summarization."""
         # Get parameters
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -379,9 +491,7 @@ class LLMSummarizeNode(LLMBaseNode):
             "key_points": "Extract and list the key points from the text, numbered 1, 2, 3, etc.",
         }
 
-        style_instruction = style_instructions.get(
-            style, style_instructions["paragraph"]
-        )
+        style_instruction = style_instructions.get(style, style_instructions["paragraph"])
 
         prompt = f"""{style_instruction}
 
@@ -430,16 +540,56 @@ Text to summarize:
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        label="Text",
+        placeholder="Text to classify...",
+        tooltip="The text to classify",
+        essential=True,
+    ),
+    PropertyDef(
+        "categories",
+        PropertyType.STRING,
+        default="",
+        label="Categories",
+        placeholder="positive, negative, neutral",
+        tooltip="Comma-separated list of categories",
+        essential=True,
+    ),
+    PropertyDef(
+        "multi_label",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Multi-label",
+        tooltip="Allow multiple categories per text",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.0,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature recommended for classification",
+    ),
+)
+@node(category="llm")
 class LLMClassifyNode(LLMBaseNode):
     """
     Classify text into categories using an LLM.
 
     Supports single-label and multi-label classification.
     """
-
-    # @category: integration
-    # @requires: none
-    # @ports: text, categories, multi_label, model, temperature -> classification, classifications, confidence, tokens_used, success, error
 
     NODE_NAME = "LLM Classify"
     NODE_CATEGORY = "AI/ML"
@@ -475,9 +625,6 @@ class LLMClassifyNode(LLMBaseNode):
         # Get parameters
         text = self.get_parameter("text")
         categories = self.get_parameter("categories")
-
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -586,16 +733,57 @@ Return ONLY the JSON, no other text."""
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@properties(
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        label="Text",
+        placeholder="Text to translate...",
+        tooltip="The text to translate",
+        essential=True,
+    ),
+    PropertyDef(
+        "target_language",
+        PropertyType.STRING,
+        default="",
+        label="Target Language",
+        placeholder="Spanish, French, German...",
+        tooltip="Language to translate to",
+        essential=True,
+    ),
+    PropertyDef(
+        "source_language",
+        PropertyType.STRING,
+        default="",
+        label="Source Language",
+        placeholder="Auto-detect if empty",
+        tooltip="Optional source language (auto-detect if empty)",
+    ),
+    PropertyDef(
+        "model",
+        PropertyType.STRING,
+        default="gpt-4o-mini",
+        label="Model",
+        tooltip="LLM model to use",
+    ),
+    PropertyDef(
+        "temperature",
+        PropertyType.FLOAT,
+        default=0.3,
+        min_value=0.0,
+        max_value=2.0,
+        label="Temperature",
+        tooltip="Low temperature for accurate translation",
+    ),
+)
+@node(category="llm")
 class LLMTranslateNode(LLMBaseNode):
     """
     Translate text to another language using an LLM.
 
     Supports automatic source language detection.
     """
-
-    # @category: integration
-    # @requires: none
-    # @ports: text, target_language, source_language, model, temperature -> translated_text, detected_language, tokens_used, success, error
 
     NODE_NAME = "LLM Translate"
     NODE_CATEGORY = "AI/ML"
@@ -631,10 +819,6 @@ class LLMTranslateNode(LLMBaseNode):
         text = self.get_parameter("text")
         target_language = self.get_parameter("target_language")
 
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
-            target_language = context.resolve_value(target_language)
-
         if not text:
             self.set_output_value("success", False)
             self.set_output_value("error", "Text is required")
@@ -652,9 +836,6 @@ class LLMTranslateNode(LLMBaseNode):
         source_language = self.get_parameter("source_language")
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.3
-
-        if hasattr(context, "resolve_value") and source_language:
-            source_language = context.resolve_value(source_language)
 
         # Build translation prompt
         if source_language:

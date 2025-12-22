@@ -352,9 +352,7 @@ def draw_port_shape(
 
     # Exec ports always use triangle
     if is_exec or data_type is None:
-        draw_triangle(
-            painter, center, size, fill_qcolor, border_qcolor, pointing_right=is_output
-        )
+        draw_triangle(painter, center, size, fill_qcolor, border_qcolor, pointing_right=is_output)
         return
 
     # Get shape for data type
@@ -377,9 +375,7 @@ def draw_port_shape(
     elif shape == PortShape.PENTAGON:
         draw_pentagon(painter, center, size, fill_qcolor, border_qcolor)
     elif shape == PortShape.TRIANGLE:
-        draw_triangle(
-            painter, center, size, fill_qcolor, border_qcolor, pointing_right=is_output
-        )
+        draw_triangle(painter, center, size, fill_qcolor, border_qcolor, pointing_right=is_output)
     else:
         # Default: circle
         draw_circle(painter, center, size, fill_qcolor, border_qcolor)

@@ -38,6 +38,12 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "ScreenshotNode": "data_nodes",
     # Table scraping nodes
     "TableScraperNode": "browser.table_scraper_node",
+    # Browser evaluate node
+    "BrowserEvaluateNode": "browser.evaluate_node",
+    # CAPTCHA nodes
+    "DetectCaptchaNode": "browser.captcha",
+    "SolveCaptchaNode": "browser.captcha",
+    "SolveCaptchaAINode": "browser.captcha_ai",
     # Form nodes
     "FormFieldNode": "browser.form_field_node",
     "FormFillerNode": "browser.form_filler_node",
@@ -80,48 +86,51 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "LogErrorNode": "error_handling_nodes",
     "AssertNode": "error_handling_nodes",
     # Data operation nodes
-    "ConcatenateNode": "data_operation_nodes",
-    "FormatStringNode": "data_operation_nodes",
-    "RegexMatchNode": "data_operation_nodes",
-    "RegexReplaceNode": "data_operation_nodes",
-    "MathOperationNode": "data_operation_nodes",
-    "ComparisonNode": "data_operation_nodes",
-    "CreateListNode": "data_operation_nodes",
-    "ListGetItemNode": "data_operation_nodes",
-    "JsonParseNode": "data_operation_nodes",
-    "GetPropertyNode": "data_operation_nodes",
+    "ConcatenateNode": "string_nodes",
+    "FormatStringNode": "string_nodes",
+    "RegexMatchNode": "string_nodes",
+    "RegexReplaceNode": "string_nodes",
+    "MathOperationNode": "math_nodes",
+    "ComparisonNode": "math_nodes",
+    "CreateListNode": "list_nodes",
+    "ListGetItemNode": "list_nodes",
+    "JsonParseNode": "dict_nodes",
+    "GetPropertyNode": "dict_nodes",
     # List operation nodes
-    "ListLengthNode": "data_operation_nodes",
-    "ListAppendNode": "data_operation_nodes",
-    "ListContainsNode": "data_operation_nodes",
-    "ListSliceNode": "data_operation_nodes",
-    "ListJoinNode": "data_operation_nodes",
-    "ListSortNode": "data_operation_nodes",
-    "ListReverseNode": "data_operation_nodes",
-    "ListUniqueNode": "data_operation_nodes",
-    "ListFilterNode": "data_operation_nodes",
-    "ListMapNode": "data_operation_nodes",
-    "ListReduceNode": "data_operation_nodes",
-    "ListFlattenNode": "data_operation_nodes",
+    "ListLengthNode": "list_nodes",
+    "ListAppendNode": "list_nodes",
+    "ListContainsNode": "list_nodes",
+    "ListSliceNode": "list_nodes",
+    "ListJoinNode": "list_nodes",
+    "ListSortNode": "list_nodes",
+    "ListReverseNode": "list_nodes",
+    "ListUniqueNode": "list_nodes",
+    "ListFilterNode": "list_nodes",
+    "ListMapNode": "list_nodes",
+    "ListReduceNode": "list_nodes",
+    "ListFlattenNode": "list_nodes",
     # Dict operation nodes
-    "DictGetNode": "data_operation_nodes",
-    "DictSetNode": "data_operation_nodes",
-    "DictRemoveNode": "data_operation_nodes",
-    "DictMergeNode": "data_operation_nodes",
-    "DictKeysNode": "data_operation_nodes",
-    "DictValuesNode": "data_operation_nodes",
-    "DictHasKeyNode": "data_operation_nodes",
-    "CreateDictNode": "data_operation_nodes",
-    "DictToJsonNode": "data_operation_nodes",
-    "DictItemsNode": "data_operation_nodes",
+    "DictGetNode": "dict_nodes",
+    "DictSetNode": "dict_nodes",
+    "DictRemoveNode": "dict_nodes",
+    "DictMergeNode": "dict_nodes",
+    "DictKeysNode": "dict_nodes",
+    "DictValuesNode": "dict_nodes",
+    "DictHasKeyNode": "dict_nodes",
+    "CreateDictNode": "dict_nodes",
+    "DictToJsonNode": "dict_nodes",
+    "DictItemsNode": "dict_nodes",
     # Data operation nodes (new package)
     "DataCompareNode": "data_operation.compare_node",
     # Utility nodes
-    "HttpRequestNode": "utility_nodes",
+    "HttpRequestNode": "http.http_basic",
     "ValidateNode": "utility_nodes",
     "TransformNode": "utility_nodes",
     "LogNode": "utility_nodes",
-    # File system nodes - read operations
+    # File system nodes - Super Nodes (consolidated)
+    "FileSystemSuperNode": "file.super_node",
+    "StructuredDataSuperNode": "file.super_node",
+    # File system nodes - read operations (legacy)
     "ReadFileNode": "file.file_read_nodes",
     # File system nodes - write operations
     "WriteFileNode": "file.file_write_nodes",
@@ -160,7 +169,6 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "MoveEmailNode": "email.imap_nodes",
     # HTTP/REST API nodes
     # HttpRequestNode is already in utility_nodes but also in http.http_basic. Preferring the specific ones.
-    "HttpRequestNodeNew": ("http.http_basic", "HttpRequestNode"),
     # HTTP/REST API nodes - advanced operations
     "SetHttpHeadersNode": "http.http_advanced",
     "ParseJsonResponseNode": "http.http_advanced",
@@ -169,6 +177,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "BuildUrlNode": "http.http_advanced",
     # HTTP/REST API nodes - authentication
     "HttpAuthNode": "http.http_auth",
+    # HTTP/REST API nodes - Super Node (consolidated)
+    "HttpSuperNode": "http.http_super_node",
     # Database nodes - SQL operations
     "DatabaseConnectNode": "database.sql_nodes",
     "ExecuteQueryNode": "database.sql_nodes",
@@ -195,6 +205,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "DateTimeDiffNode": "datetime_nodes",
     "DateTimeCompareNode": "datetime_nodes",
     "GetTimestampNode": "datetime_nodes",
+    # Text nodes - Super Nodes (consolidated)
+    "TextSuperNode": "text.super_node",
     # Text nodes (Refactored)
     "TextSplitNode": "text.manipulation",
     "TextReplaceNode": "text.manipulation",
@@ -348,21 +360,6 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "GmailTriggerNode": "trigger_nodes.gmail_trigger_node",
     "DriveTriggerNode": "trigger_nodes.drive_trigger_node",
     "SheetsTriggerNode": "trigger_nodes.sheets_trigger_node",
-    "CalendarTriggerNode": "trigger_nodes.calendar_trigger_node",
-    # Google Calendar nodes - Event operations
-    "CalendarListEventsNode": "google.calendar.calendar_events",
-    "CalendarGetEventNode": "google.calendar.calendar_events",
-    "CalendarCreateEventNode": "google.calendar.calendar_events",
-    "CalendarUpdateEventNode": "google.calendar.calendar_events",
-    "CalendarDeleteEventNode": "google.calendar.calendar_events",
-    "CalendarQuickAddNode": "google.calendar.calendar_events",
-    "CalendarMoveEventNode": "google.calendar.calendar_events",
-    "CalendarGetFreeBusyNode": "google.calendar.calendar_events",
-    # Google Calendar nodes - Management operations
-    "CalendarListCalendarsNode": "google.calendar.calendar_manage",
-    "CalendarGetCalendarNode": "google.calendar.calendar_manage",
-    "CalendarCreateCalendarNode": "google.calendar.calendar_manage",
-    "CalendarDeleteCalendarNode": "google.calendar.calendar_manage",
     # Telegram messaging nodes - Send
     "TelegramSendMessageNode": "messaging.telegram.telegram_send",
     "TelegramSendPhotoNode": "messaging.telegram.telegram_send",
@@ -382,26 +379,17 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "WhatsAppSendVideoNode": "messaging.whatsapp.whatsapp_send",
     "WhatsAppSendLocationNode": "messaging.whatsapp.whatsapp_send",
     "WhatsAppSendInteractiveNode": "messaging.whatsapp.whatsapp_send",
-    # Google Docs nodes (standalone - with own OAuth)
-    "DocsGetDocumentNode": "google.docs.docs_read",
-    "DocsGetTextNode": "google.docs.docs_read",
-    "DocsExportNode": "google.docs.docs_read",
-    "DocsCreateDocumentNode": "google.docs.docs_write",
-    "DocsInsertTextNode": "google.docs.docs_write",
-    "DocsAppendTextNode": "google.docs.docs_write",
-    "DocsReplaceTextNode": "google.docs.docs_write",
-    "DocsInsertTableNode": "google.docs.docs_write",
-    "DocsInsertImageNode": "google.docs.docs_write",
-    "DocsApplyStyleNode": "google.docs.docs_write",
-    # Gmail nodes (from google.gmail_nodes)
-    "GmailSendEmailNode": "google.gmail_nodes",
-    "GmailSendWithAttachmentNode": "google.gmail_nodes",
-    "GmailCreateDraftNode": "google.gmail_nodes",
-    "GmailSendDraftNode": "google.gmail_nodes",
-    "GmailGetEmailNode": "google.gmail_nodes",
+    # Gmail nodes (using new GmailBaseNode with built-in credential handling)
+    "GmailSendEmailNode": "google.gmail.gmail_send",
+    "GmailSendWithAttachmentNode": "google.gmail.gmail_send",
+    "GmailCreateDraftNode": "google.gmail.gmail_send",
+    "GmailReplyToEmailNode": "google.gmail.gmail_send",
+    "GmailForwardEmailNode": "google.gmail.gmail_send",
+    "GmailGetEmailNode": "google.gmail.gmail_read",
     "GmailListEmailsNode": "google.gmail_nodes",
-    "GmailSearchEmailsNode": "google.gmail_nodes",
-    "GmailGetThreadNode": "google.gmail_nodes",
+    "GmailSearchEmailsNode": "google.gmail.gmail_read",
+    "GmailGetThreadNode": "google.gmail.gmail_read",
+    "GmailGetAttachmentNode": "google.gmail.gmail_read",
     "GmailModifyLabelsNode": "google.gmail_nodes",
     "GmailMoveToTrashNode": "google.gmail_nodes",
     "GmailMarkAsReadNode": "google.gmail_nodes",
@@ -412,9 +400,6 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "GmailBatchSendNode": "google.gmail_nodes",
     "GmailBatchModifyNode": "google.gmail_nodes",
     "GmailBatchDeleteNode": "google.gmail_nodes",
-    "GmailReplyToEmailNode": "google.gmail.gmail_send",
-    "GmailForwardEmailNode": "google.gmail.gmail_send",
-    "GmailGetAttachmentNode": "google.gmail.gmail_read",
     # Sheets nodes (from google.sheets_nodes)
     "SheetsGetCellNode": "google.sheets_nodes",
     "SheetsSetCellNode": "google.sheets_nodes",
@@ -440,6 +425,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     # Drive nodes (from google.drive_nodes)
     "DriveUploadFileNode": "google.drive_nodes",
     "DriveDownloadFileNode": "google.drive_nodes",
+    "DriveDownloadFolderNode": "google.drive_nodes",
+    "DriveBatchDownloadNode": "google.drive_nodes",
     "DriveDeleteFileNode": "google.drive_nodes",
     "DriveCopyFileNode": "google.drive_nodes",
     "DriveMoveFileNode": "google.drive_nodes",
@@ -468,6 +455,8 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "OutlookSendEmailNode": "desktop_nodes.office_nodes",
     "OutlookReadEmailsNode": "desktop_nodes.office_nodes",
     "OutlookGetInboxCountNode": "desktop_nodes.office_nodes",
+    # Desktop Automation Nodes - Super Nodes (consolidated)
+    "WindowManagementSuperNode": "desktop_nodes.window_super_node",
     # Desktop Automation Nodes - Application
     "LaunchApplicationNode": "desktop_nodes",
     "CloseApplicationNode": "desktop_nodes",
@@ -520,4 +509,5 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "SubflowNode": "subflow_node",
     # Workflow nodes
     "CallSubworkflowNode": "workflow.call_subworkflow_node",
+    "ExecuteWorkflowNode": "workflow.execute_workflow_node",
 }

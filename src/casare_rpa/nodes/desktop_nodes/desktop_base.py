@@ -104,9 +104,7 @@ class DesktopNodeBase(BaseNode):
         Raises:
             ValueError: If desktop context cannot be created
         """
-        desktop_ctx: Optional[DesktopContext] = getattr(
-            context, "desktop_context", None
-        )
+        desktop_ctx: Optional[DesktopContext] = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
         return desktop_ctx
@@ -148,10 +146,10 @@ class DesktopNodeBase(BaseNode):
             Operation result dictionary
         """
         if retry_count is None:
-            retry_count = int(self.config.get("retry_count", self.DEFAULT_RETRY_COUNT))
+            retry_count = int(self.get_parameter("retry_count", self.DEFAULT_RETRY_COUNT))
         if retry_interval is None:
             retry_interval = float(
-                self.config.get("retry_interval", self.DEFAULT_RETRY_INTERVAL)
+                self.get_parameter("retry_interval", self.DEFAULT_RETRY_INTERVAL)
             )
 
         max_attempts = retry_count + 1
@@ -162,15 +160,11 @@ class DesktopNodeBase(BaseNode):
             try:
                 attempts += 1
                 if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
                 result: Dict[str, Any] = await operation()
 
-                logger.info(
-                    f"[{self.name}] {operation_name} succeeded (attempt {attempts})"
-                )
+                logger.info(f"[{self.name}] {operation_name} succeeded (attempt {attempts})")
                 self.status = NodeStatus.SUCCESS
                 return result
 
@@ -184,9 +178,7 @@ class DesktopNodeBase(BaseNode):
                 else:
                     break
 
-        error_msg = (
-            f"Failed to {operation_name} after {attempts} attempts: {last_error}"
-        )
+        error_msg = f"Failed to {operation_name} after {attempts} attempts: {last_error}"
         logger.error(f"[{self.name}] {error_msg}")
         self.status = NodeStatus.ERROR
         raise RuntimeError(error_msg)
@@ -278,7 +270,7 @@ class ElementInteractionMixin:
             raise ValueError("Must provide 'element' or both 'window' and 'selector'")
 
         if timeout is None:
-            timeout = float(self.config.get("timeout", 5.0))  # type: ignore
+            timeout = float(self.get_parameter("timeout", 5.0))  # type: ignore
 
         logger.info(f"[{self.name}] Finding element with selector: {selector}")  # type: ignore
 

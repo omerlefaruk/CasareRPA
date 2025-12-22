@@ -67,9 +67,7 @@ class FuzzyOptionsTab(QWidget):
         type_row.addWidget(type_label)
 
         self._match_type = QComboBox()
-        self._match_type.addItems(
-            ["Contains", "Equals", "StartsWith", "EndsWith", "Regex"]
-        )
+        self._match_type.addItems(["Contains", "Equals", "StartsWith", "EndsWith", "Regex"])
         self._match_type.setStyleSheet("""
             QComboBox {
                 background: #2a2a2a;
@@ -136,12 +134,8 @@ class FuzzyOptionsTab(QWidget):
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet(
-            "color: #e0e0e0; font-size: 11px; min-width: 35px;"
-        )
-        self._accuracy_slider.valueChanged.connect(
-            lambda v: self._accuracy_label.setText(f"{v}%")
-        )
+        self._accuracy_label.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 35px;")
+        self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
         options_layout.addLayout(acc_row)
@@ -209,9 +203,7 @@ class CVOptionsTab(QWidget):
         type_row.addWidget(type_label)
 
         self._element_type = QComboBox()
-        self._element_type.addItems(
-            ["Button", "Link", "Input", "Text", "Image", "Checkbox", "Any"]
-        )
+        self._element_type.addItems(["Button", "Link", "Input", "Text", "Image", "Checkbox", "Any"])
         self._element_type.setStyleSheet("""
             QComboBox {
                 background: #2a2a2a;
@@ -278,12 +270,8 @@ class CVOptionsTab(QWidget):
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet(
-            "color: #e0e0e0; font-size: 11px; min-width: 35px;"
-        )
-        self._accuracy_slider.valueChanged.connect(
-            lambda v: self._accuracy_label.setText(f"{v}%")
-        )
+        self._accuracy_label.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 35px;")
+        self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
         options_layout.addLayout(acc_row)
@@ -439,12 +427,8 @@ class ImageOptionsTab(QWidget):
         acc_row.addWidget(self._accuracy_slider)
 
         self._accuracy_label = QLabel("80%")
-        self._accuracy_label.setStyleSheet(
-            "color: #e0e0e0; font-size: 11px; min-width: 35px;"
-        )
-        self._accuracy_slider.valueChanged.connect(
-            lambda v: self._accuracy_label.setText(f"{v}%")
-        )
+        self._accuracy_label.setStyleSheet("color: #e0e0e0; font-size: 11px; min-width: 35px;")
+        self._accuracy_slider.valueChanged.connect(lambda v: self._accuracy_label.setText(f"{v}%"))
         acc_row.addWidget(self._accuracy_label)
         acc_row.addStretch()
         options_layout.addLayout(acc_row)
@@ -681,9 +665,7 @@ class AdvancedOptionsWidget(QWidget):
     def _on_toggle(self) -> None:
         self._expanded = self._header.isChecked()
         self._content.setVisible(self._expanded)
-        self._header.setText(
-            "v Advanced Options" if self._expanded else "> Advanced Options"
-        )
+        self._header.setText("v Advanced Options" if self._expanded else "> Advanced Options")
 
     def expand(self) -> None:
         """Expand the section."""

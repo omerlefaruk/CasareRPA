@@ -3,19 +3,20 @@
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
-# Import logic nodes
-from casare_rpa.nodes.data_operation_nodes import (
+# Import logic nodes (single source of truth: executable node modules)
+from casare_rpa.nodes.string_nodes import (
     ConcatenateNode,
     FormatStringNode,
     RegexMatchNode,
     RegexReplaceNode,
+)
+from casare_rpa.nodes.math_nodes import (
     MathOperationNode,
     ComparisonNode,
+)
+from casare_rpa.nodes.list_nodes import (
     CreateListNode,
     ListGetItemNode,
-    JsonParseNode,
-    GetPropertyNode,
-    # List operations
     ListLengthNode,
     ListAppendNode,
     ListContainsNode,
@@ -28,7 +29,10 @@ from casare_rpa.nodes.data_operation_nodes import (
     ListMapNode,
     ListReduceNode,
     ListFlattenNode,
-    # Dict operations
+)
+from casare_rpa.nodes.dict_nodes import (
+    JsonParseNode,
+    GetPropertyNode,
     DictGetNode,
     DictSetNode,
     DictRemoveNode,
@@ -39,9 +43,8 @@ from casare_rpa.nodes.data_operation_nodes import (
     CreateDictNode,
     DictToJsonNode,
     DictItemsNode,
-    # Dataset comparison
-    DataCompareNode,
 )
+from casare_rpa.nodes.data_operation import DataCompareNode
 
 
 # =============================================================================
