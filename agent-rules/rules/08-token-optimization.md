@@ -1,52 +1,19 @@
+---
+description: Strategies for optimizing token usage
+---
+
 # Token Optimization
 
-Optimize for AI agent efficiency when working with codebase.
+## Principles
 
-## `_index.md` Files
+1. **Read selectively**: Don't dump 5000 line files if you need 10 lines.
+2. **Use summaries**: Rely on _index.md files.
+3. **Concise output**: Generate code, not essays.
+4. **Structured formats**: Prefer tables or short lists; use XML blocks when it reduces tokens.
 
-Every major directory should have `_index.md`:
-
-```markdown
-# [Module Name] Index
-
-Quick reference for [purpose].
-
-## Directory Structure
-| Directory | Purpose | Key Exports |
-|-----------|---------|-------------|
-| ... | ... | ... |
-
-## Key Files
-| File | Contains | Lines |
-|------|----------|-------|
-| ... | ... | ~XXX |
-
-## Entry Points
-\`\`\`python
-from module import X, Y, Z
-\`\`\`
+Example:
+```xml
+<rules>
+  <rule id="flow">Plan -> Review -> Tests -> Implement -> Review -> QA -> Docs</rule>
+</rules>
 ```
-
-## `__all__` Exports
-
-Every `__init__.py` must have explicit `__all__`:
-
-```python
-__all__ = [
-    "ClassName",
-    "function_name",
-    "CONSTANT",
-]
-```
-
-## Benefits
-- Quick module discovery
-- Reduced token consumption
-- Clear public API
-- Better IDE support
-
-## Maintenance
-Update `_index.md` when:
-- Adding new files/directories
-- Changing exports
-- Major refactoring

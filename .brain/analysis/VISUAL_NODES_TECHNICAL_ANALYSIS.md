@@ -1,3 +1,9 @@
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
 # Visual Nodes Technical Analysis
 
 **Deep technical dive into visual node architecture, patterns, and implementation details.**

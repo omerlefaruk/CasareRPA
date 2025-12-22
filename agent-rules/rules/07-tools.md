@@ -1,37 +1,39 @@
+---
+description: Tool usage guidelines
+---
+
 # Tool Usage
 
-## File Operations
-- Use `view_file` before editing to understand context
-- Use `view_file_outline` for large files
-- Use `find_by_name` to locate files
-- Use `grep_search` to find patterns
+## Local Tools (Preferred)
+- Read files with `read`; edit with `edit`; create with `write`.
+- List directories with `list`; find files with `rg --files`; search contents with `rg`.
+- Run commands with `bash` only when needed (tests, linters, build steps).
 
-## Code Editing
-- Use `replace_file_content` for single contiguous edits
-- Use `multi_replace_file_content` for non-adjacent changes
-- Use `write_to_file` for new files only
-- Always specify `TargetFile` first
+## Search Order (Token-Optimized)
+- Prefer semantic search first: `search_codebase(query, top_k=...)` (MCP via ChromaDB) for "find code by meaning".
+- Index/rebuild: `python scripts/index_codebase.py`
+- MCP server: `python scripts/chroma_search_mcp.py`
+- Fall back to `rg` for exact strings and `rg --files` for filenames/patterns.
 
-## Commands
-```bash
-# Run tests
-pytest tests/ -v
+## MCP Servers
+- MCP servers are configured in `.mcp.json` at repo root.
+- Core local servers:
+  - `filesystem`: safe file operations within allowed roots.
+  - `git`: inspect and manipulate the Git repository.
+  - `sequential-thinking`: structured step-by-step reasoning.
+  - `codebase`: semantic search via ChromaDB.
+- Optional external-context servers (when needed): `exa`, `ref`, `playwright`.
+- Always use MCP servers when the task matches the capability (filesystem for file reads/writes, git for repo ops, sequential-thinking for multi-step planning, exa/ref for research, playwright for browser automation).
 
-# Run app
-python run.py
+## Claude Mirror
+- Keep the Claude mirror synced via `python scripts/sync_claude_dir.py`.
+- Never edit the mirror directly; treat it as generated.
+- Optional: `python scripts/sync_claude_dir.py --link` to create junctions/symlinks.
 
-# Type check
-mypy src/
+## Agent-Rules Mirror
+- Keep `agent-rules/` synced via `python scripts/sync_agent_rules.py`.
+- Never edit `agent-rules/` directly; treat it as generated.
 
-# Format
-black src/ tests/
-
-# Lint
-ruff check src/
-```
-
-## Best Practices
-1. Read before write
-2. Make minimal, focused edits
-3. Verify with tests after changes
-4. Don't guess - use search tools
+## Safety
+- Never hardcode secrets in configs; use environment variables (e.g., `${EXA_API_KEY}`).
+- Avoid destructive commands unless explicitly requested.

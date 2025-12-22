@@ -56,6 +56,12 @@ python scripts/index_codebase.py
 
 The indexer is **incremental** - it only processes files that have changed since the last run.
 
+### Start MCP Server Locally
+
+```bash
+python scripts/chroma_search_mcp.py
+```
+
 ### Force Full Re-index
 
 ```bash

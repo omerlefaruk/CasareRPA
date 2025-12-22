@@ -1,32 +1,18 @@
+---
+description: Enforcement of rules and boundaries
+---
+
 # Enforcement
 
-## Mandatory Checks
+## Hard Constraints
 
-Before completing any task, verify:
+1. **No External Imports in Domain**: The domain layer must remain pure.
+2. **No Synchronous I/O in Async Contexts**: Do not block the event loop.
+3. **No Hardcoded Secrets**: Use the credential manager.
 
-### Code Quality
-- [ ] Type hints on all functions
-- [ ] Docstrings on public APIs
-- [ ] No `# type: ignore` without justification
-- [ ] Async for all I/O
-
-### Testing
-- [ ] Tests pass: `pytest tests/ -v`
-- [ ] New code has tests
-- [ ] Edge cases covered
-
-### Architecture
-- [ ] Domain layer has no external imports
-- [ ] Infrastructure implements domain interfaces
-- [ ] No circular imports
-
-### Documentation
-- [ ] `_index.md` updated if structure changed
-- [ ] Docstrings match implementation
-- [ ] CHANGELOG updated for features
-
-## Blockers
-If any check fails, STOP and fix before proceeding.
-
-## Exceptions
-Document exceptions with justification in commit message or plan.
+## Boundaries (Never)
+1. **No Main Branch Work**: Do not work directly on `main`/`master` (use worktrees).
+2. **No Destructive Commands**: No `git reset --hard`, `git checkout --`, `rm -rf` without explicit request.
+3. **No Secret Leakage**: Never commit or print secrets/tokens.
+4. **No Silent Errors**: Always log external failures with context.
+5. **No Domain Violations**: Domain must not import infrastructure/presentation.

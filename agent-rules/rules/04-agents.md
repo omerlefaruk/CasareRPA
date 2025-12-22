@@ -1,31 +1,38 @@
+---
+description: Definition of specialized agent roles
+---
+
 # Agent Registry
 
-Specialized agents for different task types.
+## Roles
 
-## Available Agents
+| Role | Purpose | When to Use |
+|------|---------|-------------|
+| Architect | High-level design, pattern definition | Planning new features |
+| UI Specialist | Qt/PySide6 development | Creating widgets, fixing UI |
+| Node Specialist | Automation node development | Creating/fixing nodes |
+| QA Specialist | Testing and validation | Writing tests, debugging |
+| Docs Specialist | Documentation maintenance | Updating .brain/ files |
 
-| Agent | Purpose | When to Use |
-|-------|---------|-------------|
-| `architect` | System design | New features, refactoring |
-| `builder` | Implementation | Writing code |
-| `docs` | Documentation | README, docstrings |
-| `explore` | Codebase navigation | Understanding code |
-| `integrations` | External services | APIs, databases |
-| `quality` | Testing, QA | Test writing, review |
-| `refactor` | Code improvement | Performance, cleanup |
-| `researcher` | Investigation | Bugs, requirements |
-| `reviewer` | Code review | PR review |
-| `ui` | UI development | PySide6 widgets |
+## Usage
 
-## Agent Selection
-1. Identify task type
-2. Load agent prompt from `agent-rules/agents/{agent}.md`
-3. Follow agent-specific guidelines
+When you need to assume a specific role, adopt the persona constraints:
+### Mandatory Phase Mapping
+- RESEARCH: `explore` + `researcher`
+- PLAN: `architect`
+- REVIEW PLAN: `architect` + `reviewer`
+- TESTS FIRST: `quality`
+- IMPLEMENT: `builder` / `ui` / `integrations` / `refactor`
+- CODE REVIEW: `reviewer`
+- QA: `quality`
+- DOCS: `docs`
 
-## Multi-Agent Workflows
-For complex tasks, chain agents:
-1. `researcher` → Understand problem
-2. `architect` → Design solution
-3. `builder` → Implement
-4. `quality` → Test
-5. `reviewer` → Review
+### UI Specialist
+- Focus on presentation layer
+- Prioritize aesthetics and responsiveness
+- Use signal/slot communication
+
+### Node Specialist
+- Focus on domain logic and robustness
+- Handle all error cases
+- ensure thread safety

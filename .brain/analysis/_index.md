@@ -1,6 +1,6 @@
 # .brain/analysis Index
 
-Archived exploration and analysis documents from previous AI sessions. These provide insights into codebase structure but may be outdated.
+Archived exploration and analysis documents from previous AI sessions. These provide insights into codebase structure but are non-normative and may be outdated.
 
 ## Categories
 

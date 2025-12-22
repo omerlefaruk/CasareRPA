@@ -1,37 +1,34 @@
+---
+description: Protocol for maintaining the .brain knowledge base
+---
+
 # Brain Protocol
 
-The `.brain/` directory is the AI agent's working memory.
+## Brain Structure
 
-## Structure
-```
-.brain/
-├── context/
-│   └── current.md      # Current session state
-├── docs/
-│   └── *.md            # Implementation checklists
-├── plans/
-│   └── *.md            # Active plans
-├── projectRules.md     # Full coding standards
-└── systemPatterns.md   # Architecture patterns
-```
+| Directory | Purpose |
+|-----------|---------|
+| .brain/context/ | Session state tracking |
+| .brain/decisions/ | Decision trees for common tasks |
+| .brain/plans/ | Implementation plans |
+| .brain/docs/ | Long-lived documentation |
 
-## Usage
+## Update Rules
 
-### Session Start
-1. Read `.brain/context/current.md`
-2. Understand current state and priorities
+### 1. Context Updates
+- Update .brain/context/current.md at the start and end of every session.
+- Record: Focus, Status, Key Decisions.
+- For multi-phase tasks, update status when a phase completes or when blocking on approval.
+- Use `python scripts/phase_report.py` to log phase/progress updates.
 
-### During Work
-- Create plans in `.brain/plans/`
-- Reference patterns in `.brain/systemPatterns.md`
+### 2. Decision Trees
+- If you find yourself making a complex decision, document the logic in a new decision tree.
+- Format: Graph-like markdown or simple lists.
 
-### Session End
-- Update `.brain/context/current.md` with:
-  - What was done
-  - What's next
-  - Any blockers
+### 3. Plans
+- Create a plan file BEFORE starting any complex task.
+- Update the plan as you make progress.
 
-## Maintenance
-- Keep `current.md` concise
-- Archive completed plans
-- Update patterns when new ones emerge
+### 4. System Patterns
+- If you discover a reusable pattern, add it to .brain/systemPatterns.md.
+- If the pattern changes agent behavior or standards, also update `AGENTS.md` and sync `CLAUDE.md` + `GEMINI.md` in the same change.

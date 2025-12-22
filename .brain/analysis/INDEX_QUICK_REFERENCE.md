@@ -1,3 +1,9 @@
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
 # _index.md Quick Reference
 
 ## What Exists (22 Files)

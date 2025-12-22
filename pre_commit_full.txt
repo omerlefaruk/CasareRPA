@@ -13,4 +13,3 @@ Ruff formatter...........................................................Failed
 189 files reformatted, 411 files left unchanged
 163 files reformatted, 336 files left unchanged
 7 files reformatted, 79 files left unchanged
-

@@ -1,3 +1,9 @@
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
 # Base Class Extraction Analysis: list_nodes.py & dict_nodes.py
 
 ## Executive Summary

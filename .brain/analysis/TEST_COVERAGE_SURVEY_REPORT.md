@@ -1,3 +1,9 @@
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
 # Test Coverage Survey Report: Browser, Desktop, and Control Flow Nodes
 
 **Report Date:** 2025-12-14

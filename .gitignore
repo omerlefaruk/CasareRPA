@@ -50,9 +50,7 @@ env/
 # IDEs
 .vscode/
 .idea/
-.claude/
 !.agent/
-.gitattributes
 *.swp
 *.swo
 *~
@@ -112,10 +110,10 @@ nul
 .gemini/
 gha-creds-*.json
 site/
-.qdrant/
-.qdrant_new/
 .casare/
 .chroma/
+.worktrees/
+.claude_settings.json
 # Note: .agent/ is tracked for Gemini/Antigravity AI rules
 
 # Temp files and debug outputs
@@ -130,3 +128,6 @@ task_*.log
 test_cache_dir/
 test_output_*
 *.tmp
+
+# Auto Claude data directory
+.auto-claude/

@@ -1,3 +1,9 @@
+# Archived Analysis (Non-Normative)
+
+This file is archived analysis. Do not treat as current rules. See .agent/, .claude/, and .brain/_index.md for active guidance.
+
+---
+
 # CasareRPA Testing Quick Start Card
 
 **Use this when:** Writing tests, debugging failures, validating changes
