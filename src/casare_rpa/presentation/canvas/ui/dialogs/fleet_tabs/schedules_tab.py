@@ -241,11 +241,9 @@ class SchedulesTabWidget(QWidget):
             name_item.setData(Qt.ItemDataRole.UserRole, schedule_id)
             self._table.setItem(row, 1, name_item)
 
-            self._table.setItem(
-                row, 2, QTableWidgetItem(schedule.get("workflow_name", "-"))
-            )
+            self._table.setItem(row, 2, QTableWidgetItem(schedule.get("workflow_name", "-")))
 
-            frequency = schedule.get("frequency", "daily")
+            schedule.get("frequency", "daily")
             freq_display = self._get_frequency_display(schedule)
             self._table.setItem(row, 3, QTableWidgetItem(freq_display))
 
@@ -308,9 +306,7 @@ class SchedulesTabWidget(QWidget):
 
             delete_btn = QPushButton("Delete")
             delete_btn.setMaximumHeight(24)
-            delete_btn.clicked.connect(
-                lambda _, s=schedule: self._on_delete_schedule(s)
-            )
+            delete_btn.clicked.connect(lambda _, s=schedule: self._on_delete_schedule(s))
             actions_layout.addWidget(delete_btn)
 
             self._table.setCellWidget(row, 8, actions_widget)
@@ -453,9 +449,7 @@ class SchedulesTabWidget(QWidget):
 
             if search_text:
                 name_match = search_text in schedule.get("name", "").lower()
-                workflow_match = (
-                    search_text in schedule.get("workflow_name", "").lower()
-                )
+                workflow_match = search_text in schedule.get("workflow_name", "").lower()
                 if not (name_match or workflow_match):
                     show = False
 
@@ -517,9 +511,7 @@ class SchedulesTabWidget(QWidget):
         if schedule.get("enabled", True):
             disable_action = menu.addAction("Disable")
             disable_action.triggered.connect(
-                lambda: self.schedule_enabled_changed.emit(
-                    schedule.get("id", ""), False
-                )
+                lambda: self.schedule_enabled_changed.emit(schedule.get("id", ""), False)
             )
         else:
             enable_action = menu.addAction("Enable")
@@ -538,9 +530,7 @@ class SchedulesTabWidget(QWidget):
         """Handle table selection change."""
         selected = self._table.selectedItems()
         if selected:
-            schedule_id = self._table.item(selected[0].row(), 1).data(
-                Qt.ItemDataRole.UserRole
-            )
+            schedule_id = self._table.item(selected[0].row(), 1).data(Qt.ItemDataRole.UserRole)
             if schedule_id:
                 self.schedule_selected.emit(schedule_id)
 
@@ -572,9 +562,7 @@ class SchedulesTabWidget(QWidget):
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("Delete Schedule")
         box.setText(f"Are you sure you want to delete '{name}'?")
-        box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         box.setDefaultButton(QMessageBox.StandardButton.No)
         box.setModal(False)
 

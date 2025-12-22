@@ -182,12 +182,9 @@ class GoToURLNode(BrowserBaseNode):
             logger.info(f"URL from parameter: '{url}'")
 
             # Resolve {{variable}} patterns in url
-            url = context.resolve_value(url)
 
             if not url:
-                logger.error(
-                    f"URL validation failed. url='{url}', config={self.config}"
-                )
+                logger.error(f"URL validation failed. url='{url}', config={self.config}")
                 raise ValueError("URL is required")
 
             # Add protocol if missing
@@ -205,8 +202,6 @@ class GoToURLNode(BrowserBaseNode):
             screenshot_path = self.get_parameter("screenshot_path", "")
 
             # Resolve {{variable}} patterns in referer and screenshot_path
-            referer = context.resolve_value(referer)
-            screenshot_path = context.resolve_value(screenshot_path)
 
             logger.info(f"Navigating to URL: {url} (wait_until={wait_until})")
 
@@ -223,9 +218,7 @@ class GoToURLNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}")
 
                     # Navigate to URL
                     response = await page.goto(url, **goto_options)
@@ -248,9 +241,7 @@ class GoToURLNode(BrowserBaseNode):
                                 node_id=getattr(self, "node_id", None),
                             )
                         )
-                        logger.debug(
-                            "BrowserPageReady event published from GoToURLNode"
-                        )
+                        logger.debug("BrowserPageReady event published from GoToURLNode")
                     except Exception as e:
                         logger.debug(f"Could not emit BrowserPageReady event: {e}")
 
@@ -414,9 +405,7 @@ class GoBackNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for go back"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go back")
 
                     await page.go_back(timeout=timeout, wait_until=wait_until)
 
@@ -553,9 +542,7 @@ class GoForwardNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for go forward"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go forward")
 
                     await page.go_forward(timeout=timeout, wait_until=wait_until)
 
@@ -692,9 +679,7 @@ class RefreshPageNode(BrowserBaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for page refresh"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for page refresh")
 
                     await page.reload(timeout=timeout, wait_until=wait_until)
 

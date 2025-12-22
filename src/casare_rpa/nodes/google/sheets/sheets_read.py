@@ -151,13 +151,9 @@ class SheetsGetCellNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         cell = self.get_parameter("cell")
-        if hasattr(context, "resolve_value") and cell:
-            cell = context.resolve_value(cell)
 
         if not cell:
             self._set_error_outputs("Cell reference is required")
@@ -270,8 +266,6 @@ class SheetsGetRangeNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         range_notation = self.get_parameter("range")
-        if hasattr(context, "resolve_value") and range_notation:
-            range_notation = context.resolve_value(range_notation)
 
         if not range_notation:
             self._set_error_outputs("Range is required")
@@ -393,13 +387,9 @@ class SheetsGetRowNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         row_num = self.get_parameter("row_num")
-        if hasattr(context, "resolve_value"):
-            row_num = context.resolve_value(row_num)
         row_num = int(row_num) if row_num else 1
 
         if row_num < 1:
@@ -529,13 +519,9 @@ class SheetsGetColumnNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
         sheet_name = sheet_name or "Sheet1"
 
         column = self.get_parameter("column")
-        if hasattr(context, "resolve_value") and column:
-            column = context.resolve_value(column)
 
         if not column:
             self._set_error_outputs("Column letter is required")
@@ -673,8 +659,6 @@ class SheetsSearchNode(SheetsBaseNode):
         spreadsheet_id = self._get_spreadsheet_id(context)
 
         search_value = self.get_parameter("search_value")
-        if hasattr(context, "resolve_value") and search_value:
-            search_value = context.resolve_value(search_value)
 
         if not search_value:
             self._set_error_outputs("Search value is required")
@@ -685,12 +669,8 @@ class SheetsSearchNode(SheetsBaseNode):
             }
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value") and sheet_name:
-            sheet_name = context.resolve_value(sheet_name)
 
         search_range = self.get_parameter("search_range")
-        if hasattr(context, "resolve_value") and search_range:
-            search_range = context.resolve_value(search_range)
 
         match_case = bool(self.get_parameter("match_case"))
         match_entire_cell = bool(self.get_parameter("match_entire_cell"))
@@ -732,9 +712,7 @@ class SheetsSearchNode(SheetsBaseNode):
 
                     found = False
                     if match_entire_cell:
-                        found = compare_value == (
-                            search_value if match_case else search_lower
-                        )
+                        found = compare_value == (search_value if match_case else search_lower)
                     else:
                         found = search_lower in compare_value
 

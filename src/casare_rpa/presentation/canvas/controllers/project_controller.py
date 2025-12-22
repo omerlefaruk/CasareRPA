@@ -123,9 +123,7 @@ class ProjectController(BaseController):
                 import qasync
 
                 future = qasync.asyncio.ensure_future(self.get_recent_projects())
-                future.add_done_callback(
-                    lambda f: self._show_dialog_with_projects(f.result())
-                )
+                future.add_done_callback(lambda f: self._show_dialog_with_projects(f.result()))
             else:
                 recent = loop.run_until_complete(self.get_recent_projects())
                 self._show_dialog_with_projects(recent)
@@ -133,9 +131,7 @@ class ProjectController(BaseController):
             # No event loop, show dialog without recent projects
             self._show_dialog_with_projects([])
 
-    def _show_dialog_with_projects(
-        self, recent_projects: List["ProjectIndexEntry"]
-    ) -> None:
+    def _show_dialog_with_projects(self, recent_projects: List["ProjectIndexEntry"]) -> None:
         """
         Show project manager dialog.
 
@@ -172,9 +168,7 @@ class ProjectController(BaseController):
             if loop.is_running():
                 import qasync
 
-                future = qasync.asyncio.ensure_future(
-                    self._create_project_async(project_data)
-                )
+                future = qasync.asyncio.ensure_future(self._create_project_async(project_data))
                 future.add_done_callback(lambda f: self._handle_create_result(f))
             else:
                 loop.run_until_complete(self._create_project_async(project_data))
@@ -210,9 +204,7 @@ class ProjectController(BaseController):
                 logger.info(f"Created project: {result.project.name}")
             else:
                 logger.error(f"Failed to create project: {result.error}")
-                self._show_error(
-                    "Project Creation Failed", result.error or "Unknown error"
-                )
+                self._show_error("Project Creation Failed", result.error or "Unknown error")
 
         except Exception as e:
             logger.error(f"Failed to create project: {e}")
@@ -239,9 +231,7 @@ class ProjectController(BaseController):
             if loop.is_running():
                 import qasync
 
-                future = qasync.asyncio.ensure_future(
-                    self._open_project_async(Path(path))
-                )
+                future = qasync.asyncio.ensure_future(self._open_project_async(Path(path)))
                 future.add_done_callback(lambda f: self._handle_open_result(f))
             else:
                 loop.run_until_complete(self._open_project_async(Path(path)))
@@ -298,9 +288,7 @@ class ProjectController(BaseController):
             if loop.is_running():
                 import qasync
 
-                future = qasync.asyncio.ensure_future(
-                    self._remove_project_async(project_id)
-                )
+                qasync.asyncio.ensure_future(self._remove_project_async(project_id))
             else:
                 loop.run_until_complete(self._remove_project_async(project_id))
         except RuntimeError as e:
@@ -350,9 +338,7 @@ class ProjectController(BaseController):
         except RuntimeError as e:
             logger.error(f"Failed to open scenario: {e}")
 
-    async def _open_scenario_async(
-        self, project_path: Path, scenario_path: Path
-    ) -> None:
+    async def _open_scenario_async(self, project_path: Path, scenario_path: Path) -> None:
         """
         Open scenario asynchronously.
 

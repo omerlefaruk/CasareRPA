@@ -1,0 +1,270 @@
+{
+    "metadata": {
+        "name": "Batch 8.1 - Gmail Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "gmail_list": {
+            "node_id": "gmail_list",
+            "node_type": "GmailListEmailsNode",
+            "config": {
+                "max_results": 10
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "gmail_get": {
+            "node_id": "gmail_get",
+            "node_type": "GmailGetEmailNode",
+            "config": {},
+            "position": [
+                400,
+                0
+            ]
+        },
+        "gmail_send": {
+            "node_id": "gmail_send",
+            "node_type": "GmailSendEmailNode",
+            "config": {
+                "to": "test@example.com",
+                "subject": "Test",
+                "body": "Hello"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "gmail_search": {
+            "node_id": "gmail_search",
+            "node_type": "GmailSearchEmailsNode",
+            "config": {
+                "query": "is:unread"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "gmail_labels": {
+            "node_id": "gmail_labels",
+            "node_type": "GmailGetLabelsNode",
+            "config": {},
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "gmail_add_label": {
+            "node_id": "gmail_add_label",
+            "node_type": "GmailAddLabelNode",
+            "config": {
+                "label": "Important"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "gmail_remove_label": {
+            "node_id": "gmail_remove_label",
+            "node_type": "GmailRemoveLabelNode",
+            "config": {
+                "label": "Important"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "gmail_mark_read": {
+            "node_id": "gmail_mark_read",
+            "node_type": "GmailMarkAsReadNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "gmail_mark_unread": {
+            "node_id": "gmail_mark_unread",
+            "node_type": "GmailMarkAsUnreadNode",
+            "config": {},
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "gmail_archive": {
+            "node_id": "gmail_archive",
+            "node_type": "GmailArchiveEmailNode",
+            "config": {},
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "gmail_trash": {
+            "node_id": "gmail_trash",
+            "node_type": "GmailTrashEmailNode",
+            "config": {},
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "gmail_star": {
+            "node_id": "gmail_star",
+            "node_type": "GmailStarEmailNode",
+            "config": {},
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "gmail_draft": {
+            "node_id": "gmail_draft",
+            "node_type": "GmailCreateDraftNode",
+            "config": {
+                "to": "test@example.com",
+                "subject": "Draft"
+            },
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "gmail_reply": {
+            "node_id": "gmail_reply",
+            "node_type": "GmailReplyToEmailNode",
+            "config": {
+                "body": "Reply"
+            },
+            "position": [
+                5200,
+                0
+            ]
+        },
+        "gmail_forward": {
+            "node_id": "gmail_forward",
+            "node_type": "GmailForwardEmailNode",
+            "config": {
+                "to": "forward@example.com"
+            },
+            "position": [
+                5600,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Gmail nodes tested!"
+            },
+            "position": [
+                6000,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "gmail_list",
+            "source_port": "exec_out",
+            "target_node": "gmail_get",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_get",
+            "source_port": "exec_out",
+            "target_node": "gmail_send",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_send",
+            "source_port": "exec_out",
+            "target_node": "gmail_search",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_search",
+            "source_port": "exec_out",
+            "target_node": "gmail_labels",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_labels",
+            "source_port": "exec_out",
+            "target_node": "gmail_add_label",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_add_label",
+            "source_port": "exec_out",
+            "target_node": "gmail_remove_label",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_remove_label",
+            "source_port": "exec_out",
+            "target_node": "gmail_mark_read",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_mark_read",
+            "source_port": "exec_out",
+            "target_node": "gmail_mark_unread",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_mark_unread",
+            "source_port": "exec_out",
+            "target_node": "gmail_archive",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_archive",
+            "source_port": "exec_out",
+            "target_node": "gmail_trash",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_trash",
+            "source_port": "exec_out",
+            "target_node": "gmail_star",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_star",
+            "source_port": "exec_out",
+            "target_node": "gmail_draft",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_draft",
+            "source_port": "exec_out",
+            "target_node": "gmail_reply",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_reply",
+            "source_port": "exec_out",
+            "target_node": "gmail_forward",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "gmail_forward",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

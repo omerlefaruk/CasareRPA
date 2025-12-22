@@ -1,0 +1,149 @@
+{
+    "metadata": {
+        "name": "Batch 8.5 - WhatsApp Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "wa_send": {
+            "node_id": "wa_send",
+            "node_type": "WhatsAppSendMessageNode",
+            "config": {
+                "to": "+1234567890",
+                "message": "Hello"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "wa_image": {
+            "node_id": "wa_image",
+            "node_type": "WhatsAppSendImageNode",
+            "config": {
+                "to": "+1234567890"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "wa_doc": {
+            "node_id": "wa_doc",
+            "node_type": "WhatsAppSendDocumentNode",
+            "config": {
+                "to": "+1234567890"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "wa_video": {
+            "node_id": "wa_video",
+            "node_type": "WhatsAppSendVideoNode",
+            "config": {
+                "to": "+1234567890"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "wa_location": {
+            "node_id": "wa_location",
+            "node_type": "WhatsAppSendLocationNode",
+            "config": {
+                "to": "+1234567890",
+                "latitude": 0,
+                "longitude": 0
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "wa_template": {
+            "node_id": "wa_template",
+            "node_type": "WhatsAppSendTemplateNode",
+            "config": {
+                "to": "+1234567890",
+                "template_name": "hello"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "wa_interactive": {
+            "node_id": "wa_interactive",
+            "node_type": "WhatsAppSendInteractiveNode",
+            "config": {
+                "to": "+1234567890"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "WhatsApp nodes tested!"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "wa_send",
+            "source_port": "exec_out",
+            "target_node": "wa_image",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wa_image",
+            "source_port": "exec_out",
+            "target_node": "wa_doc",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wa_doc",
+            "source_port": "exec_out",
+            "target_node": "wa_video",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wa_video",
+            "source_port": "exec_out",
+            "target_node": "wa_location",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wa_location",
+            "source_port": "exec_out",
+            "target_node": "wa_template",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wa_template",
+            "source_port": "exec_out",
+            "target_node": "wa_interactive",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wa_interactive",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

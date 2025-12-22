@@ -1,0 +1,51 @@
+[
+  {
+    "file": "batch_8_1_gmail.json",
+    "status": "FAILED",
+    "error": "Workflow failed",
+    "logs": [],
+    "node_outputs": {}
+  },
+  {
+    "file": "batch_8_2_sheets.json",
+    "status": "FAILED",
+    "error": "Workflow failed",
+    "logs": [],
+    "node_outputs": {}
+  },
+  {
+    "file": "batch_8_3_drive.json",
+    "status": "FAILED",
+    "error": "Workflow failed",
+    "logs": [],
+    "node_outputs": {}
+  },
+  {
+    "file": "batch_8_4_telegram.json",
+    "status": "FAILED",
+    "error": "Workflow failed",
+    "logs": [],
+    "node_outputs": {}
+  },
+  {
+    "file": "batch_8_5_whatsapp.json",
+    "status": "FAILED",
+    "error": "Workflow failed",
+    "logs": [],
+    "node_outputs": {}
+  },
+  {
+    "file": "batch_8_6_more_list.json",
+    "status": "SUCCESS",
+    "error": null,
+    "logs": [],
+    "node_outputs": {}
+  },
+  {
+    "file": "batch_8_7_more_system.json",
+    "status": "FAILED",
+    "error": "Workflow failed",
+    "logs": [],
+    "node_outputs": {}
+  }
+]

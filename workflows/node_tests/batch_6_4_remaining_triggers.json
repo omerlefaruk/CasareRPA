@@ -1,0 +1,178 @@
+{
+    "metadata": {
+        "name": "Batch 6.4 - Remaining Triggers",
+        "description": "Tests ChatTriggerNode, FormTriggerNode, ErrorTriggerNode, AppEventTriggerNode, WorkflowCallTriggerNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "chat_trigger": {
+            "node_id": "chat_trigger",
+            "node_type": "ChatTriggerNode",
+            "config": {
+                "channel": "general"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "log_chat": {
+            "node_id": "log_chat",
+            "node_type": "LogNode",
+            "config": {
+                "message": "ChatTriggerNode OK"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "form_trigger": {
+            "node_id": "form_trigger",
+            "node_type": "FormTriggerNode",
+            "config": {
+                "form_id": "test_form"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "log_form": {
+            "node_id": "log_form",
+            "node_type": "LogNode",
+            "config": {
+                "message": "FormTriggerNode OK"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "error_trigger": {
+            "node_id": "error_trigger",
+            "node_type": "ErrorTriggerNode",
+            "config": {
+                "error_types": "all"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "log_error": {
+            "node_id": "log_error",
+            "node_type": "LogNode",
+            "config": {
+                "message": "ErrorTriggerNode OK"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "app_event_trigger": {
+            "node_id": "app_event_trigger",
+            "node_type": "AppEventTriggerNode",
+            "config": {
+                "event_name": "test_event"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "log_app_event": {
+            "node_id": "log_app_event",
+            "node_type": "LogNode",
+            "config": {
+                "message": "AppEventTriggerNode OK"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "workflow_call_trigger": {
+            "node_id": "workflow_call_trigger",
+            "node_type": "WorkflowCallTriggerNode",
+            "config": {},
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All remaining triggers tested!"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "chat_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_chat",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_chat",
+            "source_port": "exec_out",
+            "target_node": "form_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "form_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_form",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_form",
+            "source_port": "exec_out",
+            "target_node": "error_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "error_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_error",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_error",
+            "source_port": "exec_out",
+            "target_node": "app_event_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "app_event_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_app_event",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_app_event",
+            "source_port": "exec_out",
+            "target_node": "workflow_call_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "workflow_call_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

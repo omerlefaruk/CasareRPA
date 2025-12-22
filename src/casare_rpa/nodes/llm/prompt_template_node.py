@@ -118,9 +118,6 @@ class PromptTemplateNode(LLMBaseNode):
         variables = self.get_parameter("variables") or {}
         should_execute = self.get_parameter("execute")
 
-        if hasattr(context, "resolve_value"):
-            template_id = context.resolve_value(template_id)
-
         if not template_id:
             self.set_output_value("success", False)
             self.set_output_value("error", "Template ID is required")
@@ -170,9 +167,6 @@ class PromptTemplateNode(LLMBaseNode):
                 temperature = self.get_parameter("temperature") or 0.7
                 max_tokens = self.get_parameter("max_tokens") or 1000
 
-                if hasattr(context, "resolve_value"):
-                    model = context.resolve_value(model)
-
                 llm_manager = await self._get_llm_manager(context)
 
                 response = await llm_manager.completion(
@@ -192,9 +186,7 @@ class PromptTemplateNode(LLMBaseNode):
                     clean = response_text.strip()
                     if clean.startswith("```"):
                         lines = clean.split("\n")
-                        clean = "\n".join(
-                            lines[1:-1] if lines[-1] == "```" else lines[1:]
-                        )
+                        clean = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
                     parsed = json.loads(clean)
                 except (json.JSONDecodeError, ValueError):
                     pass
@@ -206,8 +198,7 @@ class PromptTemplateNode(LLMBaseNode):
                 self.set_output_value("error", "")
 
                 logger.info(
-                    f"Prompt template executed: {template_id}, "
-                    f"tokens={response.total_tokens}"
+                    f"Prompt template executed: {template_id}, " f"tokens={response.total_tokens}"
                 )
 
                 return {
@@ -324,12 +315,6 @@ class ListTemplatesNode(LLMBaseNode):
         if include_builtin is None:
             include_builtin = True
 
-        if hasattr(context, "resolve_value"):
-            if category:
-                category = context.resolve_value(category)
-            if search:
-                search = context.resolve_value(search)
-
         try:
             template_manager = get_prompt_template_manager()
 
@@ -422,8 +407,6 @@ class GetTemplateInfoNode(LLMBaseNode):
         )
 
         template_id = self.get_parameter("template_id")
-        if hasattr(context, "resolve_value"):
-            template_id = context.resolve_value(template_id)
 
         if not template_id:
             self.set_output_value("success", False)

@@ -206,7 +206,6 @@ class ImageConvertNode(BaseNode):
                 )
 
             # Resolve variables and environment in source path
-            source_path = context.resolve_value(source_path)
             source_path = os.path.expandvars(source_path)
 
             # SECURITY: Validate source path
@@ -219,14 +218,11 @@ class ImageConvertNode(BaseNode):
 
             if source.is_dir():
                 if output_path:
-                    output_path = context.resolve_value(output_path)
                     output_path = os.path.expandvars(output_path)
                 else:
                     output_path = str(source / "converted")
 
-                output_dir = validate_path_security(
-                    output_path, "write", allow_dangerous
-                )
+                output_dir = validate_path_security(output_path, "write", allow_dangerous)
                 if output_dir.exists() and output_dir.is_file():
                     raise ValueError(
                         f"output_path must be a directory when source_path is a folder: {output_path}"
@@ -249,43 +245,25 @@ class ImageConvertNode(BaseNode):
                 def _convert_batch() -> list[str]:
                     converted: list[str] = []
                     resample = (
-                        Image.Resampling.LANCZOS
-                        if hasattr(Image, "Resampling")
-                        else Image.LANCZOS
+                        Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
                     )
                     for input_file in input_files:
-                        safe_source = validate_path_security(
-                            input_file, "read", allow_dangerous
-                        )
-                        rel = (
-                            input_file.relative_to(source)
-                            if recursive
-                            else Path(input_file.name)
-                        )
+                        safe_source = validate_path_security(input_file, "read", allow_dangerous)
+                        rel = input_file.relative_to(source) if recursive else Path(input_file.name)
                         dest_candidate = (output_dir / rel).with_suffix(ext)
                         dest_candidate.parent.mkdir(parents=True, exist_ok=True)
-                        dest = validate_path_security(
-                            dest_candidate, "write", allow_dangerous
-                        )
+                        dest = validate_path_security(dest_candidate, "write", allow_dangerous)
 
                         if dest.exists() and not overwrite:
-                            raise FileExistsError(
-                                f"Destination already exists: {dest_candidate}"
-                            )
+                            raise FileExistsError(f"Destination already exists: {dest_candidate}")
 
                         with Image.open(safe_source) as img:
                             img = ImageOps.exif_transpose(img)
 
                             if scale_percent != 100:
-                                new_width = max(
-                                    1, int(round(img.width * scale_percent / 100))
-                                )
-                                new_height = max(
-                                    1, int(round(img.height * scale_percent / 100))
-                                )
-                                img = img.resize(
-                                    (new_width, new_height), resample=resample
-                                )
+                                new_width = max(1, int(round(img.width * scale_percent / 100)))
+                                new_height = max(1, int(round(img.height * scale_percent / 100)))
+                                img = img.resize((new_width, new_height), resample=resample)
 
                             if output_format == "JPEG" and img.mode in ("RGBA", "P"):
                                 background = Image.new("RGB", img.size, (255, 255, 255))
@@ -333,16 +311,13 @@ class ImageConvertNode(BaseNode):
                 if not overwrite and Path(output_path).resolve() == source.resolve():
                     output_path = str(source.with_name(f"{source.stem}_converted{ext}"))
             else:
-                output_path = context.resolve_value(output_path)
                 output_path = os.path.expandvars(output_path)
 
             # SECURITY: Validate output path (supports directory targets)
             directory_hint = output_path.endswith(os.sep) or (
                 os.altsep is not None and output_path.endswith(os.altsep)
             )
-            dest_candidate = validate_path_security(
-                output_path, "write", allow_dangerous
-            )
+            dest_candidate = validate_path_security(output_path, "write", allow_dangerous)
             if directory_hint or (dest_candidate.exists() and dest_candidate.is_dir()):
                 dest_candidate.mkdir(parents=True, exist_ok=True)
                 dest_candidate = dest_candidate / f"{source.stem}{ext}"
@@ -370,9 +345,7 @@ class ImageConvertNode(BaseNode):
                             else Image.LANCZOS
                         )
                         new_width = max(1, int(round(img.width * scale_percent / 100)))
-                        new_height = max(
-                            1, int(round(img.height * scale_percent / 100))
-                        )
+                        new_height = max(1, int(round(img.height * scale_percent / 100)))
                         img = img.resize((new_width, new_height), resample=resample)
 
                     # Handle transparency for JPEG (convert RGBA to RGB)

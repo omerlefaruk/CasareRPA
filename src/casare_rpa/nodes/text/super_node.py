@@ -572,9 +572,7 @@ class TextSuperNode(BaseNode):
         action = self.get_parameter("action", TextAction.CONTAINS.value)
 
         # Map actions to handlers
-        handlers: Dict[
-            str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
             TextAction.SUBSTRING.value: self._execute_substring,
             TextAction.CONTAINS.value: self._execute_contains,
             TextAction.STARTS_WITH.value: self._execute_starts_with,
@@ -630,7 +628,6 @@ class TextSuperNode(BaseNode):
         """Check if text contains substring."""
         text = str(self.get_input_value("text", context) or "")
         search = str(self.get_input_value("search", context) or "")
-        search = context.resolve_value(search)
         case_sensitive = self.get_parameter("case_sensitive", True)
 
         if not case_sensitive:
@@ -655,13 +652,10 @@ class TextSuperNode(BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_starts_with(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_starts_with(self, context: "IExecutionContext") -> ExecutionResult:
         """Check if text starts with prefix."""
         text = str(self.get_input_value("text", context) or "")
         prefix = str(self.get_input_value("prefix", context) or "")
-        prefix = context.resolve_value(prefix)
         case_sensitive = self.get_parameter("case_sensitive", True)
 
         if not case_sensitive:
@@ -682,7 +676,6 @@ class TextSuperNode(BaseNode):
         """Check if text ends with suffix."""
         text = str(self.get_input_value("text", context) or "")
         suffix = str(self.get_input_value("suffix", context) or "")
-        suffix = context.resolve_value(suffix)
         case_sensitive = self.get_parameter("case_sensitive", True)
 
         if not case_sensitive:
@@ -703,7 +696,6 @@ class TextSuperNode(BaseNode):
         """Extract text using regex."""
         text = str(self.get_input_value("text", context) or "")
         pattern = str(self.get_input_value("pattern", context) or "")
-        pattern = context.resolve_value(pattern)
 
         if not pattern:
             raise ValueError("Regex pattern is required")
@@ -759,9 +751,6 @@ class TextSuperNode(BaseNode):
         separator = self.get_input_value("separator", context)
         max_split = safe_int(self.get_parameter("max_split", -1), -1)
 
-        if separator is not None:
-            separator = context.resolve_value(separator)
-
         if separator is None or separator == "":
             result = text.split(maxsplit=max_split) if max_split >= 0 else text.split()
         else:
@@ -787,9 +776,6 @@ class TextSuperNode(BaseNode):
         old_value = str(self.get_input_value("old_value", context) or "")
         new_value = str(self.get_input_value("new_value", context) or "")
 
-        old_value = context.resolve_value(old_value)
-        new_value = context.resolve_value(new_value)
-
         count = safe_int(self.get_parameter("replace_count", -1), -1)
         use_regex = self.get_parameter("use_regex", False)
 
@@ -803,9 +789,7 @@ class TextSuperNode(BaseNode):
                 flags |= re.DOTALL
 
             if count >= 0:
-                result, replacements = re.subn(
-                    old_value, new_value, text, count=count, flags=flags
-                )
+                result, replacements = re.subn(old_value, new_value, text, count=count, flags=flags)
             else:
                 result, replacements = re.subn(old_value, new_value, text, flags=flags)
         else:
@@ -834,7 +818,6 @@ class TextSuperNode(BaseNode):
         chars = self.get_parameter("trim_characters", "")
 
         if chars:
-            chars = context.resolve_value(chars)
             chars_arg = chars
         else:
             chars_arg = None
@@ -889,7 +872,6 @@ class TextSuperNode(BaseNode):
         mode = self.get_parameter("pad_mode", "left")
         fill_char = self.get_parameter("fill_char", " ")
 
-        fill_char = context.resolve_value(fill_char)
         if len(fill_char) != 1:
             fill_char = " "
 
@@ -1001,7 +983,6 @@ class TextSuperNode(BaseNode):
                 items = [items]
 
         separator = self.get_parameter("separator", "")
-        separator = context.resolve_value(separator)
 
         result = separator.join(str(item) for item in items)
 

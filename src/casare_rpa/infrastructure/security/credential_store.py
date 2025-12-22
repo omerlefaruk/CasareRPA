@@ -39,6 +39,7 @@ class CredentialType(Enum):
     CONNECTION_STRING = "connection_string"
     OAUTH_TOKEN = "oauth_token"
     GOOGLE_OAUTH = "google_oauth"
+    OPENAI_OAUTH = "openai_oauth"
     CUSTOM = "custom"
 
 
@@ -167,6 +168,25 @@ CREDENTIAL_CATEGORIES = {
         ],
         "auto_refresh": True,
     },
+    "openai_oauth": {
+        "name": "OpenAI / Azure OAuth",
+        "type": CredentialType.OPENAI_OAUTH,
+        "providers": [
+            "openai",
+            "azure_openai",
+        ],
+        "fields": [
+            "client_id",
+            "client_secret",
+            "authorization_url",
+            "token_url",
+            "access_token",
+            "refresh_token",
+            "token_expiry",
+            "scopes",
+        ],
+        "auto_refresh": True,
+    },
 }
 
 
@@ -236,9 +256,7 @@ class CredentialStore:
             try:
                 import win32crypt
 
-                return win32crypt.CryptProtectData(
-                    key, "CasareRPA Master Key", None, None, None, 0
-                )
+                return win32crypt.CryptProtectData(key, "CasareRPA Master Key", None, None, None, 0)
             except ImportError:
                 pass
 
@@ -261,9 +279,7 @@ class CredentialStore:
             try:
                 import win32crypt
 
-                _, key = win32crypt.CryptUnprotectData(
-                    protected_key, None, None, None, 0
-                )
+                _, key = win32crypt.CryptUnprotectData(protected_key, None, None, None, 0)
                 return key
             except ImportError:
                 pass
@@ -337,9 +353,7 @@ class CredentialStore:
 
         except InvalidToken:
             # Store encrypted with different key - start fresh
-            logger.warning(
-                "Credential store encrypted with different key, starting fresh"
-            )
+            logger.warning("Credential store encrypted with different key, starting fresh")
             self._credentials = {}
             # Remove corrupted file
             try:
@@ -354,9 +368,7 @@ class CredentialStore:
         """Save encrypted store to disk."""
         store_data = {
             "version": 2,
-            "credentials": {
-                cred_id: cred.to_dict() for cred_id, cred in self._credentials.items()
-            },
+            "credentials": {cred_id: cred.to_dict() for cred_id, cred in self._credentials.items()},
         }
 
         json_data = json.dumps(store_data, indent=2).encode("utf-8")
@@ -540,9 +552,7 @@ class CredentialStore:
 
         return sorted(results, key=lambda x: x["name"].lower())
 
-    def get_credentials_for_dropdown(
-        self, category: Optional[str] = None
-    ) -> List[tuple[str, str]]:
+    def get_credentials_for_dropdown(self, category: Optional[str] = None) -> List[tuple[str, str]]:
         """Get credentials formatted for dropdown: [(id, display_name), ...]"""
         self._ensure_initialized()
 
@@ -577,9 +587,7 @@ class CredentialStore:
 
         if credential_id in self._credentials:
             self._credentials[credential_id].name = new_name
-            self._credentials[credential_id].updated_at = datetime.now(
-                timezone.utc
-            ).isoformat()
+            self._credentials[credential_id].updated_at = datetime.now(timezone.utc).isoformat()
             self._save_store()
             return True
         return False
@@ -738,6 +746,74 @@ class CredentialStore:
         return self.list_credentials(
             category="google",
             credential_type=CredentialType.GOOGLE_OAUTH,
+        )
+
+    def save_openai_oauth(
+        self,
+        name: str,
+        client_id: str,
+        client_secret: str,
+        authorization_url: str,
+        token_url: str,
+        access_token: str,
+        refresh_token: str,
+        scopes: List[str],
+        token_expiry: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+        description: str = "",
+        credential_id: Optional[str] = None,
+    ) -> str:
+        """
+        Save an OpenAI/Azure OAuth credential.
+
+        Args:
+            name: Display name
+            client_id: Client ID
+            client_secret: Client Secret
+            authorization_url: Auth URL
+            token_url: Token URL
+            access_token: Access Token
+            refresh_token: Refresh Token
+            scopes: Scopes
+            token_expiry: Expiry
+            tenant_id: Azure Tenant ID (optional)
+            description: Description
+            credential_id: Update ID
+
+        Returns:
+            Credential ID
+        """
+        data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "authorization_url": authorization_url,
+            "token_url": token_url,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "scopes": scopes,
+        }
+
+        if token_expiry:
+            data["token_expiry"] = token_expiry
+
+        if tenant_id:
+            data["tenant_id"] = tenant_id
+
+        return self.save_credential(
+            name=name,
+            credential_type=CredentialType.OPENAI_OAUTH,
+            category="openai_oauth",
+            data=data,
+            description=description,
+            tags=["openai", "azure", "oauth"],
+            credential_id=credential_id,
+        )
+
+    def list_openai_credentials(self) -> List[Dict[str, Any]]:
+        """List all OpenAI OAuth credentials."""
+        return self.list_credentials(
+            category="openai_oauth",
+            credential_type=CredentialType.OPENAI_OAUTH,
         )
 
     def get_google_credential_for_dropdown(self) -> List[tuple[str, str]]:

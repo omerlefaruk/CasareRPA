@@ -22,9 +22,6 @@ from casare_rpa.domain.orchestrator.services.robot_selection_service import (
 from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
     RobotAssignment,
 )
-from casare_rpa.domain.orchestrator.value_objects.node_robot_override import (
-    NodeRobotOverride,
-)
 from casare_rpa.domain.orchestrator.errors import (
     NoAvailableRobotError,
     RobotNotFoundError,
@@ -126,14 +123,12 @@ class SubmitJobUseCase:
         all_robots: List[Robot] = await self._robot_repo.get_all()
 
         # 2. Load workflow assignments
-        assignments: List[
-            RobotAssignment
-        ] = await self._assignment_repo.get_by_workflow(workflow_id)
-
-        # 3. Load node overrides for the workflow
-        overrides: List[NodeRobotOverride] = await self._override_repo.get_by_workflow(
+        assignments: List[RobotAssignment] = await self._assignment_repo.get_by_workflow(
             workflow_id
         )
+
+        # 3. Load node overrides for the workflow
+        await self._override_repo.get_by_workflow(workflow_id)
 
         # 4. Select robot
         selected_robot_id: str
@@ -174,9 +169,7 @@ class SubmitJobUseCase:
         if not final_workflow_name:
             final_workflow_name = workflow_data.get("metadata", {}).get("name", "")
             if not final_workflow_name:
-                final_workflow_name = workflow_data.get(
-                    "name", f"Workflow-{workflow_id[:8]}"
-                )
+                final_workflow_name = workflow_data.get("name", f"Workflow-{workflow_id[:8]}")
 
         # 6. Create Job entity
         job_id = str(uuid.uuid4())
@@ -227,17 +220,13 @@ class SubmitJobUseCase:
         """
         capabilities: Set[RobotCapability] = set()
         nodes = workflow_data.get("nodes", {})
-
-        if isinstance(nodes, dict):
-            nodes_list = list(nodes.values())
-        elif isinstance(nodes, list):
-            nodes_list = nodes
-        else:
+        if not isinstance(nodes, dict):
             return None
+        nodes_list = list(nodes.values())
 
         for node in nodes_list:
             if isinstance(node, dict):
-                node_type = node.get("type") or node.get("node_type", "")
+                node_type = node.get("node_type", "")
             else:
                 node_type = getattr(node, "node_type", "") or type(node).__name__
 
@@ -252,15 +241,12 @@ class SubmitJobUseCase:
 
             # Desktop nodes require desktop capability
             if any(
-                term in node_type_lower
-                for term in ["desktop", "uiautomation", "window", "win32"]
+                term in node_type_lower for term in ["desktop", "uiautomation", "window", "win32"]
             ):
                 capabilities.add(RobotCapability.DESKTOP)
 
             # ML/AI nodes may require GPU
-            if any(
-                term in node_type_lower for term in ["ml", "ai", "model", "llm", "ocr"]
-            ):
+            if any(term in node_type_lower for term in ["ml", "ai", "model", "llm", "ocr"]):
                 capabilities.add(RobotCapability.GPU)
 
         return capabilities if capabilities else None

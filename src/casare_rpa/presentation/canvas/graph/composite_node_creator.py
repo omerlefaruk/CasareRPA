@@ -68,9 +68,7 @@ class CompositeNodeCreator(QObject):
 
         # Get the node name for logging
         node_name = (
-            composite_node.NODE_NAME
-            if hasattr(composite_node, "NODE_NAME")
-            else "Composite"
+            composite_node.NODE_NAME if hasattr(composite_node, "NODE_NAME") else "Composite"
         )
 
         # Schedule deletion and replacement (must be done after current event)
@@ -93,9 +91,7 @@ class CompositeNodeCreator(QObject):
                     logger.warning(f"Unknown composite node type: {node_name}")
 
             except Exception as e:
-                logger.error(
-                    f"Failed to handle composite node creation: {e}", exc_info=True
-                )
+                logger.error(f"Failed to handle composite node creation: {e}", exc_info=True)
 
         # Use QTimer to defer the replacement
         QTimer.singleShot(0, replace_composite)
@@ -190,14 +186,8 @@ class CompositeNodeCreator(QObject):
         end_node.paired_start_id = start_id
 
         # Set up pairing on CasareRPA nodes
-        start_casare = (
-            start_node.get_casare_node()
-            if hasattr(start_node, "get_casare_node")
-            else None
-        )
-        end_casare = (
-            end_node.get_casare_node() if hasattr(end_node, "get_casare_node") else None
-        )
+        (start_node.get_casare_node() if hasattr(start_node, "get_casare_node") else None)
+        end_casare = end_node.get_casare_node() if hasattr(end_node, "get_casare_node") else None
 
         if end_casare and hasattr(end_casare, "set_paired_start"):
             end_casare.set_paired_start(start_id)
@@ -230,9 +220,7 @@ class CompositeNodeCreator(QObject):
         """
         try:
             # Create Try node
-            try_node = self._graph.create_node(
-                "casare_rpa.control_flow.VisualTryNode", pos=[x, y]
-            )
+            try_node = self._graph.create_node("casare_rpa.control_flow.VisualTryNode", pos=[x, y])
 
             # Create Catch node (side-by-side with large spacing)
             catch_node = self._graph.create_node(
@@ -253,9 +241,7 @@ class CompositeNodeCreator(QObject):
             return None
 
         except Exception as e:
-            logger.error(
-                f"Failed to create Try/Catch/Finally block: {e}", exc_info=True
-            )
+            logger.error(f"Failed to create Try/Catch/Finally block: {e}", exc_info=True)
             return None
 
     def _setup_try_catch_pairing(self, try_node, catch_node, finally_node) -> None:
@@ -280,18 +266,12 @@ class CompositeNodeCreator(QObject):
         finally_node.paired_try_id = try_id
 
         # Set up pairing on CasareRPA logic nodes
-        try_casare = (
-            try_node.get_casare_node() if hasattr(try_node, "get_casare_node") else None
-        )
+        try_casare = try_node.get_casare_node() if hasattr(try_node, "get_casare_node") else None
         catch_casare = (
-            catch_node.get_casare_node()
-            if hasattr(catch_node, "get_casare_node")
-            else None
+            catch_node.get_casare_node() if hasattr(catch_node, "get_casare_node") else None
         )
         finally_casare = (
-            finally_node.get_casare_node()
-            if hasattr(finally_node, "get_casare_node")
-            else None
+            finally_node.get_casare_node() if hasattr(finally_node, "get_casare_node") else None
         )
 
         if try_casare:

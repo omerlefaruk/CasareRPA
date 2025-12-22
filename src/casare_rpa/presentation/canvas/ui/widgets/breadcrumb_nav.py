@@ -36,9 +36,7 @@ class BreadcrumbItem:
     id: str  # Workflow or subflow ID
     name: str  # Display name
     path: Optional[str] = None  # File path if applicable
-    data: dict = field(
-        default_factory=dict
-    )  # Additional data (nodes, connections, etc.)
+    data: dict = field(default_factory=dict)  # Additional data (nodes, connections, etc.)
 
 
 class BreadcrumbButton(QPushButton):
@@ -291,9 +289,7 @@ class BreadcrumbNavWidget(QFrame):
             # Add button
             btn = BreadcrumbButton(item, is_current)
             if not is_current:
-                btn.clicked.connect(
-                    lambda checked, idx=i: self._on_breadcrumb_clicked(idx)
-                )
+                btn.clicked.connect(lambda checked, idx=i: self._on_breadcrumb_clicked(idx))
             self._breadcrumb_layout.addWidget(btn)
 
         # Resize widget to fit content
@@ -334,9 +330,7 @@ class SubflowNavigationController:
         """Set the main window reference for serialization."""
         self._main_window = main_window
 
-    def initialize(
-        self, workflow_name: str = "Main Workflow", workflow_id: str = "main"
-    ) -> None:
+    def initialize(self, workflow_name: str = "Main Workflow", workflow_id: str = "main") -> None:
         """
         Initialize with the root workflow.
 
@@ -360,9 +354,7 @@ class SubflowNavigationController:
         node = selected[0]
 
         # Check if it's a subflow node
-        return (
-            hasattr(node, "__identifier__") and "subflow" in node.__identifier__.lower()
-        )
+        return hasattr(node, "__identifier__") and "subflow" in node.__identifier__.lower()
 
     def dive_in(self) -> bool:
         """
@@ -378,17 +370,11 @@ class SubflowNavigationController:
         node = self._graph.selected_nodes()[0]
 
         # Get subflow info
-        subflow_id = (
-            node.get_property("subflow_id") if hasattr(node, "get_property") else None
-        )
+        subflow_id = node.get_property("subflow_id") if hasattr(node, "get_property") else None
         subflow_name = (
-            node.get_property("subflow_name")
-            if hasattr(node, "get_property")
-            else "Subflow"
+            node.get_property("subflow_name") if hasattr(node, "get_property") else "Subflow"
         )
-        subflow_path = (
-            node.get_property("subflow_path") if hasattr(node, "get_property") else None
-        )
+        subflow_path = node.get_property("subflow_path") if hasattr(node, "get_property") else None
 
         if not subflow_id and not subflow_path:
             logger.warning("Cannot dive in: subflow not configured")
@@ -491,9 +477,7 @@ class SubflowNavigationController:
                 self._state_stack.append(state)
                 node_count = len(state.get("nodes", {}))
                 conn_count = len(state.get("connections", []))
-                logger.debug(
-                    f"Saved workflow state: {node_count} nodes, {conn_count} connections"
-                )
+                logger.debug(f"Saved workflow state: {node_count} nodes, {conn_count} connections")
             else:
                 # Fallback: minimal state capture
                 logger.warning("No main_window - using minimal state capture")
@@ -520,9 +504,7 @@ class SubflowNavigationController:
 
             node_count = len(state.get("nodes", {}))
             conn_count = len(state.get("connections", []))
-            logger.debug(
-                f"Restoring workflow state: {node_count} nodes, {conn_count} connections"
-            )
+            logger.debug(f"Restoring workflow state: {node_count} nodes, {conn_count} connections")
 
             if self._main_window:
                 deserializer = WorkflowDeserializer(self._graph, self._main_window)
@@ -571,27 +553,8 @@ class SubflowNavigationController:
                     description="",
                 )
 
-            # Convert workflow state back to subflow format
-            transformed_nodes = {}
-            for node_id, node_data in state.get("nodes", {}).items():
-                # Convert position from [x, y] list to {x, y} dict
-                pos = node_data.get("position", [0, 0])
-                if isinstance(pos, list) and len(pos) >= 2:
-                    position = {"x": pos[0], "y": pos[1]}
-                else:
-                    position = {"x": 0, "y": 0}
-
-                # Transform node data back to subflow format
-                transformed_nodes[node_id] = {
-                    "node_id": node_data.get("node_id", node_id),
-                    "type": node_data.get("node_type", ""),
-                    "position": position,
-                    "properties": node_data.get("config", {}),
-                    "name": node_data.get("name", ""),
-                }
-
-            # Update subflow with new node data
-            subflow.nodes = transformed_nodes
+            # Subflows persist in canonical workflow format
+            subflow.nodes = state.get("nodes", {})
             subflow.connections = state.get("connections", [])
 
             # Save back to file
@@ -626,39 +589,12 @@ class SubflowNavigationController:
                 subflow = Subflow.load_from_file(subflow_path)
             else:
                 # Try to find by ID in registry
-                logger.warning(
-                    f"Subflow loading by ID not yet implemented: {subflow_id}"
-                )
+                logger.warning(f"Subflow loading by ID not yet implemented: {subflow_id}")
                 return False
 
-            # Convert subflow to workflow-compatible format
-            # Subflow format differs from workflow format - need to transform
-            subflow_data = subflow.to_dict()
-
-            # Transform nodes from subflow format to workflow format
-            transformed_nodes = {}
-            for node_id, node_data in subflow_data.get("nodes", {}).items():
-                # Convert position from {x, y} dict to [x, y] list
-                pos = node_data.get("position", {})
-                if isinstance(pos, dict):
-                    position = [pos.get("x", 0), pos.get("y", 0)]
-                else:
-                    position = pos if isinstance(pos, list) else [0, 0]
-
-                # Transform node data
-                transformed_nodes[node_id] = {
-                    "node_id": node_data.get("node_id", node_id),
-                    "node_type": node_data.get("type", ""),  # 'type' → 'node_type'
-                    "position": position,
-                    "config": node_data.get(
-                        "properties", {}
-                    ),  # 'properties' → 'config'
-                    "name": node_data.get("name", ""),
-                }
-
             workflow_data = {
-                "nodes": transformed_nodes,
-                "connections": subflow_data.get("connections", []),
+                "nodes": subflow.nodes,
+                "connections": subflow.connections,
                 "variables": {},  # Subflows don't have top-level variables
                 "frames": [],
                 "settings": {},

@@ -90,6 +90,11 @@ class GoogleScope(Enum):
     CALENDAR_FULL = "https://www.googleapis.com/auth/calendar"
     CALENDAR_EVENTS = "https://www.googleapis.com/auth/calendar.events"
 
+    # Generative AI (Gemini)
+    GENERATIVE_LANGUAGE = "https://www.googleapis.com/auth/generative-language"
+    GENERATIVE_LANGUAGE_RETRIEVER = "https://www.googleapis.com/auth/generative-language.retriever"
+    CLOUD_PLATFORM = "https://www.googleapis.com/auth/cloud-platform"
+
 
 # Scope shortcuts for common use cases
 SCOPES = {
@@ -135,16 +140,12 @@ class GoogleCredentials:
         )
 
     @classmethod
-    def from_service_account(
-        cls, service_account_info: Dict[str, Any]
-    ) -> "GoogleCredentials":
+    def from_service_account(cls, service_account_info: Dict[str, Any]) -> "GoogleCredentials":
         """Create credentials from service account JSON."""
         try:
             from google.oauth2 import service_account
 
-            creds = service_account.Credentials.from_service_account_info(
-                service_account_info
-            )
+            creds = service_account.Credentials.from_service_account_info(service_account_info)
             return cls(
                 access_token=creds.token or "",
                 token_uri=creds._token_uri,
@@ -339,9 +340,7 @@ class GoogleAPIClient:
             with open(file_path, "r") as f:
                 info = json.load(f)
 
-            creds = service_account.Credentials.from_service_account_info(
-                info, scopes=scopes
-            )
+            creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
 
             # Get access token
             from google.auth.transport.requests import Request
@@ -375,9 +374,7 @@ class GoogleAPIClient:
             from google.oauth2 import service_account
             from google.auth.transport.requests import Request
 
-            creds = service_account.Credentials.from_service_account_info(
-                info, scopes=scopes
-            )
+            creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
 
             # Get access token
             creds.refresh(Request())
@@ -418,9 +415,7 @@ class GoogleAPIClient:
                     get_google_access_token,
                 )
 
-                logger.debug(
-                    f"Using GoogleOAuthManager to refresh: {self.config.credential_id}"
-                )
+                logger.debug(f"Using GoogleOAuthManager to refresh: {self.config.credential_id}")
                 new_token = await get_google_access_token(self.config.credential_id)
                 self._credentials.access_token = new_token
                 # The OAuth manager already persisted the refreshed tokens
@@ -437,14 +432,11 @@ class GoogleAPIClient:
 
         if not self._credentials.refresh_token:
             raise GoogleAuthError(
-                "No refresh_token available. "
-                "For service accounts, re-authenticate instead."
+                "No refresh_token available. " "For service accounts, re-authenticate instead."
             )
 
         if not self._credentials.client_id or not self._credentials.client_secret:
-            raise GoogleAuthError(
-                "client_id and client_secret required for token refresh"
-            )
+            raise GoogleAuthError("client_id and client_secret required for token refresh")
 
         async with self._lock:
             try:
@@ -456,9 +448,7 @@ class GoogleAPIClient:
                     "client_secret": self._credentials.client_secret,
                 }
 
-                async with session.post(
-                    self._credentials.token_uri, data=data
-                ) as response:
+                async with session.post(self._credentials.token_uri, data=data) as response:
                     result = await response.json()
 
                     if "error" in result:
@@ -502,9 +492,7 @@ class GoogleAPIClient:
 
             if info:
                 # Build updated credential data
-                token_expiry = datetime.now(timezone.utc) + timedelta(
-                    seconds=expires_in
-                )
+                token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
                 data = {
                     "client_id": self._credentials.client_id,
                     "client_secret": self._credentials.client_secret,
@@ -630,9 +618,7 @@ class GoogleAPIClient:
                 await self._ensure_valid_token()
 
                 # Execute request (sync, but runs in thread pool internally)
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, request.execute
-                )
+                result = await asyncio.get_event_loop().run_in_executor(None, request.execute)
 
                 return result
 
@@ -651,11 +637,7 @@ class GoogleAPIClient:
                 # Check for auth errors (don't retry)
                 if "401" in error_str or "403" in error_str:
                     # Try token refresh once
-                    if (
-                        attempt == 0
-                        and self._credentials
-                        and self._credentials.refresh_token
-                    ):
+                    if attempt == 0 and self._credentials and self._credentials.refresh_token:
                         logger.debug("Auth error, attempting token refresh...")
                         try:
                             await self.refresh_token()
@@ -725,16 +707,12 @@ class GoogleAPIClient:
 
             # Check for critical errors
             if len(errors) == len(requests):
-                raise GoogleAPIError(
-                    f"All batch requests failed. First error: {errors[0]}"
-                )
+                raise GoogleAPIError(f"All batch requests failed. First error: {errors[0]}")
 
             return results
 
         except ImportError:
-            raise GoogleAPIError(
-                "google-api-python-client not installed for batch requests"
-            )
+            raise GoogleAPIError("google-api-python-client not installed for batch requests")
         except Exception as e:
             raise GoogleAPIError(f"Batch request failed: {e}") from e
 

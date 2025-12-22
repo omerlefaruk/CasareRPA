@@ -27,11 +27,9 @@ from casare_rpa.infrastructure.ai.registry_dumper import (
 )
 
 from casare_rpa.infrastructure.ai.agent.exceptions import (
-    WorkflowGenerationError,
     LLMCallError,
     JSONParseError,
     ValidationError,
-    MaxRetriesExceededError,
 )
 from casare_rpa.infrastructure.ai.agent.types import (
     GenerationAttempt,
@@ -79,7 +77,7 @@ class SmartWorkflowAgent:
         validator: Headless workflow sandbox for validation
     """
 
-    DEFAULT_MODEL = "openrouter/deepseek/deepseek-v3.2"
+    DEFAULT_MODEL = "openrouter/google/gemini-3-flash-preview"
     DEFAULT_TEMPERATURE = 0.2
     DEFAULT_MAX_TOKENS = 4000
     DEFAULT_MAX_RETRIES = 3
@@ -112,11 +110,7 @@ class SmartWorkflowAgent:
         self.max_retries = (
             max_retries
             if max_retries is not None
-            else (
-                config.retry.max_generation_retries
-                if config
-                else self.DEFAULT_MAX_RETRIES
-            )
+            else (config.retry.max_generation_retries if config else self.DEFAULT_MAX_RETRIES)
         )
         self.validator = HeadlessWorkflowSandbox()
         self._system_prompt_cache: Optional[str] = None
@@ -211,9 +205,7 @@ class SmartWorkflowAgent:
             self._rag_available = True
             logger.debug("RAG components initialized successfully")
         except ImportError:
-            logger.warning(
-                "RAG dependencies (chromadb/litellm) not found. RAG disabled."
-            )
+            logger.warning("RAG dependencies (chromadb/litellm) not found. RAG disabled.")
             self._rag_available = False
         except Exception as e:
             logger.error(f"Failed to initialize RAG: {e}")
@@ -254,9 +246,7 @@ class SmartWorkflowAgent:
                 )
                 documents.append(doc)
 
-            await self._vector_store.add_documents(
-                documents, collection=self.RAG_COLLECTION
-            )
+            await self._vector_store.add_documents(documents, collection=self.RAG_COLLECTION)
             self._nodes_indexed = True
             logger.info(f"Indexed {len(documents)} nodes for RAG")
 
@@ -276,9 +266,7 @@ class SmartWorkflowAgent:
             )
 
             relevant_types = {res.metadata["type"] for res in results}
-            logger.debug(
-                f"RAG retrieved {len(relevant_types)} nodes for query: '{query}'"
-            )
+            logger.debug(f"RAG retrieved {len(relevant_types)} nodes for query: '{query}'")
 
             # Fetch full manifest to filter
             full_manifest = dump_node_manifest()
@@ -571,9 +559,7 @@ class SmartWorkflowAgent:
         if start_idx == -1:
             logger.error("No JSON object found in response")
             # If we have a thinking block but no JSON, capture that context
-            thinking_match = re.search(
-                r"<thinking>(.*?)</thinking>", content, re.DOTALL
-            )
+            thinking_match = re.search(r"<thinking>(.*?)</thinking>", content, re.DOTALL)
             context = ""
             if thinking_match:
                 context = f"\nThinking was: {thinking_match.group(1)[:200]}..."
@@ -702,17 +688,8 @@ class SmartWorkflowAgent:
 
         if "nodes" not in data:
             data["nodes"] = {}
-        elif isinstance(data["nodes"], list):
-            # AI sometimes returns nodes as a list instead of dict
-            # Convert list to dict using node_id as key
-            logger.debug("Converting nodes from list to dict format")
-            nodes_dict = {}
-            for node in data["nodes"]:
-                if isinstance(node, dict) and "node_id" in node:
-                    nodes_dict[node["node_id"]] = node
-                else:
-                    logger.warning(f"Skipping invalid node in list: {node}")
-            data["nodes"] = nodes_dict
+        elif not isinstance(data["nodes"], dict):
+            raise ValueError("workflow.nodes must be a dictionary")
 
         return data
 
@@ -920,9 +897,7 @@ class SmartWorkflowAgent:
             "connections": new_connections,
         }
 
-    def _calculate_append_position(
-        self, existing_workflow: Dict[str, Any]
-    ) -> tuple[str, float]:
+    def _calculate_append_position(self, existing_workflow: Dict[str, Any]) -> tuple[str, float]:
         """
         Calculate append position for extending workflow.
 
@@ -987,9 +962,7 @@ class SmartWorkflowAgent:
         Raises:
             LLMCallError: If LLM call fails
         """
-        logger.info(
-            f"LLM call attempt {attempt + 1}: model={model}, temp={temperature:.2f}"
-        )
+        logger.info(f"LLM call attempt {attempt + 1}: model={model}, temp={temperature:.2f}")
         start_time = time.time()
 
         try:
@@ -999,15 +972,12 @@ class SmartWorkflowAgent:
                 model=model,
                 system_prompt=system_prompt,
                 temperature=temperature,
-                max_tokens=self._config.max_tokens
-                if self._config
-                else self.DEFAULT_MAX_TOKENS,
+                max_tokens=self._config.max_tokens if self._config else self.DEFAULT_MAX_TOKENS,
             )
 
             duration_ms = (time.time() - start_time) * 1000
             logger.debug(
-                f"LLM response received in {duration_ms:.2f}ms: "
-                f"{response.total_tokens} tokens"
+                f"LLM response received in {duration_ms:.2f}ms: " f"{response.total_tokens} tokens"
             )
             return response.content
 
@@ -1059,15 +1029,11 @@ class SmartWorkflowAgent:
             )
 
         # Determine parameters from config or defaults
-        model_name = model or (
-            self._config.model if self._config else self.DEFAULT_MODEL
-        )
+        model_name = model or (self._config.model if self._config else self.DEFAULT_MODEL)
         base_temp = (
             temperature
             if temperature is not None
-            else (
-                self._config.temperature if self._config else self.DEFAULT_TEMPERATURE
-            )
+            else (self._config.temperature if self._config else self.DEFAULT_TEMPERATURE)
         )
 
         logger.info(
@@ -1086,9 +1052,7 @@ class SmartWorkflowAgent:
             page_context_str = ""
             detected_urls = self._detect_urls(user_prompt)
             if detected_urls:
-                logger.info(
-                    f"Detected {len(detected_urls)} URLs in prompt: {detected_urls}"
-                )
+                logger.info(f"Detected {len(detected_urls)} URLs in prompt: {detected_urls}")
                 try:
                     page_contexts = await self._fetch_page_contexts(detected_urls)
                     if page_contexts:
@@ -1171,9 +1135,7 @@ class SmartWorkflowAgent:
                 workflow = self._parse_workflow_json(json_str)
 
                 # Check if this is an edit response (skip standard workflow processing)
-                is_edit_response = (
-                    workflow.get("action") == "edit" and "modifications" in workflow
-                )
+                is_edit_response = workflow.get("action") == "edit" and "modifications" in workflow
 
                 if not is_edit_response:
                     # Post-process workflow (only for new/append workflows)
@@ -1197,9 +1159,7 @@ class SmartWorkflowAgent:
                     validation_history.append(result)
 
                     if not result.is_valid:
-                        errors = [
-                            f"{issue.code}: {issue.message}" for issue in result.errors
-                        ]
+                        errors = [f"{issue.code}: {issue.message}" for issue in result.errors]
 
                         # Invoke validation error callback
                         if self._config and self._config.on_validation_error:
@@ -1213,9 +1173,7 @@ class SmartWorkflowAgent:
 
                         attempt_record.error = f"{len(errors)} validation errors"
                         attempt_record.validation_result = result
-                        attempt_record.duration_ms = (
-                            time.time() - attempt_start
-                        ) * 1000
+                        attempt_record.duration_ms = (time.time() - attempt_start) * 1000
                         attempt_history.append(attempt_record)
 
                         logger.warning(
@@ -1264,8 +1222,7 @@ class SmartWorkflowAgent:
             except JSONParseError as e:
                 logger.warning(f"JSON parse error on attempt {attempt + 1}: {e}")
                 current_prompt = (
-                    f"JSON parse error: {e}. "
-                    f"Fix the syntax and output valid JSON only."
+                    f"JSON parse error: {e}. " f"Fix the syntax and output valid JSON only."
                 )
                 attempt_record.error = str(e)
                 attempt_record.duration_ms = (time.time() - attempt_start) * 1000
@@ -1279,9 +1236,7 @@ class SmartWorkflowAgent:
                         last_json_str, e.details.get("validation_errors", [str(e)])
                     )
                 else:
-                    current_prompt = (
-                        f"Error: {e}. Please generate a valid workflow JSON."
-                    )
+                    current_prompt = f"Error: {e}. Please generate a valid workflow JSON."
                 attempt_record.error = str(e)
                 attempt_record.duration_ms = (time.time() - attempt_start) * 1000
                 attempt_history.append(attempt_record)
@@ -1333,9 +1288,7 @@ class SmartWorkflowAgent:
 
         # All retries exhausted
         total_time = (time.time() - generation_start) * 1000
-        logger.error(
-            f"Max retries ({self.max_retries}) exceeded after {total_time:.2f}ms"
-        )
+        logger.error(f"Max retries ({self.max_retries}) exceeded after {total_time:.2f}ms")
 
         return WorkflowGenerationResult(
             success=False,
@@ -1392,9 +1345,7 @@ class SmartWorkflowAgent:
                 existing_conn_set.add(conn_tuple)
                 new_connections_added += 1
 
-        logger.debug(
-            f"Merged: +{new_nodes_added} nodes, +{new_connections_added} connections"
-        )
+        logger.debug(f"Merged: +{new_nodes_added} nodes, +{new_connections_added} connections")
 
         return {
             "metadata": existing.get("metadata", new.get("metadata", {})),
@@ -1505,12 +1456,12 @@ class SmartWorkflowAgent:
         base_instructions = self._build_system_prompt()
 
         if detected_intent == UserIntent.REFINE and current_workflow:
-            system_prompt = REFINE_SYSTEM_PROMPT.format(
+            REFINE_SYSTEM_PROMPT.format(
                 current_workflow=json.dumps(current_workflow, indent=2)[:4000],
                 base_instructions=base_instructions,
             )
         else:
-            system_prompt = MULTI_TURN_SYSTEM_PROMPT.format(
+            MULTI_TURN_SYSTEM_PROMPT.format(
                 conversation_context=conversation_context,
                 workflow_state=workflow_state,
                 detected_intent=intent_str,
@@ -1518,10 +1469,6 @@ class SmartWorkflowAgent:
             )
 
         # Determine mode based on intent
-        is_new = (
-            detected_intent in (UserIntent.NEW_WORKFLOW, None)
-            and current_workflow is None
-        )
         is_modify = detected_intent in (
             UserIntent.MODIFY_WORKFLOW,
             UserIntent.ADD_NODE,
@@ -1539,9 +1486,7 @@ class SmartWorkflowAgent:
         result = await self.generate_workflow(
             user_prompt=user_prompt,
             existing_workflow=current_workflow if is_modify else None,
-            canvas_state={"nodes": current_workflow.get("nodes", {})}
-            if current_workflow
-            else None,
+            canvas_state={"nodes": current_workflow.get("nodes", {})} if current_workflow else None,
             is_edit=is_modify,
             model=model,
             temperature=temperature,

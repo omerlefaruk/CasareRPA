@@ -5,8 +5,6 @@ Re-exports string operation nodes from casare_rpa.nodes.string_nodes
 for consistent package organization.
 """
 
-from casare_rpa.domain.decorators import node, properties
-
 from casare_rpa.nodes.string_nodes import (
     ConcatenateNode,
     FormatStringNode,

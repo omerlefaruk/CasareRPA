@@ -162,9 +162,7 @@ def has_circular_dependency(
                             # Back edge - cycle
                             return True
                         if state[neighbor] == 0:
-                            stack.append(
-                                (neighbor, iter(graph.get(neighbor, [])), True)
-                            )
+                            stack.append((neighbor, iter(graph.get(neighbor, [])), True))
             else:
                 # Backtracking - mark as finished
                 state[node] = 2
@@ -230,7 +228,7 @@ def find_entry_points_and_reachable(
         # Get node type
         node_type = ""
         if isinstance(node_data, dict):
-            node_type = node_data.get("node_type") or node_data.get("type", "")
+            node_type = node_data.get("node_type", "")
 
         # StartNode is always an entry point
         if node_type == "StartNode":
@@ -261,27 +259,6 @@ def find_entry_points_and_reachable(
     return entry_points, reachable
 
 
-def find_reachable_nodes(
-    nodes: Dict[str, Any],
-    connections: List[Dict[str, Any]],
-) -> Set[str]:
-    """Legacy wrapper - find all reachable nodes from entry points."""
-    _, reachable = find_entry_points_and_reachable(nodes, connections)
-    return reachable
-
-
-# Legacy aliases with underscore prefix for backwards compatibility
-_parse_connection = parse_connection
-_is_exec_port = is_exec_port
-_is_exec_input_port = is_exec_input_port
-_has_circular_dependency = has_circular_dependency
-_find_entry_points_and_reachable = find_entry_points_and_reachable
-_find_reachable_nodes = find_reachable_nodes
-
-# Additional legacy alias
-_is_exec_port_name = is_exec_port
-
-
 __all__ = [
     # Public API (no underscore)
     "parse_connection",
@@ -289,13 +266,4 @@ __all__ = [
     "is_exec_input_port",
     "has_circular_dependency",
     "find_entry_points_and_reachable",
-    "find_reachable_nodes",
-    # Legacy aliases (with underscore) for backwards compatibility
-    "_parse_connection",
-    "_is_exec_port",
-    "_is_exec_input_port",
-    "_has_circular_dependency",
-    "_find_entry_points_and_reachable",
-    "_find_reachable_nodes",
-    "_is_exec_port_name",
 ]

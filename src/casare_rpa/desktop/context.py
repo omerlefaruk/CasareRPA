@@ -30,7 +30,7 @@ from casare_rpa.desktop.selector import find_element as selector_find_element
 def _run_async(coro):
     """Run async coroutine synchronously, handling existing event loops."""
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
         # If we're in an async context, we can't use asyncio.run()
         # Use a thread pool to run the coroutine
         import concurrent.futures
@@ -106,9 +106,7 @@ class DesktopContext:
     ) -> DesktopElement:
         """Launch an application and return its main window (sync version)."""
         return _run_async(
-            self._window_manager.launch_application(
-                path, args, working_dir, timeout, window_title
-            )
+            self._window_manager.launch_application(path, args, working_dir, timeout, window_title)
         )
 
     async def async_launch_application(
@@ -136,9 +134,7 @@ class DesktopContext:
         timeout: float = 5.0,
     ) -> bool:
         """Close an application (sync version)."""
-        return _run_async(
-            self._window_manager.close_application(window_or_pid, force, timeout)
-        )
+        return _run_async(self._window_manager.close_application(window_or_pid, force, timeout))
 
     async def async_close_application(
         self,
@@ -147,9 +143,7 @@ class DesktopContext:
         timeout: float = 5.0,
     ) -> bool:
         """Close an application (async version)."""
-        return await self._window_manager.close_application(
-            window_or_pid, force, timeout
-        )
+        return await self._window_manager.close_application(window_or_pid, force, timeout)
 
     def resize_window(self, window: DesktopElement, width: int, height: int) -> bool:
         """Resize a window to specified dimensions (sync version)."""
@@ -208,9 +202,7 @@ class DesktopContext:
     ) -> bool:
         """Drag mouse from one position to another (sync version)."""
         return _run_async(
-            self._mouse_controller.drag(
-                start_x, start_y, end_x, end_y, button, duration
-            )
+            self._mouse_controller.drag(start_x, start_y, end_x, end_y, button, duration)
         )
 
     # =========================================================================
@@ -233,9 +225,7 @@ class DesktopContext:
         self, element: DesktopElement, value: str, by_text: bool = True
     ) -> bool:
         """Select an item from a dropdown/combobox (sync version)."""
-        return _run_async(
-            self._form_interactor.select_from_dropdown(element, value, by_text)
-        )
+        return _run_async(self._form_interactor.select_from_dropdown(element, value, by_text))
 
     def check_checkbox(self, element: DesktopElement, check: bool = True) -> bool:
         """Check or uncheck a checkbox (sync version)."""
@@ -252,9 +242,7 @@ class DesktopContext:
         tab_index: int = None,
     ) -> bool:
         """Select a tab in a tab control (sync version)."""
-        return _run_async(
-            self._form_interactor.select_tab(tab_control, tab_name, tab_index)
-        )
+        return _run_async(self._form_interactor.select_tab(tab_control, tab_name, tab_index))
 
     def expand_tree_item(self, element: DesktopElement, expand: bool = True) -> bool:
         """Expand or collapse a tree item (sync version)."""
@@ -267,9 +255,7 @@ class DesktopContext:
         amount: Union[float, str] = 0.5,
     ) -> bool:
         """Scroll an element (sync version)."""
-        return _run_async(
-            self._form_interactor.scroll_element(element, direction, amount)
-        )
+        return _run_async(self._form_interactor.scroll_element(element, direction, amount))
 
     # =========================================================================
     # Screenshot & OCR Operations - Sync API
@@ -282,9 +268,7 @@ class DesktopContext:
         format: str = "PNG",
     ) -> Optional[Any]:
         """Capture a screenshot (sync version)."""
-        return _run_async(
-            self._screen_capture.capture_screenshot(file_path, region, format)
-        )
+        return _run_async(self._screen_capture.capture_screenshot(file_path, region, format))
 
     def capture_element_image(
         self,
@@ -295,9 +279,7 @@ class DesktopContext:
     ) -> Optional[Any]:
         """Capture an image of a specific desktop element (sync version)."""
         return _run_async(
-            self._screen_capture.capture_element_image(
-                element, file_path, padding, format
-            )
+            self._screen_capture.capture_element_image(element, file_path, padding, format)
         )
 
     def ocr_extract_text(
@@ -346,9 +328,7 @@ class DesktopContext:
     ) -> Optional[DesktopElement]:
         """Wait for an element to reach a specific state (sync version)."""
         return _run_async(
-            self._wait_manager.wait_for_element(
-                selector, timeout, state, poll_interval, parent
-            )
+            self._wait_manager.wait_for_element(selector, timeout, state, poll_interval, parent)
         )
 
     async def async_wait_for_element(

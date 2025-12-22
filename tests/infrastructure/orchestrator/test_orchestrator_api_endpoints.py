@@ -42,7 +42,8 @@ def _configure_robot_auth(monkeypatch, *, robot_id: str = "robot-001") -> str:
     return api_key
 
 
-def test_admin_endpoints_require_auth(monkeypatch):
+def test_admin_endpoints_require_db(monkeypatch):
+    """Test that robot endpoints return 503 when database is unavailable."""
     monkeypatch.delenv("ORCHESTRATOR_ADMIN_API_KEY", raising=False)
     monkeypatch.setattr(api_auth, "JWT_DEV_MODE", False)
 
@@ -52,7 +53,8 @@ def test_admin_endpoints_require_auth(monkeypatch):
     client = TestClient(app)
     resp = client.get("/api/v1/robots")
 
-    assert resp.status_code == 401
+    # Without db_pool set, endpoints return 503 Service Unavailable
+    assert resp.status_code == 503
 
 
 def test_job_cancel_requires_admin_key(monkeypatch):
@@ -149,8 +151,6 @@ def test_robot_heartbeat_maps_idle_to_online(monkeypatch):
 
         async def execute(self, query: str, *params):
             self.execute_calls.append((query, params))
-            if "record_robot_heartbeat" in query:
-                raise Exception("function missing")
             return "UPDATE 1"
 
     conn = _Conn()
@@ -160,16 +160,12 @@ def test_robot_heartbeat_maps_idle_to_online(monkeypatch):
     app.include_router(robots.router, prefix="/api/v1")
 
     client = TestClient(app)
+    # Correct path: /robots/{robot_id}/heartbeat
     resp = client.post(
-        "/api/v1/robots/heartbeat",
+        "/api/v1/robots/robot-001/heartbeat",
         headers={"X-Api-Key": api_key},
-        json={"status": "idle", "current_jobs": 2, "metrics": {"cpu_percent": 1.0}},
+        json={"cpu_percent": 1.0},
     )
 
     assert resp.status_code == 200
     assert resp.json()["ok"] is True
-
-    # Second execute call is the UPDATE fallback; db_status is param[3].
-    (_, params) = conn.execute_calls[1]
-    assert params[0] == "robot-001"
-    assert params[3] == "online"

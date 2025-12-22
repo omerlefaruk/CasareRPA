@@ -17,7 +17,8 @@
 4.  **STRICT TYPING:** Use Python type hints everywhere. Use `mypy` compatible code.
 5.  **DDD COMPLIANCE:** Adhere to Domain-Driven Design principles (Layers, Aggregates, Value Objects).
 6.  **TEST-DRIVEN:** Verify every change with `pytest`.
-7.  **MODERN NODE STANDARD:** All nodes use `@properties()` + `get_parameter()`. Never use `self.config.get()`.
+7.  **MODERN NODE STANDARD:** All nodes use `@properties()` + `get_parameter()`. `get_parameter()` now AUTO-RESOLVES `{{variables}}`. Never use `self.config.get()` or manual `context.resolve_value()`.
+8.  **NO HARDCODED WAITS:** Never use `asyncio.sleep()` or `time.sleep()` with fixed durations. Use smart waiting strategies (wait_for_selector, wait_for_load_state, expect_download, etc.).
 
 ## Rules Workflow
 
@@ -37,6 +38,19 @@
 *   **`glob` / `grep`**: Use extensively for "Phase 1: Research".
 *   **`bash`**: Use for running tests, linters, and managing the environment.
 
+## MCP Configuration
+
+MCP servers are configured in `./.mcp.json`.
+
+- Node-based MCP servers run via `npx` (ensure Node.js is on `PATH`).
+- Use `filesystem` for safe repo-scoped file operations.
+- Use `git` for repository inspection/operations.
+- Use `sequential-thinking` when structured reasoning is needed.
+
+**Git MCP server prerequisite:**
+
+- `python -m pip install mcp-server-git`
+
 ## Quick Commands
 
 ```bash
@@ -52,8 +66,8 @@ pytest tests/domain/test_node.py -v
 # Audit node modernization (98%+ modern expected)
 python scripts/audit_node_modernization.py
 
-# Re-index codebase for Qdrant (Semantic Search)
-python scripts/index_codebase_qdrant.py
+# Re-index codebase for ChromaDB (Semantic Search)
+python scripts/index_codebase.py
 
 # Launch Canvas (UI Test)
 python manage.py canvas

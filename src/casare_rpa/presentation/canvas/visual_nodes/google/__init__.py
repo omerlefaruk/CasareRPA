@@ -4,27 +4,10 @@ Visual nodes for Google Workspace category.
 Provides visual node representations for:
 - Gmail: Email operations
 - Sheets: Spreadsheet operations
-- Docs: Document operations
 - Drive: File storage operations
-- Calendar: Event and calendar management
 """
 
-from casare_rpa.presentation.canvas.visual_nodes.google.calendar_nodes import (
-    # Event operations (8)
-    VisualCalendarListEventsNode,
-    VisualCalendarGetEventNode,
-    VisualCalendarCreateEventNode,
-    VisualCalendarUpdateEventNode,
-    VisualCalendarDeleteEventNode,
-    VisualCalendarQuickAddNode,
-    VisualCalendarMoveEventNode,
-    VisualCalendarGetFreeBusyNode,
-    # Calendar management operations (4)
-    VisualCalendarListCalendarsNode,
-    VisualCalendarGetCalendarNode,
-    VisualCalendarCreateCalendarNode,
-    VisualCalendarDeleteCalendarNode,
-)
+# Calendar nodes removed - see Calendar/Docs cleanup 2025
 
 from casare_rpa.presentation.canvas.visual_nodes.google.gmail_nodes import (
     # Send operations
@@ -83,20 +66,7 @@ from casare_rpa.presentation.canvas.visual_nodes.google.sheets_nodes import (
     VisualSheetsBatchClearNode,
 )
 
-from casare_rpa.presentation.canvas.visual_nodes.google.docs_nodes import (
-    # Document operations
-    VisualDocsCreateDocumentNode,
-    VisualDocsGetDocumentNode,
-    VisualDocsGetContentNode,
-    # Text operations
-    VisualDocsInsertTextNode,
-    VisualDocsReplaceTextNode,
-    # Formatting
-    VisualDocsInsertTableNode,
-    VisualDocsInsertImageNode,
-    VisualDocsUpdateStyleNode,
-    # NOTE: VisualDocsDeleteContentNode and VisualDocsBatchUpdateNode removed - no logic nodes exist
-)
+# Docs nodes removed - see Calendar/Docs cleanup 2025
 
 from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
     # File operations - Single file
@@ -128,20 +98,7 @@ from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
 )
 
 __all__ = [
-    # Calendar - Event operations (8)
-    "VisualCalendarListEventsNode",
-    "VisualCalendarGetEventNode",
-    "VisualCalendarCreateEventNode",
-    "VisualCalendarUpdateEventNode",
-    "VisualCalendarDeleteEventNode",
-    "VisualCalendarQuickAddNode",
-    "VisualCalendarMoveEventNode",
-    "VisualCalendarGetFreeBusyNode",
-    # Calendar - Management operations (4)
-    "VisualCalendarListCalendarsNode",
-    "VisualCalendarGetCalendarNode",
-    "VisualCalendarCreateCalendarNode",
-    "VisualCalendarDeleteCalendarNode",
+    # Calendar nodes removed - see Calendar/Docs cleanup 2025
     # Gmail - Send operations (6)
     "VisualGmailSendEmailNode",
     "VisualGmailSendWithAttachmentNode",
@@ -193,17 +150,7 @@ __all__ = [
     "VisualSheetsBatchUpdateNode",
     "VisualSheetsBatchGetNode",
     "VisualSheetsBatchClearNode",
-    # Docs - Document operations (3)
-    "VisualDocsCreateDocumentNode",
-    "VisualDocsGetDocumentNode",
-    "VisualDocsGetContentNode",
-    # Docs - Text operations (2)
-    "VisualDocsInsertTextNode",
-    "VisualDocsReplaceTextNode",
-    # Docs - Formatting (3)
-    "VisualDocsInsertTableNode",
-    "VisualDocsInsertImageNode",
-    "VisualDocsUpdateStyleNode",
+    # Docs nodes removed - see Calendar/Docs cleanup 2025
     # Drive - File operations - Single file (7)
     "VisualDriveUploadFileNode",
     "VisualDriveDownloadFileNode",

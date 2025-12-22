@@ -1,7 +1,7 @@
 import os
 import lz4.frame
 import pickle
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from dataclasses import dataclass
 from aiocache import Cache
 from diskcache import Cache as DiskCache
@@ -15,9 +15,7 @@ class CacheConfig:
     l2_enabled: bool = True
     l1_ttl: int = 300  # 5 minutes
     l2_ttl: int = 3600  # 1 hour
-    disk_path: str = os.path.join(
-        os.environ.get("LOCALAPPDATA", "."), "CasareRPA", "cache"
-    )
+    disk_path: str = os.path.join(os.environ.get("LOCALAPPDATA", "."), "CasareRPA", "cache")
     compression_threshold: int = 1024  # Compress if > 1KB
 
 
@@ -32,11 +30,7 @@ class TieredCacheManager:
         self.config = config or CacheConfig()
 
         # Initialize L1 (Memory)
-        self.l1 = (
-            Cache(Cache.MEMORY, ttl=self.config.l1_ttl)
-            if self.config.l1_enabled
-            else None
-        )
+        self.l1 = Cache(Cache.MEMORY, ttl=self.config.l1_ttl) if self.config.l1_enabled else None
 
         # Initialize L2 (Disk)
         self.l2 = None
@@ -45,9 +39,7 @@ class TieredCacheManager:
                 os.makedirs(self.config.disk_path, exist_ok=True)
                 self.l2 = DiskCache(self.config.disk_path)
             except Exception as e:
-                logger.error(
-                    f"Failed to initialize DiskCache at {self.config.disk_path}: {e}"
-                )
+                logger.error(f"Failed to initialize DiskCache at {self.config.disk_path}: {e}")
                 self.config.l2_enabled = False
 
     async def get(self, key: str) -> Optional[Any]:
@@ -114,9 +106,7 @@ class TieredCacheManager:
             # We access the internal storage to filter keys
             try:
                 keys_to_delete = [
-                    k
-                    for k in self.l1._cache
-                    if isinstance(k, str) and k.startswith(prefix)
+                    k for k in self.l1._cache if isinstance(k, str) and k.startswith(prefix)
                 ]
                 for k in keys_to_delete:
                     await self.l1.delete(k)
@@ -125,9 +115,7 @@ class TieredCacheManager:
 
         if self.l2 is not None:
             try:
-                keys_to_delete = [
-                    k for k in self.l2 if isinstance(k, str) and k.startswith(prefix)
-                ]
+                keys_to_delete = [k for k in self.l2 if isinstance(k, str) and k.startswith(prefix)]
                 for k in keys_to_delete:
                     self.l2.delete(k)
             except Exception as e:

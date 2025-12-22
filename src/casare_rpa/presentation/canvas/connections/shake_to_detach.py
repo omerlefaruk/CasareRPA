@@ -10,10 +10,10 @@ individually deleting connections.
 
 import time
 from collections import deque
-from typing import Optional, Deque, Tuple
+from typing import Optional, Deque
 from dataclasses import dataclass
 
-from PySide6.QtCore import QObject, Signal, QPointF, Qt, QTimer
+from PySide6.QtCore import QObject, Signal, Qt, QTimer
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QGraphicsDropShadowEffect
 from NodeGraphQt import NodeGraph, BaseNode
@@ -146,18 +146,12 @@ class ShakeToDetachManager(QObject):
 
             # Detect drag start
             elif event.type() == QEvent.Type.MouseButtonPress:
-                if (
-                    isinstance(event, QMouseEvent)
-                    and event.button() == Qt.MouseButton.LeftButton
-                ):
+                if isinstance(event, QMouseEvent) and event.button() == Qt.MouseButton.LeftButton:
                     self._handle_drag_start()
 
             # Detect drag end
             elif event.type() == QEvent.Type.MouseButtonRelease:
-                if (
-                    isinstance(event, QMouseEvent)
-                    and event.button() == Qt.MouseButton.LeftButton
-                ):
+                if isinstance(event, QMouseEvent) and event.button() == Qt.MouseButton.LeftButton:
                     self._handle_drag_end()
 
         except Exception as e:
@@ -173,9 +167,7 @@ class ShakeToDetachManager(QObject):
                 # Check we're not making a connection
                 viewer = self._graph.viewer()
                 is_connecting = (
-                    viewer
-                    and hasattr(viewer, "_LIVE_PIPE")
-                    and viewer._LIVE_PIPE.isVisible()
+                    viewer and hasattr(viewer, "_LIVE_PIPE") and viewer._LIVE_PIPE.isVisible()
                 )
 
                 if not is_connecting:
@@ -206,9 +198,7 @@ class ShakeToDetachManager(QObject):
             current_time = time.perf_counter()
 
             # Add sample
-            sample = MovementSample(
-                x=scene_pos.x(), y=scene_pos.y(), timestamp=current_time
-            )
+            sample = MovementSample(x=scene_pos.x(), y=scene_pos.y(), timestamp=current_time)
             self._movement_history.append(sample)
 
             # Need at least 2 samples to detect direction
@@ -227,10 +217,7 @@ class ShakeToDetachManager(QObject):
             current_direction = 1 if dx > 0 else -1
 
             # Detect direction change
-            if (
-                self._last_x_direction is not None
-                and current_direction != self._last_x_direction
-            ):
+            if self._last_x_direction is not None and current_direction != self._last_x_direction:
                 self._direction_changes.append(current_time)
                 self._check_for_shake(current_time)
 
@@ -247,9 +234,7 @@ class ShakeToDetachManager(QObject):
 
         # Remove old direction changes outside time window
         window_start = current_time - (self._time_window_ms / 1000.0)
-        self._direction_changes = [
-            t for t in self._direction_changes if t >= window_start
-        ]
+        self._direction_changes = [t for t in self._direction_changes if t >= window_start]
 
         # Check if we have enough direction changes
         if len(self._direction_changes) >= self._shake_threshold:

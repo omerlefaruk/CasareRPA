@@ -9,9 +9,7 @@ def _require_secret(var_name: str) -> str:
     try:
         value = os.environ[var_name]
     except KeyError as exc:
-        raise RuntimeError(
-            f"Missing required environment variable: {var_name}"
-        ) from exc
+        raise RuntimeError(f"Missing required environment variable: {var_name}") from exc
     if not value.strip():
         raise RuntimeError(f"Environment variable {var_name} cannot be empty")
     return value
@@ -21,28 +19,73 @@ def _build_mcp_servers() -> Dict[str, Dict[str, object]]:
     return {
         "exa": {
             "type": "local",
-            "command": ["C:\\nvm4w\\nodejs\\npx.cmd", "-y", "exa-mcp-server"],
+            "command": ["npx", "-y", "exa-mcp-server"],
             "environment": {"EXA_API_KEY": _require_secret("EXA_API_KEY")},
         },
         "context7": {
             "type": "local",
             "command": [
-                "C:\\nvm4w\\nodejs\\npx.cmd",
+                "npx",
                 "-y",
                 "@upstash/context7-mcp@latest",
             ],
             "environment": {"CONTEXT7_API_KEY": _require_secret("CONTEXT7_API_KEY")},
         },
-        "qdrant": {
+        "ref": {
             "type": "local",
             "command": [
-                "C:\\Users\\Rau\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\mcp-server-qdrant.exe"
+                "npx",
+                "-y",
+                "@upstash/context7-mcp@latest",
             ],
-            "environment": {
-                "QDRANT_LOCAL_PATH": "C:/Users/Rau/Desktop/CasareRPA/.qdrant",
-                "COLLECTION_NAME": "casare_codebase",
-                "EMBEDDING_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
-            },
+            "environment": {"CONTEXT7_API_KEY": _require_secret("CONTEXT7_API_KEY")},
+        },
+        "codebase": {
+            "type": "local",
+            "command": [
+                "python",
+                str((Path(__file__).parent.parent / "scripts" / "chroma_search_mcp.py").resolve()),
+            ],
+            "environment": {},
+        },
+        "filesystem": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                str((Path(__file__).parent.parent).resolve()),
+            ],
+            "environment": {},
+        },
+        "git": {
+            "type": "local",
+            "command": [
+                "python",
+                "-m",
+                "mcp_server_git",
+                "--repository",
+                str((Path(__file__).parent.parent).resolve()),
+            ],
+            "environment": {},
+        },
+        "sequential-thinking": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@modelcontextprotocol/server-sequential-thinking",
+            ],
+            "environment": {},
+        },
+        "playwright": {
+            "type": "local",
+            "command": [
+                "npx",
+                "-y",
+                "@playwright/mcp@latest",
+            ],
+            "environment": {},
         },
     }
 

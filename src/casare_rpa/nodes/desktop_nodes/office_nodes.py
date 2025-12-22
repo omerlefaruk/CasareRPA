@@ -116,9 +116,7 @@ class ExcelOpenNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Excel open operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         # Use get_parameter to check both port value and config (properties panel)
         file_path = self.get_parameter("file_path")
@@ -132,8 +130,6 @@ class ExcelOpenNode(BaseNode):
         create_if_missing = self.get_parameter("create_if_missing", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         try:
             import os
@@ -247,11 +243,6 @@ class ExcelReadCellNode(BaseNode):
         cell = self.get_input_value("cell")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if isinstance(sheet, str):
-                sheet = context.resolve_value(sheet)
-            if cell:
-                cell = context.resolve_value(cell)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -364,11 +355,6 @@ class ExcelWriteCellNode(BaseNode):
         value = self.get_input_value("value")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if isinstance(sheet, str):
-                sheet = context.resolve_value(sheet)
-            if cell:
-                cell = context.resolve_value(cell)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -475,11 +461,6 @@ class ExcelGetRangeNode(BaseNode):
         range_ref = self.get_parameter("range")  # Check both port and config
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if isinstance(sheet, str):
-                sheet = context.resolve_value(sheet)
-            if range_ref:
-                range_ref = context.resolve_value(range_ref)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -688,9 +669,7 @@ class WordOpenNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Word open operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         # Use get_parameter to check both port value and config (properties panel)
         file_path = self.get_parameter("file_path")
@@ -698,8 +677,6 @@ class WordOpenNode(BaseNode):
         create_if_missing = self.get_parameter("create_if_missing", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         try:
             import os
@@ -891,11 +868,6 @@ class WordReplaceTextNode(BaseNode):
         replace_all = self.get_parameter("replace_all", True)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if find_text:
-                find_text = context.resolve_value(find_text)
-            if replace_text:
-                replace_text = context.resolve_value(replace_text)
 
         if not document:
             raise ValueError("Document is required")
@@ -1139,9 +1111,7 @@ class OutlookSendEmailNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook send email operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         to = self.get_input_value("to")
         subject = self.get_input_value("subject")
@@ -1152,17 +1122,6 @@ class OutlookSendEmailNode(BaseNode):
         html_body = self.get_parameter("html_body", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if to:
-                to = context.resolve_value(to)
-            if subject:
-                subject = context.resolve_value(subject)
-            if body:
-                body = context.resolve_value(body)
-            if cc:
-                cc = context.resolve_value(cc)
-            if bcc:
-                bcc = context.resolve_value(bcc)
 
         if not to:
             raise ValueError("Recipient is required")
@@ -1270,9 +1229,7 @@ class OutlookReadEmailsNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook read emails operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
 
         folder_name = self.get_parameter("folder", "Inbox")
         max_count = self.get_parameter("count", 10)
@@ -1306,9 +1263,7 @@ class OutlookReadEmailsNode(BaseNode):
                     "sender": message.SenderEmailAddress,
                     "sender_name": message.SenderName,
                     "received": str(message.ReceivedTime),
-                    "body": message.Body[:500]
-                    if message.Body
-                    else "",  # First 500 chars
+                    "body": message.Body[:500] if message.Body else "",  # First 500 chars
                     "unread": message.UnRead,
                     "has_attachments": message.Attachments.Count > 0,
                 }
@@ -1379,9 +1334,9 @@ class OutlookGetInboxCountNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook get inbox count operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError(
-                "pywin32 not installed. Install with: pip install pywin32"
-            )
+            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+
+        unread_only = self.get_parameter("unread_only", False)
 
         try:
             outlook = win32com.client.Dispatch("Outlook.Application")
@@ -1391,16 +1346,21 @@ class OutlookGetInboxCountNode(BaseNode):
             total_count = inbox.Items.Count
             unread_count = inbox.UnReadItemCount
 
+            result_count = unread_count if unread_only else total_count
+
             self.set_output_value("total_count", total_count)
             self.set_output_value("unread_count", unread_count)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(f"Inbox: {total_count} total, {unread_count} unread")
+            logger.info(
+                f"Inbox: {total_count} total, {unread_count} unread (Requested: {'unread' if unread_only else 'total'})"
+            )
             return {
                 "success": True,
                 "total_count": total_count,
                 "unread_count": unread_count,
+                "count": result_count,
             }
 
         except Exception as e:

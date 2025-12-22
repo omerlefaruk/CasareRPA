@@ -32,7 +32,7 @@ arguments:
 /plan-workflow "Login to website, scrape product prices, save to Google Sheets"
 
 # Complex AI workflow
-/plan-workflow "Monitor inbox for invoices, extract data with AI, update database, send Slack notification"
+/plan-workflow "Monitor inbox for invoices, extract data with AI, save to Google Sheets, send Telegram notification"
 ```
 
 ---
@@ -70,9 +70,9 @@ arguments:
 ### Node Discovery Strategy
 
 ```python
-# 1. Semantic search (qdrant)
-qdrant-find: "{goal} automation"
-qdrant-find: "{action} {target} node"
+# 1. Semantic search (ChromaDB)
+search_codebase("{goal} automation", top_k=10)
+search_codebase("{action} {target} node", top_k=10)
 
 # 2. Registry scan
 Read: src/casare_rpa/nodes/_index.md
@@ -91,11 +91,11 @@ Read: src/casare_rpa/nodes/file/super_node.py
 | "website", "scrape", "browser" | browser | LaunchBrowserNode, TableScraperNode, ExtractTextNode |
 | "API", "HTTP", "REST" | rest_api | HttpRequestNode, ApiAuthNode |
 | "file", "CSV", "JSON" | file_operations | FileSystemSuperNode, StructuredDataSuperNode |
-| "database", "SQL" | database | DatabaseConnectNode, DatabaseQueryNode |
 | "Google", "Sheets", "Gmail" | google | SheetsWriteNode, GmailSendNode, DriveUploadNode |
-| "AI", "extract", "classify" | ai_ml | LLMExtractDataNode, AIConditionNode, LLMClassifyNode |
+| "AI", "extract", "classify" | control_flow, data_operations | IfNode, JsonParseNode, DataCompareNode |
+
 | "loop", "condition", "retry" | control_flow, error_handling | ForLoopStartNode, IfNode, TryCatchNode |
-| "notify", "message", "alert" | messaging | TelegramSendNode, SlackNotifyNode |
+| "notify", "message", "alert" | messaging | TelegramSendNode, DiscordNotifyNode |
 | "Windows", "desktop", "click" | desktop_automation | FindElementNode, ClickElementNode, OCRNode |
 
 ---
@@ -189,7 +189,7 @@ All values below can be customized per client:
 | `{{data_selector}}` | SELECTOR | - | CSS selector for data extraction |
 | `{{output_sheet_id}}` | STRING | - | Google Sheet ID for output |
 | `{{output_database}}` | STRING | - | Database connection string |
-| `{{notification_channel}}` | STRING | - | Slack/Telegram channel |
+| `{{notification_channel}}` | STRING | - | Telegram/Discord channel |
 | `{{max_retries}}` | INTEGER | 3 | Retry attempts on failure |
 | `{{error_threshold}}` | INTEGER | 5 | Abort after N errors |
 | `{{batch_size}}` | INTEGER | 100 | Items per batch |
@@ -213,8 +213,9 @@ All values below can be customized per client:
 ### Phase 3: Extraction
 10. **TableScraperNode** → Extract main data
 11. **ForLoopStartNode** → Iterate items
-12. **LLMExtractDataNode** → AI-enhance extraction
+12. **RegexMatchNode / JsonParseNode** → Extract structured fields
 13. **ForLoopEndNode** → Complete iteration
+
 
 ### Phase 4: Output
 14. **SheetsWriteNode** → Save to {{output_sheet_id}}
@@ -264,19 +265,21 @@ All values below can be customized per client:
 ### Token Optimization Strategies
 1. **Prompt Caching**
    - Cache system prompts (reduces cost 50-90%)
-   - Use `PromptTemplateNode` with cached templates
+   - Reuse stable instructions across runs
+
 
 2. **Batch Processing**
-   - Group items before LLM calls
-   - Use `LLMBatchNode` for bulk processing
+   - Group items before AI calls
+   - Prefer one request per batch of items
 
 3. **Tiered Processing**
-   - Fast model first (haiku/flash)
-   - Escalate to powerful model only if needed
+   - Use a fast/cheap model first
+   - Escalate to a stronger model only when needed
 
 4. **Context Window Management**
-   - Chunk large documents
-   - Use RAGNode for selective retrieval
+   - Chunk large inputs
+   - Provide only the minimal relevant context
+
 
 ### Estimated Costs
 | Component | Items | Model | Tokens/Item | Cost |
@@ -366,7 +369,8 @@ flowchart TD
         G --> H[WaitForSelectorNode]
         H --> I[TableScraperNode]
         I --> J{ForLoopStart}
-        J -->|each item| K[LLMExtractDataNode]
+         J -->|each item| K[Extract structured fields]
+
         K --> L[DataValidatorNode]
         L --> J
         J -->|done| M[ForLoopEnd]
@@ -447,7 +451,7 @@ Gap Identified → Propose Node Spec → User Approval → /implement-node
 ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐
 │ UNDERSTAND│ → │  DISCOVER │ → │  ANALYZE  │ → │   PLAN    │ → │ OPTIMIZE  │ → │ GENERATE  │ → │ IMPLEMENT │
 │  explore  │   │  explore  │   │ architect │   │ architect │   │ architect │   │  builder  │   │  builder  │
-│           │   │ + qdrant  │   │           │   │           │   │           │   │           │   │ + ui +    │
+│           │   │ + search  │   │           │   │           │   │           │   │           │   │ + ui +    │
 │           │   │           │   │           │   │           │   │           │   │           │   │ quality   │
 └───────────┘   └───────────┘   └───────────┘   └───────────┘   └───────────┘   └───────────┘   └───────────┘
                                       │                                               │               │
@@ -487,7 +491,7 @@ After running `/plan-workflow`, you receive:
 
 ## Quick Stats
 - Nodes: 18
-- AI Nodes: 2 (LLMExtractDataNode, LLMSummarizeNode)
+
 - Estimated Cost: $0.35/1000 products
 - Missing Nodes: 1 (PaginatedScraperNode - will create)
 

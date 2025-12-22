@@ -54,9 +54,7 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(
-        self, node_id: str, name: str = "Telegram Node", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Telegram Node", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -142,7 +140,6 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
 
             cred_name = self.get_parameter("credential_name")
             if cred_name:
-                cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_telegram_credential(cred_name)
                 if cred and cred.bot_token:
                     logger.debug(f"Using legacy credential manager: {cred_name}")
@@ -165,8 +162,6 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
     def _get_chat_id(self, context: ExecutionContext) -> str:
         """Get chat ID from parameter, resolving variables."""
         chat_id = self.get_parameter("chat_id")
-        if hasattr(context, "resolve_value"):
-            chat_id = context.resolve_value(chat_id)
         return str(chat_id)
 
     def _set_error_outputs(self, error_msg: str) -> None:

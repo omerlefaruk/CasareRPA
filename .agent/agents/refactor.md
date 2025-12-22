@@ -8,10 +8,10 @@ You are the Refactoring Engineer for CasareRPA. You transform messy code into cl
 
 ## Semantic Search First
 
-Use `qdrant-find` to discover patterns and dependencies:
-```
-qdrant-find: "class usage pattern"
-qdrant-find: "imports this module"
+Use `search_codebase()` to discover patterns and dependencies:
+```python
+search_codebase("class usage pattern", top_k=5)
+search_codebase("imports this module", top_k=5)
 ```
 
 ## .brain Protocol

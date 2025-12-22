@@ -68,9 +68,7 @@ def get_gpu_capabilities(force_refresh: bool = False) -> GPUCapabilities:
             caps.cuda_available = True
             caps.cuda_version = torch.version.cuda
             caps.cuda_device_name = torch.cuda.get_device_name(0)
-            caps.cuda_memory_mb = torch.cuda.get_device_properties(0).total_memory // (
-                1024 * 1024
-            )
+            caps.cuda_memory_mb = torch.cuda.get_device_properties(0).total_memory // (1024 * 1024)
             logger.debug(f"CUDA detected via PyTorch: {caps.cuda_device_name}")
     except ImportError:
         pass
@@ -82,9 +80,9 @@ def get_gpu_capabilities(force_refresh: bool = False) -> GPUCapabilities:
 
             caps.cuda_available = True
             caps.cuda_device_name = cupy.cuda.runtime.getDeviceProperties(0)["name"]
-            caps.cuda_memory_mb = cupy.cuda.runtime.getDeviceProperties(0)[
-                "totalGlobalMem"
-            ] // (1024 * 1024)
+            caps.cuda_memory_mb = cupy.cuda.runtime.getDeviceProperties(0)["totalGlobalMem"] // (
+                1024 * 1024
+            )
             logger.debug(f"CUDA detected via CuPy: {caps.cuda_device_name}")
         except (ImportError, Exception):
             pass
@@ -98,7 +96,7 @@ def get_gpu_capabilities(force_refresh: bool = False) -> GPUCapabilities:
         if "CUDA" in build_info and "YES" in build_info.split("CUDA")[1][:50]:
             # Verify we can actually create a GPU mat
             try:
-                test_mat = cv2.cuda_GpuMat()
+                cv2.cuda_GpuMat()
                 caps.opencv_cuda_available = True
                 logger.debug("OpenCV CUDA support detected")
             except Exception:

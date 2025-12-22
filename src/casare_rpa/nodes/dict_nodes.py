@@ -53,7 +53,7 @@ class JsonParseNode(BaseNode):
         try:
             json_str = self.get_parameter("json_string", "")
             # Resolve {{variable}} patterns
-            json_str = context.resolve_value(json_str) if json_str else ""
+            json_str = json_str if json_str else ""
             if not json_str:
                 raise ValueError("Empty JSON string")
 
@@ -103,8 +103,8 @@ class GetPropertyNode(BaseNode):
             obj = self.get_parameter("object", {})
             path = self.get_parameter("property_path", "")
             # Resolve {{variable}} patterns
-            obj = context.resolve_value(obj) if obj else {}
-            path = context.resolve_value(path) if path else ""
+            obj = obj if obj else {}
+            path = path if path else ""
 
             if not isinstance(obj, dict):
                 raise ValueError("Input is not a dictionary")
@@ -167,8 +167,8 @@ class DictGetNode(BaseNode):
             key = self.get_parameter("key", "")
             default = self.get_parameter("default")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
+            d = d if d else {}
+            key = key if key else ""
             default = context.resolve_value(default) if default is not None else None
 
             if not isinstance(d, dict):
@@ -227,9 +227,8 @@ class DictSetNode(BaseNode):
             key = self.get_parameter("key", "")
             value = self.get_parameter("value")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
-            value = context.resolve_value(value)
+            d = d if d else {}
+            key = key if key else ""
 
             if not isinstance(d, dict):
                 d = {}
@@ -284,8 +283,8 @@ class DictRemoveNode(BaseNode):
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
+            d = d if d else {}
+            key = key if key else ""
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -331,8 +330,8 @@ class DictMergeNode(BaseNode):
             d1 = self.get_parameter("dict_1", {})
             d2 = self.get_parameter("dict_2", {})
             # Resolve {{variable}} patterns
-            d1 = context.resolve_value(d1) if d1 else {}
-            d2 = context.resolve_value(d2) if d2 else {}
+            d1 = d1 if d1 else {}
+            d2 = d2 if d2 else {}
 
             if not isinstance(d1, dict):
                 d1 = {}
@@ -373,7 +372,7 @@ class DictKeysNode(BaseNode):
         try:
             d = self.get_parameter("dict", {})
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -418,7 +417,7 @@ class DictValuesNode(BaseNode):
         try:
             d = self.get_parameter("dict", {})
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -464,8 +463,8 @@ class DictHasKeyNode(BaseNode):
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
-            key = context.resolve_value(key) if key else ""
+            d = d if d else {}
+            key = key if key else ""
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -513,7 +512,7 @@ class CreateDictNode(BaseNode):
                 key = self.get_parameter(f"key_{i}")
                 value = self.get_parameter(f"value_{i}")
                 # Resolve {{variable}} patterns
-                key = context.resolve_value(key) if key else None
+                key = key if key else None
                 value = context.resolve_value(value) if value is not None else None
                 if key is not None and key != "":
                     result[key] = value
@@ -574,7 +573,7 @@ class DictToJsonNode(BaseNode):
             d = self.get_parameter("dict", {})
             indent = self.get_parameter("indent")
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if indent is not None:
                 indent = int(indent)
@@ -626,7 +625,7 @@ class DictItemsNode(BaseNode):
         try:
             d = self.get_parameter("dict", {})
             # Resolve {{variable}} patterns
-            d = context.resolve_value(d) if d else {}
+            d = d if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")

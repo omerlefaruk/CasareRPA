@@ -23,7 +23,6 @@ Usage:
 """
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.decorators import node, properties
 from casare_rpa.config import DEFAULT_NODE_TIMEOUT, DEFAULT_PAGE_LOAD_TIMEOUT
 
 

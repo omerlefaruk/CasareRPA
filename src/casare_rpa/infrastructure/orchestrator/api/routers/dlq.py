@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Path, Query, Request
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -91,9 +91,7 @@ class DLQPurgeResponse(BaseModel):
 async def list_dlq_entries(
     request: Request,
     workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
-    pending_only: bool = Query(
-        True, description="Only show entries not yet reprocessed"
-    ),
+    pending_only: bool = Query(True, description="Only show entries not yet reprocessed"),
     limit: int = Query(50, ge=1, le=500, description="Maximum entries to return"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
 ):
@@ -186,9 +184,7 @@ async def get_dlq_stats(
 @limiter.limit("120/minute")
 async def get_dlq_entry(
     request: Request,
-    entry_id: str = Path(
-        ..., min_length=1, max_length=64, description="DLQ entry UUID"
-    ),
+    entry_id: str = Path(..., min_length=1, max_length=64, description="DLQ entry UUID"),
 ):
     """
     Get a specific DLQ entry by ID.
@@ -236,12 +232,8 @@ async def get_dlq_entry(
 @limiter.limit("30/minute")
 async def retry_dlq_entry(
     request: Request,
-    entry_id: str = Path(
-        ..., min_length=1, max_length=64, description="DLQ entry UUID"
-    ),
-    reprocessed_by: str = Query(
-        "api", description="Identifier of who initiated the retry"
-    ),
+    entry_id: str = Path(..., min_length=1, max_length=64, description="DLQ entry UUID"),
+    reprocessed_by: str = Query("api", description="Identifier of who initiated the retry"),
 ):
     """
     Retry a job from the Dead Letter Queue.
@@ -270,9 +262,7 @@ async def retry_dlq_entry(
                 detail=f"DLQ entry {entry_id} not found or already reprocessed",
             )
 
-        logger.info(
-            f"DLQ entry {entry_id} retried as job {new_job_id} by {reprocessed_by}"
-        )
+        logger.info(f"DLQ entry {entry_id} retried as job {new_job_id} by {reprocessed_by}")
 
         return DLQRetryResponse(
             dlq_entry_id=entry_id,
@@ -291,9 +281,7 @@ async def retry_dlq_entry(
 @limiter.limit("30/minute")
 async def delete_dlq_entry(
     request: Request,
-    entry_id: str = Path(
-        ..., min_length=1, max_length=64, description="DLQ entry UUID"
-    ),
+    entry_id: str = Path(..., min_length=1, max_length=64, description="DLQ entry UUID"),
 ):
     """
     Delete a DLQ entry permanently.
@@ -357,13 +345,9 @@ async def purge_dlq(
         )
 
     try:
-        purged_count = await dlq_manager.purge_reprocessed(
-            older_than_days=older_than_days
-        )
+        purged_count = await dlq_manager.purge_reprocessed(older_than_days=older_than_days)
 
-        logger.info(
-            f"Purged {purged_count} DLQ entries older than {older_than_days} days"
-        )
+        logger.info(f"Purged {purged_count} DLQ entries older than {older_than_days} days")
 
         return DLQPurgeResponse(
             purged_count=purged_count,

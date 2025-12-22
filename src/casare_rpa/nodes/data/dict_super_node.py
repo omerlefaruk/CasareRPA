@@ -26,7 +26,7 @@ DictSuperNode (12 operations):
 
 import json
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Awaitable
+from typing import TYPE_CHECKING, Callable, Awaitable
 
 from loguru import logger
 
@@ -431,9 +431,7 @@ class DictSuperNode(BaseNode):
         action = self.get_parameter("action", DictAction.GET.value)
 
         # Map actions to handlers
-        handlers: dict[
-            str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
             DictAction.CREATE.value: self._execute_create,
             DictAction.GET.value: self._execute_get,
             DictAction.GET_PROPERTY.value: self._execute_get_property,
@@ -508,9 +506,7 @@ class DictSuperNode(BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_get_property(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_get_property(self, context: "IExecutionContext") -> ExecutionResult:
         """Get nested property using dot notation."""
         input_dict = self.get_input_value("dict", context)
         if not isinstance(input_dict, dict):
@@ -709,11 +705,7 @@ class DictSuperNode(BaseNode):
         def deep_merge_dicts(d1: dict, d2: dict) -> dict:
             result = dict(d1)
             for key, value in d2.items():
-                if (
-                    key in result
-                    and isinstance(result[key], dict)
-                    and isinstance(value, dict)
-                ):
+                if key in result and isinstance(result[key], dict) and isinstance(value, dict):
                     result[key] = deep_merge_dicts(result[key], value)
                 elif key not in result or overwrite:
                     result[key] = value
@@ -739,9 +731,7 @@ class DictSuperNode(BaseNode):
 
     # === CONVERT ACTION HANDLERS ===
 
-    async def _execute_parse_json(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_parse_json(self, context: "IExecutionContext") -> ExecutionResult:
         """Parse JSON string to dict."""
         json_string = self.get_input_value("json_string", context)
         if json_string is None:

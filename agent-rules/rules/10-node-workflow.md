@@ -33,28 +33,32 @@ Before creating new nodes:
 
 ### Required Components
 1. Node class extending `BaseNode`
-2. `@executable_node` decorator
-3. `@node_schema` with properties
+2. `@node(category="category")` decorator
+3. `@properties` with property definitions
 4. Tests in `tests/nodes/`
 
 ### Template
 ```python
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.entities import BaseNode
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-@node_schema(
-    PropertyDef("input", PropertyType.STRING, essential=True),
+@properties(
+    PropertyDef("input", PropertyType.STRING, required=True),
 )
-@executable_node
+@node(category="my_category")
 class MyNode(BaseNode):
     """One-line description."""
 
-    NODE_NAME = "My Node"
-
     async def execute(self, context):
-        # Implementation
-        return {"result": "value"}
+        # 1. Get raw parameter
+        raw_val = self.get_parameter("input")
+
+        # 2. Resolve templates (MANDATORY)
+        val = context.resolve_value(raw_val)
+
+        # 3. Implementation
+        return self.success_result({"result": f"Processed {val}"})
 ```
 
 ## Phase 4: REGISTER

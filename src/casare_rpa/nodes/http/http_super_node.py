@@ -21,7 +21,7 @@ HttpSuperNode (8 operations):
 """
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Awaitable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Awaitable
 import json
 import os
 
@@ -230,8 +230,7 @@ BODY_ACTIONS = [
         order=1,
         required=True,
         display_when={
-            "action": REQUEST_ACTIONS
-            + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
+            "action": REQUEST_ACTIONS + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
         },
     ),
     # === REQUEST OPTIONS ===
@@ -243,8 +242,7 @@ BODY_ACTIONS = [
         tooltip="Request headers as JSON object",
         order=10,
         display_when={
-            "action": REQUEST_ACTIONS
-            + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
+            "action": REQUEST_ACTIONS + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
         },
     ),
     PropertyDef(
@@ -284,8 +282,7 @@ BODY_ACTIONS = [
         tooltip="Request timeout in seconds",
         order=20,
         display_when={
-            "action": REQUEST_ACTIONS
-            + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
+            "action": REQUEST_ACTIONS + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
         },
     ),
     PropertyDef(
@@ -306,8 +303,7 @@ BODY_ACTIONS = [
         tooltip="Verify SSL certificates",
         order=22,
         display_when={
-            "action": REQUEST_ACTIONS
-            + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
+            "action": REQUEST_ACTIONS + [HttpAction.DOWNLOAD.value, HttpAction.UPLOAD.value]
         },
     ),
     # === DOWNLOAD OPTIONS ===
@@ -474,9 +470,7 @@ class HttpSuperNode(BaseNode):
         action = self.get_parameter("action", HttpAction.GET.value)
 
         # Map actions to handlers
-        handlers: dict[
-            str, Callable[["ExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: dict[str, Callable[["ExecutionContext"], Awaitable[ExecutionResult]]] = {
             HttpAction.GET.value: self._execute_get,
             HttpAction.POST.value: self._execute_post,
             HttpAction.PUT.value: self._execute_put,
@@ -520,7 +514,6 @@ class HttpSuperNode(BaseNode):
         url = self.get_input_value("url", context)
         if not url:
             url = self.get_parameter("url", "")
-        url = context.resolve_value(url)
 
         headers = self.get_input_value("headers", context)
         if not headers:
@@ -608,8 +601,6 @@ class HttpSuperNode(BaseNode):
             body = self.get_input_value("body", context)
             if not body:
                 body = self.get_parameter("body", "")
-            if isinstance(body, str) and body:
-                body = context.resolve_value(body)
 
             content_type = self.get_parameter("content_type", "application/json")
 
@@ -665,9 +656,7 @@ class HttpSuperNode(BaseNode):
 
     async def _execute_post(self, context: "ExecutionContext") -> ExecutionResult:
         """Execute POST request."""
-        return await self._make_request(
-            context, "POST", include_body=True, include_params=True
-        )
+        return await self._make_request(context, "POST", include_body=True, include_params=True)
 
     async def _execute_put(self, context: "ExecutionContext") -> ExecutionResult:
         """Execute PUT request."""
@@ -693,7 +682,6 @@ class HttpSuperNode(BaseNode):
         save_path = self.get_input_value("save_path", context)
         if not save_path:
             save_path = self.get_parameter("save_path", "")
-        save_path = context.resolve_value(save_path)
 
         if not save_path:
             raise ValueError("Save path is required")
@@ -740,9 +728,7 @@ class HttpSuperNode(BaseNode):
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
-            logger.info(
-                f"Downloaded {params['url']} -> {save_path} ({file_size} bytes)"
-            )
+            logger.info(f"Downloaded {params['url']} -> {save_path} ({file_size} bytes)")
 
             self.status = NodeStatus.SUCCESS
             return {
@@ -774,7 +760,6 @@ class HttpSuperNode(BaseNode):
         file_path = self.get_input_value("file_path", context)
         if not file_path:
             file_path = self.get_parameter("file_path", "")
-        file_path = context.resolve_value(file_path)
 
         if not file_path:
             raise ValueError("File path is required")
@@ -807,7 +792,7 @@ class HttpSuperNode(BaseNode):
 
         # Get client and make request
         # Note: For multipart, we need to use the underlying aiohttp session
-        client = await get_http_client_from_context(context)
+        await get_http_client_from_context(context)
 
         async with aiohttp.ClientSession() as session:
             headers = params["headers"] if params["headers"] else {}
@@ -849,7 +834,6 @@ class HttpSuperNode(BaseNode):
             token = self.get_input_value("token", context)
             if not token:
                 token = self.get_parameter("token", "")
-            token = context.resolve_value(token)
 
             if token:
                 auth_headers["Authorization"] = f"Bearer {token}"
@@ -860,12 +844,10 @@ class HttpSuperNode(BaseNode):
             username = self.get_input_value("username", context)
             if not username:
                 username = self.get_parameter("username", "")
-            username = context.resolve_value(username)
 
             password = self.get_input_value("password", context)
             if not password:
                 password = self.get_parameter("password", "")
-            password = context.resolve_value(password)
 
             if username:
                 credentials = f"{username}:{password}"
@@ -878,7 +860,6 @@ class HttpSuperNode(BaseNode):
             token = self.get_input_value("token", context)
             if not token:
                 token = self.get_parameter("token", "")
-            token = context.resolve_value(token)
 
             header_name = self.get_parameter("header_name", "X-API-Key")
 

@@ -110,3 +110,16 @@ site/
 .qdrant_new/
 .casare/
 # Note: .agent/ is tracked for Gemini/Antigravity AI rules
+
+# Temp files and debug outputs
+f821_*.txt
+f821_*.json
+f401_*.txt
+@AutomationLog.txt
+all_nodes.txt
+node_tests_run.txt
+power_test.txt
+task_*.log
+test_cache_dir/
+test_output_*
+*.tmp

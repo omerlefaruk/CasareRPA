@@ -106,8 +106,6 @@ class RunPythonScriptNode(BaseNode):
             timeout = self.get_parameter("timeout", 60)
             isolated = self.get_parameter("isolated", False)
 
-            code = context.resolve_value(code)
-
             if not code:
                 raise ValueError("code is required")
 
@@ -115,9 +113,7 @@ class RunPythonScriptNode(BaseNode):
                 variables = {}
 
             if isolated:
-                result, output, error = await self._run_isolated(
-                    code, variables, timeout
-                )
+                result, output, error = await self._run_isolated(code, variables, timeout)
             else:
                 result, output, error = self._run_inline(code, variables)
 
@@ -211,9 +207,7 @@ print("__RESULT__:" + json.dumps(result, default=str))
             result = None
             if "__RESULT__:" in output:
                 result_line = [
-                    line
-                    for line in output.split("\n")
-                    if line.startswith("__RESULT__:")
+                    line for line in output.split("\n") if line.startswith("__RESULT__:")
                 ]
                 if result_line:
                     try:
@@ -346,11 +340,6 @@ class RunPythonFileNode(BaseNode):
             retry_interval = self.get_parameter("retry_interval", 1000)
             retry_on_nonzero = self.get_parameter("retry_on_nonzero", False)
 
-            file_path = context.resolve_value(file_path)
-            python_path = context.resolve_value(python_path)
-            if working_dir:
-                working_dir = context.resolve_value(working_dir)
-
             if not file_path:
                 raise ValueError("file_path is required")
 
@@ -431,9 +420,7 @@ class RunPythonFileNode(BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Python file execution failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Python file execution failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -444,9 +431,7 @@ class RunPythonFileNode(BaseNode):
                 self.set_output_value("return_code", -1)
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
-                logger.error(
-                    f"Python file execution timed out after {max_attempts} attempts"
-                )
+                logger.error(f"Python file execution timed out after {max_attempts} attempts")
                 return {"success": False, "error": "Timeout", "next_nodes": []}
 
             raise last_error
@@ -512,8 +497,6 @@ class EvalExpressionNode(BaseNode):
         try:
             expression = str(self.get_parameter("expression", ""))
             variables = self.get_parameter("variables", {})
-
-            expression = context.resolve_value(expression)
 
             if not expression:
                 raise ValueError("expression is required")
@@ -687,10 +670,6 @@ class RunBatchScriptNode(BaseNode):
             retry_interval = self.get_parameter("retry_interval", 1000)
             retry_on_nonzero = self.get_parameter("retry_on_nonzero", False)
 
-            script = context.resolve_value(script)
-            if working_dir:
-                working_dir = context.resolve_value(working_dir)
-
             if not script:
                 raise ValueError("script is required")
 
@@ -710,13 +689,9 @@ class RunBatchScriptNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for batch script"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for batch script")
 
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=suffix, delete=False
-                    ) as f:
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False) as f:
                         if sys.platform != "win32":
                             f.write("#!/bin/bash\n")
                         f.write(script)
@@ -791,9 +766,7 @@ class RunBatchScriptNode(BaseNode):
                         os.unlink(script_path)
                         script_path = None
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Batch script execution failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Batch script execution failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -804,9 +777,7 @@ class RunBatchScriptNode(BaseNode):
                 self.set_output_value("return_code", -1)
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
-                logger.error(
-                    f"Batch script execution timed out after {max_attempts} attempts"
-                )
+                logger.error(f"Batch script execution timed out after {max_attempts} attempts")
                 return {"success": False, "error": "Timeout", "next_nodes": []}
 
             raise last_error
@@ -901,9 +872,6 @@ class RunJavaScriptNode(BaseNode):
             input_data = self.get_parameter("input_data")
             timeout = self.get_parameter("timeout", 60)
             node_path = self.get_parameter("node_path", "node")
-
-            code = context.resolve_value(code)
-            node_path = context.resolve_value(node_path)
 
             if not code:
                 raise ValueError("code is required")

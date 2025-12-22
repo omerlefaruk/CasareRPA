@@ -42,12 +42,6 @@ from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
-    from casare_rpa.presentation.canvas.services.websocket_bridge import (
-        WebSocketBridge,
-        RobotStatusUpdate,
-        JobStatusUpdate,
-        QueueMetricsUpdate,
-    )
 
 
 class FleetDashboardDialog(QDialog):
@@ -262,9 +256,7 @@ class FleetDashboardDialog(QDialog):
 
         # Schedules tab
         self._schedules_tab.schedule_selected.connect(self._on_schedule_selected)
-        self._schedules_tab.schedule_enabled_changed.connect(
-            self.schedule_enabled_changed.emit
-        )
+        self._schedules_tab.schedule_enabled_changed.connect(self.schedule_enabled_changed.emit)
         self._schedules_tab.schedule_edited.connect(self.schedule_edited.emit)
         self._schedules_tab.schedule_deleted.connect(self.schedule_deleted.emit)
         self._schedules_tab.schedule_run_now.connect(self.schedule_run_now.emit)
@@ -449,9 +441,7 @@ class FleetDashboardDialog(QDialog):
         self._nav_icon_cache[cache_key] = icon
         return icon
 
-    def show_toast(
-        self, message: str, level: str = "info", duration_ms: int = 2500
-    ) -> None:
+    def show_toast(self, message: str, level: str = "info", duration_ms: int = 2500) -> None:
         self._toast.show_toast(message, level=level, duration_ms=duration_ms)
 
     def set_connection_status(self, connected: bool, message: str) -> None:
@@ -471,9 +461,7 @@ class FleetDashboardDialog(QDialog):
         self._tenant_selector.update_tenants(tenants)
         self._update_tenant_selector_visibility(tenant_count=len(tenants))
 
-    def _update_tenant_selector_visibility(
-        self, tenant_count: Optional[int] = None
-    ) -> None:
+    def _update_tenant_selector_visibility(self, tenant_count: Optional[int] = None) -> None:
         if tenant_count is None:
             tenant_count = 0
         visible = bool(self._is_super_admin and tenant_count > 1)

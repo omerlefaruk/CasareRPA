@@ -493,7 +493,7 @@ spec:
   condition: pending_jobs > 50 AND rate(jobs_completed[5m]) == 0
   for: 10m
 
-# Warning (Ticket/Slack)
+# Warning (Ticket/Webhook)
 - name: robot_disconnected
   condition: delta(connected_robots[5m]) < 0
   for: 0m

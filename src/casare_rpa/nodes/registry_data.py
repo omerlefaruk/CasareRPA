@@ -40,6 +40,10 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "TableScraperNode": "browser.table_scraper_node",
     # Browser evaluate node
     "BrowserEvaluateNode": "browser.evaluate_node",
+    # CAPTCHA nodes
+    "DetectCaptchaNode": "browser.captcha",
+    "SolveCaptchaNode": "browser.captcha",
+    "SolveCaptchaAINode": "browser.captcha_ai",
     # Form nodes
     "FormFieldNode": "browser.form_field_node",
     "FormFillerNode": "browser.form_filler_node",
@@ -165,7 +169,6 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "MoveEmailNode": "email.imap_nodes",
     # HTTP/REST API nodes
     # HttpRequestNode is already in utility_nodes but also in http.http_basic. Preferring the specific ones.
-    "HttpRequestNodeNew": ("http.http_basic", "HttpRequestNode"),
     # HTTP/REST API nodes - advanced operations
     "SetHttpHeadersNode": "http.http_advanced",
     "ParseJsonResponseNode": "http.http_advanced",
@@ -357,21 +360,6 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "GmailTriggerNode": "trigger_nodes.gmail_trigger_node",
     "DriveTriggerNode": "trigger_nodes.drive_trigger_node",
     "SheetsTriggerNode": "trigger_nodes.sheets_trigger_node",
-    "CalendarTriggerNode": "trigger_nodes.calendar_trigger_node",
-    # Google Calendar nodes - Event operations
-    "CalendarListEventsNode": "google.calendar.calendar_events",
-    "CalendarGetEventNode": "google.calendar.calendar_events",
-    "CalendarCreateEventNode": "google.calendar.calendar_events",
-    "CalendarUpdateEventNode": "google.calendar.calendar_events",
-    "CalendarDeleteEventNode": "google.calendar.calendar_events",
-    "CalendarQuickAddNode": "google.calendar.calendar_events",
-    "CalendarMoveEventNode": "google.calendar.calendar_events",
-    "CalendarGetFreeBusyNode": "google.calendar.calendar_events",
-    # Google Calendar nodes - Management operations
-    "CalendarListCalendarsNode": "google.calendar.calendar_manage",
-    "CalendarGetCalendarNode": "google.calendar.calendar_manage",
-    "CalendarCreateCalendarNode": "google.calendar.calendar_manage",
-    "CalendarDeleteCalendarNode": "google.calendar.calendar_manage",
     # Telegram messaging nodes - Send
     "TelegramSendMessageNode": "messaging.telegram.telegram_send",
     "TelegramSendPhotoNode": "messaging.telegram.telegram_send",
@@ -391,17 +379,6 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "WhatsAppSendVideoNode": "messaging.whatsapp.whatsapp_send",
     "WhatsAppSendLocationNode": "messaging.whatsapp.whatsapp_send",
     "WhatsAppSendInteractiveNode": "messaging.whatsapp.whatsapp_send",
-    # Google Docs nodes (standalone - with own OAuth)
-    "DocsGetDocumentNode": "google.docs.docs_read",
-    "DocsGetTextNode": "google.docs.docs_read",
-    "DocsExportNode": "google.docs.docs_read",
-    "DocsCreateDocumentNode": "google.docs.docs_write",
-    "DocsInsertTextNode": "google.docs.docs_write",
-    "DocsAppendTextNode": "google.docs.docs_write",
-    "DocsReplaceTextNode": "google.docs.docs_write",
-    "DocsInsertTableNode": "google.docs.docs_write",
-    "DocsInsertImageNode": "google.docs.docs_write",
-    "DocsApplyStyleNode": "google.docs.docs_write",
     # Gmail nodes (using new GmailBaseNode with built-in credential handling)
     "GmailSendEmailNode": "google.gmail.gmail_send",
     "GmailSendWithAttachmentNode": "google.gmail.gmail_send",

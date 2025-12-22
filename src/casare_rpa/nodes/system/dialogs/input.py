@@ -5,7 +5,6 @@ Nodes for getting user input via dialogs.
 """
 
 import asyncio
-from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
@@ -226,9 +225,6 @@ class MultilineInputDialogNode(BaseNode):
             placeholder = self.get_parameter("placeholder", "")
             max_chars = int(self.get_parameter("max_chars", 0) or 0)
 
-            title = context.resolve_value(title)
-            default_text = context.resolve_value(default_text)
-
             try:
                 from PySide6.QtWidgets import (
                     QDialog,
@@ -271,9 +267,7 @@ class MultilineInputDialogNode(BaseNode):
 
                 text_edit.textChanged.connect(on_text_changed)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -405,8 +399,6 @@ class CredentialDialogNode(BaseNode):
             show_remember = self.get_parameter("show_remember", True)
             mask_password = self.get_parameter("mask_password", True)
 
-            title = context.resolve_value(title)
-
             try:
                 from PySide6.QtWidgets import (
                     QDialog,
@@ -446,9 +438,7 @@ class CredentialDialogNode(BaseNode):
                     remember_check = QCheckBox("Remember me")
                     layout.addWidget(remember_check)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -458,9 +448,7 @@ class CredentialDialogNode(BaseNode):
                 def on_finished(result):
                     if not future.done():
                         if result == QDialog.Accepted:
-                            remember = (
-                                remember_check.isChecked() if remember_check else False
-                            )
+                            remember = remember_check.isChecked() if remember_check else False
                             future.set_result(
                                 (
                                     username_input.text(),

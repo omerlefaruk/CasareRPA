@@ -5,14 +5,12 @@ Nodes for previewing images and displaying tabular data.
 """
 
 import asyncio
-from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -95,13 +93,10 @@ class ImagePreviewDialogNode(BaseNode):
             image_path = self.get_input_value("image_path")
             if image_path is None:
                 image_path = self.get_parameter("image_path", "")
-            image_path = context.resolve_value(str(image_path))
 
             title = self.get_parameter("title", "Image Preview")
             scale = float(self.get_parameter("scale", 1.0) or 1.0)
             allow_zoom = self.get_parameter("allow_zoom", True)
-
-            title = context.resolve_value(title)
 
             if not image_path or not os.path.exists(image_path):
                 self.set_output_value("confirmed", False)
@@ -179,9 +174,7 @@ class ImagePreviewDialogNode(BaseNode):
 
                 layout.addWidget(scroll)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -300,11 +293,8 @@ class TableDialogNode(BaseNode):
             columns_str = self.get_parameter("columns", "")
             selectable = self.get_parameter("selectable", False)
 
-            title = context.resolve_value(title)
-
             # Parse data
             if isinstance(data_input, str):
-                data_input = context.resolve_value(data_input)
                 try:
                     data = json.loads(data_input)
                 except json.JSONDecodeError:
@@ -367,22 +357,16 @@ class TableDialogNode(BaseNode):
                     if isinstance(row, dict):
                         for col_idx, col_name in enumerate(columns):
                             value = row.get(col_name, "")
-                            table.setItem(
-                                row_idx, col_idx, QTableWidgetItem(str(value))
-                            )
+                            table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
                     elif isinstance(row, (list, tuple)):
                         for col_idx, value in enumerate(row):
                             if col_idx < len(columns):
-                                table.setItem(
-                                    row_idx, col_idx, QTableWidgetItem(str(value))
-                                )
+                                table.setItem(row_idx, col_idx, QTableWidgetItem(str(value)))
 
                 table.resizeColumnsToContents()
                 layout.addWidget(table)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -399,9 +383,7 @@ class TableDialogNode(BaseNode):
                                 if selected_items:
                                     selected_idx = selected_items[0].row()
                                     selected_row_data = (
-                                        data[selected_idx]
-                                        if selected_idx < len(data)
-                                        else None
+                                        data[selected_idx] if selected_idx < len(data) else None
                                     )
                             future.set_result((selected_row_data, selected_idx, True))
                         else:

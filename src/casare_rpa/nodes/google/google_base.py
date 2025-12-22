@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
-from typing import Any, List, Optional
+from typing import Any, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
 
 from loguru import logger
 
@@ -244,11 +247,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         credentials = await self._get_credentials(context)
 
         # Get credential_id for OAuth auto-refresh at client level
-        cred_id = self.get_parameter("credential_id") or self.get_parameter(
-            "credential_id"
-        )
-        if cred_id:
-            cred_id = context.resolve_value(cred_id)
+        cred_id = self.get_parameter("credential_id") or self.get_parameter("credential_id")
 
         # Create client config with credential_id for auto-refresh
         config = GoogleConfig(
@@ -302,11 +301,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         )
 
         # Get credential_id (from picker widget or direct config)
-        cred_id = self.get_parameter("credential_id") or self.get_parameter(
-            "credential_id"
-        )
-        if cred_id:
-            cred_id = context.resolve_value(cred_id)
+        cred_id = self.get_parameter("credential_id") or self.get_parameter("credential_id")
 
         # PRIMARY PATH: Use GoogleOAuthManager for automatic token refresh
         # This is the recommended path for stored credentials
@@ -424,7 +419,6 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
 
             cred_name = self.get_parameter("credential_id")
             if cred_name:
-                cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_credential(cred_name)
                 if cred and cred.access_token:
                     logger.debug(f"Using legacy credential from manager: {cred_name}")
@@ -468,9 +462,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
                 # Get decrypted credential data by ID
                 data = store.get_credential(cred_id)
                 if data and data.get("access_token"):
-                    logger.warning(
-                        f"Using credential from store WITHOUT auto-refresh: {cred_id}"
-                    )
+                    logger.warning(f"Using credential from store WITHOUT auto-refresh: {cred_id}")
 
                     # Parse expiry timestamp
                     expiry = None
@@ -656,9 +648,7 @@ def get_drive_scopes(readonly: bool = False, file_only: bool = False) -> List[st
 
 def get_calendar_scopes(readonly: bool = False) -> List[str]:
     """Get Calendar OAuth2 scopes."""
-    return (
-        SCOPES.get("calendar_readonly", []) if readonly else SCOPES.get("calendar", [])
-    )
+    return SCOPES.get("calendar_readonly", []) if readonly else SCOPES.get("calendar", [])
 
 
 # =============================================================================
@@ -773,8 +763,6 @@ class DocsBaseNode(GoogleBaseNode):
     def _get_document_id(self, context: ExecutionContext) -> str:
         """Get document ID from parameter, resolving variables."""
         doc_id = self.get_parameter("document_id")
-        if hasattr(context, "resolve_value"):
-            doc_id = context.resolve_value(doc_id)
         return str(doc_id) if doc_id else ""
 
     async def _execute_google(
@@ -850,17 +838,11 @@ class SheetsBaseNode(GoogleBaseNode):
     def _get_spreadsheet_id(self, context: ExecutionContext) -> str:
         """Get spreadsheet ID from parameter, resolving variables."""
         sheet_id = self.get_parameter("spreadsheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
         return str(sheet_id) if sheet_id else ""
 
-    def _get_sheet_name(
-        self, context: ExecutionContext, default: str = "Sheet1"
-    ) -> str:
+    def _get_sheet_name(self, context: ExecutionContext, default: str = "Sheet1") -> str:
         """Get sheet name from parameter, resolving variables."""
         name = self.get_parameter("sheet_name") or self.get_input_value("sheet_name")
-        if hasattr(context, "resolve_value") and name:
-            name = context.resolve_value(name)
         return str(name) if name else default
 
     # A1 notation utilities
@@ -996,8 +978,6 @@ class DriveBaseNode(GoogleBaseNode):
     def _get_file_id(self, context: ExecutionContext) -> str:
         """Get file ID from parameter, resolving variables."""
         file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
-        if hasattr(context, "resolve_value") and file_id:
-            file_id = context.resolve_value(file_id)
         return str(file_id) if file_id else ""
 
     @staticmethod
@@ -1006,7 +986,7 @@ class DriveBaseNode(GoogleBaseNode):
         from pathlib import Path
         import mimetypes
 
-        ext = Path(file_path).suffix.lower()
+        Path(file_path).suffix.lower()
         mime_type, _ = mimetypes.guess_type(file_path)
         return mime_type or "application/octet-stream"
 
@@ -1091,15 +1071,9 @@ class CalendarBaseNode(GoogleBaseNode):
             required=False,
         )
 
-    def _get_calendar_id(
-        self, context: ExecutionContext, default: str = "primary"
-    ) -> str:
+    def _get_calendar_id(self, context: ExecutionContext, default: str = "primary") -> str:
         """Get calendar ID from parameter, resolving variables."""
-        cal_id = self.get_parameter("calendar_id") or self.get_input_value(
-            "calendar_id"
-        )
-        if hasattr(context, "resolve_value") and cal_id:
-            cal_id = context.resolve_value(cal_id)
+        cal_id = self.get_parameter("calendar_id") or self.get_input_value("calendar_id")
         return str(cal_id) if cal_id else default
 
     async def _execute_google(

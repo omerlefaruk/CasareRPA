@@ -444,9 +444,7 @@ class VisualXMLToJsonNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "include_attributes", "Include Attributes", state=True, tab="properties"
-        )
+        self.add_checkbox("include_attributes", "Include Attributes", state=True, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -597,9 +595,7 @@ class VisualSplitPDFNode(VisualNode):
                 placeholder="Select output folder...",
             ),
         )
-        self.add_text_input(
-            "pages_per_file", "Pages Per File", text="1", tab="properties"
-        )
+        self.add_text_input("pages_per_file", "Pages Per File", text="1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -676,9 +672,7 @@ class VisualPDFToImagesNode(VisualNode):
                 placeholder="Select output folder...",
             ),
         )
-        self.add_combo_menu(
-            "format", "Format", items=["png", "jpeg", "jpg"], tab="properties"
-        )
+        self.add_combo_menu("format", "Format", items=["png", "jpeg", "jpg"], tab="properties")
         self.add_text_input("dpi", "DPI", text="200", tab="properties")
 
     def setup_ports(self) -> None:
@@ -705,16 +699,10 @@ class VisualFTPConnectNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "passive", label="", text="Passive Mode", state=True, tab="properties"
-        )
-        self.add_checkbox(
-            "use_tls", label="", text="Use TLS", state=False, tab="properties"
-        )
+        self.add_checkbox("passive", label="", text="Passive Mode", state=True, tab="properties")
+        self.add_checkbox("use_tls", label="", text="Use TLS", state=False, tab="properties")
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -742,15 +730,11 @@ class VisualFTPUploadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "binary_mode", label="", text="Binary Mode", state=True, tab="properties"
-        )
+        self.add_checkbox("binary_mode", label="", text="Binary Mode", state=True, tab="properties")
         self.add_checkbox(
             "create_dirs", label="", text="Create Dirs", state=False, tab="properties"
         )
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -776,15 +760,9 @@ class VisualFTPDownloadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "binary_mode", label="", text="Binary Mode", state=True, tab="properties"
-        )
-        self.add_checkbox(
-            "overwrite", label="", text="Overwrite", state=False, tab="properties"
-        )
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
+        self.add_checkbox("binary_mode", label="", text="Binary Mode", state=True, tab="properties")
+        self.add_checkbox("overwrite", label="", text="Overwrite", state=False, tab="properties")
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
         self.add_text_input(
             "retry_interval",
             "Retry Interval (s)",
@@ -810,9 +788,7 @@ class VisualFTPListNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "detailed", label="", text="Detailed", state=False, tab="properties"
-        )
+        self.add_checkbox("detailed", label="", text="Detailed", state=False, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -845,9 +821,7 @@ class VisualFTPMakeDirNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox(
-            "parents", label="", text="Create Parents", state=False, tab="properties"
-        )
+        self.add_checkbox("parents", label="", text="Create Parents", state=False, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -911,3 +885,121 @@ class VisualFTPGetSizeNode(VisualNode):
         self.add_exec_output("exec_out")
         self.add_typed_output("size", DataType.INTEGER)
         self.add_typed_output("found", DataType.BOOLEAN)
+
+
+# =============================================================================
+# Directory Operations
+# =============================================================================
+
+
+class VisualListDirectoryNode(VisualNode):
+    """Visual representation of ListDirectoryNode."""
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "List Directory"
+    NODE_CATEGORY = "file_operations/directory"
+    CASARE_NODE_CLASS = "ListDirectoryNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="dir_path",
+                label="Directory",
+                placeholder="Select directory to list...",
+            ),
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dir_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("items", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualFileExistsNode(VisualNode):
+    """Visual representation of FileExistsNode.
+
+    Checks if a file or directory exists at the given path.
+    Outputs: exists (bool), is_file (bool), is_dir (bool)
+    """
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "File Exists"
+    NODE_CATEGORY = "file_operations/path"
+    CASARE_NODE_CLASS = "FileExistsNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="path",
+                label="Path",
+                file_filter="All Files (*.*)",
+                placeholder="Select file or directory...",
+            ),
+        )
+        self.add_combo_menu(
+            "check_type",
+            "Check Type",
+            items=["any", "file", "directory"],
+            tab="properties",
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("exists", DataType.BOOLEAN)
+        self.add_typed_output("is_file", DataType.BOOLEAN)
+        self.add_typed_output("is_dir", DataType.BOOLEAN)
+
+
+class VisualCreateDirectoryNode(VisualNode):
+    """Visual representation of CreateDirectoryNode.
+
+    Creates a directory at the specified path.
+    Can create parent directories if needed.
+    """
+
+    __identifier__ = "casare_rpa.file_operations"
+    NODE_NAME = "Create Directory"
+    NODE_CATEGORY = "file_operations/directory"
+    CASARE_NODE_CLASS = "CreateDirectoryNode"
+
+    def __init__(self) -> None:
+        super().__init__()
+        _replace_widget(
+            self,
+            NodeDirectoryPathWidget(
+                name="dir_path",
+                label="Directory Path",
+                placeholder="Select or enter directory path...",
+            ),
+        )
+        self.add_checkbox(
+            "create_parents",
+            label="",
+            text="Create Parent Directories",
+            state=True,
+            tab="properties",
+        )
+        self.add_checkbox(
+            "exist_ok",
+            label="",
+            text="OK if Exists",
+            state=True,
+            tab="properties",
+        )
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dir_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("dir_path", DataType.STRING)
+        self.add_typed_output("created", DataType.BOOLEAN)
+        self.add_typed_output("success", DataType.BOOLEAN)

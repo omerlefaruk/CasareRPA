@@ -126,10 +126,7 @@ class AISwitchNode(LLMBaseNode):
         self._options = options[: self.MAX_OPTIONS]
         for option in self._options:
             port_name = f"exec_{self._sanitize_port_name(option)}"
-            if (
-                not hasattr(self, "_output_ports")
-                or port_name not in self._output_ports
-            ):
+            if not hasattr(self, "_output_ports") or port_name not in self._output_ports:
                 self.add_exec_output(port_name)
 
     def _sanitize_port_name(self, option: str) -> str:
@@ -145,11 +142,6 @@ class AISwitchNode(LLMBaseNode):
         question = self.get_parameter("question")
         options = self.get_parameter("options")
         eval_context = self.get_parameter("context")
-
-        if hasattr(context, "resolve_value"):
-            question = context.resolve_value(question)
-            options = context.resolve_value(options)
-            eval_context = context.resolve_value(eval_context)
 
         if not question:
             self._set_switch_error("Question is required")
@@ -184,9 +176,6 @@ class AISwitchNode(LLMBaseNode):
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.0
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         options_str = ", ".join(f'"{o}"' for o in options)
 
@@ -249,8 +238,7 @@ Return ONLY the JSON, no other text."""
             self.set_output_value("error", "")
 
             logger.info(
-                f"AI switch: '{question[:30]}...' -> {selected} "
-                f"(confidence: {confidence:.2f})"
+                f"AI switch: '{question[:30]}...' -> {selected} " f"(confidence: {confidence:.2f})"
             )
 
             # Determine next exec port

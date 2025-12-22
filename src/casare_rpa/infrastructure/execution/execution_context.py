@@ -154,30 +154,38 @@ class ExecutionContext:
 
     def resolve_value(self, value: Any) -> Any:
         """
-        Resolve {{variable_name}} patterns in a value.
+        Resolve variable patterns in a value.
+        Supports {{var}}, ${var}, and %var%.
+        Handles strings, dictionaries, and lists recursively.
 
-        Uses caching for improved performance on repeated resolutions.
+        Uses caching for improved performance on repeated resolutions (strings only).
 
         Args:
-            value: The value to resolve (only strings are processed)
+            value: The value to resolve
 
         Returns:
-            The resolved value with all {{variable}} patterns replaced.
+            The resolved value.
         """
-        # Fast path: non-strings or no variables
-        if not isinstance(value, str) or "{{" not in value:
+        # Fast path for non-resolvable types
+        if not isinstance(value, (str, dict, list)):
             return value
 
-        # Check cache first
-        found, cached_result = self._var_cache.get_cached(value, self._state.variables)
-        if found:
-            return cached_result
+        # For strings, check cache first
+        if isinstance(value, str):
+            # No markers? Skip resolution
+            if not any(m in value for m in ("{{", "${", "%")):
+                return value
 
-        # Cache miss - resolve using domain resolver
+            found, cached_result = self._var_cache.get_cached(value, self._state.variables)
+            if found:
+                return cached_result
+
+        # Resolve using domain state
         result = self._state.resolve_value(value)
 
-        # Cache the result
-        self._var_cache.cache_result(value, self._state.variables, result)
+        # Cache string results
+        if isinstance(value, str):
+            self._var_cache.cache_result(value, self._state.variables, result)
 
         return result
 
@@ -276,9 +284,7 @@ class ExecutionContext:
         provider = await self.get_credential_provider()
         if not provider:
             if required:
-                raise ValueError(
-                    f"Credential provider unavailable, cannot resolve: {alias}"
-                )
+                raise ValueError(f"Credential provider unavailable, cannot resolve: {alias}")
             return None
 
         return await provider.get_credential(alias, required=required)
@@ -514,9 +520,7 @@ class ExecutionContext:
 
         return branch_context
 
-    def merge_branch_results(
-        self, branch_name: str, branch_variables: Dict[str, Any]
-    ) -> None:
+    def merge_branch_results(self, branch_name: str, branch_variables: Dict[str, Any]) -> None:
         """
         Merge variables from a completed branch back to main context.
 

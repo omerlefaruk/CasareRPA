@@ -384,9 +384,7 @@ CONTENT_ACTIONS = [
         label="Binary Mode",
         tooltip="Read/write as binary data",
         order=31,
-        display_when={
-            "action": [FileSystemAction.READ.value, FileSystemAction.WRITE.value]
-        },
+        display_when={"action": [FileSystemAction.READ.value, FileSystemAction.WRITE.value]},
     ),
     PropertyDef(
         "max_size",
@@ -634,9 +632,7 @@ class FileSystemSuperNode(BaseNode):
         self._ensure_ports_for_action(action)
 
         # Map actions to handlers
-        handlers: Dict[
-            str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
             FileSystemAction.READ.value: self._execute_read,
             FileSystemAction.WRITE.value: self._execute_write,
             FileSystemAction.APPEND.value: self._execute_append,
@@ -686,7 +682,6 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security(file_path, "read", allow_dangerous)
 
@@ -727,9 +722,8 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
-        content = context.resolve_value(content) if content else ""
+        content = content if content else ""
         path = validate_path_security(file_path, "write", allow_dangerous)
 
         if create_dirs and path.parent:
@@ -771,9 +765,8 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
-        content = context.resolve_value(content) if content else ""
+        content = content if content else ""
         path = validate_path_security(file_path, "append", allow_dangerous)
 
         if not path.exists() and not create_if_missing:
@@ -807,7 +800,6 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security(file_path, "delete", allow_dangerous)
 
@@ -850,9 +842,7 @@ class FileSystemSuperNode(BaseNode):
         if not source_path or not dest_path:
             raise ValueError("source_path and dest_path are required")
 
-        source_path = context.resolve_value(source_path)
         source_path = os.path.expandvars(source_path)
-        dest_path = context.resolve_value(dest_path)
         dest_path = os.path.expandvars(dest_path)
 
         source = validate_path_security(source_path, "read", allow_dangerous)
@@ -893,9 +883,7 @@ class FileSystemSuperNode(BaseNode):
         if not source_path or not dest_path:
             raise ValueError("source_path and dest_path are required")
 
-        source_path = context.resolve_value(source_path)
         source_path = os.path.expandvars(source_path)
-        dest_path = context.resolve_value(dest_path)
         dest_path = os.path.expandvars(dest_path)
 
         source = validate_path_security(source_path, "read", allow_dangerous)
@@ -935,7 +923,6 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security_readonly(file_path, "check", allow_dangerous)
 
@@ -967,7 +954,6 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security_readonly(file_path, "stat", allow_dangerous)
 
@@ -994,7 +980,6 @@ class FileSystemSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security_readonly(file_path, "stat", allow_dangerous)
 
@@ -1004,12 +989,8 @@ class FileSystemSuperNode(BaseNode):
         stat = path.stat()
 
         self.set_output_value("size", stat.st_size)
-        self.set_output_value(
-            "created", datetime.fromtimestamp(stat.st_ctime).isoformat()
-        )
-        self.set_output_value(
-            "modified", datetime.fromtimestamp(stat.st_mtime).isoformat()
-        )
+        self.set_output_value("created", datetime.fromtimestamp(stat.st_ctime).isoformat())
+        self.set_output_value("modified", datetime.fromtimestamp(stat.st_mtime).isoformat())
         self.set_output_value("extension", path.suffix)
         self.set_output_value("name", path.name)
         self.set_output_value("parent", str(path.parent))
@@ -1022,9 +1003,7 @@ class FileSystemSuperNode(BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_create_dir(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_create_dir(self, context: "IExecutionContext") -> ExecutionResult:
         """Create directory."""
         dir_path = self.get_parameter("directory_path")
         parents = self.get_parameter("parents", True)
@@ -1034,7 +1013,6 @@ class FileSystemSuperNode(BaseNode):
         if not dir_path:
             raise ValueError("directory_path is required")
 
-        dir_path = context.resolve_value(dir_path)
         dir_path = os.path.expandvars(dir_path)
         path = validate_path_security(dir_path, "mkdir", allow_dangerous)
         await asyncio.to_thread(path.mkdir, parents=parents, exist_ok=exist_ok)
@@ -1049,9 +1027,7 @@ class FileSystemSuperNode(BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_list_files(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_list_files(self, context: "IExecutionContext") -> ExecutionResult:
         """List files in directory."""
         dir_path = self.get_parameter("directory_path")
         pattern = self.get_parameter("pattern", "*")
@@ -1061,15 +1037,11 @@ class FileSystemSuperNode(BaseNode):
         if not dir_path:
             raise ValueError("directory_path is required")
 
-        dir_path = context.resolve_value(dir_path)
         dir_path = os.path.expandvars(dir_path)
-        pattern = context.resolve_value(pattern)
 
         # SECURITY: Validate pattern doesn't contain path traversal
         if ".." in pattern:
-            raise PathSecurityError(
-                "Pattern cannot contain path traversal sequences (..)"
-            )
+            raise PathSecurityError("Pattern cannot contain path traversal sequences (..)")
 
         path = validate_path_security_readonly(dir_path, "list", allow_dangerous)
 
@@ -1108,15 +1080,11 @@ class FileSystemSuperNode(BaseNode):
         if not dir_path:
             raise ValueError("dir_path is required")
 
-        dir_path = context.resolve_value(dir_path)
         dir_path = os.path.expandvars(dir_path)
-        pattern = context.resolve_value(pattern)
 
         # SECURITY: Validate pattern doesn't contain path traversal
         if ".." in pattern:
-            raise PathSecurityError(
-                "Pattern cannot contain path traversal sequences (..)"
-            )
+            raise PathSecurityError("Pattern cannot contain path traversal sequences (..)")
 
         path = validate_path_security_readonly(dir_path, "list", allow_dangerous)
 
@@ -1357,9 +1325,7 @@ SCALE_PERCENT_CHOICES = ["5%", "10%", "25%", "50%", "75%", "100%"]
         tooltip="Path to the ZIP archive",
         placeholder="C:\\path\\to\\archive.zip",
         order=10,
-        display_when={
-            "action": [StructuredDataAction.ZIP.value, StructuredDataAction.UNZIP.value]
-        },
+        display_when={"action": [StructuredDataAction.ZIP.value, StructuredDataAction.UNZIP.value]},
     ),
     PropertyDef(
         "source_path",
@@ -1635,9 +1601,7 @@ class StructuredDataSuperNode(BaseNode):
                 if port_def.name not in self.output_ports:
                     self.add_output_port(port_def.name, port_def.data_type)
 
-            logger.debug(
-                f"StructuredDataSuperNode: Updated ports for action '{action}'"
-            )
+            logger.debug(f"StructuredDataSuperNode: Updated ports for action '{action}'")
 
     async def execute(self, context: "IExecutionContext") -> ExecutionResult:
         """Execute the selected structured data action."""
@@ -1649,9 +1613,7 @@ class StructuredDataSuperNode(BaseNode):
         self._ensure_ports_for_action(action)
 
         # Map actions to handlers
-        handlers: Dict[
-            str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
             StructuredDataAction.READ_CSV.value: self._execute_read_csv,
             StructuredDataAction.WRITE_CSV.value: self._execute_write_csv,
             StructuredDataAction.READ_JSON.value: self._execute_read_json,
@@ -1694,16 +1656,13 @@ class StructuredDataSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security(file_path, "read", allow_dangerous)
 
         if not path.exists():
             raise FileNotFoundError(f"CSV file not found: {file_path}")
 
-        logger.info(
-            f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})"
-        )
+        logger.info(f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})")
 
         data, headers = await AsyncFileOperations.read_csv(
             path,
@@ -1741,10 +1700,9 @@ class StructuredDataSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
-        data = context.resolve_value(data) or []
-        headers = context.resolve_value(headers) if headers else None
+        data = data or []
+        headers = headers if headers else None
         path = validate_path_security(file_path, "write", allow_dangerous)
 
         if path.parent:
@@ -1780,7 +1738,6 @@ class StructuredDataSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
         path = validate_path_security(file_path, "read", allow_dangerous)
 
@@ -1799,9 +1756,7 @@ class StructuredDataSuperNode(BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_write_json(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_write_json(self, context: "IExecutionContext") -> ExecutionResult:
         """Write data to JSON file."""
         file_path = self.get_parameter("file_path")
         data = self.get_parameter("data")
@@ -1813,9 +1768,7 @@ class StructuredDataSuperNode(BaseNode):
         if not file_path:
             raise ValueError("file_path is required")
 
-        file_path = context.resolve_value(file_path)
         file_path = os.path.expandvars(file_path)
-        data = context.resolve_value(data)
         path = validate_path_security(file_path, "write", allow_dangerous)
 
         if path.parent:
@@ -1852,13 +1805,10 @@ class StructuredDataSuperNode(BaseNode):
         if not zip_path:
             raise ValueError("zip_path is required")
 
-        zip_path = context.resolve_value(zip_path)
         zip_path = os.path.expandvars(zip_path)
         if source_path:
-            source_path = context.resolve_value(source_path)
             source_path = os.path.expandvars(source_path)
         if base_dir:
-            base_dir = context.resolve_value(base_dir)
             base_dir = os.path.expandvars(base_dir)
 
         zip_validated_path = validate_path_security(zip_path, "write", allow_dangerous)
@@ -1874,9 +1824,7 @@ class StructuredDataSuperNode(BaseNode):
                 logger.info(f"Auto-discovered {len(files)} files from folder: {source}")
             elif "*" in source_path or "?" in source_path:
                 files = [
-                    f
-                    for f in glob_module.glob(source_path, recursive=True)
-                    if Path(f).is_file()
+                    f for f in glob_module.glob(source_path, recursive=True) if Path(f).is_file()
                 ]
                 if not base_dir:
                     parts = Path(source_path).parts
@@ -1894,14 +1842,10 @@ class StructuredDataSuperNode(BaseNode):
                 raise ValueError(f"source_path not found: {source_path}")
 
         if not files:
-            raise ValueError(
-                "No files to zip. Provide 'source_path' or connect 'files' input."
-            )
+            raise ValueError("No files to zip. Provide 'source_path' or connect 'files' input.")
 
         zip_compression = (
-            zipfile.ZIP_DEFLATED
-            if compression == "ZIP_DEFLATED"
-            else zipfile.ZIP_STORED
+            zipfile.ZIP_DEFLATED if compression == "ZIP_DEFLATED" else zipfile.ZIP_STORED
         )
 
         if zip_validated_path.parent:
@@ -1912,9 +1856,7 @@ class StructuredDataSuperNode(BaseNode):
         def _create_zip() -> int:
             """Create ZIP archive synchronously (runs in thread)."""
             count = 0
-            with zipfile.ZipFile(
-                zip_validated_path, "w", compression=zip_compression
-            ) as zf:
+            with zipfile.ZipFile(zip_validated_path, "w", compression=zip_compression) as zf:
                 for fp_str in files:
                     fp = Path(fp_str)
                     if not fp.exists():
@@ -1936,9 +1878,7 @@ class StructuredDataSuperNode(BaseNode):
         self.set_output_value("success", True)
         self.status = NodeStatus.SUCCESS
 
-        logger.info(
-            f"Created ZIP archive: {zip_validated_path} with {file_count} files"
-        )
+        logger.info(f"Created ZIP archive: {zip_validated_path} with {file_count} files")
 
         return {
             "success": True,
@@ -1957,9 +1897,7 @@ class StructuredDataSuperNode(BaseNode):
         if not extract_to:
             raise ValueError("extract_to is required")
 
-        zip_path = context.resolve_value(zip_path)
         zip_path = os.path.expandvars(zip_path)
-        extract_to = context.resolve_value(extract_to)
         extract_to = os.path.expandvars(extract_to)
 
         zip_file = validate_path_security(zip_path, "read", allow_dangerous)
@@ -2014,9 +1952,7 @@ class StructuredDataSuperNode(BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_image_convert(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_image_convert(self, context: "IExecutionContext") -> ExecutionResult:
         """Convert image between formats."""
         source_path = self.get_parameter("source_path")
         output_path = self.get_parameter("output_path", "")
@@ -2052,16 +1988,11 @@ class StructuredDataSuperNode(BaseNode):
                     scale_percent = scale_percent[:-1]
             scale_percent = int(scale_percent)
         except (TypeError, ValueError):
-            raise ValueError(
-                "scale_percent must be one of: " + ", ".join(SCALE_PERCENT_CHOICES)
-            )
+            raise ValueError("scale_percent must be one of: " + ", ".join(SCALE_PERCENT_CHOICES))
 
         if scale_percent not in (5, 10, 25, 50, 75, 100):
-            raise ValueError(
-                "scale_percent must be one of: " + ", ".join(SCALE_PERCENT_CHOICES)
-            )
+            raise ValueError("scale_percent must be one of: " + ", ".join(SCALE_PERCENT_CHOICES))
 
-        source_path = context.resolve_value(source_path)
         source_path = os.path.expandvars(source_path)
         source = validate_path_security(source_path, "read", allow_dangerous)
 
@@ -2072,7 +2003,6 @@ class StructuredDataSuperNode(BaseNode):
 
         if source.is_dir():
             if output_path:
-                output_path = context.resolve_value(output_path)
                 output_path = os.path.expandvars(output_path)
             else:
                 output_path = str(source / "converted")
@@ -2100,40 +2030,24 @@ class StructuredDataSuperNode(BaseNode):
             def _convert_batch() -> list[str]:
                 converted: list[str] = []
                 resample = (
-                    Image.Resampling.LANCZOS
-                    if hasattr(Image, "Resampling")
-                    else Image.LANCZOS
+                    Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
                 )
                 for input_file in input_files:
-                    safe_source = validate_path_security(
-                        input_file, "read", allow_dangerous
-                    )
-                    rel = (
-                        input_file.relative_to(source)
-                        if recursive
-                        else Path(input_file.name)
-                    )
+                    safe_source = validate_path_security(input_file, "read", allow_dangerous)
+                    rel = input_file.relative_to(source) if recursive else Path(input_file.name)
                     dest_candidate = (output_dir / rel).with_suffix(ext)
                     dest_candidate.parent.mkdir(parents=True, exist_ok=True)
-                    dest = validate_path_security(
-                        dest_candidate, "write", allow_dangerous
-                    )
+                    dest = validate_path_security(dest_candidate, "write", allow_dangerous)
 
                     if dest.exists() and not overwrite:
-                        raise FileExistsError(
-                            f"Destination already exists: {dest_candidate}"
-                        )
+                        raise FileExistsError(f"Destination already exists: {dest_candidate}")
 
                     with Image.open(safe_source) as img:
                         img = ImageOps.exif_transpose(img)
 
                         if scale_percent != 100:
-                            new_width = max(
-                                1, int(round(img.width * scale_percent / 100))
-                            )
-                            new_height = max(
-                                1, int(round(img.height * scale_percent / 100))
-                            )
+                            new_width = max(1, int(round(img.width * scale_percent / 100)))
+                            new_height = max(1, int(round(img.height * scale_percent / 100)))
                             img = img.resize((new_width, new_height), resample=resample)
                         # Handle transparency for JPEG
                         if output_format == "JPEG" and img.mode in ("RGBA", "P"):
@@ -2181,7 +2095,6 @@ class StructuredDataSuperNode(BaseNode):
             if not overwrite and Path(output_path).resolve() == source.resolve():
                 output_path = str(source.with_name(f"{source.stem}_converted{ext}"))
         else:
-            output_path = context.resolve_value(output_path)
             output_path = os.path.expandvars(output_path)
 
         # SECURITY: Validate output path (supports directory targets)
@@ -2210,9 +2123,7 @@ class StructuredDataSuperNode(BaseNode):
 
                 if scale_percent != 100:
                     resample = (
-                        Image.Resampling.LANCZOS
-                        if hasattr(Image, "Resampling")
-                        else Image.LANCZOS
+                        Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
                     )
                     new_width = max(1, int(round(img.width * scale_percent / 100)))
                     new_height = max(1, int(round(img.height * scale_percent / 100)))

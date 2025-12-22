@@ -107,9 +107,7 @@ class HotkeyWaitNode(BaseNode):
                 try:
                     if timeout_ms > 0:
                         try:
-                            await asyncio.wait_for(
-                                hotkey_event.wait(), timeout=timeout_ms / 1000
-                            )
+                            await asyncio.wait_for(hotkey_event.wait(), timeout=timeout_ms / 1000)
                             triggered = True
                         except asyncio.TimeoutError:
                             timed_out = True
@@ -331,7 +329,7 @@ class ClipboardMonitorNode(BaseNode):
         try:
             timeout_ms = int(self.get_parameter("timeout", 30000) or 30000)
             trigger_on_change = self.get_parameter("trigger_on_change", True)
-            content_type = self.get_parameter("content_type", "text")
+            self.get_parameter("content_type", "text")
 
             content = ""
             changed = False
@@ -418,9 +416,7 @@ class ClipboardMonitorNode(BaseNode):
                             break
 
                 except ImportError:
-                    logger.error(
-                        "Neither pyperclip nor PySide6 available for clipboard"
-                    )
+                    logger.error("Neither pyperclip nor PySide6 available for clipboard")
                     timed_out = True
 
             self.set_output_value("content", content)

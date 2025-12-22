@@ -200,6 +200,12 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
         property_format.setForeground(QColor(self.COLOR_PROPERTY))
         self._formats["property"] = property_format
 
+        # CasareRPA Variable format ({{var}})
+        variable_format = QTextCharFormat()
+        variable_format.setForeground(QColor(self.COLOR_VARIABLE))
+        variable_format.setFontWeight(QFont.Weight.Bold)
+        self._formats["variable"] = variable_format
+
     def highlightBlock(self, text: str) -> None:
         """
         Highlight a block of JavaScript text.
@@ -282,9 +288,7 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
 
         # Regular expressions: /pattern/flags
         # Simplified - matches common regex patterns
-        regex_pattern = re.compile(
-            r"(?<=[=(\[,!&|?:;])\s*/(?![/*])(?:[^/\\]|\\.)+/[gimsuy]*"
-        )
+        regex_pattern = re.compile(r"(?<=[=(\[,!&|?:;])\s*/(?![/*])(?:[^/\\]|\\.)+/[gimsuy]*")
         for match in regex_pattern.finditer(text):
             start = match.start()
             # Skip leading whitespace
@@ -341,6 +345,15 @@ class JavaScriptHighlighter(QSyntaxHighlighter):
             length = match.end() - match.start()
             if not any(highlighted[start : start + length]):
                 self.setFormat(start, length, self._formats["number"])
+
+        # CasareRPA Variable references {{var}}
+        variable_pattern = re.compile(r"\{\{[^}]+\}\}")
+        for match in variable_pattern.finditer(text):
+            start = match.start()
+            length = match.end() - start
+            self.setFormat(start, length, self._formats["variable"])
+            for i in range(start, min(start + length, len(highlighted))):
+                highlighted[i] = True
 
 
 def get_javascript_editor_stylesheet() -> str:

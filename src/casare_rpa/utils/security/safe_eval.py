@@ -66,11 +66,20 @@ def safe_eval(expression: str, variables: Optional[Dict[str, Any]] = None) -> An
 
     # Try safe evaluation with simpleeval using defaults
     try:
+        # Add common aliases for true/false/null
+        eval_names = (variables or {}).copy()
+        if "true" not in eval_names:
+            eval_names["true"] = True
+        if "false" not in eval_names:
+            eval_names["false"] = False
+        if "null" not in eval_names:
+            eval_names["null"] = None
+
         result = simple_eval(
             expression,
             operators=DEFAULT_OPERATORS,
             functions=SAFE_FUNCTIONS,
-            names=variables or {},
+            names=eval_names,
         )
         logger.debug(f"Safe eval: '{expression}' -> {result}")
         return result
@@ -170,9 +179,7 @@ def is_safe_expression(expression: str) -> bool:
     expression_lower = expression.lower()
     for pattern in dangerous_patterns:
         if pattern in expression_lower:
-            logger.warning(
-                f"Potentially dangerous pattern '{pattern}' found in expression"
-            )
+            logger.warning(f"Potentially dangerous pattern '{pattern}' found in expression")
             return False
 
     return True

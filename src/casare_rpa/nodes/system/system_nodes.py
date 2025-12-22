@@ -57,9 +57,7 @@ class ScreenRegionPickerNode(BaseNode):
     # @requires: uiautomation
     # @ports: none -> x, y, width, height, confirmed
 
-    def __init__(
-        self, node_id: str, name: str = "Screen Region Picker", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Screen Region Picker", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -76,10 +74,8 @@ class ScreenRegionPickerNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            title = self.get_parameter("title", "Select Screen Region")
+            self.get_parameter("title", "Select Screen Region")
             show_coordinates = self.get_parameter("show_coordinates", True)
-
-            title = context.resolve_value(title)
 
             try:
                 from PySide6.QtWidgets import QApplication, QWidget, QLabel, QRubberBand
@@ -137,14 +133,10 @@ class ScreenRegionPickerNode(BaseNode):
                         if not self.selection_rect.isNull():
                             # Clear the selection area
                             painter.setCompositionMode(QPainter.CompositionMode_Clear)
-                            painter.fillRect(
-                                self.selection_rect.normalized(), Qt.transparent
-                            )
+                            painter.fillRect(self.selection_rect.normalized(), Qt.transparent)
 
                             # Draw selection border
-                            painter.setCompositionMode(
-                                QPainter.CompositionMode_SourceOver
-                            )
+                            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
                             pen = QPen(QColor(33, 150, 243), 2)
                             painter.setPen(pen)
                             painter.drawRect(self.selection_rect.normalized())
@@ -158,9 +150,7 @@ class ScreenRegionPickerNode(BaseNode):
                     def mouseMoveEvent(self, event):
                         if self.start_pos:
                             self.current_pos = event.globalPosition().toPoint()
-                            self.selection_rect = QRect(
-                                self.start_pos, self.current_pos
-                            )
+                            self.selection_rect = QRect(self.start_pos, self.current_pos)
                             self.update()
 
                             if self.coord_label:
@@ -168,9 +158,7 @@ class ScreenRegionPickerNode(BaseNode):
                                 self.coord_label.setText(
                                     f"X: {rect.x()}, Y: {rect.y()}, W: {rect.width()}, H: {rect.height()}"
                                 )
-                                label_pos = self.mapFromGlobal(
-                                    self.current_pos
-                                ) + QPoint(15, 15)
+                                label_pos = self.mapFromGlobal(self.current_pos) + QPoint(15, 15)
                                 self.coord_label.move(label_pos)
                                 self.coord_label.adjustSize()
                                 self.coord_label.show()
@@ -312,9 +300,7 @@ class VolumeControlNode(BaseNode):
                 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
                 devices = AudioUtilities.GetSpeakers()
-                interface = devices.Activate(
-                    IAudioEndpointVolume._iid_, CLSCTX_ALL, None
-                )
+                interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
                 volume_interface = cast(interface, POINTER(IAudioEndpointVolume))
 
                 if action == "get":
@@ -446,13 +432,9 @@ class ProcessListNode(BaseNode):
                         if include_details:
                             try:
                                 # Don't use interval for cpu_percent - it blocks!
-                                process_data["cpu_percent"] = proc.cpu_percent(
-                                    interval=None
-                                )
+                                process_data["cpu_percent"] = proc.cpu_percent(interval=None)
                                 mem_info = proc.memory_info()
-                                process_data["memory_mb"] = round(
-                                    mem_info.rss / (1024 * 1024), 2
-                                )
+                                process_data["memory_mb"] = round(mem_info.rss / (1024 * 1024), 2)
                                 process_data["username"] = proc.username()
                                 process_data["create_time"] = proc.create_time()
                             except (psutil.AccessDenied, psutil.NoSuchProcess):
@@ -552,7 +534,6 @@ class ProcessKillNode(BaseNode):
             pid_or_name = self.get_input_value("pid_or_name")
             if pid_or_name is None:
                 pid_or_name = self.get_parameter("pid_or_name", "")
-            pid_or_name = context.resolve_value(str(pid_or_name))
 
             force = self.get_parameter("force", False)
             timeout = int(self.get_parameter("timeout", 5) or 5)
@@ -689,9 +670,7 @@ class EnvironmentVariableNode(BaseNode):
     # @requires: uiautomation
     # @ports: var_name, value -> result_value, exists, success
 
-    def __init__(
-        self, node_id: str, name: str = "Environment Variable", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Environment Variable", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -715,12 +694,10 @@ class EnvironmentVariableNode(BaseNode):
             var_name = self.get_input_value("var_name")
             if var_name is None:
                 var_name = self.get_parameter("var_name", "")
-            var_name = context.resolve_value(str(var_name))
 
             var_value = self.get_input_value("value")
             if var_value is None:
                 var_value = self.get_parameter("value", "")
-            var_value = context.resolve_value(str(var_value))
 
             scope = self.get_parameter("scope", "process")
 
@@ -782,9 +759,7 @@ class EnvironmentVariableNode(BaseNode):
                         logger.info(f"Set {scope} environment variable: {var_name}")
 
                     except PermissionError:
-                        logger.error(
-                            f"Permission denied setting {scope} environment variable"
-                        )
+                        logger.error(f"Permission denied setting {scope} environment variable")
                     except Exception as e:
                         logger.error(f"Error setting environment variable: {e}")
 

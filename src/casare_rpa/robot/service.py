@@ -70,9 +70,7 @@ SERVICE_START_TYPE = win32service.SERVICE_AUTO_START if win32service else None
 
 # Default config path
 DEFAULT_CONFIG_PATH = Path(
-    os.environ.get(
-        "CASARE_CONFIG_PATH", str(Path.home() / ".casare_rpa" / "robot_config.yaml")
-    )
+    os.environ.get("CASARE_CONFIG_PATH", str(Path.home() / ".casare_rpa" / "robot_config.yaml"))
 )
 
 
@@ -81,8 +79,7 @@ def get_service_config() -> dict:
     config = {
         "robot_id": os.environ.get("CASARE_ROBOT_ID"),
         "robot_name": os.environ.get("CASARE_ROBOT_NAME", SERVICE_NAME),
-        "postgres_url": os.environ.get("POSTGRES_URL")
-        or os.environ.get("DATABASE_URL"),
+        "postgres_url": os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL"),
         "environment": os.environ.get("CASARE_ENVIRONMENT", "default"),
         "max_concurrent_jobs": int(os.environ.get("CASARE_MAX_CONCURRENT_JOBS", "1")),
         "poll_interval_seconds": float(os.environ.get("CASARE_POLL_INTERVAL", "1.0")),
@@ -251,10 +248,7 @@ if PYWIN32_AVAILABLE:
             # Wait for stop event
             while self.is_alive:
                 await asyncio.sleep(1)
-                if (
-                    win32event.WaitForSingleObject(self.stop_event, 0)
-                    == win32event.WAIT_OBJECT_0
-                ):
+                if win32event.WaitForSingleObject(self.stop_event, 0) == win32event.WAIT_OBJECT_0:
                     break
 
             await self.agent.stop()
@@ -278,8 +272,7 @@ def install_service() -> bool:
 
     try:
         # Get the Python executable and script path
-        python_exe = sys.executable
-        script_path = os.path.abspath(__file__)
+        os.path.abspath(__file__)
 
         # Install the service
         win32serviceutil.InstallService(

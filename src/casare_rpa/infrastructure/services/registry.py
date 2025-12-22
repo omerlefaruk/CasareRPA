@@ -12,7 +12,7 @@ import asyncio
 import os
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 import socket
 
 try:
@@ -218,9 +218,7 @@ class ServiceRegistry:
 
             start = time.time()
 
-            conn = await asyncpg.connect(
-                postgres_url, timeout=5, statement_cache_size=0
-            )
+            conn = await asyncpg.connect(postgres_url, timeout=5, statement_cache_size=0)
             try:
                 await conn.fetchval("SELECT 1")
             finally:
@@ -264,9 +262,7 @@ class ServiceRegistry:
         except Exception:
             return "postgresql://***"
 
-    async def wait_for_service(
-        self, name: str, timeout: int = 30, interval: float = 1.0
-    ) -> bool:
+    async def wait_for_service(self, name: str, timeout: int = 30, interval: float = 1.0) -> bool:
         """Wait for a service to become available."""
         logger.info(f"Waiting for {name} to become available (timeout: {timeout}s)")
 

@@ -125,9 +125,7 @@ class PageContext:
                     lines.append("|-------|----------|------|-----|")
                     for f in form.fields:
                         label = f.label or f.name or f.placeholder or "unnamed"
-                        lines.append(
-                            f"| {label} | `{f.selector}` | {f.field_type} | `{f.ref}` |"
-                        )
+                        lines.append(f"| {label} | `{f.selector}` | {f.field_type} | `{f.ref}` |")
                 if form.submit_button:
                     lines.append(
                         f"- Submit: `{form.submit_button.get('selector', '')}` "
@@ -142,9 +140,7 @@ class PageContext:
             lines.append("|------|----------|-----|")
             for btn in self.buttons[:15]:  # Limit to 15
                 text = btn.get("text", "")[:30]
-                lines.append(
-                    f"| {text} | `{btn.get('selector', '')}` | `{btn.get('ref', '')}` |"
-                )
+                lines.append(f"| {text} | `{btn.get('selector', '')}` | `{btn.get('ref', '')}` |")
             if len(self.buttons) > 15:
                 lines.append(f"*... and {len(self.buttons) - 15} more buttons*")
             lines.append("")
@@ -230,9 +226,7 @@ class PageAnalyzer:
     """
 
     # Regex patterns for parsing snapshot
-    ROLE_PATTERN = re.compile(
-        r'^(\s*)- (\w+)(?: "([^"]*)")?(?: \[ref=([^\]]+)\])?:?\s*(.*)$'
-    )
+    ROLE_PATTERN = re.compile(r'^(\s*)- (\w+)(?: "([^"]*)")?(?: \[ref=([^\]]+)\])?:?\s*(.*)$')
     ATTR_PATTERN = re.compile(r'(\w+)="([^"]*)"')
 
     def __init__(self) -> None:
@@ -270,7 +264,6 @@ class PageAnalyzer:
 
         # Parse line by line
         lines = snapshot.split("\n")
-        current_indent = 0
         element_stack: List[Tuple[int, str, str, str]] = []  # (indent, role, name, ref)
 
         for line in lines:
@@ -396,9 +389,7 @@ class PageAnalyzer:
                 )
 
             elif role_lower == "navigation":
-                nav_items = self._extract_navigation_items(
-                    lines, lines.index(line), indent
-                )
+                nav_items = self._extract_navigation_items(lines, lines.index(line), indent)
                 context.navigation.extend(nav_items)
 
             elif role_lower == "heading":
@@ -494,7 +485,9 @@ class PageAnalyzer:
             if role_lower in ("button", "link"):
                 return f'{base}:has-text("{escaped_name}")'
             elif role_lower in ("textbox", "searchbox"):
-                return f'input[placeholder*="{escaped_name}"], input[name*="{escaped_name.lower()}"]'
+                return (
+                    f'input[placeholder*="{escaped_name}"], input[name*="{escaped_name.lower()}"]'
+                )
             else:
                 return f'{base}[aria-label*="{escaped_name}"]'
 

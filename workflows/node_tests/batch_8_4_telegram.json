@@ -1,0 +1,180 @@
+{
+    "metadata": {
+        "name": "Batch 8.4 - Telegram Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "telegram_send": {
+            "node_id": "telegram_send",
+            "node_type": "TelegramSendMessageNode",
+            "config": {
+                "chat_id": "123456",
+                "text": "Hello"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "telegram_photo": {
+            "node_id": "telegram_photo",
+            "node_type": "TelegramSendPhotoNode",
+            "config": {
+                "chat_id": "123456"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "telegram_doc": {
+            "node_id": "telegram_doc",
+            "node_type": "TelegramSendDocumentNode",
+            "config": {
+                "chat_id": "123456"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "telegram_location": {
+            "node_id": "telegram_location",
+            "node_type": "TelegramSendLocationNode",
+            "config": {
+                "chat_id": "123456",
+                "latitude": 0,
+                "longitude": 0
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "telegram_media": {
+            "node_id": "telegram_media",
+            "node_type": "TelegramSendMediaGroupNode",
+            "config": {
+                "chat_id": "123456"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "telegram_edit": {
+            "node_id": "telegram_edit",
+            "node_type": "TelegramEditMessageNode",
+            "config": {
+                "chat_id": "123456",
+                "message_id": "1"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "telegram_delete": {
+            "node_id": "telegram_delete",
+            "node_type": "TelegramDeleteMessageNode",
+            "config": {
+                "chat_id": "123456",
+                "message_id": "1"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "telegram_updates": {
+            "node_id": "telegram_updates",
+            "node_type": "TelegramGetUpdatesNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "telegram_callback": {
+            "node_id": "telegram_callback",
+            "node_type": "TelegramAnswerCallbackNode",
+            "config": {},
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Telegram nodes tested!"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "telegram_send",
+            "source_port": "exec_out",
+            "target_node": "telegram_photo",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_photo",
+            "source_port": "exec_out",
+            "target_node": "telegram_doc",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_doc",
+            "source_port": "exec_out",
+            "target_node": "telegram_location",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_location",
+            "source_port": "exec_out",
+            "target_node": "telegram_media",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_media",
+            "source_port": "exec_out",
+            "target_node": "telegram_edit",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_edit",
+            "source_port": "exec_out",
+            "target_node": "telegram_delete",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_delete",
+            "source_port": "exec_out",
+            "target_node": "telegram_updates",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_updates",
+            "source_port": "exec_out",
+            "target_node": "telegram_callback",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_callback",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

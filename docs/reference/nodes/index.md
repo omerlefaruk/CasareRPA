@@ -1,6 +1,7 @@
 # Node Reference
 
-CasareRPA provides 413+ automation nodes organized across 18 categories. Each node performs a specific, atomic operation that can be connected to build complex workflows.
+CasareRPA provides a large library of automation nodes organized into categories. Each node performs a specific, atomic operation that can be connected to build complex workflows.
+
 
 ## Node Categories
 
@@ -12,17 +13,16 @@ CasareRPA provides 413+ automation nodes organized across 18 categories. Each no
 | [Data Operations](data-operations.md) | 40+ | String, list, dict, math operations |
 | [File Operations](file-operations.md) | 20+ | Read/write files, CSV, JSON, ZIP |
 | Desktop | 30+ | Windows UI automation |
-| Database | 10+ | SQL queries, transactions |
 | HTTP | 8+ | REST API requests |
 | Email | 10+ | SMTP, IMAP email operations |
 | Messaging | 15+ | Telegram, WhatsApp integration |
-| Google | 50+ | Sheets, Drive, Gmail, Calendar, Docs |
+| Google | 50+ | Sheets, Drive, Gmail |
 | System | 25+ | Clipboard, commands, dialogs |
 | Script | 5+ | Python, JavaScript, batch scripts |
 | PDF | 6+ | Read, merge, split PDFs |
 | FTP | 10+ | FTP file transfers |
-| LLM | 15+ | AI/LLM integrations |
 | Trigger | 20+ | Workflow triggers (webhook, schedule) |
+
 
 ## Node Anatomy
 

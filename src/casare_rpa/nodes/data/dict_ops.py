@@ -5,8 +5,6 @@ Re-exports dictionary operation nodes from casare_rpa.nodes.dict_nodes
 for consistent package organization.
 """
 
-from casare_rpa.domain.decorators import node, properties
-
 from casare_rpa.nodes.dict_nodes import (
     JsonParseNode,
     GetPropertyNode,

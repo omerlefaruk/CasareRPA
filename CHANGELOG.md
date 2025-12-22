@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2025-12-18
+
+### Removed
+
+- **Slack/Teams platform support** - Removed from chat triggers and webhook authentication
+  - `ChatTriggerNode` platform choices now: `web`, `discord`, `telegram` (removed `slack`, `teams`)
+  - `ChatTrigger` implementation no longer supports Slack/Teams payload parsing
+  - `WebhookTrigger` HMAC providers now: `github`, `stripe`, `generic` (removed `slack`)
+  - `WebhookAuthenticator` removed `X-Slack-Signature` header support
+- **Database/SQL node references** - Removed orphaned documentation references
+  - No production database nodes were present; only doc/manifest references cleaned
+
+### Changed
+
+- Updated documentation to remove Slack/Teams/Database examples
+- Chat trigger now focuses on Discord, Telegram, and custom webhooks
+
+---
+
 ## [3.0.0] - 2025-11-28
 
 ### Breaking Changes

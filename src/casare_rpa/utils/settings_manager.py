@@ -50,8 +50,8 @@ class SettingsManager:
             "cache_size_mb": 200,
         },
         "ai": {
-            "provider": "OpenAI",
-            "model": "gpt-4o-mini",
+            "provider": "Google",
+            "model": "gemini-3-flash-preview",
             "credential_id": "auto",
             "debug_mode": False,
         },
@@ -99,11 +99,7 @@ class SettingsManager:
 
         # Deep merge
         for key, value in settings.items():
-            if (
-                key in merged
-                and isinstance(merged[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
                 merged[key].update(value)
             else:
                 merged[key] = value

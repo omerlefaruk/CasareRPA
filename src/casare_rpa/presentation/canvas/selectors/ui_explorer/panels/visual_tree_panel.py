@@ -233,7 +233,7 @@ class VisualTreeItem(QTreeWidgetItem):
 
             # Add child items
             for child_element in children[:100]:  # Limit to 100 children
-                child_item = VisualTreeItem(
+                VisualTreeItem(
                     child_element,
                     parent=self,
                     load_children_callback=self._load_children_callback,
@@ -242,9 +242,7 @@ class VisualTreeItem(QTreeWidgetItem):
             self._children_loaded = True
             self.element.children_loaded = True
 
-            logger.debug(
-                f"Loaded {len(children)} children for {self.element.short_name}"
-            )
+            logger.debug(f"Loaded {len(children)} children for {self.element.short_name}")
 
         except Exception as e:
             logger.error(f"Failed to load children: {e}")

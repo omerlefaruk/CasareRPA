@@ -1,0 +1,94 @@
+{
+    "metadata": {
+        "name": "Batch 5.1 - Utility Nodes",
+        "description": "Tests LogNode, CommentNode, DebugBreakpointNode, RandomNumberNode, RandomStringNode, RandomUUIDNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "random_number": {
+            "node_id": "random_number",
+            "node_type": "RandomNumberNode",
+            "config": {
+                "min_value": 1,
+                "max_value": 100
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "random_string": {
+            "node_id": "random_string",
+            "node_type": "RandomStringNode",
+            "config": {
+                "length": 10
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "random_uuid": {
+            "node_id": "random_uuid",
+            "node_type": "RandomUUIDNode",
+            "config": {},
+            "position": [
+                800,
+                0
+            ]
+        },
+        "comment_node": {
+            "node_id": "comment_node",
+            "node_type": "CommentNode",
+            "config": {
+                "comment": "This is a test comment"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Utility tests passed! Random: {{random_number.result}}, UUID: {{random_uuid.uuid}}"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "random_number",
+            "source_port": "exec_out",
+            "target_node": "random_string",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_string",
+            "source_port": "exec_out",
+            "target_node": "random_uuid",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_uuid",
+            "source_port": "exec_out",
+            "target_node": "comment_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "comment_node",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

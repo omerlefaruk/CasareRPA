@@ -21,7 +21,6 @@ from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     DataType,
@@ -136,14 +135,13 @@ class ReadCSVNode(BaseNode):
             skip_rows = self.get_parameter("skip_rows", 0)
             max_rows = self.get_parameter("max_rows", 0)
             strict = self.get_parameter("strict", False)
-            doublequote = self.get_parameter("doublequote", True)
-            escapechar = self.get_parameter("escapechar", None)
+            self.get_parameter("doublequote", True)
+            self.get_parameter("escapechar", None)
 
             if not file_path:
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
@@ -156,9 +154,7 @@ class ReadCSVNode(BaseNode):
             data = []
             headers = []
 
-            logger.info(
-                f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})"
-            )
+            logger.info(f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})")
 
             # Use async file operations for non-blocking I/O
             data, headers = await AsyncFileOperations.read_csv(
@@ -178,9 +174,7 @@ class ReadCSVNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(
-                f"CSV read successfully: {len(data)} rows, {len(headers)} columns"
-            )
+            logger.info(f"CSV read successfully: {len(data)} rows, {len(headers)} columns")
 
             return {
                 "success": True,
@@ -254,10 +248,9 @@ class WriteCSVNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            data = context.resolve_value(data) or []
-            headers = context.resolve_value(headers) if headers else None
+            data = data or []
+            headers = headers if headers else None
 
             # SECURITY: Validate path before access
             allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
@@ -342,7 +335,6 @@ class ReadJSONFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before access
@@ -372,8 +364,7 @@ class ReadJSONFileNode(BaseNode):
             import json
 
             if isinstance(e, json.JSONDecodeError) or (
-                hasattr(e, "__cause__")
-                and isinstance(e.__cause__, json.JSONDecodeError)
+                hasattr(e, "__cause__") and isinstance(e.__cause__, json.JSONDecodeError)
             ):
                 return {
                     "success": False,
@@ -438,9 +429,7 @@ class WriteJSONFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path and data
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            data = context.resolve_value(data)
 
             # SECURITY: Validate path before access
             allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
@@ -550,20 +539,15 @@ class ZipFilesNode(BaseNode):
                 raise ValueError("zip_path is required")
 
             # Resolve {{variable}} patterns and environment variables
-            zip_path = context.resolve_value(zip_path)
             zip_path = os.path.expandvars(zip_path)
             if source_path:
-                source_path = context.resolve_value(source_path)
                 source_path = os.path.expandvars(source_path)
             if base_dir:
-                base_dir = context.resolve_value(base_dir)
                 base_dir = os.path.expandvars(base_dir)
 
             # SECURITY: Validate output zip path before access
             allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
-            zip_validated_path = validate_path_security(
-                zip_path, "write", allow_dangerous
-            )
+            zip_validated_path = validate_path_security(zip_path, "write", allow_dangerous)
 
             # Auto-discover files from source_path if files list is empty
             if not files and source_path:
@@ -575,16 +559,10 @@ class ZipFilesNode(BaseNode):
                     # Auto-set base_dir to the folder if not specified
                     if not base_dir:
                         base_dir = str(source)
-                    logger.info(
-                        f"Auto-discovered {len(files)} files from folder: {source}"
-                    )
+                    logger.info(f"Auto-discovered {len(files)} files from folder: {source}")
                 elif "*" in source_path or "?" in source_path:
                     # It's a glob pattern
-                    files = [
-                        f
-                        for f in glob.glob(source_path, recursive=True)
-                        if Path(f).is_file()
-                    ]
+                    files = [f for f in glob.glob(source_path, recursive=True) if Path(f).is_file()]
                     # For glob patterns, use parent of the pattern as base_dir if not specified
                     if not base_dir:
                         # Find the first non-glob part of the path
@@ -613,9 +591,7 @@ class ZipFilesNode(BaseNode):
                 )
 
             zip_compression = (
-                zipfile.ZIP_DEFLATED
-                if compression == "ZIP_DEFLATED"
-                else zipfile.ZIP_STORED
+                zipfile.ZIP_DEFLATED if compression == "ZIP_DEFLATED" else zipfile.ZIP_STORED
             )
 
             # Use the security-validated path
@@ -625,9 +601,7 @@ class ZipFilesNode(BaseNode):
             file_count = 0
             base = Path(base_dir) if base_dir else None
 
-            with zipfile.ZipFile(
-                zip_validated_path, "w", compression=zip_compression
-            ) as zf:
+            with zipfile.ZipFile(zip_validated_path, "w", compression=zip_compression) as zf:
                 for file_path in files:
                     fp = Path(file_path)
                     if not fp.exists():
@@ -647,9 +621,7 @@ class ZipFilesNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(
-                f"Created ZIP archive: {zip_validated_path} with {file_count} files"
-            )
+            logger.info(f"Created ZIP archive: {zip_validated_path} with {file_count} files")
 
             return {
                 "success": True,
@@ -722,9 +694,7 @@ class UnzipFilesNode(BaseNode):
                 raise ValueError("extract_to is required")
 
             # Resolve {{variable}} patterns and environment variables in zip_path and extract_to
-            zip_path = context.resolve_value(zip_path)
             zip_path = os.path.expandvars(zip_path)
-            extract_to = context.resolve_value(extract_to)
             extract_to = os.path.expandvars(extract_to)
 
             # SECURITY: Validate paths

@@ -85,8 +85,6 @@ class EmbeddingNode(LLMBaseNode):
         )
 
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -192,9 +190,6 @@ class VectorStoreAddNode(LLMBaseNode):
         documents = self.get_parameter("documents")
         collection = self.get_parameter("collection") or "default"
         embeddings = self.get_parameter("embeddings")
-
-        if hasattr(context, "resolve_value"):
-            collection = context.resolve_value(collection)
 
         if not documents:
             self.set_output_value("success", False)
@@ -329,8 +324,6 @@ class VectorSearchNode(LLMBaseNode):
         from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 
         query = self.get_parameter("query")
-        if hasattr(context, "resolve_value"):
-            query = context.resolve_value(query)
 
         if not query:
             self.set_output_value("success", False)
@@ -342,9 +335,6 @@ class VectorSearchNode(LLMBaseNode):
         top_k = self.get_parameter("top_k") or 5
         filter_dict = self.get_parameter("filter")
         query_embedding = self.get_parameter("query_embedding")
-
-        if hasattr(context, "resolve_value"):
-            collection = context.resolve_value(collection)
 
         try:
             store = get_vector_store()
@@ -377,10 +367,7 @@ class VectorSearchNode(LLMBaseNode):
             self.set_output_value("success", True)
             self.set_output_value("error", "")
 
-            logger.info(
-                f"Vector search: query='{query[:30]}...', "
-                f"results={len(results_list)}"
-            )
+            logger.info(f"Vector search: query='{query[:30]}...', " f"results={len(results_list)}")
 
             return {
                 "success": True,
@@ -498,8 +485,6 @@ Answer:"""
         from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 
         question = self.get_parameter("question")
-        if hasattr(context, "resolve_value"):
-            question = context.resolve_value(question)
 
         if not question:
             self.set_output_value("success", False)
@@ -508,19 +493,12 @@ Answer:"""
 
         collection = self.get_parameter("collection") or "default"
         top_k = self.get_parameter("top_k") or 3
-        prompt_template = (
-            self.get_parameter("prompt_template") or self.DEFAULT_RAG_TEMPLATE
-        )
+        prompt_template = self.get_parameter("prompt_template") or self.DEFAULT_RAG_TEMPLATE
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.7
         max_tokens = self.get_parameter("max_tokens") or 1000
         system_prompt = self.get_parameter("system_prompt")
-
-        if hasattr(context, "resolve_value"):
-            collection = context.resolve_value(collection)
-            prompt_template = context.resolve_value(prompt_template)
-            model = context.resolve_value(model)
 
         try:
             # Step 1: Retrieve relevant documents
@@ -548,9 +526,7 @@ Answer:"""
                 )
 
             context_text = (
-                "\n\n".join(context_parts)
-                if context_parts
-                else "No relevant context found."
+                "\n\n".join(context_parts) if context_parts else "No relevant context found."
             )
 
             # Step 2: Build prompt with context

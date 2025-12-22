@@ -1,0 +1,278 @@
+{
+    "metadata": {
+        "name": "Batch 8.2 - Google Sheets Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "sheets_create": {
+            "node_id": "sheets_create",
+            "node_type": "SheetsCreateSpreadsheetNode",
+            "config": {
+                "title": "Test Sheet"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "sheets_get": {
+            "node_id": "sheets_get",
+            "node_type": "SheetsGetSpreadsheetNode",
+            "config": {
+                "spreadsheet_id": "test_id"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "sheets_get_cell": {
+            "node_id": "sheets_get_cell",
+            "node_type": "SheetsGetCellNode",
+            "config": {
+                "cell": "A1"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "sheets_set_cell": {
+            "node_id": "sheets_set_cell",
+            "node_type": "SheetsSetCellNode",
+            "config": {
+                "cell": "A1",
+                "value": "Test"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "sheets_get_range": {
+            "node_id": "sheets_get_range",
+            "node_type": "SheetsGetRangeNode",
+            "config": {
+                "range": "A1:B10"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "sheets_write_range": {
+            "node_id": "sheets_write_range",
+            "node_type": "SheetsWriteRangeNode",
+            "config": {
+                "range": "A1:B10"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "sheets_append_row": {
+            "node_id": "sheets_append_row",
+            "node_type": "SheetsAppendRowNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "sheets_insert_row": {
+            "node_id": "sheets_insert_row",
+            "node_type": "SheetsInsertRowNode",
+            "config": {
+                "row": 1
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "sheets_delete_row": {
+            "node_id": "sheets_delete_row",
+            "node_type": "SheetsDeleteRowNode",
+            "config": {
+                "row": 1
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "sheets_insert_col": {
+            "node_id": "sheets_insert_col",
+            "node_type": "SheetsInsertColumnNode",
+            "config": {
+                "column": 1
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "sheets_delete_col": {
+            "node_id": "sheets_delete_col",
+            "node_type": "SheetsDeleteColumnNode",
+            "config": {
+                "column": 1
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "sheets_add_sheet": {
+            "node_id": "sheets_add_sheet",
+            "node_type": "SheetsAddSheetNode",
+            "config": {
+                "title": "New Sheet"
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "sheets_delete_sheet": {
+            "node_id": "sheets_delete_sheet",
+            "node_type": "SheetsDeleteSheetNode",
+            "config": {
+                "sheet_id": 0
+            },
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "sheets_clear": {
+            "node_id": "sheets_clear",
+            "node_type": "SheetsClearRangeNode",
+            "config": {
+                "range": "A1:B10"
+            },
+            "position": [
+                5200,
+                0
+            ]
+        },
+        "sheets_format": {
+            "node_id": "sheets_format",
+            "node_type": "SheetsFormatCellsNode",
+            "config": {},
+            "position": [
+                5600,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Sheets nodes tested!"
+            },
+            "position": [
+                6000,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "sheets_create",
+            "source_port": "exec_out",
+            "target_node": "sheets_get",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_get",
+            "source_port": "exec_out",
+            "target_node": "sheets_get_cell",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_get_cell",
+            "source_port": "exec_out",
+            "target_node": "sheets_set_cell",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_set_cell",
+            "source_port": "exec_out",
+            "target_node": "sheets_get_range",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_get_range",
+            "source_port": "exec_out",
+            "target_node": "sheets_write_range",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_write_range",
+            "source_port": "exec_out",
+            "target_node": "sheets_append_row",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_append_row",
+            "source_port": "exec_out",
+            "target_node": "sheets_insert_row",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_insert_row",
+            "source_port": "exec_out",
+            "target_node": "sheets_delete_row",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_delete_row",
+            "source_port": "exec_out",
+            "target_node": "sheets_insert_col",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_insert_col",
+            "source_port": "exec_out",
+            "target_node": "sheets_delete_col",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_delete_col",
+            "source_port": "exec_out",
+            "target_node": "sheets_add_sheet",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_add_sheet",
+            "source_port": "exec_out",
+            "target_node": "sheets_delete_sheet",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_delete_sheet",
+            "source_port": "exec_out",
+            "target_node": "sheets_clear",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_clear",
+            "source_port": "exec_out",
+            "target_node": "sheets_format",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_format",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

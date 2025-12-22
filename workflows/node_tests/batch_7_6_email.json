@@ -1,0 +1,160 @@
+{
+    "metadata": {
+        "name": "Batch 7.6 - Email Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "send_email": {
+            "node_id": "send_email",
+            "node_type": "SendEmailNode",
+            "config": {
+                "to": "test@example.com",
+                "subject": "Test",
+                "body": "Hello"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "read_emails": {
+            "node_id": "read_emails",
+            "node_type": "ReadEmailsNode",
+            "config": {
+                "folder": "INBOX"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "delete_email": {
+            "node_id": "delete_email",
+            "node_type": "DeleteEmailNode",
+            "config": {},
+            "position": [
+                800,
+                0
+            ]
+        },
+        "mark_email": {
+            "node_id": "mark_email",
+            "node_type": "MarkEmailNode",
+            "config": {
+                "as_read": true
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "move_email": {
+            "node_id": "move_email",
+            "node_type": "MoveEmailNode",
+            "config": {
+                "folder": "Archive"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "filter_emails": {
+            "node_id": "filter_emails",
+            "node_type": "FilterEmailsNode",
+            "config": {
+                "subject_contains": "Invoice"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "get_email_content": {
+            "node_id": "get_email_content",
+            "node_type": "GetEmailContentNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "save_attachment": {
+            "node_id": "save_attachment",
+            "node_type": "SaveAttachmentNode",
+            "config": {
+                "path": "C:\\temp"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Email nodes tested!"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "send_email",
+            "source_port": "exec_out",
+            "target_node": "read_emails",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "read_emails",
+            "source_port": "exec_out",
+            "target_node": "delete_email",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "delete_email",
+            "source_port": "exec_out",
+            "target_node": "mark_email",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "mark_email",
+            "source_port": "exec_out",
+            "target_node": "move_email",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "move_email",
+            "source_port": "exec_out",
+            "target_node": "filter_emails",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "filter_emails",
+            "source_port": "exec_out",
+            "target_node": "get_email_content",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_email_content",
+            "source_port": "exec_out",
+            "target_node": "save_attachment",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "save_attachment",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

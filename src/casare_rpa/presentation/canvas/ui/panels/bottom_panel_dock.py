@@ -29,6 +29,12 @@ from casare_rpa.presentation.canvas.theme import THEME
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult
     from casare_rpa.domain.events import DomainEvent
+    from .variables_tab import VariablesTab
+    from .output_tab import OutputTab
+    from .log_tab import LogTab
+    from .validation_tab import ValidationTab
+    from .history_tab import HistoryTab
+    from .terminal_tab import TerminalTab
 
 
 class BottomPanelDock(QDockWidget):
@@ -122,9 +128,7 @@ class BottomPanelDock(QDockWidget):
         """Set up the user interface."""
         # Main container widget with expanding size policy
         container = QWidget()
-        container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -135,9 +139,7 @@ class BottomPanelDock(QDockWidget):
         self._tab_widget.setDocumentMode(True)
         self._tab_widget.setUsesScrollButtons(True)
         self._tab_widget.setMovable(False)  # Fixed tab order for consistency
-        self._tab_widget.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self._tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Create tabs
         self._create_tabs()
@@ -159,16 +161,12 @@ class BottomPanelDock(QDockWidget):
         self._variables_tab.variables_changed.connect(self._on_variables_changed)
         self._variables_tab.variables_changed.connect(self._update_tab_badges)
         self._tab_widget.addTab(self._variables_tab, "Variables")
-        self._tab_widget.setTabToolTip(
-            self.TAB_VARIABLES, "Workflow variables (Ctrl+Shift+V)"
-        )
+        self._tab_widget.setTabToolTip(self.TAB_VARIABLES, "Workflow variables (Ctrl+Shift+V)")
 
         # Output tab
         self._output_tab = OutputTab()
         self._tab_widget.addTab(self._output_tab, "Output")
-        self._tab_widget.setTabToolTip(
-            self.TAB_OUTPUT, "Workflow outputs and return values"
-        )
+        self._tab_widget.setTabToolTip(self.TAB_OUTPUT, "Workflow outputs and return values")
 
         # Log tab
         self._log_tab = LogTab()
@@ -178,9 +176,7 @@ class BottomPanelDock(QDockWidget):
 
         # Validation tab
         self._validation_tab = ValidationTab()
-        self._validation_tab.validation_requested.connect(
-            self.validation_requested.emit
-        )
+        self._validation_tab.validation_requested.connect(self.validation_requested.emit)
         self._validation_tab.repair_requested.connect(self.repair_requested.emit)
         self._validation_tab.issue_clicked.connect(self.issue_clicked.emit)
         self._tab_widget.addTab(self._validation_tab, "Validation")
@@ -193,9 +189,7 @@ class BottomPanelDock(QDockWidget):
         self._history_tab.node_selected.connect(self.navigate_to_node.emit)
         self._history_tab.clear_requested.connect(self._on_history_clear_requested)
         self._tab_widget.addTab(self._history_tab, "History")
-        self._tab_widget.setTabToolTip(
-            self.TAB_HISTORY, "Execution history with timing"
-        )
+        self._tab_widget.setTabToolTip(self.TAB_HISTORY, "Execution history with timing")
 
         # Terminal tab (raw stdout/stderr output)
         self._terminal_tab = TerminalTab()
@@ -222,9 +216,7 @@ class BottomPanelDock(QDockWidget):
 
         # Log tab - show count if > 0
         log_count = (
-            self._log_tab.get_entry_count()
-            if hasattr(self._log_tab, "get_entry_count")
-            else 0
+            self._log_tab.get_entry_count() if hasattr(self._log_tab, "get_entry_count") else 0
         )
         log_title = f"Log ({log_count})" if log_count > 0 else "Log"
         self._tab_widget.setTabText(self.TAB_LOG, log_title)
@@ -427,9 +419,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Output API ====================
 
-    def add_output(
-        self, name: str, value: Any, timestamp: Optional[str] = None
-    ) -> None:
+    def add_output(self, name: str, value: Any, timestamp: Optional[str] = None) -> None:
         """
         Add an output to the Output tab.
 
@@ -468,9 +458,7 @@ class BottomPanelDock(QDockWidget):
         self._log_tab.log_event(event)
         self._update_tab_badges()
 
-    def log_message(
-        self, message: str, level: str = "info", node_id: Optional[str] = None
-    ) -> None:
+    def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
         """
         Log a custom message.
 

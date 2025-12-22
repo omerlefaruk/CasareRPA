@@ -116,10 +116,6 @@ class AIDecisionTableNode(LLMBaseNode):
         decision_table = self.get_parameter("decision_table")
         eval_context = self.get_parameter("context")
 
-        if hasattr(context, "resolve_value"):
-            decision_table = context.resolve_value(decision_table)
-            eval_context = context.resolve_value(eval_context)
-
         # Parse decision table if string
         if isinstance(decision_table, str):
             try:
@@ -158,9 +154,6 @@ class AIDecisionTableNode(LLMBaseNode):
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.0
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         # Format rules for prompt
         rules_str = self._format_rules_for_prompt(rules)
@@ -260,9 +253,7 @@ Return ONLY the JSON, no other text."""
             priority = rule.get("priority", 0)
 
             cond_str = ", ".join(f"{k}={v}" for k, v in conditions.items())
-            lines.append(
-                f"Rule {i}: IF ({cond_str}) THEN action='{action}' [priority={priority}]"
-            )
+            lines.append(f"Rule {i}: IF ({cond_str}) THEN action='{action}' [priority={priority}]")
 
         return "\n".join(lines)
 

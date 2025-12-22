@@ -107,10 +107,6 @@ class AIConditionNode(LLMBaseNode):
         condition = self.get_parameter("condition")
         eval_context = self.get_parameter("context")
 
-        if hasattr(context, "resolve_value"):
-            condition = context.resolve_value(condition)
-            eval_context = context.resolve_value(eval_context)
-
         if not condition:
             self._set_condition_error("Condition is required")
             return {
@@ -130,9 +126,6 @@ class AIConditionNode(LLMBaseNode):
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.0
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         prompt = f"""Evaluate the following condition against the given context.
 

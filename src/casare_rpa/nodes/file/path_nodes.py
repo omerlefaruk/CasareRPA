@@ -95,7 +95,6 @@ class FileExistsNode(BaseNode):
                 raise ValueError("path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only, allows system paths)
@@ -196,7 +195,6 @@ class GetFileSizeNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only)
@@ -291,7 +289,6 @@ class GetFileInfoNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path (read-only)
@@ -302,12 +299,8 @@ class GetFileInfoNode(BaseNode):
             stat = path.stat()
 
             self.set_output_value("size", stat.st_size)
-            self.set_output_value(
-                "created", datetime.fromtimestamp(stat.st_ctime).isoformat()
-            )
-            self.set_output_value(
-                "modified", datetime.fromtimestamp(stat.st_mtime).isoformat()
-            )
+            self.set_output_value("created", datetime.fromtimestamp(stat.st_ctime).isoformat())
+            self.set_output_value("modified", datetime.fromtimestamp(stat.st_mtime).isoformat())
             self.set_output_value("extension", path.suffix)
             self.set_output_value("name", path.name)
             self.set_output_value("parent", str(path.parent))

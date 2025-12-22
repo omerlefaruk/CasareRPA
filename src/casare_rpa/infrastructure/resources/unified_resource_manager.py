@@ -299,9 +299,7 @@ class BrowserPool:
         self.max_size = max_size
         self._headless = headless
         self._browser: Optional["Browser"] = None
-        self._available_contexts: LRUResourceCache["BrowserContext"] = LRUResourceCache(
-            max_size
-        )
+        self._available_contexts: LRUResourceCache["BrowserContext"] = LRUResourceCache(max_size)
         self._in_use_contexts: Dict[str, "BrowserContext"] = {}  # job_id -> context
         self._lock = asyncio.Lock()
         self._started = False
@@ -316,9 +314,7 @@ class BrowserPool:
             from playwright.async_api import async_playwright
 
             self._playwright = await async_playwright().start()
-            self._browser = await self._playwright.chromium.launch(
-                headless=self._headless
-            )
+            self._browser = await self._playwright.chromium.launch(headless=self._headless)
             self._started = True
             logger.info(f"Browser pool started (max_size={self.max_size})")
         except ImportError:
@@ -368,9 +364,7 @@ class BrowserPool:
             self._started = False
             logger.info("Browser pool stopped")
 
-    async def acquire(
-        self, job_id: str, timeout: float = 30.0
-    ) -> Optional["BrowserContext"]:
+    async def acquire(self, job_id: str, timeout: float = 30.0) -> Optional["BrowserContext"]:
         """
         Acquire a browser context for a job.
 
@@ -403,18 +397,14 @@ class BrowserPool:
                     return context
 
                 # Create new context if under limit
-                total_contexts = self._available_contexts.size + len(
-                    self._in_use_contexts
-                )
+                total_contexts = self._available_contexts.size + len(self._in_use_contexts)
                 if total_contexts < self.max_size:
                     try:
                         context = await self._browser.new_context()
                         self._in_use_contexts[job_id] = context
                         self._stats.resources_created += 1
                         self._stats.leases_granted += 1
-                        logger.debug(
-                            f"Created new browser context for job {job_id[:8]}"
-                        )
+                        logger.debug(f"Created new browser context for job {job_id[:8]}")
                         return context
                     except Exception as e:
                         logger.error(f"Failed to create browser context: {e}")
@@ -658,9 +648,7 @@ class HTTPPool:
 
         self.max_size = max_size
         self._sessions: Dict[str, UnifiedHttpClient] = {}  # job_id -> client
-        self._available_sessions: LRUResourceCache[UnifiedHttpClient] = (
-            LRUResourceCache(max_size)
-        )
+        self._available_sessions: LRUResourceCache[UnifiedHttpClient] = LRUResourceCache(max_size)
         self._lock = asyncio.Lock()
         self._started = False
         self._stats = PoolStatistics()
@@ -952,9 +940,7 @@ class UnifiedResourceManager:
             True if within quota, False otherwise
         """
         current_leases = self.active_leases.get(job_id, [])
-        count = sum(
-            1 for lease in current_leases if lease.resource_type == resource_type
-        )
+        count = sum(1 for lease in current_leases if lease.resource_type == resource_type)
 
         limits = {
             ResourceType.BROWSER: self.quota.max_browsers,
@@ -965,9 +951,7 @@ class UnifiedResourceManager:
         limit = limits.get(resource_type, 0)
         return count < limit
 
-    def analyze_workflow_needs(
-        self, workflow_json: Union[str, Dict]
-    ) -> Dict[str, bool]:
+    def analyze_workflow_needs(self, workflow_json: Union[str, Dict]) -> Dict[str, bool]:
         """
         Analyze workflow to determine required resources.
 
@@ -1007,12 +991,6 @@ class UnifiedResourceManager:
                 "ScreenshotNode",
             }
 
-            db_node_types = {
-                "SQLQueryNode",
-                "SQLExecuteNode",
-                "DatabaseConnectionNode",
-            }
-
             http_node_types = {
                 "HTTPRequestNode",
                 "RESTAPINode",
@@ -1024,8 +1002,6 @@ class UnifiedResourceManager:
                 node_type = node.get("node_type") or node.get("type", "")
                 if node_type in browser_node_types:
                     needs_browser = True
-                if node_type in db_node_types:
-                    needs_database = True
                 if node_type in http_node_types:
                     needs_http = True
 
@@ -1121,9 +1097,7 @@ class UnifiedResourceManager:
                             )
                         )
                         self._stats.leases_granted += 1
-                        logger.debug(
-                            f"Pre-warmed database connection for job {job_id[:8]}"
-                        )
+                        logger.debug(f"Pre-warmed database connection for job {job_id[:8]}")
                     else:
                         self._stats.degradations += 1
                         logger.warning(

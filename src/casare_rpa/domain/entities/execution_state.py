@@ -54,9 +54,7 @@ class ExecutionState:
         self._project_context = project_context
 
         # Variable storage - build hierarchy from project context + initial variables
-        self.variables: Dict[str, Any] = self._build_variable_hierarchy(
-            initial_variables
-        )
+        self.variables: Dict[str, Any] = self._build_variable_hierarchy(initial_variables)
         if self.variables:
             logger.info(
                 f"Initialized with {len(self.variables)} variables: {list(self.variables.keys())}"
@@ -68,9 +66,7 @@ class ExecutionState:
         self.errors: List[tuple[NodeId, str]] = []  # Track errors
         self.stopped: bool = False
 
-    def _build_variable_hierarchy(
-        self, runtime_vars: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _build_variable_hierarchy(self, runtime_vars: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Build variables dict with proper scoping hierarchy.
 
@@ -211,9 +207,9 @@ class ExecutionState:
             >>> state.resolve_value("https://{{website}}")
             "https://google.com"
         """
-        from casare_rpa.domain.variable_resolver import resolve_variables
+        from casare_rpa.domain.services.variable_resolver import resolve_any
 
-        return resolve_variables(value, self.variables)
+        return resolve_any(value, self.variables)
 
     def set_current_node(self, node_id: NodeId) -> None:
         """
@@ -290,9 +286,7 @@ class ExecutionState:
             "workflow_name": self.workflow_name,
             "mode": self.mode.name,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat()
-            if self.completed_at
-            else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "duration_seconds": duration,
             "nodes_executed": len(self.execution_path),
             "execution_path": self.execution_path,

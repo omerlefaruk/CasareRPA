@@ -157,9 +157,7 @@ class WriteFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path and content
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            content = context.resolve_value(content)
 
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "write", allow_dangerous)
@@ -322,9 +320,7 @@ class AppendFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path and content
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
-            content = context.resolve_value(content)
 
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "append", allow_dangerous)

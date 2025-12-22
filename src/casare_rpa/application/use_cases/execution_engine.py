@@ -5,13 +5,10 @@ A reusable execution engine that handles the core workflow execution loop.
 Consolidates logic from ExecuteWorkflowUseCase and SubflowExecutor.
 """
 
-import asyncio
-from collections import deque
 from typing import Any, Callable, Dict, List, Optional, Set, Protocol
 
 from loguru import logger
 
-from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.value_objects.types import NodeId
 from casare_rpa.domain.interfaces import IExecutionContext
@@ -150,22 +147,15 @@ class WorkflowExecutionEngine:
             if exec_result.result:
                 # Handle Parallel Branches
                 if "parallel_branches" in exec_result.result and self.parallel_strategy:
-                    await self.parallel_strategy.execute_parallel_branches(
-                        exec_result.result
-                    )
+                    await self.parallel_strategy.execute_parallel_branches(exec_result.result)
                     join_id = exec_result.result.get("paired_join_id")
                     if join_id:
                         queue.insert(0, join_id)
                     continue
 
                 # Handle Parallel Foreach
-                if (
-                    "parallel_foreach_batch" in exec_result.result
-                    and self.parallel_strategy
-                ):
-                    if hasattr(
-                        self.parallel_strategy, "execute_parallel_foreach_batch"
-                    ):
+                if "parallel_foreach_batch" in exec_result.result and self.parallel_strategy:
+                    if hasattr(self.parallel_strategy, "execute_parallel_foreach_batch"):
                         await self.parallel_strategy.execute_parallel_foreach_batch(
                             exec_result.result, curr_id
                         )

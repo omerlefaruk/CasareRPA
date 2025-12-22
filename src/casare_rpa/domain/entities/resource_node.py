@@ -48,23 +48,23 @@ class ResourceNode(BaseNode):
     shared resources.
 
     Examples:
-        - DatabaseConnectionNode -> connection pool
         - BrowserProfileNode -> browser settings
         - CredentialNode -> secure credential reference
+        - ConnectionPoolNode -> connection pool settings
 
     Usage:
         @node(
-            name="Database Connection",
-            category="database",
+            name=\"Browser Profile\",
+            category=\"browser\",
         )
         @properties(
-            PropertyDef("resource_name", STRING, required=True),
-            PropertyDef("host", STRING, default="localhost"),
-            PropertyDef("port", INTEGER, default=5432),
+            PropertyDef(\"resource_name\", STRING, required=True),
+            PropertyDef(\"headless\", BOOLEAN, default=True),
+            PropertyDef(\"timeout\", INTEGER, default=30000),
         )
-        class DatabaseConnectionNode(ResourceNode):
+        class BrowserProfileNode(ResourceNode):
             async def create_resource(self, context):
-                return await create_pool(...)
+                return await create_browser_context(...)
 
     Attributes:
         resource_id: Unique identifier for this resource instance

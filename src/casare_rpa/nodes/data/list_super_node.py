@@ -27,7 +27,7 @@ ListSuperNode (14 operations):
 """
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Awaitable, List
+from typing import TYPE_CHECKING, Any, Callable, Awaitable
 
 from loguru import logger
 
@@ -506,9 +506,7 @@ class ListSuperNode(BaseNode):
         action = self.get_parameter("action", ListAction.GET_ITEM.value)
 
         # Map actions to handlers
-        handlers: dict[
-            str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
             ListAction.CREATE.value: self._execute_create,
             ListAction.GET_ITEM.value: self._execute_get_item,
             ListAction.LENGTH.value: self._execute_length,
@@ -779,11 +777,7 @@ class ListSuperNode(BaseNode):
             result = []
             for item in input_list:
                 try:
-                    key = (
-                        item
-                        if not isinstance(item, dict)
-                        else tuple(sorted(item.items()))
-                    )
+                    key = item if not isinstance(item, dict) else tuple(sorted(item.items()))
                     if key not in seen:
                         seen.add(key)
                         result.append(item)
@@ -989,7 +983,6 @@ class ListSuperNode(BaseNode):
             input_list = []
 
         separator = self.get_parameter("separator", ", ")
-        separator = context.resolve_value(separator)
 
         result = separator.join(str(item) for item in input_list)
 

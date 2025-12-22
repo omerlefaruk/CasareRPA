@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import asyncio
 import functools
-import traceback
 from typing import Any, Callable, Dict, Optional, TypeVar, ParamSpec
 
 from loguru import logger

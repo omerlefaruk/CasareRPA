@@ -6,7 +6,7 @@ Includes variable changes, browser events, and log messages.
 Replaces EventType.VARIABLE_SET, BROWSER_PAGE_READY, LOG_MESSAGE enum values.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from casare_rpa.domain.events.base import DomainEvent

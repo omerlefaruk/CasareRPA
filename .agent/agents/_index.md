@@ -28,6 +28,14 @@ Refactor: explore → refactor → quality → reviewer
 Research: explore → researcher → docs
 ```
 
+## MCP Servers
+
+MCP servers are defined in `./.mcp.json`. Core local servers include:
+
+- `filesystem` (repo-scoped file operations)
+- `git` (repository inspection/operations)
+- `sequential-thinking` (structured reasoning)
+
 ## Usage Pattern
 
 ```python
@@ -36,6 +44,7 @@ Task(subagent_type="explore", prompt="Find authentication code")
 Task(subagent_type="architect", prompt="Design login feature")
 Task(subagent_type="builder", prompt="Implement login per plan")
 ```
+
 
 ## Cross-References
 

@@ -30,8 +30,8 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         PropertyType.JSON,
         required=True,
         label="Field Mapping",
-        placeholder='{"#email": "${email}", "#password": "${password}"}',
-        tooltip="JSON mapping of selectors to values. Use ${var} for variables.",
+        placeholder='{"#email": "{{email}}", "#password": "{{password}}"}',
+        tooltip="JSON mapping of selectors to values. Supports variables like {{var}}, ${var}, or %var%.",
     ),
     PropertyDef(
         "fast_mode",
@@ -88,7 +88,7 @@ class FormFillerNode(BrowserBaseNode):
     - Radio buttons (check based on truthy value)
     - Textareas (fill with text)
 
-    Variable substitution is supported using ${variable_name} syntax.
+    Variable substitution is supported using {{var}}, ${var}, or %var% syntax.
     """
 
     # @category: browser
@@ -137,9 +137,7 @@ class FormFillerNode(BrowserBaseNode):
         # Get field mapping from input ports or config
         # Priority: fields_in (array from FormFieldNode) > field_mapping port > config
         fields_array = self.get_input_value("fields_in")
-        logger.info(
-            f"FormFiller: fields_in = {fields_array}, type = {type(fields_array)}"
-        )
+        logger.info(f"FormFiller: fields_in = {fields_array}, type = {type(fields_array)}")
         logger.info(
             f"FormFiller: input_ports = {list(self.input_ports.keys()) if hasattr(self, 'input_ports') else 'N/A'}"
         )
@@ -201,7 +199,7 @@ class FormFillerNode(BrowserBaseNode):
                 continue
             # Normalize CasareRPA selectors (webctrl, itext, etc.) to Playwright format
             normalized_selector = normalize_selector(selector)
-            resolved_mapping[normalized_selector] = self._resolve_value(context, value)
+            resolved_mapping[normalized_selector] = self._normalize_numeric_value(value)
             # Preserve metadata with normalized selector key
             if selector in field_metadata:
                 resolved_metadata[normalized_selector] = field_metadata[selector]
@@ -243,31 +241,20 @@ class FormFillerNode(BrowserBaseNode):
                 errors = result.get("errors", [])
 
                 if errors:
-                    logger.warning(
-                        f"Fast mode: {len(errors)} fields failed: {errors[:3]}"
-                    )
+                    logger.warning(f"Fast mode: {len(errors)} fields failed: {errors[:3]}")
                 logger.info(
                     f"Fast mode: filled {filled_count}/{len(resolved_mapping)} fields via JS batch"
                 )
 
                 # Auto-fallback: If fast mode failed for most fields, try standard mode
-                if (
-                    filled_count < len(resolved_mapping) // 2
-                    and len(resolved_mapping) > 0
-                ):
+                if filled_count < len(resolved_mapping) // 2 and len(resolved_mapping) > 0:
                     logger.warning(
                         f"Fast mode only filled {filled_count}/{len(resolved_mapping)}, falling back to standard mode"
                     )
                     # Get unfilled selectors
-                    unfilled = {
-                        k: v
-                        for k, v in resolved_mapping.items()
-                        if k not in filled_data
-                    }
+                    unfilled = {k: v for k, v in resolved_mapping.items() if k not in filled_data}
                     unfilled_meta = {
-                        k: v
-                        for k, v in resolved_metadata.items()
-                        if k not in filled_data
+                        k: v for k, v in resolved_metadata.items() if k not in filled_data
                     }
                     if unfilled:
                         extra_count, extra_data = await self._fill_fields_standard(
@@ -350,9 +337,7 @@ class FormFillerNode(BrowserBaseNode):
                     await locator.wait_for(state="attached", timeout=fast_timeout)
                 except Exception:
                     # Element not found quickly - skip it
-                    errors.append(
-                        f"{selector[:30]}...: not found within {fast_timeout}ms"
-                    )
+                    errors.append(f"{selector[:30]}...: not found within {fast_timeout}ms")
                     return False
 
                 # Get per-field clear_first setting (defaults to True)
@@ -412,8 +397,7 @@ class FormFillerNode(BrowserBaseNode):
                     "selector": selector,
                     "value": str(value),
                     "clearFirst": field_meta.get("clear_first", True),
-                    "isXPath": selector.startswith("//")
-                    or selector.startswith("xpath="),
+                    "isXPath": selector.startswith("//") or selector.startswith("xpath="),
                 }
             )
 
@@ -548,9 +532,7 @@ class FormFillerNode(BrowserBaseNode):
                 try:
                     await locator.wait_for(state="attached", timeout=field_timeout)
                 except Exception:
-                    logger.debug(
-                        f"Field not found within {field_timeout}ms: {selector[:50]}..."
-                    )
+                    logger.debug(f"Field not found within {field_timeout}ms: {selector[:50]}...")
                     continue
 
                 # Get element handle for type detection
@@ -564,9 +546,7 @@ class FormFillerNode(BrowserBaseNode):
 
                 # Get element info
                 tag_name = await element.evaluate("e => e.tagName.toLowerCase()")
-                input_type = (
-                    await element.get_attribute("type") if tag_name == "input" else None
-                )
+                input_type = await element.get_attribute("type") if tag_name == "input" else None
 
                 # Fill based on element type
                 if tag_name == "select":
@@ -590,35 +570,6 @@ class FormFillerNode(BrowserBaseNode):
                 continue
 
         return filled_count, filled_data
-
-    def _resolve_value(self, context: ExecutionContext, value: Any) -> Any:
-        """
-        Resolve variable references in a value.
-
-        Supports {{variable_name}} and ${variable_name} syntax for variable substitution.
-
-        Args:
-            context: Execution context with variables
-            value: Value to resolve
-
-        Returns:
-            Resolved value (with float-to-int conversion for whole numbers)
-        """
-        if not isinstance(value, str):
-            return value
-
-        # Check if value contains variable references (both syntaxes)
-        if "{{" not in value and "${" not in value:
-            return value
-
-        # Resolve using context
-        resolved = context.resolve_value(value)
-
-        # Convert whole-number floats to int for cleaner form values
-        # e.g., 40716543298.0 -> 40716543298 (phone numbers from Excel)
-        resolved = self._normalize_numeric_value(resolved)
-
-        return resolved
 
     def _normalize_numeric_value(self, value: Any) -> Any:
         """

@@ -144,12 +144,8 @@ class ControllerRegistrar:
             return
 
         # When a project is opened, register it with autosave
-        mw._project_controller.project_opened.connect(
-            self._on_project_opened_for_autosave
-        )
-        mw._project_controller.project_closed.connect(
-            self._on_project_closed_for_autosave
-        )
+        mw._project_controller.project_opened.connect(self._on_project_opened_for_autosave)
+        mw._project_controller.project_closed.connect(self._on_project_closed_for_autosave)
 
     @Slot(object)
     def _on_project_opened_for_autosave(self, project) -> None:
@@ -211,7 +207,6 @@ class ControllerRegistrar:
         - Node controller signals to logging/debugging
         - Panel controller signals to UI feedback
         """
-        mw = self._main_window
 
         logger.debug("Connecting controller signals...")
 

@@ -176,18 +176,13 @@ class RunCommandNode(BaseNode):
             allow_dangerous = self.get_parameter("allow_dangerous", False)
 
             # Resolve {{variable}} patterns
-            command = context.resolve_value(command)
-            if working_dir:
-                working_dir = context.resolve_value(working_dir)
 
             if not command:
                 raise ValueError("command is required")
 
             # SECURITY: Extract base command for validation
             base_cmd = command.split()[0].lower() if command else ""
-            base_cmd = (
-                base_cmd.replace(".exe", "").replace(".cmd", "").replace(".bat", "")
-            )
+            base_cmd = base_cmd.replace(".exe", "").replace(".cmd", "").replace(".bat", "")
 
             # SECURITY: Block dangerous commands unless explicitly allowed
             if not allow_dangerous:
@@ -212,14 +207,10 @@ class RunCommandNode(BaseNode):
                 # When shell=True, concatenate as string (less safe)
                 if args:
                     if isinstance(args, list):
-                        command = (
-                            command + " " + " ".join(shlex.quote(str(a)) for a in args)
-                        )
+                        command = command + " " + " ".join(shlex.quote(str(a)) for a in args)
                     elif isinstance(args, str):
                         command = command + " " + args
-                logger.warning(
-                    f"RunCommandNode executing with shell=True: {command[:100]}..."
-                )
+                logger.warning(f"RunCommandNode executing with shell=True: {command[:100]}...")
             else:
                 # When shell=False, build command list (safer)
                 if isinstance(command, str):
@@ -427,7 +418,6 @@ class RunPowerShellNode(BaseNode):
             constrained_mode = self.get_parameter("constrained_mode", False)
 
             # Resolve {{variable}} patterns in script
-            script = context.resolve_value(script)
 
             if not script:
                 raise ValueError("script is required")
@@ -466,9 +456,7 @@ class RunPowerShellNode(BaseNode):
 
             ps_cmd.extend(["-Command", script])
 
-            result = subprocess.run(
-                ps_cmd, capture_output=True, text=True, timeout=timeout
-            )
+            result = subprocess.run(ps_cmd, capture_output=True, text=True, timeout=timeout)
 
             stdout = result.stdout
             stderr = result.stderr

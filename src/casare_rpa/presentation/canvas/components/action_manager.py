@@ -55,6 +55,14 @@ class ActionManager:
             mw._on_open_workflow,
         )
 
+        mw.action_reload = self._create_action(
+            "reload",
+            "&Reload",
+            QKeySequence("Ctrl+Shift+R"),
+            "Reload current workflow from disk (Ctrl+Shift+R)",
+            mw._on_reload_workflow,
+        )
+
         mw.action_save = self._create_action(
             "save",
             "&Save",
@@ -103,9 +111,7 @@ class ActionManager:
             "Redo the last undone action",
             enabled=False,
         )
-        mw.action_redo.setShortcuts(
-            [QKeySequence.StandardKey.Redo, QKeySequence("Ctrl+Shift+Z")]
-        )
+        mw.action_redo.setShortcuts([QKeySequence.StandardKey.Redo, QKeySequence("Ctrl+Shift+Z")])
 
         mw.action_cut = self._create_action(
             "cut", "Cu&t", QKeySequence.StandardKey.Cut, "Cut selected nodes"

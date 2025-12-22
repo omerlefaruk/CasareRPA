@@ -136,7 +136,6 @@ class ReadFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before any operation
@@ -152,9 +151,7 @@ class ReadFileNode(BaseNode):
                     f"File size ({size} bytes) exceeds max_size limit ({max_size} bytes)"
                 )
 
-            logger.info(
-                f"Reading file: {path} (binary={binary_mode}, encoding={encoding})"
-            )
+            logger.info(f"Reading file: {path} (binary={binary_mode}, encoding={encoding})")
 
             # Use async file operations for non-blocking I/O
             if binary_mode:
@@ -170,9 +167,7 @@ class ReadFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {
-                    "content": content[:100] + "..."
-                    if len(str(content)) > 100
-                    else content,
+                    "content": content[:100] + "..." if len(str(content)) > 100 else content,
                     "size": size,
                 },
                 "next_nodes": ["exec_out"],

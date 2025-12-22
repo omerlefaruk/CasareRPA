@@ -6,8 +6,6 @@ Anchors are stable reference elements (labels, headings) used to
 reliably find dynamic target elements relative to their position.
 """
 
-from casare_rpa.domain.decorators import node, properties
-
 from dataclasses import dataclass
 from typing import Dict, Any
 import json

@@ -88,8 +88,20 @@ class TestShakeToDetachManager:
             ShakeToDetachManager,
         )
 
+        # Mock QTimer to avoid Qt native code crashes in headless/offscreen mode
         with patch.object(ShakeToDetachManager, "_setup_event_filters"):
-            mgr = ShakeToDetachManager(mock_graph)
+            with patch(
+                "casare_rpa.presentation.canvas.connections.shake_to_detach.QTimer"
+            ) as mock_timer_cls:
+                mock_timer = MagicMock()
+                mock_timer.setSingleShot = MagicMock()
+                mock_timer.timeout = MagicMock()
+                mock_timer.timeout.connect = MagicMock()
+                mock_timer.start = MagicMock()
+                mock_timer_cls.return_value = mock_timer
+
+                mgr = ShakeToDetachManager(mock_graph)
+                mgr._feedback_timer = mock_timer
         return mgr
 
     def test_initial_state(self, manager):
@@ -108,9 +120,7 @@ class TestShakeToDetachManager:
 
     def test_set_sensitivity(self, manager):
         """Test configuring shake sensitivity."""
-        manager.set_sensitivity(
-            shake_threshold=6, time_window_ms=500, min_movement_px=20
-        )
+        manager.set_sensitivity(shake_threshold=6, time_window_ms=500, min_movement_px=20)
         assert manager._shake_threshold == 6
         assert manager._time_window_ms == 500
         assert manager._min_movement_px == 20

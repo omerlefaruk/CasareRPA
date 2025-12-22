@@ -201,24 +201,26 @@ class WorkflowQueryService:
             with open(workflow_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
+            metadata = data.get("metadata", {})
+            if not isinstance(metadata, dict):
+                metadata = {}
+
             # Extract workflow ID
-            workflow_id = data.get("id", workflow_file.stem)
+            workflow_id = workflow_file.stem
 
             # Extract name (with fallback to filename)
-            name = data.get("name", workflow_file.stem)
+            name = metadata.get("name", workflow_file.stem)
 
             # Count nodes
-            nodes = data.get("nodes", [])
-            node_count = len(nodes) if isinstance(nodes, list) else 0
+            nodes = data.get("nodes", {})
+            node_count = len(nodes) if isinstance(nodes, dict) else 0
 
             # Parse last modified
             last_modified = None
-            modified_str = data.get("last_modified") or data.get("modified_at")
+            modified_str = metadata.get("modified_at")
             if modified_str:
                 try:
-                    last_modified = datetime.fromisoformat(
-                        modified_str.replace("Z", "+00:00")
-                    )
+                    last_modified = datetime.fromisoformat(modified_str.replace("Z", "+00:00"))
                 except (ValueError, AttributeError):
                     pass
 
@@ -227,7 +229,7 @@ class WorkflowQueryService:
                 last_modified = datetime.fromtimestamp(workflow_file.stat().st_mtime)
 
             # Extract description
-            description = data.get("description", "")
+            description = metadata.get("description", "")
 
             return WorkflowListItemDTO(
                 id=workflow_id,

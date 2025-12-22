@@ -11,7 +11,7 @@ Provides a general-purpose text editor with:
 import re
 from typing import Any, Optional
 
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import (
     QColor,
     QKeyEvent,
@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.theme import Theme, THEME
+from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
@@ -167,9 +167,7 @@ class RichTextEditor(BaseExpressionEditor):
             self.VALIDATION_ERROR: c.error,
         }
         border_color = border_colors.get(self._validation_status, c.border)
-        border_width = (
-            "2px" if self._validation_status != self.VALIDATION_VALID else "1px"
-        )
+        border_width = "2px" if self._validation_status != self.VALIDATION_VALID else "1px"
 
         self._text_edit.setStyleSheet(f"""
             QTextEdit {{

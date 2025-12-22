@@ -8,8 +8,6 @@ Usage:
     from casare_rpa.nodes.file.structured import StructuredDataSuperNode, StructuredDataAction
 """
 
-from casare_rpa.domain.decorators import node, properties
-
 from casare_rpa.nodes.file.super_node import (
     StructuredDataAction,
     StructuredDataSuperNode,

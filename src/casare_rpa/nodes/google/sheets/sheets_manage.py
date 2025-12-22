@@ -110,22 +110,16 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
         """Create a new spreadsheet."""
         # Get parameters
         title = self.get_parameter("title")
-        if hasattr(context, "resolve_value"):
-            title = context.resolve_value(title)
 
         if not title:
             self._set_error_outputs("Spreadsheet title is required")
             return {"success": False, "error": "Title is required", "next_nodes": []}
 
         sheets = self.get_parameter("sheets")
-        if isinstance(sheets, str) and hasattr(context, "resolve_value"):
-            sheets = context.resolve_value(sheets)
         if not sheets:
             sheets = ["Sheet1"]
 
         locale = self.get_parameter("locale", "en_US")
-        if hasattr(context, "resolve_value"):
-            locale = context.resolve_value(locale)
 
         # Create spreadsheet
         result = await client.create_spreadsheet(
@@ -149,9 +143,7 @@ class SheetsCreateSpreadsheetNode(SheetsBaseNode):
                 "title": result.title,
                 "locale": result.locale,
                 "time_zone": result.time_zone,
-                "sheets": [
-                    s.get("properties", {}).get("title", "") for s in result.sheets
-                ],
+                "sheets": [s.get("properties", {}).get("title", "") for s in result.sheets],
             },
         )
 
@@ -308,8 +300,6 @@ class SheetsAddSheetNode(SheetsBaseNode):
             }
 
         sheet_name = self.get_parameter("sheet_name")
-        if hasattr(context, "resolve_value"):
-            sheet_name = context.resolve_value(sheet_name)
 
         if not sheet_name:
             self._set_error_outputs("Sheet name is required")
@@ -403,8 +393,6 @@ class SheetsDeleteSheetNode(SheetsBaseNode):
             }
 
         sheet_id = self.get_parameter("sheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
 
         if sheet_id is None:
             self._set_error_outputs("Sheet ID is required")
@@ -496,9 +484,7 @@ class SheetsCopySheetNode(SheetsBaseNode):
 
         self.add_input_port("source_spreadsheet_id", DataType.STRING, required=True)
         self.add_input_port("source_sheet_id", DataType.INTEGER, required=True)
-        self.add_input_port(
-            "destination_spreadsheet_id", DataType.STRING, required=True
-        )
+        self.add_input_port("destination_spreadsheet_id", DataType.STRING, required=True)
 
         self._define_common_output_ports()
         self.add_output_port("new_sheet_id", DataType.INTEGER)
@@ -511,8 +497,6 @@ class SheetsCopySheetNode(SheetsBaseNode):
     ) -> ExecutionResult:
         """Copy a sheet to another spreadsheet."""
         source_id = self.get_parameter("source_spreadsheet_id")
-        if hasattr(context, "resolve_value"):
-            source_id = context.resolve_value(source_id)
 
         if not source_id:
             self._set_error_outputs("Source spreadsheet ID is required")
@@ -523,8 +507,6 @@ class SheetsCopySheetNode(SheetsBaseNode):
             }
 
         sheet_id = self.get_parameter("source_sheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
 
         if sheet_id is None:
             self._set_error_outputs("Source sheet ID is required")
@@ -535,8 +517,6 @@ class SheetsCopySheetNode(SheetsBaseNode):
             }
 
         dest_id = self.get_parameter("destination_spreadsheet_id")
-        if hasattr(context, "resolve_value"):
-            dest_id = context.resolve_value(dest_id)
 
         if not dest_id:
             self._set_error_outputs("Destination spreadsheet ID is required")
@@ -632,8 +612,6 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
             }
 
         source_sheet_id = self.get_parameter("source_sheet_id")
-        if hasattr(context, "resolve_value"):
-            source_sheet_id = context.resolve_value(source_sheet_id)
 
         if source_sheet_id is None:
             self._set_error_outputs("Source sheet ID is required")
@@ -644,8 +622,6 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
             }
 
         new_name = self.get_parameter("new_sheet_name")
-        if new_name and hasattr(context, "resolve_value"):
-            new_name = context.resolve_value(new_name)
 
         insert_index = self.get_parameter("insert_index")
 
@@ -738,16 +714,12 @@ class SheetsRenameSheetNode(SheetsBaseNode):
             }
 
         sheet_id = self.get_parameter("sheet_id")
-        if hasattr(context, "resolve_value"):
-            sheet_id = context.resolve_value(sheet_id)
 
         if sheet_id is None:
             self._set_error_outputs("Sheet ID is required")
             return {"success": False, "error": "Sheet ID is required", "next_nodes": []}
 
         new_name = self.get_parameter("new_name")
-        if hasattr(context, "resolve_value"):
-            new_name = context.resolve_value(new_name)
 
         if not new_name:
             self._set_error_outputs("New name is required")

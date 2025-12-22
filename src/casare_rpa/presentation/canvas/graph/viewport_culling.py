@@ -16,6 +16,7 @@ from typing import Dict, Set, Tuple, Optional, List
 from PySide6.QtCore import QRectF, QObject, Signal
 
 from loguru import logger
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 
 # ============================================================================
@@ -166,9 +167,7 @@ class ViewportCullingManager(QObject):
     # Signal emitted when visibility changes
     visibility_changed = Signal(set, set)  # (visible_ids, hidden_ids)
 
-    def __init__(
-        self, cell_size: int = 500, margin: int = 1000, parent: Optional[QObject] = None
-    ):
+    def __init__(self, cell_size: int = 500, margin: int = 1000, parent: Optional[QObject] = None):
         """
         Initialize the viewport culling manager.
 
@@ -339,6 +338,13 @@ class ViewportCullingManager(QObject):
         # Emit signal if there were changes
         if newly_visible or newly_hidden:
             self.visibility_changed.emit(newly_visible, newly_hidden)
+            log_canvas_event(
+                "viewport_cull_update",
+                newly_visible=len(newly_visible),
+                newly_hidden=len(newly_hidden),
+                visible_nodes=len(self._visible_nodes),
+                total_nodes=len(self._all_nodes),
+            )
 
         return newly_visible, newly_hidden
 
@@ -404,11 +410,7 @@ class ViewportCullingManager(QObject):
                     source_id in self._visible_nodes or target_id in self._visible_nodes
                 )
 
-            if (
-                pipe_item
-                and hasattr(pipe_item, "setVisible")
-                and hasattr(pipe_item, "scene")
-            ):
+            if pipe_item and hasattr(pipe_item, "setVisible") and hasattr(pipe_item, "scene"):
                 if pipe_item.scene() is not None:
                     pipe_item.setVisible(should_be_visible)
 
@@ -420,11 +422,7 @@ class ViewportCullingManager(QObject):
     def _show_all_pipes(self) -> None:
         """Show all pipes (used when culling is disabled)."""
         for pipe_id, (_, _, pipe_item) in self._pipes.items():
-            if (
-                pipe_item
-                and hasattr(pipe_item, "setVisible")
-                and hasattr(pipe_item, "scene")
-            ):
+            if pipe_item and hasattr(pipe_item, "setVisible") and hasattr(pipe_item, "scene"):
                 if pipe_item.scene() is not None:
                     pipe_item.setVisible(True)
 

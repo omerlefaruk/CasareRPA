@@ -105,8 +105,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
 
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         try:
             message_id = int(message_id)
@@ -116,8 +114,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
 
         # Get new text
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self._set_error_outputs("Text is required")
@@ -125,8 +121,6 @@ class TelegramEditMessageNode(TelegramBaseNode):
 
         # Get optional params
         parse_mode = self.get_parameter("parse_mode")
-        if parse_mode and hasattr(context, "resolve_value"):
-            parse_mode = context.resolve_value(parse_mode)
 
         logger.debug(f"Editing Telegram message {message_id} in {chat_id}")
 
@@ -211,8 +205,6 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
 
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         try:
             message_id = int(message_id)
@@ -305,8 +297,6 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
 
         # Get media JSON
         media_json = self.get_parameter("media_json")
-        if hasattr(context, "resolve_value"):
-            media_json = context.resolve_value(media_json)
 
         if not media_json:
             self.set_output_value("success", False)
@@ -452,8 +442,6 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         """Answer a callback query."""
         # Get callback query ID
         callback_query_id = self.get_parameter("callback_query_id")
-        if hasattr(context, "resolve_value"):
-            callback_query_id = context.resolve_value(callback_query_id)
 
         if not callback_query_id:
             self.set_output_value("success", False)
@@ -466,14 +454,10 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
 
         # Get optional params
         text = self.get_parameter("text")
-        if text and hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         show_alert = self.get_parameter("show_alert") or False
 
         url = self.get_parameter("url")
-        if url and hasattr(context, "resolve_value"):
-            url = context.resolve_value(url)
 
         logger.debug(f"Answering Telegram callback: {callback_query_id}")
 
@@ -583,24 +567,19 @@ class TelegramGetUpdatesNode(TelegramBaseNode):
         """Get updates."""
         # Get optional params
         offset = self.get_parameter("offset")
-        if offset and hasattr(context, "resolve_value"):
-            offset = context.resolve_value(offset)
+        if offset:
             try:
                 offset = int(offset)
             except (TypeError, ValueError):
                 offset = None
 
         limit = self.get_parameter("limit") or 100
-        if hasattr(context, "resolve_value"):
-            limit = context.resolve_value(limit)
         try:
             limit = min(int(limit), 100)
         except (TypeError, ValueError):
             limit = 100
 
         timeout = self.get_parameter("timeout") or 30
-        if hasattr(context, "resolve_value"):
-            timeout = context.resolve_value(timeout)
         try:
             timeout = int(timeout)
         except (TypeError, ValueError):

@@ -36,10 +36,10 @@ mcp__Ref__ref_read_url: "https://doc.qt.io/qtforpython/..."
 
 ## Semantic Search (Internal Codebase)
 
-Use `qdrant-find` to understand existing implementations before researching alternatives:
-```
-qdrant-find: "current implementation of X"
-qdrant-find: "how feature Y works"
+Use `search_codebase()` to understand existing implementations before researching alternatives:
+```python
+search_codebase("current implementation of X", top_k=5)
+search_codebase("how feature Y works", top_k=5)
 ```
 
 ## .brain Protocol

@@ -134,17 +134,24 @@ class MyNode(BaseNode):
 
     async def execute(self, context):
         # MODERN: get_parameter() checks port first, then config
-        url = self.get_parameter("url")              # required
-        timeout = self.get_parameter("timeout", 30000)  # optional
+        # AUTO-RESOLVES {{variables}} - no manual resolve_value() needed!
+        url = self.get_parameter("url")              # Auto-resolved!
+        timeout = self.get_parameter("timeout", 30000)  # Auto-resolved!
+
+        # Get raw un-resolved value (for templates/debugging):
+        raw = self.get_raw_parameter("url")
 
         # LEGACY (DON'T USE): self.config.get("timeout", 30000)
+        # LEGACY (DON'T USE): context.resolve_value(url)
 ```
 
 **Requirements:**
 - `@properties()` decorator (REQUIRED - even if empty)
-- `get_parameter()` for optional properties (dual-source: port → config)
+- `get_parameter()` for optional properties (dual-source: port → config), AUTO-RESOLVES `{{variables}}`
+- `get_raw_parameter()` when you need the un-resolved template string
 - Explicit DataType on all ports (ANY is valid for polymorphic)
 - NO `self.config.get()` calls
+- NO manual `context.resolve_value()` calls
 
 **Audit compliance:** `python scripts/audit_node_modernization.py` → 98%+ modern
 

@@ -1,0 +1,205 @@
+{
+    "metadata": {
+        "name": "Batch 7.9 - Window Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "get_window_list": {
+            "node_id": "get_window_list",
+            "node_type": "GetWindowListNode",
+            "config": {},
+            "position": [
+                0,
+                0
+            ]
+        },
+        "activate_window": {
+            "node_id": "activate_window",
+            "node_type": "ActivateWindowNode",
+            "config": {
+                "title": "Notepad"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "maximize_window": {
+            "node_id": "maximize_window",
+            "node_type": "MaximizeWindowNode",
+            "config": {},
+            "position": [
+                800,
+                0
+            ]
+        },
+        "minimize_window": {
+            "node_id": "minimize_window",
+            "node_type": "MinimizeWindowNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "restore_window": {
+            "node_id": "restore_window",
+            "node_type": "RestoreWindowNode",
+            "config": {},
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "move_window": {
+            "node_id": "move_window",
+            "node_type": "MoveWindowNode",
+            "config": {
+                "x": 0,
+                "y": 0
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "resize_window": {
+            "node_id": "resize_window",
+            "node_type": "ResizeWindowNode",
+            "config": {
+                "width": 800,
+                "height": 600
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "set_window_state": {
+            "node_id": "set_window_state",
+            "node_type": "SetWindowStateNode",
+            "config": {
+                "state": "normal"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "get_window_props": {
+            "node_id": "get_window_props",
+            "node_type": "GetWindowPropertiesNode",
+            "config": {},
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "wait_for_window": {
+            "node_id": "wait_for_window",
+            "node_type": "WaitForWindowNode",
+            "config": {
+                "title": "Notepad"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "window_super": {
+            "node_id": "window_super",
+            "node_type": "WindowManagementSuperNode",
+            "config": {
+                "action": "list"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Window nodes tested!"
+            },
+            "position": [
+                4400,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "get_window_list",
+            "source_port": "exec_out",
+            "target_node": "activate_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "activate_window",
+            "source_port": "exec_out",
+            "target_node": "maximize_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "maximize_window",
+            "source_port": "exec_out",
+            "target_node": "minimize_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "minimize_window",
+            "source_port": "exec_out",
+            "target_node": "restore_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "restore_window",
+            "source_port": "exec_out",
+            "target_node": "move_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "move_window",
+            "source_port": "exec_out",
+            "target_node": "resize_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "resize_window",
+            "source_port": "exec_out",
+            "target_node": "set_window_state",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_window_state",
+            "source_port": "exec_out",
+            "target_node": "get_window_props",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_window_props",
+            "source_port": "exec_out",
+            "target_node": "wait_for_window",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wait_for_window",
+            "source_port": "exec_out",
+            "target_node": "window_super",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "window_super",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

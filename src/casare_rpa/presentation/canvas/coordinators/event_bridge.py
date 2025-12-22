@@ -28,7 +28,7 @@ Thread Safety:
     delivery automatically via Qt's queued connection mechanism.
 """
 
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Optional, Type
 
 from PySide6.QtCore import QObject, Signal
 
@@ -102,22 +102,14 @@ class QtDomainEventBridge(QObject):
     # Node signals - specific signatures for type safety
     node_started = Signal(str, str, str)  # node_id, node_type, workflow_id
     node_completed = Signal(str, str, float)  # node_id, node_type, execution_time_ms
-    node_failed = Signal(
-        str, str, str, bool
-    )  # node_id, node_type, error_msg, retryable
+    node_failed = Signal(str, str, str, bool)  # node_id, node_type, error_msg, retryable
     node_skipped = Signal(str, str, str)  # node_id, node_type, reason
 
     # Workflow signals
     workflow_started = Signal(str, str, int)  # workflow_id, workflow_name, total_nodes
-    workflow_completed = Signal(
-        str, float, int
-    )  # workflow_id, exec_time_ms, nodes_executed
-    workflow_failed = Signal(
-        str, str, str
-    )  # workflow_id, error_message, failed_node_id
-    workflow_progress = Signal(
-        str, float, int, int
-    )  # workflow_id, pct, completed, total
+    workflow_completed = Signal(str, float, int)  # workflow_id, exec_time_ms, nodes_executed
+    workflow_failed = Signal(str, str, str)  # workflow_id, error_message, failed_node_id
+    workflow_progress = Signal(str, float, int, int)  # workflow_id, pct, completed, total
     workflow_paused = Signal(str, str)  # workflow_id, paused_at_node_id
     workflow_resumed = Signal(str, str)  # workflow_id, resume_from_node_id
     workflow_stopped = Signal(str, str)  # workflow_id, stopped_at_node_id
@@ -159,9 +151,7 @@ class QtDomainEventBridge(QObject):
 
         self._subscribe_to_events()
         self._running = True
-        logger.info(
-            f"QtDomainEventBridge started with {len(self._subscriptions)} subscriptions"
-        )
+        logger.info(f"QtDomainEventBridge started with {len(self._subscriptions)} subscriptions")
 
     def stop(self) -> None:
         """
@@ -398,9 +388,7 @@ class QtDomainEventBridge(QObject):
     def _on_log_message(self, event: Any) -> None:
         """Handle LogMessage event."""
         try:
-            level_str = (
-                event.level.value if hasattr(event.level, "value") else str(event.level)
-            )
+            level_str = event.level.value if hasattr(event.level, "value") else str(event.level)
             source = event.source or ""
             self.log_message.emit(
                 level_str,
@@ -498,9 +486,7 @@ def get_qt_domain_event_bridge(
 
     if _bridge_instance is None:
         if event_bus is None:
-            raise ValueError(
-                "event_bus required on first call to get_qt_domain_event_bridge"
-            )
+            raise ValueError("event_bus required on first call to get_qt_domain_event_bridge")
         _bridge_instance = QtDomainEventBridge(event_bus, parent)
 
     return _bridge_instance

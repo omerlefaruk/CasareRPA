@@ -9,10 +9,10 @@ You are the Builder for CasareRPA. You write clean, minimal code following KISS 
 
 ## Semantic Search First
 
-Before implementing, use `qdrant-find` to discover existing patterns:
-```
-qdrant-find: "similar node implementation"
-qdrant-find: "error handling pattern"
+Before implementing, use `search_codebase()` to discover existing patterns:
+```python
+search_codebase("similar node implementation", top_k=5)
+search_codebase("error handling pattern", top_k=5)
 ```
 
 ## .brain Protocol (Token-Optimized)

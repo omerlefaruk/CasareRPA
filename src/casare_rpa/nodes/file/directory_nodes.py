@@ -107,7 +107,6 @@ class CreateDirectoryNode(BaseNode):
                 raise ValueError("directory_path is required")
 
             # Resolve {{variable}} patterns and environment variables in dir_path
-            dir_path = context.resolve_value(dir_path)
             dir_path = os.path.expandvars(dir_path)
 
             # SECURITY: Validate path before directory creation
@@ -218,9 +217,7 @@ class ListFilesNode(BaseNode):
                 raise ValueError("directory_path is required")
 
             # Resolve {{variable}} patterns and environment variables in dir_path and pattern
-            dir_path = context.resolve_value(dir_path)
             dir_path = os.path.expandvars(dir_path)
-            pattern = context.resolve_value(pattern)
 
             # SECURITY: Validate directory path (read-only)
             path = validate_path_security_readonly(dir_path, "list", allow_dangerous)
@@ -362,9 +359,7 @@ class ListDirectoryNode(BaseNode):
                 raise ValueError("dir_path is required")
 
             # Resolve {{variable}} patterns and environment variables in dir_path and pattern
-            dir_path = context.resolve_value(dir_path)
             dir_path = os.path.expandvars(dir_path)
-            pattern = context.resolve_value(pattern)
 
             # SECURITY: Validate directory path (read-only)
             path = validate_path_security_readonly(dir_path, "list", allow_dangerous)

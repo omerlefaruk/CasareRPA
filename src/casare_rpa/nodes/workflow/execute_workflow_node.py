@@ -6,7 +6,6 @@ It handles the transformation of visual nodes to executable nodes internally,
 permitting the reuse of any workflow without explicit subflow packaging.
 """
 
-import asyncio
 import orjson
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
@@ -17,7 +16,6 @@ from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    DataType,
     ExecutionResult,
     NodeStatus,
 )
@@ -88,7 +86,7 @@ class ExecuteWorkflowNode(BaseNode):
 
         try:
             workflow_path = self.get_parameter("workflow_path", "")
-            wait_for_completion = self.get_parameter("wait_for_completion", True)
+            self.get_parameter("wait_for_completion", True)
 
             if not workflow_path:
                 return self._error_result("No workflow path configured")
@@ -119,9 +117,7 @@ class ExecuteWorkflowNode(BaseNode):
                     "next_nodes": ["exec_out"],
                 }
             else:
-                return self._error_result(
-                    result.get("error", "Workflow execution failed")
-                )
+                return self._error_result(result.get("error", "Workflow execution failed"))
 
         except Exception as e:
             logger.exception(f"ExecuteWorkflowNode critical error: {e}")
@@ -159,9 +155,7 @@ class ExecuteWorkflowNode(BaseNode):
 
         # Transform nodes to executable format (fixing VisualNode types)
         # We reuse the logic from SubflowNode for this
-        executable_nodes, id_mapping, reroute_mapping = (
-            self._transform_nodes_for_execution(nodes)
-        )
+        executable_nodes, id_mapping, reroute_mapping = self._transform_nodes_for_execution(nodes)
 
         # Build WorkflowSchema
         workflow_schema = WorkflowSchema()
@@ -222,18 +216,14 @@ class ExecuteWorkflowNode(BaseNode):
 
             # Skip reroute nodes
             is_reroute = (
-                "RerouteNode" in type_str
-                or "Reroute" in name
-                or type_str == "VisualRerouteNode"
+                "RerouteNode" in type_str or "Reroute" in name or type_str == "VisualRerouteNode"
             )
             if is_reroute:
                 reroute_mapping[visual_key] = ("in", "out")
                 continue
 
             # Get actual node ID
-            actual_node_id = (
-                custom.get("node_id") or node_data.get("node_id") or visual_key
-            )
+            actual_node_id = custom.get("node_id") or node_data.get("node_id") or visual_key
             id_mapping[visual_key] = actual_node_id
 
             # Extract executable node type
@@ -328,7 +318,7 @@ class ExecuteWorkflowNode(BaseNode):
 
             if tgt in reroute_mapping:
                 # Resolve through reroute
-                final_tgts = get_final_targets(tgt)
+                get_final_targets(tgt)
                 # Note: Logic above for get_final_targets assumes we start lookups from reroute node
                 # but map needs to be filled.
                 # Actually, simpler: just follow the chain?

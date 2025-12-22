@@ -99,11 +99,7 @@ class DesktopRecordedAction:
             target = self.element_name or f"({self.x}, {self.y})"
             return f"Right-click on {target}"
         elif self.action_type == DesktopActionType.KEYBOARD_TYPE:
-            return (
-                f"Type: {self.text[:30]}..."
-                if len(self.text) > 30
-                else f"Type: {self.text}"
-            )
+            return f"Type: {self.text[:30]}..." if len(self.text) > 30 else f"Type: {self.text}"
         elif self.action_type == DesktopActionType.KEYBOARD_HOTKEY:
             return f"Hotkey: {'+'.join(self.keys)}"
         elif self.action_type == DesktopActionType.MOUSE_DRAG:
@@ -135,9 +131,7 @@ class DesktopRecorder:
         self._keyboard_listener: Optional[keyboard.Listener] = None
 
         # Callbacks
-        self._on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = (
-            None
-        )
+        self._on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = None
         self._on_recording_started: Optional[Callable[[], None]] = None
         self._on_recording_stopped: Optional[Callable[[], None]] = None
         self._on_recording_paused: Optional[Callable[[bool], None]] = None
@@ -210,9 +204,7 @@ class DesktopRecorder:
         self.is_recording = False
         self.is_paused = False
 
-        duration = (
-            (datetime.now() - self.start_time).total_seconds() if self.start_time else 0
-        )
+        duration = (datetime.now() - self.start_time).total_seconds() if self.start_time else 0
         logger.info(
             f"Desktop recording stopped. Duration: {duration:.2f}s, Actions: {len(self.actions)}"
         )
@@ -302,9 +294,7 @@ class DesktopRecorder:
         # Get element at position
         element_info = self._get_element_at_position(x, y)
 
-        action = DesktopRecordedAction(
-            action_type=action_type, x=x, y=y, **element_info
-        )
+        action = DesktopRecordedAction(action_type=action_type, x=x, y=y, **element_info)
 
         self._add_action(action)
 
@@ -319,9 +309,9 @@ class DesktopRecorder:
 
         # Check for global hotkeys (these should work even when recording)
         try:
-            key_name = key.char if hasattr(key, "char") and key.char else str(key)
+            key.char if hasattr(key, "char") and key.char else str(key)
         except AttributeError:
-            key_name = str(key)
+            str(key)
 
         # Handle F9 (toggle recording) - handled externally
         # Handle F10 (pause) - handled externally
@@ -349,9 +339,7 @@ class DesktopRecorder:
             keys = [self._key_to_string(k) for k in self._pressed_keys]
             keys.append(self._key_to_string(key))
 
-            action = DesktopRecordedAction(
-                action_type=DesktopActionType.KEYBOARD_HOTKEY, keys=keys
-            )
+            action = DesktopRecordedAction(action_type=DesktopActionType.KEYBOARD_HOTKEY, keys=keys)
             self._add_action(action)
             return
 

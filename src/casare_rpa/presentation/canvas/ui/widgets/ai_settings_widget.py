@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QMessageBox,
 )
-from PySide6.QtCore import Signal, Qt, QThread
+from PySide6.QtCore import Signal
 import urllib.request
 import json
 
@@ -47,9 +47,10 @@ LLM_MODELS: Dict[str, List[str]] = {
         "claude-3-haiku-20240307",
     ],
     "Google": [
+        "gemini-3-flash-preview",
+        "gemini-2.0-flash-exp",
         "gemini-1.5-pro",
         "gemini-1.5-flash",
-        "gemini-2.0-flash-exp",
     ],
     "Mistral": [
         "mistral-large-latest",
@@ -67,10 +68,12 @@ LLM_MODELS: Dict[str, List[str]] = {
         "deepseek-coder",
     ],
     "OpenRouter": [
+        "openrouter/google/gemini-3-flash-preview",
         "openrouter/deepseek/deepseek-v3.2",
         "openrouter/deepseek/deepseek-chat",
         "openrouter/openai/gpt-4o",
         "openrouter/anthropic/claude-3.5-sonnet",
+        "openrouter/google/gemini-2.0-flash-exp",
         "openrouter/google/gemini-2.0-flash-exp:free",
         "openrouter/meta-llama/llama-3.3-70b-instruct",
         "openrouter/mistralai/mistral-large-latest",
@@ -118,16 +121,47 @@ def get_llm_credentials() -> List[Dict[str, Any]]:
         )
 
         store = get_credential_store()
+
+        # 1. Get standard LLM API keys
         for cred in store.list_credentials(category="llm"):
             credentials.append(
                 {
                     "id": cred["id"],
                     "name": cred["name"],
-                    "provider": cred.get("tags", ["unknown"])[0]
-                    if cred.get("tags")
-                    else "unknown",
+                    "provider": cred.get("tags", ["unknown"])[0] if cred.get("tags") else "unknown",
+                    "type": "api_key",
                 }
             )
+
+        # 2. Get Google OAuth credentials
+        # (These can be used for Gemini models)
+        for cred in store.list_credentials(category="google"):
+            # Only include if it has appropriate scopes/tags, or just include all and let user decide
+            # Typically user would select "My Google Account"
+            display_name = cred["name"]
+            # Try to get email if available in description or we'd need to peek (expensive)
+            # For now just use name
+            credentials.append(
+                {
+                    "id": cred["id"],
+                    "name": display_name,
+                    "provider": "google",
+                    "type": "oauth",
+                }
+            )
+
+        # 3. Get OpenAI/Azure OAuth credentials
+        for cred in store.list_credentials(category="openai_oauth"):
+            display_name = cred["name"]
+            credentials.append(
+                {
+                    "id": cred["id"],
+                    "name": display_name,
+                    "provider": "openai",
+                    "type": "oauth",
+                }
+            )
+
     except ImportError:
         logger.debug("Credential store not available")
     except Exception as e:
@@ -149,12 +183,15 @@ def detect_provider_from_model(model: str) -> str:
 
     if model_lower.startswith("openrouter/"):
         return "OpenRouter"
+    elif "gemini" in model_lower:
+        # Default Gemini to Google unless specifically OpenRouter
+        if model_lower.startswith("openrouter/"):
+            return "OpenRouter"
+        return "Google"
     elif "gpt" in model_lower or "o1" in model_lower:
         return "OpenAI"
     elif "claude" in model_lower:
         return "Anthropic"
-    elif "gemini" in model_lower:
-        return "Google"
     elif "mistral" in model_lower or "codestral" in model_lower:
         return "Mistral"
     elif "llama" in model_lower or "mixtral" in model_lower:
@@ -263,8 +300,8 @@ class AISettingsWidget(QWidget):
             self._provider_combo.addItems(list(LLM_MODELS.keys()))
             self._provider_combo.setToolTip("Select AI provider")
 
-            # Set OpenRouter as default provider
-            idx = self._provider_combo.findText("OpenRouter")
+            # Set Google as default provider
+            idx = self._provider_combo.findText("Google")
             if idx >= 0:
                 self._provider_combo.setCurrentIndex(idx)
 
@@ -320,7 +357,8 @@ class AISettingsWidget(QWidget):
         credentials = get_llm_credentials()
         if credentials:
             for cred in credentials:
-                display = f"{cred['name']} ({cred['provider']})"
+                type_label = "OAuth" if cred.get("type") == "oauth" else "Key"
+                display = f"{cred['name']} ({cred['provider']} {type_label})"
                 self._credential_combo.addItem(display, cred["id"])
         else:
             self._credential_combo.addItem("No credentials stored", None)
@@ -328,9 +366,7 @@ class AISettingsWidget(QWidget):
     def _connect_signals(self) -> None:
         """Connect widget signals."""
         if self._show_credential:
-            self._credential_combo.currentIndexChanged.connect(
-                self._on_credential_changed
-            )
+            self._credential_combo.currentIndexChanged.connect(self._on_credential_changed)
             # Emit initial credential selection so consumers can enable their UI
             cred_id = self._credential_combo.currentData()
             if cred_id:
@@ -422,9 +458,8 @@ class AISettingsWidget(QWidget):
             if detected_provider != current_provider:
                 # Check if model is in detected provider's list OR if it's an OpenRouter model we just fetched
                 is_known_model = model in LLM_MODELS.get(detected_provider, [])
-                is_fetched_openrouter = (
-                    detected_provider == "OpenRouter"
-                    and model.startswith("openrouter/")
+                is_fetched_openrouter = detected_provider == "OpenRouter" and model.startswith(
+                    "openrouter/"
                 )
 
                 if is_known_model or is_fetched_openrouter:
@@ -434,9 +469,7 @@ class AISettingsWidget(QWidget):
                         self._provider_combo.setCurrentIndex(idx)
                         # Also show fetch button if we switched to OpenRouter
                         if hasattr(self, "_fetch_btn"):
-                            self._fetch_btn.setVisible(
-                                detected_provider == "OpenRouter"
-                            )
+                            self._fetch_btn.setVisible(detected_provider == "OpenRouter")
                     self._updating = False
 
         self.model_changed.emit(model)
@@ -485,9 +518,7 @@ class AISettingsWidget(QWidget):
 
             store = get_credential_store()
 
-            cred_id = (
-                self._credential_combo.currentData() if self._show_credential else None
-            )
+            cred_id = self._credential_combo.currentData() if self._show_credential else None
 
             if cred_id and cred_id != "auto":
                 return store.get_api_key(cred_id)
@@ -550,9 +581,7 @@ class AISettingsWidget(QWidget):
                     mid = item.get("id")
                     if mid:
                         models.append(
-                            f"openrouter/{mid}"
-                            if not mid.startswith("openrouter/")
-                            else mid
+                            f"openrouter/{mid}" if not mid.startswith("openrouter/") else mid
                         )
 
                 models.sort()

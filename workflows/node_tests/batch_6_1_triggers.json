@@ -1,0 +1,136 @@
+{
+    "metadata": {
+        "name": "Batch 6.1 - Trigger Nodes",
+        "description": "Tests ScheduleTriggerNode, FileWatchTriggerNode, WebhookTriggerNode instantiation and configuration",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "schedule_trigger": {
+            "node_id": "schedule_trigger",
+            "node_type": "ScheduleTriggerNode",
+            "config": {
+                "frequency": "daily",
+                "time_hour": 9,
+                "time_minute": 0,
+                "timezone": "UTC"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "log_schedule": {
+            "node_id": "log_schedule",
+            "node_type": "LogNode",
+            "config": {
+                "message": "ScheduleTriggerNode executed successfully"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "file_watch_trigger": {
+            "node_id": "file_watch_trigger",
+            "node_type": "FileWatchTriggerNode",
+            "config": {
+                "watch_path": "C:\\temp",
+                "patterns": "*.txt,*.pdf",
+                "events": "created,modified",
+                "recursive": true
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "log_filewatch": {
+            "node_id": "log_filewatch",
+            "node_type": "LogNode",
+            "config": {
+                "message": "FileWatchTriggerNode executed successfully"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "webhook_trigger": {
+            "node_id": "webhook_trigger",
+            "node_type": "WebhookTriggerNode",
+            "config": {
+                "secret": "test_secret",
+                "validate_signature": false
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "log_webhook": {
+            "node_id": "log_webhook",
+            "node_type": "LogNode",
+            "config": {
+                "message": "WebhookTriggerNode executed successfully"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All trigger nodes instantiated and configured successfully!"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "schedule_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_schedule",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_schedule",
+            "source_port": "exec_out",
+            "target_node": "file_watch_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "file_watch_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_filewatch",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_filewatch",
+            "source_port": "exec_out",
+            "target_node": "webhook_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "webhook_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_webhook",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_webhook",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

@@ -6,8 +6,10 @@ the format expected by load_workflow_from_dict().
 """
 
 from typing import Dict, List, Any, Optional, TYPE_CHECKING
+import time
 from datetime import datetime
 from loguru import logger
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -41,6 +43,14 @@ class WorkflowSerializer:
             Complete workflow dict matching WorkflowSchema format
         """
         logger.debug("Serializing workflow from canvas graph")
+        start = time.perf_counter()
+        try:
+            log_canvas_event(
+                "serialize_start",
+                node_count=len(self._graph.all_nodes()),
+            )
+        except Exception:
+            log_canvas_event("serialize_start")
 
         try:
             workflow_data = {
@@ -57,11 +67,22 @@ class WorkflowSerializer:
             logger.debug(
                 f"Serialization complete: {node_count} nodes, {connection_count} connections"
             )
+            log_canvas_event(
+                "serialize_end",
+                duration_ms=round((time.perf_counter() - start) * 1000.0, 2),
+                node_count=node_count,
+                connection_count=connection_count,
+            )
 
             return workflow_data
 
         except Exception as e:
             logger.exception(f"Failed to serialize workflow: {e}")
+            log_canvas_event(
+                "serialize_error",
+                duration_ms=round((time.perf_counter() - start) * 1000.0, 2),
+                error=str(e),
+            )
             # Return minimal valid structure on error
             return {
                 "metadata": {"name": "", "description": "", "version": "1.0.0"},
@@ -124,9 +145,7 @@ class WorkflowSerializer:
         """
         # Skip visual-only annotation nodes
         if not hasattr(visual_node, "_casare_node") or visual_node._casare_node is None:
-            logger.debug(
-                f"Skipping visual-only node: {visual_node.name()} (no CasareRPA backing)"
-            )
+            logger.debug(f"Skipping visual-only node: {visual_node.name()} (no CasareRPA backing)")
             return None
 
         casare_node = visual_node._casare_node
@@ -200,9 +219,7 @@ class WorkflowSerializer:
                         # ALWAYS use widget value if it's not empty
                         if widget_value is not None and widget_value != "":
                             config[widget_name] = widget_value
-                            logger.trace(
-                                f"[SERIALIZER] Widget sync: {widget_name}={widget_value}"
-                            )
+                            logger.trace(f"[SERIALIZER] Widget sync: {widget_name}={widget_value}")
         except Exception as e:
             logger.warning(f"Widget value sync failed: {e}")
 
@@ -336,10 +353,7 @@ class WorkflowSerializer:
         """
         try:
             # Try to get variables from bottom panel
-            if (
-                hasattr(self._main_window, "_bottom_panel")
-                and self._main_window._bottom_panel
-            ):
+            if hasattr(self._main_window, "_bottom_panel") and self._main_window._bottom_panel:
                 variables_tab = self._main_window._bottom_panel.get_variables_tab()
                 if variables_tab and hasattr(variables_tab, "get_variables"):
                     variables = variables_tab.get_variables()
@@ -362,9 +376,7 @@ class WorkflowSerializer:
         try:
             # NodeGraphQt stores frames in the scene
             # Access via graph._viewer._scene if available
-            if hasattr(self._graph, "_viewer") and hasattr(
-                self._graph._viewer, "_scene"
-            ):
+            if hasattr(self._graph, "_viewer") and hasattr(self._graph._viewer, "_scene"):
                 scene = self._graph._viewer._scene
 
                 # Look for frame items in the scene
@@ -388,9 +400,9 @@ class WorkflowSerializer:
                                 else getattr(item, "_rect", None)
                             )
                             # Get contained nodes via public property or fallback
-                            contained_nodes = getattr(
-                                item, "contained_nodes", None
-                            ) or getattr(item, "_nodes", [])
+                            contained_nodes = getattr(item, "contained_nodes", None) or getattr(
+                                item, "_nodes", []
+                            )
 
                             frame_data = {
                                 "title": title,
@@ -439,17 +451,13 @@ class WorkflowSerializer:
                 if prefs and isinstance(prefs, dict):
                     execution_prefs = prefs.get("execution", {})
                     if "stop_on_error" in execution_prefs:
-                        settings["stop_on_error"] = bool(
-                            execution_prefs["stop_on_error"]
-                        )
+                        settings["stop_on_error"] = bool(execution_prefs["stop_on_error"])
                     if "timeout" in execution_prefs:
                         settings["timeout"] = int(execution_prefs["timeout"])
                     if "retry_count" in execution_prefs:
                         settings["retry_count"] = int(execution_prefs["retry_count"])
                     logger.debug("Loaded execution settings from preferences")
         except Exception as e:
-            logger.debug(
-                f"Could not load settings from preferences, using defaults: {e}"
-            )
+            logger.debug(f"Could not load settings from preferences, using defaults: {e}")
 
         return settings

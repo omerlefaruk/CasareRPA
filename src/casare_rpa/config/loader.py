@@ -233,9 +233,7 @@ def _build_database_config() -> DatabaseConfig:
     """Build DatabaseConfig from environment variables."""
     return DatabaseConfig(
         enabled=_parse_bool(os.getenv("DB_ENABLED"), True),
-        url=os.getenv("DATABASE_URL")
-        or os.getenv("POSTGRES_URL")
-        or os.getenv("PGQUEUER_DB_URL"),
+        url=os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("PGQUEUER_DB_URL"),
         host=os.getenv("DB_HOST", "localhost"),
         port=_parse_int(os.getenv("DB_PORT"), 5432),
         name=os.getenv("DB_NAME", "casare_rpa"),
@@ -244,9 +242,7 @@ def _build_database_config() -> DatabaseConfig:
         pool_min_size=_parse_int(os.getenv("DB_POOL_MIN_SIZE"), 2),
         pool_max_size=_parse_int(os.getenv("DB_POOL_MAX_SIZE"), 10),
         command_timeout=_parse_float(os.getenv("DB_COMMAND_TIMEOUT"), 60.0),
-        max_inactive_lifetime=_parse_float(
-            os.getenv("DB_MAX_INACTIVE_LIFETIME"), 300.0
-        ),
+        max_inactive_lifetime=_parse_float(os.getenv("DB_MAX_INACTIVE_LIFETIME"), 300.0),
     )
 
 
@@ -284,7 +280,6 @@ def _build_orchestrator_config() -> OrchestratorConfig:
         cors_origins.append(api_url)
 
     # Tunnel First Strategy: Prefer CASARE_API_URL if set
-    host = "0.0.0.0"
     if api_url:
         # If using tunnel, we still bind to 0.0.0.0 locally, but the 'public' URL is the tunnel
         pass
@@ -294,14 +289,10 @@ def _build_orchestrator_config() -> OrchestratorConfig:
         or os.getenv("HOST")
         or os.getenv("API_HOST", "0.0.0.0"),
         port=_parse_int(
-            os.getenv("ORCHESTRATOR_PORT")
-            or os.getenv("PORT")
-            or os.getenv("API_PORT"),
+            os.getenv("ORCHESTRATOR_PORT") or os.getenv("PORT") or os.getenv("API_PORT"),
             8000,
         ),
-        workers=_parse_int(
-            os.getenv("ORCHESTRATOR_WORKERS") or os.getenv("WORKERS"), 1
-        ),
+        workers=_parse_int(os.getenv("ORCHESTRATOR_WORKERS") or os.getenv("WORKERS"), 1),
         cors_origins=cors_origins,
         ssl_keyfile=_parse_path(os.getenv("SSL_KEYFILE")),
         ssl_certfile=_parse_path(os.getenv("SSL_CERTFILE")),
@@ -313,16 +304,13 @@ def _build_robot_config() -> RobotConfig:
     return RobotConfig(
         id=os.getenv("ROBOT_ID") or os.getenv("CASARE_ROBOT_ID"),
         name=os.getenv("ROBOT_NAME") or os.getenv("CASARE_ROBOT_NAME"),
-        environment=os.getenv("ROBOT_ENVIRONMENT")
-        or os.getenv("CASARE_ENVIRONMENT", "production"),
+        environment=os.getenv("ROBOT_ENVIRONMENT") or os.getenv("CASARE_ENVIRONMENT", "production"),
         max_concurrent_jobs=_parse_int(
-            os.getenv("ROBOT_MAX_CONCURRENT_JOBS")
-            or os.getenv("CASARE_MAX_CONCURRENT_JOBS"),
+            os.getenv("ROBOT_MAX_CONCURRENT_JOBS") or os.getenv("CASARE_MAX_CONCURRENT_JOBS"),
             1,
         ),
         heartbeat_interval=_parse_int(
-            os.getenv("ROBOT_HEARTBEAT_INTERVAL")
-            or os.getenv("CASARE_HEARTBEAT_INTERVAL"),
+            os.getenv("ROBOT_HEARTBEAT_INTERVAL") or os.getenv("CASARE_HEARTBEAT_INTERVAL"),
             30,
         ),
         capabilities=_parse_list(
@@ -368,9 +356,7 @@ def _build_rate_limit_config() -> RateLimitConfig:
     """Build RateLimitConfig from environment variables."""
     return RateLimitConfig(
         enabled=_parse_bool(os.getenv("RATE_LIMIT_ENABLED"), True),
-        requests_per_minute=_parse_int(
-            os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"), 100
-        ),
+        requests_per_minute=_parse_int(os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE"), 100),
     )
 
 

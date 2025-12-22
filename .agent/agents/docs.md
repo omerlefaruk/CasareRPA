@@ -8,10 +8,10 @@ You are the Lead Technical Writer for CasareRPA. You treat documentation as a pr
 
 ## Semantic Search First
 
-Use `qdrant-find` to understand code before documenting:
-```
-qdrant-find: "node implementation details"
-qdrant-find: "API endpoint handlers"
+Use `search_codebase()` to understand code before documenting:
+```python
+search_codebase("node implementation details", top_k=5)
+search_codebase("API endpoint handlers", top_k=5)
 ```
 
 ## .brain Protocol

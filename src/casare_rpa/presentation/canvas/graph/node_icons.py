@@ -61,7 +61,6 @@ def _init_category_colors() -> Dict[str, QColor]:
             "utility": Theme.get_category_qcolor("utility"),
             "triggers": Theme.get_category_qcolor("triggers"),
             "messaging": Theme.get_category_qcolor("messaging"),
-            "ai_ml": Theme.get_category_qcolor("ai_ml"),
             "document": Theme.get_category_qcolor("document"),
             "google": Theme.get_category_qcolor("google"),
         }
@@ -194,19 +193,10 @@ NODE_ICONS = {
     "Write File": ("💾", "file"),
     "Delete File": ("🗑", "file"),
     "File Exists": ("❓", "file"),
-    # AI/ML nodes
-    "LLM Completion": ("🤖", "ai_ml"),
-    "LLM Chat": ("💬", "ai_ml"),
-    "LLM Extract Data": ("📊", "ai_ml"),
-    "LLM Summarize": ("📝", "ai_ml"),
-    "LLM Classify": ("🏷", "ai_ml"),
-    "LLM Translate": ("🌐", "ai_ml"),
 }
 
 
-def create_node_icon(
-    node_name: str, size: int = 24, custom_color: Optional[QColor] = None
-) -> str:
+def create_node_icon(node_name: str, size: int = 24, custom_color: Optional[QColor] = None) -> str:
     """
     Create a professional icon for a node type.
 
@@ -223,9 +213,7 @@ def create_node_icon(
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(
-            category, QColor(158, 158, 158)
-        )
+        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
     else:
         # Fallback for unknown nodes
         symbol = "●"
@@ -303,9 +291,7 @@ def create_category_icon(category: str, size: int = 24) -> str:
     painter.end()
 
     # Save to temp file
-    temp_path = os.path.join(
-        tempfile.gettempdir(), f"casare_category_{category}_{id(pixmap)}.png"
-    )
+    temp_path = os.path.join(tempfile.gettempdir(), f"casare_category_{category}_{id(pixmap)}.png")
     pixmap.save(temp_path, "PNG")
 
     return temp_path
@@ -382,9 +368,7 @@ def create_node_icon_pixmap(
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(
-            category, QColor(158, 158, 158)
-        )
+        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
     else:
         # Fallback for unknown nodes
         symbol = "●"

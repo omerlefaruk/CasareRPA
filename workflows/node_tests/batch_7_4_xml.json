@@ -1,0 +1,142 @@
+{
+    "metadata": {
+        "name": "Batch 7.4 - XML Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "set_xml": {
+            "node_id": "set_xml",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "xml",
+                "value": "<root><item id=\"1\">Test</item></root>"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "parse_xml": {
+            "node_id": "parse_xml",
+            "node_type": "ParseXMLNode",
+            "config": {
+                "xml_string": "{{xml}}"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "xpath_query": {
+            "node_id": "xpath_query",
+            "node_type": "XPathQueryNode",
+            "config": {
+                "query": "//item"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "get_xml_element": {
+            "node_id": "get_xml_element",
+            "node_type": "GetXMLElementNode",
+            "config": {
+                "path": "item"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "get_xml_attr": {
+            "node_id": "get_xml_attr",
+            "node_type": "GetXMLAttributeNode",
+            "config": {
+                "attribute": "id"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "xml_to_json": {
+            "node_id": "xml_to_json",
+            "node_type": "XMLToJsonNode",
+            "config": {},
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "json_to_xml": {
+            "node_id": "json_to_xml",
+            "node_type": "JsonToXMLNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "XML nodes tested!"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "set_xml",
+            "source_port": "exec_out",
+            "target_node": "parse_xml",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "parse_xml",
+            "source_port": "exec_out",
+            "target_node": "xpath_query",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "xpath_query",
+            "source_port": "exec_out",
+            "target_node": "get_xml_element",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_xml_element",
+            "source_port": "exec_out",
+            "target_node": "get_xml_attr",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_xml_attr",
+            "source_port": "exec_out",
+            "target_node": "xml_to_json",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "xml_to_json",
+            "source_port": "exec_out",
+            "target_node": "json_to_xml",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "json_to_xml",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

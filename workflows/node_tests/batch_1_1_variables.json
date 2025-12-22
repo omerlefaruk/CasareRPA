@@ -1,0 +1,380 @@
+{
+    "metadata": {
+        "name": "Batch 1.1 - Variables & Data Types",
+        "description": "Tests SetVariableNode, GetVariableNode, IncrementVariableNode, CreateDictNode, DictGetNode, DictSetNode, DictHasKeyNode, DictRemoveNode, DictKeysNode, DictValuesNode, DictItemsNode, DictMergeNode, DictToJsonNode, CreateListNode, JsonParseNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "set_string": {
+            "node_id": "set_string",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "my_string",
+                "value": "Hello World"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "set_int": {
+            "node_id": "set_int",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "my_int",
+                "value": 42
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "set_list": {
+            "node_id": "set_list",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "my_list",
+                "value": [
+                    1,
+                    2,
+                    3
+                ]
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "set_dict": {
+            "node_id": "set_dict",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "my_dict",
+                "value": {
+                    "a": 1,
+                    "b": 2
+                }
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "get_string": {
+            "node_id": "get_string",
+            "node_type": "GetVariableNode",
+            "config": {
+                "variable_name": "my_string"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "increment_counter": {
+            "node_id": "increment_counter",
+            "node_type": "IncrementVariableNode",
+            "config": {
+                "variable_name": "my_int",
+                "increment": 10
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "create_dict": {
+            "node_id": "create_dict",
+            "node_type": "CreateDictNode",
+            "config": {
+                "key_1": "name",
+                "value_1": "Alice",
+                "key_2": "age",
+                "value_2": 30,
+                "key_3": "city",
+                "value_3": "NYC"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "dict_get": {
+            "node_id": "dict_get",
+            "node_type": "DictGetNode",
+            "config": {
+                "dict": "{{create_dict.dict}}",
+                "key": "name"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "dict_set": {
+            "node_id": "dict_set",
+            "node_type": "DictSetNode",
+            "config": {
+                "dict": "{{create_dict.dict}}",
+                "key": "country",
+                "value": "USA"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "dict_has_key": {
+            "node_id": "dict_has_key",
+            "node_type": "DictHasKeyNode",
+            "config": {
+                "dict": "{{dict_set.dict}}",
+                "key": "country"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "dict_keys": {
+            "node_id": "dict_keys",
+            "node_type": "DictKeysNode",
+            "config": {
+                "dict": "{{dict_set.dict}}"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "dict_values": {
+            "node_id": "dict_values",
+            "node_type": "DictValuesNode",
+            "config": {
+                "dict": "{{dict_set.dict}}"
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "dict_items": {
+            "node_id": "dict_items",
+            "node_type": "DictItemsNode",
+            "config": {
+                "dict": "{{dict_set.dict}}"
+            },
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "create_dict2": {
+            "node_id": "create_dict2",
+            "node_type": "CreateDictNode",
+            "config": {
+                "key_1": "x",
+                "value_1": 100,
+                "key_2": "y",
+                "value_2": 200
+            },
+            "position": [
+                5200,
+                0
+            ]
+        },
+        "dict_merge": {
+            "node_id": "dict_merge",
+            "node_type": "DictMergeNode",
+            "config": {
+                "dict1": "{{dict_set.dict}}",
+                "dict2": "{{create_dict2.dict}}"
+            },
+            "position": [
+                5600,
+                0
+            ]
+        },
+        "dict_remove": {
+            "node_id": "dict_remove",
+            "node_type": "DictRemoveNode",
+            "config": {
+                "dict": "{{dict_merge.dict}}",
+                "key": "x"
+            },
+            "position": [
+                6000,
+                0
+            ]
+        },
+        "dict_to_json": {
+            "node_id": "dict_to_json",
+            "node_type": "DictToJsonNode",
+            "config": {
+                "dict": "{{dict_remove.dict}}"
+            },
+            "position": [
+                6400,
+                0
+            ]
+        },
+        "create_list": {
+            "node_id": "create_list",
+            "node_type": "CreateListNode",
+            "config": {
+                "item_1": "apple",
+                "item_2": "banana",
+                "item_3": "cherry",
+                "item_4": "date",
+                "item_5": "elderberry"
+            },
+            "position": [
+                6800,
+                0
+            ]
+        },
+        "json_parse": {
+            "node_id": "json_parse",
+            "node_type": "JsonParseNode",
+            "config": {
+                "json_string": "{\"parsed\": true, \"count\": 5}"
+            },
+            "position": [
+                7200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All variable & dict tests passed!"
+            },
+            "position": [
+                7600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "set_string",
+            "source_port": "exec_out",
+            "target_node": "set_int",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_int",
+            "source_port": "exec_out",
+            "target_node": "set_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_list",
+            "source_port": "exec_out",
+            "target_node": "set_dict",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_dict",
+            "source_port": "exec_out",
+            "target_node": "get_string",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_string",
+            "source_port": "exec_out",
+            "target_node": "increment_counter",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "increment_counter",
+            "source_port": "exec_out",
+            "target_node": "create_dict",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "create_dict",
+            "source_port": "exec_out",
+            "target_node": "dict_get",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_get",
+            "source_port": "exec_out",
+            "target_node": "dict_set",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_set",
+            "source_port": "exec_out",
+            "target_node": "dict_has_key",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_has_key",
+            "source_port": "exec_out",
+            "target_node": "dict_keys",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_keys",
+            "source_port": "exec_out",
+            "target_node": "dict_values",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_values",
+            "source_port": "exec_out",
+            "target_node": "dict_items",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_items",
+            "source_port": "exec_out",
+            "target_node": "create_dict2",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "create_dict2",
+            "source_port": "exec_out",
+            "target_node": "dict_merge",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_merge",
+            "source_port": "exec_out",
+            "target_node": "dict_remove",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_remove",
+            "source_port": "exec_out",
+            "target_node": "dict_to_json",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_to_json",
+            "source_port": "exec_out",
+            "target_node": "create_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "create_list",
+            "source_port": "exec_out",
+            "target_node": "json_parse",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "json_parse",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}

@@ -4,7 +4,6 @@ Manages injector lifecycle and bidirectional communication
 """
 
 import asyncio
-import re
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List, Tuple
 from loguru import logger
@@ -21,247 +20,13 @@ from casare_rpa.utils.selectors.selector_cache import SelectorCache, get_selecto
 _page_callbacks: Dict[int, Dict[str, Callable]] = {}
 
 
-def _parse_single_xml_element(element_str: str) -> Tuple[str, Dict[str, str]]:
-    """
-    Parse a single XML element like <webctrl tag='INPUT' id='foo' />.
-
-    Handles embedded XML in attribute values like:
-        <webctrl selector="<input id='test' />" />
-
-    Returns:
-        Tuple of (tag_name, attributes_dict)
-    """
-    element_str = element_str.strip()
-
-    if not element_str.startswith("<"):
-        return "", {}
-
-    # Extract tag name
-    tag_match = re.match(r"<(\w+)", element_str)
-    if not tag_match:
-        return "", {}
-
-    tag = tag_match.group(1).lower()
-
-    # Find attributes section (everything after tag name, before final />)
-    # Handle self-closing /> or just >
-    # We need to find the LAST /> or > that closes this element
-    # This is tricky when values contain embedded XML
-
-    # Strategy: Parse attributes directly from the string using quote-aware parsing
-    attrs = {}
-
-    # Find all attribute assignments in the string
-    # Pattern matches: name="value" or name='value'
-    # where value can contain the OTHER quote type and > characters
-    pos = len(tag_match.group(0))  # Start after tag name
-    rest = element_str[pos:]
-
-    # Double-quoted: name="anything except double quote"
-    for m in re.finditer(r'(\w+)\s*=\s*"([^"]*)"', rest):
-        attrs[m.group(1).lower()] = m.group(2)
-
-    # Single-quoted: name='anything except single quote'
-    for m in re.finditer(r"(\w+)\s*=\s*'([^']*)'", rest):
-        name = m.group(1).lower()
-        if name not in attrs:
-            attrs[name] = m.group(2)
-
-    return tag, attrs
-
-
-def _build_xpath_for_element(tag: str, attrs: Dict[str, str]) -> str:
-    """Build XPath predicate for a webctrl element."""
-    # Check if 'selector' attribute contains a selector value
-    # Can be: embedded XML (<input id="x"/>), CSS (input[name='x']), or XPath (//input)
-    if "selector" in attrs:
-        embedded = attrs["selector"].strip()
-
-        # Embedded XML: <input id="x"/>
-        if embedded.startswith("<"):
-            embedded_tag, embedded_attrs = _parse_single_xml_element(embedded)
-            if embedded_tag and embedded_tag not in ("webctrl", "html", "wnd", "ctrl"):
-                # Use the embedded element's tag and attributes
-                return _build_xpath_for_element(
-                    embedded_tag, {"tag": embedded_tag, **embedded_attrs}
-                )
-
-        # Already XPath: //... or xpath=...
-        elif embedded.startswith("//") or embedded.startswith("xpath="):
-            # Return as-is (remove xpath= prefix if present)
-            # Also remove leading // since caller adds it
-            xpath = embedded[6:] if embedded.startswith("xpath=") else embedded
-            return xpath.lstrip("/")
-
-        # CSS selector: tag, #id, .class, [attr], etc. - return with CSS marker
-        # FormFiller's Playwright locator handles both XPath and CSS
-        elif not embedded.startswith("/"):
-            # Return CSS selector prefixed for identification (stripped later)
-            return f"css={embedded}"
-
-    # Map UiPath tag names to HTML
-    html_tag = attrs.get("tag", "*").lower()
-
-    xpath_parts = [html_tag]
-
-    for attr_name, attr_value in attrs.items():
-        if attr_name in ("tag", "selector"):
-            continue  # Already handled or embedded selector
-
-        # Map UiPath attribute names to HTML/XPath
-        if attr_name == "aaname":
-            # aaname = accessible name / text content
-            if "'" in attr_value:
-                xpath_parts.append(
-                    f'[contains(text(), "{attr_value}") or @aria-label="{attr_value}" or @name="{attr_value}"]'
-                )
-            else:
-                xpath_parts.append(
-                    f"[contains(text(), '{attr_value}') or @aria-label='{attr_value}' or @name='{attr_value}']"
-                )
-        elif attr_name == "id":
-            xpath_parts.append(f"[@id='{attr_value}']")
-        elif attr_name == "class":
-            xpath_parts.append(f"[contains(@class, '{attr_value}')]")
-        elif attr_name == "name":
-            xpath_parts.append(f"[@name='{attr_value}']")
-        elif attr_name == "type":
-            xpath_parts.append(f"[@type='{attr_value}']")
-        elif attr_name == "placeholder":
-            xpath_parts.append(f"[@placeholder='{attr_value}']")
-        elif attr_name == "value":
-            xpath_parts.append(f"[@value='{attr_value}']")
-        elif attr_name == "href":
-            xpath_parts.append(f"[contains(@href, '{attr_value}')]")
-        elif attr_name == "innertext":
-            xpath_parts.append(f"[contains(text(), '{attr_value}')]")
-        elif attr_name == "idx":
-            pass  # Handled separately
-        else:
-            # Generic attribute
-            xpath_parts.append(f"[@{attr_name}='{attr_value}']")
-
-    return "".join(xpath_parts)
-
-
 def parse_xml_selector(xml_selector: str) -> Tuple[str, str]:
     """
-    Parse UiPath-style XML selector and convert to XPath.
-
-    Supports single-line and multi-line hierarchical selectors:
-        Single: <input id='abc' class='foo bar' />
-        Multi:  <webctrl aaname='First Name' tag='LABEL' />
-                <nav up='1' />
-                <webctrl tag='INPUT' />
-
-    Args:
-        xml_selector: XML format selector (single or multi-line)
-
-    Returns:
-        Tuple of (xpath_selector, selector_type)
+    Parse UiPath-style XML selector and convert to XPath. (Backward Compatibility)
     """
-    xml_selector = xml_selector.strip()
+    from casare_rpa.application.services.selector_service import SelectorService
 
-    # Already an XPath?
-    if xml_selector.startswith("//") or xml_selector.startswith("(//"):
-        return xml_selector, "xpath"
-
-    # Already a CSS selector?
-    if not xml_selector.startswith("<"):
-        return xml_selector, "css"
-
-    # Split into lines/elements
-    lines = [line.strip() for line in xml_selector.split("\n") if line.strip()]
-
-    # Handle single-line with multiple elements: <a /><b />
-    if len(lines) == 1 and lines[0].count("<") > 1:
-        parts = re.split(r">\s*<", lines[0])
-        lines = []
-        for i, part in enumerate(parts):
-            if i == 0:
-                lines.append(part + ">")
-            elif i == len(parts) - 1:
-                lines.append("<" + part)
-            else:
-                lines.append("<" + part + ">")
-
-    if not lines:
-        return xml_selector, "css"
-
-    # Parse each element
-    xpath_parts = []
-    pending_nav = None
-
-    for line in lines:
-        tag, attrs = _parse_single_xml_element(line)
-
-        if not tag:
-            continue
-
-        if tag == "nav":
-            # Navigation command
-            pending_nav = attrs
-            continue
-
-        if tag in ("webctrl", "html", "wnd", "ctrl"):
-            # UiPath control element
-            element_xpath = _build_xpath_for_element(tag, attrs)
-
-            if pending_nav:
-                # Handle different navigation directions
-                up_count = int(pending_nav.get("up", "0"))
-                right_count = int(pending_nav.get("right", "0"))
-                left_count = int(pending_nav.get("left", "0"))
-                down_count = int(pending_nav.get("down", "0"))
-
-                if up_count > 0 and xpath_parts:
-                    # Navigate up (parent) then find element
-                    nav_xpath = "/parent::*" * up_count
-                    xpath_parts[-1] += nav_xpath
-                    xpath_parts.append(f"/descendant::{element_xpath}")
-                elif right_count > 0 and xpath_parts:
-                    # Navigate right - use following:: for robustness (works across containers)
-                    xpath_parts.append(f"/following::{element_xpath}[{right_count}]")
-                elif left_count > 0 and xpath_parts:
-                    # Navigate left - use preceding:: for robustness
-                    xpath_parts.append(f"/preceding::{element_xpath}[{left_count}]")
-                elif down_count > 0 and xpath_parts:
-                    # Navigate down (following in document order)
-                    xpath_parts.append(f"/following::{element_xpath}[{down_count}]")
-                else:
-                    xpath_parts.append(f"//{element_xpath}")
-                pending_nav = None
-            elif xpath_parts:
-                xpath_parts.append(f"/descendant::{element_xpath}")
-            else:
-                xpath_parts.append(f"//{element_xpath}")
-        else:
-            # Regular HTML tag (legacy format like <input id='x' />)
-            element_xpath = _build_xpath_for_element(tag, {"tag": tag, **attrs})
-            xpath_parts.append(f"//{element_xpath}")
-
-    if not xpath_parts:
-        logger.warning(f"Could not parse XML selector: {xml_selector}")
-        return xml_selector, "css"
-
-    final_xpath = "".join(xpath_parts)
-
-    # Check if the result is actually a CSS selector (from selector= attribute)
-    # Single-element CSS selectors come back as "//css=..." or just "css=..."
-    if final_xpath.startswith("//css="):
-        # Single CSS selector, return without // prefix
-        return final_xpath[6:], "css"
-    elif "css=" in final_xpath and len(xpath_parts) == 1:
-        # Standalone CSS selector
-        return final_xpath.replace("//css=", "").replace("css=", ""), "css"
-
-    # Handle idx (index) - wrap in parentheses
-    last_tag, last_attrs = _parse_single_xml_element(lines[-1])
-    if "idx" in last_attrs:
-        idx = int(last_attrs["idx"]) + 1  # UiPath 0-based → XPath 1-based
-        final_xpath = f"({final_xpath})[{idx}]"
-
-    return final_xpath, "xpath"
+    return SelectorService.parse_xml_selector(xml_selector)
 
 
 def _get_page_callbacks(page) -> Dict[str, Callable]:
@@ -337,9 +102,7 @@ class SelectorManager:
                 raise
 
         try:
-            await page.expose_function(
-                "__casareRPA_onActionRecorded", self._handle_action_recorded
-            )
+            await page.expose_function("__casareRPA_onActionRecorded", self._handle_action_recorded)
         except Exception as e:
             if "already registered" not in str(e).lower():
                 raise
@@ -372,9 +135,7 @@ class SelectorManager:
         callbacks = _get_page_callbacks(self._active_page)
         callbacks["on_element_selected"] = on_element_selected
         callbacks["on_recording_complete"] = on_recording_complete
-        logger.debug(
-            f"Registered callbacks in global registry for page {id(self._active_page)}"
-        )
+        logger.debug(f"Registered callbacks in global registry for page {id(self._active_page)}")
 
         self._is_active = True
         self._is_recording = recording
@@ -393,9 +154,7 @@ class SelectorManager:
         callback_exists = await self._active_page.evaluate(
             "typeof window.__casareRPA_onElementSelected === 'function'"
         )
-        logger.info(
-            f"Callback __casareRPA_onElementSelected exists in browser: {callback_exists}"
-        )
+        logger.info(f"Callback __casareRPA_onElementSelected exists in browser: {callback_exists}")
 
         if not callback_exists:
             logger.warning("Callback not found - attempting to re-expose")
@@ -440,9 +199,7 @@ class SelectorManager:
         if self._active_page:
             callbacks = _get_page_callbacks(self._active_page)
             callback = callbacks.get("on_element_selected")
-            logger.debug(
-                f"Retrieved callback from global registry: {callback is not None}"
-            )
+            logger.debug(f"Retrieved callback from global registry: {callback is not None}")
         # Fall back to instance callback if global not available
         if callback is None:
             callback = self._callback_element_selected
@@ -489,9 +246,7 @@ class SelectorManager:
         Args:
             action: Single action data from browser
         """
-        logger.debug(
-            f"Action recorded: {action.get('action')} at {action.get('timestamp')}"
-        )
+        logger.debug(f"Action recorded: {action.get('action')} at {action.get('timestamp')}")
         # Could emit events here for real-time UI updates if needed
 
     async def _handle_recording_complete(self, actions: List[Dict[str, Any]]):
@@ -706,9 +461,7 @@ class SelectorManager:
             logger.error(f"Selector test failed: {e}")
             return {"success": False, "error": str(e), "count": 0, "time": 0}
 
-    async def highlight_elements(
-        self, selector_value: str, selector_type: str = "xpath"
-    ):
+    async def highlight_elements(self, selector_value: str, selector_type: str = "xpath"):
         """
         Highlight all elements matching a selector (for visual validation)
         """

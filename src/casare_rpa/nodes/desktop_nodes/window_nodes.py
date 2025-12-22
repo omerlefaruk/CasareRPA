@@ -17,7 +17,6 @@ from casare_rpa.nodes.desktop_nodes.properties import (
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
     BRING_TO_FRONT_PROP,
-    WINDOW_STATE_PROP,
 )
 
 
@@ -168,9 +167,7 @@ class ResizeWindowNode(WindowNodeBase):
             desktop_ctx.resize_window(window, int(width), int(height))
             return self.success_result()
 
-        return await self.execute_with_retry(
-            do_resize, context, operation_name="resize window"
-        )
+        return await self.execute_with_retry(do_resize, context, operation_name="resize window")
 
 
 @properties(
@@ -253,9 +250,7 @@ class MoveWindowNode(WindowNodeBase):
             desktop_ctx.move_window(window, int(x), int(y))
             return self.success_result()
 
-        return await self.execute_with_retry(
-            do_move, context, operation_name="move window"
-        )
+        return await self.execute_with_retry(do_move, context, operation_name="move window")
 
 
 @properties(
@@ -310,6 +305,8 @@ class MaximizeWindowNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - maximize window."""
         window = self.get_window_from_input()
+        retry_count = self.get_parameter("retry_count")
+        retry_interval = self.get_parameter("retry_interval")
 
         logger.info(f"[{self.name}] Maximizing window")
 
@@ -320,7 +317,11 @@ class MaximizeWindowNode(WindowNodeBase):
             return self.success_result()
 
         return await self.execute_with_retry(
-            do_maximize, context, operation_name="maximize window"
+            do_maximize,
+            context,
+            retry_count=retry_count,
+            retry_interval=retry_interval,
+            operation_name="maximize window",
         )
 
 
@@ -376,6 +377,8 @@ class MinimizeWindowNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - minimize window."""
         window = self.get_window_from_input()
+        retry_count = self.get_parameter("retry_count")
+        retry_interval = self.get_parameter("retry_interval")
 
         logger.info(f"[{self.name}] Minimizing window")
 
@@ -386,7 +389,11 @@ class MinimizeWindowNode(WindowNodeBase):
             return self.success_result()
 
         return await self.execute_with_retry(
-            do_minimize, context, operation_name="minimize window"
+            do_minimize,
+            context,
+            retry_count=retry_count,
+            retry_interval=retry_interval,
+            operation_name="minimize window",
         )
 
 
@@ -442,6 +449,8 @@ class RestoreWindowNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - restore window."""
         window = self.get_window_from_input()
+        retry_count = self.get_parameter("retry_count")
+        retry_interval = self.get_parameter("retry_interval")
 
         logger.info(f"[{self.name}] Restoring window")
 
@@ -452,7 +461,11 @@ class RestoreWindowNode(WindowNodeBase):
             return self.success_result()
 
         return await self.execute_with_retry(
-            do_restore, context, operation_name="restore window"
+            do_restore,
+            context,
+            retry_count=retry_count,
+            retry_interval=retry_interval,
+            operation_name="restore window",
         )
 
 
@@ -612,7 +625,7 @@ class SetWindowStateNode(WindowNodeBase):
     async def execute(self, context: Any) -> Dict[str, Any]:
         """Execute the node - set window state."""
         window = self.get_window_from_input()
-        state = self.get_parameter("window_state", context)
+        state = self.get_parameter("state")
 
         logger.info(f"[{self.name}] Setting window state to '{state}'")
 

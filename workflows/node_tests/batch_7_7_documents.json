@@ -1,0 +1,239 @@
+{
+    "metadata": {
+        "name": "Batch 7.7 - Document Nodes (Excel/PDF/Word)",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "excel_open": {
+            "node_id": "excel_open",
+            "node_type": "ExcelOpenNode",
+            "config": {
+                "file_path": "C:\\temp\\test.xlsx"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "excel_read": {
+            "node_id": "excel_read",
+            "node_type": "ExcelReadCellNode",
+            "config": {
+                "cell": "A1"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "excel_write": {
+            "node_id": "excel_write",
+            "node_type": "ExcelWriteCellNode",
+            "config": {
+                "cell": "A1",
+                "value": "Test"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "excel_range": {
+            "node_id": "excel_range",
+            "node_type": "ExcelGetRangeNode",
+            "config": {
+                "range": "A1:B10"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "excel_close": {
+            "node_id": "excel_close",
+            "node_type": "ExcelCloseNode",
+            "config": {},
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "pdf_read": {
+            "node_id": "pdf_read",
+            "node_type": "ReadPDFTextNode",
+            "config": {
+                "file_path": "C:\\temp\\test.pdf"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "pdf_info": {
+            "node_id": "pdf_info",
+            "node_type": "GetPDFInfoNode",
+            "config": {
+                "file_path": "C:\\temp\\test.pdf"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "pdf_merge": {
+            "node_id": "pdf_merge",
+            "node_type": "MergePDFsNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "pdf_split": {
+            "node_id": "pdf_split",
+            "node_type": "SplitPDFNode",
+            "config": {},
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "word_open": {
+            "node_id": "word_open",
+            "node_type": "WordOpenNode",
+            "config": {
+                "file_path": "C:\\temp\\test.docx"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "word_text": {
+            "node_id": "word_text",
+            "node_type": "WordGetTextNode",
+            "config": {},
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "word_replace": {
+            "node_id": "word_replace",
+            "node_type": "WordReplaceTextNode",
+            "config": {
+                "find": "old",
+                "replace": "new"
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "word_close": {
+            "node_id": "word_close",
+            "node_type": "WordCloseNode",
+            "config": {},
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Document nodes tested!"
+            },
+            "position": [
+                5200,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "excel_open",
+            "source_port": "exec_out",
+            "target_node": "excel_read",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "excel_read",
+            "source_port": "exec_out",
+            "target_node": "excel_write",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "excel_write",
+            "source_port": "exec_out",
+            "target_node": "excel_range",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "excel_range",
+            "source_port": "exec_out",
+            "target_node": "excel_close",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "excel_close",
+            "source_port": "exec_out",
+            "target_node": "pdf_read",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "pdf_read",
+            "source_port": "exec_out",
+            "target_node": "pdf_info",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "pdf_info",
+            "source_port": "exec_out",
+            "target_node": "pdf_merge",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "pdf_merge",
+            "source_port": "exec_out",
+            "target_node": "pdf_split",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "pdf_split",
+            "source_port": "exec_out",
+            "target_node": "word_open",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "word_open",
+            "source_port": "exec_out",
+            "target_node": "word_text",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "word_text",
+            "source_port": "exec_out",
+            "target_node": "word_replace",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "word_replace",
+            "source_port": "exec_out",
+            "target_node": "word_close",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "word_close",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

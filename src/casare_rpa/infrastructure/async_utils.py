@@ -9,7 +9,6 @@ import asyncio
 import functools
 from typing import Any, Callable, TypeVar
 
-from loguru import logger
 
 T = TypeVar("T")
 

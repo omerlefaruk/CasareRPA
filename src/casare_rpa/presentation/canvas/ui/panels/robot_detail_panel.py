@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QGroupBox,
     QLabel,
     QPushButton,
     QProgressBar,
@@ -21,7 +20,6 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QHeaderView,
     QSplitter,
-    QFrame,
 )
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QFont
@@ -130,23 +128,17 @@ class RobotDetailPanel(QDockWidget):
         status_layout.setSpacing(16)
 
         self._status_indicator = QLabel("●")
-        self._status_indicator.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 16px;"
-        )
+        self._status_indicator.setStyleSheet(f"color: {THEME.text_muted}; font-size: 16px;")
         status_layout.addWidget(self._status_indicator)
 
         self._status_label = QLabel("Unknown")
-        self._status_label.setStyleSheet(
-            f"color: {THEME.text_secondary}; font-size: 12px;"
-        )
+        self._status_label.setStyleSheet(f"color: {THEME.text_secondary}; font-size: 12px;")
         status_layout.addWidget(self._status_label)
 
         status_layout.addStretch()
 
         self._robot_id_label = QLabel("")
-        self._robot_id_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 10px;"
-        )
+        self._robot_id_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
         status_layout.addWidget(self._robot_id_label)
 
         main_layout.addLayout(status_layout)
@@ -238,9 +230,7 @@ class RobotDetailPanel(QDockWidget):
         job_layout.addLayout(job_header)
 
         self._job_name_label = QLabel("No active job")
-        self._job_name_label.setStyleSheet(
-            f"color: {THEME.text_primary}; font-size: 12px;"
-        )
+        self._job_name_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 12px;")
         job_layout.addWidget(self._job_name_label)
 
         # Job progress bar
@@ -252,9 +242,7 @@ class RobotDetailPanel(QDockWidget):
         job_layout.addWidget(self._job_progress_bar)
 
         self._job_status_label = QLabel("")
-        self._job_status_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 10px;"
-        )
+        self._job_status_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
         job_layout.addWidget(self._job_status_label)
 
         splitter.addWidget(job_widget)
@@ -401,9 +389,7 @@ class RobotDetailPanel(QDockWidget):
     def _show_no_selection(self) -> None:
         """Show placeholder when no robot selected."""
         self._robot_name_label.setText("No Robot Selected")
-        self._status_indicator.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 16px;"
-        )
+        self._status_indicator.setStyleSheet(f"color: {THEME.text_muted}; font-size: 16px;")
         self._status_label.setText("")
         self._robot_id_label.setText("")
         self._cpu_bar.setValue(0)
@@ -547,9 +533,7 @@ class RobotDetailPanel(QDockWidget):
 
             # Format: HH:MM:SS [LEVEL] message
             if timestamp:
-                time_str = (
-                    timestamp.split("T")[-1][:8] if "T" in timestamp else timestamp[:8]
-                )
+                time_str = timestamp.split("T")[-1][:8] if "T" in timestamp else timestamp[:8]
             else:
                 time_str = "        "
 

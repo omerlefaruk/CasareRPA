@@ -126,7 +126,7 @@ class AIRecoveryNode(BaseNode):
             error_message = self.get_input_value("error_message") or "Unknown error"
             error_type = self.get_input_value("error_type") or "Exception"
             error_node = self.get_input_value("error_node") or ""
-            stack_trace = self.get_input_value("stack_trace")
+            self.get_input_value("stack_trace")
             screenshot = self.get_input_value("screenshot")
             execution_history = self.get_input_value("execution_history") or []
             node_context = self.get_input_value("node_context") or {}

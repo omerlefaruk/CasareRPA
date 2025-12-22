@@ -142,8 +142,6 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
 
         # Get text
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self._set_error_outputs("Text message is required")
@@ -265,8 +263,6 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
 
         # Get template name
         template_name = self.get_parameter("template_name")
-        if hasattr(context, "resolve_value"):
-            template_name = context.resolve_value(template_name)
 
         if not template_name:
             self._set_error_outputs("Template name is required")
@@ -278,15 +274,11 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
 
         # Get language code
         language_code = self.get_parameter("language_code") or "en_US"
-        if hasattr(context, "resolve_value"):
-            language_code = context.resolve_value(language_code)
 
         # Get components (JSON string)
         components = None
         components_str = self.get_parameter("components")
         if components_str:
-            if hasattr(context, "resolve_value"):
-                components_str = context.resolve_value(components_str)
             try:
                 components = json.loads(components_str)
             except json.JSONDecodeError as e:
@@ -395,8 +387,6 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
 
         # Get image
         image = self.get_parameter("image")
-        if hasattr(context, "resolve_value"):
-            image = context.resolve_value(image)
 
         if not image:
             self._set_error_outputs("Image is required")
@@ -404,8 +394,6 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
 
         # Get optional caption
         caption = self.get_parameter("caption")
-        if caption and hasattr(context, "resolve_value"):
-            caption = context.resolve_value(caption)
 
         logger.debug(f"Sending WhatsApp image to {to}")
 
@@ -514,8 +502,6 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
 
         # Get document
         document = self.get_parameter("document")
-        if hasattr(context, "resolve_value"):
-            document = context.resolve_value(document)
 
         if not document:
             self._set_error_outputs("Document is required")
@@ -523,12 +509,8 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
 
         # Get optional params
         filename = self.get_parameter("filename")
-        if filename and hasattr(context, "resolve_value"):
-            filename = context.resolve_value(filename)
 
         caption = self.get_parameter("caption")
-        if caption and hasattr(context, "resolve_value"):
-            caption = context.resolve_value(caption)
 
         logger.debug(f"Sending WhatsApp document to {to}")
 
@@ -628,8 +610,6 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
 
         # Get video
         video = self.get_parameter("video")
-        if hasattr(context, "resolve_value"):
-            video = context.resolve_value(video)
 
         if not video:
             self._set_error_outputs("Video is required")
@@ -637,8 +617,6 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
 
         # Get optional caption
         caption = self.get_parameter("caption")
-        if caption and hasattr(context, "resolve_value"):
-            caption = context.resolve_value(caption)
 
         logger.debug(f"Sending WhatsApp video to {to}")
 
@@ -765,10 +743,6 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         latitude = self.get_parameter("latitude")
         longitude = self.get_parameter("longitude")
 
-        if hasattr(context, "resolve_value"):
-            latitude = context.resolve_value(latitude)
-            longitude = context.resolve_value(longitude)
-
         try:
             latitude = float(latitude)
             longitude = float(longitude)
@@ -799,12 +773,8 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
 
         # Get optional params
         name = self.get_parameter("name")
-        if name and hasattr(context, "resolve_value"):
-            name = context.resolve_value(name)
 
         address = self.get_parameter("address")
-        if address and hasattr(context, "resolve_value"):
-            address = context.resolve_value(address)
 
         logger.debug(f"Sending WhatsApp location to {to}")
 
@@ -938,8 +908,6 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
 
         # Get interactive type
         interactive_type = self.get_parameter("interactive_type")
-        if hasattr(context, "resolve_value"):
-            interactive_type = context.resolve_value(interactive_type)
 
         if interactive_type not in ["button", "list"]:
             self._set_error_outputs("Interactive type must be 'button' or 'list'")
@@ -951,8 +919,6 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
 
         # Get body text
         body_text = self.get_parameter("body_text")
-        if hasattr(context, "resolve_value"):
-            body_text = context.resolve_value(body_text)
 
         if not body_text:
             self._set_error_outputs("Body text is required")
@@ -964,8 +930,6 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
 
         # Get action (JSON string)
         action_json = self.get_parameter("action_json")
-        if hasattr(context, "resolve_value"):
-            action_json = context.resolve_value(action_json)
 
         try:
             action = json.loads(action_json)
@@ -981,8 +945,6 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
         header = None
         header_json = self.get_parameter("header_json")
         if header_json:
-            if hasattr(context, "resolve_value"):
-                header_json = context.resolve_value(header_json)
             try:
                 header = json.loads(header_json)
             except json.JSONDecodeError as e:
@@ -995,8 +957,6 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
 
         # Get optional footer
         footer_text = self.get_parameter("footer_text")
-        if footer_text and hasattr(context, "resolve_value"):
-            footer_text = context.resolve_value(footer_text)
 
         logger.debug(f"Sending WhatsApp interactive message to {to}")
 

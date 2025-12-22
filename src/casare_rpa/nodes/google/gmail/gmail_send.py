@@ -183,8 +183,6 @@ class GmailSendEmailNode(GmailBaseNode):
         """Send a plain/HTML email."""
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -198,18 +196,12 @@ class GmailSendEmailNode(GmailBaseNode):
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get subject and body
         subject = self.get_parameter("subject")
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
 
         if not subject:
             self._set_error_outputs("Subject is required")
@@ -229,8 +221,6 @@ class GmailSendEmailNode(GmailBaseNode):
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         logger.debug(f"Sending Gmail to {to_list}")
 
@@ -345,8 +335,6 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         """Send an email with attachments."""
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -360,18 +348,12 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get subject and body
         subject = self.get_parameter("subject")
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
 
         if not subject:
             self._set_error_outputs("Subject is required")
@@ -391,15 +373,10 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         # Get attachments - from string or list
         attachments_str = self.get_parameter("attachments") or ""
         attachment_list = self.get_parameter("attachment_list") or []
-        if hasattr(context, "resolve_value"):
-            attachments_str = context.resolve_value(attachments_str)
-            attachment_list = context.resolve_value(attachment_list)
 
         # Parse attachment paths
         attachment_paths: list[Union[str, Path]] = []
@@ -424,9 +401,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
             else:
                 logger.warning(f"Attachment not found: {att_path}")
 
-        logger.debug(
-            f"Sending Gmail with {len(valid_attachments)} attachments to {to_list}"
-        )
+        logger.debug(f"Sending Gmail with {len(valid_attachments)} attachments to {to_list}")
 
         # Send message
         result = await client.send_message(
@@ -445,9 +420,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         self.set_output_value("thread_id", result.thread_id)
         self.set_output_value("attachment_count", len(valid_attachments))
 
-        logger.info(
-            f"Gmail sent with {len(valid_attachments)} attachments: {result.id}"
-        )
+        logger.info(f"Gmail sent with {len(valid_attachments)} attachments: {result.id}")
 
         return {
             "success": True,
@@ -555,9 +528,6 @@ class GmailReplyToEmailNode(GmailBaseNode):
         # Get thread and message IDs
         thread_id = self.get_parameter("thread_id")
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            thread_id = context.resolve_value(thread_id)
-            message_id = context.resolve_value(message_id)
 
         if not thread_id:
             self._set_error_outputs("Thread ID is required")
@@ -577,8 +547,6 @@ class GmailReplyToEmailNode(GmailBaseNode):
 
         # Get body
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            body = context.resolve_value(body)
 
         if not body:
             self._set_error_outputs("Reply body is required")
@@ -590,15 +558,10 @@ class GmailReplyToEmailNode(GmailBaseNode):
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
@@ -713,8 +676,6 @@ class GmailForwardEmailNode(GmailBaseNode):
         """Forward an email."""
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         if not message_id:
             self._set_error_outputs("Message ID is required")
@@ -726,8 +687,6 @@ class GmailForwardEmailNode(GmailBaseNode):
 
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -741,16 +700,11 @@ class GmailForwardEmailNode(GmailBaseNode):
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get additional body
         additional_body = self.get_parameter("additional_body") or ""
-        if hasattr(context, "resolve_value"):
-            additional_body = context.resolve_value(additional_body)
 
         logger.debug(f"Forwarding message {message_id} to {to_list}")
 
@@ -860,8 +814,6 @@ class GmailCreateDraftNode(GmailBaseNode):
         """Create a draft email."""
         # Get recipients
         to_str = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to_str = context.resolve_value(to_str)
 
         to_list = _parse_email_list(to_str)
         if not to_list:
@@ -875,18 +827,12 @@ class GmailCreateDraftNode(GmailBaseNode):
         # Get optional CC/BCC
         cc_str = self.get_parameter("cc") or ""
         bcc_str = self.get_parameter("bcc") or ""
-        if hasattr(context, "resolve_value"):
-            cc_str = context.resolve_value(cc_str)
-            bcc_str = context.resolve_value(bcc_str)
         cc_list = _parse_email_list(cc_str)
         bcc_list = _parse_email_list(bcc_str)
 
         # Get subject and body
         subject = self.get_parameter("subject")
         body = self.get_parameter("body")
-        if hasattr(context, "resolve_value"):
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
 
         if not subject:
             self._set_error_outputs("Subject is required")
@@ -906,13 +852,9 @@ class GmailCreateDraftNode(GmailBaseNode):
 
         # Get body type
         body_type = self.get_parameter("body_type") or "plain"
-        if hasattr(context, "resolve_value"):
-            body_type = context.resolve_value(body_type)
 
         # Get attachments
         attachments_str = self.get_parameter("attachments") or ""
-        if hasattr(context, "resolve_value"):
-            attachments_str = context.resolve_value(attachments_str)
 
         attachment_paths = []
         if attachments_str:

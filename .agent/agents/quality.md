@@ -31,11 +31,11 @@ mcp__Ref__ref_search_documentation: "pytest fixtures async"
 
 ## Semantic Search (Internal Codebase)
 
-Use `qdrant-find` to discover existing test patterns:
-```
-qdrant-find: "test node execution"
-qdrant-find: "mock playwright page"
-qdrant-find: "async test pattern"
+Use `search_codebase()` to discover existing test patterns:
+```python
+search_codebase("test node execution", top_k=5)
+search_codebase("mock playwright page", top_k=5)
+search_codebase("async test pattern", top_k=5)
 ```
 
 ## .brain Protocol (Token-Optimized)

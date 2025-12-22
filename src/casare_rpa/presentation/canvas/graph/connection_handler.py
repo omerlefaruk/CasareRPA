@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Optional, Set
 from PySide6.QtCore import Signal, QObject
 
 from loguru import logger
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -97,9 +98,7 @@ class ConnectionHandler(QObject):
                 logger.warning(f"Connection blocked: {validation.message}")
 
                 try:
-                    output_port.disconnect_from(
-                        input_port, push_undo=False, emit_signal=False
-                    )
+                    output_port.disconnect_from(input_port, push_undo=False, emit_signal=False)
                 except Exception as e:
                     logger.error(f"Failed to disconnect invalid connection: {e}")
 
@@ -125,7 +124,10 @@ class ConnectionHandler(QObject):
                     if (
                         pipe
                         and hasattr(pipe, "input_port")
-                        and pipe.input_port() == input_port
+                        and (
+                            (callable(pipe.input_port) and pipe.input_port() == input_port)
+                            or (not callable(pipe.input_port) and pipe.input_port == input_port)
+                        )
                     ):
                         source_node = output_port.node()
                         target_node = input_port.node()
@@ -133,6 +135,14 @@ class ConnectionHandler(QObject):
                             pipe_id = f"{source_node.id}:{output_port.name()}>{target_node.id}:{input_port.name()}"
                             self._culler.register_pipe(
                                 pipe_id, source_node.id, target_node.id, pipe
+                            )
+                            log_canvas_event(
+                                "connection_added",
+                                pipe_id=pipe_id,
+                                source_node_id=source_node.id,
+                                target_node_id=target_node.id,
+                                source_port=output_port.name(),
+                                target_port=input_port.name(),
                             )
                         break
 
@@ -155,8 +165,18 @@ class ConnectionHandler(QObject):
             source_node = output_port.node() if output_port else None
             target_node = input_port.node() if input_port else None
             if source_node and target_node:
-                pipe_id = f"{source_node.id}:{output_port.name()}>{target_node.id}:{input_port.name()}"
+                pipe_id = (
+                    f"{source_node.id}:{output_port.name()}>{target_node.id}:{input_port.name()}"
+                )
                 self._culler.unregister_pipe(pipe_id)
+                log_canvas_event(
+                    "connection_removed",
+                    pipe_id=pipe_id,
+                    source_node_id=source_node.id,
+                    target_node_id=target_node.id,
+                    source_port=output_port.name(),
+                    target_port=input_port.name(),
+                )
         except Exception as e:
             logger.debug(f"Could not unregister pipe from culling: {e}")
 
@@ -234,6 +254,10 @@ class ConnectionHandler(QObject):
 
             if orphaned_pipes:
                 logger.debug(f"Cleaned up {len(orphaned_pipes)} orphaned pipe(s)")
+                log_canvas_event(
+                    "orphaned_pipes_removed",
+                    count=len(orphaned_pipes),
+                )
 
         except Exception as e:
             logger.debug(f"Error during orphaned pipe cleanup: {e}")
@@ -281,6 +305,13 @@ class ConnectionHandler(QObject):
         """
         for pipe in orphaned_pipes:
             try:
+                input_port_item = (
+                    pipe.input_port() if callable(pipe.input_port) else pipe.input_port
+                )
+                output_port_item = (
+                    pipe.output_port() if callable(pipe.output_port) else pipe.output_port
+                )
+
                 if pipe.input_port and hasattr(pipe.input_port, "connected_pipes"):
                     try:
                         if pipe in pipe.input_port.connected_pipes:
@@ -298,15 +329,38 @@ class ConnectionHandler(QObject):
                 if pipe.scene():
                     scene.removeItem(pipe)
 
-                self._culler.unregister_pipe(id(pipe))
+                pipe_id = None
+                if input_port_item and output_port_item:
+                    source_node = (
+                        output_port_item.node()
+                        if callable(output_port_item.node)
+                        else output_port_item.node
+                    )
+                    target_node = (
+                        input_port_item.node()
+                        if callable(input_port_item.node)
+                        else input_port_item.node
+                    )
+                    if source_node and target_node:
+                        try:
+                            source_id = source_node.id
+                            target_id = target_node.id
+                            source_port = output_port_item.name()
+                            target_port = input_port_item.name()
+                            pipe_id = f"{source_id}:{source_port}>{target_id}:{target_port}"
+                        except Exception:
+                            pipe_id = None
+
+                if pipe_id:
+                    self._culler.unregister_pipe(pipe_id)
+                else:
+                    self._culler.unregister_pipe(str(id(pipe)))
 
                 logger.debug(f"Cleaned up orphaned pipe: {pipe}")
             except Exception as e:
                 logger.debug(f"Error cleaning up orphaned pipe: {e}")
 
-    def show_connection_search(
-        self, source_port, scene_pos, node_created_handler
-    ) -> None:
+    def show_connection_search(self, source_port, scene_pos, node_created_handler) -> None:
         """
         Show the standard graph context menu (Tab search style) and setup auto-connect.
 
@@ -348,9 +402,7 @@ class ConnectionHandler(QObject):
             except (RuntimeError, TypeError):
                 pass
 
-    def _format_magic_connect_header(
-        self, source_port, source_type, source_is_output: bool
-    ) -> str:
+    def _format_magic_connect_header(self, source_port, source_type, source_is_output: bool) -> str:
         try:
             from casare_rpa.domain.value_objects.types import DataType
 
@@ -371,19 +423,11 @@ class ConnectionHandler(QObject):
         """Get DataType for a PortItem (None for exec)."""
         try:
             port_name = getattr(port_item, "name", "")
-            node_item = (
-                port_item.parentItem() if hasattr(port_item, "parentItem") else None
-            )
+            node_item = port_item.parentItem() if hasattr(port_item, "parentItem") else None
             node = None
             if node_item is not None:
-                node = getattr(node_item, "node", None) or getattr(
-                    node_item, "_node", None
-                )
-            if (
-                node
-                and hasattr(node, "get_port_type")
-                and callable(getattr(node, "get_port_type"))
-            ):
+                node = getattr(node_item, "node", None) or getattr(node_item, "_node", None)
+            if node and hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
                 return node.get_port_type(port_name)
         except Exception:
             pass

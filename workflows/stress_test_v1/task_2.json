@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "name": "Variable Formatting and Logging",
+    "description": "Sets name and age variables, formats them into a string, and logs the output.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "set_name": {
+      "node_id": "set_name",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "name",
+        "value": "Alice"
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "set_age": {
+      "node_id": "set_age",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "age",
+        "value": 30
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "create_data_dict": {
+      "node_id": "create_data_dict",
+      "node_type": "CreateDictNode",
+      "config": {
+        "key_1": "name",
+        "value_1": "{{name}}",
+        "key_2": "age",
+        "value_2": "{{age}}"
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    },
+    "format_greeting": {
+      "node_id": "format_greeting",
+      "node_type": "FormatStringNode",
+      "config": {
+        "template": "Hello, my name is {name} and I am {age} years old",
+        "variables": "{{create_data_dict.dict}}"
+      },
+      "position": [
+        1200.0,
+        0.0
+      ]
+    },
+    "log_result": {
+      "node_id": "log_result",
+      "node_type": "LogNode",
+      "config": {
+        "message": "{{format_greeting.result}}"
+      },
+      "position": [
+        1600.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "set_name",
+      "source_port": "exec_out",
+      "target_node": "set_age",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "set_age",
+      "source_port": "exec_out",
+      "target_node": "create_data_dict",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "create_data_dict",
+      "source_port": "exec_out",
+      "target_node": "format_greeting",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "format_greeting",
+      "source_port": "exec_out",
+      "target_node": "log_result",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

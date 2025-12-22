@@ -84,9 +84,7 @@ class SetHttpHeadersNode(BaseNode):
     # @requires: requests
     # @ports: base_headers, header_name, header_value, headers_json -> headers
 
-    def __init__(
-        self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -381,9 +379,7 @@ class HttpDownloadFileNode(BaseNode):
     # @requires: requests
     # @ports: url, save_path, headers, timeout -> file_path, file_size, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "HTTP Download File", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "HTTP Download File", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -418,9 +414,6 @@ class HttpDownloadFileNode(BaseNode):
             overwrite = self.get_parameter("overwrite", True)
             retry_count = self.get_parameter("retry_count", 0)
             chunk_size = self.get_parameter("chunk_size", 8192)
-
-            url = context.resolve_value(url)
-            save_path = context.resolve_value(save_path)
 
             if not url:
                 raise ValueError("URL is required")
@@ -593,9 +586,7 @@ class HttpUploadFileNode(BaseNode):
     # @requires: requests
     # @ports: url, file_path, field_name, headers, extra_fields, timeout -> response_body, response_json, status_code, success, error
 
-    def __init__(
-        self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -636,9 +627,6 @@ class HttpUploadFileNode(BaseNode):
             extra_fields = self.get_parameter("extra_fields", {})
             timeout_seconds = self.get_parameter("timeout", 300.0)
             retry_count = self.get_parameter("retry_count", 0)
-
-            url = context.resolve_value(url)
-            file_path = context.resolve_value(file_path)
 
             if not url:
                 raise ValueError("URL is required")
@@ -801,9 +789,6 @@ class BuildUrlNode(BaseNode):
             base_url = self.get_parameter("base_url")
             path = self.get_parameter("path", "")
             params = self.get_parameter("params", {})
-
-            base_url = context.resolve_value(base_url)
-            path = context.resolve_value(path)
 
             if not base_url:
                 raise ValueError("Base URL is required")

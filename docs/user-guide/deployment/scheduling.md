@@ -324,7 +324,7 @@ alerts:
     enabled: true
     channels:
       - email
-      - slack
+      - webhook
 
   missed_run:
     enabled: true

@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING, Dict, Callable, Awaitable, Any
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
@@ -314,9 +313,7 @@ class WindowManagementSuperNode(DesktopNodeBase):
         action = self.get_parameter("action", WindowAction.RESIZE.value)
 
         # Map actions to handlers
-        handlers: Dict[
-            str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]
-        ] = {
+        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
             WindowAction.RESIZE.value: self._execute_resize,
             WindowAction.MOVE.value: self._execute_move,
             WindowAction.MAXIMIZE.value: self._execute_maximize,
@@ -467,9 +464,7 @@ class WindowManagementSuperNode(DesktopNodeBase):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_get_properties(
-        self, context: "IExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_get_properties(self, context: "IExecutionContext") -> ExecutionResult:
         """Get window properties."""
         window = self._get_window()
 
@@ -478,9 +473,7 @@ class WindowManagementSuperNode(DesktopNodeBase):
         desktop_ctx = self.get_desktop_context(context)
         properties = desktop_ctx.get_window_properties(window)
 
-        logger.info(
-            f"[{self.name}] Got properties: {properties.get('title', 'Unknown')}"
-        )
+        logger.info(f"[{self.name}] Got properties: {properties.get('title', 'Unknown')}")
 
         self.set_output_value("properties", properties)
         self.set_output_value("title", properties.get("title", ""))

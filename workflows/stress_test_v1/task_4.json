@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "name": "File Existence Check and Delete",
+    "description": "Checks if a specific file exists, deletes it if it does, otherwise logs a message.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "check_file_exists": {
+      "node_id": "check_file_exists",
+      "node_type": "FileSystemSuperNode",
+      "config": {
+        "action": "File Exists",
+        "path": "stress_test_file.txt"
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "if_exists": {
+      "node_id": "if_exists",
+      "node_type": "IfNode",
+      "config": {
+        "condition": "{{check_file_exists.exists}} == true"
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "delete_file": {
+      "node_id": "delete_file",
+      "node_type": "FileSystemSuperNode",
+      "config": {
+        "action": "Delete File",
+        "file_path": "stress_test_file.txt"
+      },
+      "position": [
+        800.0,
+        -100.0
+      ]
+    },
+    "log_not_found": {
+      "node_id": "log_not_found",
+      "node_type": "LogNode",
+      "config": {
+        "message": "File does not exist"
+      },
+      "position": [
+        800.0,
+        100.0
+      ]
+    },
+    "merge_flow": {
+      "node_id": "merge_flow",
+      "node_type": "MergeNode",
+      "config": {},
+      "position": [
+        1200.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "check_file_exists",
+      "source_port": "exec_out",
+      "target_node": "if_exists",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "if_exists",
+      "source_port": "true",
+      "target_node": "delete_file",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "if_exists",
+      "source_port": "false",
+      "target_node": "log_not_found",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "delete_file",
+      "source_port": "exec_out",
+      "target_node": "merge_flow",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "log_not_found",
+      "source_port": "exec_out",
+      "target_node": "merge_flow",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

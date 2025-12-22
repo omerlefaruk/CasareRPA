@@ -260,9 +260,7 @@ class TestSuperNodeMixinOnActionChanged:
         # Should not raise, just log warning
         node._on_action_changed("Read File")
 
-    def test_on_action_changed_calls_clear_and_create(
-        self, mock_qtimer, mock_port_schema
-    ) -> None:
+    def test_on_action_changed_calls_clear_and_create(self, mock_qtimer, mock_port_schema) -> None:
         """Test that action change clears old ports and creates new ones."""
         from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import (
             SuperNodeMixin,
@@ -288,9 +286,7 @@ class TestSuperNodeMixinOnActionChanged:
         node._create_ports_from_config.assert_called_once()
         node._filter_widgets_for_action.assert_called_once_with("Write File")
 
-    def test_on_action_changed_invalid_action(
-        self, mock_qtimer, mock_port_schema
-    ) -> None:
+    def test_on_action_changed_invalid_action(self, mock_qtimer, mock_port_schema) -> None:
         """Test that invalid action logs warning but doesn't crash."""
         from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import (
             SuperNodeMixin,
@@ -436,6 +432,9 @@ class TestSuperNodeMixinPortManagement:
         node = TestNode()
         node.add_typed_input = MagicMock()
         node.add_typed_output = MagicMock()
+        # Mock get_input/get_output to return None (port doesn't exist yet)
+        node.get_input = MagicMock(return_value=None)
+        node.get_output = MagicMock(return_value=None)
 
         config = mock_port_schema.get_config("Write File")
         node._create_ports_from_config(config)

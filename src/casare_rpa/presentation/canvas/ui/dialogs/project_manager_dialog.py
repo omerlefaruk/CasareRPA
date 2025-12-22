@@ -399,9 +399,7 @@ class ProjectManagerDialog(QDialog):
             # Create project item
             project_item = QTreeWidgetItem()
             project_item.setText(0, f"📁 {entry.name}")
-            project_item.setData(
-                0, Qt.ItemDataRole.UserRole, {"type": "project", "entry": entry}
-            )
+            project_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "project", "entry": entry})
             project_item.setToolTip(0, entry.path)
 
             # Load scenarios for this project
@@ -453,7 +451,7 @@ class ProjectManagerDialog(QDialog):
             for scenario_file in scenarios_dir.glob("*.json"):
                 try:
                     data = orjson.loads(scenario_file.read_bytes())
-                    name = data.get("name", scenario_file.stem)
+                    name = data.get("metadata", {}).get("name") or scenario_file.stem
                     scenarios.append(
                         {
                             "name": name,
@@ -498,9 +496,7 @@ class ProjectManagerDialog(QDialog):
             parent = items[0].parent()
             if parent:
                 parent_data = parent.data(0, Qt.ItemDataRole.UserRole)
-                self._selected_project = (
-                    parent_data.get("entry") if parent_data else None
-                )
+                self._selected_project = parent_data.get("entry") if parent_data else None
             self._selected_scenario = item_data
             self._update_details_for_scenario(item_data)
 
@@ -680,9 +676,7 @@ class ProjectManagerDialog(QDialog):
             return
 
         if not path:
-            QMessageBox.warning(
-                self, "Validation Error", "Project location is required."
-            )
+            QMessageBox.warning(self, "Validation Error", "Project location is required.")
             return
 
         # Check if path exists and is not empty

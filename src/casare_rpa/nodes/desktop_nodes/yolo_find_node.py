@@ -271,9 +271,7 @@ class YOLOFindElementNode(DesktopNodeBase):
                     save_dc.SelectObject(bitmap)
 
                     # Try PrintWindow for better capture
-                    result = windll.user32.PrintWindow(
-                        window_handle, save_dc.GetSafeHdc(), 2
-                    )
+                    windll.user32.PrintWindow(window_handle, save_dc.GetSafeHdc(), 2)
 
                     bmpinfo = bitmap.GetInfo()
                     bmpstr = bitmap.GetBitmapBits(True)
@@ -308,8 +306,7 @@ class YOLOFindElementNode(DesktopNodeBase):
 
         except ImportError:
             raise ImportError(
-                "Screenshot capture requires Pillow. "
-                "Install with: pip install Pillow"
+                "Screenshot capture requires Pillow. " "Install with: pip install Pillow"
             )
 
     async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
@@ -367,9 +364,7 @@ class YOLOFindElementNode(DesktopNodeBase):
                 return self.error_result(result.error_message or "Detection failed")
 
             # Filter by confidence and get all matching elements
-            matching_elements = [
-                e for e in result.elements if e.confidence >= confidence_threshold
-            ]
+            matching_elements = [e for e in result.elements if e.confidence >= confidence_threshold]
 
             # Convert to list of dicts for output
             all_elements_data = [e.to_dict() for e in matching_elements]

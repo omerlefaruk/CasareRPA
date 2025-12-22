@@ -21,6 +21,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsPathItem,
+    QGraphicsPolygonItem,
     QGraphicsRectItem,
     QGraphicsScene,
     QGraphicsSimpleTextItem,
@@ -322,7 +323,7 @@ class ProcessMapWidget(QGraphicsView):
         edges = model.get("edges", {})
         entry_nodes = set(model.get("entry_nodes", []))
         exit_nodes = set(model.get("exit_nodes", []))
-        loop_nodes = set(model.get("loop_nodes", []))
+        set(model.get("loop_nodes", []))
         node_types = model.get("node_types", {})
 
         # Layout nodes in a grid
@@ -366,9 +367,7 @@ class ProcessMapWidget(QGraphicsView):
                 self._edges.append(edge_item)
 
         # Fit view to content
-        self._scene.setSceneRect(
-            self._scene.itemsBoundingRect().adjusted(-50, -50, 50, 50)
-        )
+        self._scene.setSceneRect(self._scene.itemsBoundingRect().adjusted(-50, -50, 50, 50))
         self.fitInView(self._scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
         logger.debug(

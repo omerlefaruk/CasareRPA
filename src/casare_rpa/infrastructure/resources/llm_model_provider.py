@@ -189,9 +189,7 @@ class LLMModelProvider:
                 models = self._fetch_models(provider, api_key)
                 if models:
                     self._cache[provider] = ModelCache(
-                        models=[
-                            ModelInfo(id=m, name=m, provider=provider) for m in models
-                        ],
+                        models=[ModelInfo(id=m, name=m, provider=provider) for m in models],
                         last_updated=time.time(),
                     )
                     return models
@@ -340,7 +338,6 @@ class LLMModelProvider:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # If we're in an async context, use run_coroutine_threadsafe
-                import concurrent.futures
 
                 future = asyncio.run_coroutine_threadsafe(_do_fetch(), loop)
                 return future.result(timeout=15.0)
@@ -356,10 +353,7 @@ class LLMModelProvider:
         for model in data.get("data", []):
             model_id = model.get("id", "")
             # Filter to chat/completion models only
-            if any(
-                prefix in model_id
-                for prefix in ["gpt-", "o1-", "o3-", "chatgpt-", "text-"]
-            ):
+            if any(prefix in model_id for prefix in ["gpt-", "o1-", "o3-", "chatgpt-", "text-"]):
                 models.append(model_id)
         return sorted(models, reverse=True)[:20]  # Latest first, limit to 20
 

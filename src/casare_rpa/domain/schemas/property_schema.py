@@ -16,7 +16,7 @@ import re
 
 logger = logging.getLogger(__name__)
 
-from casare_rpa.domain.schemas.property_types import PropertyType, PropertyVisibility
+from casare_rpa.domain.schemas.property_types import PropertyType
 
 
 # PERFORMANCE: Module-level type validators to avoid rebuilding on every call
@@ -25,8 +25,7 @@ TYPE_VALIDATORS: Dict[PropertyType, Callable[[Any], bool]] = {
     PropertyType.STRING: lambda v: isinstance(v, str),
     PropertyType.TEXT: lambda v: isinstance(v, str),
     PropertyType.INTEGER: lambda v: isinstance(v, int) and not isinstance(v, bool),
-    PropertyType.FLOAT: lambda v: isinstance(v, (int, float))
-    and not isinstance(v, bool),
+    PropertyType.FLOAT: lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
     PropertyType.BOOLEAN: lambda v: isinstance(v, bool),
     PropertyType.ANY: lambda v: True,
     PropertyType.CHOICE: lambda v: isinstance(v, str),
@@ -128,19 +127,80 @@ class PropertyDef:
     supports_expressions: bool = True
     """Whether this property supports expression syntax (e.g., {{variable}})."""
 
-    def __post_init__(self) -> None:
-        """Auto-generate label and sync essential with visibility."""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    """Additional metadata attributes for the property."""
+
+    def __init__(
+        self,
+        name: str,
+        type: PropertyType,
+        default: Any = None,
+        label: Optional[str] = None,
+        placeholder: str = "",
+        choices: Optional[List[str]] = None,
+        tab: str = "properties",
+        readonly: bool = False,
+        tooltip: str = "",
+        required: bool = False,
+        min_value: Optional[float] = None,
+        max_value: Optional[float] = None,
+        widget_class: Optional[Type] = None,
+        essential: bool = False,
+        visibility: Literal["essential", "normal", "advanced", "internal"] = "normal",
+        order: int = 0,
+        display_when: Optional[Dict[str, Any]] = None,
+        hidden_when: Optional[Dict[str, Any]] = None,
+        dynamic_choices: Optional[Callable[[Dict[str, Any]], List[str]]] = None,
+        dynamic_default: Optional[Callable[[Dict[str, Any]], Any]] = None,
+        group: Optional[str] = None,
+        group_collapsed: bool = True,
+        pattern: Optional[str] = None,
+        supports_expressions: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        self.name = name
+        self.type = type
+        self.default = default
+        self.label = label
+        self.placeholder = placeholder
+        self.choices = choices
+        self.tab = tab
+        self.readonly = readonly
+        self.tooltip = tooltip
+        self.required = required
+        self.min_value = min_value
+        self.max_value = max_value
+        self.widget_class = widget_class
+        self.essential = essential
+        self.visibility = visibility
+        self.order = order
+        self.display_when = display_when
+        self.hidden_when = hidden_when
+        self.dynamic_choices = dynamic_choices
+        self.dynamic_default = dynamic_default
+        self.group = group
+        self.group_collapsed = group_collapsed
+        self.pattern = pattern
+        self.supports_expressions = supports_expressions
+        self.metadata = kwargs
+
+        # Post-init logic
         if self.label is None:
-            # Convert snake_case to Title Case
             self.label = self.name.replace("_", " ").title()
 
-        # Map essential=True to visibility="essential" for backward compatibility
         if self.essential and self.visibility == "normal":
             self.visibility = "essential"
 
-        # Also sync the other way: visibility="essential" sets essential=True
         if self.visibility == "essential" and not self.essential:
-            object.__setattr__(self, "essential", True)
+            self.essential = True
+
+        # Add kwargs as attributes for easy access
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def __post_init__(self) -> None:
+        # Since we added a manual __init__ to support **kwargs, we move post_init logic there.
+        pass
 
 
 @dataclass
@@ -207,13 +267,9 @@ class NodeSchema:
             # Range validation for numeric types
             if prop.type in (PropertyType.INTEGER, PropertyType.FLOAT):
                 if prop.min_value is not None and value < prop.min_value:
-                    errors.append(
-                        f"{prop.label or prop.name} must be >= {prop.min_value}"
-                    )
+                    errors.append(f"{prop.label or prop.name} must be >= {prop.min_value}")
                 if prop.max_value is not None and value > prop.max_value:
-                    errors.append(
-                        f"{prop.label or prop.name} must be <= {prop.max_value}"
-                    )
+                    errors.append(f"{prop.label or prop.name} must be <= {prop.max_value}")
 
             # Choice validation
             if prop.type == PropertyType.CHOICE:
@@ -231,15 +287,9 @@ class NodeSchema:
                         )
 
             # Pattern validation for STRING types
-            if (
-                prop.pattern
-                and prop.type == PropertyType.STRING
-                and isinstance(value, str)
-            ):
+            if prop.pattern and prop.type == PropertyType.STRING and isinstance(value, str):
                 if not re.match(prop.pattern, value):
-                    errors.append(
-                        f"{prop.label or prop.name} does not match required pattern"
-                    )
+                    errors.append(f"{prop.label or prop.name} does not match required pattern")
 
         if errors:
             return False, "; ".join(errors)
@@ -452,9 +502,7 @@ class NodeSchema:
             logger.warning(f"Error getting dynamic choices for {prop_name}: {e}")
             return prop.choices  # Fall back to static choices
 
-    def get_dynamic_default(
-        self, prop_name: str, current_config: Dict[str, Any]
-    ) -> Any:
+    def get_dynamic_default(self, prop_name: str, current_config: Dict[str, Any]) -> Any:
         """
         Get dynamic default value for a property based on current config.
 

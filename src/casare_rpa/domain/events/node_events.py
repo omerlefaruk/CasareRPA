@@ -5,7 +5,7 @@ Typed domain events for node execution lifecycle.
 Replaces EventType.NODE_* enum values with typed classes.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from casare_rpa.domain.events.base import DomainEvent

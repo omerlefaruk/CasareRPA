@@ -7,7 +7,6 @@ Entry Points:
     - ExecutionContext: Runtime context for workflow execution
     - RetryHandler: Exponential backoff retry logic
     - HookRunner: Lifecycle hook execution
-    - SubworkflowExecutor: Nested workflow execution
 
 Key Patterns:
     - Retry with exponential backoff and jitter
@@ -27,10 +26,6 @@ from casare_rpa.infrastructure.execution.retry_handler import (
     get_retry_handler,
     reset_retry_handler,
 )
-from casare_rpa.infrastructure.execution.subworkflow_executor import (
-    SubworkflowExecutor,
-    SubworkflowExecutionResult,
-)
 
 __all__ = [
     # Core execution context
@@ -44,7 +39,4 @@ __all__ = [
     "HookRunner",
     "get_hook_runner",
     "reset_hook_runner",
-    # Subworkflow execution
-    "SubworkflowExecutor",
-    "SubworkflowExecutionResult",
 ]

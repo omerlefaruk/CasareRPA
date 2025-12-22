@@ -1,0 +1,193 @@
+{
+    "metadata": {
+        "name": "Batch 2.1 - File Operations",
+        "description": "Tests FileSystemSuperNode with various file actions",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "fs_mkdir": {
+            "node_id": "fs_mkdir",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Create Directory",
+                "directory_path": "test_output/node_tests_v2"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "fs_write": {
+            "node_id": "fs_write",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Write File",
+                "file_path": "test_output/node_tests_v2/test.txt",
+                "content": "Hello World!"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "fs_exists": {
+            "node_id": "fs_exists",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "File Exists",
+                "path": "test_output/node_tests_v2/test.txt"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "fs_read": {
+            "node_id": "fs_read",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Read File",
+                "file_path": "test_output/node_tests_v2/test.txt"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "fs_append": {
+            "node_id": "fs_append",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Append File",
+                "file_path": "test_output/node_tests_v2/test.txt",
+                "content": "\nAppended!"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "fs_copy": {
+            "node_id": "fs_copy",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Copy File",
+                "source_path": "test_output/node_tests_v2/test.txt",
+                "dest_path": "test_output/node_tests_v2/test_copy.txt"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "fs_list": {
+            "node_id": "fs_list",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "List Directory",
+                "dir_path": "test_output/node_tests_v2"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "fs_move": {
+            "node_id": "fs_move",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Move File",
+                "source_path": "test_output/node_tests_v2/test_copy.txt",
+                "dest_path": "test_output/node_tests_v2/test_moved.txt"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "fs_delete": {
+            "node_id": "fs_delete",
+            "node_type": "FileSystemSuperNode",
+            "config": {
+                "action": "Delete File",
+                "file_path": "test_output/node_tests_v2/test_moved.txt"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All FileSystemSuperNode tests passed!"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "fs_mkdir",
+            "source_port": "exec_out",
+            "target_node": "fs_write",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_write",
+            "source_port": "exec_out",
+            "target_node": "fs_exists",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_exists",
+            "source_port": "exec_out",
+            "target_node": "fs_read",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_read",
+            "source_port": "exec_out",
+            "target_node": "fs_append",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_append",
+            "source_port": "exec_out",
+            "target_node": "fs_copy",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_copy",
+            "source_port": "exec_out",
+            "target_node": "fs_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_list",
+            "source_port": "exec_out",
+            "target_node": "fs_move",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_move",
+            "source_port": "exec_out",
+            "target_node": "fs_delete",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "fs_delete",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}

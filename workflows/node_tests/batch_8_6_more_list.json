@@ -1,0 +1,181 @@
+{
+    "metadata": {
+        "name": "Batch 8.6 - More List/Data Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "list_filter": {
+            "node_id": "list_filter",
+            "node_type": "ListFilterNode",
+            "config": {},
+            "position": [
+                0,
+                0
+            ]
+        },
+        "list_map": {
+            "node_id": "list_map",
+            "node_type": "ListMapNode",
+            "config": {},
+            "position": [
+                400,
+                0
+            ]
+        },
+        "list_reduce": {
+            "node_id": "list_reduce",
+            "node_type": "ListReduceNode",
+            "config": {},
+            "position": [
+                800,
+                0
+            ]
+        },
+        "list_flatten": {
+            "node_id": "list_flatten",
+            "node_type": "ListFlattenNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "list_slice": {
+            "node_id": "list_slice",
+            "node_type": "ListSliceNode",
+            "config": {
+                "start": 0,
+                "end": 5
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "list_reverse": {
+            "node_id": "list_reverse",
+            "node_type": "ListReverseNode",
+            "config": {},
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "shuffle_list": {
+            "node_id": "shuffle_list",
+            "node_type": "ShuffleListNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "random_choice": {
+            "node_id": "random_choice",
+            "node_type": "RandomChoiceNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "transform": {
+            "node_id": "transform",
+            "node_type": "TransformNode",
+            "config": {},
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "structured_data": {
+            "node_id": "structured_data",
+            "node_type": "StructuredDataSuperNode",
+            "config": {
+                "action": "parse"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "More list/data nodes tested!"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "list_filter",
+            "source_port": "exec_out",
+            "target_node": "list_map",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_map",
+            "source_port": "exec_out",
+            "target_node": "list_reduce",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_reduce",
+            "source_port": "exec_out",
+            "target_node": "list_flatten",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_flatten",
+            "source_port": "exec_out",
+            "target_node": "list_slice",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_slice",
+            "source_port": "exec_out",
+            "target_node": "list_reverse",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_reverse",
+            "source_port": "exec_out",
+            "target_node": "shuffle_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "shuffle_list",
+            "source_port": "exec_out",
+            "target_node": "random_choice",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_choice",
+            "source_port": "exec_out",
+            "target_node": "transform",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "transform",
+            "source_port": "exec_out",
+            "target_node": "structured_data",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "structured_data",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

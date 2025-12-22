@@ -1,0 +1,131 @@
+{
+    "metadata": {
+        "name": "Batch 6.2 - More Trigger Nodes",
+        "description": "Tests EmailTriggerNode, RSSFeedTriggerNode, GmailTriggerNode, SSETriggerNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "email_trigger": {
+            "node_id": "email_trigger",
+            "node_type": "EmailTriggerNode",
+            "config": {
+                "email": "test@example.com",
+                "subject_filter": "Invoice*"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "log_email": {
+            "node_id": "log_email",
+            "node_type": "LogNode",
+            "config": {
+                "message": "EmailTriggerNode executed"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "rss_trigger": {
+            "node_id": "rss_trigger",
+            "node_type": "RSSFeedTriggerNode",
+            "config": {
+                "feed_url": "https://example.com/feed.xml",
+                "poll_interval_minutes": 15
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "log_rss": {
+            "node_id": "log_rss",
+            "node_type": "LogNode",
+            "config": {
+                "message": "RSSFeedTriggerNode executed"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "sse_trigger": {
+            "node_id": "sse_trigger",
+            "node_type": "SSETriggerNode",
+            "config": {
+                "url": "https://example.com/events"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "log_sse": {
+            "node_id": "log_sse",
+            "node_type": "LogNode",
+            "config": {
+                "message": "SSETriggerNode executed"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All additional trigger nodes tested!"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "email_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_email",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_email",
+            "source_port": "exec_out",
+            "target_node": "rss_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "rss_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_rss",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_rss",
+            "source_port": "exec_out",
+            "target_node": "sse_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sse_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_sse",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_sse",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

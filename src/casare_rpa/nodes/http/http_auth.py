@@ -172,12 +172,8 @@ class HttpAuthNode(BaseNode, CredentialAwareMixin):
 
             elif auth_type.lower() == "basic":
                 if not username or not password:
-                    raise ValueError(
-                        "Username and password are required for Basic auth"
-                    )
-                credentials = base64.b64encode(
-                    f"{username}:{password}".encode()
-                ).decode()
+                    raise ValueError("Username and password are required for Basic auth")
+                credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
                 headers["Authorization"] = f"Basic {credentials}"
                 logger.debug("Set Basic authentication")
 
@@ -293,9 +289,7 @@ class OAuth2AuthorizeNode(BaseNode):
     # @requires: requests
     # @ports: client_id, auth_url, scope, redirect_uri, extra_params -> auth_url, state, code_verifier, code_challenge
 
-    def __init__(
-        self, node_id: str, name: str = "OAuth2 Authorize", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "OAuth2 Authorize", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -324,19 +318,13 @@ class OAuth2AuthorizeNode(BaseNode):
             client_id = self.get_parameter("client_id", "")
             auth_url = self.get_parameter("auth_url", "")
             scope = self.get_parameter("scope", "")
-            redirect_uri = self.get_parameter(
-                "redirect_uri", "http://localhost:8080/callback"
-            )
+            redirect_uri = self.get_parameter("redirect_uri", "http://localhost:8080/callback")
             state = self.get_parameter("state", "")
             response_type = self.get_parameter("response_type", "code")
             pkce_enabled = self.get_parameter("pkce_enabled", True)
             extra_params = self.get_input_value("extra_params") or {}
 
             # Resolve variables
-            client_id = context.resolve_value(client_id)
-            auth_url = context.resolve_value(auth_url)
-            scope = context.resolve_value(scope)
-            redirect_uri = context.resolve_value(redirect_uri)
 
             if not client_id:
                 raise ValueError("client_id is required")
@@ -518,9 +506,7 @@ class OAuth2TokenExchangeNode(BaseNode):
     # @requires: requests
     # @ports: code, code_verifier, refresh_token, username, password, scope -> access_token, refresh_token, token_type, expires_in, scope, id_token, full_response
 
-    def __init__(
-        self, node_id: str, name: str = "OAuth2 Token Exchange", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "OAuth2 Token Exchange", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -562,12 +548,6 @@ class OAuth2TokenExchangeNode(BaseNode):
             scope = self.get_input_value("scope") or ""
 
             # Resolve variables
-            client_id = context.resolve_value(client_id)
-            client_secret = context.resolve_value(client_secret)
-            token_url = context.resolve_value(token_url)
-            code = context.resolve_value(code)
-            code_verifier = context.resolve_value(code_verifier)
-            refresh_token_input = context.resolve_value(refresh_token_input)
 
             if not client_id:
                 raise ValueError("client_id is required")
@@ -600,9 +580,7 @@ class OAuth2TokenExchangeNode(BaseNode):
 
             elif grant_type == "client_credentials":
                 if not client_secret:
-                    raise ValueError(
-                        "Client secret is required for client_credentials grant"
-                    )
+                    raise ValueError("Client secret is required for client_credentials grant")
 
             elif grant_type == "password":
                 if not username or not password_input:
@@ -624,9 +602,7 @@ class OAuth2TokenExchangeNode(BaseNode):
 
                     if response.status != 200:
                         error = response_data.get("error", "unknown_error")
-                        error_desc = response_data.get(
-                            "error_description", "Token exchange failed"
-                        )
+                        error_desc = response_data.get("error_description", "Token exchange failed")
                         raise ValueError(f"OAuth error: {error} - {error_desc}")
 
             # Extract tokens from response
@@ -721,9 +697,7 @@ class OAuth2CallbackServerNode(BaseNode):
     # @requires: requests
     # @ports: expected_state -> code, state, access_token, error, error_description
 
-    def __init__(
-        self, node_id: str, name: str = "OAuth2 Callback Server", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "OAuth2 Callback Server", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -749,9 +723,6 @@ class OAuth2CallbackServerNode(BaseNode):
             timeout = int(self.get_parameter("timeout", 120))
             path = self.get_parameter("path", "/callback")
             expected_state = self.get_input_value("expected_state") or ""
-
-            if expected_state:
-                expected_state = context.resolve_value(expected_state)
 
             # Callback result storage
             result = {"received": False, "data": {}}
@@ -812,17 +783,13 @@ class OAuth2CallbackServerNode(BaseNode):
 
             try:
                 await site.start()
-                logger.info(
-                    f"OAuth callback server started on http://127.0.0.1:{port}{path}"
-                )
+                logger.info(f"OAuth callback server started on http://127.0.0.1:{port}{path}")
 
                 # Wait for callback with timeout
                 start_time = asyncio.get_event_loop().time()
                 while not result["received"]:
                     if asyncio.get_event_loop().time() - start_time > timeout:
-                        raise TimeoutError(
-                            f"OAuth callback not received within {timeout} seconds"
-                        )
+                        raise TimeoutError(f"OAuth callback not received within {timeout} seconds")
                     await asyncio.sleep(0.1)
 
             finally:
@@ -932,9 +899,7 @@ class OAuth2TokenValidateNode(BaseNode):
     # @requires: requests
     # @ports: token -> active, client_id, username, scope, expires_at, token_type, full_response
 
-    def __init__(
-        self, node_id: str, name: str = "OAuth2 Token Validate", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "OAuth2 Token Validate", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -963,10 +928,6 @@ class OAuth2TokenValidateNode(BaseNode):
             token = self.get_input_value("token") or ""
 
             # Resolve variables
-            introspection_url = context.resolve_value(introspection_url)
-            client_id = context.resolve_value(client_id)
-            client_secret = context.resolve_value(client_secret)
-            token = context.resolve_value(token)
 
             if not introspection_url:
                 raise ValueError("introspection_url is required")
@@ -979,24 +940,18 @@ class OAuth2TokenValidateNode(BaseNode):
             # Client authentication via Basic auth or body
             headers = {"Content-Type": "application/x-www-form-urlencoded"}
             if client_id and client_secret:
-                credentials = base64.b64encode(
-                    f"{client_id}:{client_secret}".encode()
-                ).decode()
+                credentials = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
                 headers["Authorization"] = f"Basic {credentials}"
             elif client_id:
                 data["client_id"] = client_id
 
             # Make introspection request
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    introspection_url, data=data, headers=headers
-                ) as response:
+                async with session.post(introspection_url, data=data, headers=headers) as response:
                     response_data = await response.json()
 
                     if response.status != 200:
-                        raise ValueError(
-                            f"Introspection failed: HTTP {response.status}"
-                        )
+                        raise ValueError(f"Introspection failed: HTTP {response.status}")
 
             # Extract token info
             active = response_data.get("active", False)

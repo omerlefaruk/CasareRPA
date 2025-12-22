@@ -6,10 +6,10 @@ Implements zero-config robot startup with automatic orchestrator discovery.
 
 import asyncio
 import os
-from typing import Optional, List
+from typing import Optional
 from loguru import logger
 
-from casare_rpa.infrastructure.services import get_service_registry, ServiceState
+from casare_rpa.infrastructure.services import get_service_registry
 
 
 class RobotAutoDiscovery:
@@ -39,9 +39,7 @@ class RobotAutoDiscovery:
                 self._discovered_url = env_url
                 return env_url
             else:
-                logger.warning(
-                    f"Orchestrator specified in env ({env_url}) is not responding"
-                )
+                logger.warning(f"Orchestrator specified in env ({env_url}) is not responding")
 
         # 2. Try local orchestrator
         local_url = "http://localhost:8000"
@@ -136,9 +134,7 @@ class RobotAutoDiscovery:
                 return None
 
             if attempt % 5 == 0:
-                logger.info(
-                    f"Still waiting for orchestrator... ({int(elapsed)}s elapsed)"
-                )
+                logger.info(f"Still waiting for orchestrator... ({int(elapsed)}s elapsed)")
 
             await asyncio.sleep(check_interval)
 

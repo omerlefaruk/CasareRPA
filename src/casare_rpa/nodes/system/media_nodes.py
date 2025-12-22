@@ -216,8 +216,6 @@ class PDFPreviewDialogNode(BaseNode):
             initial_page = int(self.get_parameter("initial_page", 1) or 1)
             zoom = float(self.get_parameter("zoom", 1.0) or 1.0)
 
-            pdf_path = context.resolve_value(str(pdf_path))
-
             if not pdf_path or not os.path.exists(pdf_path):
                 self.status = NodeStatus.ERROR
                 return {
@@ -276,9 +274,7 @@ class PDFPreviewDialogNode(BaseNode):
             future = asyncio.get_event_loop().create_future()
 
             class PDFPreviewDialog(QDialog):
-                def __init__(
-                    self, pdf_doc, start_page: int, zoom_level: float, result_future
-                ):
+                def __init__(self, pdf_doc, start_page: int, zoom_level: float, result_future):
                     super().__init__()
                     self._future = result_future
                     self.doc = pdf_doc
@@ -288,9 +284,7 @@ class PDFPreviewDialogNode(BaseNode):
 
                     self.setWindowTitle(f"PDF Preview - {Path(pdf_path).name}")
                     self.setMinimumSize(600, 800)
-                    self.setWindowFlags(
-                        self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint
-                    )
+                    self.setWindowFlags(self.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
                     self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
                     self._setup_ui()
@@ -473,8 +467,6 @@ class WebcamCaptureNode(BaseNode):
             output_path = self.get_parameter("output_path", "")
             show_preview = self.get_parameter("show_preview", True)
 
-            output_path = context.resolve_value(str(output_path))
-
             if not output_path:
                 output_path = os.path.join(
                     tempfile.gettempdir(),
@@ -512,9 +504,7 @@ class WebcamCaptureNode(BaseNode):
                     cap.read()
 
                 if show_preview:
-                    window_name = (
-                        "Webcam Capture - Press SPACE to capture, ESC to cancel"
-                    )
+                    window_name = "Webcam Capture - Press SPACE to capture, ESC to cancel"
                     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
                     cv2.resizeWindow(window_name, 640, 480)
 

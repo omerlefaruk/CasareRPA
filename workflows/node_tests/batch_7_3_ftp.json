@@ -1,0 +1,163 @@
+{
+    "metadata": {
+        "name": "Batch 7.3 - FTP Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "ftp_connect": {
+            "node_id": "ftp_connect",
+            "node_type": "FTPConnectNode",
+            "config": {
+                "host": "ftp.example.com",
+                "username": "test",
+                "password": "test"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "ftp_list": {
+            "node_id": "ftp_list",
+            "node_type": "FTPListNode",
+            "config": {
+                "path": "/"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "ftp_makedir": {
+            "node_id": "ftp_makedir",
+            "node_type": "FTPMakeDirNode",
+            "config": {
+                "path": "/test"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "ftp_getsize": {
+            "node_id": "ftp_getsize",
+            "node_type": "FTPGetSizeNode",
+            "config": {
+                "path": "/file.txt"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "ftp_rename": {
+            "node_id": "ftp_rename",
+            "node_type": "FTPRenameNode",
+            "config": {
+                "old_path": "/a.txt",
+                "new_path": "/b.txt"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "ftp_removedir": {
+            "node_id": "ftp_removedir",
+            "node_type": "FTPRemoveDirNode",
+            "config": {
+                "path": "/test"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "ftp_delete": {
+            "node_id": "ftp_delete",
+            "node_type": "FTPDeleteNode",
+            "config": {
+                "path": "/file.txt"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "ftp_disconnect": {
+            "node_id": "ftp_disconnect",
+            "node_type": "FTPDisconnectNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "FTP nodes tested!"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "ftp_connect",
+            "source_port": "exec_out",
+            "target_node": "ftp_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_list",
+            "source_port": "exec_out",
+            "target_node": "ftp_makedir",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_makedir",
+            "source_port": "exec_out",
+            "target_node": "ftp_getsize",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_getsize",
+            "source_port": "exec_out",
+            "target_node": "ftp_rename",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_rename",
+            "source_port": "exec_out",
+            "target_node": "ftp_removedir",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_removedir",
+            "source_port": "exec_out",
+            "target_node": "ftp_delete",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_delete",
+            "source_port": "exec_out",
+            "target_node": "ftp_disconnect",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "ftp_disconnect",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

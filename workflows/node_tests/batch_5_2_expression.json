@@ -1,0 +1,97 @@
+{
+    "metadata": {
+        "name": "Batch 5.2 - Expression & Eval Nodes",
+        "description": "Tests EvaluateExpressionNode, RunPythonScriptNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "set_values": {
+            "node_id": "set_values",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "x",
+                "value": 10
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "set_y": {
+            "node_id": "set_y",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "y",
+                "value": 20
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "evaluate_expr": {
+            "node_id": "evaluate_expr",
+            "node_type": "EvaluateExpressionNode",
+            "config": {
+                "expression": "{{x}} + {{y}} * 2"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "run_python": {
+            "node_id": "run_python",
+            "node_type": "RunPythonScriptNode",
+            "config": {
+                "script": "result = 'Hello from Python'\nprint(result)"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Expression & Eval tests passed! Expression result: {{evaluate_expr.result}}"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "set_values",
+            "source_port": "exec_out",
+            "target_node": "set_y",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_y",
+            "source_port": "exec_out",
+            "target_node": "evaluate_expr",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "evaluate_expr",
+            "source_port": "exec_out",
+            "target_node": "run_python",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "run_python",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

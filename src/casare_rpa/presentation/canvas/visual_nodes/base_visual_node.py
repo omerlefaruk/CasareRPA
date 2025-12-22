@@ -5,9 +5,13 @@ This module provides the base VisualNode class to avoid circular imports.
 """
 
 from functools import partial
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.domain.schemas.property_schema import PropertyDef
+
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
-from PySide6.QtCore import QPoint, Slot
+from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor
 
 from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
@@ -92,9 +96,7 @@ class VisualNode(NodeGraphQtBaseNode):
         self.create_property("status", "idle")
         self.create_property("_is_running", False)
         self.create_property("_is_completed", False)
-        self.create_property(
-            "_disabled", False
-        )  # Disabled nodes are skipped during execution
+        self.create_property("_disabled", False)  # Disabled nodes are skipped during execution
 
         # Auto-create linked CasareRPA node
         # This ensures every visual node has a CasareRPA node regardless of how it was created
@@ -536,9 +538,7 @@ class VisualNode(NodeGraphQtBaseNode):
     # EXPRESSION EDITOR INTEGRATION
     # =========================================================================
 
-    def _open_expression_editor(
-        self, property_name: str, property_def: "PropertyDef"
-    ) -> None:
+    def _open_expression_editor(self, property_name: str, property_def: "PropertyDef") -> None:
         """
         Open expression editor popup for a property.
 
@@ -578,13 +578,9 @@ class VisualNode(NodeGraphQtBaseNode):
             if hasattr(widget, "get_value"):
                 try:
                     current_value = widget.get_value()
-                    logger.debug(
-                        f"Retrieved value from widget {property_name}: '{current_value}'"
-                    )
+                    logger.debug(f"Retrieved value from widget {property_name}: '{current_value}'")
                 except Exception as e:
-                    logger.debug(
-                        f"Could not get value from widget {property_name}: {e}"
-                    )
+                    logger.debug(f"Could not get value from widget {property_name}: {e}")
             else:
                 logger.debug(f"Widget {property_name} has no get_value method")
         else:
@@ -593,9 +589,7 @@ class VisualNode(NodeGraphQtBaseNode):
         # Fallback to property value if widget value is unavailable
         if current_value is None:
             current_value = self.get_property(property_name) or ""
-            logger.debug(
-                f"Used fallback property value for {property_name}: '{current_value}'"
-            )
+            logger.debug(f"Used fallback property value for {property_name}: '{current_value}'")
 
         # Create popup
         popup = ExpressionEditorPopup(parent=None)  # Top-level window
@@ -614,9 +608,7 @@ class VisualNode(NodeGraphQtBaseNode):
         popup.set_value(str(current_value))
 
         # Connect accepted signal to update property
-        popup.accepted.connect(
-            partial(self._on_expression_editor_accepted, property_name)
-        )
+        popup.accepted.connect(partial(self._on_expression_editor_accepted, property_name))
 
         # Position near widget
         if widget:
@@ -630,9 +622,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     internal_widget = widget.widget()
 
                 if internal_widget and hasattr(internal_widget, "mapToGlobal"):
-                    global_pos = internal_widget.mapToGlobal(
-                        QPoint(0, internal_widget.height())
-                    )
+                    global_pos = internal_widget.mapToGlobal(QPoint(0, internal_widget.height()))
                     popup.show_at_position(global_pos)
                     logger.debug(f"Expression editor opened for {property_name}")
                     return
@@ -653,9 +643,7 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         from loguru import logger
 
-        logger.debug(
-            f"Expression editor accepted for {property_name}: {len(value)} chars"
-        )
+        logger.debug(f"Expression editor accepted for {property_name}: {len(value)} chars")
         self.set_property(property_name, value)
 
     def get_casare_node(self) -> Optional[CasareBaseNode]:
@@ -767,9 +755,7 @@ class VisualNode(NodeGraphQtBaseNode):
             # Log the error for debugging but don't crash
             from loguru import logger
 
-            logger.warning(
-                f"_auto_create_casare_node failed for {type(self).__name__}: {e}"
-            )
+            logger.warning(f"_auto_create_casare_node failed for {type(self).__name__}: {e}")
 
     def _sync_properties_to_casare_node(self, casare_node) -> None:
         """
@@ -835,9 +821,7 @@ class VisualNode(NodeGraphQtBaseNode):
             return  # No casare node yet
 
         # Get schema from casare node class
-        schema: Optional[NodeSchema] = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return  # No schema, use manual widget definitions
 
@@ -892,9 +876,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     self.add_int_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        value=int(prop_def.default)
-                        if prop_def.default is not None
-                        else 0,
+                        value=int(prop_def.default) if prop_def.default is not None else 0,
                         tab=prop_def.tab,
                     )
                 except AttributeError:
@@ -902,9 +884,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     self._add_variable_aware_text_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        text=str(prop_def.default)
-                        if prop_def.default is not None
-                        else "0",
+                        text=str(prop_def.default) if prop_def.default is not None else "0",
                         tab=prop_def.tab,
                         tooltip=prop_def.tooltip,
                         property_def=prop_def,
@@ -916,18 +896,14 @@ class VisualNode(NodeGraphQtBaseNode):
                     self.add_float_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        value=float(prop_def.default)
-                        if prop_def.default is not None
-                        else 0.0,
+                        value=float(prop_def.default) if prop_def.default is not None else 0.0,
                         tab=prop_def.tab,
                     )
                 except AttributeError:
                     self._add_variable_aware_text_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
-                        text=str(prop_def.default)
-                        if prop_def.default is not None
-                        else "0.0",
+                        text=str(prop_def.default) if prop_def.default is not None else "0.0",
                         tab=prop_def.tab,
                         tooltip=prop_def.tooltip,
                         property_def=prop_def,
@@ -937,9 +913,7 @@ class VisualNode(NodeGraphQtBaseNode):
                 self.add_checkbox(
                     prop_def.name,
                     prop_def.label or prop_def.name,
-                    state=bool(prop_def.default)
-                    if prop_def.default is not None
-                    else False,
+                    state=bool(prop_def.default) if prop_def.default is not None else False,
                     tab=prop_def.tab,
                 )
 
@@ -952,10 +926,7 @@ class VisualNode(NodeGraphQtBaseNode):
                         tab=prop_def.tab,
                     )
                     # Set default value
-                    if (
-                        prop_def.default is not None
-                        and prop_def.default in prop_def.choices
-                    ):
+                    if prop_def.default is not None and prop_def.default in prop_def.choices:
                         self.set_property(prop_def.name, prop_def.default)
 
             elif prop_def.type == PropertyType.FILE_PATH:
@@ -1135,16 +1106,23 @@ class VisualNode(NodeGraphQtBaseNode):
             self.view.post_init()
 
     def _update_widget_visibility(self) -> None:
-        """Update widget visibility based on collapse state and essential flags."""
+        """Update widget visibility based on collapse state and essential flags.
+
+        CRITICAL: Calls prepareGeometryChange() on the view before changing visibility
+        to ensure Qt's scene cache is properly invalidated for geometry changes.
+        """
         from loguru import logger
 
         if not self._casare_node:
             return
 
+        # CRITICAL: Notify Qt scene that geometry will change before modifying visibility
+        # This prevents rendering artifacts when panning/scrolling after collapse state changes
+        if hasattr(self.view, "prepareGeometryChange"):
+            self.view.prepareGeometryChange()
+
         # Get schema from casare node class
-        schema: Optional[NodeSchema] = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return
 
@@ -1190,9 +1168,7 @@ class VisualNode(NodeGraphQtBaseNode):
         if not self._casare_node:
             return []
 
-        schema: Optional[NodeSchema] = getattr(
-            self._casare_node.__class__, "__node_schema__", None
-        )
+        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return []
 
@@ -1209,7 +1185,6 @@ class VisualNode(NodeGraphQtBaseNode):
         Returns:
             List of PropertyDef that should be rendered
         """
-        from casare_rpa.domain.schemas import PropertyDef
 
         if not self._casare_node:
             return []

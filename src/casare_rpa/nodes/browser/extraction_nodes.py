@@ -4,9 +4,6 @@ Browser extraction and download nodes.
 Handles extracting data (images) and downloading files.
 """
 
-import asyncio
-from typing import Tuple
-
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -97,8 +94,7 @@ class GetAllImagesNode(BaseNode):
             allowed_types = []
             if file_types_str:
                 allowed_types = [
-                    f".{t.strip().lower().lstrip('.')}"
-                    for t in file_types_str.split(",")
+                    f".{t.strip().lower().lstrip('.')}" for t in file_types_str.split(",")
                 ]
 
             # JavaScript to extract all images
@@ -311,18 +307,11 @@ class DownloadFileNode(BaseNode):
             filename_override = self.get_input_value("filename")
 
             # Resolve variables
-            if hasattr(context, "resolve_value"):
-                if url:
-                    url = context.resolve_value(url)
-                if filename_override:
-                    filename_override = context.resolve_value(filename_override)
 
             if not url:
                 raise ValueError("URL is required")
 
             save_path = self.get_parameter("save_path", "")
-            if hasattr(context, "resolve_value") and save_path:
-                save_path = context.resolve_value(save_path)
 
             use_browser = self.get_parameter("use_browser", False)
             timeout = self.get_parameter("timeout", 30000)

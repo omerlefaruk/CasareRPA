@@ -204,9 +204,7 @@ class WhatsAppClient:
                         )
                     # Remove Content-Type header for multipart
                     headers = {"Authorization": f"Bearer {self.config.access_token}"}
-                    async with session.post(
-                        url, data=form_data, headers=headers
-                    ) as response:
+                    async with session.post(url, data=form_data, headers=headers) as response:
                         result = await response.json()
                 else:
                     async with session.post(url, json=data) as response:
@@ -221,9 +219,7 @@ class WhatsAppClient:
                     # Check for rate limiting
                     if error_code in [4, 17, 341]:  # Rate limit codes
                         retry_after = 5
-                        logger.warning(
-                            f"WhatsApp rate limited. Waiting {retry_after}s..."
-                        )
+                        logger.warning(f"WhatsApp rate limited. Waiting {retry_after}s...")
                         await asyncio.sleep(retry_after)
                         continue
 
@@ -238,9 +234,7 @@ class WhatsAppClient:
 
             except aiohttp.ClientError as e:
                 if attempt < self.config.max_retries - 1:
-                    logger.warning(
-                        f"WhatsApp request failed (attempt {attempt + 1}): {e}"
-                    )
+                    logger.warning(f"WhatsApp request failed (attempt {attempt + 1}): {e}")
                     await asyncio.sleep(self.config.retry_delay * (attempt + 1))
                 else:
                     raise WhatsAppAPIError(f"Network error: {e}") from e
@@ -674,9 +668,6 @@ class WhatsAppClient:
             raise WhatsAppAPIError(f"File not found: {file_path}")
 
         content = file_path.read_bytes()
-        files = {
-            "file": (file_path.name, content, content_type),
-        }
 
         # Need to add messaging_product to form data
         session = await self._ensure_session()
@@ -690,9 +681,7 @@ class WhatsAppClient:
         )
 
         headers = {"Authorization": f"Bearer {self.config.access_token}"}
-        async with session.post(
-            self.config.media_url, data=form_data, headers=headers
-        ) as response:
+        async with session.post(self.config.media_url, data=form_data, headers=headers) as response:
             result = await response.json()
 
         if "error" in result:

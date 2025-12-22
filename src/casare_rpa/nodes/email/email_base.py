@@ -6,7 +6,6 @@ plus shared PropertyDef constants for email-related nodes.
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
 
 
 from email.header import decode_header
@@ -143,16 +142,12 @@ def parse_email_message(msg: EmailMessage) -> Dict[str, Any]:
                     )
             elif content_type == "text/plain":
                 try:
-                    body_text = part.get_payload(decode=True).decode(
-                        "utf-8", errors="replace"
-                    )
+                    body_text = part.get_payload(decode=True).decode("utf-8", errors="replace")
                 except (AttributeError, UnicodeDecodeError):
                     body_text = str(part.get_payload())
             elif content_type == "text/html":
                 try:
-                    body_html = part.get_payload(decode=True).decode(
-                        "utf-8", errors="replace"
-                    )
+                    body_html = part.get_payload(decode=True).decode("utf-8", errors="replace")
                 except (AttributeError, UnicodeDecodeError):
                     body_html = str(part.get_payload())
     else:

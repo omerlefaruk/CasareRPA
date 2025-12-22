@@ -402,7 +402,7 @@ route:
       receiver: 'pagerduty'
     - match:
         severity: warning
-      receiver: 'slack'
+      receiver: 'webhook'
 
 receivers:
   - name: 'default'
@@ -413,10 +413,10 @@ receivers:
     pagerduty_configs:
       - service_key: '<pagerduty-key>'
 
-  - name: 'slack'
-    slack_configs:
-      - api_url: 'https://hooks.slack.com/services/xxx'
-        channel: '#rpa-alerts'
+  - name: 'webhook'
+    webhook_configs:
+      - url: 'https://your-webhook-endpoint.com/alerts'
+        send_resolved: true
 ```
 
 ---

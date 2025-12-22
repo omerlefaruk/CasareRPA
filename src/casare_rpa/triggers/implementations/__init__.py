@@ -29,7 +29,7 @@ from casare_rpa.triggers.implementations.google_trigger_base import (
 from casare_rpa.triggers.implementations.gmail_trigger import GmailTrigger
 from casare_rpa.triggers.implementations.sheets_trigger import SheetsTrigger
 from casare_rpa.triggers.implementations.drive_trigger import DriveTrigger
-from casare_rpa.triggers.implementations.calendar_trigger import CalendarTrigger
+# Calendar trigger removed - see Calendar/Docs cleanup 2025
 
 __all__ = [
     "WebhookTrigger",
@@ -52,5 +52,5 @@ __all__ = [
     "GmailTrigger",
     "SheetsTrigger",
     "DriveTrigger",
-    "CalendarTrigger",
+    # Calendar removed
 ]

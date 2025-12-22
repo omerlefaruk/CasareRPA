@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "name": "Variable Math Chain",
+    "description": "Sets variables, performs math, and logs the result in a serial chain.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "set_var_a": {
+      "node_id": "set_var_a",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "VarA",
+        "value": 10
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "set_var_b": {
+      "node_id": "set_var_b",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "VarB",
+        "value": "{{VarA}}"
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "add_five": {
+      "node_id": "add_five",
+      "node_type": "MathOperationNode",
+      "config": {
+        "a": "{{VarB}}",
+        "b": 5,
+        "operation": "add",
+        "output_var": "final_result"
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    },
+    "log_result": {
+      "node_id": "log_result",
+      "node_type": "LogNode",
+      "config": {
+        "message": "The final value is: {{final_result}}"
+      },
+      "position": [
+        1200.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "set_var_a",
+      "source_port": "exec_out",
+      "target_node": "set_var_b",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "set_var_b",
+      "source_port": "exec_out",
+      "target_node": "add_five",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "add_five",
+      "source_port": "exec_out",
+      "target_node": "log_result",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

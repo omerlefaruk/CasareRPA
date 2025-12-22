@@ -54,9 +54,7 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(
-        self, node_id: str, name: str = "WhatsApp Node", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "WhatsApp Node", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -101,8 +99,6 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
 
         # Get optional business account ID
         business_account_id = self.get_parameter("business_account_id")
-        if hasattr(context, "resolve_value") and business_account_id:
-            business_account_id = context.resolve_value(business_account_id)
 
         # Create client
         config = WhatsAppConfig(
@@ -155,8 +151,6 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
 
             cred_name = self.get_parameter("credential_name")
             if cred_name:
-                if hasattr(context, "resolve_value"):
-                    cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.access_token:
                     logger.debug(f"Using legacy credential manager: {cred_name}")
@@ -212,13 +206,9 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
 
             cred_name = self.get_parameter("credential_name")
             if cred_name:
-                if hasattr(context, "resolve_value"):
-                    cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.phone_number_id:
-                    logger.debug(
-                        f"Using legacy credential for phone_number_id: {cred_name}"
-                    )
+                    logger.debug(f"Using legacy credential for phone_number_id: {cred_name}")
                     return cred.phone_number_id
 
             # Try default credential names in legacy system
@@ -238,8 +228,6 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
     def _get_recipient(self, context: ExecutionContext) -> str:
         """Get recipient phone number from parameter, resolving variables."""
         to = self.get_parameter("to")
-        if hasattr(context, "resolve_value"):
-            to = context.resolve_value(to)
         return str(to)
 
     def _set_error_outputs(self, error_msg: str) -> None:

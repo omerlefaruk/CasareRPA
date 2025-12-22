@@ -40,9 +40,7 @@ if _jwt_secret_env is None:
 else:
     JWT_SECRET_KEY = _jwt_secret_env
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
-)
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 # SECURITY: JWT_DEV_MODE defaults to false. Must explicitly enable for development.
 JWT_DEV_MODE = os.getenv("JWT_DEV_MODE", "false").lower() in ("true", "1", "yes")
@@ -121,10 +119,23 @@ def _try_admin_api_key(token: str) -> Optional[AuthenticatedUser]:
     else:
         masked_admin = "invalid"
 
-    logger.warning(
-        f"Admin Key Mismatch: Token='{masked_token}' vs Admin='{masked_admin}'"
-    )
+    logger.warning(f"Admin Key Mismatch: Token='{masked_token}' vs Admin='{masked_admin}'")
     return None
+
+
+def validate_admin_secret(secret: Optional[str]) -> bool:
+    """
+    Validate admin API secret (legacy query param mode).
+    Used primarily for diagnostic WebSocket connections.
+    """
+    if not secret:
+        return False
+    admin_key = _get_admin_api_key()
+    if not admin_key:
+        return False
+    import hmac
+
+    return hmac.compare_digest(secret, admin_key)
 
 
 def create_access_token(
@@ -316,8 +327,7 @@ def require_role(required_role: str):
         """Check if user has required role."""
         if not user.has_role(required_role):
             logger.warning(
-                f"Access denied: user={user.user_id} required={required_role} "
-                f"has={user.roles}"
+                f"Access denied: user={user.user_id} required={required_role} " f"has={user.roles}"
             )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -582,9 +592,7 @@ def get_robot_authenticator() -> RobotAuthenticator:
     return _robot_authenticator
 
 
-def configure_robot_authenticator(
-    use_database: bool = False, db_pool=None
-) -> RobotAuthenticator:
+def configure_robot_authenticator(use_database: bool = False, db_pool=None) -> RobotAuthenticator:
     """
     Configure the global robot authenticator.
 
@@ -596,9 +604,7 @@ def configure_robot_authenticator(
         Configured RobotAuthenticator
     """
     global _robot_authenticator
-    _robot_authenticator = RobotAuthenticator(
-        use_database=use_database, db_pool=db_pool
-    )
+    _robot_authenticator = RobotAuthenticator(use_database=use_database, db_pool=db_pool)
     logger.info(f"Robot authenticator configured: database={use_database}")
     return _robot_authenticator
 
@@ -640,9 +646,7 @@ async def verify_robot_token(x_api_key: str = Header(..., alias="X-Api-Key")) ->
     robot_id = await authenticator.verify_token_async(x_api_key)
 
     if not robot_id:
-        logger.warning(
-            f"Failed robot authentication attempt with key: {x_api_key[:12]}..."
-        )
+        logger.warning(f"Failed robot authentication attempt with key: {x_api_key[:12]}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired API key",

@@ -42,7 +42,6 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
     NodeStatus,
 )
-from casare_rpa.utils.selectors.selector_normalizer import normalize_selector
 from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 
 if TYPE_CHECKING:
@@ -248,9 +247,7 @@ async def get_page_from_context(
         page = context.get_active_page()
 
     if page is None:
-        raise PageNotAvailableError(
-            "No page instance found. Launch browser and navigate first."
-        )
+        raise PageNotAvailableError("No page instance found. Launch browser and navigate first.")
 
     return page
 
@@ -351,9 +348,7 @@ class BrowserBaseNode(BaseNode, ABC):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(
-        self, node_id: str, config: Optional[dict] = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs: Any) -> None:
         """
         Initialize browser base node.
 
@@ -438,6 +433,9 @@ class BrowserBaseNode(BaseNode, ABC):
         """
         Get selector parameter, resolve variables, and normalize for Playwright.
 
+        Uses the unified SelectorFacade for consistent normalization across
+        all browser nodes (CSS, XPath, UiPath XML, wildcards, etc.).
+
         Args:
             context: Execution context (for variable resolution)
             param_name: Parameter name containing selector
@@ -448,12 +446,19 @@ class BrowserBaseNode(BaseNode, ABC):
         Raises:
             ValueError: If selector is required but empty
         """
-        selector = self.get_parameter(param_name, "")
-        if not selector:
-            raise ValueError(f"{param_name} is required")
+        from casare_rpa.utils.selectors import get_selector_facade
 
-        selector = context.resolve_value(selector)
-        return normalize_selector(selector)
+        # Get selector from parameter (auto-resolves variables via get_parameter)
+        selector = self.get_parameter(param_name, "")
+
+        if not selector or not str(selector).strip():
+            raise ValueError(
+                f"Selector parameter '{param_name}' is required but empty. "
+                f"Provide a valid CSS, XPath, or text selector."
+            )
+
+        # Normalize using unified facade
+        return get_selector_facade().normalize(str(selector).strip())
 
     def get_optional_normalized_selector(
         self,
@@ -464,6 +469,7 @@ class BrowserBaseNode(BaseNode, ABC):
         Get optional selector parameter, resolve variables, and normalize.
 
         Unlike get_normalized_selector(), returns None if selector is empty.
+        Uses the unified SelectorFacade for consistent normalization.
 
         Args:
             context: Execution context
@@ -472,12 +478,16 @@ class BrowserBaseNode(BaseNode, ABC):
         Returns:
             Normalized selector string, or None if empty
         """
+        from casare_rpa.utils.selectors import get_selector_facade
+
+        # Get selector from parameter (auto-resolves variables via get_parameter)
         selector = self.get_parameter(param_name, "")
-        if not selector or not selector.strip():
+
+        if not selector or not str(selector).strip():
             return None
 
-        selector = context.resolve_value(selector)
-        return normalize_selector(selector)
+        # Normalize using unified facade
+        return get_selector_facade().normalize(str(selector).strip())
 
     def get_healing_context(self, param_name: str = "selector") -> Optional[dict]:
         """
@@ -565,14 +575,10 @@ class BrowserBaseNode(BaseNode, ABC):
             )
 
             if element:
-                logger.info(
-                    f"Found target element via anchor: {anchor_config.selector}"
-                )
+                logger.info(f"Found target element via anchor: {anchor_config.selector}")
                 return element
 
-            logger.warning(
-                "Could not find target via anchor, falling back to direct selector"
-            )
+            logger.warning("Could not find target via anchor, falling back to direct selector")
             return None
 
         except ImportError:
@@ -614,16 +620,12 @@ class BrowserBaseNode(BaseNode, ABC):
         # Try anchor-based location first
         anchor_config = self.get_anchor_config()
         if anchor_config and anchor_config.is_valid:
-            element = await self.find_element_with_anchor(
-                page, selector, anchor_config, timeout_ms
-            )
+            element = await self.find_element_with_anchor(page, selector, anchor_config, timeout_ms)
             if element:
                 return element, selector, "anchor"
 
         # Fall through to standard healing-aware finder
-        return await self.find_element_with_healing(
-            page, selector, timeout_ms, param_name
-        )
+        return await self.find_element_with_healing(page, selector, timeout_ms, param_name)
 
     async def find_element_with_healing(
         self,
@@ -761,9 +763,7 @@ class BrowserBaseNode(BaseNode, ABC):
                         state="attached",
                     )
                     if input_el:
-                        logger.info(
-                            f"Found input via label 'for' attribute: #{for_attr}"
-                        )
+                        logger.info(f"Found input via label 'for' attribute: #{for_attr}")
                         return input_el, "for_attr"
                 except Exception:
                     logger.debug(f"Could not find input with id='{for_attr}'")
@@ -820,9 +820,7 @@ class BrowserBaseNode(BaseNode, ABC):
                 pass
 
             # No input found, return original element (will likely fail on fill)
-            logger.warning(
-                "Could not find associated input for label, using original element"
-            )
+            logger.warning("Could not find associated input for label, using original element")
             return element, "original"
 
         except Exception as e:
@@ -860,9 +858,7 @@ class BrowserBaseNode(BaseNode, ABC):
                 if isinstance(fingerprint_data, dict):
                     fingerprint = ElementFingerprint(**fingerprint_data)
                     healing_chain._fingerprints[selector] = fingerprint
-                    healing_chain._heuristic_healer.store_fingerprint(
-                        selector, fingerprint
-                    )
+                    healing_chain._heuristic_healer.store_fingerprint(selector, fingerprint)
                     logger.debug(f"Loaded fingerprint for healing: {selector}")
 
             # Load spatial context for anchor healing
@@ -904,8 +900,7 @@ class BrowserBaseNode(BaseNode, ABC):
                     healing_chain._cv_contexts[selector] = cv_context
                     healing_chain._cv_healer.store_context(selector, cv_context)
                     logger.debug(
-                        f"Loaded CV template for healing: {selector} "
-                        f"({len(image_bytes)} bytes)"
+                        f"Loaded CV template for healing: {selector} " f"({len(image_bytes)} bytes)"
                     )
 
         except Exception as e:
@@ -947,7 +942,7 @@ class BrowserBaseNode(BaseNode, ABC):
                 # CV healing returns coordinates, not element
                 healing_chain = get_healing_chain()
                 if healing_chain:
-                    result = healing_chain._cv_contexts.get(selector)
+                    healing_chain._cv_contexts.get(selector)
                     # For CV, we need to click at coordinates
                     # This is a simplified implementation - full impl would use
                     # result.cv_click_coordinates from HealingChainResult
@@ -1005,9 +1000,7 @@ class BrowserBaseNode(BaseNode, ABC):
             attempts += 1
             try:
                 if attempts > 1:
-                    logger.info(
-                        f"Retry attempt {attempts - 1}/{retry_count} for {operation_name}"
-                    )
+                    logger.info(f"Retry attempt {attempts - 1}/{retry_count} for {operation_name}")
 
                 result = await operation()
                 return result, attempts

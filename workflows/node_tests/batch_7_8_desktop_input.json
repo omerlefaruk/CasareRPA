@@ -1,0 +1,165 @@
+{
+    "metadata": {
+        "name": "Batch 7.8 - Desktop Nodes (Mouse/Keyboard)",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "mouse_click": {
+            "node_id": "mouse_click",
+            "node_type": "MouseClickNode",
+            "config": {
+                "x": 100,
+                "y": 100
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "move_mouse": {
+            "node_id": "move_mouse",
+            "node_type": "MoveMouseNode",
+            "config": {
+                "x": 200,
+                "y": 200
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "drag_mouse": {
+            "node_id": "drag_mouse",
+            "node_type": "DragMouseNode",
+            "config": {
+                "from_x": 100,
+                "from_y": 100,
+                "to_x": 200,
+                "to_y": 200
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "get_mouse_pos": {
+            "node_id": "get_mouse_pos",
+            "node_type": "GetMousePositionNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "send_keys": {
+            "node_id": "send_keys",
+            "node_type": "SendKeysNode",
+            "config": {
+                "keys": "Hello"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "press_key": {
+            "node_id": "press_key",
+            "node_type": "PressKeyNode",
+            "config": {
+                "key": "enter"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "send_hotkey": {
+            "node_id": "send_hotkey",
+            "node_type": "SendHotKeyNode",
+            "config": {
+                "hotkey": "ctrl+c"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "hotkey_wait": {
+            "node_id": "hotkey_wait",
+            "node_type": "HotkeyWaitNode",
+            "config": {
+                "hotkey": "ctrl+s"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Desktop input nodes tested!"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "mouse_click",
+            "source_port": "exec_out",
+            "target_node": "move_mouse",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "move_mouse",
+            "source_port": "exec_out",
+            "target_node": "drag_mouse",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drag_mouse",
+            "source_port": "exec_out",
+            "target_node": "get_mouse_pos",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_mouse_pos",
+            "source_port": "exec_out",
+            "target_node": "send_keys",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "send_keys",
+            "source_port": "exec_out",
+            "target_node": "press_key",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "press_key",
+            "source_port": "exec_out",
+            "target_node": "send_hotkey",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "send_hotkey",
+            "source_port": "exec_out",
+            "target_node": "hotkey_wait",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "hotkey_wait",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

@@ -8,10 +8,10 @@ You are the code review gate for CasareRPA. Your role is MANDATORY after every i
 
 ## Semantic Search for Context
 
-Use `qdrant-find` to find similar implementations for comparison:
-```
-qdrant-find: "similar node pattern"
-qdrant-find: "existing test patterns"
+Use `search_codebase()` to find similar implementations for comparison:
+```python
+search_codebase("similar node pattern", top_k=5)
+search_codebase("existing test patterns", top_k=5)
 ```
 
 ## .brain Protocol (Token-Optimized)

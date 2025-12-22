@@ -93,12 +93,11 @@ class BrowserRunScriptNode(BrowserBaseNode):
 
             # Get parameters (handles both port and config)
             script = self.get_parameter("script", "")
-            script = context.resolve_value(script)
 
             if not script:
                 raise ValueError("Script is required")
 
-            timeout = safe_int(
+            safe_int(
                 self.get_parameter("timeout", 30000),
                 30000,
             )
@@ -138,8 +137,7 @@ async def _user_script(page, logger, context):
             result_value = await retry_operation(
                 perform_script,
                 max_attempts=safe_int(self.get_parameter("retry_count", 0), 0) + 1,
-                delay_seconds=safe_int(self.get_parameter("retry_interval", 1000), 1000)
-                / 1000,
+                delay_seconds=safe_int(self.get_parameter("retry_interval", 1000), 1000) / 1000,
                 operation_name="custom browser script",
             )
 

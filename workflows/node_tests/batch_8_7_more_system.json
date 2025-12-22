@@ -1,0 +1,222 @@
+{
+    "metadata": {
+        "name": "Batch 8.7 - More System Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "env_var": {
+            "node_id": "env_var",
+            "node_type": "EnvironmentVariableNode",
+            "config": {
+                "name": "PATH"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "process_list": {
+            "node_id": "process_list",
+            "node_type": "ProcessListNode",
+            "config": {},
+            "position": [
+                400,
+                0
+            ]
+        },
+        "process_kill": {
+            "node_id": "process_kill",
+            "node_type": "ProcessKillNode",
+            "config": {
+                "process_name": "notepad.exe"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "list_services": {
+            "node_id": "list_services",
+            "node_type": "ListServicesNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "get_service_status": {
+            "node_id": "get_service_status",
+            "node_type": "GetServiceStatusNode",
+            "config": {
+                "service_name": "Spooler"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "launch_app": {
+            "node_id": "launch_app",
+            "node_type": "LaunchApplicationNode",
+            "config": {
+                "path": "notepad.exe"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "close_app": {
+            "node_id": "close_app",
+            "node_type": "CloseApplicationNode",
+            "config": {
+                "process_name": "notepad.exe"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "run_batch": {
+            "node_id": "run_batch",
+            "node_type": "RunBatchScriptNode",
+            "config": {
+                "script": "echo Hello"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "run_python_file": {
+            "node_id": "run_python_file",
+            "node_type": "RunPythonFileNode",
+            "config": {
+                "file_path": "test.py"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "text_to_speech": {
+            "node_id": "text_to_speech",
+            "node_type": "TextToSpeechNode",
+            "config": {
+                "text": "Hello"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "beep": {
+            "node_id": "beep",
+            "node_type": "BeepNode",
+            "config": {},
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "audio_alert": {
+            "node_id": "audio_alert",
+            "node_type": "AudioAlertNode",
+            "config": {},
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "System nodes tested!"
+            },
+            "position": [
+                4800,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "env_var",
+            "source_port": "exec_out",
+            "target_node": "process_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "process_list",
+            "source_port": "exec_out",
+            "target_node": "process_kill",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "process_kill",
+            "source_port": "exec_out",
+            "target_node": "list_services",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_services",
+            "source_port": "exec_out",
+            "target_node": "get_service_status",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_service_status",
+            "source_port": "exec_out",
+            "target_node": "launch_app",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "launch_app",
+            "source_port": "exec_out",
+            "target_node": "close_app",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "close_app",
+            "source_port": "exec_out",
+            "target_node": "run_batch",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "run_batch",
+            "source_port": "exec_out",
+            "target_node": "run_python_file",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "run_python_file",
+            "source_port": "exec_out",
+            "target_node": "text_to_speech",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "text_to_speech",
+            "source_port": "exec_out",
+            "target_node": "beep",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "beep",
+            "source_port": "exec_out",
+            "target_node": "audio_alert",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "audio_alert",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

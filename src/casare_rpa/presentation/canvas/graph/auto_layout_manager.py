@@ -11,7 +11,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple, Any
 
 from PySide6.QtCore import QObject, QPointF, QPropertyAnimation, QEasingCurve, Signal
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject
+from PySide6.QtWidgets import QGraphicsObject
 
 from loguru import logger
 
@@ -259,9 +259,7 @@ class AutoLayoutManager(QObject):
             logger.debug(f"Error getting connections: {e}")
         return connections
 
-    def _get_connections_between(
-        self, node_ids: Set[str]
-    ) -> List[Tuple[str, str, bool]]:
+    def _get_connections_between(self, node_ids: Set[str]) -> List[Tuple[str, str, bool]]:
         """Get connections where both endpoints are in the given set."""
         all_connections = self._get_all_connections()
         return [
@@ -322,9 +320,7 @@ class AutoLayoutManager(QObject):
         for source_id, target_id, is_exec in connections:
             if source_id in node_ids and target_id in node_ids:
                 layout_edges.append(
-                    LayoutEdge(
-                        source_id=source_id, target_id=target_id, is_exec=is_exec
-                    )
+                    LayoutEdge(source_id=source_id, target_id=target_id, is_exec=is_exec)
                 )
                 layout_nodes[source_id].successors.append(target_id)
                 layout_nodes[target_id].predecessors.append(source_id)
@@ -490,9 +486,7 @@ class AutoLayoutManager(QObject):
             connected_in_ref = [c for c in connected if c in ref_positions]
 
             if connected_in_ref:
-                avg = sum(ref_positions[c] for c in connected_in_ref) / len(
-                    connected_in_ref
-                )
+                avg = sum(ref_positions[c] for c in connected_in_ref) / len(connected_in_ref)
                 barycenters[nid] = avg
             else:
                 barycenters[nid] = node.position
@@ -580,9 +574,7 @@ class AutoLayoutManager(QObject):
 
         return positions
 
-    def _apply_positions(
-        self, nodes: Dict[str, LayoutNode], positions: Dict[str, QPointF]
-    ) -> None:
+    def _apply_positions(self, nodes: Dict[str, LayoutNode], positions: Dict[str, QPointF]) -> None:
         """
         Apply computed positions to nodes.
 
@@ -646,9 +638,7 @@ class AutoLayoutManager(QObject):
                     elif hasattr(view_item, "setPos"):
                         view_item.setPos(target_pos)
                     self._pending_animations -= 1
-                    self.node_position_changed.emit(
-                        node_id, target_pos.x(), target_pos.y()
-                    )
+                    self.node_position_changed.emit(node_id, target_pos.x(), target_pos.y())
                     continue
 
                 # Create position animation (only for QGraphicsObject)

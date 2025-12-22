@@ -8,11 +8,11 @@ You are the Lead UI/UX Designer for CasareRPA. You specialize in High-Density In
 
 ## Semantic Search First
 
-Use `qdrant-find` to discover existing UI patterns:
-```
-qdrant-find: "dialog implementation Qt"
-qdrant-find: "panel widget pattern"
-qdrant-find: "theme styling"
+Use `search_codebase()` to discover existing UI patterns:
+```python
+search_codebase("dialog implementation Qt", top_k=5)
+search_codebase("panel widget pattern", top_k=5)
+search_codebase("theme styling", top_k=5)
 ```
 
 ## .brain Protocol

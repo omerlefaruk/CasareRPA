@@ -1,0 +1,99 @@
+{
+    "metadata": {
+        "name": "Batch 4.1 - HTTP API",
+        "description": "Tests HTTPRequestNode, HTTPSuperNode for GET requests",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "http_get": {
+            "node_id": "http_get",
+            "node_type": "HTTPSuperNode",
+            "config": {
+                "action": "GET",
+                "url": "https://httpbin.org/get"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "set_response_data": {
+            "node_id": "set_response_data",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "response_body",
+                "value": "{{http_get.body}}"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "http_post": {
+            "node_id": "http_post",
+            "node_type": "HTTPSuperNode",
+            "config": {
+                "action": "POST",
+                "url": "https://httpbin.org/post",
+                "body": "{\"test\": \"data\"}"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "parse_json": {
+            "node_id": "parse_json",
+            "node_type": "ParseJSONNode",
+            "config": {
+                "json_string": "{{http_post.body}}"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "HTTP API tests passed! GET status: {{http_get.status_code}}, POST status: {{http_post.status_code}}"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "http_get",
+            "source_port": "exec_out",
+            "target_node": "set_response_data",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_response_data",
+            "source_port": "exec_out",
+            "target_node": "http_post",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "http_post",
+            "source_port": "exec_out",
+            "target_node": "parse_json",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "parse_json",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

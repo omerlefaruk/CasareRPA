@@ -1,0 +1,184 @@
+{
+    "metadata": {
+        "name": "Batch 6.3 - Google & Messaging Triggers",
+        "description": "Tests GmailTriggerNode, SheetsTriggerNode, DriveTriggerNode, TelegramTriggerNode, WhatsAppTriggerNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "gmail_trigger": {
+            "node_id": "gmail_trigger",
+            "node_type": "GmailTriggerNode",
+            "config": {
+                "check_interval": 60,
+                "label_filter": "INBOX"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "log_gmail": {
+            "node_id": "log_gmail",
+            "node_type": "LogNode",
+            "config": {
+                "message": "GmailTriggerNode OK"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "sheets_trigger": {
+            "node_id": "sheets_trigger",
+            "node_type": "SheetsTriggerNode",
+            "config": {
+                "spreadsheet_id": "test_spreadsheet_id",
+                "poll_interval_minutes": 5
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "log_sheets": {
+            "node_id": "log_sheets",
+            "node_type": "LogNode",
+            "config": {
+                "message": "SheetsTriggerNode OK"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "drive_trigger": {
+            "node_id": "drive_trigger",
+            "node_type": "DriveTriggerNode",
+            "config": {
+                "folder_id": "test_folder_id",
+                "poll_interval_minutes": 5
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "log_drive": {
+            "node_id": "log_drive",
+            "node_type": "LogNode",
+            "config": {
+                "message": "DriveTriggerNode OK"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "telegram_trigger": {
+            "node_id": "telegram_trigger",
+            "node_type": "TelegramTriggerNode",
+            "config": {
+                "bot_token": "test_token",
+                "chat_filter": ""
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "log_telegram": {
+            "node_id": "log_telegram",
+            "node_type": "LogNode",
+            "config": {
+                "message": "TelegramTriggerNode OK"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "whatsapp_trigger": {
+            "node_id": "whatsapp_trigger",
+            "node_type": "WhatsAppTriggerNode",
+            "config": {
+                "phone_number_id": "test_phone_id"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All Google & Messaging triggers tested!"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "gmail_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_gmail",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_gmail",
+            "source_port": "exec_out",
+            "target_node": "sheets_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "sheets_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_sheets",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_sheets",
+            "source_port": "exec_out",
+            "target_node": "drive_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_drive",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_drive",
+            "source_port": "exec_out",
+            "target_node": "telegram_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "telegram_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_telegram",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_telegram",
+            "source_port": "exec_out",
+            "target_node": "whatsapp_trigger",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "whatsapp_trigger",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

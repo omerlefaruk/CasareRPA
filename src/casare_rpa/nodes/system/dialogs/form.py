@@ -5,14 +5,12 @@ Nodes for displaying custom forms and multi-step wizards.
 """
 
 import asyncio
-from typing import Optional, Tuple
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
@@ -79,10 +77,7 @@ class FormDialogNode(BaseNode):
             if fields_input is None:
                 fields_input = self.get_parameter("fields", "[]")
 
-            title = context.resolve_value(title)
-
             if isinstance(fields_input, str):
-                fields_input = context.resolve_value(fields_input)
                 try:
                     fields = json.loads(fields_input)
                 except json.JSONDecodeError:
@@ -153,9 +148,7 @@ class FormDialogNode(BaseNode):
                     elif field_type == "select":
                         widget = QComboBox()
                         widget.addItems([str(opt) for opt in field_options])
-                        if field_default and str(field_default) in [
-                            str(o) for o in field_options
-                        ]:
+                        if field_default and str(field_default) in [str(o) for o in field_options]:
                             widget.setCurrentText(str(field_default))
                         widgets[field_name] = ("select", widget)
                     else:
@@ -166,9 +159,7 @@ class FormDialogNode(BaseNode):
 
                 layout.addLayout(form)
 
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-                )
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
                 buttons.accepted.connect(dialog.accept)
                 buttons.rejected.connect(dialog.reject)
                 layout.addWidget(buttons)
@@ -291,10 +282,7 @@ class WizardDialogNode(BaseNode):
                 steps_input = self.get_parameter("steps", "[]")
             allow_back = self.get_parameter("allow_back", True)
 
-            title = context.resolve_value(title)
-
             if isinstance(steps_input, str):
-                steps_input = context.resolve_value(steps_input)
                 try:
                     steps = json.loads(steps_input)
                 except json.JSONDecodeError:
@@ -465,9 +453,7 @@ class WizardDialogNode(BaseNode):
 
                 def on_finished(result):
                     if not future.done():
-                        future.set_result(
-                            (result_data[0], completed_flag[0], current_step[0])
-                        )
+                        future.set_result((result_data[0], completed_flag[0], current_step[0]))
 
                 dialog.finished.connect(on_finished)
                 dialog.show()

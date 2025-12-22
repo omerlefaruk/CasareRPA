@@ -13,11 +13,13 @@ from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 from loguru import logger
-from pydantic import ValidationError
 
 from casare_rpa.application.services import OrchestratorClient
 from casare_rpa.config import WORKFLOWS_DIR
-from casare_rpa.infrastructure.security.workflow_schema import validate_workflow_json
+from casare_rpa.domain.validation import (
+    WorkflowValidationError,
+    validate_workflow_json,
+)
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
@@ -95,15 +97,11 @@ class WorkflowController(BaseController):
 
         if self._orchestrator_client is None:
             orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:8000")
-            self._orchestrator_client = OrchestratorClient(
-                orchestrator_url=orchestrator_url
-            )
+            self._orchestrator_client = OrchestratorClient(orchestrator_url=orchestrator_url)
             logger.debug("Created OrchestratorClient for API calls")
         return self._orchestrator_client
 
-    def _extract_schedule_trigger_info(
-        self, workflow_json: dict
-    ) -> tuple[str | None, dict | None]:
+    def _extract_schedule_trigger_info(self, workflow_json: dict) -> tuple[str | None, dict | None]:
         """
         Extract schedule trigger configuration from workflow JSON.
 
@@ -117,34 +115,25 @@ class WorkflowController(BaseController):
             - trigger_type: "scheduled" if Schedule Trigger found, None otherwise
             - schedule_config: Dict with 'cron_expression' and original config, or None
         """
-        from typing import Any, Dict
 
         nodes = workflow_json.get("nodes", {})
+        if not isinstance(nodes, dict):
+            logger.warning(f"[SCHEDULE_DETECT] Invalid nodes format: {type(nodes).__name__}")
+            return None, None
 
-        # LOG: Show the number of nodes and format
-        logger.info(
-            f"[SCHEDULE_DETECT] Searching {len(nodes) if nodes else 0} nodes "
-            f"(format: {'list' if isinstance(nodes, list) else 'dict'})"
-        )
-
-        # Handle both dict format (Canvas) and list format
-        if isinstance(nodes, list):
-            nodes_iter = [(n.get("node_id", ""), n) for n in nodes]
-        else:
-            nodes_iter = nodes.items()
+        logger.info(f"[SCHEDULE_DETECT] Searching {len(nodes)} nodes")
+        nodes_iter = nodes.items()
 
         for node_id, node_data in nodes_iter:
-            # Check for ScheduleTriggerNode - try multiple key formats
-            node_type = (
-                node_data.get("node_type", "") or node_data.get("type_", "") or ""
-            )
+            # Check for ScheduleTriggerNode
+            node_type = node_data.get("node_type", "")
 
             # LOG: Show each node type for troubleshooting
             logger.info(f"[SCHEDULE_DETECT] Node {node_id}: type='{node_type}'")
 
             if "ScheduleTrigger" in node_type:
-                # Extract config from 'config' (serialized) or 'custom' (Canvas raw)
-                config = node_data.get("config", {}) or node_data.get("custom", {})
+                # Extract config from canonical payload
+                config = node_data.get("config", {})
 
                 # Convert to cron expression
                 cron_expr = self._schedule_config_to_cron(config)
@@ -294,6 +283,35 @@ class WorkflowController(BaseController):
 
             QTimer.singleShot(500, self._validate_after_open)
 
+    def reload_workflow(self) -> None:
+        """
+        Reload the current workflow from disk.
+
+        This allows live editing of workflow JSON files with external tools
+        like WorkflowBuilder. The canvas will be updated with the latest
+        file contents without needing to use File > Open.
+        """
+        logger.info("Reloading workflow from disk")
+
+        if not self._current_file:
+            self.main_window.show_status("No workflow file to reload", 3000)
+            return
+
+        if not self._current_file.exists():
+            self.main_window.show_status(f"File not found: {self._current_file}", 3000)
+            return
+
+        # Emit signal to reload (app will handle the actual loading)
+        self.workflow_loaded.emit(str(self._current_file))
+        # Don't change modified state - user might have made changes
+
+        self.main_window.show_status(f"Reloaded: {self._current_file.name}", 3000)
+
+        # Schedule validation after reloading
+        from PySide6.QtCore import QTimer
+
+        QTimer.singleShot(500, self._validate_after_open)
+
     def import_workflow(self) -> None:
         """Import nodes from another workflow."""
         logger.info("Importing workflow")
@@ -339,9 +357,7 @@ class WorkflowController(BaseController):
 
         if file_path:
             self.workflow_exported.emit(file_path)
-            self.main_window.show_status(
-                f"Exporting {len(selected_nodes)} nodes...", 3000
-            )
+            self.main_window.show_status(f"Exporting {len(selected_nodes)} nodes...", 3000)
 
     def save_workflow(self) -> None:
         """Save the current workflow."""
@@ -669,18 +685,14 @@ class WorkflowController(BaseController):
             try:
                 validate_workflow_json(data)
                 logger.debug("Clipboard workflow schema validation passed")
-            except ValidationError as e:
+            except WorkflowValidationError as e:
                 logger.error(f"Clipboard workflow schema validation failed: {e}")
                 QMessageBox.warning(
                     self.main_window,
                     "Invalid Workflow",
-                    f"The clipboard content failed security validation:\n\n"
-                    f"{str(e)[:500]}",
+                    f"The clipboard content failed security validation:\n\n" f"{str(e)[:500]}",
                 )
                 return
-            except Exception as e:
-                # Log but continue for backwards compatibility
-                logger.warning(f"Schema validation skipped (non-standard format): {e}")
 
             # Emit signal with the JSON string for app to handle
             self.workflow_imported_json.emit(text)
@@ -712,9 +724,7 @@ class WorkflowController(BaseController):
                 import orjson
                 from pathlib import Path
 
-                logger.info(
-                    f"Importing dropped file: {file_path} at position {position}"
-                )
+                logger.info(f"Importing dropped file: {file_path} at position {position}")
 
                 # Load workflow data
                 data = orjson.loads(Path(file_path).read_bytes())
@@ -723,20 +733,14 @@ class WorkflowController(BaseController):
                 try:
                     validate_workflow_json(data)
                     logger.debug("Dropped workflow schema validation passed")
-                except ValidationError as e:
+                except WorkflowValidationError as e:
                     logger.error(f"Dropped workflow schema validation failed: {e}")
                     QMessageBox.warning(
                         self.main_window,
                         "Invalid Workflow",
-                        f"The dropped file failed security validation:\n\n"
-                        f"{str(e)[:500]}",
+                        f"The dropped file failed security validation:\n\n" f"{str(e)[:500]}",
                     )
                     return
-                except Exception as e:
-                    # Log but continue for backwards compatibility
-                    logger.warning(
-                        f"Schema validation skipped (non-standard format): {e}"
-                    )
 
                 # Signal workflow import with file path
                 self.workflow_imported.emit(file_path)
@@ -761,29 +765,21 @@ class WorkflowController(BaseController):
                 try:
                     validate_workflow_json(data)
                     logger.debug("Dropped JSON data schema validation passed")
-                except ValidationError as e:
+                except WorkflowValidationError as e:
                     logger.error(f"Dropped JSON data schema validation failed: {e}")
                     QMessageBox.warning(
                         self.main_window,
                         "Invalid Workflow",
-                        f"The dropped data failed security validation:\n\n"
-                        f"{str(e)[:500]}",
+                        f"The dropped data failed security validation:\n\n" f"{str(e)[:500]}",
                     )
                     return
-                except Exception as e:
-                    # Log but continue for backwards compatibility
-                    logger.warning(
-                        f"Schema validation skipped (non-standard format): {e}"
-                    )
 
                 # Convert to JSON string and signal
                 json_str = orjson.dumps(data).decode("utf-8")
                 self.workflow_imported_json.emit(json_str)
                 self.main_window.set_modified(True)
 
-                self.main_window.show_status(
-                    f"Imported {len(data.get('nodes', {}))} nodes", 5000
-                )
+                self.main_window.show_status(f"Imported {len(data.get('nodes', {}))} nodes", 5000)
             except Exception as e:
                 logger.error(f"Failed to import dropped JSON: {e}")
                 self.main_window.show_status(f"Error importing JSON: {str(e)}", 5000)
@@ -815,9 +811,7 @@ class WorkflowController(BaseController):
             if validation_errors:
                 # Count errors vs warnings
                 error_count = sum(
-                    1
-                    for e in validation_errors
-                    if getattr(e, "severity", "error") == "error"
+                    1 for e in validation_errors if getattr(e, "severity", "error") == "error"
                 )
                 warning_count = len(validation_errors) - error_count
 
@@ -887,9 +881,7 @@ class WorkflowController(BaseController):
         # keyed by node_id. API accepts both dict and list formats.
 
         # Detect Schedule Trigger nodes and extract scheduling info
-        trigger_type, schedule_config = self._extract_schedule_trigger_info(
-            workflow_json
-        )
+        trigger_type, schedule_config = self._extract_schedule_trigger_info(workflow_json)
         schedule_cron = None
 
         if trigger_type == "scheduled" and schedule_config:
@@ -986,9 +978,7 @@ class WorkflowController(BaseController):
         3. Orchestrator queues job for internet robots
         4. Show confirmation with workflow_id
         """
-        logger.info(
-            "Submit for Internet Robots selected - queuing for remote execution"
-        )
+        logger.info("Submit for Internet Robots selected - queuing for remote execution")
 
         # Check if workflow has been saved
         if not self._current_file:
@@ -1015,9 +1005,7 @@ class WorkflowController(BaseController):
         # keyed by node_id. API accepts both dict and list formats.
 
         # Detect Schedule Trigger nodes and extract scheduling info
-        trigger_type, schedule_config = self._extract_schedule_trigger_info(
-            workflow_json
-        )
+        trigger_type, schedule_config = self._extract_schedule_trigger_info(workflow_json)
         schedule_cron = None
 
         if trigger_type == "scheduled" and schedule_config:
@@ -1028,9 +1016,7 @@ class WorkflowController(BaseController):
             )
         else:
             trigger_type = "manual"
-            self.main_window.show_status(
-                "Submitting workflow for internet robots...", 3000
-            )
+            self.main_window.show_status("Submitting workflow for internet robots...", 3000)
 
         # Submit via OrchestratorClient (Application layer)
         client = self._get_orchestrator_client()
@@ -1188,9 +1174,7 @@ class WorkflowController(BaseController):
                     "nodes": [],
                     "connections": [],
                     "metadata": {
-                        "name": self._current_file.stem
-                        if self._current_file
-                        else "Untitled"
+                        "name": self._current_file.stem if self._current_file else "Untitled"
                     },
                 }
         except Exception as e:
@@ -1202,9 +1186,7 @@ class WorkflowController(BaseController):
         try:
             import orjson
 
-            path.write_bytes(
-                orjson.dumps(history.to_dict(), option=orjson.OPT_INDENT_2)
-            )
+            path.write_bytes(orjson.dumps(history.to_dict(), option=orjson.OPT_INDENT_2))
             logger.debug(f"Saved version history to {path}")
         except Exception as e:
             logger.warning(f"Failed to save version history: {e}")

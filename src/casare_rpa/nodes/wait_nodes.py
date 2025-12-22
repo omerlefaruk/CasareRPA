@@ -67,9 +67,7 @@ class WaitNode(BaseNode):
     # @requires: none
     # @ports: duration -> none
 
-    def __init__(
-        self, node_id: str, name: str = "Wait", duration: float = 1.0, **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Wait", duration: float = 1.0, **kwargs) -> None:
         """Initialize wait node."""
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -237,7 +235,7 @@ class WaitForElementNode(BrowserBaseNode):
                             f"Retry attempt {attempts - 1}/{retry_count} for element: {selector}"
                         )
 
-                    element = await page.wait_for_selector(selector, **wait_options)
+                    await page.wait_for_selector(selector, **wait_options)
 
                     # Highlight if enabled
                     await self.highlight_if_enabled(page, selector, timeout)
@@ -257,9 +255,7 @@ class WaitForElementNode(BrowserBaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Wait for element failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Wait for element failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
 
             # All attempts failed
@@ -366,9 +362,7 @@ class WaitForNavigationNode(BrowserBaseNode):
                 attempts += 1
                 try:
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for navigation"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for navigation")
 
                     await page.wait_for_load_state(wait_until, timeout=timeout)
 
@@ -385,9 +379,7 @@ class WaitForNavigationNode(BrowserBaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(
-                            f"Wait for navigation failed (attempt {attempts}): {e}"
-                        )
+                        logger.warning(f"Wait for navigation failed (attempt {attempts}): {e}")
                         await asyncio.sleep(retry_interval / 1000)
 
             # All attempts failed

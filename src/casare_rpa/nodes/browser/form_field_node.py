@@ -36,8 +36,8 @@ from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
         default="",
         required=True,
         label="Value",
-        tooltip="Value to fill. Use ${var} for variables.",
-        placeholder="text or ${variable}",
+        tooltip="Value to fill. Support variables like {{var}}, ${var}, or %var%.",
+        placeholder="text or {{variable}}",
         essential=True,
     ),
     PropertyDef(
@@ -140,13 +140,10 @@ class FormFieldNode(BrowserBaseNode):
                 }
             )
 
-        # Resolve variable references in value
-        resolved_value = context.resolve_value(value) if "${" in str(value) else value
-
         # Create field definition
         field_def = {
             "selector": selector,
-            "value": resolved_value,
+            "value": value,
             "type": field_type,
             "clear_first": clear_first,
         }
@@ -161,9 +158,7 @@ class FormFieldNode(BrowserBaseNode):
         # Accumulate
         fields_out = fields_in + [field_def]
 
-        logger.debug(
-            f"FormField accumulated: {selector} (total fields: {len(fields_out)})"
-        )
+        logger.debug(f"FormField accumulated: {selector} (total fields: {len(fields_out)})")
 
         # Set outputs
         self.set_output_value("page", page)

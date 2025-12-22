@@ -102,13 +102,12 @@ class ExecutionResultHandler:
 
         return False
 
-    def _handle_loop_back(
-        self, loop_start_id: str, current_node_id: str, queue: List[str]
-    ) -> None:
-        """Clears executed nodes in loop body to allow re-execution."""
-        body_nodes = self.orchestrator.find_loop_body_nodes(
-            loop_start_id, current_node_id
-        )
+    def _handle_loop_back(self, loop_start_id: str, current_node_id: str, queue: List[str]) -> None:
+        """Clears executed nodes in loop body and the start node itself to allow re-execution."""
+        body_nodes = self.orchestrator.find_loop_body_nodes(loop_start_id, current_node_id)
+        # MUST clear the loop start node as well, otherwise execute_workflow skips it on next pop
+        self.state_manager.executed_nodes.discard(loop_start_id)
+
         for nid in body_nodes:
             self.state_manager.executed_nodes.discard(nid)
 

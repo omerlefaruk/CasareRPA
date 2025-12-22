@@ -21,7 +21,10 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from casare_rpa.triggers.manager import TriggerManager
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -29,6 +32,10 @@ from pydantic import BaseModel, Field, field_validator
 from loguru import logger
 import orjson
 
+from casare_rpa.domain.validation import (
+    WorkflowValidationError,
+    validate_workflow_json,
+)
 from casare_rpa.infrastructure.orchestrator.api.auth import (
     get_current_user,
     AuthenticatedUser,
@@ -66,9 +73,6 @@ MAX_WORKFLOW_SIZE_BYTES = 10 * 1024 * 1024
 
 # Maximum file upload size (50MB)
 MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024
-
-# Maximum number of nodes in a workflow
-MAX_NODES_COUNT = 1000
 
 # Allowed content types for file uploads
 ALLOWED_UPLOAD_CONTENT_TYPES = {
@@ -124,9 +128,7 @@ class WorkflowSubmissionRequest(BaseModel):
 
     workflow_name: str = Field(..., min_length=1, max_length=255)
     workflow_json: Dict[str, Any] = Field(..., description="Workflow graph definition")
-    trigger_type: str = Field(
-        default="manual", description="manual, scheduled, or webhook"
-    )
+    trigger_type: str = Field(default="manual", description="manual, scheduled, or webhook")
     execution_mode: str = Field(default="lan", description="lan or internet")
     schedule_cron: Optional[str] = Field(
         None, description="Cron expression if trigger_type=scheduled"
@@ -155,24 +157,11 @@ class WorkflowSubmissionRequest(BaseModel):
     @field_validator("workflow_json")
     @classmethod
     def validate_workflow_json(cls, v):
-        # Basic validation - must have nodes key
-        if "nodes" not in v:
-            raise ValueError("workflow_json must contain 'nodes' key")
-
-        # Accept both dict (Canvas format) and list format for nodes
-        nodes = v["nodes"]
-        if isinstance(nodes, dict):
-            node_count = len(nodes)
-        elif isinstance(nodes, list):
-            node_count = len(nodes)
-        else:
-            raise ValueError("workflow_json.nodes must be a dict or list")
-
-        # Security: Limit node count to prevent resource exhaustion
-        if node_count > MAX_NODES_COUNT:
-            raise ValueError(
-                f"Workflow exceeds maximum node count ({node_count} > {MAX_NODES_COUNT})"
-            )
+        try:
+            validate_workflow_json(v)
+        except WorkflowValidationError as e:
+            details = "; ".join(e.errors) if e.errors else str(e)
+            raise ValueError(details) from e
 
         return v
 
@@ -420,9 +409,7 @@ async def enqueue_job(
         return job_id
 
     except Exception as e:
-        logger.error(
-            "Failed to enqueue job to database: {} - falling back to memory queue", e
-        )
+        logger.error("Failed to enqueue job to database: {} - falling back to memory queue", e)
         queue = get_memory_queue()
         return await queue.enqueue(
             workflow_id=workflow_id,
@@ -507,9 +494,7 @@ async def submit_workflow(
                 execution_mode=request.execution_mode,
                 metadata=request.metadata,
             )
-            status_message = (
-                f"Workflow submitted and queued for {request.execution_mode} execution"
-            )
+            status_message = f"Workflow submitted and queued for {request.execution_mode} execution"
 
         elif request.trigger_type == "scheduled":
             # Create schedule via the schedules router
@@ -664,9 +649,7 @@ async def submit_workflow(
                 # For now, we create a singleton-like reference
                 trigger_manager = _get_trigger_manager()
                 if trigger_manager:
-                    registered_trigger = await trigger_manager.register_trigger(
-                        trigger_config
-                    )
+                    registered_trigger = await trigger_manager.register_trigger(trigger_config)
                     if registered_trigger:
                         webhook_url = trigger_manager.get_webhook_url(trigger_id)
                         logger.info(
@@ -675,14 +658,12 @@ async def submit_workflow(
                             workflow_id,
                             endpoint,
                         )
-                        status_message = f"Workflow submitted with webhook trigger (URL: {webhook_url})"
-                    else:
-                        logger.warning(
-                            "Failed to register webhook trigger: {}", trigger_id
-                        )
                         status_message = (
-                            "Workflow submitted but webhook registration failed"
+                            f"Workflow submitted with webhook trigger (URL: {webhook_url})"
                         )
+                    else:
+                        logger.warning("Failed to register webhook trigger: {}", trigger_id)
+                        status_message = "Workflow submitted but webhook registration failed"
                 else:
                     logger.warning(
                         "TriggerManager not available, webhook registered in config only"
@@ -713,9 +694,7 @@ async def submit_workflow(
                                 True,
                                 orjson.dumps(trigger_config.to_dict()).decode(),
                             )
-                        logger.info(
-                            "Webhook trigger stored in database: {}", trigger_id
-                        )
+                        logger.info("Webhook trigger stored in database: {}", trigger_id)
                     except Exception as e:
                         logger.warning(
                             "Failed to store webhook in database (table may not exist): {}",
@@ -724,14 +703,10 @@ async def submit_workflow(
 
             except ImportError as e:
                 logger.warning("Trigger system not available: {}", e)
-                status_message = (
-                    "Workflow submitted (webhook trigger requires trigger system)"
-                )
+                status_message = "Workflow submitted (webhook trigger requires trigger system)"
             except Exception as e:
                 logger.error("Failed to register webhook trigger: {}", e)
-                status_message = (
-                    f"Workflow submitted but webhook setup failed: {str(e)}"
-                )
+                status_message = f"Workflow submitted but webhook setup failed: {str(e)}"
 
         return WorkflowSubmissionResponse(
             workflow_id=workflow_id,
@@ -744,9 +719,7 @@ async def submit_workflow(
 
     except Exception as e:
         logger.error("Workflow submission failed: {}", e)
-        raise HTTPException(
-            status_code=500, detail=f"Workflow submission failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Workflow submission failed: {str(e)}")
 
 
 @router.post("/workflows/upload", response_model=WorkflowSubmissionResponse)
@@ -846,9 +819,7 @@ async def upload_workflow(
         raise
 
     except Exception as e:
-        logger.error(
-            "File upload failed for {}: {}", file.filename if file else "unknown", e
-        )
+        logger.error("File upload failed for {}: {}", file.filename if file else "unknown", e)
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 
@@ -894,9 +865,7 @@ async def get_workflow(
                         if isinstance(workflow_json, str):
                             workflow_json = orjson.loads(workflow_json)
 
-                        logger.debug(
-                            "Workflow retrieved from database: {}", workflow_id
-                        )
+                        logger.debug("Workflow retrieved from database: {}", workflow_id)
                         return WorkflowDetailsResponse(
                             workflow_id=str(row["workflow_id"]),
                             workflow_name=row["workflow_name"],
@@ -918,9 +887,7 @@ async def get_workflow(
         file_path = workflows_dir / f"{workflow_id}.json"
 
         if not file_path.exists():
-            raise HTTPException(
-                status_code=404, detail=f"Workflow not found: {workflow_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Workflow not found: {workflow_id}")
 
         # Load workflow data
         workflow_data = orjson.loads(file_path.read_bytes())
@@ -949,9 +916,7 @@ async def get_workflow(
 
     except Exception as e:
         logger.error("Failed to retrieve workflow {}: {}", workflow_id, e)
-        raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve workflow: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve workflow: {str(e)}")
 
 
 @router.delete("/workflows/{workflow_id}")
@@ -1040,9 +1005,7 @@ async def delete_workflow(
                 logger.warning("Failed to unregister triggers for workflow: {}", e)
 
         if not db_deleted and not fs_deleted:
-            raise HTTPException(
-                status_code=404, detail=f"Workflow not found: {workflow_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Workflow not found: {workflow_id}")
 
         return {
             "status": "success",
@@ -1058,6 +1021,4 @@ async def delete_workflow(
 
     except Exception as e:
         logger.error("Failed to delete workflow {}: {}", workflow_id, e)
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete workflow: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to delete workflow: {str(e)}")

@@ -1,7 +1,6 @@
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field, field_validator
 import datetime
-import json
 from loguru import logger
 
 
@@ -78,36 +77,28 @@ class SkillManager:
         if execution.skill_name not in self.skills:
             raise ValueError(f"Unknown skill: {execution.skill_name}")
 
-        skill = self.skills[execution.skill_name]
+        self.skills[execution.skill_name]
         # In a real implementation, we would use jsonschema.validate
         # For now, we log the validation attempt
         self.logger.info(
             f"Validating skill {execution.skill_name} with params {execution.parameters}"
         )
 
-    def log_activity(
-        self, agent: str, action: str, status: str, details: Optional[str] = None
-    ):
+    def log_activity(self, agent: str, action: str, status: str, details: Optional[str] = None):
         """Log agent activity."""
-        activity = AgentActivity(
-            agent=agent, action=action, status=status, details=details
-        )
+        activity = AgentActivity(agent=agent, action=action, status=status, details=details)
         self.logger.info(f"Agent Activity: {activity.model_dump_json()}")
 
     async def execute_skill(self, execution: SkillExecution, agent_name: str):
         """Execute a skill with logging and error handling."""
         try:
             self.validate_execution(execution)
-            self.log_activity(
-                agent_name, f"execute_skill:{execution.skill_name}", "pending"
-            )
+            self.log_activity(agent_name, f"execute_skill:{execution.skill_name}", "pending")
 
             # Actual execution logic would go here
             # result = await self._run_skill(execution)
 
-            self.log_activity(
-                agent_name, f"execute_skill:{execution.skill_name}", "success"
-            )
+            self.log_activity(agent_name, f"execute_skill:{execution.skill_name}", "success")
             return {"status": "success", "skill": execution.skill_name}
         except Exception as e:
             self.log_activity(

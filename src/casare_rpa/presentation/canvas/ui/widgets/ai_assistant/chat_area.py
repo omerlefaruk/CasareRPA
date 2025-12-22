@@ -18,18 +18,9 @@ from typing import List, Optional
 from PySide6.QtCore import (
     QTimer,
     Qt,
-    QSize,
     QPropertyAnimation,
     QEasingCurve,
     QAbstractAnimation,
-)
-from PySide6.QtGui import (
-    QFont,
-    QColor,
-    QPainter,
-    QPainterPath,
-    QPaintEvent,
-    QTextOption,
 )
 from PySide6.QtWidgets import (
     QFrame,
@@ -40,7 +31,6 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
-    QGraphicsOpacityEffect,
 )
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
@@ -144,9 +134,7 @@ class MessageBubble(QFrame):
         else:
             self._content_widget = QLabel(self._content)
             self._content_widget.setWordWrap(True)
-            self._content_widget.setTextFormat(
-                Qt.TextFormat.RichText
-            )  # Basic formatting
+            self._content_widget.setTextFormat(Qt.TextFormat.RichText)  # Basic formatting
             self._content_widget.setTextInteractionFlags(
                 Qt.TextInteractionFlag.TextSelectableByMouse
             )
@@ -219,9 +207,7 @@ class MessageBubble(QFrame):
         elif self._message_type == MessageType.SYSTEM:
             layout.addStretch()
             lbl = QLabel(f"✨ {self._content}")
-            lbl.setStyleSheet(
-                f"color: {colors.text_muted}; font-size: 11px; font-style: italic;"
-            )
+            lbl.setStyleSheet(f"color: {colors.text_muted}; font-size: 11px; font-style: italic;")
             layout.addWidget(lbl)
             layout.addStretch()
             self._bubble_frame.hide()  # We don't use the standard frame for system
@@ -340,7 +326,7 @@ class ChatArea(QScrollArea):
         self._content_layout.addWidget(self._thinking_indicator)
 
     def _apply_style(self) -> None:
-        colors = Theme.get_colors()
+        Theme.get_colors()
         self.setStyleSheet("""
             ChatArea {
                 background-color: transparent;

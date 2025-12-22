@@ -68,7 +68,6 @@ EXCLUDE_DIRS = {
     "venv",
     ".venv",
     "node_modules",
-    ".qdrant",
     ".chroma",
 }
 EXCLUDE_FILES = {"__init__.py"}

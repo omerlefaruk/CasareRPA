@@ -117,8 +117,8 @@ class ObstacleRect:
 
         Uses parametric line intersection.
         """
-        dx = x2 - x1
-        dy = y2 - y1
+        x2 - x1
+        y2 - y1
 
         # Check each edge
         edges = [
@@ -147,14 +147,12 @@ class ObstacleRect:
     ) -> bool:
         """Check if two line segments intersect."""
 
-        def ccw(
-            ax: float, ay: float, bx: float, by: float, cx: float, cy: float
-        ) -> bool:
+        def ccw(ax: float, ay: float, bx: float, by: float, cx: float, cy: float) -> bool:
             return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
 
-        return ccw(ax1, ay1, bx1, by1, bx2, by2) != ccw(
-            ax2, ay2, bx1, by1, bx2, by2
-        ) and ccw(ax1, ay1, ax2, ay2, bx1, by1) != ccw(ax1, ay1, ax2, ay2, bx2, by2)
+        return ccw(ax1, ay1, bx1, by1, bx2, by2) != ccw(ax2, ay2, bx1, by1, bx2, by2) and ccw(
+            ax1, ay1, ax2, ay2, bx1, by1
+        ) != ccw(ax1, ay1, ax2, ay2, bx2, by2)
 
 
 class SmartRouter:
@@ -405,9 +403,7 @@ class SmartRouter:
         directions = [1, -1] if prefer_up else [-1, 1]
 
         for direction in directions:
-            for offset_mult in range(
-                1, int(_MAX_VERTICAL_OFFSET / _VERTICAL_OFFSET_STEP) + 1
-            ):
+            for offset_mult in range(1, int(_MAX_VERTICAL_OFFSET / _VERTICAL_OFFSET_STEP) + 1):
                 v_offset = direction * offset_mult * _VERTICAL_OFFSET_STEP
 
                 # Adjust control points vertically

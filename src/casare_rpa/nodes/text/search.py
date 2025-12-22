@@ -142,7 +142,6 @@ class TextContainsNode(BaseNode):
             search = str(self.get_input_value("search", context) or "")
 
             # Resolve {{variable}} patterns in search
-            search = context.resolve_value(search)
 
             case_sensitive = self.get_parameter("case_sensitive", True)
 
@@ -225,7 +224,6 @@ class TextStartsWithNode(BaseNode):
             prefix = str(self.get_input_value("prefix", context) or "")
 
             # Resolve {{variable}} patterns in prefix
-            prefix = context.resolve_value(prefix)
 
             case_sensitive = self.get_parameter("case_sensitive", True)
 
@@ -300,7 +298,6 @@ class TextEndsWithNode(BaseNode):
             suffix = str(self.get_input_value("suffix", context) or "")
 
             # Resolve {{variable}} patterns in suffix
-            suffix = context.resolve_value(suffix)
 
             case_sensitive = self.get_parameter("case_sensitive", True)
 
@@ -399,9 +396,7 @@ class TextExtractNode(BaseNode):
         self.add_input_port("text", DataType.STRING, required=False)
         self.add_input_port("pattern", DataType.STRING, required=True)
         self.add_output_port("match", DataType.ANY)  # String or List[String]
-        self.add_output_port(
-            "groups", DataType.LIST
-        )  # List[String] or List[List[String]]
+        self.add_output_port("groups", DataType.LIST)  # List[String] or List[List[String]]
         self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -412,7 +407,6 @@ class TextExtractNode(BaseNode):
             pattern = str(self.get_input_value("pattern", context) or "")
 
             # Resolve {{variable}} patterns
-            pattern = context.resolve_value(pattern)
 
             all_matches = self.get_parameter("all_matches", False)
 

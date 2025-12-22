@@ -74,28 +74,6 @@ Quick reference for resource managers. Use for fast discovery.
 | `GOOGLE_SCOPES` | `google_client.py` | Scope constants |
 | `create_google_client()` | `google_client.py` | Factory function |
 
-### Google Docs
-
-| Export | Source | Description |
-|--------|--------|-------------|
-| `GoogleDocsClient` | `google_docs_client.py` | Docs API client |
-| `GoogleDocsConfig` | `google_docs_client.py` | Docs configuration |
-| `GoogleDocument` | `google_docs_client.py` | Document data |
-| `GoogleDocsAPIError` | `google_docs_client.py` | API error |
-| `DocsExportFormat` | `google_docs_client.py` | Export format enum |
-| `DocumentStyle` | `google_docs_client.py` | Document styling |
-
-### Google Calendar
-
-| Export | Source | Description |
-|--------|--------|-------------|
-| `GoogleCalendarClient` | `google_calendar_client.py` | Calendar API client |
-| `GoogleCalendarAPIError` | `google_calendar_client.py` | API error |
-| `CalendarConfig` | `google_calendar_client.py` | Calendar configuration |
-| `CalendarEvent` | `google_calendar_client.py` | Event data |
-| `Calendar` | `google_calendar_client.py` | Calendar data |
-| `FreeBusyInfo` | `google_calendar_client.py` | Free/busy information |
-
 ### Google Sheets
 
 | Export | Source | Description |

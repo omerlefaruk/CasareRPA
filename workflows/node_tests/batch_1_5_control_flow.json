@@ -1,0 +1,456 @@
+{
+    "metadata": {
+        "name": "Batch 1.5 - Control Flow",
+        "description": "Tests IfNode, SwitchNode, ForLoopStartNode, ForLoopEndNode, WhileLoopStartNode, WhileLoopEndNode, BreakNode, MergeNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "set_value": {
+            "node_id": "set_value",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "test_value",
+                "value": 75
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "compare_value": {
+            "node_id": "compare_value",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": "{{test_value}}",
+                "b": 50,
+                "operator": ">"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "if_check": {
+            "node_id": "if_check",
+            "node_type": "IfNode",
+            "config": {
+                "condition": "{{compare_value.result}}"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "log_true": {
+            "node_id": "log_true",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Value is greater than 50"
+            },
+            "position": [
+                1200,
+                -100
+            ]
+        },
+        "log_false": {
+            "node_id": "log_false",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Value is NOT greater than 50"
+            },
+            "position": [
+                1200,
+                100
+            ]
+        },
+        "merge_if": {
+            "node_id": "merge_if",
+            "node_type": "MergeNode",
+            "config": {},
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "set_list": {
+            "node_id": "set_list",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "items",
+                "value": [
+                    "A",
+                    "B",
+                    "C"
+                ]
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "for_loop_start": {
+            "node_id": "for_loop_start",
+            "node_type": "ForLoopStartNode",
+            "config": {
+                "items": "{{items}}"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "log_item": {
+            "node_id": "log_item",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Item: {{for_loop_start.current_item}}"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "for_loop_end": {
+            "node_id": "for_loop_end",
+            "node_type": "ForLoopEndNode",
+            "config": {
+                "paired_start_id": "for_loop_start"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "set_counter": {
+            "node_id": "set_counter",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "counter",
+                "value": 0
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "while_loop_start": {
+            "node_id": "while_loop_start",
+            "node_type": "WhileLoopStartNode",
+            "config": {
+                "condition": "{{counter}} < 3"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "increment_counter": {
+            "node_id": "increment_counter",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": "{{counter}}",
+                "b": 1,
+                "operation": "add"
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "update_counter": {
+            "node_id": "update_counter",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "counter",
+                "value": "{{increment_counter.result}}"
+            },
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "log_counter": {
+            "node_id": "log_counter",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Counter: {{counter}}"
+            },
+            "position": [
+                5200,
+                0
+            ]
+        },
+        "while_loop_end": {
+            "node_id": "while_loop_end",
+            "node_type": "WhileLoopEndNode",
+            "config": {
+                "paired_start_id": "while_loop_start"
+            },
+            "position": [
+                5600,
+                0
+            ]
+        },
+        "set_switch_val": {
+            "node_id": "set_switch_val",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "switch_val",
+                "value": "option_b"
+            },
+            "position": [
+                6000,
+                0
+            ]
+        },
+        "switch_node": {
+            "node_id": "switch_node",
+            "node_type": "SwitchNode",
+            "config": {
+                "value": "{{switch_val}}",
+                "cases": [
+                    "option_a",
+                    "option_b",
+                    "option_c"
+                ]
+            },
+            "position": [
+                6400,
+                0
+            ]
+        },
+        "log_option_a": {
+            "node_id": "log_option_a",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Selected: Option A"
+            },
+            "position": [
+                6800,
+                -150
+            ]
+        },
+        "log_option_b": {
+            "node_id": "log_option_b",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Selected: Option B"
+            },
+            "position": [
+                6800,
+                0
+            ]
+        },
+        "log_option_c": {
+            "node_id": "log_option_c",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Selected: Option C"
+            },
+            "position": [
+                6800,
+                150
+            ]
+        },
+        "log_default": {
+            "node_id": "log_default",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Selected: Default"
+            },
+            "position": [
+                6800,
+                300
+            ]
+        },
+        "merge_switch": {
+            "node_id": "merge_switch",
+            "node_type": "MergeNode",
+            "config": {},
+            "position": [
+                7200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All control flow tests passed!"
+            },
+            "position": [
+                7600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "set_value",
+            "source_port": "exec_out",
+            "target_node": "compare_value",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_value",
+            "source_port": "exec_out",
+            "target_node": "if_check",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "if_check",
+            "source_port": "true",
+            "target_node": "log_true",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "if_check",
+            "source_port": "false",
+            "target_node": "log_false",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_true",
+            "source_port": "exec_out",
+            "target_node": "merge_if",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_false",
+            "source_port": "exec_out",
+            "target_node": "merge_if",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "merge_if",
+            "source_port": "exec_out",
+            "target_node": "set_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_list",
+            "source_port": "exec_out",
+            "target_node": "for_loop_start",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "for_loop_start",
+            "source_port": "body",
+            "target_node": "log_item",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_item",
+            "source_port": "exec_out",
+            "target_node": "for_loop_end",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "for_loop_start",
+            "source_port": "completed",
+            "target_node": "set_counter",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_counter",
+            "source_port": "exec_out",
+            "target_node": "while_loop_start",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "while_loop_start",
+            "source_port": "body",
+            "target_node": "increment_counter",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "increment_counter",
+            "source_port": "exec_out",
+            "target_node": "update_counter",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "update_counter",
+            "source_port": "exec_out",
+            "target_node": "log_counter",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_counter",
+            "source_port": "exec_out",
+            "target_node": "while_loop_end",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "while_loop_start",
+            "source_port": "completed",
+            "target_node": "set_switch_val",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_switch_val",
+            "source_port": "exec_out",
+            "target_node": "switch_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "switch_node",
+            "source_port": "case_0",
+            "target_node": "log_option_a",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "switch_node",
+            "source_port": "case_1",
+            "target_node": "log_option_b",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "switch_node",
+            "source_port": "case_2",
+            "target_node": "log_option_c",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "switch_node",
+            "source_port": "default",
+            "target_node": "log_default",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_option_a",
+            "source_port": "exec_out",
+            "target_node": "merge_switch",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_option_b",
+            "source_port": "exec_out",
+            "target_node": "merge_switch",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_option_c",
+            "source_port": "exec_out",
+            "target_node": "merge_switch",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "log_default",
+            "source_port": "exec_out",
+            "target_node": "merge_switch",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "merge_switch",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}

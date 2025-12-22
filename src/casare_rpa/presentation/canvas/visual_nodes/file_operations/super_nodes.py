@@ -9,10 +9,8 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import (
     SuperNodeMixin,
 )
-from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.file.super_node import (
     FileSystemSuperNode,
-    FileSystemAction,
     FILE_SYSTEM_PORT_SCHEMA,
 )
 

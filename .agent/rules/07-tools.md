@@ -4,15 +4,23 @@ description: Tool usage guidelines
 
 # Tool Usage
 
-## File Operations
-- Use `view_file` for reading.
-- Use `replace_file_content` for surgical edits.
-- Use `write_to_file` for new files.
+## Local Tools (Preferred)
+- Read files with `read`; edit with `edit`; create with `write`.
+- List directories with `list`; find files with `glob`; search contents with `grep`.
+- Run commands with `bash` only when needed (tests, linters, build steps).
 
-## Command Execution
-- Always check `SafeToAutoRun`.
-- Use `run_command` for shell operations.
+## Search Order (Token-Optimized)
+- Prefer semantic search first: `search_codebase(query, top_k=...)` (MCP via ChromaDB) for "find code by meaning".
+- Fall back to `grep` for exact strings and `glob` for filenames/patterns.
 
-## Search
-- Use `grep_search` for exact matches.
-- Use `find_by_name` for file discovery.
+## MCP Servers
+- MCP servers are configured in `.mcp.json` at repo root.
+- Core local servers:
+  - `filesystem`: safe file operations within allowed roots.
+  - `git`: inspect and manipulate the Git repository.
+  - `sequential-thinking`: structured step-by-step reasoning.
+- Optional external-context servers (when needed): `exa`, `context7`, `ref`, `playwright`.
+
+## Safety
+- Never hardcode secrets in configs; use environment variables (e.g., `${EXA_API_KEY}`).
+- Avoid destructive commands unless explicitly requested.

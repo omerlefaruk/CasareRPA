@@ -17,7 +17,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import Enum
 from pathlib import Path
-from typing import Any, List, Optional, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from loguru import logger
 
@@ -412,8 +412,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         self.status = NodeStatus.RUNNING
 
         action = self.get_parameter("action", EmailAction.SEND.value)
-        if hasattr(context, "resolve_value"):
-            action = context.resolve_value(action)
 
         handlers = {
             EmailAction.SEND.value: self._execute_send,
@@ -465,14 +463,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         priority = self.get_parameter("priority", "normal")
 
         # Resolve variables
-        if hasattr(context, "resolve_value"):
-            smtp_server = context.resolve_value(smtp_server)
-            from_email = context.resolve_value(from_email)
-            to_email = context.resolve_value(to_email)
-            subject = context.resolve_value(subject)
-            body = context.resolve_value(body)
-            cc = context.resolve_value(cc)
-            bcc = context.resolve_value(bcc)
 
         if not to_email:
             return self._error_result("Recipient email address is required")
@@ -588,10 +578,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         )
 
         # Resolve variables
-        if hasattr(context, "resolve_value"):
-            imap_server = context.resolve_value(imap_server)
-            folder = context.resolve_value(folder)
-            search_criteria = context.resolve_value(search_criteria)
 
         if not username or not password:
             return self._error_result("Username and password required")
@@ -627,9 +613,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
                         msg = email_module.message_from_bytes(raw_email)
                         parsed = parse_email_message(msg)
                         parsed["uid"] = (
-                            msg_id.decode()
-                            if isinstance(msg_id, bytes)
-                            else str(msg_id)
+                            msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
                         )
                         emails_list.append(parsed)
 
@@ -683,10 +667,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         )
 
         # Resolve variables
-        if hasattr(context, "resolve_value"):
-            imap_server = context.resolve_value(imap_server)
-            folder = context.resolve_value(folder)
-            email_uid = context.resolve_value(email_uid)
 
         if not email_uid:
             return self._error_result("Email UID is required")
@@ -751,10 +731,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         )
 
         # Resolve variables
-        if hasattr(context, "resolve_value"):
-            imap_server = context.resolve_value(imap_server)
-            folder = context.resolve_value(folder)
-            email_uid = context.resolve_value(email_uid)
 
         if not email_uid:
             return self._error_result("Email UID is required")
@@ -810,11 +786,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         )
 
         # Resolve variables
-        if hasattr(context, "resolve_value"):
-            imap_server = context.resolve_value(imap_server)
-            folder = context.resolve_value(folder)
-            email_uid = context.resolve_value(email_uid)
-            target_folder = context.resolve_value(target_folder)
 
         if not email_uid or not target_folder:
             return self._error_result("Email UID and target folder are required")
@@ -855,9 +826,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_save_attachment(
-        self, context: "ExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_save_attachment(self, context: "ExecutionContext") -> ExecutionResult:
         """Save email attachments to disk."""
         imap_server = self.get_parameter("imap_server", "imap.gmail.com")
         imap_port = self.get_parameter("imap_port", 993)
@@ -877,11 +846,6 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         )
 
         # Resolve variables
-        if hasattr(context, "resolve_value"):
-            imap_server = context.resolve_value(imap_server)
-            folder = context.resolve_value(folder)
-            email_uid = context.resolve_value(email_uid)
-            save_path = context.resolve_value(save_path)
 
         if not email_uid:
             return self._error_result("Email UID is required")
@@ -973,9 +937,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             try:
                 attempts += 1
                 if attempts > 1:
-                    logger.info(
-                        f"Retry attempt {attempts - 1}/{retry_count} for {operation_name}"
-                    )
+                    logger.info(f"Retry attempt {attempts - 1}/{retry_count} for {operation_name}")
 
                 result = await loop.run_in_executor(None, sync_func)
                 return success_handler(result)

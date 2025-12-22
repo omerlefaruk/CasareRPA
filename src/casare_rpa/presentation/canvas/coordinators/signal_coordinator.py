@@ -10,7 +10,7 @@ Usage:
     # Actions are connected via ActionManager, handlers route here
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 import asyncio
 
 from PySide6.QtCore import QTimer, Slot
@@ -97,6 +97,12 @@ class SignalCoordinator:
             self._mw._workflow_controller.open_workflow()
 
     @Slot()
+    def on_reload_workflow(self) -> None:
+        """Handle reload workflow action (Ctrl+Shift+R)."""
+        if self._mw._workflow_controller:
+            self._mw._workflow_controller.reload_workflow()
+
+    @Slot()
     def on_import_workflow(self) -> None:
         """Handle import workflow action."""
         if self._mw._workflow_controller:
@@ -175,9 +181,7 @@ class SignalCoordinator:
     def on_submit(self) -> None:
         """Handle submit for internet robots action."""
         if self._mw._workflow_controller:
-            asyncio.create_task(
-                self._mw._workflow_controller.submit_for_internet_robots()
-            )
+            asyncio.create_task(self._mw._workflow_controller.submit_for_internet_robots())
 
     @Slot(bool)
     def on_pause_workflow(self, checked: bool) -> None:
@@ -466,9 +470,7 @@ class SignalCoordinator:
             logger.debug(f"Could not save quick node mode preference: {e}")
 
         status = "enabled" if checked else "disabled"
-        self._mw.show_status(
-            f"Quick node mode {status} (press letter keys to create nodes)", 2500
-        )
+        self._mw.show_status(f"Quick node mode {status} (press letter keys to create nodes)", 2500)
         logger.debug(f"Quick node mode: {status}")
 
     # ==================== Menu Actions ====================
@@ -596,8 +598,7 @@ class SignalCoordinator:
                 QMessageBox.warning(
                     self._mw,
                     "Recording Error",
-                    "No browser page available. Please run a workflow with "
-                    "Open Browser first.",
+                    "No browser page available. Please run a workflow with " "Open Browser first.",
                 )
                 self._mw.action_record_workflow.setChecked(False)
                 return
@@ -652,10 +653,8 @@ class SignalCoordinator:
             actions = await recording_service.stop_recording(recorder)
 
             if actions:
-                workflow_data = recording_service.generate_workflow_from_actions(
-                    actions
-                )
-                nodes = workflow_data.get("nodes", [])
+                workflow_data = recording_service.generate_workflow_from_actions(actions)
+                nodes = list(workflow_data.get("nodes", {}).values())
 
                 if nodes:
                     from casare_rpa.presentation.canvas.ui.dialogs import (
@@ -663,9 +662,7 @@ class SignalCoordinator:
                     )
 
                     dialog = RecordingReviewDialog(nodes, parent=self._mw)
-                    dialog.accepted_with_data.connect(
-                        self._on_recording_review_accepted
-                    )
+                    dialog.accepted_with_data.connect(self._on_recording_review_accepted)
                     dialog.exec()
 
             logger.info(f"Recording stopped: {len(actions) if actions else 0} actions")
@@ -679,59 +676,55 @@ class SignalCoordinator:
         """Show the browser recording panel."""
         logger.debug("Recording panel: recording in progress...")
 
-    def _on_recording_review_accepted(
-        self, nodes_data: list, include_waits: bool
-    ) -> None:
+    def _on_recording_review_accepted(self, nodes_data: list, include_waits: bool) -> None:
         """Handle accepted recording review - create nodes on canvas."""
         if not nodes_data:
             return
 
-        final_nodes = []
+        final_nodes: Dict[str, Dict[str, Any]] = {}
         connections = []
 
         for i, node in enumerate(nodes_data):
-            node_id = node.get("id", f"action_{i+1}")
-            final_nodes.append(node)
+            node_id = node.get("node_id", f"action_{i+1}")
+            final_nodes[node_id] = node
 
             if include_waits and i < len(nodes_data) - 1:
                 wait_time = node.get("config", {}).get("wait_after", 500)
                 if wait_time > 0:
                     wait_id = f"wait_{i+1}"
-                    final_nodes.append(
-                        {
-                            "id": wait_id,
-                            "type": "WaitNode",
-                            "name": f"Wait {wait_time}ms",
-                            "config": {"duration": wait_time},
-                        }
-                    )
+                    final_nodes[wait_id] = {
+                        "node_id": wait_id,
+                        "node_type": "WaitNode",
+                        "name": f"Wait {wait_time}ms",
+                        "config": {"duration": wait_time},
+                    }
                     connections.append(
                         {
-                            "from_node": node_id,
-                            "from_port": "exec_out",
-                            "to_node": wait_id,
-                            "to_port": "exec_in",
+                            "source_node": node_id,
+                            "source_port": "exec_out",
+                            "target_node": wait_id,
+                            "target_port": "exec_in",
                         }
                     )
                     next_node = nodes_data[i + 1]
-                    next_id = next_node.get("id", f"action_{i+2}")
+                    next_id = next_node.get("node_id", f"action_{i+2}")
                     connections.append(
                         {
-                            "from_node": wait_id,
-                            "from_port": "exec_out",
-                            "to_node": next_id,
-                            "to_port": "exec_in",
+                            "source_node": wait_id,
+                            "source_port": "exec_out",
+                            "target_node": next_id,
+                            "target_port": "exec_in",
                         }
                     )
             elif i < len(nodes_data) - 1:
                 next_node = nodes_data[i + 1]
-                next_id = next_node.get("id", f"action_{i+2}")
+                next_id = next_node.get("node_id", f"action_{i+2}")
                 connections.append(
                     {
-                        "from_node": node_id,
-                        "from_port": "exec_out",
-                        "to_node": next_id,
-                        "to_port": "exec_in",
+                        "source_node": node_id,
+                        "source_port": "exec_out",
+                        "target_node": next_id,
+                        "target_port": "exec_in",
                     }
                 )
 
@@ -755,7 +748,7 @@ class SignalCoordinator:
             "WaitNode": "casare_rpa.wait.VisualWaitNode",
         }
 
-        nodes_data = workflow_data.get("nodes", [])
+        nodes_data = workflow_data.get("nodes", {})
         connections_data = workflow_data.get("connections", [])
         if not nodes_data:
             return
@@ -775,15 +768,15 @@ class SignalCoordinator:
         first_node = None
         NODE_SPACING = 450
 
-        for node_data in nodes_data:
-            node_type = node_data.get("type")
+        for node_id, node_data in nodes_data.items():
+            node_type = node_data.get("node_type")
             visual_type = VISUAL_NODE_TYPE_MAP.get(node_type)
             if not visual_type:
                 continue
 
             node = graph.create_node(visual_type, pos=[current_x, start_y])
             if node:
-                created_nodes[node_data["id"]] = node
+                created_nodes[node_id] = node
                 if first_node is None:
                     first_node = node
                 for key, value in node_data.get("config", {}).items():
@@ -813,12 +806,12 @@ class SignalCoordinator:
                 pass
 
         for conn in connections_data:
-            from_node = created_nodes.get(conn.get("from_node"))
-            to_node = created_nodes.get(conn.get("to_node"))
+            from_node = created_nodes.get(conn.get("source_node"))
+            to_node = created_nodes.get(conn.get("target_node"))
             if from_node and to_node:
                 try:
-                    out_port = from_node.get_output(conn.get("from_port", "exec_out"))
-                    in_port = to_node.get_input(conn.get("to_port", "exec_in"))
+                    out_port = from_node.get_output(conn.get("source_port", "exec_out"))
+                    in_port = to_node.get_input(conn.get("target_port", "exec_in"))
                     if out_port and in_port:
                         out_port.connect_to(in_port)
                 except Exception:
@@ -929,20 +922,10 @@ class SignalCoordinator:
             logger.warning("No nodes in AI workflow")
             return
 
-        # Normalize nodes_data to handle both list and dict formats
-        # List format: [{"node_id": "node_1", "node_type": "StartNode", ...}, ...]
-        # Alt list format: [{"id": "node_1", "type": "StartNode", ...}, ...]
-        # Dict format: {"node_1": {"node_type": "StartNode", ...}, ...}
-        if isinstance(nodes_data, list):
-            nodes_items = [
-                (n.get("node_id") or n.get("id") or f"node_{i}", n)
-                for i, n in enumerate(nodes_data)
-            ]
-        elif isinstance(nodes_data, dict):
-            nodes_items = list(nodes_data.items())
-        else:
+        if not isinstance(nodes_data, dict):
             logger.warning(f"Invalid nodes_data format: {type(nodes_data)}")
             return
+        nodes_items = list(nodes_data.items())
 
         # Build node type map from registered nodes
         node_type_map = self._build_ai_node_type_map(graph)
@@ -957,13 +940,10 @@ class SignalCoordinator:
         created_nodes = {}
         skipped_nodes = []  # Track skipped nodes for user feedback
         for node_id, node_data in nodes_items:
-            # Support both "node_type" and "type" keys
-            node_type = node_data.get("node_type") or node_data.get("type")
+            node_type = node_data.get("node_type")
             logger.info(f"Processing node: {node_id} -> {node_type}")
             if not node_type:
-                logger.warning(
-                    f"Node {node_id} has no node_type (keys: {list(node_data.keys())})"
-                )
+                logger.warning(f"Node {node_id} has no node_type (keys: {list(node_data.keys())})")
                 skipped_nodes.append((node_id, "no node_type", None))
                 continue
 
@@ -976,9 +956,7 @@ class SignalCoordinator:
                 for key, value in node_type_map.items():
                     if key.lower() == node_type_lower:
                         identifier = value
-                        logger.info(
-                            f"  Found case-insensitive match: {node_type} -> {key}"
-                        )
+                        logger.info(f"  Found case-insensitive match: {node_type} -> {key}")
                         break
 
             logger.info(f"  Identifier for {node_type}: {identifier}")
@@ -1019,9 +997,7 @@ class SignalCoordinator:
                         except Exception:
                             pass
                 else:
-                    logger.warning(
-                        f"  FAILED: create_node returned None for {node_type}"
-                    )
+                    logger.warning(f"  FAILED: create_node returned None for {node_type}")
 
             except Exception as e:
                 logger.error(f"Failed to create node {node_type}: {e}", exc_info=True)
@@ -1216,9 +1192,7 @@ class SignalCoordinator:
         # Show status
         if hasattr(self._mw, "show_status_message"):
             if failed_count == 0:
-                self._mw.show_status_message(
-                    f"Modified {modified_count} properties", timeout=5000
-                )
+                self._mw.show_status_message(f"Modified {modified_count} properties", timeout=5000)
             else:
                 self._mw.show_status_message(
                     f"Modified {modified_count} properties, {failed_count} failed",
@@ -1251,9 +1225,7 @@ class SignalCoordinator:
         """Select node by ID and center view."""
         logger.info(f"_select_node_by_id called with node_id: {node_id}")
 
-        if not self._mw._central_widget or not hasattr(
-            self._mw._central_widget, "graph"
-        ):
+        if not self._mw._central_widget or not hasattr(self._mw._central_widget, "graph"):
             logger.warning("No central widget or graph found")
             return
 
@@ -1300,9 +1272,7 @@ class SignalCoordinator:
                     )
                     if casare_node and hasattr(casare_node, "config"):
                         casare_node.config[prop_name] = value
-                        logger.debug(
-                            f"Updated casare_node.config['{prop_name}'] = {value}"
-                        )
+                        logger.debug(f"Updated casare_node.config['{prop_name}'] = {value}")
                     break
 
     @Slot(dict)

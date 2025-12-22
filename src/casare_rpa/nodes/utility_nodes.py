@@ -7,8 +7,7 @@ and explicit logging within workflows.
 
 import json
 import re
-import asyncio
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from enum import Enum
 
 from loguru import logger
@@ -147,16 +146,12 @@ class ValidateNode(BaseNode):
             validation_type = self.get_parameter("validation_type", "not_empty")
             validation_param = self.get_parameter("validation_param")
 
-            is_valid, error_msg = self._validate(
-                value, validation_type, validation_param
-            )
+            is_valid, error_msg = self._validate(value, validation_type, validation_param)
 
             self.set_output_value("is_valid", is_valid)
             self.set_output_value("error_message", error_msg if not is_valid else "")
 
-            logger.info(
-                f"Validation '{validation_type}': {'passed' if is_valid else 'failed'}"
-            )
+            logger.info(f"Validation '{validation_type}': {'passed' if is_valid else 'failed'}")
 
             self.status = NodeStatus.SUCCESS
             return {
@@ -174,9 +169,7 @@ class ValidateNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": error_msg, "next_nodes": ["invalid"]}
 
-    def _validate(
-        self, value: Any, validation_type: str, param: Any
-    ) -> tuple[bool, str]:
+    def _validate(self, value: Any, validation_type: str, param: Any) -> tuple[bool, str]:
         """Perform validation and return (is_valid, error_message)."""
         try:
             vtype = ValidationType(validation_type)
@@ -419,9 +412,7 @@ class TransformNode(BaseNode):
         try:
             value = self.get_parameter("value")
             transform_type = self.get_parameter("transform_type", "to_string")
-            transform_param = self.get_parameter("param") or self.get_parameter(
-                "transform_param"
-            )
+            transform_param = self.get_parameter("param") or self.get_parameter("transform_param")
 
             result = self._transform(value, transform_type, transform_param)
 
@@ -507,9 +498,7 @@ class TransformNode(BaseNode):
 
         elif ttype == TransformType.REPLACE:
             if not param or not isinstance(param, dict):
-                raise ValueError(
-                    "Replace requires param dict with 'old' and 'new' keys"
-                )
+                raise ValueError("Replace requires param dict with 'old' and 'new' keys")
             return str(value).replace(param.get("old", ""), param.get("new", ""))
 
         elif ttype == TransformType.REGEX_EXTRACT:
@@ -535,9 +524,7 @@ class TransformNode(BaseNode):
             if not param:
                 return value
             # param should be a key to extract from each dict in list
-            return [
-                item.get(param) if isinstance(item, dict) else item for item in value
-            ]
+            return [item.get(param) if isinstance(item, dict) else item for item in value]
 
         elif ttype == TransformType.FILTER_VALUES:
             if not isinstance(value, list):
@@ -809,9 +796,7 @@ class RerouteNode(BaseNode):
             # Pass through to output
             self.set_output_value("out", value)
 
-            logger.debug(
-                f"Reroute {self.node_id} passing through: {type(value).__name__}"
-            )
+            logger.debug(f"Reroute {self.node_id} passing through: {type(value).__name__}")
 
             self.status = NodeStatus.SUCCESS
 

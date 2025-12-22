@@ -29,13 +29,13 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QBrush, QIcon
+from PySide6.QtGui import QColor, QBrush
 
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     ROBOT_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
 )
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon, ToolbarIcons
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
@@ -43,9 +43,6 @@ from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
-    from casare_rpa.presentation.canvas.services.websocket_bridge import (
-        RobotStatusUpdate,
-    )
 
 
 # Heartbeat timeout threshold (seconds) - robot considered stale after this
@@ -82,9 +79,7 @@ class RobotEditDialog(QDialog):
 
         self._max_jobs_spin = QSpinBox()
         self._max_jobs_spin.setRange(1, 20)
-        self._max_jobs_spin.setValue(
-            self._robot.max_concurrent_jobs if self._robot else 3
-        )
+        self._max_jobs_spin.setValue(self._robot.max_concurrent_jobs if self._robot else 3)
         form.addRow("Max Concurrent Jobs:", self._max_jobs_spin)
 
         self._environment_edit = QLineEdit()
@@ -115,8 +110,7 @@ class RobotEditDialog(QDialog):
         layout.addWidget(cap_group)
 
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save
-            | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self._on_save)
         buttons.rejected.connect(self.reject)
@@ -389,9 +383,7 @@ class RobotsTabWidget(QWidget):
 
             status_value = getattr(robot.status, "value", str(robot.status)).lower()
             status_item = QTableWidgetItem(status_value.upper())
-            status_color = ROBOT_STATUS_COLORS.get(
-                status_value, QColor(THEME.text_secondary)
-            )
+            status_color = ROBOT_STATUS_COLORS.get(status_value, QColor(THEME.text_secondary))
             status_item.setForeground(QBrush(status_color))
             self._table.setItem(row, 1, status_item)
 
@@ -533,9 +525,7 @@ class RobotsTabWidget(QWidget):
         menu = QMenu(self)
 
         details_action = menu.addAction("View Details")
-        details_action.triggered.connect(
-            lambda: self.robot_details_requested.emit(robot_id)
-        )
+        details_action.triggered.connect(lambda: self.robot_details_requested.emit(robot_id))
 
         edit_action = menu.addAction("Edit")
         edit_action.triggered.connect(lambda: self._on_edit_robot(robot_id))

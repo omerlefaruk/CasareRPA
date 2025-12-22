@@ -150,8 +150,6 @@ class GmailGetEmailNode(GmailBaseNode):
         """Get a single email by ID."""
         # Get message ID
         message_id = self.get_parameter("message_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
 
         if not message_id:
             self._set_error_outputs("Message ID is required")
@@ -163,8 +161,6 @@ class GmailGetEmailNode(GmailBaseNode):
 
         # Get format
         format_type = self.get_parameter("format") or "full"
-        if hasattr(context, "resolve_value"):
-            format_type = context.resolve_value(format_type)
 
         logger.debug(f"Getting Gmail message {message_id}")
 
@@ -311,14 +307,6 @@ class GmailSearchEmailsNode(GmailBaseNode):
         include_spam_trash = self.get_parameter("include_spam_trash") or False
         page_token = self.get_parameter("page_token") or None
 
-        if hasattr(context, "resolve_value"):
-            query = context.resolve_value(query)
-            max_results = context.resolve_value(max_results)
-            label_ids_str = context.resolve_value(label_ids_str)
-            include_spam_trash = context.resolve_value(include_spam_trash)
-            if page_token:
-                page_token = context.resolve_value(page_token)
-
         # Parse label IDs
         label_ids = None
         if label_ids_str:
@@ -454,8 +442,6 @@ class GmailGetThreadNode(GmailBaseNode):
         """Get a conversation thread."""
         # Get thread ID
         thread_id = self.get_parameter("thread_id")
-        if hasattr(context, "resolve_value"):
-            thread_id = context.resolve_value(thread_id)
 
         if not thread_id:
             self._set_error_outputs("Thread ID is required")
@@ -467,8 +453,6 @@ class GmailGetThreadNode(GmailBaseNode):
 
         # Get format
         format_type = self.get_parameter("format") or "full"
-        if hasattr(context, "resolve_value"):
-            format_type = context.resolve_value(format_type)
 
         logger.debug(f"Getting Gmail thread {thread_id}")
 
@@ -512,9 +496,7 @@ class GmailGetThreadNode(GmailBaseNode):
         self.set_output_value("last_message", last_message)
         self.set_output_value("participants", list(participants))
 
-        logger.info(
-            f"Gmail thread retrieved: {thread.id} with {len(message_list)} messages"
-        )
+        logger.info(f"Gmail thread retrieved: {thread.id} with {len(message_list)} messages")
 
         return {
             "success": True,
@@ -619,9 +601,6 @@ class GmailGetAttachmentNode(GmailBaseNode):
         # Get message and attachment IDs
         message_id = self.get_parameter("message_id")
         attachment_id = self.get_parameter("attachment_id")
-        if hasattr(context, "resolve_value"):
-            message_id = context.resolve_value(message_id)
-            attachment_id = context.resolve_value(attachment_id)
 
         if not message_id:
             self._set_error_outputs("Message ID is required")
@@ -642,9 +621,6 @@ class GmailGetAttachmentNode(GmailBaseNode):
         # Get optional save path and filename
         save_path = self.get_parameter("save_path") or ""
         filename = self.get_parameter("filename") or "attachment"
-        if hasattr(context, "resolve_value"):
-            save_path = context.resolve_value(save_path)
-            filename = context.resolve_value(filename)
 
         logger.debug(f"Getting attachment {attachment_id} from message {message_id}")
 

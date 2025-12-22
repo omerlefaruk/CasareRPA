@@ -24,4 +24,5 @@ __all__ = [
     "schedules",
     "websockets",
     "workflows",
+    "health",
 ]

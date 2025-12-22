@@ -9,6 +9,7 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QTreeWidget,
     QTreeWidgetItem,
+    QTreeWidgetItemIterator,
     QWidget,
     QVBoxLayout,
     QLineEdit,
@@ -155,7 +156,7 @@ class ElementTreeItem(QTreeWidgetItem):
             for child in children[:50]:  # Limit to first 50 children
                 try:
                     child_element = DesktopElement(child)
-                    child_item = ElementTreeItem(child_element, self)
+                    ElementTreeItem(child_element, self)
                 except Exception as e:
                     logger.warning(f"Failed to create tree item for child: {e}")
 

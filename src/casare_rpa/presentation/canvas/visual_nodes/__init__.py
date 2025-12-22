@@ -6,12 +6,10 @@ Uses lazy loading to improve startup performance.
 """
 
 import importlib
-from typing import TYPE_CHECKING, Any, Dict, List, Type
+from typing import Any, Dict, List, Type
 
-# Type hints for IDE support - these don't actually import at runtime
-if TYPE_CHECKING:
-    from .basic.nodes import VisualStartNode, VisualEndNode, VisualCommentNode
-    # Add other type hints as needed for IDE support
+# Note: Type hints for IDE support can be added as needed
+# All visual node classes are lazy-loaded via __getattr__
 
 
 # =============================================================================
@@ -49,12 +47,14 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualFormFieldNode": "browser.nodes",
     "VisualFormFillerNode": "browser.nodes",
     "VisualDetectFormsNode": "browser.nodes",
-    # Smart Selector AI nodes
-    "VisualSmartSelectorNode": "browser.nodes",
-    "VisualSmartSelectorOptionsNode": "browser.nodes",
-    "VisualRefineSelectorNode": "browser.nodes",
     # Browser Evaluate (JavaScript execution)
     "VisualBrowserEvaluateNode": "browser.evaluate_node",
+    # Browser Scripting (Python execution with page access)
+    "VisualBrowserRunScriptNode": "browser.scripting",
+    # Browser CAPTCHA (3 nodes)
+    "VisualDetectCaptchaNode": "browser.captcha",
+    "VisualSolveCaptchaNode": "browser.captcha",
+    "VisualSolveCaptchaAINode": "browser.captcha",
     # Control Flow (16 nodes)
     "VisualIfNode": "control_flow.nodes",
     "VisualForLoopNode": "control_flow.nodes",
@@ -71,17 +71,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualTryNode": "control_flow.nodes",
     "VisualCatchNode": "control_flow.nodes",
     "VisualFinallyNode": "control_flow.nodes",
-    # Database (10 nodes)
-    "VisualDatabaseConnectNode": "database.nodes",
-    "VisualExecuteQueryNode": "database.nodes",
-    "VisualExecuteNonQueryNode": "database.nodes",
-    "VisualBeginTransactionNode": "database.nodes",
-    "VisualCommitTransactionNode": "database.nodes",
-    "VisualRollbackTransactionNode": "database.nodes",
-    "VisualCloseDatabaseNode": "database.nodes",
-    "VisualTableExistsNode": "database.nodes",
-    "VisualGetTableColumnsNode": "database.nodes",
-    "VisualExecuteBatchNode": "database.nodes",
+    # Database nodes removed - see Calendar/Docs cleanup 2025
     # Data Operations (32 nodes)
     "VisualConcatenateNode": "data_operations.nodes",
     "VisualFormatStringNode": "data_operations.nodes",
@@ -162,7 +152,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualMarkEmailNode": "email.nodes",
     "VisualDeleteEmailNode": "email.nodes",
     "VisualMoveEmailNode": "email.nodes",
-    # Error Handling (10 nodes)
+    # Error Handling (9 nodes)
     "VisualRetryNode": "error_handling.nodes",
     "VisualRetrySuccessNode": "error_handling.nodes",
     "VisualRetryFailNode": "error_handling.nodes",
@@ -172,9 +162,12 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualErrorRecoveryNode": "error_handling.nodes",
     "VisualLogErrorNode": "error_handling.nodes",
     "VisualAssertNode": "error_handling.nodes",
-    "VisualAIRecoveryNode": "error_handling.nodes",
     # File Operations - Super Nodes
     "VisualFileSystemSuperNode": "file_operations.super_nodes",
+    # File Operations - Directory and Path
+    "VisualListDirectoryNode": "file_operations.nodes",
+    "VisualFileExistsNode": "file_operations.nodes",
+    "VisualCreateDirectoryNode": "file_operations.nodes",
     # File Operations - Structured Data
     "VisualReadCSVNode": "file_operations.nodes",
     "VisualWriteCSVNode": "file_operations.nodes",
@@ -345,26 +338,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualGmailTriggerNode": "triggers.nodes",
     "VisualDriveTriggerNode": "triggers.nodes",
     "VisualSheetsTriggerNode": "triggers.nodes",
-    "VisualCalendarTriggerNode": "triggers.nodes",
-    # AI/ML (10 nodes)
-    "VisualLLMCompletionNode": "ai_ml.nodes",
-    "VisualLLMChatNode": "ai_ml.nodes",
-    "VisualLLMExtractDataNode": "ai_ml.nodes",
-    "VisualLLMSummarizeNode": "ai_ml.nodes",
-    "VisualLLMClassifyNode": "ai_ml.nodes",
-    "VisualLLMTranslateNode": "ai_ml.nodes",
-    # AI Condition nodes
-    "VisualAIConditionNode": "ai_ml.nodes",
-    "VisualAISwitchNode": "ai_ml.nodes",
-    "VisualAIDecisionTableNode": "ai_ml.nodes",
-    # AI Agent
-    "VisualAIAgentNode": "ai_ml.nodes",
-    # Document AI (5 nodes)
-    "VisualClassifyDocumentNode": "document.nodes",
-    "VisualExtractFormNode": "document.nodes",
-    "VisualExtractInvoiceNode": "document.nodes",
-    "VisualExtractTableNode": "document.nodes",
-    "VisualValidateExtractionNode": "document.nodes",
+    # CalendarTriggerNode removed - see Calendar/Docs cleanup 2025
     # Messaging - Telegram Send (4 nodes)
     "VisualTelegramSendMessageNode": "messaging.nodes",
     "VisualTelegramSendPhotoNode": "messaging.nodes",
@@ -384,19 +358,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualWhatsAppSendVideoNode": "messaging.whatsapp_nodes",
     "VisualWhatsAppSendLocationNode": "messaging.whatsapp_nodes",
     "VisualWhatsAppSendInteractiveNode": "messaging.whatsapp_nodes",
-    # Google Calendar (12 nodes)
-    "VisualCalendarListEventsNode": "google",
-    "VisualCalendarGetEventNode": "google",
-    "VisualCalendarCreateEventNode": "google",
-    "VisualCalendarUpdateEventNode": "google",
-    "VisualCalendarDeleteEventNode": "google",
-    "VisualCalendarQuickAddNode": "google",
-    "VisualCalendarMoveEventNode": "google",
-    "VisualCalendarGetFreeBusyNode": "google",
-    "VisualCalendarListCalendarsNode": "google",
-    "VisualCalendarGetCalendarNode": "google",
-    "VisualCalendarCreateCalendarNode": "google",
-    "VisualCalendarDeleteCalendarNode": "google",
+    # Google Calendar nodes removed - see Calendar/Docs cleanup 2025
     # Google Gmail (21 nodes)
     "VisualGmailSendEmailNode": "google",
     "VisualGmailSendWithAttachmentNode": "google",
@@ -441,15 +403,7 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualSheetsBatchUpdateNode": "google",
     "VisualSheetsBatchGetNode": "google",
     "VisualSheetsBatchClearNode": "google",
-    # Google Docs (8 nodes)
-    "VisualDocsCreateDocumentNode": "google",
-    "VisualDocsGetDocumentNode": "google",
-    "VisualDocsGetContentNode": "google",
-    "VisualDocsInsertTextNode": "google",
-    "VisualDocsReplaceTextNode": "google",
-    "VisualDocsInsertTableNode": "google",
-    "VisualDocsInsertImageNode": "google",
-    "VisualDocsUpdateStyleNode": "google",
+    # Google Docs nodes removed - see Calendar/Docs cleanup 2025
     # Google Drive (21 nodes)
     "VisualDriveUploadFileNode": "google",
     "VisualDriveDownloadFileNode": "google",
@@ -473,8 +427,6 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
     "VisualDriveBatchCopyNode": "google",
     # Subflows (1 node)
     "VisualSubflowNode": "subflows.nodes",
-    # Note: SubflowVisualNode is an alias available via import from subflows.nodes
-    # but NOT registered here to avoid duplicate __identifier__ conflict
     # Workflow nodes (1 node)
     "VisualCallSubworkflowNode": "workflow",
     "VisualExecuteWorkflowNode": "workflow.execute_workflow_node",

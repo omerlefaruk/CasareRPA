@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "name": "Counter While Loop",
+    "description": "Counts from 0 to 3 using a WhileLoopStartNode and increments a counter variable.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "init_counter": {
+      "node_id": "init_counter",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "counter",
+        "value": 0
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "while_loop_start": {
+      "node_id": "while_loop_start",
+      "node_type": "WhileLoopStartNode",
+      "config": {
+        "condition": "{{counter}} <= 3"
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "log_counter": {
+      "node_id": "log_counter",
+      "node_type": "LogNode",
+      "config": {
+        "message": "Current counter value: {{counter}}"
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    },
+    "increment_counter": {
+      "node_id": "increment_counter",
+      "node_type": "MathOperationNode",
+      "config": {
+        "a": "{{counter}}",
+        "b": 1,
+        "operation": "add",
+        "output_var": "counter"
+      },
+      "position": [
+        1200.0,
+        0.0
+      ]
+    },
+    "while_loop_end": {
+      "node_id": "while_loop_end",
+      "node_type": "WhileLoopEndNode",
+      "config": {
+        "paired_start_id": "while_loop_start"
+      },
+      "position": [
+        1600.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "init_counter",
+      "source_port": "exec_out",
+      "target_node": "while_loop_start",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "while_loop_start",
+      "source_port": "body",
+      "target_node": "log_counter",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "log_counter",
+      "source_port": "exec_out",
+      "target_node": "increment_counter",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "increment_counter",
+      "source_port": "exec_out",
+      "target_node": "while_loop_end",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

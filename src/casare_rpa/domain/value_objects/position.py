@@ -5,7 +5,7 @@ Immutable 2D position for node placement in workflow canvas.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, List
 
 
 @dataclass(frozen=True)
@@ -49,27 +49,29 @@ class Position:
         """
         return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> List[float]:
         """
-        Serialize to dictionary.
+        Serialize to a [x, y] list for workflow persistence.
 
         Returns:
-            Dictionary with x and y coordinates
+            List with x and y coordinates
         """
-        return {"x": self.x, "y": self.y}
+        return [self.x, self.y]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Position":
+    def from_dict(cls, data: Any) -> "Position":
         """
-        Create Position from dictionary.
+        Create Position from a serialized [x, y] list.
 
         Args:
-            data: Dictionary with x and y keys
+            data: List or tuple with x and y values
 
         Returns:
             Position instance
         """
-        return cls(x=float(data.get("x", 0)), y=float(data.get("y", 0)))
+        if isinstance(data, (list, tuple)) and len(data) >= 2:
+            return cls(x=float(data[0]), y=float(data[1]))
+        raise ValueError(f"Invalid position data: {data!r}")
 
     @classmethod
     def origin(cls) -> "Position":

@@ -158,12 +158,8 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         Truncates if still too long.
         """
         # Remove script and style content
-        html = re.sub(
-            r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE
-        )
-        html = re.sub(
-            r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE
-        )
+        html = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE)
+        html = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE)
         html = re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL)
 
         # Remove inline styles and event handlers (reduce noise)
@@ -410,9 +406,7 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
             # Validate XPath as fallback
             if not selector.validation_status and selector.xpath_selector:
                 try:
-                    xpath_elements = await page.locator(
-                        f"xpath={selector.xpath_selector}"
-                    ).all()
+                    xpath_elements = await page.locator(f"xpath={selector.xpath_selector}").all()
                     if len(xpath_elements) == 1:
                         selector.validation_status = True
                         selector.matched_elements_count = 1
@@ -445,7 +439,7 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         Returns:
             Refined GeneratedSelector
         """
-        page_html = await page.content()
+        await page.content()
 
         context = {
             "page_url": page.url,

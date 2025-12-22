@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "name": "File Write Read and Length Log",
+    "description": "Writes a string to a file, reads it back, and logs the length of the content.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "write_power_file": {
+      "node_id": "write_power_file",
+      "node_type": "FileSystemSuperNode",
+      "config": {
+        "action": "Write File",
+        "file_path": "power_test.txt",
+        "content": "CasareRPA is powerful"
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "read_power_file": {
+      "node_id": "read_power_file",
+      "node_type": "FileSystemSuperNode",
+      "config": {
+        "action": "Read File",
+        "file_path": "power_test.txt"
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "log_content_length": {
+      "node_id": "log_content_length",
+      "node_type": "LogNode",
+      "config": {
+        "message": "The content length is: {{read_power_file.size}} bytes."
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "write_power_file",
+      "source_port": "exec_out",
+      "target_node": "read_power_file",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "read_power_file",
+      "source_port": "exec_out",
+      "target_node": "log_content_length",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

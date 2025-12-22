@@ -14,19 +14,31 @@ All 430+ nodes follow **Schema-Driven Logic**:
 @node(category="browser")
 class MyNode(BaseNode):
     async def execute(self, context):
-        url = self.get_parameter("url")              # required
-        timeout = self.get_parameter("timeout", 30000)  # optional
+        url = self.get_parameter("url")              # Auto-resolved!
+        timeout = self.get_parameter("timeout", 30000)  # Auto-resolved!
 ```
 
 **Requirements:**
 - `@properties()` decorator (REQUIRED - even if empty)
-- `get_parameter()` for optional properties (dual-source: port → config)
+- `get_parameter()` for ALL port/config values (dual-source pattern)
+- **AUTO-RESOLUTION** (NEW 2025): `get_parameter()` now auto-resolves `{{variables}}` when context is available. Manual `context.resolve_value()` calls are **no longer needed** in most cases.
+- **RAW VALUES**: Use `get_raw_parameter()` or `get_parameter(name, resolve=False)` when you need the un-resolved template string.
+- **CACHE AWARENESS**: `VariableResolutionCache` is prefix-aware. Updating a parent dict (e.g. `node`) invalidates child paths (e.g. `node.result`).
 - Explicit DataType on all ports (ANY is valid)
 - NO `self.config.get()` calls (LEGACY)
 
 **Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
 
+## MCP Setup
+
+MCP servers are configured in `./.mcp.json`.
+
+- `filesystem` — safe file operations within allowed roots (Node, via `npx`)
+- `git` — repository inspection/operations (requires `python -m pip install mcp-server-git`)
+- `sequential-thinking` — structured reasoning tool (Node, via `npx`)
+
 ## Agent Capabilities
+
 
 | Agent | Capability | Skill Mapping |
 |-------|------------|---------------|
@@ -156,3 +168,19 @@ class MyNode(BaseNode):
 1. **API Failures:** Retry with exponential backoff (max 3 retries).
 2. **Skill Execution Failures:** Log error, notify user, and suggest alternative skill or manual intervention.
 3. **Validation Failures:** Reject execution if parameters do not match schema.
+
+## Lessons Learned (Stress Test Round 1)
+
+1. **SERIAL EXECUTION IS MANDATORY**: All action nodes, including "data" nodes (`ComparisonNode`, `FormatStringNode`, etc.), must be part of the main `exec_out` -> `exec_in` chain. Orphan nodes run at start-time in parallel and usually fail due to missing data from the main chain.
+2. **ROBUST DATA NODES**: Logic nodes should handle unresolved templates (e.g., `{{variable}}`) gracefully. If a variable is not ready (due to orphan execution), the node should log a warning and return a safe default instead of crashing the process.
+3. **RECURSIVE RESOLUTION**: Nodes that accept dictionaries (like `FormatStringNode`'s `variables`) must use `resolve_dict_variables` to ensure nested templates are resolved before Use.
+4. **TYPE COERCION in COMPARISON**: Comparison nodes should attempt to coerce numeric-looking strings to floats/ints before comparison to handle inputs like `"25" > 20`.
+5. **JSON-LIKE BOOLEANS**: Safe evaluation should support `true`, `false`, and `null` as aliases for Python's `True`, `False`, `None` to improve compatibility with LLM-generated expressions.
+6. **NO HARDCODED WAITS**: NEVER use `asyncio.sleep()` or `time.sleep()` with fixed durations. Instead, use smart waiting strategies:
+   - `page.wait_for_load_state('networkidle')` - Wait for network to be idle
+   - `page.wait_for_load_state('domcontentloaded')` - Wait for DOM ready
+   - `locator.wait_for(state='visible')` - Wait for element visibility
+   - `page.wait_for_selector(selector)` - Wait for element to appear
+   - `page.expect_download()` - Wait for download events
+   - `page.wait_for_url(pattern)` - Wait for URL change
+   - Polling with exponential backoff for custom conditions

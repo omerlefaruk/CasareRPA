@@ -91,8 +91,6 @@ class CaptureScreenshotNode(BaseNode):
         format_type = self.get_parameter("format", "PNG")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
@@ -201,8 +199,6 @@ class CaptureElementImageNode(BaseNode):
         format_type = self.get_parameter("format", "PNG")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and file_path:
-            file_path = context.resolve_value(file_path)
 
         padding = safe_int(padding, 0)
 
@@ -338,11 +334,6 @@ class OCRExtractTextNode(BaseNode):
         ocr_config = self.get_parameter("config", "")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if image_path:
-                image_path = context.resolve_value(image_path)
-            language = context.resolve_value(language)
-            ocr_config = context.resolve_value(ocr_config)
 
         desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:

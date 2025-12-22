@@ -1,0 +1,232 @@
+{
+    "metadata": {
+        "name": "Batch 8.3 - Google Drive Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "drive_list": {
+            "node_id": "drive_list",
+            "node_type": "DriveListFilesNode",
+            "config": {},
+            "position": [
+                0,
+                0
+            ]
+        },
+        "drive_search": {
+            "node_id": "drive_search",
+            "node_type": "DriveSearchFilesNode",
+            "config": {
+                "query": "name contains 'test'"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "drive_get": {
+            "node_id": "drive_get",
+            "node_type": "DriveGetFileNode",
+            "config": {
+                "file_id": "test_id"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "drive_upload": {
+            "node_id": "drive_upload",
+            "node_type": "DriveUploadFileNode",
+            "config": {
+                "file_path": "C:\\temp\\test.txt"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "drive_download": {
+            "node_id": "drive_download",
+            "node_type": "DriveDownloadFileNode",
+            "config": {
+                "file_id": "test_id",
+                "destination": "C:\\temp"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "drive_create_folder": {
+            "node_id": "drive_create_folder",
+            "node_type": "DriveCreateFolderNode",
+            "config": {
+                "name": "Test Folder"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "drive_copy": {
+            "node_id": "drive_copy",
+            "node_type": "DriveCopyFileNode",
+            "config": {
+                "file_id": "test_id"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "drive_move": {
+            "node_id": "drive_move",
+            "node_type": "DriveMoveFileNode",
+            "config": {
+                "file_id": "test_id",
+                "folder_id": "dest_id"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "drive_rename": {
+            "node_id": "drive_rename",
+            "node_type": "DriveRenameFileNode",
+            "config": {
+                "file_id": "test_id",
+                "new_name": "renamed"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "drive_delete": {
+            "node_id": "drive_delete",
+            "node_type": "DriveDeleteFileNode",
+            "config": {
+                "file_id": "test_id"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "drive_share": {
+            "node_id": "drive_share",
+            "node_type": "DriveShareFileNode",
+            "config": {
+                "file_id": "test_id",
+                "email": "user@example.com"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "drive_export": {
+            "node_id": "drive_export",
+            "node_type": "DriveExportFileNode",
+            "config": {
+                "file_id": "test_id"
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Drive nodes tested!"
+            },
+            "position": [
+                4800,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "drive_list",
+            "source_port": "exec_out",
+            "target_node": "drive_search",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_search",
+            "source_port": "exec_out",
+            "target_node": "drive_get",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_get",
+            "source_port": "exec_out",
+            "target_node": "drive_upload",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_upload",
+            "source_port": "exec_out",
+            "target_node": "drive_download",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_download",
+            "source_port": "exec_out",
+            "target_node": "drive_create_folder",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_create_folder",
+            "source_port": "exec_out",
+            "target_node": "drive_copy",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_copy",
+            "source_port": "exec_out",
+            "target_node": "drive_move",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_move",
+            "source_port": "exec_out",
+            "target_node": "drive_rename",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_rename",
+            "source_port": "exec_out",
+            "target_node": "drive_delete",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_delete",
+            "source_port": "exec_out",
+            "target_node": "drive_share",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_share",
+            "source_port": "exec_out",
+            "target_node": "drive_export",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "drive_export",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

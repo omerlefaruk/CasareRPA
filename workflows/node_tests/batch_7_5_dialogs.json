@@ -1,0 +1,223 @@
+{
+    "metadata": {
+        "name": "Batch 7.5 - Dialog Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "message_box": {
+            "node_id": "message_box",
+            "node_type": "MessageBoxNode",
+            "config": {
+                "title": "Test",
+                "message": "Hello"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "input_dialog": {
+            "node_id": "input_dialog",
+            "node_type": "InputDialogNode",
+            "config": {
+                "title": "Input",
+                "label": "Enter value"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "confirm_dialog": {
+            "node_id": "confirm_dialog",
+            "node_type": "ConfirmDialogNode",
+            "config": {
+                "title": "Confirm",
+                "message": "Are you sure?"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "file_picker": {
+            "node_id": "file_picker",
+            "node_type": "FilePickerDialogNode",
+            "config": {
+                "title": "Select File"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "folder_picker": {
+            "node_id": "folder_picker",
+            "node_type": "FolderPickerDialogNode",
+            "config": {
+                "title": "Select Folder"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "color_picker": {
+            "node_id": "color_picker",
+            "node_type": "ColorPickerDialogNode",
+            "config": {},
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "datetime_picker": {
+            "node_id": "datetime_picker",
+            "node_type": "DateTimePickerDialogNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "list_picker": {
+            "node_id": "list_picker",
+            "node_type": "ListPickerDialogNode",
+            "config": {
+                "items": "Option 1,Option 2"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "multiline_input": {
+            "node_id": "multiline_input",
+            "node_type": "MultilineInputDialogNode",
+            "config": {
+                "title": "Notes"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "credential_dialog": {
+            "node_id": "credential_dialog",
+            "node_type": "CredentialDialogNode",
+            "config": {},
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "form_dialog": {
+            "node_id": "form_dialog",
+            "node_type": "FormDialogNode",
+            "config": {},
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "progress_dialog": {
+            "node_id": "progress_dialog",
+            "node_type": "ProgressDialogNode",
+            "config": {},
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Dialog nodes tested!"
+            },
+            "position": [
+                4800,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "message_box",
+            "source_port": "exec_out",
+            "target_node": "input_dialog",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "input_dialog",
+            "source_port": "exec_out",
+            "target_node": "confirm_dialog",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "confirm_dialog",
+            "source_port": "exec_out",
+            "target_node": "file_picker",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "file_picker",
+            "source_port": "exec_out",
+            "target_node": "folder_picker",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "folder_picker",
+            "source_port": "exec_out",
+            "target_node": "color_picker",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "color_picker",
+            "source_port": "exec_out",
+            "target_node": "datetime_picker",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "datetime_picker",
+            "source_port": "exec_out",
+            "target_node": "list_picker",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_picker",
+            "source_port": "exec_out",
+            "target_node": "multiline_input",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "multiline_input",
+            "source_port": "exec_out",
+            "target_node": "credential_dialog",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "credential_dialog",
+            "source_port": "exec_out",
+            "target_node": "form_dialog",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "form_dialog",
+            "source_port": "exec_out",
+            "target_node": "progress_dialog",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "progress_dialog",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

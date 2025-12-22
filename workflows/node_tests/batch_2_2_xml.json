@@ -1,0 +1,45 @@
+{
+    "metadata": {
+        "name": "Batch 2.2 - XML Parsing",
+        "description": "Tests ParseXMLNode only",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "set_xml": {
+            "node_id": "set_xml",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "xml_data",
+                "value": "<root><item>Test</item></root>"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "XML parsing test passed! Data: {{xml_data}}"
+            },
+            "position": [
+                400,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "set_xml",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}

@@ -8,7 +8,7 @@ All domain events are immutable value objects (frozen dataclasses).
 from abc import ABC
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from uuid import UUID, uuid4
 
 

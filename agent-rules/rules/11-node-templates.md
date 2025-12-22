@@ -4,69 +4,75 @@ Quick-start templates for common node types.
 
 ## Browser Node Template
 ```python
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.entities import BaseNode
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.nodes.browser import BrowserBaseNode, get_page_from_context
+from casare_rpa.nodes.browser.base import BrowserBaseNode, get_page_from_context
 
-@node_schema(
-    PropertyDef("selector", PropertyType.SELECTOR, essential=True),
+@properties(
+    PropertyDef("selector", PropertyType.SELECTOR, required=True),
     PropertyDef("timeout", PropertyType.INTEGER, default=30000),
 )
-@executable_node
+@node(category="browser")
 class MyBrowserNode(BrowserBaseNode):
     """Browser automation node."""
 
-    NODE_NAME = "My Browser Node"
-
     async def execute(self, context):
         page = await get_page_from_context(context)
-        selector = self.get_property("selector")
+        # 1. Get raw property
+        raw_selector = self.get_parameter("selector")
+
+        # 2. Resolve template (CRITICAL)
+        selector = context.resolve_value(raw_selector)
+
         # Implementation
-        return {"success": True}
+        return self.success_result({"success": True})
 ```
 
 ## Desktop Node Template
 ```python
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.entities import BaseNode
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-@node_schema(
-    PropertyDef("window_title", PropertyType.STRING, essential=True),
+@properties(
+    PropertyDef("window_title", PropertyType.STRING, required=True),
 )
-@executable_node
+@node(category="desktop")
 class MyDesktopNode(BaseNode):
     """Desktop automation node."""
 
-    NODE_NAME = "My Desktop Node"
-
     async def execute(self, context):
         import uiautomation as auto
-        window_title = self.get_property("window_title")
+        # 1. Resolve window title
+        raw_title = self.get_parameter("window_title")
+        window_title = context.resolve_value(raw_title)
+
         # Implementation
-        return {"success": True}
+        return self.success_result({"success": True})
 ```
 
 ## Data Node Template
 ```python
-from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.entities import BaseNode
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-@node_schema(
-    PropertyDef("input_data", PropertyType.ANY, essential=True),
+@properties(
+    PropertyDef("input_data", PropertyType.ANY, required=True),
 )
-@executable_node
+@node(category="data")
 class MyDataNode(BaseNode):
     """Data transformation node."""
 
-    NODE_NAME = "My Data Node"
-
     async def execute(self, context):
-        data = context.resolve_value(self.get_property("input_data"))
-        # Transform data
-        return {"output": transformed_data}
+        # 1. Get and resolve
+        raw_data = self.get_parameter("input_data")
+        data = context.resolve_value(raw_data)
+
+        # 2. Transform data
+        # transformed_data = ...
+        return self.success_result({"output": data})
 ```
 
 ## Test Template

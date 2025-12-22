@@ -157,9 +157,7 @@ class CasareCheckBox:
 
             checkbox_text = checkbox.text() or ""
             title_width = fm.horizontalAdvance(title_text) if title_text else 0
-            checkbox_text_width = (
-                fm.horizontalAdvance(checkbox_text) if checkbox_text else 0
-            )
+            checkbox_text_width = fm.horizontalAdvance(checkbox_text) if checkbox_text else 0
 
             # Ensure enough room for either the group box title or the checkbox text.
             # NodeGraphQt nodes also enforce a practical minimum widget width (~200px)
@@ -170,19 +168,12 @@ class CasareCheckBox:
             required_width = max(
                 200,
                 title_width + horizontal_padding,
-                indicator_width
-                + indicator_spacing
-                + checkbox_text_width
-                + horizontal_padding,
+                indicator_width + indicator_spacing + checkbox_text_width + horizontal_padding,
             )
 
             group_box.setMinimumWidth(required_width)
-            group_box.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-            )
-            checkbox.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-            )
+            group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            checkbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             checkbox.setMinimumWidth(max(0, required_width - horizontal_padding))
 
             # Also update the proxy widget sizing so boundingRect aligns with the
@@ -474,9 +465,7 @@ class CasareNodeDataDropFix:
                         converted_urls = []
                         for url in urls:
                             if isinstance(url, QUrl):
-                                converted_urls.append(
-                                    url.toLocalFile() or url.toString()
-                                )
+                                converted_urls.append(url.toLocalFile() or url.toString())
                             else:
                                 converted_urls.append(str(url))
                         # Create modified data with string paths
@@ -555,18 +544,13 @@ class CasareNodeBaseFontFix:
                 text_width = fm.horizontalAdvance(port_name)
 
                 # Truncate if text exceeds max width OR max character count
-                if (
-                    text_width > PORT_LABEL_MAX_WIDTH_PX
-                    or len(port_name) > PORT_LABEL_MAX_LENGTH
-                ):
+                if text_width > PORT_LABEL_MAX_WIDTH_PX or len(port_name) > PORT_LABEL_MAX_LENGTH:
                     # Use the smaller of the two constraints
                     max_width = min(
                         PORT_LABEL_MAX_WIDTH_PX,
                         fm.horizontalAdvance("x" * PORT_LABEL_MAX_LENGTH),
                     )
-                    display_name = fm.elidedText(
-                        port_name, Qt.TextElideMode.ElideRight, max_width
-                    )
+                    display_name = fm.elidedText(port_name, Qt.TextElideMode.ElideRight, max_width)
 
                 text = QGraphicsTextItem(display_name, self)
                 text.setFont(font)
@@ -776,7 +760,6 @@ class CasarePortItemShapeFix:
             from casare_rpa.domain.value_objects.types import DataType
 
             # Store original paint method
-            original_paint = PortItem.paint
 
             def patched_paint(self, painter, option, widget):
                 """
@@ -927,9 +910,7 @@ def _install_widget_init_patches() -> None:
         # Patch NodeCheckBox
         original_checkbox_init = NodeCheckBox.__init__
 
-        def patched_checkbox_init(
-            self, parent=None, name="", label="", text="", state=False
-        ):
+        def patched_checkbox_init(self, parent=None, name="", label="", text="", state=False):
             original_checkbox_init(self, parent, name, label, text, state)
             CasareCheckBox.apply_styling(self)
 
@@ -1245,9 +1226,7 @@ class NodeFilePathWidget:
         return create_file_path_widget(name, label, file_filter, placeholder, text)
 
 
-def create_directory_path_widget(
-    name: str, label: str, placeholder: str, text: str = ""
-):
+def create_directory_path_widget(name: str, label: str, placeholder: str, text: str = ""):
     """
     Factory function to create a NodeDirectoryPathWidget.
 
@@ -1467,9 +1446,7 @@ def set_variable_picker_node_context(
                 return
 
         # If discovery failed, log debug message
-        logger.debug(
-            "Variable picker: Node context not available (widget not yet in hierarchy)"
-        )
+        logger.debug("Variable picker: Node context not available (widget not yet in hierarchy)")
 
     except Exception as e:
         logger.debug(f"Variable picker: Could not set node context: {e}")
@@ -1632,12 +1609,8 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
                         viewer = graph._viewer
                         if hasattr(viewer, "window"):
                             main_window = viewer.window()
-                            if main_window and hasattr(
-                                main_window, "_selector_controller"
-                            ):
-                                browser_page = (
-                                    main_window._selector_controller.get_browser_page()
-                                )
+                            if main_window and hasattr(main_window, "_selector_controller"):
+                                browser_page = main_window._selector_controller.get_browser_page()
 
             # Determine mode
             mode = "browser" if browser_page else "desktop"
@@ -1661,9 +1634,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
                 if name == "image_template":
                     # Extract cv_template from healing_context
                     image_base64 = None
-                    logger.info(
-                        "ImageTemplate: Processing result for image_template property"
-                    )
+                    logger.info("ImageTemplate: Processing result for image_template property")
                     logger.info(
                         f"ImageTemplate: has healing_context={hasattr(result, 'healing_context')}"
                     )
@@ -1682,9 +1653,7 @@ def create_selector_widget(name: str, label: str, placeholder: str, text: str = 
                                 f"ImageTemplate: image_base64 length={len(image_base64) if image_base64 else 0}"
                             )
                         else:
-                            logger.warning(
-                                "ImageTemplate: cv_template is empty or missing"
-                            )
+                            logger.warning("ImageTemplate: cv_template is empty or missing")
                     else:
                         logger.warning(
                             f"ImageTemplate: No healing_context or empty. Value={getattr(result, 'healing_context', 'N/A')}"
@@ -2361,9 +2330,7 @@ class NodeGoogleSheetWidget:
         spreadsheet_widget=None,
         credential_widget=None,
     ):
-        return create_google_sheet_widget(
-            name, label, spreadsheet_widget, credential_widget
-        )
+        return create_google_sheet_widget(name, label, spreadsheet_widget, credential_widget)
 
 
 class NodeGoogleDriveFileWidget:
@@ -2415,9 +2382,7 @@ class NodeGoogleDriveFolderWidget:
         credential_widget=None,
         enhanced: bool = False,
     ):
-        return create_google_drive_folder_widget(
-            name, label, credential_widget, enhanced
-        )
+        return create_google_drive_folder_widget(name, label, credential_widget, enhanced)
 
 
 class NodeTextWidget:

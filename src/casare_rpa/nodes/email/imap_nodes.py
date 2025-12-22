@@ -124,12 +124,6 @@ class SaveAttachmentNode(BaseNode):
             folder = self.get_parameter("folder", "INBOX")
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            save_path = context.resolve_value(save_path)
-            folder = context.resolve_value(folder)
 
             if not email_uid:
                 self.set_output_value("saved_files", [])
@@ -170,9 +164,7 @@ class SaveAttachmentNode(BaseNode):
                                 # SECURITY: Sanitize filename to prevent path traversal
                                 safe_filename = Path(filename).name
                                 if not safe_filename:
-                                    logger.warning(
-                                        f"Skipping invalid filename: {filename}"
-                                    )
+                                    logger.warning(f"Skipping invalid filename: {filename}")
                                     continue
                                 filepath = os.path.join(save_path, safe_filename)
 
@@ -313,12 +305,6 @@ class MarkEmailNode(BaseNode):
             mark_as = self.get_parameter("mark_as", "read")
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            folder = context.resolve_value(folder)
-            mark_as = context.resolve_value(mark_as)
 
             if not email_uid:
                 self.set_output_value("success", False)
@@ -463,11 +449,6 @@ class DeleteEmailNode(BaseNode):
             permanent = self.get_parameter("permanent", False)
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            folder = context.resolve_value(folder)
 
             if not email_uid:
                 self.set_output_value("success", False)
@@ -605,12 +586,6 @@ class MoveEmailNode(BaseNode):
             target_folder = self.get_parameter("target_folder", "")
 
             # Resolve {{variable}} patterns
-            imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            email_uid = context.resolve_value(email_uid)
-            source_folder = context.resolve_value(source_folder)
-            target_folder = context.resolve_value(target_folder)
 
             if not email_uid or not target_folder:
                 self.set_output_value("success", False)

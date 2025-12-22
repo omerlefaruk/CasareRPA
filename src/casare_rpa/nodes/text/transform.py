@@ -80,7 +80,6 @@ class TextJoinNode(BaseNode):
             separator = self.get_parameter("separator", "")
 
             # Resolve {{variable}} patterns in separator
-            separator = context.resolve_value(separator)
 
             result = separator.join(str(item) for item in items)
 

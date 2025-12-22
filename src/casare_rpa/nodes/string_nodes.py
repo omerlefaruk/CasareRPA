@@ -8,7 +8,6 @@ Provides nodes for string manipulation including:
 """
 
 import re
-from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
@@ -326,9 +325,7 @@ class RegexReplaceNode(BaseNode):
 
             max_count = int(self.get_parameter("max_count", 0))
             if max_count > 0:
-                result, count = re.subn(
-                    pattern, replacement, text, count=max_count, flags=flags
-                )
+                result, count = re.subn(pattern, replacement, text, count=max_count, flags=flags)
             else:
                 result, count = re.subn(pattern, replacement, text, flags=flags)
 

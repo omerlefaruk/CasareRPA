@@ -1,0 +1,161 @@
+{
+    "metadata": {
+        "name": "Batch 2.3 - System, DateTime & Commands",
+        "description": "Tests SystemInfoNode, WaitNode, GetTimestampNode, GetCurrentDateTimeNode, DateTimeAddNode, DateTimeDiffNode, RunCommandNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "system_info": {
+            "node_id": "system_info",
+            "node_type": "SystemInfoNode",
+            "config": {},
+            "position": [
+                0,
+                0
+            ]
+        },
+        "wait_node": {
+            "node_id": "wait_node",
+            "node_type": "WaitNode",
+            "config": {
+                "seconds": 0.1
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "get_timestamp": {
+            "node_id": "get_timestamp",
+            "node_type": "GetTimestampNode",
+            "config": {},
+            "position": [
+                800,
+                0
+            ]
+        },
+        "get_datetime": {
+            "node_id": "get_datetime",
+            "node_type": "GetCurrentDateTimeNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "datetime_add": {
+            "node_id": "datetime_add",
+            "node_type": "DateTimeAddNode",
+            "config": {
+                "datetime": "{{get_datetime.datetime}}",
+                "days": 1
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "set_past_date": {
+            "node_id": "set_past_date",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "past_date",
+                "value": "2024-01-01T00:00:00"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "datetime_diff": {
+            "node_id": "datetime_diff",
+            "node_type": "DateTimeDiffNode",
+            "config": {
+                "datetime_1": "{{past_date}}",
+                "datetime_2": "{{get_datetime.datetime}}"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "run_command": {
+            "node_id": "run_command",
+            "node_type": "RunCommandNode",
+            "config": {
+                "command": "echo Hello from RunCommandNode",
+                "shell": true
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All System, DateTime & Command tests passed! Days diff: {{datetime_diff.total_days}}"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "system_info",
+            "source_port": "exec_out",
+            "target_node": "wait_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "wait_node",
+            "source_port": "exec_out",
+            "target_node": "get_timestamp",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_timestamp",
+            "source_port": "exec_out",
+            "target_node": "get_datetime",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_datetime",
+            "source_port": "exec_out",
+            "target_node": "datetime_add",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "datetime_add",
+            "source_port": "exec_out",
+            "target_node": "set_past_date",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_past_date",
+            "source_port": "exec_out",
+            "target_node": "datetime_diff",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "datetime_diff",
+            "source_port": "exec_out",
+            "target_node": "run_command",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "run_command",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}

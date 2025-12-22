@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, List
-from loguru import logger
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -90,7 +89,9 @@ class PlatformLauncher:
         print("🔍 Checking prerequisites...")
 
         # Check Python
-        python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        python_version = (
+            f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        )
         print(f"   ✓ Python {python_version}")
 
         # Check venv
@@ -128,9 +129,7 @@ class PlatformLauncher:
             process = subprocess.Popen(
                 cmd,
                 cwd=str(self.project_root),
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-                if sys.platform == "win32"
-                else 0,
+                creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
             )
 
             self._processes.append(process)
@@ -161,9 +160,7 @@ class PlatformLauncher:
             process = subprocess.Popen(
                 cmd,
                 cwd=str(self.project_root),
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-                if sys.platform == "win32"
-                else 0,
+                creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
             )
 
             self._processes.append(process)
@@ -186,9 +183,7 @@ class PlatformLauncher:
             process = subprocess.Popen(
                 cmd,
                 cwd=str(self.project_root),
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-                if sys.platform == "win32"
-                else 0,
+                creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
             )
 
             self._processes.append(process)
@@ -211,9 +206,7 @@ class PlatformLauncher:
             process = subprocess.Popen(
                 cmd,
                 cwd=str(self.project_root),
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-                if sys.platform == "win32"
-                else 0,
+                creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
             )
 
             self._processes.append(process)

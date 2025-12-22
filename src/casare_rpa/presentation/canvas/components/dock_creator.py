@@ -14,6 +14,7 @@ from loguru import logger
 if TYPE_CHECKING:
     from ..main_window import MainWindow
     from ..ui.panels import BottomPanelDock, SidePanelDock, BreakpointsPanel
+    from ..ui.panels import ProjectExplorerPanel, CredentialsPanel
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.panels.analytics_panel import AnalyticsPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
@@ -114,9 +115,7 @@ class DockCreator:
         # Connect to robot controller for analytics URL updates
         if robot_controller:
             robot_controller.connection_status_changed.connect(
-                lambda connected: self._update_side_panel_analytics_url(
-                    side_panel, connected
-                )
+                lambda connected: self._update_side_panel_analytics_url(side_panel, connected)
             )
 
         # Add toggle action to View menu with hotkey 7
@@ -349,9 +348,7 @@ class DockCreator:
 
         return analytics_panel
 
-    def _update_analytics_url(
-        self, analytics_panel: "AnalyticsPanel", connected: bool
-    ) -> None:
+    def _update_analytics_url(self, analytics_panel: "AnalyticsPanel", connected: bool) -> None:
         """Update analytics panel URL when robot controller connects."""
         if not connected:
             return

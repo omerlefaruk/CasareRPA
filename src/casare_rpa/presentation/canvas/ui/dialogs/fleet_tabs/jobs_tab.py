@@ -6,7 +6,6 @@ Supports real-time job updates with progress bars via WebSocketBridge.
 """
 
 from typing import Optional, List, Dict, Any, TYPE_CHECKING
-from datetime import datetime
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -22,25 +21,24 @@ from PySide6.QtWidgets import (
     QLabel,
     QTextEdit,
     QGroupBox,
-    QMenu,
     QProgressBar,
 )
 from functools import partial
 
-from PySide6.QtCore import Qt, Signal, QTimer, Slot
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QBrush
 
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     JOB_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
 )
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon, ToolbarIcons
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 from casare_rpa.presentation.canvas.theme import THEME
 
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.services.websocket_bridge import JobStatusUpdate
+    pass
 
 
 class JobsTabWidget(QWidget):

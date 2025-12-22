@@ -1,0 +1,33 @@
+
+[functions.wa_webhook]
+enabled = true
+verify_jwt = true
+import_map = "./functions/wa_webhook/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/wa_webhook/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/wa_webhook/*.html" ]
+
+[functions.wa_api]
+enabled = true
+verify_jwt = true
+import_map = "./functions/wa_api/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/wa_api/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/wa_api/*.html" ]
+
+[functions.ocr_api]
+enabled = true
+verify_jwt = true
+import_map = "./functions/ocr_api/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/ocr_api/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/ocr_api/*.html" ]

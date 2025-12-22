@@ -40,7 +40,7 @@ Example Usage:
 """
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -178,8 +178,10 @@ class BrowserEvaluateNode(BrowserBaseNode):
             script = self.get_input_value("script")
             if not script:
                 script = self.get_parameter("script", "")
-            script = context.resolve_value(script)
 
+            # Resolve variables in script
+            if script:
+                script = context.resolve_value(script)
             if not script or not script.strip():
                 self.set_output_value("success", False)
                 self.set_output_value("error", "Script is required")
@@ -261,9 +263,7 @@ class BrowserEvaluateNode(BrowserBaseNode):
 
             # Retry failed
             await self.screenshot_on_failure(page, "evaluate_fail")
-            error_msg = str(
-                operation_result.last_error or "JavaScript execution failed"
-            )
+            error_msg = str(operation_result.last_error or "JavaScript execution failed")
             self.set_output_value("success", False)
             self.set_output_value("error", error_msg)
             self.set_output_value("result", None)
@@ -301,14 +301,12 @@ class BrowserEvaluateNode(BrowserBaseNode):
         try:
             return json.loads(value)
         except json.JSONDecodeError:
-            logger.debug(
-                "Result looks like JSON but failed to parse, returning as string"
-            )
+            logger.debug("Result looks like JSON but failed to parse, returning as string")
             return value
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        script = self.get_parameter("script", "")
+        self.get_parameter("script", "")
         # Script can be empty if provided via input port
         # No strict validation needed here
         return True, ""

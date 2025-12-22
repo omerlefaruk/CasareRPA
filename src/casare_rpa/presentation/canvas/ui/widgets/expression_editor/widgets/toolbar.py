@@ -7,7 +7,7 @@ and Rich Text editors. THEME-styled with hover effects.
 
 from typing import Callable, Optional
 
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 

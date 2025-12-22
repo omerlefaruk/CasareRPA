@@ -23,21 +23,9 @@ from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 from casare_rpa.nodes.llm.property_constants import (
     LLM_MODEL,
     LLM_TEMPERATURE,
-    LLM_TEMPERATURE_LOW,
-    LLM_TEMPERATURE_MEDIUM,
-    LLM_TEMPERATURE_TRANSLATION,
     LLM_MAX_TOKENS,
     LLM_SYSTEM_PROMPT,
     LLM_PROMPT,
-    LLM_MESSAGE,
-    LLM_CONVERSATION_ID,
-    LLM_SCHEMA,
-    LLM_MAX_LENGTH,
-    LLM_SUMMARY_STYLE,
-    LLM_CATEGORIES,
-    LLM_MULTI_LABEL,
-    LLM_TARGET_LANGUAGE,
-    LLM_SOURCE_LANGUAGE,
 )
 
 
@@ -85,8 +73,6 @@ class LLMCompletionNode(LLMBaseNode):
         """Execute completion request."""
         # Get parameters
         prompt = self.get_parameter("prompt")
-        if hasattr(context, "resolve_value"):
-            prompt = context.resolve_value(prompt)
 
         if not prompt:
             self._set_error_outputs("Prompt is required")
@@ -96,12 +82,6 @@ class LLMCompletionNode(LLMBaseNode):
         temperature = self.get_parameter("temperature") or self.DEFAULT_TEMPERATURE
         max_tokens = self.get_parameter("max_tokens") or self.DEFAULT_MAX_TOKENS
         system_prompt = self.get_parameter("system_prompt")
-
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
-            system_prompt = (
-                context.resolve_value(system_prompt) if system_prompt else None
-            )
 
         try:
             response = await manager.completion(
@@ -220,8 +200,6 @@ class LLMChatNode(LLMBaseNode):
         """Execute chat message."""
         # Get parameters
         message = self.get_parameter("message")
-        if hasattr(context, "resolve_value"):
-            message = context.resolve_value(message)
 
         if not message:
             self._set_error_outputs("Message is required")
@@ -232,15 +210,6 @@ class LLMChatNode(LLMBaseNode):
         temperature = self.get_parameter("temperature") or self.DEFAULT_TEMPERATURE
         max_tokens = self.get_parameter("max_tokens") or self.DEFAULT_MAX_TOKENS
         system_prompt = self.get_parameter("system_prompt")
-
-        if hasattr(context, "resolve_value"):
-            conversation_id = (
-                context.resolve_value(conversation_id) if conversation_id else None
-            )
-            model = context.resolve_value(model)
-            system_prompt = (
-                context.resolve_value(system_prompt) if system_prompt else None
-            )
 
         try:
             response, conv_id = await manager.chat(
@@ -353,9 +322,6 @@ class LLMExtractDataNode(LLMBaseNode):
         # Get parameters
         text = self.get_parameter("text")
         schema = self.get_parameter("schema")
-
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -507,8 +473,6 @@ class LLMSummarizeNode(LLMBaseNode):
         """Execute summarization."""
         # Get parameters
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -527,9 +491,7 @@ class LLMSummarizeNode(LLMBaseNode):
             "key_points": "Extract and list the key points from the text, numbered 1, 2, 3, etc.",
         }
 
-        style_instruction = style_instructions.get(
-            style, style_instructions["paragraph"]
-        )
+        style_instruction = style_instructions.get(style, style_instructions["paragraph"])
 
         prompt = f"""{style_instruction}
 
@@ -663,9 +625,6 @@ class LLMClassifyNode(LLMBaseNode):
         # Get parameters
         text = self.get_parameter("text")
         categories = self.get_parameter("categories")
-
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self.set_output_value("success", False)
@@ -860,10 +819,6 @@ class LLMTranslateNode(LLMBaseNode):
         text = self.get_parameter("text")
         target_language = self.get_parameter("target_language")
 
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
-            target_language = context.resolve_value(target_language)
-
         if not text:
             self.set_output_value("success", False)
             self.set_output_value("error", "Text is required")
@@ -881,9 +836,6 @@ class LLMTranslateNode(LLMBaseNode):
         source_language = self.get_parameter("source_language")
         model = self.get_parameter("model") or self.DEFAULT_MODEL
         temperature = self.get_parameter("temperature") or 0.3
-
-        if hasattr(context, "resolve_value") and source_language:
-            source_language = context.resolve_value(source_language)
 
         # Build translation prompt
         if source_language:

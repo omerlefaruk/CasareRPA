@@ -13,7 +13,7 @@ Capabilities:
 
 import json
 import uuid
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, List, Tuple
 from pathlib import Path
 
 from loguru import logger
@@ -22,7 +22,6 @@ from casare_rpa.domain.validation.validators import (
     validate_workflow,
     has_circular_dependency,
 )
-from casare_rpa.domain.validation.schemas import get_valid_node_types
 from casare_rpa.nodes.registry_data import NODE_REGISTRY
 from casare_rpa.domain.schemas.workflow_ai import WorkflowAISchema
 
@@ -129,9 +128,7 @@ class WorkflowBuilder:
                     found = True
                     break
             if not found:
-                logger.warning(
-                    f"Node type '{node_type}' not found in registry via direct lookup."
-                )
+                logger.warning(f"Node type '{node_type}' not found in registry via direct lookup.")
 
         if not node_id:
             # Generate unique ID based on type
@@ -159,9 +156,7 @@ class WorkflowBuilder:
                 if c["source_node"] != node_id and c["target_node"] != node_id
             ]
 
-    def connect(
-        self, source: str, source_port: str, target: str, target_port: str
-    ) -> None:
+    def connect(self, source: str, source_port: str, target: str, target_port: str) -> None:
         """Create a connection between nodes."""
         # Check existence
         if source not in self.workflow_data["nodes"]:
@@ -237,13 +232,9 @@ class WorkflowBuilder:
                 node_id = action["node_id"]
                 if node_id in self.workflow_data["nodes"]:
                     if "changes" in action:
-                        self.workflow_data["nodes"][node_id]["config"].update(
-                            action["changes"]
-                        )
+                        self.workflow_data["nodes"][node_id]["config"].update(action["changes"])
                     if "position" in action:
-                        self.workflow_data["nodes"][node_id]["position"] = action[
-                            "position"
-                        ]
+                        self.workflow_data["nodes"][node_id]["position"] = action["position"]
 
             elif action_type == "delete_node":
                 self.delete_node(action["node_id"])
@@ -277,9 +268,7 @@ class WorkflowBuilder:
             if nid not in self.workflow_data["nodes"]:
                 self.workflow_data["nodes"][nid] = nbot
             else:
-                self.workflow_data["nodes"][nid]["config"].update(
-                    nbot.get("config", {})
-                )
+                self.workflow_data["nodes"][nid]["config"].update(nbot.get("config", {}))
 
         for conn in data.get("connections", []):
             self.connect(
@@ -298,7 +287,7 @@ class WorkflowBuilder:
             max_retries: Number of retries
         """
         # 1. Create Loop Logic Nodes
-        init_var = self.add_node(
+        self.add_node(
             "SetVariableNode",
             {
                 "variable_name": "retry_count",
@@ -317,11 +306,9 @@ class WorkflowBuilder:
             position=(0, 0),
         )
 
-        loop_end = self.add_node(
-            "WhileLoopEndNode", {"paired_start_id": loop_start}, position=(1000, 0)
-        )
+        self.add_node("WhileLoopEndNode", {"paired_start_id": loop_start}, position=(1000, 0))
 
-        increment = self.add_node(
+        self.add_node(
             "IncrementVariableNode",
             {"variable_name": "retry_count", "increment": 1},
             position=(800, 200),

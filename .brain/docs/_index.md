@@ -24,15 +24,12 @@ Technical documentation and development guides.
 |------|---------|-------------|
 | [tdd-guide.md](tdd-guide.md) | Test-driven development guide | Writing tests first |
 
-## Qdrant Semantic Search
+## Semantic Search (ChromaDB)
 
-| File | Purpose | When to Use |
-|------|---------|-------------|
-| [QDRANT_INDEX.md](QDRANT_INDEX.md) | Qdrant system overview | Understanding semantic search |
-| [QDRANT_DOCS_README.md](QDRANT_DOCS_README.md) | Qdrant documentation guide | Setup and usage |
-| [QDRANT_UNDERSTANDING.md](QDRANT_UNDERSTANDING.md) | Deep dive into Qdrant | Architecture details |
-| [qdrant-quick-reference.md](qdrant-quick-reference.md) | Quick command reference | Daily usage |
-| [qdrant-debugging.md](qdrant-debugging.md) | Troubleshooting guide | Fixing search issues |
+Semantic search uses a local ChromaDB index:
+
+- Build/update index: `python scripts/index_codebase.py`
+- MCP server: `python scripts/chroma_search_mcp.py` (tool: `search_codebase`)
 
 ## Quick Reference
 

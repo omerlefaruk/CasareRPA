@@ -64,9 +64,7 @@ class RetryPolicy:
 
     def calculate_delay(self, attempt: int) -> float:
         """Calculate delay for a retry attempt."""
-        delay = min(
-            self.initial_delay * (self.backoff_multiplier**attempt), self.max_delay
-        )
+        delay = min(self.initial_delay * (self.backoff_multiplier**attempt), self.max_delay)
         if self.jitter:
             # Add 0-25% random jitter
             delay *= 1 + secrets.randbelow(25) / 100
@@ -232,9 +230,7 @@ class ErrorRecoveryManager:
             self._active_recoveries[key] = attempt + 1
             delay = self._retry_policy.calculate_delay(attempt)
 
-            logger.info(
-                f"Retrying job {job_id[:8]} in {delay:.1f}s (attempt {attempt + 1})"
-            )
+            logger.info(f"Retrying job {job_id[:8]} in {delay:.1f}s (attempt {attempt + 1})")
             await asyncio.sleep(delay)
 
             try:
@@ -428,9 +424,7 @@ class HealthMetrics:
         return {
             "robot_id": self.robot_id,
             "status": self.status.value,
-            "last_heartbeat": self.last_heartbeat.isoformat()
-            if self.last_heartbeat
-            else None,
+            "last_heartbeat": self.last_heartbeat.isoformat() if self.last_heartbeat else None,
             "cpu_percent": self.cpu_percent,
             "memory_percent": self.memory_percent,
             "disk_percent": self.disk_percent,
@@ -663,9 +657,7 @@ class HealthMonitor:
                 if metrics.status != HealthStatus.UNHEALTHY:
                     old_status = metrics.status
                     metrics.status = HealthStatus.UNHEALTHY
-                    self._notify_health_change(
-                        robot_id, old_status, HealthStatus.UNHEALTHY
-                    )
+                    self._notify_health_change(robot_id, old_status, HealthStatus.UNHEALTHY)
 
     def get_robot_health(self, robot_id: str) -> Optional[HealthMetrics]:
         """Get health metrics for a robot."""
@@ -686,16 +678,10 @@ class HealthMonitor:
     def get_overall_health(self) -> Dict[str, Any]:
         """Get overall system health summary."""
         total = len(self._robot_metrics)
-        healthy = sum(
-            1 for m in self._robot_metrics.values() if m.status == HealthStatus.HEALTHY
-        )
-        degraded = sum(
-            1 for m in self._robot_metrics.values() if m.status == HealthStatus.DEGRADED
-        )
+        healthy = sum(1 for m in self._robot_metrics.values() if m.status == HealthStatus.HEALTHY)
+        degraded = sum(1 for m in self._robot_metrics.values() if m.status == HealthStatus.DEGRADED)
         unhealthy = sum(
-            1
-            for m in self._robot_metrics.values()
-            if m.status == HealthStatus.UNHEALTHY
+            1 for m in self._robot_metrics.values() if m.status == HealthStatus.UNHEALTHY
         )
 
         # Overall status
@@ -870,9 +856,7 @@ class SecurityManager:
         Returns:
             Number of tokens revoked
         """
-        to_revoke = [
-            t for t, token in self._tokens.items() if token.robot_id == robot_id
-        ]
+        to_revoke = [t for t, token in self._tokens.items() if token.robot_id == robot_id]
 
         for token_str in to_revoke:
             del self._tokens[token_str]
@@ -928,8 +912,7 @@ class SecurityManager:
 
         # Clean old entries from front
         while (
-            self._request_counts[identifier]
-            and self._request_counts[identifier][0] < window_start
+            self._request_counts[identifier] and self._request_counts[identifier][0] < window_start
         ):
             self._request_counts[identifier].popleft()
 
@@ -990,7 +973,7 @@ class SecurityManager:
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get security statistics."""
-        now = datetime.now(timezone.utc)
+        datetime.now(timezone.utc)
 
         active_tokens = sum(1 for t in self._tokens.values() if not t.is_expired)
         expired_tokens = sum(1 for t in self._tokens.values() if t.is_expired)

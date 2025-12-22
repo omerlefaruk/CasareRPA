@@ -19,8 +19,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QComboBox,
     QLineEdit,
-    QGroupBox,
-    QFormLayout,
     QFrame,
 )
 from PySide6.QtCore import Signal, Qt
@@ -93,16 +91,12 @@ class QueuesTabWidget(BaseTabWidget):
         self._queue_table = QTableWidget()
         self._queue_table.setColumnCount(3)
         self._queue_table.setHorizontalHeaderLabels(["Name", "Items", "Status"])
-        self._queue_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self._queue_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._queue_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self._queue_table.setAlternatingRowColors(True)
         self._queue_table.verticalHeader().setVisible(False)
         self._queue_table.horizontalHeader().setStretchLastSection(True)
-        self._queue_table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
+        self._queue_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         left_layout.addWidget(self._queue_table)
 
         # Queue actions
@@ -132,14 +126,10 @@ class QueuesTabWidget(BaseTabWidget):
         self._new_card = self._create_stat_card("New", "0", THEME.status_info)
         stats_layout.addWidget(self._new_card)
 
-        self._progress_card = self._create_stat_card(
-            "In Progress", "0", THEME.status_warning
-        )
+        self._progress_card = self._create_stat_card("In Progress", "0", THEME.status_warning)
         stats_layout.addWidget(self._progress_card)
 
-        self._completed_card = self._create_stat_card(
-            "Completed", "0", THEME.status_success
-        )
+        self._completed_card = self._create_stat_card("Completed", "0", THEME.status_success)
         stats_layout.addWidget(self._completed_card)
 
         self._failed_card = self._create_stat_card("Failed", "0", THEME.status_error)
@@ -152,9 +142,7 @@ class QueuesTabWidget(BaseTabWidget):
         filter_layout.addWidget(QLabel("Filter:"))
 
         self._status_filter = QComboBox()
-        self._status_filter.addItems(
-            ["All", "New", "InProgress", "Completed", "Failed"]
-        )
+        self._status_filter.addItems(["All", "New", "InProgress", "Completed", "Failed"])
         self._status_filter.setFixedWidth(120)
         filter_layout.addWidget(self._status_filter)
 
@@ -175,9 +163,7 @@ class QueuesTabWidget(BaseTabWidget):
         self._items_table.setHorizontalHeaderLabels(
             ["Reference", "Status", "Priority", "Created", "Updated"]
         )
-        self._items_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self._items_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._items_table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self._items_table.setAlternatingRowColors(True)
         self._items_table.verticalHeader().setVisible(False)
@@ -218,9 +204,7 @@ class QueuesTabWidget(BaseTabWidget):
         # Connect signals
         self._connect_tab_signals()
 
-    def _create_stat_card(
-        self, title: str, value: str, color: Optional[str] = None
-    ) -> QFrame:
+    def _create_stat_card(self, title: str, value: str, color: Optional[str] = None) -> QFrame:
         """Create a statistics card widget."""
         card = QFrame()
         card.setFrameShape(QFrame.Shape.StyledPanel)
@@ -245,9 +229,7 @@ class QueuesTabWidget(BaseTabWidget):
 
         value_label = QLabel(value)
         value_color = color or THEME.text_primary
-        value_label.setStyleSheet(
-            f"color: {value_color}; font-size: 20px; font-weight: bold;"
-        )
+        value_label.setStyleSheet(f"color: {value_color}; font-size: 20px; font-weight: bold;")
         value_label.setObjectName("value_label")
         layout.addWidget(value_label)
 
@@ -264,9 +246,7 @@ class QueuesTabWidget(BaseTabWidget):
         self._queue_table.selectionModel().selectionChanged.connect(
             self._on_queue_selection_changed
         )
-        self._items_table.selectionModel().selectionChanged.connect(
-            self._on_item_selection_changed
-        )
+        self._items_table.selectionModel().selectionChanged.connect(self._on_item_selection_changed)
 
         self._add_queue_btn.clicked.connect(self._on_add_queue)
         self._delete_queue_btn.clicked.connect(self._on_delete_queue)

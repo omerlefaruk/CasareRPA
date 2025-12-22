@@ -12,7 +12,6 @@ from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.desktop_nodes.window_super_node import (
     WindowManagementSuperNode,
-    WindowAction,
     WINDOW_PORT_SCHEMA,
 )
 

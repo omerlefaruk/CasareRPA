@@ -28,7 +28,7 @@ Is this a browser/Playwright node?
 
 ```bash
 # Search for similar functionality
-qdrant-find: "your node description"
+search_codebase "your node description"
 Grep: "YourKeyword" --path nodes/
 ```
 

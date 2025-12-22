@@ -110,13 +110,9 @@ class TextSplitNode(BaseNode):
             max_split = safe_int(self.get_parameter("max_split", -1), -1)
 
             # Resolve {{variable}} patterns in separator
-            if separator is not None:
-                separator = context.resolve_value(separator)
 
             if separator is None or separator == "":
-                result = (
-                    text.split(maxsplit=max_split) if max_split >= 0 else text.split()
-                )
+                result = text.split(maxsplit=max_split) if max_split >= 0 else text.split()
             else:
                 result = (
                     text.split(separator, maxsplit=max_split)
@@ -228,8 +224,6 @@ class TextReplaceNode(BaseNode):
             new_value = str(self.get_input_value("new_value", context) or "")
 
             # Resolve {{variable}} patterns
-            old_value = context.resolve_value(old_value)
-            new_value = context.resolve_value(new_value)
 
             count = safe_int(self.get_parameter("count", -1), -1)
             use_regex = self.get_parameter("use_regex", False)
@@ -249,9 +243,7 @@ class TextReplaceNode(BaseNode):
                         old_value, new_value, text, count=count, flags=flags
                     )
                 else:
-                    result, replacements = re.subn(
-                        old_value, new_value, text, flags=flags
-                    )
+                    result, replacements = re.subn(old_value, new_value, text, flags=flags)
             else:
                 original_count = text.count(old_value)
                 if count >= 0:
@@ -336,7 +328,6 @@ class TextTrimNode(BaseNode):
 
             # Resolve {{variable}} patterns in characters
             if chars:
-                chars = context.resolve_value(chars)
                 chars_arg = chars
             else:
                 chars_arg = None
@@ -501,7 +492,6 @@ class TextPadNode(BaseNode):
             fill_char = self.get_parameter("fill_char", " ")
 
             # Resolve {{variable}} patterns in fill_char
-            fill_char = context.resolve_value(fill_char)
 
             if len(fill_char) != 1:
                 fill_char = " "

@@ -13,11 +13,11 @@ You are the Integration Specialist for CasareRPA. You design and implement robus
 ### API Documentation (Priority 1)
 ```
 # Search official API docs
-mcp__Ref__ref_search_documentation: "Slack API Python SDK"
+mcp__Ref__ref_search_documentation: "Discord API Python SDK"
 mcp__Ref__ref_search_documentation: "Google Drive API Python"
 
 # Read specific API documentation
-mcp__Ref__ref_read_url: "https://api.slack.com/methods/chat.postMessage"
+mcp__Ref__ref_read_url: "https://discord.com/developers/docs/resources/channel#create-message"
 ```
 
 ### Code Examples & SDKs (Priority 2)
@@ -42,11 +42,11 @@ mcp__exa__web_search_exa: "OAuth 2.0 refresh token best practices"
 
 ## Semantic Search (Internal Codebase)
 
-Use `qdrant-find` to discover existing integration patterns:
-```
-qdrant-find: "HTTP client integration"
-qdrant-find: "OAuth authentication"
-qdrant-find: "API node implementation"
+Use `search_codebase()` to discover existing integration patterns:
+```python
+search_codebase("HTTP client integration", top_k=5)
+search_codebase("OAuth authentication", top_k=5)
+search_codebase("API node implementation", top_k=5)
 ```
 
 ## .brain Protocol
@@ -63,7 +63,7 @@ On completion, report:
 - **APIs**: REST, GraphQL, SOAP, gRPC
 - **Auth**: OAuth 2.0, SAML, LDAP, API keys, JWT
 - **Cloud**: AWS (S3, Lambda, SQS), Azure, GCP
-- **Databases**: PostgreSQL, MySQL, MongoDB, Redis
+- **Databases**: PostgreSQL, MySQL, SQLite, Redis
 - **Message Queues**: RabbitMQ, Kafka, SQS
 - **Enterprise**: Salesforce, SAP, ServiceNow
 - **Async Patterns**: Connection pooling, circuit breakers, retry

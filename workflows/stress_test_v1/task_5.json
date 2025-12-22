@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "name": "Parse JSON and Extract Theme Fixed",
+    "description": "Uses BrowserRunScript to safely parse nested JSON and extract a value.",
+    "version": "1.1.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "set_json_string": {
+      "node_id": "set_json_string",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "raw_json",
+        "value": "{\"user\": {\"id\": 123, \"settings\": {\"theme\": \"dark\"}}}"
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "launch_browser": {
+      "node_id": "launch_browser",
+      "node_type": "LaunchBrowserNode",
+      "config": {
+        "headless": true
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "extract_theme": {
+      "node_id": "extract_theme",
+      "node_type": "BrowserRunScriptNode",
+      "config": {
+        "script": "const data = JSON.parse('{{raw_json}}');\\nreturn data.user.settings.theme;"
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    },
+    "log_theme": {
+      "node_id": "log_theme",
+      "node_type": "LogNode",
+      "config": {
+        "message": "The extracted theme is: {{extract_theme.result}}"
+      },
+      "position": [
+        1200.0,
+        0.0
+      ]
+    },
+    "close_browser": {
+      "node_id": "close_browser",
+      "node_type": "CloseBrowserNode",
+      "config": {},
+      "position": [
+        1600.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "set_json_string",
+      "source_port": "exec_out",
+      "target_node": "launch_browser",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "launch_browser",
+      "source_port": "exec_out",
+      "target_node": "extract_theme",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "extract_theme",
+      "source_port": "exec_out",
+      "target_node": "log_theme",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "log_theme",
+      "source_port": "exec_out",
+      "target_node": "close_browser",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

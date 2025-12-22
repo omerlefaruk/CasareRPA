@@ -65,6 +65,13 @@ from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualFTPGetSizeNode,
 )
 
+# Directory and path operations
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualListDirectoryNode,
+    VisualFileExistsNode,
+    VisualCreateDirectoryNode,
+)
+
 __all__ = [
     # Super Nodes (consolidated operations)
     "VisualFileSystemSuperNode",
@@ -104,4 +111,8 @@ __all__ = [
     "VisualFTPRenameNode",
     "VisualFTPDisconnectNode",
     "VisualFTPGetSizeNode",
+    # Directory and path operations
+    "VisualListDirectoryNode",
+    "VisualFileExistsNode",
+    "VisualCreateDirectoryNode",
 ]

@@ -123,7 +123,7 @@ class NodeBackgroundCache:
         painter.fillPath(body_path, QBrush(body_color))
 
         # Draw header bar (top portion with rounded corners)
-        header_rect = QRectF(0, 0, width, header_height)
+        QRectF(0, 0, width, header_height)
         header_path = QPainterPath()
 
         # Create header path with only top corners rounded
@@ -207,7 +207,7 @@ class NodeBackgroundCache:
         painter.fillPath(body_path, QBrush(body_color))
 
         # Draw header (same as above)
-        header_rect = QRectF(0, 0, width, header_height)
+        QRectF(0, 0, width, header_height)
         header_path = QPainterPath()
         header_path.moveTo(corner_radius, 0)
         header_path.lineTo(width - corner_radius, 0)

@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "name": "Calculate Sum of List",
+    "description": "Iterates through a list of numbers and calculates the total sum using a variable.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "init_sum": {
+      "node_id": "init_sum",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "total_sum",
+        "value": 0
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "define_list": {
+      "node_id": "define_list",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "numbers",
+        "value": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "loop_start": {
+      "node_id": "loop_start",
+      "node_type": "ForLoopStartNode",
+      "config": {
+        "items": "{{numbers}}"
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    },
+    "add_operation": {
+      "node_id": "add_operation",
+      "node_type": "MathOperationNode",
+      "config": {
+        "a": "{{total_sum}}",
+        "b": "{{loop_start.current_item}}",
+        "operation": "add"
+      },
+      "position": [
+        1200.0,
+        0.0
+      ]
+    },
+    "update_sum": {
+      "node_id": "update_sum",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "total_sum",
+        "value": "{{add_operation.result}}"
+      },
+      "position": [
+        1600.0,
+        0.0
+      ]
+    },
+    "loop_end": {
+      "node_id": "loop_end",
+      "node_type": "ForLoopEndNode",
+      "config": {
+        "paired_start_id": "loop_start"
+      },
+      "position": [
+        2000.0,
+        0.0
+      ]
+    },
+    "log_total": {
+      "node_id": "log_total",
+      "node_type": "LogNode",
+      "config": {
+        "message": "The total sum is: {{total_sum}}"
+      },
+      "position": [
+        2400.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "init_sum",
+      "source_port": "exec_out",
+      "target_node": "define_list",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "define_list",
+      "source_port": "exec_out",
+      "target_node": "loop_start",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "loop_start",
+      "source_port": "body",
+      "target_node": "add_operation",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "add_operation",
+      "source_port": "exec_out",
+      "target_node": "update_sum",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "update_sum",
+      "source_port": "exec_out",
+      "target_node": "loop_end",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "loop_start",
+      "source_port": "completed",
+      "target_node": "log_total",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

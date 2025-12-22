@@ -5,7 +5,7 @@ Provides a context menu with quick actions when right-clicking on nodes.
 """
 
 from typing import TYPE_CHECKING, Optional
-from PySide6.QtWidgets import QMenu, QApplication, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QMenu, QApplication, QInputDialog
 from PySide6.QtCore import QObject, Signal, QEvent, Qt, QPointF
 from loguru import logger
 
@@ -130,10 +130,7 @@ class NodeQuickActions(QObject):
             if event.button() == Qt.MouseButton.RightButton:
                 # If auto-connect is in drag mode, let it handle the RMB event
                 # for connection confirmation
-                if (
-                    self._auto_connect_manager
-                    and self._auto_connect_manager._dragging_node
-                ):
+                if self._auto_connect_manager and self._auto_connect_manager._dragging_node:
                     return False  # Pass through to AutoConnectManager
 
                 # Check if click is directly on a node

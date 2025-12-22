@@ -164,9 +164,6 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
             use_ssl = self.get_parameter("use_ssl", True)
 
             # Resolve {{variable}} patterns in connection parameters
-            imap_server = context.resolve_value(imap_server)
-            folder = context.resolve_value(folder)
-            search_criteria = context.resolve_value(search_criteria)
 
             # Resolve credentials using CredentialAwareMixin
             username, password = await self.resolve_username_password(
@@ -224,9 +221,7 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
                             msg = email_module.message_from_bytes(raw_email)
                             parsed = parse_email_message(msg)
                             parsed["uid"] = (
-                                msg_id.decode()
-                                if isinstance(msg_id, bytes)
-                                else str(msg_id)
+                                msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
                             )
                             emails_list.append(parsed)
 
@@ -247,18 +242,14 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for read emails"
-                        )
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for read emails")
 
                     emails = await loop.run_in_executor(None, _read_emails_sync)
 
                     self.set_output_value("emails", emails)
                     self.set_output_value("count", len(emails))
 
-                    logger.info(
-                        f"Read {len(emails)} emails from {folder} (attempt {attempts})"
-                    )
+                    logger.info(f"Read {len(emails)} emails from {folder} (attempt {attempts})")
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
@@ -360,9 +351,7 @@ class GetEmailContentNode(BaseNode):
             self.set_output_value("body_html", email_data.get("body_html", ""))
             self.set_output_value("attachments", email_data.get("attachments", []))
 
-            logger.debug(
-                f"Extracted email content: {email_data.get('subject', 'No subject')}"
-            )
+            logger.debug(f"Extracted email content: {email_data.get('subject', 'No subject')}")
             self.status = NodeStatus.SUCCESS
             return {"success": True}
 
@@ -437,8 +426,6 @@ class FilterEmailsNode(BaseNode):
             has_attachments = self.get_parameter("has_attachments", None)
 
             # Resolve {{variable}} patterns
-            subject_contains = context.resolve_value(subject_contains)
-            from_contains = context.resolve_value(from_contains)
 
             filtered = []
             for email_data in emails:

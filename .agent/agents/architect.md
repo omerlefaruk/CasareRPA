@@ -29,10 +29,10 @@ mcp__Ref__ref_read_url: "https://doc.qt.io/..."
 
 ## Semantic Search (Internal Codebase)
 
-Use `qdrant-find` MCP tool for discovering patterns and existing implementations:
-```
-qdrant-find: "node execution pattern"
-qdrant-find: "event bus implementation"
+Use `search_codebase()` MCP tool (ChromaDB) for discovering patterns and existing implementations:
+```python
+search_codebase("node execution pattern", top_k=5)
+search_codebase("event bus implementation", top_k=5)
 ```
 
 ## .brain Protocol (Token-Optimized)

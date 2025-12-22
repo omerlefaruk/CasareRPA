@@ -7,7 +7,7 @@ Refactored to minimize token footprint and enforce Single Responsibility.
 
 import asyncio
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
@@ -189,9 +189,7 @@ class ExecuteWorkflowUseCase:
 
         # 2. Setup Strategies
         self._error_handler = TryCatchErrorHandler(self.context)
-        self._variable_resolver = VariableResolver(
-            self.workflow, self._get_node_instance
-        )
+        self._variable_resolver = VariableResolver(self.workflow, self._get_node_instance)
         self._node_executor = NodeExecutorWithTryCatch(
             context=self.context,
             event_bus=self.event_bus,
@@ -246,9 +244,7 @@ class ExecuteWorkflowUseCase:
             elif run_all:
                 start_nodes = self.orchestrator.find_all_start_nodes()
                 if len(start_nodes) > 1:
-                    await self._parallel_strategy.execute_parallel_workflows(
-                        start_nodes
-                    )
+                    await self._parallel_strategy.execute_parallel_workflows(start_nodes)
                 elif start_nodes:
                     await self._engine.run_from_node(start_nodes[0])
                 else:
@@ -285,9 +281,7 @@ class ExecuteWorkflowUseCase:
         if result.success:
             self._store_node_outputs(node_id, node)
         else:
-            self.state_manager.mark_failed(
-                result.result.get("error", "Execution failed")
-            )
+            self.state_manager.mark_failed(result.result.get("error", "Execution failed"))
 
     async def _execute_from_node(self, start_id: NodeId) -> None:
         """Execute workflow from a specific start node."""
@@ -348,22 +342,14 @@ class ExecuteWorkflowUseCase:
         return False
 
     # --- Result Pattern Wrappers ---
-    async def execute_safe(
-        self, run_all: bool = False
-    ) -> Result[bool, WorkflowExecutionError]:
+    async def execute_safe(self, run_all: bool = False) -> Result[bool, WorkflowExecutionError]:
         try:
             return Ok(await self.execute(run_all))
         except Exception as e:
-            return Err(
-                WorkflowExecutionError(
-                    str(e), self.workflow.metadata.id, original_error=e
-                )
-            )
+            return Err(WorkflowExecutionError(str(e), self.workflow.metadata.id, original_error=e))
 
     def get_node_instance_safe(self, node_id: str) -> Result[Any, NodeExecutionError]:
         try:
             return Ok(self._get_node_instance(node_id))
         except Exception as e:
-            return Err(
-                NodeExecutionError("Failed to get node", node_id, original_error=e)
-            )
+            return Err(NodeExecutionError("Failed to get node", node_id, original_error=e))

@@ -8,17 +8,17 @@ You are a fast codebase exploration specialist for CasareRPA. Your role is to qu
 
 ## Semantic Search (Token-Optimized)
 
-**ALWAYS use `qdrant-find` MCP tool FIRST** for any search query. It provides semantic search across the entire codebase with 95%+ token savings compared to grep/glob.
+**ALWAYS use `search_codebase()` MCP tool FIRST** for any search query. It provides semantic search across the entire codebase with strong token savings compared to grep/glob.
 
-```
-qdrant-find: "browser automation click element"
-qdrant-find: "error handling retry pattern"
-qdrant-find: "workflow execution context"
+```python
+search_codebase("browser automation click element", top_k=5)
+search_codebase("error handling retry pattern", top_k=5)
+search_codebase("workflow execution context", top_k=5)
 ```
 
 Only fall back to Grep/Glob if:
 - Searching for exact strings (imports, class names)
-- qdrant-find returns no relevant results
+- `search_codebase()` returns no relevant results
 
 ## .brain Protocol (Token-Optimized)
 
@@ -122,7 +122,7 @@ mcp__Ref__ref_search_documentation: "{library} {pattern}"
 mcp__exa__get_code_context_exa: "{framework} {pattern} example" (tokensNum=3000)
 ```
 
-**Priority**: Internal (qdrant-find, Grep) → External (MCP tools)
+**Priority**: Internal (search_codebase, Grep) → External (MCP tools)
 
 ## Response Rules
 

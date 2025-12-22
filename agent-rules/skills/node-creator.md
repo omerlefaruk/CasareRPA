@@ -41,10 +41,16 @@ class MyCustomNode(BaseNode):
     async def execute(self, context) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
         try:
-            input_val = self.get_parameter("input_value")
+            # 1. Get raw value from port or config
+            raw_input = self.get_parameter("input_value")
+
+            # 2. RESOLVE TEMPLATES (CRITICAL)
+            # This ensures {{node.port}} syntax works in your node
+            input_val = context.resolve_value(raw_input)
+
             # ... implementation ...
 
-            self.set_output_value("result", "some output")
+            self.set_output_value("result", f"Processed: {input_val}")
             return self.success_result({"success": True})
         except Exception as e:
             return self.error_result(e)

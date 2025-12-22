@@ -132,6 +132,12 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         hr_format.setForeground(QColor(self.COLOR_HR))
         self._formats["hr"] = hr_format
 
+        # CasareRPA Variable format ({{var}})
+        variable_format = QTextCharFormat()
+        variable_format.setForeground(QColor(self.COLOR_BOLD))  # Use bold color for variables
+        variable_format.setFontWeight(QFont.Weight.Bold)
+        self._formats["variable"] = variable_format
+
     def highlightBlock(self, text: str) -> None:
         """
         Highlight a block of Markdown text.
@@ -192,9 +198,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
         if match:
             marker_start = match.start(2)
             marker_end = match.end(2)
-            self.setFormat(
-                marker_start, marker_end - marker_start, self._formats["list"]
-            )
+            self.setFormat(marker_start, marker_end - marker_start, self._formats["list"])
             for i in range(marker_start, marker_end):
                 if i < len(highlighted):
                     highlighted[i] = True
@@ -248,6 +252,17 @@ class MarkdownHighlighter(QSyntaxHighlighter):
             length = match.end() - match.start()
             if not any(highlighted[start : start + length]):
                 self.setFormat(start, length, self._formats["code"])
+
+        # CasareRPA Variable references {{var}}
+        variable_pattern = re.compile(r"\{\{[^}]+\}\}")
+        for match in variable_pattern.finditer(text):
+            start = match.start()
+            length = match.end() - start
+            self.setFormat(start, length, self._formats["variable"])
+            # We don't necessarily need to mark it as highlighted for MD as it can overlap with other things ideally
+            # but for safety against other regexes:
+            for i in range(start, min(start + length, len(highlighted))):
+                highlighted[i] = True
 
 
 def get_markdown_editor_stylesheet() -> str:

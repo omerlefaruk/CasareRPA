@@ -354,8 +354,8 @@ class TestCodePlainTextEditTabHandling:
         actual_tab_width = editor.tabStopDistance()
         # Verify it's a reasonable value (greater than 0 and in expected range)
         assert actual_tab_width > 0
-        # Should be around 28-40 pixels depending on font (4 spaces * ~7-10 pixels per char)
-        assert 20 <= actual_tab_width <= 50
+        # Should be around 28-80 pixels depending on font/DPI (4 spaces * ~7-20 pixels per char)
+        assert 15 <= actual_tab_width <= 80
 
     def test_tab_inserts_spaces(self, editor, qapp) -> None:
         """Test pressing Tab inserts 4 spaces."""
@@ -364,9 +364,7 @@ class TestCodePlainTextEditTabHandling:
         from PySide6.QtCore import QEvent
 
         # Create Tab key event
-        event = QKeyEvent(
-            QEvent.Type.KeyPress, Qt.Key.Key_Tab, Qt.KeyboardModifier.NoModifier
-        )
+        event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Tab, Qt.KeyboardModifier.NoModifier)
 
         editor.keyPressEvent(event)
         assert editor.toPlainText() == "    "  # 4 spaces

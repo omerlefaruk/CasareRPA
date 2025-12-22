@@ -27,12 +27,20 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+# =============================================================================
+# Qt Headless Configuration (MUST be before any Qt imports)
+# =============================================================================
+# This enables Qt to run without a display server (for CI/headless testing)
+if "QT_QPA_PLATFORM" not in os.environ:
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 # Ensure src is in path for imports
 src_path = Path(__file__).parent.parent / "src"
@@ -62,9 +70,7 @@ def pytest_configure(config: pytest.Config) -> None:
         config.addinivalue_line("markers", marker)
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: List[pytest.Item]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item]) -> None:
     """Automatically mark tests based on their location."""
     for item in items:
         # Auto-mark based on path
@@ -711,9 +717,7 @@ def assert_node_success(result: Dict[str, Any], message: str = "") -> None:
     ), f"Node execution failed: {result.get('error', 'Unknown error')}. {message}"
 
 
-def assert_node_failure(
-    result: Dict[str, Any], expected_error: Optional[str] = None
-) -> None:
+def assert_node_failure(result: Dict[str, Any], expected_error: Optional[str] = None) -> None:
     """
     Assert that a node execution result indicates failure.
 

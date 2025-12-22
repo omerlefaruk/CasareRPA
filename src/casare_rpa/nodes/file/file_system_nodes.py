@@ -98,7 +98,6 @@ class DeleteFileNode(BaseNode):
                 raise ValueError("file_path is required")
 
             # Resolve {{variable}} patterns and environment variables in file_path
-            file_path = context.resolve_value(file_path)
             file_path = os.path.expandvars(file_path)
 
             # SECURITY: Validate path before delete operation
@@ -241,9 +240,7 @@ class CopyFileNode(BaseNode):
                 raise ValueError("source_path and dest_path are required")
 
             # Resolve {{variable}} patterns and environment variables in paths
-            source_path = context.resolve_value(source_path)
             source_path = os.path.expandvars(source_path)
-            dest_path = context.resolve_value(dest_path)
             dest_path = os.path.expandvars(dest_path)
 
             # SECURITY: Validate paths before any operation
@@ -379,9 +376,7 @@ class MoveFileNode(BaseNode):
                 raise ValueError("source_path and dest_path are required")
 
             # Resolve {{variable}} patterns and environment variables in paths
-            source_path = context.resolve_value(source_path)
             source_path = os.path.expandvars(source_path)
-            dest_path = context.resolve_value(dest_path)
             dest_path = os.path.expandvars(dest_path)
 
             # SECURITY: Validate paths before any operation

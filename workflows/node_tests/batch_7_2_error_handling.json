@@ -1,0 +1,153 @@
+{
+    "metadata": {
+        "name": "Batch 7.2 - Error Handling",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "try_node": {
+            "node_id": "try_node",
+            "node_type": "TryNode",
+            "config": {},
+            "position": [
+                0,
+                0
+            ]
+        },
+        "set_var": {
+            "node_id": "set_var",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "test",
+                "value": "success"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "catch_node": {
+            "node_id": "catch_node",
+            "node_type": "CatchNode",
+            "config": {},
+            "position": [
+                800,
+                0
+            ]
+        },
+        "finally_node": {
+            "node_id": "finally_node",
+            "node_type": "FinallyNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "retry_node": {
+            "node_id": "retry_node",
+            "node_type": "RetryNode",
+            "config": {
+                "max_retries": 3
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "assert_node": {
+            "node_id": "assert_node",
+            "node_type": "AssertNode",
+            "config": {
+                "condition": "true"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "validate_node": {
+            "node_id": "validate_node",
+            "node_type": "ValidateNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "on_error": {
+            "node_id": "on_error",
+            "node_type": "OnErrorNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Error handling nodes tested!"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "try_node",
+            "source_port": "exec_out",
+            "target_node": "set_var",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "set_var",
+            "source_port": "exec_out",
+            "target_node": "catch_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "catch_node",
+            "source_port": "exec_out",
+            "target_node": "finally_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "finally_node",
+            "source_port": "exec_out",
+            "target_node": "retry_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "retry_node",
+            "source_port": "exec_out",
+            "target_node": "assert_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "assert_node",
+            "source_port": "exec_out",
+            "target_node": "validate_node",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "validate_node",
+            "source_port": "exec_out",
+            "target_node": "on_error",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "on_error",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

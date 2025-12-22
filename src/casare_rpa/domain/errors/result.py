@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")  # Success value type
 U = TypeVar("U")  # Transformed value type
 E = TypeVar("E", bound=Exception)  # Error type (must be Exception subclass)
+F = TypeVar("F", bound=Exception)  # Transformed error type
 
 
 @dataclass(frozen=True, slots=True)

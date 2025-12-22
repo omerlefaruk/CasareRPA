@@ -134,9 +134,7 @@ class WaitManager:
             ValueError: If no search criteria provided
         """
         if not title and not title_regex and not class_name:
-            raise ValueError(
-                "Must provide at least one of: title, title_regex, class_name"
-            )
+            raise ValueError("Must provide at least one of: title, title_regex, class_name")
 
         valid_states = ["visible", "hidden"]
         if state.lower() not in valid_states:
@@ -179,7 +177,7 @@ class WaitManager:
 
             await asyncio.sleep(poll_interval)
 
-        elapsed = time.time() - start_time
+        time.time() - start_time
         search_desc = title or title_regex or class_name
         raise TimeoutError(
             f"Window '{search_desc}' did not become '{state}' within {timeout} seconds"
@@ -207,9 +205,7 @@ class WaitManager:
         def _check_exists() -> bool:
             try:
                 search_parent = parent if parent else auto.GetRootControl()
-                element = selector_find_element(
-                    search_parent, selector, timeout=max(0.1, timeout)
-                )
+                element = selector_find_element(search_parent, selector, timeout=max(0.1, timeout))
                 exists = element is not None and element.exists()
                 logger.debug(f"Element exists: {exists}")
                 return exists
@@ -287,13 +283,9 @@ class WaitManager:
                 expected_str = str(expected_value)
 
                 if comparison == "equals":
-                    result = (
-                        actual_value == expected_value or actual_str == expected_str
-                    )
+                    result = actual_value == expected_value or actual_str == expected_str
                 elif comparison == "not_equals":
-                    result = (
-                        actual_value != expected_value and actual_str != expected_str
-                    )
+                    result = actual_value != expected_value and actual_str != expected_str
                 elif comparison == "contains":
                     result = expected_str.lower() in actual_str.lower()
                 elif comparison == "startswith":
@@ -363,6 +355,4 @@ class WaitManager:
             await asyncio.sleep(poll_interval)
 
         elapsed = time.time() - start_time
-        raise TimeoutError(
-            f"{error_message} within {timeout} seconds (elapsed: {elapsed:.1f}s)"
-        )
+        raise TimeoutError(f"{error_message} within {timeout} seconds (elapsed: {elapsed:.1f}s)")

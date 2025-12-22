@@ -94,6 +94,11 @@ GOOGLE_SCOPES = {
         "scope": GoogleScope.CALENDAR_READONLY.value,
         "description": "View calendar events only",
     },
+    "gemini_ai": {
+        "label": "Gemini AI (Cloud Platform)",
+        "scope": GoogleScope.CLOUD_PLATFORM.value,
+        "description": "Access Gemini AI models for text generation and captcha solving",
+    },
 }
 
 
@@ -217,9 +222,7 @@ class OAuthThread(QThread):
         parent=None,
     ):
         super().__init__(parent)
-        self._worker = OAuthWorker(
-            client_id, client_secret, auth_code, redirect_uri, scopes
-        )
+        self._worker = OAuthWorker(client_id, client_secret, auth_code, redirect_uri, scopes)
 
     def run(self):
         self._worker.finished.connect(self.finished.emit)
@@ -272,9 +275,7 @@ class GoogleOAuthDialog(QDialog):
 
         # Header
         header_label = QLabel("Connect Google Account")
-        header_label.setStyleSheet(
-            "font-size: 18px; font-weight: bold; color: #e0e0e0;"
-        )
+        header_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #e0e0e0;")
         layout.addWidget(header_label)
 
         description = QLabel(
@@ -344,9 +345,7 @@ class GoogleOAuthDialog(QDialog):
         mode_group = QGroupBox("Redirect Mode")
         mode_layout = QVBoxLayout(mode_group)
 
-        mode_description = QLabel(
-            "Choose where Google should redirect after authorization:"
-        )
+        mode_description = QLabel("Choose where Google should redirect after authorization:")
         mode_description.setStyleSheet("color: #888888; margin-bottom: 8px;")
         mode_layout.addWidget(mode_description)
 
@@ -406,9 +405,7 @@ class GoogleOAuthDialog(QDialog):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setMaximumHeight(200)
-        scroll_area.setStyleSheet(
-            "QScrollArea { border: 1px solid #3c3c3c; background: #252526; }"
-        )
+        scroll_area.setStyleSheet("QScrollArea { border: 1px solid #3c3c3c; background: #252526; }")
 
         scope_container = QWidget()
         scope_grid = QGridLayout(scope_container)
@@ -565,9 +562,7 @@ class GoogleOAuthDialog(QDialog):
     def _validate_inputs(self) -> bool:
         """Validate all inputs before authorization."""
         if not self._name_input.text().strip():
-            QMessageBox.warning(
-                self, "Validation Error", "Please enter a credential name."
-            )
+            QMessageBox.warning(self, "Validation Error", "Please enter a credential name.")
             self._name_input.setFocus()
             return False
 
@@ -577,9 +572,7 @@ class GoogleOAuthDialog(QDialog):
             return False
 
         if not self._client_secret_input.text().strip():
-            QMessageBox.warning(
-                self, "Validation Error", "Please enter a Client Secret."
-            )
+            QMessageBox.warning(self, "Validation Error", "Please enter a Client Secret.")
             self._client_secret_input.setFocus()
             return False
 
@@ -621,7 +614,7 @@ class GoogleOAuthDialog(QDialog):
 
             # Start local OAuth server
             self._oauth_server = LocalOAuthServer()
-            port = self._oauth_server.start()
+            self._oauth_server.start()
             redirect_uri = self._oauth_server.redirect_uri
             state = self._oauth_server.state
 
@@ -846,9 +839,7 @@ class GoogleOAuthDialog(QDialog):
             f"Failed to authorize with Google:\n\n{error}",
         )
 
-    def _update_status(
-        self, message: str, success: bool = False, error: bool = False
-    ) -> None:
+    def _update_status(self, message: str, success: bool = False, error: bool = False) -> None:
         """Update status label with appropriate styling."""
         self._status_label.setText(message)
 

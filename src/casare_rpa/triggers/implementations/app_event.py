@@ -79,9 +79,7 @@ class AppEventTrigger(BaseTrigger):
             self._status = TriggerStatus.ERROR
             return False
 
-        logger.info(
-            f"App event trigger started: {self.config.name} (source: {event_source})"
-        )
+        logger.info(f"App event trigger started: {self.config.name} (source: {event_source})")
         return True
 
     async def stop(self) -> bool:
@@ -111,7 +109,7 @@ class AppEventTrigger(BaseTrigger):
     async def _start_windows_monitor(self) -> bool:
         """Start monitoring Windows events."""
         config = self.config.config
-        event_types = config.get("event_types", ["window_focus"])
+        config.get("event_types", ["window_focus"])
 
         try:
             # Try to use win32api for Windows events
@@ -135,7 +133,7 @@ class AppEventTrigger(BaseTrigger):
         """Poll for Windows events."""
         config = self.config.config
         window_title_pattern = config.get("window_title_pattern", "")
-        process_name = config.get("process_name", "")
+        config.get("process_name", "")
         poll_interval = config.get("poll_interval", 1)
 
         last_window_title = ""
@@ -159,9 +157,7 @@ class AppEventTrigger(BaseTrigger):
 
                     # Check if matches filter
                     if window_title_pattern:
-                        if not re.search(
-                            window_title_pattern, current_title, re.IGNORECASE
-                        ):
+                        if not re.search(window_title_pattern, current_title, re.IGNORECASE):
                             continue
 
                     # Emit event
@@ -186,9 +182,7 @@ class AppEventTrigger(BaseTrigger):
         """Start monitoring browser events."""
         # Browser events would typically require a browser extension
         # or integration with Playwright/Selenium
-        logger.warning(
-            "Browser event monitoring requires browser extension integration"
-        )
+        logger.warning("Browser event monitoring requires browser extension integration")
 
         # Start a placeholder polling task
         self._poll_task = asyncio.create_task(self._poll_browser_events())

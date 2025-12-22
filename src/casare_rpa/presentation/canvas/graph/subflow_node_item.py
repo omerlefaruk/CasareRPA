@@ -68,7 +68,7 @@ _STACK_COLORS: Optional[list] = None
 
 def _get_subflow_header_color() -> QColor:
     """Get subflow header color from theme."""
-    cc = Theme.get_canvas_colors()
+    Theme.get_canvas_colors()
     # Use a custom blue-gray color for subflows
     return _hex_to_qcolor("#4A5568")
 
@@ -247,9 +247,7 @@ class SubflowNodeItem(CasareNodeItem):
             rect.height() + stack_extension,
         )
 
-    def _draw_stack_layers(
-        self, painter: QPainter, rect: QRectF, radius: float = 8.0
-    ) -> None:
+    def _draw_stack_layers(self, painter: QPainter, rect: QRectF, radius: float = 8.0) -> None:
         """
         Draw stack layers behind the main node.
 
@@ -470,9 +468,7 @@ class SubflowNodeItem(CasareNodeItem):
         header_path.lineTo(header_rect.right(), header_rect.bottom())
         header_path.lineTo(header_rect.left(), header_rect.bottom())
         header_path.lineTo(header_rect.left(), header_rect.top() + radius)
-        header_path.arcTo(
-            header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90
-        )
+        header_path.arcTo(header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90)
         header_path.closeSubpath()
 
         # Header gradient (blue-gray at 60% opacity)
@@ -589,9 +585,7 @@ class SubflowNodeItem(CasareNodeItem):
 
         # Draw play symbol (expand/open subflow)
         painter.setPen(
-            QPen(
-                _EXPAND_BTN_SYMBOL, 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap
-            )
+            QPen(_EXPAND_BTN_SYMBOL, 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
         )
 
         center_x = x + btn_size / 2
@@ -633,9 +627,7 @@ class SubflowNodeItem(CasareNodeItem):
 
         # Draw gear/settings symbol
         painter.setPen(
-            QPen(
-                _EXPAND_BTN_SYMBOL, 1.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap
-            )
+            QPen(_EXPAND_BTN_SYMBOL, 1.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
         )
 
         center_x = x + btn_size / 2
@@ -644,9 +636,7 @@ class SubflowNodeItem(CasareNodeItem):
         # Draw simplified gear: a small circle with lines
         gear_radius = 4
         painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawEllipse(
-            QPointF(center_x, center_y), gear_radius - 1, gear_radius - 1
-        )
+        painter.drawEllipse(QPointF(center_x, center_y), gear_radius - 1, gear_radius - 1)
 
         # Draw 4 spokes
         for angle in [0, 90, 180, 270]:

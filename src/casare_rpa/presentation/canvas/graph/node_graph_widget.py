@@ -15,6 +15,7 @@ REFACTORED: Logic extracted into delegate classes:
 - GraphEventHandler: Event filtering, keyboard/mouse handling
 """
 
+import os
 from typing import Optional
 
 from PySide6.QtCore import QEvent, Qt, Signal
@@ -76,6 +77,7 @@ from casare_rpa.presentation.canvas.ui.widgets.breadcrumb_nav import (
     BreadcrumbNavWidget,
     SubflowNavigationController,
 )
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 # Extracted delegate classes
 from casare_rpa.presentation.canvas.graph.graph_setup import GraphSetup
@@ -137,6 +139,27 @@ class NodeGraphWidget(QWidget):
         # Create node graph
         self._graph = NodeGraph()
 
+        # Optional trace logging for unexpected undo/redo calls.
+        if os.environ.get("CASARE_CANVAS_UNDO_TRACE") == "1":
+            import traceback
+
+            undo_stack = self._graph.undo_stack()
+            if undo_stack and not hasattr(undo_stack, "_casare_undo_wrapped"):
+                original_undo = undo_stack.undo
+                original_redo = undo_stack.redo
+
+                def traced_undo() -> None:
+                    logger.debug("Undo invoked:\n" + "".join(traceback.format_stack()))
+                    original_undo()
+
+                def traced_redo() -> None:
+                    logger.debug("Redo invoked:\n" + "".join(traceback.format_stack()))
+                    original_redo()
+
+                undo_stack.undo = traced_undo  # type: ignore[assignment]
+                undo_stack.redo = traced_redo  # type: ignore[assignment]
+                undo_stack._casare_undo_wrapped = True
+
         # Enable viewport culling for smooth 60 FPS panning with 100+ nodes
         from casare_rpa.presentation.canvas.graph.viewport_culling import (
             ViewportCullingManager,
@@ -159,24 +182,19 @@ class NodeGraphWidget(QWidget):
 
         # Create connection handler delegate
         validator = get_connection_validator() if HAS_CONNECTION_VALIDATOR else None
-        self._connection_handler = ConnectionHandler(
-            self._graph, self._culler, validator
-        )
-        self._connection_handler.connection_blocked.connect(
-            self.connection_blocked.emit
-        )
+        self._connection_handler = ConnectionHandler(self._graph, self._culler, validator)
+        self._connection_handler.connection_blocked.connect(self.connection_blocked.emit)
         self._connection_handler.setup_validation()
 
         # Create event handler delegate
-        self._event_handler = GraphEventHandler(
-            self._graph, self._selection_handler, self
-        )
+        self._event_handler = GraphEventHandler(self._graph, self._selection_handler, self)
 
         # Setup viewport culling signals (uses methods from this class and delegates)
         self._setup_viewport_culling()
 
         # PERFORMANCE: O(1) node ID tracking instead of O(n) scans
         self._node_ids_in_use: set[str] = set()
+        self._node_id_by_graph_id: dict[str, str] = {}
         self._node_count: int = 0
 
         # Create composite node creator (For Loop, While Loop, Try/Catch)
@@ -221,14 +239,10 @@ class NodeGraphWidget(QWidget):
         self._popup_close_press_pos = None
 
         # Connect create subflow action
-        self._quick_actions.create_subflow_requested.connect(
-            self._create_subflow_from_selection
-        )
+        self._quick_actions.create_subflow_requested.connect(self._create_subflow_from_selection)
 
         # Connect toggle cache action
-        self._quick_actions.toggle_cache_requested.connect(
-            self._on_toggle_cache_from_menu
-        )
+        self._quick_actions.toggle_cache_requested.connect(self._on_toggle_cache_from_menu)
 
         # Setup paste hook for duplicate ID detection
         self._setup_paste_hook()
@@ -373,6 +387,11 @@ class NodeGraphWidget(QWidget):
             if hasattr(node, "view") and node.view:
                 rect = node.view.sceneBoundingRect()
                 self._culler.register_node(node.id, node.view, rect)
+                log_canvas_event(
+                    "node_created",
+                    node_id=node.id,
+                    node_type=type(node).__name__,
+                )
 
                 view = node.view
                 if hasattr(view, "set_position_callback"):
@@ -381,9 +400,7 @@ class NodeGraphWidget(QWidget):
 
                     def on_position_changed(item, nid=node_id):
                         try:
-                            widget_ref._culler.update_node_position(
-                                nid, item.sceneBoundingRect()
-                            )
+                            widget_ref._culler.update_node_position(nid, item.sceneBoundingRect())
                             if (
                                 hasattr(widget_ref, "_smart_routing")
                                 and widget_ref._smart_routing.is_enabled()
@@ -416,8 +433,15 @@ class NodeGraphWidget(QWidget):
         try:
             for node_id in node_ids:
                 self._culler.unregister_node(node_id)
-                self._node_ids_in_use.discard(node_id)
+                casare_node_id = self._node_id_by_graph_id.pop(node_id, None)
+                if casare_node_id:
+                    self._node_ids_in_use.discard(casare_node_id)
             self._node_count = max(0, self._node_count - len(node_ids))
+            log_canvas_event(
+                "nodes_deleted",
+                node_ids=list(node_ids),
+                count=len(node_ids),
+            )
         except Exception as e:
             logger.debug(f"Could not unregister nodes from culling: {e}")
 
@@ -428,6 +452,7 @@ class NodeGraphWidget(QWidget):
         try:
             self._culler.clear()
             self._node_ids_in_use.clear()
+            self._node_id_by_graph_id.clear()
             self._node_count = 0
             logger.debug("Viewport culler cleared on session change")
         except Exception as e:
@@ -445,9 +470,7 @@ class NodeGraphWidget(QWidget):
         self._breadcrumb.move(10, 10)
 
         main_window = self.window()
-        self._subflow_nav = SubflowNavigationController(
-            self._graph, self._breadcrumb, main_window
-        )
+        self._subflow_nav = SubflowNavigationController(self._graph, self._breadcrumb, main_window)
 
         self._breadcrumb.navigate_back.connect(self._on_subflow_go_back)
         self._breadcrumb.navigate_to.connect(self._on_subflow_navigate_to)
@@ -614,9 +637,7 @@ class NodeGraphWidget(QWidget):
             time_window_ms: Time window for shake detection (default 400ms)
             min_movement_px: Minimum horizontal movement per swing (default 15px)
         """
-        self._shake_to_detach.set_sensitivity(
-            shake_threshold, time_window_ms, min_movement_px
-        )
+        self._shake_to_detach.set_sensitivity(shake_threshold, time_window_ms, min_movement_px)
 
     # =========================================================================
     # HIGH PERFORMANCE MODE
@@ -629,9 +650,7 @@ class NodeGraphWidget(QWidget):
 
         if node_count >= threshold and not get_high_performance_mode():
             set_high_performance_mode(True)
-            logger.info(
-                f"Auto-enabled High Performance Mode ({node_count} nodes >= {threshold})"
-            )
+            logger.info(f"Auto-enabled High Performance Mode ({node_count} nodes >= {threshold})")
 
     def _check_performance_mode_incremental(self) -> None:
         """O(1) performance mode check using tracked node count."""
@@ -767,10 +786,7 @@ class NodeGraphWidget(QWidget):
 
         # Handle mouse release for Alt+drag cleanup
         if event.type() == QEvent.Type.MouseButtonRelease:
-            if (
-                event.button() == Qt.MouseButton.LeftButton
-                and self._event_handler.alt_drag_node
-            ):
+            if event.button() == Qt.MouseButton.LeftButton and self._event_handler.alt_drag_node:
                 self._event_handler.alt_drag_node = None
 
         # Handle mouse move for Alt+drag
@@ -1026,9 +1042,7 @@ class NodeGraphWidget(QWidget):
             if view_item:
                 view_item.setSelected(True)
 
-            logger.debug(
-                f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}"
-            )
+            logger.debug(f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}")
             return True
 
         except Exception as e:
@@ -1068,7 +1082,9 @@ class NodeGraphWidget(QWidget):
                     view = node.view
                     if view and hasattr(view, "set_cache_enabled"):
                         # Toggle the cache state
-                        current = view.is_cache_enabled() if hasattr(view, "is_cache_enabled") else False
+                        current = (
+                            view.is_cache_enabled() if hasattr(view, "is_cache_enabled") else False
+                        )
                         view.set_cache_enabled(not current)
                         # Also update the casare_node config
                         casare_node = getattr(node, "casare_node", None)
@@ -1147,33 +1163,31 @@ class NodeGraphWidget(QWidget):
             return
 
         if not current_id:
-            node.set_property("node_id", casare_node.node_id)
+            node.set_property("node_id", casare_node.node_id, push_undo=False)
             self._register_node_id(casare_node.node_id)
+            self._node_id_by_graph_id[node.id] = casare_node.node_id
         else:
             is_duplicate = self._check_for_duplicate_id(node, current_id)
 
             if is_duplicate:
-                node_type = (
-                    getattr(casare_node, "node_type", None)
-                    or type(casare_node).__name__
-                )
+                node_type = getattr(casare_node, "node_type", None) or type(casare_node).__name__
                 new_id = generate_node_id(node_type)
                 casare_node.node_id = new_id
-                node.set_property("node_id", new_id)
+                node.set_property("node_id", new_id, push_undo=False)
                 self._register_node_id(new_id)
+                self._node_id_by_graph_id[node.id] = new_id
                 logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
             else:
                 if casare_node.node_id != current_id:
                     casare_node.node_id = current_id
                 self._register_node_id(current_id)
+                self._node_id_by_graph_id[node.id] = current_id
 
         self._sync_visual_properties_to_casare_node(node, casare_node)
 
     def _ensure_casare_node(self, node):
         """Ensure the visual node has a linked casare_node."""
-        casare_node = (
-            node.get_casare_node() if hasattr(node, "get_casare_node") else None
-        )
+        casare_node = node.get_casare_node() if hasattr(node, "get_casare_node") else None
 
         if casare_node:
             return casare_node
@@ -1450,9 +1464,7 @@ class NodeGraphWidget(QWidget):
                         cursor_pos = target.cursorPosition()
                         current_text = target.text()
                         new_text = (
-                            current_text[:cursor_pos]
-                            + variable_text
-                            + current_text[cursor_pos:]
+                            current_text[:cursor_pos] + variable_text + current_text[cursor_pos:]
                         )
                         target.setText(new_text)
                         target.setCursorPosition(cursor_pos + len(variable_text))
@@ -1470,9 +1482,7 @@ class NodeGraphWidget(QWidget):
 
         event.ignore()
 
-    def _create_node_at_position(
-        self, node_type: str, identifier: str, position: tuple
-    ) -> None:
+    def _create_node_at_position(self, node_type: str, identifier: str, position: tuple) -> None:
         """Create a node at the specified position."""
         self._creation_helper.create_node_at_position(node_type, identifier, position)
 

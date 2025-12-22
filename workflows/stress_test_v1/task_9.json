@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "name": "Create and Log Dictionary",
+    "description": "Creates a dictionary with status and code, then logs the object.",
+    "version": "1.0.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "create_status_dict": {
+      "node_id": "create_status_dict",
+      "node_type": "CreateDictNode",
+      "config": {
+        "key_1": "status",
+        "value_1": "ok",
+        "key_2": "code",
+        "value_2": 200
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "log_dict_output": {
+      "node_id": "log_dict_output",
+      "node_type": "LogNode",
+      "config": {
+        "message": "Dictionary content: {{create_status_dict.dict}}"
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "create_status_dict",
+      "source_port": "exec_out",
+      "target_node": "log_dict_output",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

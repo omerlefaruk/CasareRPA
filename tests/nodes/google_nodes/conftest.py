@@ -55,6 +55,15 @@ def mock_drive_client() -> MagicMock:
 
     client.download_file = AsyncMock(side_effect=mock_download_file)
 
+    # get_file returns file metadata (needed for downloads)
+    client.get_file = AsyncMock(
+        return_value=MockDriveFile(
+            id="file_123",
+            name="test_file.pdf",
+            mime_type="application/pdf",
+        )
+    )
+
     # list_files returns (files, next_page_token)
     client.list_files = AsyncMock(return_value=([], None))
 

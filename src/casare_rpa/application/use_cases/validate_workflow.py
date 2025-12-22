@@ -165,23 +165,13 @@ class ValidateWorkflowUseCase:
             nodes_data = []
             if hasattr(workflow, "nodes"):
                 nodes = workflow.nodes
-                # Handle both dict and list of nodes
-                if isinstance(nodes, dict):
-                    for node_id, node in sorted(nodes.items()):
-                        node_type = (
-                            node.__class__.__name__
-                            if hasattr(node, "__class__")
-                            else str(type(node))
-                        )
-                        nodes_data.append({"id": node_id, "type": node_type})
-                else:
-                    for node in sorted(nodes, key=lambda n: getattr(n, "node_id", "")):
-                        nodes_data.append(
-                            {
-                                "id": getattr(node, "node_id", str(id(node))),
-                                "type": node.__class__.__name__,
-                            }
-                        )
+                if not isinstance(nodes, dict):
+                    raise ValueError("Workflow nodes must be a dict keyed by node_id.")
+                for node_id, node in sorted(nodes.items()):
+                    node_type = (
+                        node.__class__.__name__ if hasattr(node, "__class__") else str(type(node))
+                    )
+                    nodes_data.append({"id": node_id, "type": node_type})
 
             connections_data = []
             if hasattr(workflow, "connections"):
@@ -218,10 +208,17 @@ class ValidateWorkflowUseCase:
         """
         issues: List[ValidationIssue] = []
 
-        # Get nodes (handle both dict and list)
+        # Get nodes (dict-only)
         nodes = workflow.nodes if hasattr(workflow, "nodes") else {}
-        if isinstance(nodes, list):
-            nodes = {getattr(n, "node_id", str(i)): n for i, n in enumerate(nodes)}
+        if not isinstance(nodes, dict):
+            issues.append(
+                ValidationIssue(
+                    severity="error",
+                    message="Workflow nodes must be a dict keyed by node_id.",
+                    code="INVALID_NODES_FORMAT",
+                )
+            )
+            return ValidationResult(is_valid=False, issues=issues)
 
         connections = workflow.connections if hasattr(workflow, "connections") else []
 
@@ -331,9 +328,7 @@ class ValidateWorkflowUseCase:
             if workflow is not None:
                 workflow_hash = self._compute_hash(workflow)
                 self._cache.pop(workflow_hash, None)
-                logger.debug(
-                    f"Invalidated cache for workflow (hash: {workflow_hash[:8]}...)"
-                )
+                logger.debug(f"Invalidated cache for workflow (hash: {workflow_hash[:8]}...)")
             else:
                 self._cache.clear()
                 logger.debug("Cleared entire validation cache")

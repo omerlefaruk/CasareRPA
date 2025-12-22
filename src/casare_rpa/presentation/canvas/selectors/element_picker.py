@@ -63,9 +63,7 @@ class ElementPickerOverlay(QWidget):
                 font-weight: bold;
             }
         """)
-        self.info_label.setText(
-            "🎯 Hover over an element and click to select • ESC to cancel"
-        )
+        self.info_label.setText("🎯 Hover over an element and click to select • ESC to cancel")
         self.info_label.setAlignment(Qt.AlignCenter)
         self.info_label.adjustSize()
 
@@ -97,6 +95,30 @@ class ElementPickerOverlay(QWidget):
         self.hover_timer.timeout.connect(self._update_hover_element)
         self.hover_timer.start(100)  # Check every 100ms
 
+    def _is_same_element(self, control1, control2) -> bool:
+        """
+        Check if two UI Automation controls represent the same element.
+
+        Uses runtime ID comparison which is more reliable than object equality
+        for COM objects.
+        """
+        try:
+            # Compare using RuntimeId which uniquely identifies an element
+            runtime_id1 = control1.GetRuntimeId()
+            runtime_id2 = control2.GetRuntimeId()
+            return runtime_id1 == runtime_id2
+        except Exception:
+            # Fallback to native window handle comparison if available
+            try:
+                hwnd1 = getattr(control1, "NativeWindowHandle", None)
+                hwnd2 = getattr(control2, "NativeWindowHandle", None)
+                if hwnd1 and hwnd2:
+                    return hwnd1 == hwnd2
+            except Exception:
+                pass
+            # Last resort: compare string representations
+            return str(control1) == str(control2)
+
     def _update_hover_element(self):
         """Update the element under cursor"""
         try:
@@ -111,14 +133,19 @@ class ElementPickerOverlay(QWidget):
                 if self._is_overlay_or_child(element_control):
                     return
 
-                # Create DesktopElement
-                new_element = DesktopElement(element_control)
+                # Check if this is a different element using safe comparison
+                is_same = False
+                if self.current_element is not None:
+                    try:
+                        is_same = self._is_same_element(
+                            element_control, self.current_element._control
+                        )
+                    except Exception:
+                        is_same = False
 
-                # Check if this is a different element
-                if (
-                    self.current_element is None
-                    or element_control != self.current_element._control
-                ):
+                if not is_same:
+                    # Create DesktopElement
+                    new_element = DesktopElement(element_control)
                     self.current_element = new_element
 
                     # Get element bounds

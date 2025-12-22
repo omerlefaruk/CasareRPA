@@ -159,8 +159,8 @@ Quick lookup for key classes, functions, and constants. Use for fast navigation.
 | Symbol | Path | Value/Purpose |
 |--------|------|---------------|
 | `_NODE_REGISTRY` | `nodes/__init__.py:25` | Node name to module mapping |
-| `COLLECTION_NAME` | `scripts/index_codebase_qdrant.py:35` | "casare_codebase" |
-| `VECTOR_NAME` | `scripts/index_codebase_qdrant.py:39` | "fast-all-minilm-l6-v2" |
+| `COLLECTION_NAME` | `scripts/index_codebase.py:35` | "casare_codebase" |
+| `PERSIST_PATH` | `scripts/index_codebase.py:37` | "<repo>/.chroma" |
 
 ---
 

@@ -1,16 +1,6 @@
-"""
-Server Lifecycle Management for Cloud Orchestrator.
-
-Handles application state, configuration, startup/shutdown, and lifespan.
-
-DDD 2025 Architecture:
-- Initializes PostgreSQL robot repository for persistent state
-- Injects repository into RobotManager for durability
-- Falls back to in-memory mode if database unavailable
-"""
-
 import os
 import threading
+import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
@@ -30,22 +20,26 @@ class OrchestratorConfig:
     host: str = "0.0.0.0"
     port: int = 8000
     workers: int = 1
+    api_version: str = "1.2.0"
 
     # Database
     database_url: Optional[str] = None
+    db_enabled: bool = True
+    db_pool_min_size: int = 2
+    db_pool_max_size: int = 10
+
+    # Supabase (optional presence sync)
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None
-
-    # Redis (optional queue backend)
-    redis_url: Optional[str] = None
 
     # Security
     api_secret: str = ""
     cors_origins: List[str] = field(default_factory=list)
+    rate_limit_enabled: bool = True
 
-    # Timeouts
-    robot_heartbeat_timeout: int = 90  # seconds
-    job_timeout_default: int = 3600  # 1 hour
+    # Robot Settings
+    robot_heartbeat_timeout: int = 90
+    job_timeout_default: int = 3600
     websocket_ping_interval: int = 30
 
     @classmethod
@@ -59,11 +53,14 @@ class OrchestratorConfig:
             port=int(os.getenv("PORT", "8000")),
             workers=int(os.getenv("WORKERS", "1")),
             database_url=os.getenv("DATABASE_URL"),
+            db_enabled=os.getenv("DB_ENABLED", "true").lower() in ("true", "1", "yes"),
+            db_pool_min_size=int(os.getenv("DB_POOL_MIN_SIZE", "2")),
+            db_pool_max_size=int(os.getenv("DB_POOL_MAX_SIZE", "10")),
             supabase_url=os.getenv("SUPABASE_URL"),
             supabase_key=os.getenv("SUPABASE_KEY"),
-            redis_url=os.getenv("REDIS_URL"),
-            api_secret=os.getenv("API_SECRET", ""),
+            api_secret=os.getenv("API_SECRET", os.getenv("ADMIN_API_KEY", "")),
             cors_origins=cors_origins,
+            rate_limit_enabled=os.getenv("RATE_LIMIT_ENABLED", "true").lower() in ("true", "1"),
             robot_heartbeat_timeout=int(os.getenv("ROBOT_HEARTBEAT_TIMEOUT", "90")),
             job_timeout_default=int(os.getenv("JOB_TIMEOUT_DEFAULT", "3600")),
             websocket_ping_interval=int(os.getenv("WS_PING_INTERVAL", "30")),
@@ -75,14 +72,26 @@ class OrchestratorState:
     """Container for orchestrator runtime state."""
 
     config: Optional[OrchestratorConfig] = None
+    startup_time: float = field(default_factory=time.time)
+
+    # Core Services
     robot_manager: Optional[RobotManager] = None
-    robot_repository: Any = None  # PgRobotRepository
-    job_producer: Any = None  # PgQueuerProducer
-    dlq_manager: Any = None  # DLQManager
-    db_pool: Any = None  # asyncpg.Pool
+    robot_repository: Any = None
+    job_producer: Any = None
+    dlq_manager: Any = None
+    db_pool: Any = None
+    db_manager: Any = None
+
+    # Logging & Monitoring
     log_streaming_service: Any = None
     log_repository: Any = None
     log_cleanup_job: Any = None
+    metrics_collector: Any = None
+    metrics_aggregator: Any = None
+    event_bus: Any = None
+
+    # Scheduling
+    global_scheduler: Any = None
 
 
 # Thread-safe state management
@@ -90,7 +99,7 @@ _state_lock = threading.Lock()
 _orchestrator_state = OrchestratorState()
 
 
-def _get_state() -> OrchestratorState:
+def get_state() -> OrchestratorState:
     """Get current orchestrator state."""
     return _orchestrator_state
 
@@ -103,7 +112,7 @@ def _set_state_field(field_name: str, value: Any) -> None:
 
 def get_config() -> OrchestratorConfig:
     """Get orchestrator configuration."""
-    state = _get_state()
+    state = get_state()
     if state.config is not None:
         return state.config
 
@@ -114,20 +123,14 @@ def get_config() -> OrchestratorConfig:
 
 
 def get_robot_manager() -> RobotManager:
-    """Get robot manager instance.
-
-    Returns RobotManager with repository if database is configured,
-    otherwise returns in-memory-only manager.
-    """
-    state = _get_state()
+    """Get robot manager instance."""
+    state = get_state()
     if state.robot_manager is not None:
         return state.robot_manager
 
     with _state_lock:
         if _orchestrator_state.robot_manager is None:
             config = get_config()
-            # Robot manager will be re-initialized with repository in lifespan
-            # This is a fallback for early access before database init
             _orchestrator_state.robot_manager = RobotManager(
                 job_timeout_default=config.job_timeout_default,
                 robot_repository=_orchestrator_state.robot_repository,
@@ -136,47 +139,51 @@ def get_robot_manager() -> RobotManager:
 
 
 def get_robot_repository() -> Any:
-    """Get robot repository if available."""
-    return _get_state().robot_repository
+    return get_state().robot_repository
 
 
 def get_job_producer() -> Any:
-    """Get job producer for durable job enqueuing.
-
-    Returns PgQueuerProducer if database is configured, None otherwise.
-    When available, use this for job submission instead of RobotManager.submit_job()
-    to ensure jobs survive orchestrator restarts.
-    """
-    return _get_state().job_producer
+    return get_state().job_producer
 
 
 def get_dlq_manager() -> Any:
-    """Get Dead Letter Queue manager if available.
-
-    Returns DLQManager if database is configured, None otherwise.
-    Use for handling failed jobs with exponential backoff retry.
-    """
-    return _get_state().dlq_manager
+    return get_state().dlq_manager
 
 
 def get_db_pool() -> Any:
-    """Get database pool if available."""
-    return _get_state().db_pool
+    return get_state().db_pool
+
+
+def get_db_manager() -> Any:
+    return get_state().db_manager
 
 
 def get_log_streaming_service() -> Any:
-    """Get log streaming service if available."""
-    return _get_state().log_streaming_service
+    return get_state().log_streaming_service
 
 
 def get_log_repository() -> Any:
-    """Get log repository if available."""
-    return _get_state().log_repository
+    return get_state().log_repository
 
 
 def get_log_cleanup_job() -> Any:
-    """Get log cleanup job if available."""
-    return _get_state().log_cleanup_job
+    return get_state().log_cleanup_job
+
+
+def get_metrics_collector() -> Any:
+    return get_state().metrics_collector
+
+
+def get_metrics_aggregator() -> Any:
+    return get_state().metrics_aggregator
+
+
+def get_event_bus() -> Any:
+    return get_state().event_bus
+
+
+def get_scheduler() -> Any:
+    return get_state().global_scheduler
 
 
 def reset_orchestrator_state() -> None:
@@ -189,20 +196,31 @@ def reset_orchestrator_state() -> None:
 
 async def _init_database(config: OrchestratorConfig) -> None:
     """Initialize database pool and related services."""
-    if not config.database_url:
-        logger.info("No DATABASE_URL configured - using in-memory mode")
+    if not config.database_url or not config.db_enabled:
+        logger.info("Database disabled or no DATABASE_URL - using in-memory mode")
         return
 
     try:
-        import asyncpg
+        from casare_rpa.infrastructure.orchestrator.api.dependencies import DatabasePoolManager
 
-        db_pool = await asyncpg.create_pool(
-            config.database_url,
-            min_size=2,
-            max_size=10,
-        )
+        pool_manager = DatabasePoolManager()
+        db_pool = await pool_manager.create_pool()
+
+        _set_state_field("db_manager", pool_manager)
         _set_state_field("db_pool", db_pool)
-        logger.info("Database pool initialized")
+
+        # Initialize monitoring data adapter
+        from casare_rpa.infrastructure.observability.metrics import get_metrics_collector
+        from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
+        from casare_rpa.infrastructure.events import get_monitoring_event_bus
+
+        metrics_collector = get_metrics_collector()
+        metrics_aggregator = MetricsAggregator.get_instance()
+        event_bus = get_monitoring_event_bus()
+
+        _set_state_field("metrics_collector", metrics_collector)
+        _set_state_field("metrics_aggregator", metrics_aggregator)
+        _set_state_field("event_bus", event_bus)
 
         # Initialize robot repository for persistent state
         await _init_robot_repository(db_pool, config)
@@ -217,7 +235,7 @@ async def _init_database(config: OrchestratorConfig) -> None:
         await _init_log_services(db_pool)
 
     except Exception as e:
-        logger.warning(f"Database connection failed: {e}")
+        logger.warning(f"Database/Monitoring initialization failed: {e}")
 
 
 async def _init_robot_repository(db_pool: Any, config: OrchestratorConfig) -> None:
@@ -375,7 +393,37 @@ async def _init_log_services(db_pool: Any) -> None:
 
 async def _cleanup_services() -> None:
     """Cleanup all services during shutdown."""
-    state = _get_state()
+    state = get_state()
+
+    # Unsubscribe from events
+    if state.event_bus:
+        try:
+            from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
+                on_job_status_changed,
+                on_robot_heartbeat,
+                on_queue_depth_changed,
+            )
+            from casare_rpa.infrastructure.events import MonitoringEventType
+
+            state.event_bus.unsubscribe(
+                MonitoringEventType.JOB_STATUS_CHANGED, on_job_status_changed
+            )
+            state.event_bus.unsubscribe(MonitoringEventType.ROBOT_HEARTBEAT, on_robot_heartbeat)
+            state.event_bus.unsubscribe(
+                MonitoringEventType.QUEUE_DEPTH_CHANGED, on_queue_depth_changed
+            )
+        except Exception as e:
+            logger.warning(f"Error unsubscribing from event bus: {e}")
+
+    # Shutdown Scheduler
+    if state.global_scheduler:
+        try:
+            from casare_rpa.infrastructure.orchestrator.scheduling import shutdown_global_scheduler
+
+            await shutdown_global_scheduler()
+            logger.info("Scheduler shutdown complete")
+        except Exception as e:
+            logger.error(f"Error shutting down scheduler: {e}")
 
     if state.log_cleanup_job:
         await state.log_cleanup_job.stop()
@@ -399,27 +447,90 @@ async def _cleanup_services() -> None:
         except Exception as e:
             logger.warning(f"Error stopping DLQ manager: {e}")
 
-    if state.db_pool:
-        await state.db_pool.close()
-        logger.info("Database pool closed")
+    if state.db_manager:
+        await state.db_manager.close()
+        logger.info("Database connections closed")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     config = get_config()
-    logger.info("Starting CasareRPA Cloud Orchestrator")
-    logger.info(f"Host: {config.host}:{config.port}")
+    state = get_state()
+    logger.info(f"Starting CasareRPA Orchestrator v{config.api_version}")
 
-    # Initialize database pool if configured
+    # 1. Initialize Database & Base Services
     await _init_database(config)
 
-    # Initialize Supabase if configured
-    if config.supabase_url and config.supabase_key:
-        logger.info("Supabase integration enabled")
+    # 2. Inject DB pool into Monitoring Routers
+    if state.db_pool:
+        try:
+            from casare_rpa.infrastructure.orchestrator.api.routers.workflows import (
+                set_db_pool as set_workflows_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.routers.schedules import (
+                set_db_pool as set_schedules_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.routers.robots import (
+                set_db_pool as set_robots_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.routers.jobs import (
+                set_db_pool as set_jobs_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.routers.robot_api_keys import (
+                set_db_pool as set_robot_api_keys_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.auth import (
+                configure_robot_authenticator,
+            )
+
+            set_workflows_db_pool(state.db_pool)
+            set_schedules_db_pool(state.db_pool)
+            set_robots_db_pool(state.db_pool)
+            set_jobs_db_pool(state.db_pool)
+            set_robot_api_keys_db_pool(state.db_pool)
+            configure_robot_authenticator(use_database=True, db_pool=state.db_pool)
+        except Exception as e:
+            logger.warning(f"Failed to inject DB pool into monitoring routers: {e}")
+
+    # 3. Initialize Scheduler
+    try:
+        from casare_rpa.infrastructure.orchestrator.scheduling import init_global_scheduler
+        from casare_rpa.infrastructure.orchestrator.api.routers.schedules import (
+            _execute_scheduled_workflow,
+        )
+
+        scheduler = await init_global_scheduler(on_schedule_trigger=_execute_scheduled_workflow)
+        _set_state_field("global_scheduler", scheduler)
+        logger.info("Global scheduler initialized")
+    except Exception as e:
+        logger.warning(f"Scheduler initialization failed: {e}")
+
+    # 4. Subscribe Monitoring Callbacks
+    if state.event_bus:
+        try:
+            from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
+                on_job_status_changed,
+                on_robot_heartbeat,
+                on_queue_depth_changed,
+            )
+            from casare_rpa.infrastructure.events import MonitoringEventType
+
+            state.event_bus.subscribe(MonitoringEventType.JOB_STATUS_CHANGED, on_job_status_changed)
+            state.event_bus.subscribe(MonitoringEventType.ROBOT_HEARTBEAT, on_robot_heartbeat)
+            state.event_bus.subscribe(
+                MonitoringEventType.QUEUE_DEPTH_CHANGED, on_queue_depth_changed
+            )
+            logger.info("Monitoring event bus callbacks subscribed")
+        except Exception as e:
+            logger.warning(f"Event bus subscription failed: {e}")
+
+    # Store state in app to expose it via dependencies
+    app.state.orchestrator_state = state
+    app.state.db_pool = state.db_pool
 
     yield
 
     # Cleanup
     await _cleanup_services()
-    logger.info("Shutting down orchestrator")
+    logger.info("Orchestrator shutdown complete")

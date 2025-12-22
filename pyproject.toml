@@ -187,3 +187,42 @@ markers = [
     "network: mark test as requiring network access",
     "chaos: mark test as chaos/stress test",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable common checks
+select = ["E", "F", "W"]
+# Ignore specific rules globally
+ignore = [
+    "E402",  # Module level import not at top of file - intentional for conditional imports
+    "E501",  # Line too long - handled by formatter
+    "E701",  # Multiple statements on one line
+    "E712",  # Comparison to True/False - sometimes preferred for clarity
+    "W291",  # Trailing whitespace - handled by formatter
+    "W292",  # No newline at end of file - handled by formatter
+    "W293",  # Blank line contains whitespace - handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Files with optional dependency try/except imports
+"src/casare_rpa/infrastructure/orchestrator/communication/realtime_service.py" = ["F401"]
+"src/casare_rpa/infrastructure/updater/tuf_updater.py" = ["F401"]
+"src/casare_rpa/nodes/desktop_nodes/yolo_find_node.py" = ["F401"]
+"src/casare_rpa/nodes/google/google_base.py" = ["F401"]
+"src/casare_rpa/nodes/system/dialogs/*.py" = ["F401"]
+"src/casare_rpa/nodes/system/quick_nodes.py" = ["F401"]
+"src/casare_rpa/nodes/system/system_nodes.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/connections/auto_connect.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/graph/node_graph_widget.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/graph/node_widgets.py" = ["F401"]
+"src/casare_rpa/presentation/canvas/ui/panels/process_mining_panel.py" = ["F401"]
+"src/casare_rpa/triggers/implementations/app_event.py" = ["F401"]
+"src/casare_rpa/triggers/registry.py" = ["F401"]
+"src/casare_rpa/utils/gpu/gpu_utils.py" = ["F401"]
+"src/casare_rpa/utils/playwright_setup.py" = ["F401"]
+"src/casare_rpa/utils/security/vault_client.py" = ["F401"]
+"src/casare_rpa/application/orchestrator/orchestrator_engine.py" = ["F401"]
+"src/casare_rpa/infrastructure/orchestrator/api/routers/workflows.py" = ["F401"]

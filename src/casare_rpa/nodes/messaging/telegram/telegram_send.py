@@ -152,8 +152,6 @@ class TelegramSendMessageNode(TelegramBaseNode):
 
         # Get text
         text = self.get_parameter("text")
-        if hasattr(context, "resolve_value"):
-            text = context.resolve_value(text)
 
         if not text:
             self._set_error_outputs("Text message is required")
@@ -165,8 +163,6 @@ class TelegramSendMessageNode(TelegramBaseNode):
 
         # Get optional params
         parse_mode = self.get_parameter("parse_mode")
-        if parse_mode and hasattr(context, "resolve_value"):
-            parse_mode = context.resolve_value(parse_mode)
 
         disable_notification = self.get_parameter("disable_notification") or False
         reply_to = self.get_parameter("reply_to_message_id")
@@ -274,8 +270,6 @@ class TelegramSendPhotoNode(TelegramBaseNode):
 
         # Get photo
         photo = self.get_parameter("photo")
-        if hasattr(context, "resolve_value"):
-            photo = context.resolve_value(photo)
 
         if not photo:
             self._set_error_outputs("Photo is required")
@@ -283,12 +277,8 @@ class TelegramSendPhotoNode(TelegramBaseNode):
 
         # Get optional params
         caption = self.get_parameter("caption")
-        if caption and hasattr(context, "resolve_value"):
-            caption = context.resolve_value(caption)
 
         parse_mode = self.get_parameter("parse_mode")
-        if parse_mode and hasattr(context, "resolve_value"):
-            parse_mode = context.resolve_value(parse_mode)
 
         disable_notification = self.get_parameter("disable_notification") or False
 
@@ -404,8 +394,6 @@ class TelegramSendDocumentNode(TelegramBaseNode):
 
         # Get document
         document = self.get_parameter("document")
-        if hasattr(context, "resolve_value"):
-            document = context.resolve_value(document)
 
         if not document:
             self._set_error_outputs("Document is required")
@@ -413,16 +401,10 @@ class TelegramSendDocumentNode(TelegramBaseNode):
 
         # Get optional params
         filename = self.get_parameter("filename")
-        if filename and hasattr(context, "resolve_value"):
-            filename = context.resolve_value(filename)
 
         caption = self.get_parameter("caption")
-        if caption and hasattr(context, "resolve_value"):
-            caption = context.resolve_value(caption)
 
         parse_mode = self.get_parameter("parse_mode")
-        if parse_mode and hasattr(context, "resolve_value"):
-            parse_mode = context.resolve_value(parse_mode)
 
         disable_notification = self.get_parameter("disable_notification") or False
 
@@ -534,10 +516,6 @@ class TelegramSendLocationNode(TelegramBaseNode):
         # Get coordinates
         latitude = self.get_parameter("latitude")
         longitude = self.get_parameter("longitude")
-
-        if hasattr(context, "resolve_value"):
-            latitude = context.resolve_value(latitude)
-            longitude = context.resolve_value(longitude)
 
         try:
             latitude = float(latitude)

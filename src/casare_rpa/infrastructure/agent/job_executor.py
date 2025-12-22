@@ -8,8 +8,9 @@ collection for the robot agent.
 
 import asyncio
 import json
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 from loguru import logger
 
@@ -18,6 +19,23 @@ class JobExecutionError(Exception):
     """Raised when job execution fails."""
 
     pass
+
+
+@dataclass
+class JobExecutionResult:
+    """
+    Result of a job execution with DBOS-like semantics.
+
+    Used by RobotAgent to get structured execution results.
+    """
+
+    workflow_id: str
+    success: bool
+    error: Optional[str] = None
+    executed_nodes: int = 0
+    total_nodes: int = 0
+    duration_ms: int = 0
+    recovered: bool = False  # True if resumed from checkpoint
 
 
 class JobExecutor:
@@ -38,6 +56,7 @@ class JobExecutor:
         progress_callback: Optional[Callable[[str, int, str], None]] = None,
         continue_on_error: bool = False,
         job_timeout: float = 3600.0,
+        node_timeout: float = 120.0,
     ):
         """
         Initialize job executor.
@@ -46,10 +65,12 @@ class JobExecutor:
             progress_callback: Async callback(job_id, progress, message) for progress updates
             continue_on_error: Continue workflow execution on node errors
             job_timeout: Maximum execution time in seconds (default: 1 hour)
+            node_timeout: Maximum execution time per node in seconds (default: 2 minutes)
         """
         self.progress_callback = progress_callback
         self.continue_on_error = continue_on_error
         self.job_timeout = job_timeout
+        self.node_timeout = node_timeout
 
         # Track active executions
         self._active_jobs: Dict[str, asyncio.Task] = {}
@@ -125,9 +146,7 @@ class JobExecutor:
 
             workflow = load_workflow_from_dict(workflow_dict)
 
-            await self._report_progress(
-                job_id, 5, "Workflow loaded, starting execution..."
-            )
+            await self._report_progress(job_id, 5, "Workflow loaded, starting execution...")
 
             # Merge job payload into initial variables
             combined_variables = dict(initial_variables or {})
@@ -159,7 +178,7 @@ class JobExecutor:
 
             settings = ExecutionSettings(
                 continue_on_error=self.continue_on_error,
-                node_timeout=min(120.0, self.job_timeout / 10),  # Node timeout
+                node_timeout=self.node_timeout,
             )
 
             use_case = ExecuteWorkflowUseCase(
@@ -176,9 +195,7 @@ class JobExecutor:
                     timeout=self.job_timeout,
                 )
             except asyncio.TimeoutError:
-                raise JobExecutionError(
-                    f"Job execution timed out after {self.job_timeout}s"
-                )
+                raise JobExecutionError(f"Job execution timed out after {self.job_timeout}s")
 
             # Collect results
             completed_at = datetime.now(timezone.utc)
@@ -208,9 +225,7 @@ class JobExecutor:
                     result["error"] = "; ".join(
                         [f"{node}: {msg}" for node, msg in use_case.context.errors]
                     )
-                await self._report_progress(
-                    job_id, 100, f"Job failed: {result['error']}"
-                )
+                await self._report_progress(job_id, 100, f"Job failed: {result['error']}")
                 logger.error(f"Job {job_id} failed: {result['error']}")
 
         except JobExecutionError as e:
@@ -246,6 +261,75 @@ class JobExecutor:
                     await result
             except Exception as e:
                 logger.warning(f"Progress callback error for job {job_id}: {e}")
+
+    async def execute_workflow(
+        self,
+        workflow_json: str,
+        workflow_id: str,
+        initial_variables: Optional[Dict[str, Any]] = None,
+        wait_for_result: bool = True,
+        on_progress: Optional[Callable[[int, str], Awaitable[None]]] = None,
+    ) -> JobExecutionResult:
+        """
+        Execute a workflow with DBOS-like semantics.
+
+        This is the canonical execution entry point for RobotAgent.
+        Wraps the execute() method and returns a structured result.
+
+        Args:
+            workflow_json: Serialized workflow definition (JSON string or dict)
+            workflow_id: Unique identifier for this execution
+            initial_variables: Initial execution variables
+            wait_for_result: Wait for execution to complete (always True for now)
+            on_progress: Optional callback for progress updates (progress%, node_id)
+
+        Returns:
+            JobExecutionResult with execution outcome
+        """
+        # Set up progress tracking if callback provided
+        original_callback = self.progress_callback
+        if on_progress:
+
+            async def wrapped_progress(job_id: str, progress: int, message: str) -> None:
+                # Extract node_id from message (format: "Executing: node_id" or "Completed: node_id")
+                node_id = message.split(": ", 1)[1] if ": " in message else message
+                try:
+                    await on_progress(progress, node_id)
+                except Exception as e:
+                    logger.debug(f"Progress callback error: {e}")
+                # Also call original callback if present
+                if original_callback:
+                    try:
+                        result = original_callback(job_id, progress, message)
+                        if asyncio.iscoroutine(result):
+                            await result
+                    except Exception:
+                        pass
+
+            self.progress_callback = wrapped_progress
+
+        try:
+            # Build job_data for execute()
+            job_data = {
+                "job_id": workflow_id,
+                "workflow_json": workflow_json,
+                "workflow_name": f"Job-{workflow_id[:8]}",
+            }
+
+            result = await self.execute(job_data, initial_variables)
+
+            return JobExecutionResult(
+                workflow_id=workflow_id,
+                success=result.get("success", False),
+                error=result.get("error"),
+                executed_nodes=result.get("nodes_executed", 0),
+                total_nodes=result.get("nodes_executed", 0),  # Not tracked separately
+                duration_ms=result.get("duration_ms", 0),
+                recovered=False,  # Checkpointing not implemented in JobExecutor
+            )
+        finally:
+            # Restore original callback
+            self.progress_callback = original_callback
 
     def cancel_job(self, job_id: str) -> bool:
         """
@@ -307,9 +391,7 @@ class _ProgressTracker:
         self.current_node = event.node_id if hasattr(event, "node_id") else "unknown"
 
         if self.callback:
-            progress = min(
-                95, 5 + int((self.nodes_completed / max(1, self.nodes_started)) * 90)
-            )
+            progress = min(95, 5 + int((self.nodes_completed / max(1, self.nodes_started)) * 90))
             try:
                 result = self.callback(
                     self.job_id,
@@ -327,9 +409,7 @@ class _ProgressTracker:
         node_id = event.node_id if hasattr(event, "node_id") else "unknown"
 
         if self.callback:
-            progress = min(
-                95, 5 + int((self.nodes_completed / max(1, self.nodes_started)) * 90)
-            )
+            progress = min(95, 5 + int((self.nodes_completed / max(1, self.nodes_started)) * 90))
             try:
                 result = self.callback(
                     self.job_id,
@@ -344,9 +424,7 @@ class _ProgressTracker:
     def on_node_error(self, event: Any) -> None:
         """Handle node error event."""
         node_id = event.node_id if hasattr(event, "node_id") else "unknown"
-        error = (
-            event.error_message if hasattr(event, "error_message") else "Unknown error"
-        )
+        error = event.error_message if hasattr(event, "error_message") else "Unknown error"
 
         if self.callback:
             try:

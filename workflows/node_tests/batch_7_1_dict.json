@@ -1,0 +1,185 @@
+{
+    "metadata": {
+        "name": "Batch 7.1 - Dict Nodes",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "create_dict": {
+            "node_id": "create_dict",
+            "node_type": "CreateDictNode",
+            "config": {},
+            "position": [
+                0,
+                0
+            ]
+        },
+        "dict_set": {
+            "node_id": "dict_set",
+            "node_type": "DictSetNode",
+            "config": {
+                "key": "name",
+                "value": "test"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "dict_get": {
+            "node_id": "dict_get",
+            "node_type": "DictGetNode",
+            "config": {
+                "key": "name"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "dict_keys": {
+            "node_id": "dict_keys",
+            "node_type": "DictKeysNode",
+            "config": {},
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "dict_values": {
+            "node_id": "dict_values",
+            "node_type": "DictValuesNode",
+            "config": {},
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "dict_has_key": {
+            "node_id": "dict_has_key",
+            "node_type": "DictHasKeyNode",
+            "config": {
+                "key": "name"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "dict_items": {
+            "node_id": "dict_items",
+            "node_type": "DictItemsNode",
+            "config": {},
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "dict_merge": {
+            "node_id": "dict_merge",
+            "node_type": "DictMergeNode",
+            "config": {},
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "dict_remove": {
+            "node_id": "dict_remove",
+            "node_type": "DictRemoveNode",
+            "config": {
+                "key": "name"
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "dict_to_json": {
+            "node_id": "dict_to_json",
+            "node_type": "DictToJsonNode",
+            "config": {},
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Dict nodes tested!"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "create_dict",
+            "source_port": "exec_out",
+            "target_node": "dict_set",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_set",
+            "source_port": "exec_out",
+            "target_node": "dict_get",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_get",
+            "source_port": "exec_out",
+            "target_node": "dict_keys",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_keys",
+            "source_port": "exec_out",
+            "target_node": "dict_values",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_values",
+            "source_port": "exec_out",
+            "target_node": "dict_has_key",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_has_key",
+            "source_port": "exec_out",
+            "target_node": "dict_items",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_items",
+            "source_port": "exec_out",
+            "target_node": "dict_merge",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_merge",
+            "source_port": "exec_out",
+            "target_node": "dict_remove",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_remove",
+            "source_port": "exec_out",
+            "target_node": "dict_to_json",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "dict_to_json",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

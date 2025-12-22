@@ -18,17 +18,15 @@ Features:
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from PySide6.QtCore import Qt, Signal, QThread, QObject
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QComboBox,
     QDockWidget,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
@@ -47,7 +45,7 @@ from casare_rpa.presentation.canvas.ui.widgets.ai_settings_widget import (
 )
 
 if TYPE_CHECKING:
-    from casare_rpa.infrastructure.ai.smart_agent import WorkflowGenerationResult
+    from casare_rpa.infrastructure.ai.agent import WorkflowGenerationResult
     from casare_rpa.infrastructure.ai.conversation_manager import ConversationManager
     from casare_rpa.infrastructure.ai.intent_classifier import IntentClassifier
 
@@ -119,9 +117,7 @@ class WorkflowGenerationWorker(QObject):
                 elif "openrouter" in provider_key:
                     provider_key = "openrouter"
 
-                return store.get_api_key_by_provider(provider_key) or store.get_key(
-                    provider_key
-                )
+                return store.get_api_key_by_provider(provider_key) or store.get_key(provider_key)
 
         except Exception as e:
             logger.warning(f"Could not retrieve credential: {e}")
@@ -131,21 +127,12 @@ class WorkflowGenerationWorker(QObject):
     def run(self) -> None:
         """Execute workflow generation with real credentials."""
         try:
-            from casare_rpa.infrastructure.ai.smart_agent import SmartWorkflowAgent
+            from casare_rpa.infrastructure.ai.agent import SmartWorkflowAgent
             from casare_rpa.infrastructure.resources.llm_resource_manager import (
                 LLMResourceManager,
                 LLMConfig,
                 LLMProvider,
             )
-
-            # Get API key from credential store
-            api_key = self._get_api_key_from_credential()
-
-            if not api_key:
-                logger.warning(
-                    f"No API key found for credential {self._credential_id}, "
-                    "falling back to environment/auto-detection"
-                )
 
             # Configure LLM client with the credential
             llm_client = LLMResourceManager()
@@ -160,9 +147,7 @@ class WorkflowGenerationWorker(QObject):
                 elif "anthropic" in p_lower:
                     provider = LLMProvider.ANTHROPIC
                 elif "google" in p_lower or "gemini" in p_lower:
-                    provider = (
-                        LLMProvider.AZURE
-                    )  # Assuming Azure/Google mapping or CUSTOM
+                    provider = LLMProvider.CUSTOM  # Google OAuth will be resolved via credential_id
                 elif "ollama" in p_lower:
                     provider = LLMProvider.OLLAMA
                 elif "openai" in p_lower:
@@ -177,10 +162,18 @@ class WorkflowGenerationWorker(QObject):
                 elif model_lower.startswith("claude"):
                     provider = LLMProvider.ANTHROPIC
 
+            # Check for model mismatch situations (e.g. Gemini without OAuth credential -> OpenRouter)
+            if (
+                not self._credential_id
+                and (self._model_id.startswith("google/") or "gemini" in self._model_id)
+                and not self._model_id.startswith("openrouter/")
+            ):
+                self._model_id = f"openrouter/{self._model_id}"
+                provider = LLMProvider.OPENROUTER
+
+            # Pass credential_id to config for dynamic resolution
             config = LLMConfig(
-                provider=provider,
-                model=self._model_id,
-                api_key=api_key,
+                provider=provider, model=self._model_id, credential_id=self._credential_id
             )
             llm_client.configure(config)
 
@@ -208,7 +201,7 @@ class WorkflowGenerationWorker(QObject):
         except Exception as e:
             logger.error(f"Workflow generation error: {e}", exc_info=True)
             # Create error result
-            from casare_rpa.infrastructure.ai.smart_agent import (
+            from casare_rpa.infrastructure.ai.agent import (
                 WorkflowGenerationResult,
             )
 
@@ -232,9 +225,7 @@ class AutoResizingTextEdit(QTextEdit):
         self.setAcceptRichText(False)
         self.setPlaceholderText("Message AI Assistant...")
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.document().documentLayout().documentSizeChanged.connect(
-            self._adjust_height
-        )
+        self.document().documentLayout().documentSizeChanged.connect(self._adjust_height)
         self.setFixedHeight(40)
         self._min_height = 40
         self._max_height = 120
@@ -331,9 +322,7 @@ class InputBar(QFrame):
                 color: {colors.text_disabled};
             }}
         """)
-        container_layout.addWidget(
-            self._send_btn, alignment=Qt.AlignmentFlag.AlignBottom
-        )
+        container_layout.addWidget(self._send_btn, alignment=Qt.AlignmentFlag.AlignBottom)
 
         layout.addWidget(self._container)
 
@@ -521,26 +510,11 @@ class AIAssistantDock(QDockWidget):
             nodes = workflow_data.get("nodes", {})
             simplified_nodes = {}
             for node_id, node_data in nodes.items():
-                # Extract just the relevant info for AI
-                custom = node_data.get("custom", {})
-                simplified_nodes[custom.get("node_id", node_id)] = {
-                    "type": node_data.get("type_", "")
-                    .split(".")[-1]
-                    .replace("Visual", ""),
+                simplified_nodes[node_id] = {
+                    "type": node_data.get("node_type", ""),
                     "name": node_data.get("name", ""),
-                    "properties": {
-                        k: v
-                        for k, v in custom.items()
-                        if k
-                        not in (
-                            "node_id",
-                            "status",
-                            "_is_running",
-                            "_is_completed",
-                            "_disabled",
-                        )
-                    },
-                    "position": node_data.get("pos", [0, 0]),
+                    "properties": node_data.get("config", {}),
+                    "position": node_data.get("position", [0, 0]),
                 }
 
             return {
@@ -638,7 +612,7 @@ class AIAssistantDock(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        colors = Theme.get_colors()
+        Theme.get_colors()
 
         # Main container
         if self._embedded:
@@ -657,9 +631,7 @@ class AIAssistantDock(QDockWidget):
 
         # Chat area (expandable)
         self._chat_area = ChatArea()
-        self._chat_area.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self._chat_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         main_layout.addWidget(self._chat_area, stretch=1)
 
         # Preview card (hidden initially)
@@ -676,7 +648,7 @@ class AIAssistantDock(QDockWidget):
 
     def _create_header(self) -> QFrame:
         """Create the header with credential selector."""
-        colors = Theme.get_colors()
+        Theme.get_colors()
         spacing = Theme.get_spacing()
 
         header = QFrame()
@@ -969,9 +941,7 @@ class AIAssistantDock(QDockWidget):
                     settings["credential_id"] = saved_credential
 
                 self._ai_settings_widget.set_settings(settings)
-                logger.debug(
-                    f"Loaded AI settings: provider={saved_provider}, model={saved_model}"
-                )
+                logger.debug(f"Loaded AI settings: provider={saved_provider}, model={saved_model}")
 
             # Restore debug mode setting
             self._debug_checkbox.setChecked(saved_debug)
@@ -1070,14 +1040,9 @@ class AIAssistantDock(QDockWidget):
                 self._handle_redo()
                 return
 
-            if (
-                classification.intent == UserIntent.CLEAR
-                and classification.confidence > 0.8
-            ):
+            if classification.intent == UserIntent.CLEAR and classification.confidence > 0.8:
                 self._clear_chat()
-                self._chat_area.add_ai_message(
-                    "Conversation cleared. How can I help you?"
-                )
+                self._chat_area.add_ai_message("Conversation cleared. How can I help you?")
                 return
 
             if classification.intent == UserIntent.HELP:
@@ -1175,9 +1140,7 @@ class AIAssistantDock(QDockWidget):
         if workflow:
             self._current_workflow = workflow
             self.append_requested.emit(workflow)
-            self._chat_area.add_ai_message(
-                "Undone. Previous workflow version restored."
-            )
+            self._chat_area.add_ai_message("Undone. Previous workflow version restored.")
             if self._conversation_manager is not None:
                 self._conversation_manager.add_assistant_message(
                     "Undone. Previous workflow version restored."
@@ -1199,9 +1162,7 @@ class AIAssistantDock(QDockWidget):
             self.append_requested.emit(workflow)
             self._chat_area.add_ai_message("Redone. Workflow restored.")
             if self._conversation_manager is not None:
-                self._conversation_manager.add_assistant_message(
-                    "Redone. Workflow restored."
-                )
+                self._conversation_manager.add_assistant_message("Redone. Workflow restored.")
         else:
             self._chat_area.add_ai_message("Nothing to redo.")
             if self._conversation_manager is not None:
@@ -1290,21 +1251,16 @@ What would you like to create?"""
                             if self._last_prompt
                             else "Generated workflow"
                         )
-                        self._conversation_manager.set_workflow(
-                            result.workflow, description
-                        )
+                        self._conversation_manager.set_workflow(result.workflow, description)
 
                     # Log detailed workflow info for debugging
                     nodes = result.workflow.get("nodes", {})
                     if isinstance(nodes, dict):
                         node_types = [
-                            n.get("node_type", n.get("type", "?"))
-                            for n in nodes.values()
+                            n.get("node_type", n.get("type", "?")) for n in nodes.values()
                         ]
                     else:
-                        node_types = [
-                            n.get("node_type", n.get("type", "?")) for n in nodes
-                        ]
+                        node_types = [n.get("node_type", n.get("type", "?")) for n in nodes]
                     logger.info(f"AI generated node types: {node_types}")
 
                     # Auto-append to canvas (skip preview card)
@@ -1335,9 +1291,7 @@ What would you like to create?"""
                 # Generation failed
                 error_msg = result.error or "Unknown error occurred"
                 attempts_info = (
-                    f" after {result.attempts} attempt(s)"
-                    if result.attempts > 0
-                    else ""
+                    f" after {result.attempts} attempt(s)" if result.attempts > 0 else ""
                 )
 
                 response = (
@@ -1349,9 +1303,7 @@ What would you like to create?"""
 
                 # Show raw LLM output if debug mode is enabled (helpful for debugging failures)
                 if self._debug_checkbox.isChecked() and result.raw_response:
-                    self._chat_area.add_system_message(
-                        "📋 Raw LLM Output (for debugging):"
-                    )
+                    self._chat_area.add_system_message("📋 Raw LLM Output (for debugging):")
                     raw_output = result.raw_response
                     if len(raw_output) > 3000:
                         raw_output = raw_output[:3000] + "\n\n... (truncated)"
@@ -1373,9 +1325,7 @@ What would you like to create?"""
             # Cleanup thread reference - ALWAYS runs
             self._generation_thread = None
 
-    def _finish_generation(
-        self, success: bool, skip_workflow_ready: bool = False
-    ) -> None:
+    def _finish_generation(self, success: bool, skip_workflow_ready: bool = False) -> None:
         """Finish generation and update UI state.
 
         Args:
@@ -1460,9 +1410,7 @@ What would you like to create?"""
         self._chat_area.hide_thinking()
 
         if success and workflow:
-            self._chat_area.add_ai_message(
-                message or "Workflow generated successfully."
-            )
+            self._chat_area.add_ai_message(message or "Workflow generated successfully.")
             self._current_workflow = workflow
             self._preview_card.set_workflow(workflow)
             self._preview_card.setVisible(True)

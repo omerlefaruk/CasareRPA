@@ -137,13 +137,6 @@ class AIAgentNode(LLMBaseNode):
         max_steps = self.get_parameter("max_steps") or self.DEFAULT_MAX_STEPS
         timeout = self.get_parameter("timeout") or self.DEFAULT_TIMEOUT
 
-        if hasattr(context, "resolve_value"):
-            goal = context.resolve_value(goal)
-            agent_context = context.resolve_value(agent_context)
-            available_tools = context.resolve_value(available_tools)
-            max_steps = context.resolve_value(max_steps)
-            timeout = context.resolve_value(timeout)
-
         if not goal:
             self._set_agent_error("Goal is required")
             return {"success": False, "error": "Goal is required", "next_nodes": []}
@@ -153,9 +146,7 @@ class AIAgentNode(LLMBaseNode):
             try:
                 available_tools = json.loads(available_tools)
             except json.JSONDecodeError:
-                available_tools = [
-                    t.strip() for t in available_tools.split(",") if t.strip()
-                ]
+                available_tools = [t.strip() for t in available_tools.split(",") if t.strip()]
 
         # Convert context to dict if needed
         initial_context: Optional[Dict[str, Any]] = None
@@ -171,8 +162,6 @@ class AIAgentNode(LLMBaseNode):
                 initial_context = {"context": str(agent_context)}
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
-        if hasattr(context, "resolve_value"):
-            model = context.resolve_value(model)
 
         try:
             from casare_rpa.infrastructure.ai.agent_executor import AgentExecutor

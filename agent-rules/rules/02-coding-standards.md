@@ -32,3 +32,14 @@ from casare_rpa.infrastructure.browser import PlaywrightManager
 - Use custom exceptions from `domain/errors/`
 - Always log errors with context
 - Return result objects, don't raise for control flow
+
+## Browser Automation (Playwright)
+- **NO HARDCODED WAITS**: Never use `asyncio.sleep()` or `time.sleep()` with fixed durations
+- Use smart waiting strategies instead:
+  - `page.wait_for_load_state('networkidle')` - Wait for network idle
+  - `page.wait_for_load_state('domcontentloaded')` - Wait for DOM ready
+  - `locator.wait_for(state='visible')` - Wait for element visibility
+  - `page.wait_for_selector(selector)` - Wait for element to appear
+  - `page.expect_download()` - Wait for download events
+  - `page.wait_for_url(pattern)` - Wait for URL change
+  - Polling with exponential backoff for custom conditions

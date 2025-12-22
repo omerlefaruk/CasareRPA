@@ -1,0 +1,299 @@
+{
+    "metadata": {
+        "name": "Batch 1.2 - List Operations",
+        "description": "Tests ListAppendNode, ListGetItemNode, ListContainsNode, ListLengthNode, ListFilterNode, ListMapNode, ListReduceNode, ListSliceNode, ListSortNode, ListReverseNode, ListUniqueNode, ListFlattenNode, ListJoinNode, ShuffleListNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "init_list": {
+            "node_id": "init_list",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "base_list",
+                "value": [
+                    5,
+                    3,
+                    8,
+                    1,
+                    9,
+                    3
+                ]
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "list_append": {
+            "node_id": "list_append",
+            "node_type": "ListAppendNode",
+            "config": {
+                "list": "{{base_list}}",
+                "item": 10
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "list_get_item": {
+            "node_id": "list_get_item",
+            "node_type": "ListGetItemNode",
+            "config": {
+                "list": "{{list_append.result}}",
+                "index": 0
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "list_contains": {
+            "node_id": "list_contains",
+            "node_type": "ListContainsNode",
+            "config": {
+                "list": "{{list_append.result}}",
+                "item": 8
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "list_length": {
+            "node_id": "list_length",
+            "node_type": "ListLengthNode",
+            "config": {
+                "list": "{{list_append.result}}"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "list_sort": {
+            "node_id": "list_sort",
+            "node_type": "ListSortNode",
+            "config": {
+                "list": "{{list_append.result}}",
+                "reverse": false
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "list_reverse": {
+            "node_id": "list_reverse",
+            "node_type": "ListReverseNode",
+            "config": {
+                "list": "{{list_sort.sorted_list}}"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "list_unique": {
+            "node_id": "list_unique",
+            "node_type": "ListUniqueNode",
+            "config": {
+                "list": "{{list_append.result}}"
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "list_slice": {
+            "node_id": "list_slice",
+            "node_type": "ListSliceNode",
+            "config": {
+                "list": "{{list_unique.unique_list}}",
+                "start": 1,
+                "end": 4
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "nested_list": {
+            "node_id": "nested_list",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "nested",
+                "value": [
+                    [
+                        1,
+                        2
+                    ],
+                    [
+                        3,
+                        4
+                    ],
+                    [
+                        5,
+                        6
+                    ]
+                ]
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "list_flatten": {
+            "node_id": "list_flatten",
+            "node_type": "ListFlattenNode",
+            "config": {
+                "list": "{{nested}}"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "string_list": {
+            "node_id": "string_list",
+            "node_type": "SetVariableNode",
+            "config": {
+                "variable_name": "str_list",
+                "value": [
+                    "apple",
+                    "banana",
+                    "cherry"
+                ]
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "list_join": {
+            "node_id": "list_join",
+            "node_type": "ListJoinNode",
+            "config": {
+                "list": "{{str_list}}",
+                "separator": ", "
+            },
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "shuffle_list": {
+            "node_id": "shuffle_list",
+            "node_type": "ShuffleListNode",
+            "config": {
+                "list": "{{str_list}}"
+            },
+            "position": [
+                5200,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "All list tests passed! Joined: {{list_join.result}}"
+            },
+            "position": [
+                5600,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "init_list",
+            "source_port": "exec_out",
+            "target_node": "list_append",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_append",
+            "source_port": "exec_out",
+            "target_node": "list_get_item",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_get_item",
+            "source_port": "exec_out",
+            "target_node": "list_contains",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_contains",
+            "source_port": "exec_out",
+            "target_node": "list_length",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_length",
+            "source_port": "exec_out",
+            "target_node": "list_sort",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_sort",
+            "source_port": "exec_out",
+            "target_node": "list_reverse",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_reverse",
+            "source_port": "exec_out",
+            "target_node": "list_unique",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_unique",
+            "source_port": "exec_out",
+            "target_node": "list_slice",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_slice",
+            "source_port": "exec_out",
+            "target_node": "nested_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "nested_list",
+            "source_port": "exec_out",
+            "target_node": "list_flatten",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_flatten",
+            "source_port": "exec_out",
+            "target_node": "string_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "string_list",
+            "source_port": "exec_out",
+            "target_node": "list_join",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "list_join",
+            "source_port": "exec_out",
+            "target_node": "shuffle_list",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "shuffle_list",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}

@@ -971,5 +971,5 @@ If you cannot resolve an issue using this guide:
    - Create new issue with diagnostic info
 
 3. **Community Support**
-   - Join Discord/Slack community
+   - Join Discord community
    - Post with error code and context

@@ -249,18 +249,15 @@ class ParameterPromotionDialog(QDialog):
         self.tree.clear()
 
         for node_id, node_data in self.subflow.nodes.items():
-            node_type = (
-                node_data.get("node_type")
-                or node_data.get("type_", "")
-                or node_data.get("type", "")
-            )
+            node_type = node_data.get("node_type")
+            if not node_type:
+                logger.warning(f"Subflow node {node_id} missing node_type")
+                continue
             node_name = node_data.get("name", node_type)
 
             # Create node item
             node_item = QTreeWidgetItem([node_name, "", ""])
-            node_item.setData(
-                0, Qt.ItemDataRole.UserRole, {"node_id": node_id, "is_node": True}
-            )
+            node_item.setData(0, Qt.ItemDataRole.UserRole, {"node_id": node_id, "is_node": True})
             node_item.setFlags(node_item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
             node_item.setExpanded(True)
 
@@ -270,11 +267,7 @@ class ParameterPromotionDialog(QDialog):
                 self._add_properties_from_schema(node_item, node_id, schema, node_data)
             else:
                 # Try to get properties from node_data directly
-                properties = (
-                    node_data.get("properties", {})
-                    or node_data.get("custom", {})
-                    or node_data.get("config", {})
-                )
+                properties = node_data.get("config", {})
                 if properties:
                     self._add_properties_from_dict(node_item, node_id, properties)
 
@@ -293,11 +286,7 @@ class ParameterPromotionDialog(QDialog):
         if not hasattr(schema, "properties"):
             return
 
-        config = (
-            node_data.get("properties", {})
-            or node_data.get("custom", {})
-            or node_data.get("config", {})
-        )
+        config = node_data.get("config", {})
 
         for prop_def in schema.properties:
             # Use last 8 chars of node_id (unique UUID suffix) to avoid collisions
@@ -308,9 +297,7 @@ class ParameterPromotionDialog(QDialog):
             prop_item = QTreeWidgetItem(
                 [
                     prop_def.name,
-                    prop_def.type.value
-                    if hasattr(prop_def.type, "value")
-                    else str(prop_def.type),
+                    prop_def.type.value if hasattr(prop_def.type, "value") else str(prop_def.type),
                     str(current_value)[:30] if current_value else "",
                 ]
             )
@@ -442,16 +429,12 @@ class ParameterPromotionDialog(QDialog):
                 default_value=data["default_value"],
             )
             self._selections[qualified_name] = param
-            logger.info(
-                f"Added parameter: {qualified_name} (total: {len(self._selections)})"
-            )
+            logger.info(f"Added parameter: {qualified_name} (total: {len(self._selections)})")
         else:
             # Remove from selections
             removed = self._selections.pop(qualified_name, None)
             if removed:
-                logger.info(
-                    f"Removed parameter: {qualified_name} (total: {len(self._selections)})"
-                )
+                logger.info(f"Removed parameter: {qualified_name} (total: {len(self._selections)})")
 
         logger.debug(f"Current selections after: {list(self._selections.keys())}")
 
@@ -474,9 +457,7 @@ class ParameterPromotionDialog(QDialog):
             self.alias_input.setText(data["property_name"].replace("_", " ").title())
             self.description_input.clear()
             default_val = data.get("default_value")
-            self.default_input.setText(
-                str(default_val) if default_val is not None else ""
-            )
+            self.default_input.setText(str(default_val) if default_val is not None else "")
             self.placeholder_input.clear()
             self.required_check.setChecked(False)
 
@@ -559,9 +540,7 @@ class ParameterPromotionDialog(QDialog):
             List of SubflowParameter objects for all selected promotions
         """
         params = list(self._selections.values())
-        logger.info(
-            f"Returning {len(params)} promoted parameters: {[p.name for p in params]}"
-        )
+        logger.info(f"Returning {len(params)} promoted parameters: {[p.name for p in params]}")
         return params
 
 

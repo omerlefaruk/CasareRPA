@@ -122,9 +122,7 @@ class RobotController(BaseController):
             if not self._orchestrator_url:
                 # Check CASARE_API_URL for tunnel URL
                 # Default to api.casare.net (persistent Cloudflare tunnel)
-                self._orchestrator_url = os.getenv(
-                    "CASARE_API_URL", "https://api.casare.net"
-                )
+                self._orchestrator_url = os.getenv("CASARE_API_URL", "https://api.casare.net")
 
             # Store fallback URLs for auto-switching
             self._orchestrator_urls = self._get_orchestrator_url_list()
@@ -165,9 +163,7 @@ class RobotController(BaseController):
             # Register callbacks for real-time updates
             self._orchestrator_client.on("robot_status", self._on_robot_status_update)
             self._orchestrator_client.on("connected", self._on_orchestrator_connected)
-            self._orchestrator_client.on(
-                "disconnected", self._on_orchestrator_disconnected
-            )
+            self._orchestrator_client.on("disconnected", self._on_orchestrator_disconnected)
             self._orchestrator_client.on("error", self._on_orchestrator_error)
 
             logger.debug(f"OrchestratorClient configured for {self._orchestrator_url}")
@@ -305,12 +301,8 @@ class RobotController(BaseController):
             self.connection_status_detailed.emit("connecting", "", try_url)
 
             api_base_url = self._normalize_orchestrator_base_url(try_url)
-            ws_url = api_base_url.replace("http://", "ws://").replace(
-                "https://", "wss://"
-            )
-            api_key = self._get_api_key_from_config() or os.getenv(
-                "ORCHESTRATOR_API_KEY"
-            )
+            ws_url = api_base_url.replace("http://", "ws://").replace("https://", "wss://")
+            api_key = self._get_api_key_from_config() or os.getenv("ORCHESTRATOR_API_KEY")
 
             self._orchestrator_client.config = OrchestratorConfig(
                 base_url=api_base_url,
@@ -340,9 +332,7 @@ class RobotController(BaseController):
         logger.error("Failed to connect to any orchestrator URL")
         self._connected = False
         self.connection_status_changed.emit(False)
-        self.connection_status_detailed.emit(
-            "disconnected", "All connection attempts failed", ""
-        )
+        self.connection_status_detailed.emit("disconnected", "All connection attempts failed", "")
         return False
 
     async def disconnect_from_orchestrator(self) -> None:
@@ -503,9 +493,7 @@ class RobotController(BaseController):
             # Get workflow data from main window
             workflow_data = self._get_workflow_data()
             if not workflow_data:
-                self.submission_state_changed.emit(
-                    "error", "No workflow data available"
-                )
+                self.submission_state_changed.emit("error", "No workflow data available")
                 return
 
             # Get variables if available
@@ -564,9 +552,7 @@ class RobotController(BaseController):
             # Try getting from project controller
             if hasattr(self.main_window, "_project_controller"):
                 proj_controller = self.main_window._project_controller
-                if proj_controller and hasattr(
-                    proj_controller, "get_current_variables"
-                ):
+                if proj_controller and hasattr(proj_controller, "get_current_variables"):
                     return proj_controller.get_current_variables()
 
             # Try getting from workflow controller
@@ -581,9 +567,7 @@ class RobotController(BaseController):
             logger.error(f"Error getting workflow variables: {e}")
             return None
 
-    def _extract_schedule_trigger(
-        self, workflow_data: dict
-    ) -> tuple[str | None, str | None]:
+    def _extract_schedule_trigger(self, workflow_data: dict) -> tuple[str | None, str | None]:
         """
         Extract schedule trigger info from workflow data.
 
@@ -596,22 +580,18 @@ class RobotController(BaseController):
             Tuple of (trigger_type, cron_expression) or (None, None) if no schedule trigger
         """
         nodes = workflow_data.get("nodes", {})
-
-        # Handle both dict format (Canvas) and list format
-        if isinstance(nodes, list):
-            nodes_iter = [(n.get("node_id", ""), n) for n in nodes]
-        else:
-            nodes_iter = nodes.items()
+        if not isinstance(nodes, dict):
+            logger.warning(f"Invalid workflow nodes format: {type(nodes).__name__}")
+            return None, None
+        nodes_iter = nodes.items()
 
         for node_id, node_data in nodes_iter:
             # Check for ScheduleTriggerNode
-            node_type = (
-                node_data.get("node_type", "") or node_data.get("type_", "") or ""
-            )
+            node_type = node_data.get("node_type", "")
 
             if "ScheduleTrigger" in node_type:
                 # Extract config
-                config = node_data.get("config", {}) or node_data.get("custom", {})
+                config = node_data.get("config", {})
 
                 # Convert to cron expression
                 cron_expr = self._schedule_config_to_cron(config)
@@ -651,9 +631,7 @@ class RobotController(BaseController):
         elif frequency == "interval":
             seconds = int(config.get("interval_seconds", 60))
             if seconds < 60:
-                logger.warning(
-                    f"Interval {seconds}s < 60s, using minimum 1 minute for cron"
-                )
+                logger.warning(f"Interval {seconds}s < 60s, using minimum 1 minute for cron")
                 seconds = 60
 
             minutes = seconds // 60
@@ -840,17 +818,13 @@ class RobotController(BaseController):
         """
         if self._orchestrator_client and self._connected:
             try:
-                robot_data_list = await self._orchestrator_client.get_robots(
-                    status="idle"
-                )
+                robot_data_list = await self._orchestrator_client.get_robots(status="idle")
                 return self._convert_robot_data(robot_data_list)
             except Exception as e:
                 logger.error(f"Failed to get available robots: {e}")
                 return []
 
-        return [
-            r for r in self._current_robots if getattr(r, "status", None) == "online"
-        ]
+        return [r for r in self._current_robots if getattr(r, "status", None) == "online"]
 
     async def get_robots_by_capability(self, capability: str) -> list:
         """
@@ -940,9 +914,7 @@ class RobotController(BaseController):
                 )
 
                 # Detect Schedule Trigger nodes in workflow
-                trigger_type, schedule_cron = self._extract_schedule_trigger(
-                    workflow_data
-                )
+                trigger_type, schedule_cron = self._extract_schedule_trigger(workflow_data)
                 if trigger_type == "scheduled":
                     logger.info(f"Schedule trigger detected: cron={schedule_cron}")
 
@@ -963,9 +935,7 @@ class RobotController(BaseController):
                 if schedule_cron:
                     payload["schedule_cron"] = schedule_cron
 
-                api_base_url = self._normalize_orchestrator_base_url(
-                    self._orchestrator_url or ""
-                )
+                api_base_url = self._normalize_orchestrator_base_url(self._orchestrator_url or "")
                 async with session.post(
                     f"{api_base_url}/api/v1/workflows",
                     headers=headers,
@@ -973,9 +943,7 @@ class RobotController(BaseController):
                 ) as resp:
                     if resp.status in (200, 201):
                         data = await resp.json()
-                        job_id = data.get("job_id") or data.get("data", {}).get(
-                            "job_id"
-                        )
+                        job_id = data.get("job_id") or data.get("data", {}).get("job_id")
                         schedule_id = data.get("schedule_id")
 
                         if schedule_id:
@@ -987,9 +955,7 @@ class RobotController(BaseController):
                                 5000,
                             )
                         else:
-                            logger.info(
-                                f"Job submitted: {job_id} to robot {target_robot_id}"
-                            )
+                            logger.info(f"Job submitted: {job_id} to robot {target_robot_id}")
                         self.job_submitted.emit(job_id or schedule_id)
                         return job_id or schedule_id
                     elif resp.status == 401:

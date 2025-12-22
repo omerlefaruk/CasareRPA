@@ -88,11 +88,18 @@ class TestDriveConfigSync:
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
         # Create minimal workflow data with config
+        # Need StartNode and EndNode for semantic validation
         workflow_data = {
             "metadata": {"name": "Test Workflow", "version": "1.0.0"},
             "nodes": {
+                "StartNode_001": {
+                    "node_type": "StartNode",
+                    "position": [0, 0],
+                    "config": {},
+                },
                 "DriveBatchDownloadNode_test1": {
                     "node_type": "DriveBatchDownloadNode",
+                    "position": [200, 0],
                     "config": {
                         "destination_folder": r"C:\Users\Rau\Desktop\save",
                         "credential_id": "cred_test123",
@@ -100,17 +107,36 @@ class TestDriveConfigSync:
                 },
                 "DriveListFilesNode_test2": {
                     "node_type": "DriveListFilesNode",
+                    "position": [200, 100],
                     "config": {
                         "folder_id": "14gesKQIyRcs98J4v3NOOQccUgRI1kMHy",
                         "credential_id": "cred_test123",
                     },
                 },
+                "EndNode_001": {
+                    "node_type": "EndNode",
+                    "position": [400, 0],
+                    "config": {},
+                },
             },
-            "connections": [],
+            "connections": [
+                {
+                    "source_node": "StartNode_001",
+                    "source_port": "exec_out",
+                    "target_node": "DriveBatchDownloadNode_test1",
+                    "target_port": "exec_in",
+                },
+                {
+                    "source_node": "DriveBatchDownloadNode_test1",
+                    "source_port": "exec_out",
+                    "target_node": "EndNode_001",
+                    "target_port": "exec_in",
+                },
+            ],
         }
 
-        # Load workflow
-        workflow = load_workflow_from_dict(workflow_data)
+        # Load workflow (skip validation since we're just testing config passing)
+        workflow = load_workflow_from_dict(workflow_data, skip_validation=True)
 
         # Check nodes were created with config
         batch_node = workflow.nodes.get("DriveBatchDownloadNode_test1")
@@ -120,19 +146,12 @@ class TestDriveConfigSync:
         assert list_node is not None, "ListFiles node not created"
 
         # Verify config was passed
-        assert (
-            batch_node.config.get("destination_folder") == r"C:\Users\Rau\Desktop\save"
-        )
+        assert batch_node.config.get("destination_folder") == r"C:\Users\Rau\Desktop\save"
         assert list_node.config.get("folder_id") == "14gesKQIyRcs98J4v3NOOQccUgRI1kMHy"
 
         # Verify get_parameter works
-        assert (
-            batch_node.get_parameter("destination_folder")
-            == r"C:\Users\Rau\Desktop\save"
-        )
-        assert (
-            list_node.get_parameter("folder_id") == "14gesKQIyRcs98J4v3NOOQccUgRI1kMHy"
-        )
+        assert batch_node.get_parameter("destination_folder") == r"C:\Users\Rau\Desktop\save"
+        assert list_node.get_parameter("folder_id") == "14gesKQIyRcs98J4v3NOOQccUgRI1kMHy"
 
         print(f"[PASS] BatchDownload config: {batch_node.config}")
         print(f"[PASS] ListFiles config: {list_node.config}")
@@ -192,9 +211,7 @@ class TestDriveConfigSync:
         print(f"[PASS] Serialized config: {config}")
 
         # Check destination_folder is in config
-        assert (
-            "destination_folder" in config
-        ), f"destination_folder not in config: {config}"
+        assert "destination_folder" in config, f"destination_folder not in config: {config}"
         assert config["destination_folder"] == r"C:\Users\Rau\Desktop\save"
 
 
@@ -212,9 +229,15 @@ class TestEndToEndConfigFlow:
         from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
         # Simulated serializer output (what serializer SHOULD produce)
+        # Need StartNode and EndNode for semantic validation
         workflow_data = {
             "metadata": {"name": "Test", "version": "1.0.0"},
             "nodes": {
+                "StartNode_001": {
+                    "node_type": "StartNode",
+                    "position": [100, 300],
+                    "config": {},
+                },
                 "DriveBatchDownloadNode_abc123": {
                     "node_type": "DriveBatchDownloadNode",
                     "position": [500, 300],
@@ -223,12 +246,30 @@ class TestEndToEndConfigFlow:
                         "credential_id": "cred_3be9a941dfef",
                     },
                 },
+                "EndNode_001": {
+                    "node_type": "EndNode",
+                    "position": [900, 300],
+                    "config": {},
+                },
             },
-            "connections": [],
+            "connections": [
+                {
+                    "source_node": "StartNode_001",
+                    "source_port": "exec_out",
+                    "target_node": "DriveBatchDownloadNode_abc123",
+                    "target_port": "exec_in",
+                },
+                {
+                    "source_node": "DriveBatchDownloadNode_abc123",
+                    "source_port": "exec_out",
+                    "target_node": "EndNode_001",
+                    "target_port": "exec_in",
+                },
+            ],
         }
 
-        # Load it
-        workflow = load_workflow_from_dict(workflow_data)
+        # Load it (skip validation since we're testing config, not execution)
+        workflow = load_workflow_from_dict(workflow_data, skip_validation=True)
         node = workflow.nodes.get("DriveBatchDownloadNode_abc123")
 
         assert node is not None

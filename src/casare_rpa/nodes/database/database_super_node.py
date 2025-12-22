@@ -160,9 +160,7 @@ class DatabaseAction(str, Enum):
         label="SQL Query",
         tooltip="SQL query or statement to execute",
         placeholder="SELECT * FROM users WHERE id = ?",
-        display_when={
-            "action": [DatabaseAction.QUERY.value, DatabaseAction.EXECUTE.value]
-        },
+        display_when={"action": [DatabaseAction.QUERY.value, DatabaseAction.EXECUTE.value]},
     ),
     PropertyDef(
         "parameters",
@@ -170,9 +168,7 @@ class DatabaseAction(str, Enum):
         default=[],
         label="Query Parameters",
         tooltip="Parameterized query values (list for positional, dict for named)",
-        display_when={
-            "action": [DatabaseAction.QUERY.value, DatabaseAction.EXECUTE.value]
-        },
+        display_when={"action": [DatabaseAction.QUERY.value, DatabaseAction.EXECUTE.value]},
     ),
     # Batch properties
     PropertyDef(
@@ -236,9 +232,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
     NODE_NAME = "Database"
     NODE_CATEGORY = "Data"
-    NODE_DESCRIPTION = (
-        "Unified database operations (Connect, Query, Execute, Transaction)"
-    )
+    NODE_DESCRIPTION = "Unified database operations (Connect, Query, Execute, Transaction)"
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         config = kwargs.get("config", {})
@@ -290,8 +284,6 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
         self.status = NodeStatus.RUNNING
 
         action = self.get_parameter("action", DatabaseAction.QUERY.value)
-        if hasattr(context, "resolve_value"):
-            action = context.resolve_value(action)
 
         handlers = {
             DatabaseAction.CONNECT.value: self._execute_connect,
@@ -354,9 +346,6 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
         )
 
         # Resolve variable patterns
-        if hasattr(context, "resolve_value"):
-            host = context.resolve_value(host)
-            database = context.resolve_value(database)
 
         logger.info(f"Connecting to {db_type} database")
 
@@ -402,9 +391,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
                             min_size=1,
                             max_size=pool_size,
                         )
-                    connection = DatabaseConnection(
-                        "postgresql", None, is_pool=True, pool=pool
-                    )
+                    connection = DatabaseConnection("postgresql", None, is_pool=True, pool=pool)
 
                 elif db_type == "mysql":
                     if not AIOMYSQL_AVAILABLE:
@@ -420,9 +407,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
                         minsize=1,
                         maxsize=pool_size,
                     )
-                    connection = DatabaseConnection(
-                        "mysql", None, is_pool=True, pool=pool
-                    )
+                    connection = DatabaseConnection("mysql", None, is_pool=True, pool=pool)
 
                 else:
                     raise ValueError(f"Unsupported database type: {db_type}")
@@ -465,7 +450,6 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
         if hasattr(context, "resolve_value"):
             original_query = query
-            query = context.resolve_value(query)
             _check_sql_injection_risk(original_query, query, "DatabaseSuperNode")
 
         logger.debug(f"Executing query: {query[:100]}...")
@@ -481,17 +465,11 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
                 columns: List[str] = []
 
                 if connection.db_type == "sqlite":
-                    results, columns = await self._query_sqlite(
-                        connection, query, parameters
-                    )
+                    results, columns = await self._query_sqlite(connection, query, parameters)
                 elif connection.db_type == "postgresql":
-                    results, columns = await self._query_postgresql(
-                        connection, query, parameters
-                    )
+                    results, columns = await self._query_postgresql(connection, query, parameters)
                 elif connection.db_type == "mysql":
-                    results, columns = await self._query_mysql(
-                        connection, query, parameters
-                    )
+                    results, columns = await self._query_mysql(connection, query, parameters)
 
                 self.set_output_value("results", results)
                 self.set_output_value("row_count", len(results))
@@ -533,7 +511,6 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
         if hasattr(context, "resolve_value"):
             original_query = query
-            query = context.resolve_value(query)
             _check_sql_injection_risk(original_query, query, "DatabaseSuperNode")
 
         logger.debug(f"Executing statement: {query[:100]}...")
@@ -585,9 +562,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             raise last_error
         raise RuntimeError("Statement failed")
 
-    async def _execute_begin_transaction(
-        self, context: "ExecutionContext"
-    ) -> ExecutionResult:
+    async def _execute_begin_transaction(self, context: "ExecutionContext") -> ExecutionResult:
         """Begin database transaction."""
         connection: Optional[DatabaseConnection] = self.get_input_value("connection")
 
@@ -758,8 +733,6 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
                             result = await pool_conn.execute(stmt)
                             rows = _parse_postgresql_result(result)
                         elif connection.db_type == "mysql":
-                            import aiomysql
-
                             async with pool_conn.cursor() as cursor:
                                 await cursor.execute(stmt)
                                 rows = cursor.rowcount
@@ -831,16 +804,12 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
         if AIOSQLITE_AVAILABLE:
             cursor = await conn.execute(query, parameters or [])
             rows = await cursor.fetchall()
-            columns = (
-                [desc[0] for desc in cursor.description] if cursor.description else []
-            )
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
             results = [dict(zip(columns, row)) for row in rows]
         else:
             cursor = conn.execute(query, parameters or [])
             rows = cursor.fetchall()
-            columns = (
-                [desc[0] for desc in cursor.description] if cursor.description else []
-            )
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
             results = [dict(zip(columns, row)) for row in rows]
 
         return results, columns
@@ -851,11 +820,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
         """Query PostgreSQL database."""
         conn = await connection.acquire()
         try:
-            rows = (
-                await conn.fetch(query, *parameters)
-                if parameters
-                else await conn.fetch(query)
-            )
+            rows = await conn.fetch(query, *parameters) if parameters else await conn.fetch(query)
             if rows:
                 columns = list(rows[0].keys())
                 results = [dict(row) for row in rows]
@@ -877,11 +842,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             async with conn.cursor(aiomysql.DictCursor) as cursor:
                 await cursor.execute(query, parameters or [])
                 rows = await cursor.fetchall()
-                columns = (
-                    [desc[0] for desc in cursor.description]
-                    if cursor.description
-                    else []
-                )
+                columns = [desc[0] for desc in cursor.description] if cursor.description else []
             return list(rows), columns
         finally:
             await connection.release()
@@ -911,9 +872,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
         conn = await connection.acquire()
         try:
             result = (
-                await conn.execute(query, *parameters)
-                if parameters
-                else await conn.execute(query)
+                await conn.execute(query, *parameters) if parameters else await conn.execute(query)
             )
             rows_affected = _parse_postgresql_result(result)
             return rows_affected, None

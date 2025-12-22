@@ -236,7 +236,6 @@ class TableScraperNode(BrowserBaseNode):
             selector = self.get_input_value("table_selector")
             if not selector:
                 selector = self.get_parameter("table_selector", "table")
-            selector = context.resolve_value(selector)
 
             # Get extraction parameters
             include_headers = self.get_parameter("include_headers", True)
@@ -254,9 +253,7 @@ class TableScraperNode(BrowserBaseNode):
             async def perform_extraction() -> Dict[str, Any]:
                 """Execute table extraction via JavaScript."""
                 # Wait for table element to be present
-                await page.wait_for_selector(
-                    selector, timeout=timeout, state="attached"
-                )
+                await page.wait_for_selector(selector, timeout=timeout, state="attached")
 
                 # Extract table data via JavaScript
                 raw_data = await page.evaluate(
@@ -289,9 +286,7 @@ class TableScraperNode(BrowserBaseNode):
                 column_count = raw_data.get("columnCount", 0)
 
                 # Format output according to requested format
-                formatted_data = self._format_output(
-                    headers, rows, output_format, include_headers
-                )
+                formatted_data = self._format_output(headers, rows, output_format, include_headers)
 
                 # Store in context variable
                 context.set_variable(output_variable, formatted_data)
@@ -301,9 +296,7 @@ class TableScraperNode(BrowserBaseNode):
                 self.set_output_value("row_count", row_count)
                 self.set_output_value("headers", headers)
 
-                logger.info(
-                    f"Extracted {row_count} rows, {column_count} columns from table"
-                )
+                logger.info(f"Extracted {row_count} rows, {column_count} columns from table")
 
                 return self.success_result(
                     {
@@ -348,9 +341,7 @@ class TableScraperNode(BrowserBaseNode):
                 return [dict(zip(headers, row)) for row in rows]
             else:
                 # If no headers, use column indices as keys
-                return [
-                    {f"col_{i}": cell for i, cell in enumerate(row)} for row in rows
-                ]
+                return [{f"col_{i}": cell for i, cell in enumerate(row)} for row in rows]
 
         elif output_format == "list_of_lists":
             # Return as list of lists, optionally with headers as first row
@@ -371,9 +362,7 @@ class TableScraperNode(BrowserBaseNode):
 
         else:
             # Default to list of lists
-            logger.warning(
-                f"Unknown output format '{output_format}', using list_of_lists"
-            )
+            logger.warning(f"Unknown output format '{output_format}', using list_of_lists")
             return rows
 
     def _validate_config(self) -> tuple[bool, str]:

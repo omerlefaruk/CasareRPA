@@ -2,7 +2,7 @@
 Unified Robot Agent for CasareRPA.
 
 Consolidates robot functionality into a single class with full lifecycle management:
-- Job execution with DBOS durability
+- Job execution with the canonical workflow engine
 - Circuit breaker integration for failure handling
 - Checkpoint management for crash recovery
 - Metrics collection and reporting
@@ -31,8 +31,8 @@ Architecture:
     +-------------+-------------+
                   |
     +-------------v-------------+
-    |  DBOSWorkflowExecutor     |
-    |   (Durable Execution)     |
+    |       JobExecutor         |
+    |   (Workflow Execution)    |
     +---------------------------+
 """
 
@@ -251,21 +251,13 @@ class RobotConfig:
             ),
             batch_size=int(os.getenv("CASARE_BATCH_SIZE", "1")),
             poll_interval_seconds=float(os.getenv("CASARE_POLL_INTERVAL", "1.0")),
-            heartbeat_interval_seconds=float(
-                os.getenv("CASARE_HEARTBEAT_INTERVAL", "10.0")
-            ),
+            heartbeat_interval_seconds=float(os.getenv("CASARE_HEARTBEAT_INTERVAL", "10.0")),
             graceful_shutdown_seconds=int(os.getenv("CASARE_SHUTDOWN_GRACE", "60")),
             max_concurrent_jobs=int(os.getenv("CASARE_MAX_CONCURRENT_JOBS", "1")),
             job_timeout_seconds=int(os.getenv("CASARE_JOB_TIMEOUT", "3600")),
-            enable_checkpointing=os.getenv(
-                "CASARE_ENABLE_CHECKPOINTING", "true"
-            ).lower()
-            == "true",
-            enable_realtime=os.getenv("CASARE_ENABLE_REALTIME", "true").lower()
-            == "true",
-            enable_circuit_breaker=os.getenv(
-                "CASARE_ENABLE_CIRCUIT_BREAKER", "true"
-            ).lower()
+            enable_checkpointing=os.getenv("CASARE_ENABLE_CHECKPOINTING", "true").lower() == "true",
+            enable_realtime=os.getenv("CASARE_ENABLE_REALTIME", "true").lower() == "true",
+            enable_circuit_breaker=os.getenv("CASARE_ENABLE_CIRCUIT_BREAKER", "true").lower()
             == "true",
             browser_pool_size=int(os.getenv("CASARE_BROWSER_POOL_SIZE", "5")),
             db_pool_size=int(os.getenv("CASARE_DB_POOL_SIZE", "10")),
@@ -277,9 +269,7 @@ class RobotConfig:
     def from_dict(cls, data: Dict[str, Any]) -> "RobotConfig":
         """Create configuration from dictionary."""
         cb_data = data.pop("circuit_breaker", {})
-        cb_config = (
-            CircuitBreakerConfig(**cb_data) if cb_data else CircuitBreakerConfig()
-        )
+        cb_config = CircuitBreakerConfig(**cb_data) if cb_data else CircuitBreakerConfig()
 
         config = cls(**data)
         config.circuit_breaker = cb_config
@@ -414,9 +404,7 @@ class RobotAgent:
         self._current_jobs: Dict[str, Any] = {}
         self._job_progress: Dict[str, Dict[str, Any]] = {}
         self._cancelled_jobs: Set[str] = set()
-        self._jobs_lock = (
-            asyncio.Lock()
-        )  # Protects _current_jobs, _job_progress, _cancelled_jobs
+        self._jobs_lock = asyncio.Lock()  # Protects _current_jobs, _job_progress, _cancelled_jobs
 
         # Callbacks
         self._on_job_complete = on_job_complete
@@ -458,9 +446,7 @@ class RobotAgent:
         }
 
         # Checkpoint path
-        self._checkpoint_file = (
-            self.config.checkpoint_path / f"agent_{self.robot_id}.json"
-        )
+        self._checkpoint_file = self.config.checkpoint_path / f"agent_{self.robot_id}.json"
 
         self._init_logging()
 
@@ -504,9 +490,7 @@ class RobotAgent:
             tags=self.config.tags.copy(),
         )
 
-    def _on_circuit_state_change(
-        self, old_state: CircuitState, new_state: CircuitState
-    ) -> None:
+    def _on_circuit_state_change(self, old_state: CircuitState, new_state: CircuitState) -> None:
         """Handle circuit breaker state change."""
         logger.info(f"Circuit breaker: {old_state.value} -> {new_state.value}")
 
@@ -633,8 +617,7 @@ class RobotAgent:
                 async with self._jobs_lock:
                     remaining = len(self._current_jobs)
                 logger.warning(
-                    f"Graceful shutdown timed out, "
-                    f"{remaining} job(s) may be orphaned"
+                    f"Graceful shutdown timed out, " f"{remaining} job(s) may be orphaned"
                 )
 
         # Save checkpoint before stopping
@@ -706,26 +689,19 @@ class RobotAgent:
             and getattr(sys, "frozen", False)
             and not use_orchestrator_jobs
         ):
-            logger.info(
-                "Frozen app detected, building database URL from DB_PASSWORD..."
-            )
+            logger.info("Frozen app detected, building database URL from DB_PASSWORD...")
             db_url = await _fetch_database_url_from_env()
             if db_url:
                 self.config.postgres_url = db_url
             else:
-                logger.warning(
-                    "DB_PASSWORD not set, continuing without database connection"
-                )
+                logger.warning("DB_PASSWORD not set, continuing without database connection")
         elif self.config.postgres_url:
             _log_config_source(self.config.postgres_url, "environment variable")
 
         # Import here to avoid circular imports and allow lazy loading
         try:
             from casare_rpa.infrastructure.queue import PgQueuerConsumer, ConsumerConfig
-            from casare_rpa.infrastructure.execution.dbos_executor import (
-                DBOSWorkflowExecutor,
-                DBOSExecutorConfig,
-            )
+            from casare_rpa.infrastructure.agent.job_executor import JobExecutor
             from casare_rpa.infrastructure.resources.unified_resource_manager import (
                 UnifiedResourceManager,
             )
@@ -765,17 +741,13 @@ class RobotAgent:
                     )
                     await self._consumer.start()
 
-            # Initialize DBOS executor
-            executor_config = DBOSExecutorConfig(
-                postgres_url=self.config.postgres_url
-                if self.config.enable_checkpointing
-                else None,
-                enable_checkpointing=self.config.enable_checkpointing,
-                execution_timeout_seconds=self.config.job_timeout_seconds,
-                node_timeout_seconds=self.config.node_timeout_seconds,
+            # Initialize job executor (canonical execution engine)
+            self._executor = JobExecutor(
+                progress_callback=self._on_job_progress,
+                continue_on_error=False,
+                job_timeout=self.config.job_timeout_seconds,
+                node_timeout=self.config.node_timeout_seconds,
             )
-            self._executor = DBOSWorkflowExecutor(executor_config)
-            await self._executor.start()
 
             # Initialize resource manager
             self._resource_manager = UnifiedResourceManager(
@@ -812,10 +784,7 @@ class RobotAgent:
                 logger.warning(f"Error stopping resource manager: {e}")
 
         if self._executor:
-            try:
-                await self._executor.stop()
-            except Exception as e:
-                logger.warning(f"Error stopping executor: {e}")
+            self._executor = None
 
         if self._consumer:
             try:
@@ -924,11 +893,7 @@ class RobotAgent:
                         details={"capabilities": self._capabilities.to_dict()},
                     )
 
-            if (
-                self._consumer
-                and hasattr(self._consumer, "_pool")
-                and self._consumer._pool
-            ):
+            if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
                 async with self._consumer._pool.acquire() as conn:
 
                     def dedupe_name(name: str, robot_id: str, attempt: int) -> str:
@@ -940,9 +905,7 @@ class RobotAgent:
                         )
                         return candidate[:128]
 
-                    def dedupe_hostname(
-                        hostname: str, robot_id: str, attempt: int
-                    ) -> str:
+                    def dedupe_hostname(hostname: str, robot_id: str, attempt: int) -> str:
                         suffix = robot_id[-8:] if robot_id else "robot"
                         candidate = (
                             f"{hostname}-{suffix}"
@@ -973,26 +936,18 @@ class RobotAgent:
                                 name_to_use,
                                 hostname_to_use,
                                 self.config.environment,
-                                orjson.dumps(self._capabilities.to_dict()).decode(
-                                    "utf-8"
-                                ),
+                                orjson.dumps(self._capabilities.to_dict()).decode("utf-8"),
                             )
                             break
                         except Exception as e:
                             msg = str(e).lower()
-                            if (
-                                "duplicate key value violates unique constraint" in msg
-                                and ("robots_name_uq" in msg or "name" in msg)
+                            if "duplicate key value violates unique constraint" in msg and (
+                                "robots_name_uq" in msg or "name" in msg
                             ):
-                                name_to_use = dedupe_name(
-                                    self.name, self.robot_id, attempt
-                                )
+                                name_to_use = dedupe_name(self.name, self.robot_id, attempt)
                                 continue
-                            if (
-                                "duplicate key value violates unique constraint" in msg
-                                and (
-                                    "robots_hostname_unique" in msg or "hostname" in msg
-                                )
+                            if "duplicate key value violates unique constraint" in msg and (
+                                "robots_hostname_unique" in msg or "hostname" in msg
                             ):
                                 hostname_to_use = dedupe_hostname(
                                     self.config.hostname, self.robot_id, attempt
@@ -1038,9 +993,7 @@ class RobotAgent:
                 discovery = get_auto_discovery()
                 discovered_url = discovery.get_discovered_url()
                 if discovered_url:
-                    logger.debug(
-                        f"Using auto-discovered orchestrator: {discovered_url}"
-                    )
+                    logger.debug(f"Using auto-discovered orchestrator: {discovered_url}")
                     return discovered_url.rstrip("/")
             except Exception as e:
                 logger.debug(f"Auto-discovery failed: {e}")
@@ -1053,9 +1006,7 @@ class RobotAgent:
         return f"{scheme}://{parsed.netloc}"
 
     def _get_orchestrator_api_key(self) -> Optional[str]:
-        api_key = os.getenv("CASARE_ORCHESTRATOR_API_KEY") or os.getenv(
-            "ORCHESTRATOR_API_KEY"
-        )
+        api_key = os.getenv("CASARE_ORCHESTRATOR_API_KEY") or os.getenv("ORCHESTRATOR_API_KEY")
         return api_key if api_key else None
 
     async def _get_orchestrator_client(self):
@@ -1161,11 +1112,7 @@ class RobotAgent:
             if await self._update_status_via_orchestrator_api(status):
                 return
 
-            if (
-                self._consumer
-                and hasattr(self._consumer, "_pool")
-                and self._consumer._pool
-            ):
+            if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
                 async with self._consumer._pool.acquire() as conn:
                     await conn.execute(
                         """
@@ -1199,10 +1146,7 @@ class RobotAgent:
             if ok:
                 self._last_reported_status = normalized
                 return True
-            if (
-                getattr(client, "last_http_status", None) == 404
-                and self._fleet_ever_registered
-            ):
+            if getattr(client, "last_http_status", None) == 404 and self._fleet_ever_registered:
                 await self._unlink_from_fleet(
                     "Robot deleted from Fleet dashboard (status update 404)"
                 )
@@ -1243,9 +1187,7 @@ class RobotAgent:
                 if self._consumer:
                     if self._circuit_breaker:
                         try:
-                            job = await self._circuit_breaker.call(
-                                self._consumer.claim_job
-                            )
+                            job = await self._circuit_breaker.call(self._consumer.claim_job)
                         except CircuitBreakerOpenError:
                             await asyncio.sleep(self.config.poll_interval_seconds)
                             continue
@@ -1362,9 +1304,7 @@ class RobotAgent:
                 self._stats["jobs_failed"] += 1
 
                 if self._audit:
-                    self._audit.job_failed(
-                        job_id, result.error or "Unknown", result.duration_ms
-                    )
+                    self._audit.job_failed(job_id, result.error or "Unknown", result.duration_ms)
                 if self._metrics:
                     self._metrics.end_job(success=False, error_message=result.error)
 
@@ -1459,9 +1399,7 @@ class RobotAgent:
                                 extension_seconds=self.config.visibility_timeout_seconds,
                             )
                             if not success:
-                                logger.warning(
-                                    f"Failed to extend lease for job {job_id[:8]}"
-                                )
+                                logger.warning(f"Failed to extend lease for job {job_id[:8]}")
                     except Exception as e:
                         logger.error(f"Heartbeat error for job {job_id[:8]}: {e}")
 
@@ -1500,9 +1438,7 @@ class RobotAgent:
                 if PSUTIL_AVAILABLE:
                     try:
                         presence_data["cpu_percent"] = psutil.cpu_percent(interval=0.1)
-                        presence_data["memory_percent"] = (
-                            psutil.virtual_memory().percent
-                        )
+                        presence_data["memory_percent"] = psutil.virtual_memory().percent
                     except Exception:
                         pass
 
@@ -1520,9 +1456,7 @@ class RobotAgent:
 
         logger.info("Presence loop stopped")
 
-    async def _update_presence_via_orchestrator_api(
-        self, presence_data: Dict[str, Any]
-    ) -> None:
+    async def _update_presence_via_orchestrator_api(self, presence_data: Dict[str, Any]) -> None:
         if not self._should_use_orchestrator_api():
             return
         # Wait for registration to complete before sending presence updates
@@ -1551,17 +1485,14 @@ class RobotAgent:
                 if ok:
                     self._last_reported_status = status
                 elif (
-                    getattr(client, "last_http_status", None) == 404
-                    and self._fleet_ever_registered
+                    getattr(client, "last_http_status", None) == 404 and self._fleet_ever_registered
                 ):
                     await self._unlink_from_fleet(
                         "Robot deleted from Fleet dashboard (presence status 404)"
                     )
                     return
 
-            ok = await client.send_robot_heartbeat(
-                self._fleet_robot_id, metrics=metrics
-            )
+            ok = await client.send_robot_heartbeat(self._fleet_robot_id, metrics=metrics)
             if (
                 not ok
                 and getattr(client, "last_http_status", None) == 404
@@ -1580,11 +1511,7 @@ class RobotAgent:
     async def _update_presence_in_db(self, presence_data: Dict[str, Any]) -> None:
         """Update presence in database."""
         try:
-            if (
-                self._consumer
-                and hasattr(self._consumer, "_pool")
-                and self._consumer._pool
-            ):
+            if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
                 async with self._consumer._pool.acquire() as conn:
                     await conn.execute(
                         """
@@ -1600,9 +1527,7 @@ class RobotAgent:
                             {
                                 "cpu_percent": presence_data.get("cpu_percent"),
                                 "memory_percent": presence_data.get("memory_percent"),
-                                "current_job_count": presence_data.get(
-                                    "current_job_count", 0
-                                ),
+                                "current_job_count": presence_data.get("current_job_count", 0),
                             }
                         ).decode("utf-8"),
                     )

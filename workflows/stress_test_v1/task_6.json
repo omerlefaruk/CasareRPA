@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "name": "Filter and Log Numbers Fixed",
+    "description": "Iterates through a list of numbers and logs those greater than 20 using IfNode condition directly.",
+    "version": "1.1.0",
+    "author": "",
+    "tags": []
+  },
+  "nodes": {
+    "set_numbers": {
+      "node_id": "set_numbers",
+      "node_type": "SetVariableNode",
+      "config": {
+        "variable_name": "number_list",
+        "value": [
+          10,
+          25,
+          5,
+          40
+        ]
+      },
+      "position": [
+        0.0,
+        0.0
+      ]
+    },
+    "loop_numbers": {
+      "node_id": "loop_numbers",
+      "node_type": "ForLoopStartNode",
+      "config": {
+        "items": "{{number_list}}"
+      },
+      "position": [
+        400.0,
+        0.0
+      ]
+    },
+    "if_greater": {
+      "node_id": "if_greater",
+      "node_type": "IfNode",
+      "config": {
+        "condition": "{{loop_numbers.current_item}} > 20"
+      },
+      "position": [
+        800.0,
+        0.0
+      ]
+    },
+    "log_number": {
+      "node_id": "log_number",
+      "node_type": "LogNode",
+      "config": {
+        "message": "Found number greater than 20: {{loop_numbers.current_item}}"
+      },
+      "position": [
+        1200.0,
+        -100.0
+      ]
+    },
+    "merge_flow": {
+      "node_id": "merge_flow",
+      "node_type": "MergeNode",
+      "config": {},
+      "position": [
+        1600.0,
+        0.0
+      ]
+    },
+    "loop_end": {
+      "node_id": "loop_end",
+      "node_type": "ForLoopEndNode",
+      "config": {
+        "paired_start_id": "loop_numbers"
+      },
+      "position": [
+        2000.0,
+        0.0
+      ]
+    }
+  },
+  "connections": [
+    {
+      "source_node": "set_numbers",
+      "source_port": "exec_out",
+      "target_node": "loop_numbers",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "loop_numbers",
+      "source_port": "body",
+      "target_node": "if_greater",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "if_greater",
+      "source_port": "true",
+      "target_node": "log_number",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "log_number",
+      "source_port": "exec_out",
+      "target_node": "merge_flow",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "if_greater",
+      "source_port": "false",
+      "target_node": "merge_flow",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "merge_flow",
+      "source_port": "exec_out",
+      "target_node": "loop_end",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 30,
+    "retry_count": 0
+  }
+}

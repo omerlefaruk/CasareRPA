@@ -8,16 +8,13 @@ triggered by typing "{{" or via keyboard shortcut.
 from typing import Any, List, Optional
 
 from PySide6.QtCore import Qt, Signal, Slot, QPoint
-from PySide6.QtGui import QColor, QFont, QKeyEvent
+from PySide6.QtGui import QColor, QKeyEvent
 from PySide6.QtWidgets import (
     QWidget,
     QListWidget,
     QListWidgetItem,
-    QVBoxLayout,
-    QApplication,
 )
 
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import (
     Theme,
@@ -202,7 +199,7 @@ class VariableAutocomplete(QListWidget):
         """Populate the list widget with filtered variables."""
         self.clear()
 
-        c = Theme.get_colors()
+        Theme.get_colors()
 
         for var in self._filtered_variables:
             badge = TYPE_BADGES.get(var.var_type, TYPE_BADGES["Any"])
@@ -254,9 +251,7 @@ class VariableAutocomplete(QListWidget):
             return
 
         # Position below cursor
-        global_pos = editor_widget.mapToGlobal(
-            QPoint(cursor_rect.left(), cursor_rect.bottom() + 2)
-        )
+        global_pos = editor_widget.mapToGlobal(QPoint(cursor_rect.left(), cursor_rect.bottom() + 2))
         self.move(global_pos)
         self.show()
         self.setFocus()

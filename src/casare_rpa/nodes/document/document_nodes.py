@@ -39,9 +39,7 @@ class DocumentBaseNode(BaseNode):
     NODE_CATEGORY = "Document AI"
     DEFAULT_MODEL = "gpt-4o"
 
-    def __init__(
-        self, node_id: str, name: str = "Document Node", **kwargs: Any
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Document Node", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -60,9 +58,7 @@ class DocumentBaseNode(BaseNode):
         provider = self._get_provider(context)
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
-        model = (
-            context.resolve_value(model) if hasattr(context, "resolve_value") else model
-        )
+        model = context.resolve_value(model) if hasattr(context, "resolve_value") else model
 
         config = LLMConfig(
             provider=provider,
@@ -171,9 +167,7 @@ class ClassifyDocumentNode(DocumentBaseNode):
     # @ports: document, categories, model -> document_type, confidence, all_scores, success, error
 
     NODE_NAME = "Classify Document"
-    NODE_DESCRIPTION = (
-        "Classify a document into categories (invoice, receipt, form, etc.)"
-    )
+    NODE_DESCRIPTION = "Classify a document into categories (invoice, receipt, form, etc.)"
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name=self.NODE_NAME, **kwargs)
@@ -200,9 +194,6 @@ class ClassifyDocumentNode(DocumentBaseNode):
     ) -> ExecutionResult:
         """Execute document classification."""
         document = self.get_parameter("document")
-
-        if hasattr(context, "resolve_value"):
-            document = context.resolve_value(document)
 
         if not document:
             self.set_output_value("success", False)
@@ -313,9 +304,6 @@ class ExtractInvoiceNode(DocumentBaseNode):
     ) -> ExecutionResult:
         """Execute invoice extraction."""
         document = self.get_parameter("document")
-
-        if hasattr(context, "resolve_value"):
-            document = context.resolve_value(document)
 
         if not document:
             self.set_output_value("success", False)
@@ -442,9 +430,6 @@ class ExtractFormNode(DocumentBaseNode):
         document = self.get_parameter("document")
         field_schema = self.get_parameter("field_schema")
 
-        if hasattr(context, "resolve_value"):
-            document = context.resolve_value(document)
-
         if not document:
             self.set_output_value("success", False)
             self.set_output_value("error", "Document is required")
@@ -566,9 +551,6 @@ class ExtractTableNode(DocumentBaseNode):
         """Execute table extraction."""
         document = self.get_parameter("document")
 
-        if hasattr(context, "resolve_value"):
-            document = context.resolve_value(document)
-
         if not document:
             self.set_output_value("success", False)
             self.set_output_value("error", "Document is required")
@@ -576,9 +558,6 @@ class ExtractTableNode(DocumentBaseNode):
 
         table_hint = self.get_parameter("table_hint")
         model = self.get_parameter("model")
-
-        if hasattr(context, "resolve_value") and table_hint:
-            table_hint = context.resolve_value(table_hint)
 
         try:
             result = await manager.extract_table(

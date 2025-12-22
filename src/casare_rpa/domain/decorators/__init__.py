@@ -25,15 +25,7 @@ from casare_rpa.domain.decorators.error_handler import error_handler
 
 # Re-export everything from the main decorators module
 # This file (decorators/__init__.py) shadows decorators.py, so we need to
-# import from the actual module file using importlib
-import importlib.util
-import sys
-from pathlib import Path
-
-# Load the decorators.py module directly (it's in the parent directory)
-_decorators_path = Path(__file__).parent.parent / "decorators.py"
-# Since we're inside the package, we need a different approach
-# Instead, we'll duplicate the core decorator code or restructure
+# import from _decorators_core.py which contains the actual implementations
 
 # NOTE: The main decorators (node, properties, etc.) are defined in the
 # decorators.py file at the same level. Since Python prioritizes packages

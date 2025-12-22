@@ -1,0 +1,129 @@
+{
+    "metadata": {
+        "name": "Batch 3.1 - Browser Core",
+        "description": "Tests BrowserLaunchNode, BrowserNavigateNode, BrowserCloseNode, BrowserScreenshotNode, BrowserWaitNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "browser_launch": {
+            "node_id": "browser_launch",
+            "node_type": "BrowserLaunchNode",
+            "config": {
+                "browser_type": "chromium",
+                "headless": true
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "browser_navigate": {
+            "node_id": "browser_navigate",
+            "node_type": "BrowserNavigateNode",
+            "config": {
+                "url": "https://example.com"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "browser_wait": {
+            "node_id": "browser_wait",
+            "node_type": "BrowserWaitNode",
+            "config": {
+                "wait_type": "timeout",
+                "timeout": 500
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "get_page_title": {
+            "node_id": "get_page_title",
+            "node_type": "BrowserGetTextNode",
+            "config": {
+                "selector": "h1"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "browser_screenshot": {
+            "node_id": "browser_screenshot",
+            "node_type": "BrowserScreenshotNode",
+            "config": {
+                "path": "test_output/browser_test_screenshot.png"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "browser_close": {
+            "node_id": "browser_close",
+            "node_type": "BrowserCloseNode",
+            "config": {},
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Browser core tests passed! Page title: {{get_page_title.text}}"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "browser_launch",
+            "source_port": "exec_out",
+            "target_node": "browser_navigate",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "browser_navigate",
+            "source_port": "exec_out",
+            "target_node": "browser_wait",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "browser_wait",
+            "source_port": "exec_out",
+            "target_node": "get_page_title",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "get_page_title",
+            "source_port": "exec_out",
+            "target_node": "browser_screenshot",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "browser_screenshot",
+            "source_port": "exec_out",
+            "target_node": "browser_close",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "browser_close",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 30
+    }
+}

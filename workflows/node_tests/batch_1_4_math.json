@@ -1,0 +1,346 @@
+{
+    "metadata": {
+        "name": "Batch 1.4 - Math & Comparison",
+        "description": "Tests MathOperationNode (all ops), ComparisonNode (all ops), RandomNumberNode, RandomChoiceNode, RandomStringNode, RandomUUIDNode",
+        "version": "1.0.0"
+    },
+    "nodes": {
+        "math_add": {
+            "node_id": "math_add",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": 10,
+                "b": 5,
+                "operation": "add"
+            },
+            "position": [
+                0,
+                0
+            ]
+        },
+        "math_subtract": {
+            "node_id": "math_subtract",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": "{{math_add.result}}",
+                "b": 3,
+                "operation": "subtract"
+            },
+            "position": [
+                400,
+                0
+            ]
+        },
+        "math_multiply": {
+            "node_id": "math_multiply",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": "{{math_subtract.result}}",
+                "b": 2,
+                "operation": "multiply"
+            },
+            "position": [
+                800,
+                0
+            ]
+        },
+        "math_divide": {
+            "node_id": "math_divide",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": "{{math_multiply.result}}",
+                "b": 4,
+                "operation": "divide"
+            },
+            "position": [
+                1200,
+                0
+            ]
+        },
+        "math_modulo": {
+            "node_id": "math_modulo",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": 17,
+                "b": 5,
+                "operation": "modulo"
+            },
+            "position": [
+                1600,
+                0
+            ]
+        },
+        "math_power": {
+            "node_id": "math_power",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": 2,
+                "b": 8,
+                "operation": "power"
+            },
+            "position": [
+                2000,
+                0
+            ]
+        },
+        "math_length": {
+            "node_id": "math_length",
+            "node_type": "MathOperationNode",
+            "config": {
+                "a": "Hello World",
+                "b": 0,
+                "operation": "length"
+            },
+            "position": [
+                2400,
+                0
+            ]
+        },
+        "compare_equal": {
+            "node_id": "compare_equal",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": 10,
+                "b": 10,
+                "operator": "=="
+            },
+            "position": [
+                2800,
+                0
+            ]
+        },
+        "compare_not_equal": {
+            "node_id": "compare_not_equal",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": 10,
+                "b": 5,
+                "operator": "!="
+            },
+            "position": [
+                3200,
+                0
+            ]
+        },
+        "compare_greater": {
+            "node_id": "compare_greater",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": 10,
+                "b": 5,
+                "operator": ">"
+            },
+            "position": [
+                3600,
+                0
+            ]
+        },
+        "compare_less": {
+            "node_id": "compare_less",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": 3,
+                "b": 7,
+                "operator": "<"
+            },
+            "position": [
+                4000,
+                0
+            ]
+        },
+        "compare_gte": {
+            "node_id": "compare_gte",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": 10,
+                "b": 10,
+                "operator": ">="
+            },
+            "position": [
+                4400,
+                0
+            ]
+        },
+        "compare_lte": {
+            "node_id": "compare_lte",
+            "node_type": "ComparisonNode",
+            "config": {
+                "a": 5,
+                "b": 10,
+                "operator": "<="
+            },
+            "position": [
+                4800,
+                0
+            ]
+        },
+        "random_number": {
+            "node_id": "random_number",
+            "node_type": "RandomNumberNode",
+            "config": {
+                "min": 1,
+                "max": 100
+            },
+            "position": [
+                5200,
+                0
+            ]
+        },
+        "random_choice": {
+            "node_id": "random_choice",
+            "node_type": "RandomChoiceNode",
+            "config": {
+                "items": [
+                    "apple",
+                    "banana",
+                    "cherry",
+                    "date"
+                ]
+            },
+            "position": [
+                5600,
+                0
+            ]
+        },
+        "random_string": {
+            "node_id": "random_string",
+            "node_type": "RandomStringNode",
+            "config": {
+                "length": 16
+            },
+            "position": [
+                6000,
+                0
+            ]
+        },
+        "random_uuid": {
+            "node_id": "random_uuid",
+            "node_type": "RandomUUIDNode",
+            "config": {},
+            "position": [
+                6400,
+                0
+            ]
+        },
+        "log_result": {
+            "node_id": "log_result",
+            "node_type": "LogNode",
+            "config": {
+                "message": "Math tests passed! UUID: {{random_uuid.uuid}}"
+            },
+            "position": [
+                6800,
+                0
+            ]
+        }
+    },
+    "connections": [
+        {
+            "source_node": "math_add",
+            "source_port": "exec_out",
+            "target_node": "math_subtract",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "math_subtract",
+            "source_port": "exec_out",
+            "target_node": "math_multiply",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "math_multiply",
+            "source_port": "exec_out",
+            "target_node": "math_divide",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "math_divide",
+            "source_port": "exec_out",
+            "target_node": "math_modulo",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "math_modulo",
+            "source_port": "exec_out",
+            "target_node": "math_power",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "math_power",
+            "source_port": "exec_out",
+            "target_node": "math_length",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "math_length",
+            "source_port": "exec_out",
+            "target_node": "compare_equal",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_equal",
+            "source_port": "exec_out",
+            "target_node": "compare_not_equal",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_not_equal",
+            "source_port": "exec_out",
+            "target_node": "compare_greater",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_greater",
+            "source_port": "exec_out",
+            "target_node": "compare_less",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_less",
+            "source_port": "exec_out",
+            "target_node": "compare_gte",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_gte",
+            "source_port": "exec_out",
+            "target_node": "compare_lte",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "compare_lte",
+            "source_port": "exec_out",
+            "target_node": "random_number",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_number",
+            "source_port": "exec_out",
+            "target_node": "random_choice",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_choice",
+            "source_port": "exec_out",
+            "target_node": "random_string",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_string",
+            "source_port": "exec_out",
+            "target_node": "random_uuid",
+            "target_port": "exec_in"
+        },
+        {
+            "source_node": "random_uuid",
+            "source_port": "exec_out",
+            "target_node": "log_result",
+            "target_port": "exec_in"
+        }
+    ],
+    "variables": {},
+    "settings": {
+        "stop_on_error": true,
+        "timeout": 60
+    }
+}
