@@ -416,10 +416,10 @@ class AutoConnectManager(QObject):
                 # Create a faded line
                 line = QGraphicsLineItem(from_pos.x(), from_pos.y(), to_pos.x(), to_pos.y())
 
-                # Style the line (faded blue/cyan with dashes)
+                # Style the line (faded blue/cyan solid line)
                 pen = QPen(QColor(100, 200, 255, 120))  # Semi-transparent cyan
                 pen.setWidth(2)
-                pen.setStyle(Qt.PenStyle.DashLine)
+                pen.setStyle(Qt.PenStyle.SolidLine)
                 line.setPen(pen)
 
                 # Add to scene

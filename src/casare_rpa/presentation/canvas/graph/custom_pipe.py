@@ -2,7 +2,7 @@
 Custom pipe styling for node connections.
 
 Provides:
-- Dotted line style when dragging connections
+- Solid line style with visual feedback when dragging connections
 - Type-colored wires (like Unreal Blueprints)
 - Variable wire thickness by data type
 - Connection labels showing data type
@@ -26,8 +26,16 @@ from PySide6.QtGui import (
     QPainterPath,
     QBrush,
     QRadialGradient,
+    QTransform,
 )
-from NodeGraphQt.qgraphics.pipe import PipeItem
+from loguru import logger
+from NodeGraphQt.qgraphics.pipe import (
+    PipeItem,
+    LivePipeItem,
+    LayoutDirectionEnum,
+    PipeEnum,
+    PortTypeEnum,
+)
 
 # Import high performance mode flag from custom_node_item
 from casare_rpa.presentation.canvas.graph.custom_node_item import (
@@ -283,69 +291,10 @@ def check_type_compatibility(
         return True
 
 
-# ============================================================================
-# OPENGL-COMPATIBLE DASHED LINE DRAWING
-# ============================================================================
-# Qt's DashLine pen style doesn't render correctly with OpenGL viewport.
-# This helper draws dashed lines manually using line segments.
-
-_DASH_LENGTH = 8.0  # Length of each dash segment
-_GAP_LENGTH = 6.0  # Length of gap between dashes
-
-
-def _draw_dashed_path(painter: QPainter, path: QPainterPath, pen: QPen) -> None:
-    """
-    Draw a path with dashed line style (OpenGL compatible).
-
-    Instead of using QPen.DashLine (which doesn't work with OpenGL),
-    this draws the path as a series of short line segments.
-
-    Args:
-        painter: QPainter to draw with
-        path: The path to draw
-        pen: Pen to use (solid style will be used)
-    """
-    if path.isEmpty():
-        return
-
-    # Use solid pen for manual dash drawing
-    solid_pen = QPen(pen)
-    solid_pen.setStyle(Qt.PenStyle.SolidLine)
-    painter.setPen(solid_pen)
-
-    # Get path length
-    path_length = path.length()
-    if path_length < 1:
-        return
-
-    # Draw dashes along the path
-    segment_length = _DASH_LENGTH + _GAP_LENGTH
-    current_pos = 0.0
-
-    while current_pos < path_length:
-        # Calculate dash start and end positions
-        dash_start = current_pos
-        dash_end = min(current_pos + _DASH_LENGTH, path_length)
-
-        # Get points along the path
-        start_percent = dash_start / path_length
-        end_percent = dash_end / path_length
-
-        try:
-            start_point = path.pointAtPercent(start_percent)
-            end_point = path.pointAtPercent(end_percent)
-            painter.drawLine(start_point, end_point)
-        except Exception:
-            pass
-
-        # Move to next segment (dash + gap)
-        current_pos += segment_length
-
-
 class CasarePipe(PipeItem):
     """
     Custom pipe with:
-    - Dotted style when being dragged
+    - Solid style with lighter color when being dragged
     - Type-colored wires (like Unreal Blueprints)
     - Variable thickness by port type
     - Optional data type label on the connection
@@ -433,6 +382,7 @@ class CasarePipe(PipeItem):
             self._animation_timer.timeout.connect(self._on_animation_tick)
 
         self._animation_timer.start(_ANIMATION_INTERVAL_MS)
+        logger.debug(f"Pipe animation started for connection: {self}")
         self.update()
 
     def stop_flow_animation(self, show_completion_glow: bool = True) -> None:
@@ -454,6 +404,7 @@ class CasarePipe(PipeItem):
             QTimer.singleShot(_COMPLETION_GLOW_MS, self._clear_completion_glow)
 
         self.update()
+        logger.debug(f"Pipe animation stopped for connection: {self}")
 
     def _clear_completion_glow(self) -> None:
         """Clear the completion glow effect."""
@@ -902,6 +853,11 @@ class CasarePipe(PipeItem):
         if not start_port:
             return
 
+        # Check if viewer is available - prevents crash during loading/undo
+        viewer = self.viewer()
+        if viewer is None and not cursor_pos:
+            return
+
         # Get start position (center of port)
         pos1 = start_port.scenePos()
         pos1.setX(pos1.x() + (start_port.boundingRect().width() / 2))
@@ -1040,7 +996,7 @@ class CasarePipe(PipeItem):
             # LOW: Keep type-based thickness but simplified
             pen = QPen(wire_color, max(1.0, self._get_wire_thickness() * 0.75))
 
-        # Draw dashed for live connections, solid for complete
+        # Draw standard solid lines for connections (live or complete)
         is_live = not self.input_port or not self.output_port
 
         # Completion glow (keep in LOD for feedback)
@@ -1057,8 +1013,9 @@ class CasarePipe(PipeItem):
             except Exception:
                 pass
             live_pen.setWidthF(max(live_pen.widthF(), 2.5))
-            # Use OpenGL-compatible manual dashed line drawing
-            _draw_dashed_path(painter, path, live_pen)
+            live_pen.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(live_pen)
+            painter.drawPath(path)
         else:
             # Solid line for complete connections
             pen.setStyle(Qt.PenStyle.SolidLine)
@@ -1082,7 +1039,7 @@ class CasarePipe(PipeItem):
         Features:
         - Type-colored wires based on output port DataType
         - Variable thickness (exec=3px, data=1.5px)
-        - Dashed line for incompatible connections during drag
+        - High-contrast lines for incompatible connections during drag
         - LOD rendering at low zoom levels
 
         PERFORMANCE: Uses centralized LOD manager to determine rendering detail.
@@ -1120,14 +1077,16 @@ class CasarePipe(PipeItem):
             self._draw_completion_glow(painter)
 
         if is_live:
-            # Connection is being dragged - use OpenGL-compatible dashed line
+            # Connection is being dragged - use lighter solid line for contrast
             if self._is_incompatible:
                 pen = QPen(_INCOMPATIBLE_WIRE_COLOR, wire_thickness)
             else:
                 live_color = QColor(wire_color).lighter(150)
                 live_color.setAlpha(255)
-                pen = QPen(live_color, max(wire_thickness, 2.5))
-            _draw_dashed_path(painter, self.path(), pen)
+                pen = QPen(live_color, wire_thickness)
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            painter.drawPath(self.path())
         else:
             # Connection is complete - use solid line with type color
             # Priority: insert highlight > hover > type-colored
@@ -1341,3 +1300,91 @@ def set_show_connection_labels(show: bool) -> None:
 def get_show_connection_labels() -> bool:
     """Check if connection labels are enabled."""
     return _show_connection_labels
+
+
+class CasareLivePipe(LivePipeItem):
+    """
+    Custom LivePipeItem that fixes:
+    1. draw_index_pointer text_pos bug (undefined when layout_direction is None)
+    """
+
+    def paint(self, painter, option, widget):
+        """
+        Paint method for live connection dragging (uses solid line).
+        """
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+        pen = self.pen()
+        path = self.path()
+
+        # Use solid line style
+        pen.setStyle(Qt.PenStyle.SolidLine)
+
+        # Determine thickness based on port type if possible
+        # Exec ports are 3.0, Data ports are 1.5
+        thickness = 1.5
+
+        # In NodeGraphQt, LivePipeItem doesn't always have _start_port exposed nicely.
+        # But we can check if the width already looks like an exec wire (from pen setup)
+        if pen.widthF() > 2.0:
+            thickness = 3.0
+
+        pen.setWidthF(thickness)
+
+        painter.setPen(pen)
+
+        if not path.isEmpty():
+            painter.drawPath(path)
+
+        painter.restore()
+
+    def draw_index_pointer(self, start_port, cursor_pos, color=None):
+        """Fixed version that always initializes text_pos."""
+        if start_port is None:
+            return
+
+        # Set text first so boundingRect is correct for positioning
+        self._idx_text.setPlainText("{}".format(start_port.name))
+        text_rect = self._idx_text.boundingRect()
+
+        transform = QTransform()
+        transform.translate(cursor_pos.x(), cursor_pos.y())
+
+        layout_dir = self.viewer_layout_direction()
+
+        # FIXED: Always initialize text_pos with default value
+        text_pos = (
+            cursor_pos.x() - (text_rect.width() / 2),
+            cursor_pos.y() - (text_rect.height() * 1.25),
+        )
+
+        # Use == instead of 'is' for reliable enum comparison
+        if layout_dir == LayoutDirectionEnum.VERTICAL.value:
+            text_pos = (
+                cursor_pos.x() + (text_rect.width() / 2.5),
+                cursor_pos.y() - (text_rect.height() / 2),
+            )
+            if start_port.port_type == PortTypeEnum.OUT.value:
+                transform.rotate(180)
+        elif layout_dir == LayoutDirectionEnum.HORIZONTAL.value:
+            text_pos = (
+                cursor_pos.x() - (text_rect.width() / 2),
+                cursor_pos.y() - (text_rect.height() * 1.25),
+            )
+            if start_port.port_type == PortTypeEnum.IN.value:
+                transform.rotate(-90)
+            else:
+                transform.rotate(90)
+
+        self._idx_text.setPos(*text_pos)
+        self._idx_pointer.setPolygon(transform.map(self._poly))
+
+        pen_color = QColor(*PipeEnum.HIGHLIGHT_COLOR.value)
+        if isinstance(color, (list, tuple)):
+            pen_color = QColor(*color)
+
+        pen = self._idx_pointer.pen()
+        pen.setColor(pen_color)
+        self._idx_pointer.setBrush(pen_color.darker(300))
+        self._idx_pointer.setPen(pen)

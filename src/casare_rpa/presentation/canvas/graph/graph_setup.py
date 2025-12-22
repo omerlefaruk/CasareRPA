@@ -63,13 +63,30 @@ class GraphSetup:
 
     def _configure_viewer(self) -> None:
         """Configure viewer colors and optimization settings."""
-        from casare_rpa.presentation.canvas.graph.custom_pipe import CasarePipe
+        from casare_rpa.presentation.canvas.graph.custom_pipe import (
+            CasarePipe,
+            CasareLivePipe,
+        )
 
         viewer = self._graph.viewer()
 
         # Register custom pipe class
         try:
             viewer._PIPE_ITEM = CasarePipe
+            viewer._LIVE_PIPE_ITEM = CasareLivePipe
+
+            # If viewer already has a live pipe instance, we must REPLACE it
+            if hasattr(viewer, "_LIVE_PIPE"):
+                # Clean up old instance if it exists
+                old_live_pipe = viewer._LIVE_PIPE
+                if old_live_pipe and hasattr(old_live_pipe, "scene") and old_live_pipe.scene():
+                    old_live_pipe.scene().removeItem(old_live_pipe)
+
+                # Instantiate our custom class
+                viewer._LIVE_PIPE = CasareLivePipe()
+                viewer._LIVE_PIPE.setVisible(False)
+                viewer.scene().addItem(viewer._LIVE_PIPE)
+                logger.debug("Replaced default live pipe with CasareLivePipe")
         except Exception as e:
             logger.warning(f"Could not register custom pipe: {e}")
 
