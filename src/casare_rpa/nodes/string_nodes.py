@@ -45,68 +45,21 @@ def _validate_regex_inputs(text: str, pattern: str) -> None:
         )
 
 
-def _strip_var_wrapper(value: str) -> str:
-    """Strip {{}} wrapper from variable reference if present."""
-    value = value.strip()
-    if value.startswith("{{") and value.endswith("}}"):
-        return value[2:-2].strip()
-    return value
-
-
-def _resolve_string_param(
-    node: BaseNode, context: ExecutionContext, param_name: str, default: str = ""
-) -> str:
-    """Resolve a string parameter from input port, parameter, or variable reference."""
-    # Try input port first
-    value = node.get_input_value(param_name)
-    if value is not None:
-        return str(value)
-
-    # Try parameter
-    param = node.get_parameter(param_name, default)
-
-    # If it's a string that looks like a variable reference
-    if isinstance(param, str) and param:
-        var_name = _strip_var_wrapper(param)
-        if var_name != param:  # Had wrapper, resolve as variable
-            resolved = context.get_variable(var_name)
-            if resolved is not None:
-                return str(resolved)
-        return param
-
-    return str(param) if param is not None else default
-
-
-def _resolve_dict_param(
-    node: BaseNode,
-    context: ExecutionContext,
-    param_name: str,
-    default: Optional[Dict] = None,
-) -> Dict[str, Any]:
-    """Resolve a dict parameter from input port, parameter, or variable reference."""
-    if default is None:
-        default = {}
-
-    # Try input port first
-    value = node.get_input_value(param_name)
-    if value is not None:
-        return value if isinstance(value, dict) else default
-
-    # Try parameter
-    param = node.get_parameter(param_name, default)
-
-    # If it's a string, try to resolve as variable reference
-    if isinstance(param, str) and param:
-        var_name = _strip_var_wrapper(param)
-        resolved = context.get_variable(var_name)
-        if resolved is not None and isinstance(resolved, dict):
-            return resolved
-        return default
-
-    return param if isinstance(param, dict) else default
-
-
 @properties(
+    PropertyDef(
+        "string_1",
+        DataType.STRING,
+        default="",
+        label="String 1",
+        tooltip="First string to concatenate",
+    ),
+    PropertyDef(
+        "string_2",
+        DataType.STRING,
+        default="",
+        label="String 2",
+        tooltip="Second string to concatenate",
+    ),
     PropertyDef(
         "separator",
         PropertyType.STRING,
@@ -138,9 +91,9 @@ class ConcatenateNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            s1 = _resolve_string_param(self, context, "string_1", "")
-            s2 = _resolve_string_param(self, context, "string_2", "")
-            separator = _resolve_string_param(self, context, "separator", "")
+            s1 = self.get_parameter("string_1", "")
+            s2 = self.get_parameter("string_2", "")
+            separator = self.get_parameter("separator", "")
 
             result = f"{s1}{separator}{s2}"
 
@@ -152,7 +105,22 @@ class ConcatenateNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@properties()  # Input port driven
+@properties(
+    PropertyDef(
+        "template",
+        DataType.STRING,
+        default="",
+        label="Template",
+        tooltip="String template with {variables}",
+    ),
+    PropertyDef(
+        "variables",
+        DataType.DICT,
+        default={},
+        label="Variables",
+        tooltip="Dictionary of variables for formatting",
+    ),
+)
 @node(category="data")
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
@@ -176,8 +144,8 @@ class FormatStringNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            template = _resolve_string_param(self, context, "template", "")
-            variables = _resolve_dict_param(self, context, "variables", {})
+            template = self.get_parameter("template", "")
+            variables = self.get_parameter("variables", {})
 
             result = template.format(**variables)
 
@@ -239,8 +207,9 @@ class RegexMatchNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            text = _resolve_string_param(self, context, "text", "")
-            pattern = _resolve_string_param(self, context, "pattern", "")
+            # get_parameter auto-resolves {{variables}} per Modern Node Standard
+            text = self.get_parameter("text", "")
+            pattern = self.get_parameter("pattern", "")
 
             # ReDoS protection - validate inputs before regex execution
             _validate_regex_inputs(text, pattern)
@@ -339,9 +308,10 @@ class RegexReplaceNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            text = _resolve_string_param(self, context, "text", "")
-            pattern = _resolve_string_param(self, context, "pattern", "")
-            replacement = _resolve_string_param(self, context, "replacement", "")
+            # get_parameter auto-resolves {{variables}} per Modern Node Standard
+            text = self.get_parameter("text", "")
+            pattern = self.get_parameter("pattern", "")
+            replacement = self.get_parameter("replacement", "")
 
             # ReDoS protection - validate inputs before regex execution
             _validate_regex_inputs(text, pattern)

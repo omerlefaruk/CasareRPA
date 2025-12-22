@@ -82,6 +82,12 @@ workflows/*.json
 .coverage
 htmlcov/
 .tox/
+test_output/
+pytest_*.txt
+ruff_*.txt
+git_*.txt
+task_*.txt
+modernization_report*.json
 
 # MyPy
 .mypy_cache/

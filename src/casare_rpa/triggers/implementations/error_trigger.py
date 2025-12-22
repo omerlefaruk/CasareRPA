@@ -131,7 +131,7 @@ class ErrorTrigger(BaseTrigger):
         # Check severity filter
         min_severity = config.get("min_severity", "error")
         severity_levels = {"info": 0, "warning": 1, "error": 2, "critical": 3}
-        event_severity = error_data.get("severity", "error")
+        event_severity = getattr(event, "severity", "error")
         if severity_levels.get(event_severity, 2) < severity_levels.get(
             min_severity, 2
         ):

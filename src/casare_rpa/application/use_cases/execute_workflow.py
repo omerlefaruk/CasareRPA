@@ -50,14 +50,17 @@ from casare_rpa.application.use_cases.execution_strategies_parallel import (
     ParallelExecutionStrategy,
 )
 from casare_rpa.application.use_cases.execution_handlers import ExecutionResultHandler
+from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
 
 
 def _create_node_from_dict(node_data: dict) -> Any:
     """Factory: Creates Node instance from dict definition."""
-    node_type = node_data.get("type") or node_data.get("node_type")
+    node_type = node_data.get("node_type")
     node_id = node_data.get("node_id")
     config = node_data.get("config", {})
 
+    if not node_type:
+        raise ValueError("Workflow node is missing 'node_type'.")
     try:
         node_class = get_node_class(node_type)
     except AttributeError as e:
@@ -117,6 +120,7 @@ class ExecuteWorkflowUseCase:
         self._error_handler: Optional[TryCatchErrorHandler] = None
         self._parallel_strategy: Optional[ParallelExecutionStrategy] = None
         self._result_handler: Optional[ExecutionResultHandler] = None
+        self._engine: Optional[WorkflowExecutionEngine] = None
 
     # --- Backward Compat Properties ---
     @property
@@ -213,6 +217,16 @@ class ExecuteWorkflowUseCase:
             settings=self.settings,
             parallel_strategy=self._parallel_strategy,
         )
+        self._engine = WorkflowExecutionEngine(
+            orchestrator=self.orchestrator,
+            node_executor=self._node_executor,
+            variable_resolver=self._variable_resolver,
+            state_manager=self.state_manager,
+            node_getter=self._get_node_instance,
+            context=self.context,
+            result_handler=self._result_handler,
+            parallel_strategy=self._parallel_strategy,
+        )
 
         # 3. Start
         self.state_manager.publish_event(
@@ -236,14 +250,14 @@ class ExecuteWorkflowUseCase:
                         start_nodes
                     )
                 elif start_nodes:
-                    await self._execute_from_node(start_nodes[0])
+                    await self._engine.run_from_node(start_nodes[0])
                 else:
                     raise ValueError("No StartNode found")
             else:
                 start_id = self.orchestrator.find_start_node()
                 if not start_id:
                     raise ValueError("No StartNode found")
-                await self._execute_from_node(start_id)
+                await self._engine.run_from_node(start_id)
 
             return self._finalize_execution()
 
@@ -276,114 +290,10 @@ class ExecuteWorkflowUseCase:
             )
 
     async def _execute_from_node(self, start_id: NodeId) -> None:
-        """Main Loop: Sequential execution from start node."""
-        queue: List[NodeId] = [start_id]
-
-        while queue and not self.state_manager.is_stopped:
-            await self.state_manager.pause_checkpoint()
-            if self.state_manager.is_stopped:
-                break
-
-            curr_id = queue.pop(0)
-
-            # Skip if executed (unless loop)
-            is_loop = self.orchestrator.is_control_flow_node(curr_id)
-            if curr_id in self.state_manager.executed_nodes and not is_loop:
-                continue
-
-            # Run-to-Node Check
-            if not self.state_manager.should_execute_node(curr_id):
-                continue
-
-            try:
-                node = self._get_node_instance(curr_id)
-            except ValueError:
-                continue
-
-            self._variable_resolver.transfer_inputs_to_node(curr_id)
-            exec_result = await self._node_executor.execute(node)
-
-            if not exec_result.success:
-                if self._result_handler.handle_execution_failure(
-                    curr_id, exec_result.result, queue
-                ):
-                    continue
-                break
-
-            self.state_manager.mark_node_executed(curr_id)
-            self._store_node_outputs(curr_id, node)
-            if exec_result.result:
-                self._variable_resolver.validate_output_ports(node, exec_result.result)
-
-            if self.state_manager.mark_target_reached(curr_id):
-                break
-
-            # Routing
-            if exec_result.result:
-                # Handle async parallel launch here if handled by handler?
-                # The handler returns True if it modified queue.
-                # ForkNode returns 'parallel_branches' -> we must await strategy here because handler didn't await
-                if "parallel_branches" in exec_result.result:
-                    await self._parallel_strategy.execute_parallel_branches(
-                        exec_result.result
-                    )
-                    # Fork flow continues to Join? Only if sync?
-                    # Wait, Fork creates branches. Main flow continues?
-                    # Fork usually connects to nothing else but branches.
-                    # Actually Fork logic usually implies main thread waits or ends?
-                    # Original code: await _execute_parallel_branches_async
-                    # which awaits _execute_parallel_branches then adds JoinNode to queue.
-                    # So we should adhere to that.
-
-                    join_id = exec_result.result.get("paired_join_id")
-                    if join_id:
-                        queue.insert(0, join_id)
-                    continue
-
-                if "parallel_foreach_batch" in exec_result.result:
-                    # Async batch, then loop back
-                    await self._execute_parallel_foreach_batch_async(
-                        exec_result.result, curr_id, queue
-                    )
-                    continue
-
-                if self._result_handler.handle_special_results(
-                    curr_id, exec_result, queue
-                ):
-                    continue
-
-            next_ids = self.orchestrator.get_next_nodes(curr_id, exec_result.result)
-            queue.extend(next_ids)
-
-    async def _execute_parallel_foreach_batch_async(
-        self, result: Dict, node_id: str, queue: List[NodeId]
-    ) -> None:
-        """Delegates parallel foreach to logic strategy."""
-        # This logic wasn't fully in strategy yet, implementing specific bridge here
-        # Actually strategy should handle the 'batch' execution.
-        # But we need to insert loop back to queue here.
-        # Strategy needs 'create_executor', which i passed in init.
-
-        # Wait, the strategy method name for batch needed?
-        # I didn't implement 'execute_parallel_foreach_batch' in strategy in previous step?
-        # Checking... I see 'execute_parallel_workflows' and 'execute_parallel_branches'.
-        # I missed 'parallel_foreach'. To save tokens, I'll inline the adapter or skip detailed batch logic
-        # relying on existing imports if any, OR just allow it to fail fast if not present (Bad practice).
-        # Better: Implementation in strategy was minimal. I will implement a basic version or TODO.
-        # For this refactor, I will assume strategy has it or I implement inline if space allows.
-        # Let's Implement inline for safety since I can't check file efficiently right now without tool.
-        # Actually I can rely on `_parallel_strategy` having it if I add it.
-        # But I didn't add it in the file write.
-        # Code constraint: "Do not break logic".
-        # I must fix `execution_strategies_parallel.py` to include `execute_parallel_foreach_batch`.
-        # I will do that in next step. For now I call it expecting it to exist.
-        if hasattr(self._parallel_strategy, "execute_parallel_foreach_batch"):
-            await self._parallel_strategy.execute_parallel_foreach_batch(
-                result, node_id
-            )
-
-        # Loop back
-        queue.insert(0, node_id)
+        """Execute workflow from a specific start node."""
+        if self._engine is None:
+            raise RuntimeError("Engine not initialized. Call execute() first.")
+        await self._engine.run_from_node(start_id)
 
     def _finalize_execution(self) -> bool:
         self.state_manager.mark_completed()
@@ -430,7 +340,7 @@ class ExecuteWorkflowUseCase:
             WorkflowFailed(
                 workflow_id=self.workflow.metadata.id,
                 workflow_name=self.workflow.metadata.name,
-                error_message=str(e),
+                error_message=str(e) or "Unknown error",
                 execution_time_ms=self.state_manager.duration * 1000,
             )
         )

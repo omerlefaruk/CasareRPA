@@ -30,7 +30,6 @@ from casare_rpa.nodes.trigger_nodes.whatsapp_trigger_node import WhatsAppTrigger
 from casare_rpa.nodes.trigger_nodes.gmail_trigger_node import GmailTriggerNode
 from casare_rpa.nodes.trigger_nodes.drive_trigger_node import DriveTriggerNode
 from casare_rpa.nodes.trigger_nodes.sheets_trigger_node import SheetsTriggerNode
-from casare_rpa.nodes.trigger_nodes.calendar_trigger_node import CalendarTriggerNode
 
 __all__ = [
     # Base
@@ -54,5 +53,4 @@ __all__ = [
     "GmailTriggerNode",
     "DriveTriggerNode",
     "SheetsTriggerNode",
-    "CalendarTriggerNode",
 ]
