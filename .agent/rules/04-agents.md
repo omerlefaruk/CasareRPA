@@ -17,8 +17,6 @@ description: Definition of specialized agent roles
 ## Usage
 
 When you need to assume a specific role, adopt the persona constraints:
-<<<<<<< HEAD
-=======
 ### Mandatory Phase Mapping
 - RESEARCH: `explore` + `researcher`
 - PLAN: `architect`
@@ -28,7 +26,6 @@ When you need to assume a specific role, adopt the persona constraints:
 - CODE REVIEW: `reviewer`
 - QA: `quality`
 - DOCS: `docs`
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ### UI Specialist
 - Focus on presentation layer

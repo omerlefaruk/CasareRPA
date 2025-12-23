@@ -8,52 +8,6 @@ description: Node development workflow and templates
 
 **Schema-Driven Logic** - All 430+ nodes follow this pattern:
 
-<<<<<<< HEAD
-**Priority:**
-1. Use existing node → Done
-2. Modify existing node → Minimal change
-3. Create new node → Last resort
-
-## Phase 3: IMPLEMENT
-
-### File Location
-| Category | Directory |
-|----------|-----------|
-| Browser | `nodes/browser/` |
-| Desktop | `nodes/desktop_nodes/` |
-| Data | `nodes/data/` |
-| Control Flow | `nodes/control_flow/` |
-| System | `nodes/system/` |
-
-### Required Components
-1. Node class extending `BaseNode`
-2. `@node(category="category")` decorator
-3. `@properties` with property definitions
-4. Tests in `tests/nodes/`
-
-### Template
-```python
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
-@properties(
-    PropertyDef("input", PropertyType.STRING, required=True),
-)
-@node(category="my_category")
-class MyNode(BaseNode):
-    """One-line description."""
-
-    async def execute(self, context):
-        # 1. Get raw parameter
-        raw_val = self.get_parameter("input")
-
-        # 2. Resolve templates (MANDATORY)
-        val = context.resolve_value(raw_val)
-
-        # 3. Implementation
-        return self.success_result({"result": f"Processed {val}"})
-=======
 ```python
 @properties(
     PropertyDef("url", PropertyType.STRING, required=True),
@@ -67,7 +21,6 @@ class MyNode(BaseNode):
         timeout = self.get_parameter("timeout", 30000)  # optional - port or config
 
         # LEGACY (DON'T USE): self.config.get("timeout", 30000)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 ```
 
 **When to use get_parameter():**

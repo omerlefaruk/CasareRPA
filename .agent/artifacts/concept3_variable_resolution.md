@@ -121,11 +121,7 @@ class BaseNode:
 3. Roll out to browser, system, and other node categories
 
 ### Phase 4: Documentation and Tests
-<<<<<<< HEAD
-1. Update GEMINI.md with new pattern
-=======
 1. Update AGENTS.md (and sync CLAUDE.md + GEMINI.md) with new pattern
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 2. Add integration tests for resolution
 3. Update existing tests if needed
 
@@ -148,11 +144,7 @@ class BaseNode:
 2. [x] **Phase 2**: Update get_parameter with auto-resolution ✅
 3. [x] **Phase 3a**: Test with a few nodes (pilot) ✅ - Added 7 unit tests
 4. [ ] **Phase 3b**: Mass update remaining nodes (optional - backward compatible)
-<<<<<<< HEAD
-5. [x] **Phase 4**: Documentation update ✅ - Updated GEMINI.md
-=======
 5. [x] **Phase 4**: Documentation update ✅ - Updated AGENTS.md/CLAUDE.md/GEMINI.md
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ---
 
@@ -173,11 +165,7 @@ class BaseNode:
 |------|--------|
 | `src/casare_rpa/domain/entities/base_node.py` | Added `_execution_context`, updated `get_parameter()` with auto-resolution, added `get_raw_parameter()` and `set_execution_context()` |
 | `src/casare_rpa/application/use_cases/node_executor.py` | Added context injection in `_execute_with_timeout()` and `execute_with_timeout_safe()` |
-<<<<<<< HEAD
-| `GEMINI.md` | Updated Modern Node Standard to reflect AUTO-RESOLUTION pattern |
-=======
 | `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` | Updated Modern Node Standard to reflect AUTO-RESOLUTION pattern |
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 | `tests/domain/test_auto_resolution.py` | Added 7 unit tests for auto-resolution |
 
 ### Key APIs Added

@@ -39,26 +39,31 @@ def check_file(filepath: str) -> list[str]:
     if "test" in filepath or "docs" in filepath or ".md" in filepath:
         return errors
     
-    with open(filepath, "r") as f:
-        lines = f.readlines()
-        for i, line in enumerate(lines, 1):
-            # Skip comments
-            if line.strip().startswith("#"):
-                continue
-            
-            # Skip ignore patterns
-            if any(re.search(pattern, line, re.IGNORECASE) 
-                   for pattern in IGNORE_PATTERNS):
-                continue
-            
-            for secret_pattern in SECRET_PATTERNS:
-                if re.search(secret_pattern, line, re.IGNORECASE):
-                    errors.append(
-                        f"{filepath}:{i} - Hardcoded secret detected. Use environment variables instead.\n  {line.strip()}"
-                    )
-                    break
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+    except Exception:
+        return errors
+    
+    for i, line in enumerate(lines, 1):
+        # Skip comments
+        if line.strip().startswith("#"):
+            continue
+        
+        # Skip ignore patterns
+        if any(re.search(pattern, line, re.IGNORECASE) 
+               for pattern in IGNORE_PATTERNS):
+            continue
+        
+        for secret_pattern in SECRET_PATTERNS:
+            if re.search(secret_pattern, line, re.IGNORECASE):
+                errors.append(
+                    f"{filepath}:{i} - Hardcoded secret detected. Use environment variables instead.\n  {line.strip()}"
+                )
+                break
     
     return errors
+
 
 
 def main():

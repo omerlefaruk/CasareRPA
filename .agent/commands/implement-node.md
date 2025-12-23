@@ -58,11 +58,6 @@ Follow patterns from explore findings.
 """)
 ```
 
-<<<<<<< HEAD
-**Gate**: "Plan ready. Approve EXECUTE?"
-
-## Phase 3: EXECUTE (Parallel - 3 agents)
-=======
 **Gate**: "Plan ready. Approve REVIEW PLAN?"
 
 ## Phase 2b: REVIEW PLAN (reviewer)
@@ -93,7 +88,6 @@ Mock ALL external APIs (Playwright, HTTP, file I/O).
 ```
 
 ## Phase 4: IMPLEMENT (Parallel - 2 agents)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ### For mode=implement or mode=clone:
 ```
@@ -122,22 +116,6 @@ Include:
 - _create_from_node_class() call
 """)
 
-<<<<<<< HEAD
-Task(subagent_type="quality", prompt="""
-mode: test
-
-Create test suite: tests/nodes/test_$ARGUMENTS.node_name.py
-
-Cover:
-- test_init: Verify ports and properties
-- test_execute_success: Happy path with mocked externals
-- test_execute_error_handling: Exception handling
-
-Use @pytest.mark.asyncio for async tests.
-Mock ALL external APIs (Playwright, HTTP, file I/O).
-""")
-=======
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 ```
 
 ### For mode=extend:
@@ -152,23 +130,6 @@ Task(subagent_type="refactor", prompt="Improve $ARGUMENTS.node_name code quality
 Task(subagent_type="quality", prompt="mode: test - Verify existing tests still pass")
 ```
 
-<<<<<<< HEAD
-## Phase 4: VALIDATE (Sequential Loop)
-
-### Quality Agent:
-```
-Task(subagent_type="quality", prompt="""
-mode: test
-
-Run tests:
-pytest tests/nodes/test_$ARGUMENTS.node_name.py -v
-pytest tests/nodes/$ARGUMENTS.category/ -v  # Regression
-
-All must pass.
-""")
-```
-
-=======
 ## Phase 4b: REGISTRATION (builder)
 
 After implementation, register the node:
@@ -185,7 +146,6 @@ Register $ARGUMENTS.node_name:
 
 ## Phase 5: CODE REVIEW + QA (Sequential Loop)
 
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 ### Reviewer Agent:
 ```
 Task(subagent_type="reviewer", prompt="""
@@ -203,24 +163,6 @@ Output: APPROVED or ISSUES with file:line references
 """)
 ```
 
-<<<<<<< HEAD
-**Loop**: If ISSUES → fix → quality → reviewer again
-
-## Phase 5: REGISTRATION (builder)
-
-After APPROVED, register the node:
-
-```
-Task(subagent_type="builder", prompt="""
-Register $ARGUMENTS.node_name:
-
-1. nodes/$ARGUMENTS.category/__init__.py - Add export
-2. nodes/registry_data.py - Add registration entry
-3. visual_nodes/$ARGUMENTS.category/__init__.py - Add visual export
-""")
-```
-
-=======
 ### Quality Agent:
 ```
 Task(subagent_type="quality", prompt="""
@@ -234,7 +176,6 @@ All must pass.
 
 **Loop**: If ISSUES/FAILURES → fix → re-test → re-review
 
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 ## Phase 6: DOCS (docs)
 
 ```

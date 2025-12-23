@@ -51,11 +51,6 @@ Follow patterns from explore findings and .brain/systemPatterns.md
 """)
 ```
 
-<<<<<<< HEAD
-**Gate**: "Plan ready. Approve EXECUTE?"
-
-## Phase 3: EXECUTE (Parallel - 2-5 agents)
-=======
 **Gate**: "Plan ready. Approve REVIEW PLAN?"
 
 ## Phase 2b: REVIEW PLAN (reviewer)
@@ -80,7 +75,6 @@ Follow patterns from explore phase.
 ```
 
 ## Phase 4: IMPLEMENT (Parallel - 2-5 agents)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ### For mode=implement or mode=extend:
 ```
@@ -100,24 +94,7 @@ Task(subagent_type="quality", prompt="mode=perf: Profile and identify bottleneck
 Task(subagent_type="refactor", prompt="Optimize identified bottlenecks")
 ```
 
-<<<<<<< HEAD
-## Phase 4: VALIDATE (Sequential Loop)
-
-### Quality Agent:
-```
-Task(subagent_type="quality", prompt="""
-mode: test
-
-Create comprehensive test suite for the feature.
-Location: tests/$ARGUMENTS.scope/
-
-Cover: SUCCESS, ERROR, EDGE_CASES
-Follow test patterns from explore phase.
-""")
-```
-=======
 ## Phase 5: CODE REVIEW + QA (Sequential Loop)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ### Reviewer Agent:
 ```
@@ -135,11 +112,6 @@ Output: APPROVED or ISSUES with file:line references
 """)
 ```
 
-<<<<<<< HEAD
-**Loop**: If ISSUES → fix → quality → reviewer again
-
-## Phase 5: DOCS (docs)
-=======
 ### Quality Agent:
 ```
 Task(subagent_type="quality", prompt="""
@@ -151,7 +123,6 @@ Report failures and required fixes.
 **Loop**: If ISSUES/FAILURES → fix → re-run tests → re-review
 
 ## Phase 6: DOCS (docs)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ```
 Task(subagent_type="docs", prompt="""

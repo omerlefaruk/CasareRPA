@@ -1,190 +1,122 @@
 <<<<<<< HEAD
-# GEMINI.md
+# AGENTS.md
 
-Configuration and capabilities for the Gemini AI Coding Agent.
+Machine-readable instructions for AI coding agents working on CasareRPA.
 
-## Modern Node Standard (2025)
+## Project Overview
 
-All 430+ nodes follow **Schema-Driven Logic**:
+CasareRPA is an enterprise Windows RPA platform built with:
+- **Python 3.12** with strict typing
+- **PySide6** for desktop UI
+- **Playwright** for browser automation
+- **Domain-Driven Design (DDD)** architecture
 
-```python
-@properties(
-    PropertyDef("url", PropertyType.STRING, required=True),
-    PropertyDef("timeout", PropertyType.INTEGER, default=30000),
-)
-@node(category="browser")
-class MyNode(BaseNode):
-    async def execute(self, context):
-        url = self.get_parameter("url")              # Auto-resolved!
-        timeout = self.get_parameter("timeout", 30000)  # Auto-resolved!
+## Build & Test Commands
+
+```bash
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test category
+pytest tests/nodes/ -v
+pytest tests/domain/ -v
+
+# Type checking
+mypy src/casare_rpa
+
+# Linting
+ruff check src/
+
+# Format code
+black src/ tests/
+
+# Re-index codebase for semantic search
+python scripts/index_codebase.py
+
+# Launch application
+python run.py
+
+# Launch Canvas UI
+python manage.py canvas
 ```
 
-**Requirements:**
-- `@properties()` decorator (REQUIRED - even if empty)
-- `get_parameter()` for ALL port/config values (dual-source pattern)
-- **AUTO-RESOLUTION** (NEW 2025): `get_parameter()` now auto-resolves `{{variables}}` when context is available. Manual `context.resolve_value()` calls are **no longer needed** in most cases.
-- **RAW VALUES**: Use `get_raw_parameter()` or `get_parameter(name, resolve=False)` when you need the un-resolved template string.
-- **CACHE AWARENESS**: `VariableResolutionCache` is prefix-aware. Updating a parent dict (e.g. `node`) invalidates child paths (e.g. `node.result`).
-- Explicit DataType on all ports (ANY is valid)
-- NO `self.config.get()` calls (LEGACY)
+## Code Style Guidelines
 
-**Audit:** `python scripts/audit_node_modernization.py` → 98%+ modern
+1. **Type Hints Required**: Every function, method, and variable must have type hints
+2. **Async-First**: Use `async/await` for all I/O operations
+3. **Docstrings**: All public APIs must have docstrings
+4. **Imports**: Use absolute imports, ordered as stdlib → third-party → local
+5. **Error Handling**: Wrap all external calls in try/except, log via `loguru`
 
-## MCP Setup
+## Architecture (DDD Layers)
 
-MCP servers are configured in `./.mcp.json`.
-
-- `filesystem` — safe file operations within allowed roots (Node, via `npx`)
-- `git` — repository inspection/operations (requires `python -m pip install mcp-server-git`)
-- `sequential-thinking` — structured reasoning tool (Node, via `npx`)
-
-## Agent Capabilities
-
-
-| Agent | Capability | Skill Mapping |
-|-------|------------|---------------|
-| `architect` | System design, DDD patterns, refactoring planning | `architect-design` |
-| `builder` | Python 3.12+ implementation, PySide6 UI, Playwright, Browser Scripting | `code-implementation` |
-| `docs` | Technical writing, docstring generation, README maintenance | `documentation` |
-| `explore` | Codebase navigation, semantic search, dependency mapping | `semantic-search` |
-| `integrations` | API client development, database schema design, Supabase | `api-integration` |
-| `quality` | Test generation (pytest), bug reproduction, code review | `test-generator` |
-| `refactor` | Code optimization, pattern modernization, clean architecture | `refactor-patterns` |
-| `researcher` | Error diagnosis, requirement gathering, technology research | `error-diagnosis` |
-| `reviewer` | PR review, security audit, style enforcement | `code-review` |
-| `ui` | PySide6 widget development, CSS styling, UX optimization | `ui-widget` |
-
-## Skill Mappings
-
-| Skill | Description | Schema |
-|-------|-------------|--------|
-| `semantic-search` | Search codebase for patterns/meaning | `search_schema` |
-| `test-generator` | Generate pytest files for nodes/domain | `test_schema` |
-| `import-fixer` | Organize and fix Python imports | `import_schema` |
-| `node-template-generator` | Scaffold new RPA nodes | `node_schema` |
-| `error-diagnosis` | Analyze logs and tracebacks to find bugs | `error_schema` |
-| `api-integration` | Create REST/GraphQL clients | `api_schema` |
-| `ui-widget` | Create PySide6 custom widgets | `ui_schema` |
-| `performance-optimizer` | Identify and fix performance bottlenecks | `perf_schema` |
-| `node-creator` | Create complex RPA nodes with logic | `node_creator_schema` |
-
-## Gemini API Integration Parameters
-
-- **Model:** `gemini-2.0-flash-exp` (Primary), `gemini-1.5-pro` (Reasoning)
-- **Temperature:** 0.0 (Strict), 0.7 (Creative)
-- **Top-P:** 0.95
-- **Top-K:** 40
-- **Max Output Tokens:** 8192
-- **Safety Settings:** `BLOCK_NONE`
-- **Response MIME Type:** `text/plain` or `application/json`
-
-## Interaction Schemas
-
-### Skill Execution Schema
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "skill_name": { "type": "string" },
-    "parameters": { "type": "object" },
-    "context": { "type": "object" }
-  },
-  "required": ["skill_name", "parameters"]
-}
+```
+src/casare_rpa/
+├── domain/          # Business logic, entities, value objects
+├── application/     # Use cases, orchestration
+├── infrastructure/  # External integrations, database, APIs
+├── presentation/    # UI, canvas, widgets
+└── nodes/           # Automation nodes (430+ modern)
 ```
 
-### Concrete Skill Schemas
+**Rules:**
+- Domain layer has NO external dependencies
+- Infrastructure implements domain interfaces
+- Nodes extend `BaseNode` from domain
+- All nodes use `@properties` + `get_parameter()` (Modern Node Standard)
 
-#### semantic-search
-```json
-{
-  "type": "object",
-  "properties": {
-    "query": { "type": "string" },
-    "top_k": { "type": "integer", "default": 5 },
-    "filter": { "type": "object" }
-  },
-  "required": ["query"]
-}
+## Testing Instructions
+
+- Use `pytest` with fixtures from `conftest.py`
+- Test happy path, error cases, and edge cases
+- Mock external dependencies in unit tests
+- Aim for 80%+ coverage on new code
+
+## Semantic Search
+
+Use the MCP `search_codebase` tool for finding code by meaning:
+```
+search_codebase("browser automation click", top_k=5)
 ```
 
-#### test-generator
-```json
-{
-  "type": "object",
-  "properties": {
-    "file_path": { "type": "string" },
-    "test_type": { "enum": ["unit", "integration", "e2e"] },
-    "mock_dependencies": { "type": "boolean", "default": true }
-  },
-  "required": ["file_path"]
-}
+First query: ~800ms | Subsequent: <100ms
+
+## Commit Message Format
+
+```
+<type>: <short description>
+
+[optional body]
+
+Types: feat, fix, refactor, test, docs, chore
 ```
 
-#### performance-optimizer
-```json
-{
-  "type": "object",
-  "properties": {
-    "target_file": { "type": "string" },
-    "optimization_goal": { "enum": ["cpu", "memory", "latency"] }
-  },
-  "required": ["target_file"]
-}
-```
+## Security Notes
 
-#### node-creator
-```json
-{
-  "type": "object",
-  "properties": {
-    "name": { "type": "string" },
-    "category": { "type": "string" },
-    "inputs": { "type": "array", "items": { "type": "string" } },
-    "outputs": { "type": "array", "items": { "type": "string" } }
-  },
-  "required": ["name", "category"]
-}
-```
+- Never commit API keys or secrets
+- Use environment variables from `.env`
+- JWT secrets must be 32+ characters in production
+- Validate all user inputs
 
-### Agent Activity Log Schema
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "properties": {
-    "timestamp": { "type": "string", "format": "date-time" },
-    "agent": { "type": "string" },
-    "action": { "type": "string" },
-    "status": { "enum": ["success", "failure", "pending"] },
-    "details": { "type": "string" }
-  },
-  "required": ["timestamp", "agent", "action", "status"]
-}
-```
+## Key Files
 
-## Error Handling Policy
+| Purpose | Location |
+|:---|:---|
+| Node base class | `src/casare_rpa/domain/entities/base_node.py` |
+| Execution controller | `src/casare_rpa/application/execution/` |
+| Browser automation | `src/casare_rpa/infrastructure/browser/` |
+| Visual nodes | `src/casare_rpa/presentation/canvas/nodes/` |
+| Tests | `tests/` |
 
-1. **API Failures:** Retry with exponential backoff (max 3 retries).
-2. **Skill Execution Failures:** Log error, notify user, and suggest alternative skill or manual intervention.
-3. **Validation Failures:** Reject execution if parameters do not match schema.
+## Adding New Nodes
 
-## Lessons Learned (Stress Test Round 1)
+When adding a new automation node, follow the **Modern Node Standard (2025)**:
 
-1. **SERIAL EXECUTION IS MANDATORY**: All action nodes, including "data" nodes (`ComparisonNode`, `FormatStringNode`, etc.), must be part of the main `exec_out` -> `exec_in` chain. Orphan nodes run at start-time in parallel and usually fail due to missing data from the main chain.
-2. **ROBUST DATA NODES**: Logic nodes should handle unresolved templates (e.g., `{{variable}}`) gracefully. If a variable is not ready (due to orphan execution), the node should log a warning and return a safe default instead of crashing the process.
-3. **RECURSIVE RESOLUTION**: Nodes that accept dictionaries (like `FormatStringNode`'s `variables`) must use `resolve_dict_variables` to ensure nested templates are resolved before Use.
-4. **TYPE COERCION in COMPARISON**: Comparison nodes should attempt to coerce numeric-looking strings to floats/ints before comparison to handle inputs like `"25" > 20`.
-5. **JSON-LIKE BOOLEANS**: Safe evaluation should support `true`, `false`, and `null` as aliases for Python's `True`, `False`, `None` to improve compatibility with LLM-generated expressions.
-6. **NO HARDCODED WAITS**: NEVER use `asyncio.sleep()` or `time.sleep()` with fixed durations. Instead, use smart waiting strategies:
-   - `page.wait_for_load_state('networkidle')` - Wait for network to be idle
-   - `page.wait_for_load_state('domcontentloaded')` - Wait for DOM ready
-   - `locator.wait_for(state='visible')` - Wait for element visibility
-   - `page.wait_for_selector(selector)` - Wait for element to appear
-   - `page.expect_download()` - Wait for download events
-   - `page.wait_for_url(pattern)` - Wait for URL change
-   - Polling with exponential backoff for custom conditions
+### Schema-Driven Logic Pattern
+
 =======
 # CasareRPA Agent Guide (Canonical)
 
@@ -423,6 +355,7 @@ bus.publish(NodeCompleted(node_id="x", node_type="Y", workflow_id="wf1", executi
 
 ## Node Development (Modern Node Standard 2025)
 Schema-driven logic (see `.agent/rules/03-nodes.md`, `.agent/rules/10-node-workflow.md`, `.brain/docs/node-templates.md`):
+>>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 ```python
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -435,6 +368,70 @@ from casare_rpa.domain.value_objects.types import DataType
 )
 @node(category="browser")
 class MyNode(BaseNode):
+<<<<<<< HEAD
+    def _define_ports(self):
+        self.add_input_port("url", DataType.STRING)
+        self.add_output_port("result", DataType.STRING)
+
+    async def execute(self, context):
+        # MODERN: get_parameter() checks port first, then config
+        # AUTO-RESOLVES {{variables}} - no manual resolve_value() needed!
+        url = self.get_parameter("url")              # Auto-resolved!
+        timeout = self.get_parameter("timeout", 30000)  # Auto-resolved!
+
+        # Get raw un-resolved value (for templates/debugging):
+        raw = self.get_raw_parameter("url")
+
+        # LEGACY (DON'T USE): self.config.get("timeout", 30000)
+        # LEGACY (DON'T USE): context.resolve_value(url)
+```
+
+**Requirements:**
+- `@properties()` decorator (REQUIRED - even if empty)
+- `get_parameter()` for optional properties (dual-source: port → config), AUTO-RESOLVES `{{variables}}`
+- `get_raw_parameter()` when you need the un-resolved template string
+- Explicit DataType on all ports (ANY is valid for polymorphic)
+- NO `self.config.get()` calls
+- NO manual `context.resolve_value()` calls
+
+**Audit compliance:** `python scripts/audit_node_modernization.py` → 98%+ modern
+
+### 4-Step Registration
+
+1.  **Create Backend Node:** Implement in `src/casare_rpa/nodes/<category>/`
+    - Use `@properties` + `@node(category="...")` decorators
+    - Use `get_parameter()` for optional properties
+
+2.  **Register Backend Node:** Add to `src/casare_rpa/nodes/registry_data.py`
+    - Key: Class Name, Value: Module path
+
+3.  **Create Visual Node:** Implement in `src/casare_rpa/presentation/canvas/visual_nodes/<category>/`
+    - Define `__identifier__`, `NODE_NAME`, `NODE_CATEGORY`
+
+4.  **Register Visual Node:** Add to `src/casare_rpa/presentation/canvas/visual_nodes/__init__.py`
+
+## Common Pitfalls & Solutions
+
+| Issue | Symptom | Cause | Solution |
+|-------|---------|-------|----------|
+| **Silent Visual Node Failure** | Node logic is correct but node doesn't appear in Canvas/Tab menu. | Import error in visual node file (e.g., importing non-existent widget). | Check visual node imports. The lazy loader suppresses import errors. |
+| **Invalid Workflow JSON** | `unexpected control character` error on load. | Unescaped newlines in JSON strings (e.g., scripts). | Use `\n` literal for newlines. Ensure JSON string values are valid one-liners. |
+| **Circular Dependency** | `CIRCULAR_DEPENDENCY` validation error. | Using `IfNode` + connection to loop back. | Use `WhileLoop` or `ForLoop` nodes which handle loops internally without static graph cycles. |
+| **Event Instantiation** | `unexpected keyword argument` error. | Passing raw objects (`page`) to Domain Events. | Pass only serializable data (`url`, `title`) matching event dataclass definition. |
+| **Widget Imports** | `ImportError: cannot import name ...` | Trying to import specific widgets like `NodeTextWidget` that don't exist. | Use `@properties` for auto-generation or factory functions like `create_variable_text_widget`. |
+
+## Skills Reference
+
+Skills are located in `agent-rules/skills/`:
+- `semantic-search.md` - Codebase search via ChromaDB
+- `error-diagnosis.md` - Debugging methodology
+- `performance-optimizer.md` - Bottleneck identification
+- `api-integration.md` - HTTP client patterns
+- `node-creator.md` - Node creation workflow
+- `ui-widget.md` - PySide6 widget templates
+- `import-fixer.md` - Import organization
+- `test-generator.md` - Test file generation
+=======
     def _define_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_exec_output("exec_out")

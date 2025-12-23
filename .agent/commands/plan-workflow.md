@@ -18,16 +18,10 @@ arguments:
 2. **DISCOVER** - Search 413+ nodes via semantic search & registry
 3. **ANALYZE** - Gap analysis with node suggestions (existing + new)
 4. **PLAN** - Create modular, scalable architecture
-<<<<<<< HEAD
-5. **OPTIMIZE** - AI model selection, caching, token cost estimation
-6. **GENERATE** - Auto-create workflow JSON + Mermaid diagram
-7. **IMPLEMENT** - Create missing nodes via `/implement-node`
-=======
 5. **REVIEW** - Confirm plan with user before implementation
 6. **OPTIMIZE** - AI model selection, caching, token cost estimation
 7. **GENERATE** - Auto-create workflow JSON + Mermaid diagram
 8. **IMPLEMENT** - Create missing nodes via `/implement-node`
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 ## Quick Start
 
