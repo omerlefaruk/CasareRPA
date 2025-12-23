@@ -43,26 +43,24 @@ repos:
       - id: ruff-format
         name: Ruff formatter
 
-  # MyPy - Static type checker (DISABLED - too many errors in current codebase)
-  # TODO: Enable incrementally after fixing type annotations in clean architecture layers
-  # Note: Found 2945 errors across 118 files - needs systematic cleanup
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.14.1
-  #   hooks:
-  #     - id: mypy
-  #       name: MyPy type checker (clean architecture only)
-  #       files: ^src/casare_rpa/(domain|infrastructure|application|presentation)/.*\.py$
-  #       args:
-  #         - --ignore-missing-imports
-  #         - --python-version=3.12
-  #         - --no-strict-optional
-  #         - --warn-redundant-casts
-  #         - --warn-unused-ignores
-  #       additional_dependencies:
-  #         - types-requests
-  #         - types-PyYAML
-  #         - pydantic
-  #         - PySide6-stubs
+  # MyPy - Static type checker (Enabled for domain layer only)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        name: MyPy type checker (domain layer only)
+        files: ^src/casare_rpa/domain/.*\.py$
+        args:
+          - --ignore-missing-imports
+          - --python-version=3.12
+          - --no-strict-optional
+          - --warn-redundant-casts
+          - --warn-unused-ignores
+        additional_dependencies:
+          - types-requests
+          - types-PyYAML
+          - pydantic
+          - PySide6-stubs
 
   # Quick test suite (optional - run manually with pytest)
   # - repo: local
@@ -171,6 +169,30 @@ repos:
       - id: node-port-definitions
         name: Verify Modern Node Standard port definitions
         entry: python scripts/check_node_port_definitions.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: node-modernization
+        name: Audit Node Modernization (ERROR severity only)
+        entry: python scripts/audit_node_modernization.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: node-schemas
+        name: Verify Node Schemas (Required ports mapped)
+        entry: python scripts/audit_node_schemas.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: ui-consistency
+        name: Audit UI Consistency (No raw widgets in nodes)
+        entry: python scripts/audit_ui_consistency.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: workflow-validation
+        name: Validate Core Test Workflows
+        entry: python scripts/validate_test_workflows.py
         language: system
         pass_filenames: false
         stages: [pre-commit]
