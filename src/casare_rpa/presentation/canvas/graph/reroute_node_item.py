@@ -8,20 +8,20 @@ Key features:
 - 16px diamond shape (no header, no widgets)
 - Ports invisible but functional at center
 - Wire color inheritance from connected type
-- Selection glow matching other nodes
+- Selection highlight via border color change
 
 All colors are sourced from the unified theme system (theme.py).
 """
 
+from loguru import logger
 from NodeGraphQt.qgraphics.node_base import NodeItem
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
+from PySide6.QtCore import QPointF, QRectF, QTimer
 from PySide6.QtGui import (
     QBrush,
     QColor,
     QPainter,
     QPainterPath,
     QPen,
-    QRadialGradient,
 )
 from PySide6.QtWidgets import QGraphicsItem
 
@@ -77,6 +77,9 @@ _NODE_HEIGHT = 22.0
 # Diamond center - exactly between the two circles
 _NODE_CENTER_X = (_INPUT_CIRCLE_X + _OUTPUT_CIRCLE_X) / 2.0
 _NODE_CENTER_Y = _NODE_HEIGHT / 2.0
+
+# Margin for diamond offset and pen width (no glow effect)
+_RENDER_MARGIN = _REROUTE_HALF + 2.0  # diamond half-size + pen width padding
 
 
 # ============================================================================
@@ -188,8 +191,18 @@ class RerouteNodeItem(NodeItem):
         # Position ports on left/right of diamond
         self._position_ports()
 
+        # Notify Qt of geometry change to ensure proper rendering
+        self.prepareGeometryChange()
+        self.update()
+
         # Defer positioning to catch any late-added ports
-        QTimer.singleShot(0, self._position_ports)
+        QTimer.singleShot(0, self._deferred_position_ports)
+
+    def _deferred_position_ports(self) -> None:
+        """Deferred port positioning with geometry update."""
+        self._position_ports()
+        self.prepareGeometryChange()
+        self.update()
 
     def _position_ports(self) -> None:
         """
@@ -216,8 +229,8 @@ class RerouteNodeItem(NodeItem):
                         port.view.setFlag(
                             QGraphicsItem.GraphicsItemFlag.ItemStacksBehindParent, True
                         )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Port positioning via node reference failed: {e}")
 
         # Fallback: Check child items by type
         for port_item in self.childItems():
@@ -233,9 +246,19 @@ class RerouteNodeItem(NodeItem):
         """
         Return bounding rect for the reroute node.
 
-        Includes space for diamond and port circles on sides.
+        Includes space for diamond, port circles, border pen width, and offset.
         """
-        return QRectF(0, 0, _NODE_WIDTH, _NODE_HEIGHT)
+        # Calculate the diamond center with offset
+        center_x = _NODE_CENTER_X + _DIAMOND_OFFSET_X
+        center_y = _NODE_CENTER_Y + _DIAMOND_OFFSET_Y
+
+        # Calculate bounds that include diamond with offset and pen width
+        left = min(0, center_x - _RENDER_MARGIN)
+        top = min(0, center_y - _RENDER_MARGIN)
+        right = max(_NODE_WIDTH, center_x + _RENDER_MARGIN)
+        bottom = max(_NODE_HEIGHT, center_y + _RENDER_MARGIN)
+
+        return QRectF(left, top, right - left, bottom - top)
 
     def shape(self) -> QPainterPath:
         """
@@ -284,16 +307,7 @@ class RerouteNodeItem(NodeItem):
 
         # Determine colors based on state
         if self.isSelected():
-            # Selected - use yellow border with glow
-            glow_radius = _REROUTE_SIZE
-            glow_gradient = QRadialGradient(center, glow_radius)
-            glow_gradient.setColorAt(0, QColor(255, 215, 0, 100))
-            glow_gradient.setColorAt(1, QColor(255, 215, 0, 0))
-            painter.setBrush(QBrush(glow_gradient))
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.drawEllipse(center, glow_radius, glow_radius)
-
-            # Diamond with yellow border
+            # Selected - yellow border, darker fill (no glow)
             painter.setBrush(QBrush(self._type_color.darker(130)))
             painter.setPen(QPen(_REROUTE_SELECTED_COLOR, 2))
             painter.drawPath(diamond)

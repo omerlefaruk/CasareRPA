@@ -191,9 +191,9 @@ class RerouteInsertManager(QObject):
                 logger.warning("Could not get node items from port items")
                 return
 
-            # Get node IDs
-            source_node_id = source_node_item.id if hasattr(source_node_item, "id") else None
-            target_node_id = target_node_item.id if hasattr(target_node_item, "id") else None
+            # Get node IDs using consistent helper method
+            source_node_id = self._get_node_id(source_node_item)
+            target_node_id = self._get_node_id(target_node_item)
 
             if not source_node_id or not target_node_id:
                 logger.warning("Could not get node IDs")
@@ -203,7 +203,7 @@ class RerouteInsertManager(QObject):
             source_node = None
             target_node = None
             for model_node in self._graph.all_nodes():
-                node_id = model_node.id() if callable(model_node.id) else model_node.id
+                node_id = self._get_node_id(model_node)
                 if node_id == source_node_id:
                     source_node = model_node
                 elif node_id == target_node_id:
@@ -256,37 +256,28 @@ class RerouteInsertManager(QObject):
             if hasattr(reroute_node, "update_type_from_connection"):
                 reroute_node.update_type_from_connection(data_type)
 
-            # Disconnect original connection
-            try:
-                source_port.disconnect_from(target_port)
-            except Exception:
+            # Disconnect original connection with validation
+            disconnected = self._disconnect_ports(source_port, target_port)
+            if not disconnected:
+                logger.error("Could not disconnect original connection - aborting reroute")
+                # Clean up the reroute node we created
                 try:
-                    target_port.disconnect_from(source_port)
-                except Exception as e:
-                    logger.error(f"Failed to disconnect original pipe: {e}")
-                    return
-
-            # Connect through reroute: source -> reroute -> target
-            connect_success = True
-            try:
-                source_port.connect_to(reroute_in)
-            except Exception as e:
-                logger.error(f"Failed to connect source to reroute: {e}")
-                connect_success = False
-
-            try:
-                reroute_out.connect_to(target_port)
-            except Exception as e:
-                logger.error(f"Failed to connect reroute to target: {e}")
-                connect_success = False
-
-            if not connect_success:
-                # Attempt to restore original connection
-                try:
-                    source_port.connect_to(target_port)
                     self._graph.delete_node(reroute_node)
                 except Exception:
                     pass
+                return
+
+            # Connect through reroute: source -> reroute -> target
+            # Use atomic operation with rollback on failure
+            try:
+                source_port.connect_to(reroute_in)
+                reroute_out.connect_to(target_port)
+            except Exception as e:
+                logger.error(f"Failed to connect through reroute: {e}")
+                # Rollback: restore original connection and clean up
+                self._rollback_reroute(
+                    source_port, target_port, reroute_in, reroute_out, reroute_node
+                )
                 return
 
             # Note: update_type_from_connection already called before connecting
@@ -419,3 +410,130 @@ class RerouteInsertManager(QObject):
                 return node.name()
             return str(node.name)
         return str(node)
+
+    def _get_node_id(self, node_or_item) -> str | None:
+        """
+        Get node ID consistently from a node item or model node.
+
+        Handles both attribute and method access patterns for NodeGraphQt compatibility.
+
+        Args:
+            node_or_item: A node item or model node
+
+        Returns:
+            The node ID string, or None if not found
+        """
+        if not node_or_item:
+            return None
+
+        if hasattr(node_or_item, "id"):
+            id_val = node_or_item.id
+            if callable(id_val):
+                return id_val()
+            return id_val
+        return None
+
+    def _disconnect_ports(self, source_port, target_port) -> bool:
+        """
+        Disconnect two ports with validation.
+
+        Tries both directions and validates the disconnect actually worked.
+
+        Args:
+            source_port: The source (output) port
+            target_port: The target (input) port
+
+        Returns:
+            True if disconnect succeeded, False otherwise
+        """
+
+        # Check if ports are connected
+        def is_connected() -> bool:
+            try:
+                if hasattr(source_port, "connected_ports"):
+                    connected = source_port.connected_ports()
+                    return target_port in connected
+                return False
+            except Exception:
+                return False
+
+        if not is_connected():
+            logger.debug("Ports not connected, nothing to disconnect")
+            return True
+
+        # Try disconnecting from source side
+        try:
+            source_port.disconnect_from(target_port)
+            if not is_connected():
+                logger.debug("Disconnected via source_port.disconnect_from")
+                return True
+        except Exception as e:
+            logger.debug(f"Source disconnect attempt failed: {e}")
+
+        # Try disconnecting from target side
+        try:
+            target_port.disconnect_from(source_port)
+            if not is_connected():
+                logger.debug("Disconnected via target_port.disconnect_from")
+                return True
+        except Exception as e:
+            logger.debug(f"Target disconnect attempt failed: {e}")
+
+        # Final check
+        if not is_connected():
+            return True
+
+        logger.warning("Failed to disconnect ports after multiple attempts")
+        return False
+
+    def _rollback_reroute(
+        self,
+        source_port,
+        target_port,
+        reroute_in,
+        reroute_out,
+        reroute_node,
+    ) -> None:
+        """
+        Rollback a failed reroute operation.
+
+        Disconnects any partial connections, restores the original connection,
+        and deletes the reroute node.
+
+        Args:
+            source_port: Original source port
+            target_port: Original target port
+            reroute_in: Reroute node input port
+            reroute_out: Reroute node output port
+            reroute_node: The reroute node to delete
+        """
+        logger.debug("Rolling back reroute operation")
+
+        # Disconnect any partial connections to the reroute node
+        try:
+            if hasattr(source_port, "connected_ports"):
+                if reroute_in in source_port.connected_ports():
+                    source_port.disconnect_from(reroute_in)
+        except Exception as e:
+            logger.debug(f"Rollback: could not disconnect source->reroute: {e}")
+
+        try:
+            if hasattr(reroute_out, "connected_ports"):
+                if target_port in reroute_out.connected_ports():
+                    reroute_out.disconnect_from(target_port)
+        except Exception as e:
+            logger.debug(f"Rollback: could not disconnect reroute->target: {e}")
+
+        # Restore original connection
+        try:
+            source_port.connect_to(target_port)
+            logger.debug("Rollback: restored original connection")
+        except Exception as e:
+            logger.error(f"Rollback: failed to restore original connection: {e}")
+
+        # Delete the reroute node
+        try:
+            self._graph.delete_node(reroute_node)
+            logger.debug("Rollback: deleted reroute node")
+        except Exception as e:
+            logger.error(f"Rollback: failed to delete reroute node: {e}")

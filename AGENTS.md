@@ -2,7 +2,7 @@
 
 This file is the canonical agent guide for CasareRPA. CLAUDE.md and GEMINI.md are generated from AGENTS.md via `python scripts/sync_agent_guides.py` with tool-specific path rewrites. Remove AGENT.md.
 
-Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture
+Windows RPA platform | Python 3.12 | PySide6 | Playwright | DDD 2025 architecture | Reroute Stability 1.0
 
 ## Pre-commit and Quality Standards
 The project strictly enforces architectural integrity and code quality via pre-commit hooks:

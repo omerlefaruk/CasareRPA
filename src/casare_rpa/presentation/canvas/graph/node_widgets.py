@@ -27,6 +27,38 @@ are called directly in those wrapper classes' __init__ methods.
 No longer using global patching for widgets.
 """
 
+from functools import partial
+from typing import Optional
+
+from loguru import logger
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QColor, QFont, QTransform
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+)
+
+# Import modernized widgets
+from casare_rpa.presentation.canvas.graph.custom_widgets import (
+    CasareCheckBox,
+    CasareComboBox,
+)
+from casare_rpa.presentation.canvas.theme import THEME
+
+# Import variable picker components
+from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+    VariableAwareLineEdit,
+)
+
+
+# Compatibility alias
+def apply_all_node_widget_fixes() -> None:
+    """Legacy alias for apply_all_fixes."""
+    apply_all_fixes()
+
 
 def apply_all_fixes() -> None:
     """
