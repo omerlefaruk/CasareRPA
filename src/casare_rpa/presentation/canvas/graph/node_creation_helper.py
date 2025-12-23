@@ -192,13 +192,7 @@ class NodeCreationHelper(QObject):
                         )
                         return True
                     except Exception as e:
-<<<<<<< HEAD
-                        logger.debug(
-                            f"Could not connect to {best_target_item.name}: {e}"
-                        )
-=======
                         logger.debug(f"Could not connect to {best_target_item.name}: {e}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             else:
                 # Source is input, find output on new node
                 best_source_item = None
@@ -227,13 +221,7 @@ class NodeCreationHelper(QObject):
                         )
                         return True
                     except Exception as e:
-<<<<<<< HEAD
-                        logger.debug(
-                            f"Could not connect to {best_source_item.name}: {e}"
-                        )
-=======
                         logger.debug(f"Could not connect to {best_source_item.name}: {e}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             return False
 
@@ -247,13 +235,7 @@ class NodeCreationHelper(QObject):
     def _get_node_port_type(self, node, port_name: str):
         """Get port type from a node if available (None for exec, DataType for data)."""
         try:
-<<<<<<< HEAD
-            if hasattr(node, "get_port_type") and callable(
-                getattr(node, "get_port_type")
-            ):
-=======
             if hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return node.get_port_type(port_name)
         except Exception:
             pass
@@ -274,27 +256,11 @@ class NodeCreationHelper(QObject):
         """
         try:
             port_name = getattr(port_item, "name", "")
-<<<<<<< HEAD
-            node_item = (
-                port_item.parentItem() if hasattr(port_item, "parentItem") else None
-            )
-            node = None
-            if node_item is not None:
-                node = getattr(node_item, "node", None) or getattr(
-                    node_item, "_node", None
-                )
-            if (
-                node
-                and hasattr(node, "get_port_type")
-                and callable(getattr(node, "get_port_type"))
-            ):
-=======
             node_item = port_item.parentItem() if hasattr(port_item, "parentItem") else None
             node = None
             if node_item is not None:
                 node = getattr(node_item, "node", None) or getattr(node_item, "_node", None)
             if node and hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return node.get_port_type(port_name)
         except Exception:
             pass

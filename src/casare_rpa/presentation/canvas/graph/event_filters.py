@@ -140,13 +140,7 @@ class OutputPortMMBFilter(QObject):
             output_data = node._last_output
 
         # Get node ID and name
-<<<<<<< HEAD
-        node_id = (
-            node.get_property("node_id") if hasattr(node, "get_property") else node.id
-        )
-=======
         node_id = node.get_property("node_id") if hasattr(node, "get_property") else node.id
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         node_name = node.name() if callable(node.name) else str(node.name)
 
         # Calculate popup position (bottom-left of node)
@@ -157,13 +151,7 @@ class OutputPortMMBFilter(QObject):
         global_pos = viewer.mapToGlobal(view_pos)
 
         # Show the output inspector
-<<<<<<< HEAD
-        self._widget.show_output_inspector(
-            node_id, node_name, output_data, global_pos, node_item
-        )
-=======
         self._widget.show_output_inspector(node_id, node_name, output_data, global_pos, node_item)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         logger.debug(f"Showing output inspector for {node_name}")
 
     def _is_exec_port(self, port_item) -> bool:
@@ -276,13 +264,7 @@ class ConnectionDropFilter(QObject):
         # Double-check: if a connection was made by NodeGraphQt, don't show menu
         try:
             if source_port is None or not hasattr(source_port, "connected_pipes"):
-<<<<<<< HEAD
-                logger.debug(
-                    "ConnectionDropFilter: Source port no longer valid, skipping search"
-                )
-=======
                 logger.debug("ConnectionDropFilter: Source port no longer valid, skipping search")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return
         except Exception as e:
             logger.debug(f"ConnectionDropFilter: Error checking connections: {e}")

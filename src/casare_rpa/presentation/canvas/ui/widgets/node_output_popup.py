@@ -1107,13 +1107,7 @@ class VariablesView(QWidget):
                             if hasattr(node, "get_property"):
                                 var_name = node.get_property("variable_name")
                                 var_value = node.get_property("default_value")
-<<<<<<< HEAD
-                                var_type = (
-                                    node.get_property("variable_type") or "String"
-                                )
-=======
                                 var_type = node.get_property("variable_type") or "String"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                             if not var_name and hasattr(node, "_casare_node"):
                                 casare_node = node._casare_node
@@ -1132,13 +1126,7 @@ class VariablesView(QWidget):
                                 if not node_id and hasattr(node, "id"):
                                     node_id = node.id()
 
-<<<<<<< HEAD
-                                insertion_path = (
-                                    f"{node_id}.value" if node_id else var_name
-                                )
-=======
                                 insertion_path = f"{node_id}.value" if node_id else var_name
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                                 var_info = VariableInfo(
                                     name=var_name,
                                     var_type=var_type,

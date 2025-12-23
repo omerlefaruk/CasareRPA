@@ -69,12 +69,7 @@ def get_cached_stylesheet() -> Optional[str]:
 
         if stored_hash != current_hash:
             logger.debug(
-<<<<<<< HEAD
-                f"Stylesheet cache invalidated: hash mismatch "
-                f"({stored_hash} != {current_hash})"
-=======
                 f"Stylesheet cache invalidated: hash mismatch " f"({stored_hash} != {current_hash})"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
             return None
 

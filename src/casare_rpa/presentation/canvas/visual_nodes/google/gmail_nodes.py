@@ -86,13 +86,7 @@ class VisualGmailSendEmailNode(VisualGmailBaseNode):
         self._safe_add_text_input("to", "To", placeholder_text="recipient@example.com")
         self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
         self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
-<<<<<<< HEAD
-        self._safe_add_text_input(
-            "subject", "Subject", placeholder_text="Email subject"
-        )
-=======
         self._safe_add_text_input("subject", "Subject", placeholder_text="Email subject")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._safe_add_text_input("body", "Body", placeholder_text="Email body...")
         self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
 
@@ -125,13 +119,7 @@ class VisualGmailSendWithAttachmentNode(VisualGmailBaseNode):
         self._safe_add_text_input("to", "To", placeholder_text="recipient@example.com")
         self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
         self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
-<<<<<<< HEAD
-        self._safe_add_text_input(
-            "subject", "Subject", placeholder_text="Email subject"
-        )
-=======
         self._safe_add_text_input("subject", "Subject", placeholder_text="Email subject")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._safe_add_text_input("body", "Body", placeholder_text="Email body...")
         self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
         self._safe_add_text_input(
@@ -165,21 +153,9 @@ class VisualGmailReplyToEmailNode(VisualGmailBaseNode):
 
     def setup_widgets(self) -> None:
         super().setup_widgets()
-<<<<<<< HEAD
-        self._safe_add_text_input(
-            "thread_id", "Thread ID", placeholder_text="18a5b7c8d9e0f1g2"
-        )
-        self._safe_add_text_input(
-            "message_id", "Message ID", placeholder_text="18a5b7c8d9e0f1g2"
-        )
-        self._safe_add_text_input(
-            "body", "Reply Body", placeholder_text="Your reply..."
-        )
-=======
         self._safe_add_text_input("thread_id", "Thread ID", placeholder_text="18a5b7c8d9e0f1g2")
         self._safe_add_text_input("message_id", "Message ID", placeholder_text="18a5b7c8d9e0f1g2")
         self._safe_add_text_input("body", "Reply Body", placeholder_text="Your reply...")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
         self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
         self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
@@ -207,13 +183,7 @@ class VisualGmailForwardEmailNode(VisualGmailBaseNode):
 
     def setup_widgets(self) -> None:
         super().setup_widgets()
-<<<<<<< HEAD
-        self._safe_add_text_input(
-            "message_id", "Message ID", placeholder_text="18a5b7c8d9e0f1g2"
-        )
-=======
         self._safe_add_text_input("message_id", "Message ID", placeholder_text="18a5b7c8d9e0f1g2")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._safe_add_text_input("to", "To", placeholder_text="forward@example.com")
         self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
         self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
@@ -252,13 +222,7 @@ class VisualGmailCreateDraftNode(VisualGmailBaseNode):
         self._safe_add_text_input("to", "To", placeholder_text="recipient@example.com")
         self._safe_add_text_input("cc", "CC", placeholder_text="cc@example.com")
         self._safe_add_text_input("bcc", "BCC", placeholder_text="bcc@example.com")
-<<<<<<< HEAD
-        self._safe_add_text_input(
-            "subject", "Subject", placeholder_text="Email subject"
-        )
-=======
         self._safe_add_text_input("subject", "Subject", placeholder_text="Email subject")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._safe_add_text_input("body", "Body", placeholder_text="Email body...")
         self._safe_add_combo_menu("body_type", "Body Type", items=["plain", "html"])
         self._safe_add_text_input(
@@ -287,13 +251,7 @@ class VisualGmailSendDraftNode(VisualGmailBaseNode):
 
     def setup_widgets(self) -> None:
         super().setup_widgets()
-<<<<<<< HEAD
-        self._safe_add_text_input(
-            "draft_id", "Draft ID", placeholder_text="r1234567890abcdef"
-        )
-=======
         self._safe_add_text_input("draft_id", "Draft ID", placeholder_text="r1234567890abcdef")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 # =============================================================================

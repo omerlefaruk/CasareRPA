@@ -494,13 +494,7 @@ class UnifiedHttpClient:
             cached = await self._cache.get(cache_key)
             if cached:
                 logger.debug(f"Cache hit for {method} {url}")
-<<<<<<< HEAD
-                return CachedResponse(
-                    cached["status"], cached["body"], cached["headers"]
-                )
-=======
                 return CachedResponse(cached["status"], cached["body"], cached["headers"])
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # SSRF Protection - validate URL before any processing
         self._validate_url_for_ssrf(url)

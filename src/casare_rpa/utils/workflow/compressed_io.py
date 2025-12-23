@@ -103,13 +103,7 @@ def save_workflow(
     logger.debug(f"Saved workflow ({len(json_bytes)/1024:.1f}KB)")
 
 
-<<<<<<< HEAD
-def load_workflow(
-    path: Path, use_streaming: Optional[bool] = None
-) -> Optional[Dict[str, Any]]:
-=======
 def load_workflow(path: Path, use_streaming: Optional[bool] = None) -> Optional[Dict[str, Any]]:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     """
     Load workflow data from file with automatic decompression.
 

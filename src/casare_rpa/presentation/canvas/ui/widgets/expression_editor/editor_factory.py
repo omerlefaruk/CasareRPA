@@ -136,23 +136,11 @@ class EditorFactory:
         if node_type and property_name:
             override = _NODE_EDITOR_OVERRIDES.get(node_type, {}).get(property_name)
             if override:
-<<<<<<< HEAD
-                logger.debug(
-                    f"Using editor override for {node_type}.{property_name}: {override}"
-                )
-                return EditorFactory.create(override, parent)
-
-        # Map property type to editor type
-        editor_type = _PROPERTY_TYPE_TO_EDITOR.get(
-            property_type.upper(), EditorType.RICH_TEXT
-        )
-=======
                 logger.debug(f"Using editor override for {node_type}.{property_name}: {override}")
                 return EditorFactory.create(override, parent)
 
         # Map property type to editor type
         editor_type = _PROPERTY_TYPE_TO_EDITOR.get(property_type.upper(), EditorType.RICH_TEXT)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         return EditorFactory.create(editor_type, parent)
 
 

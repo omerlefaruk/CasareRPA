@@ -175,13 +175,7 @@ class TelegramTriggerNode(BaseTriggerNode):
         ]
 
         allowed_updates_str = self.get_parameter("allowed_updates", "message")
-<<<<<<< HEAD
-        allowed_updates = [
-            u.strip() for u in allowed_updates_str.split(",") if u.strip()
-        ]
-=======
         allowed_updates = [u.strip() for u in allowed_updates_str.split(",") if u.strip()]
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         return {
             "bot_token": self.get_parameter("bot_token", ""),

@@ -132,36 +132,18 @@ class RobotPickerPanel(QDockWidget):
 
         self._connection_indicator = QLabel("●")
         self._connection_indicator.setFixedWidth(16)
-<<<<<<< HEAD
-        self._connection_indicator.setStyleSheet(
-            f"color: {THEME.error}; font-size: 14px;"
-        )
-=======
         self._connection_indicator.setStyleSheet(f"color: {THEME.error}; font-size: 14px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._connection_indicator.setToolTip("Disconnected from orchestrator")
         connection_layout.addWidget(self._connection_indicator)
 
         self._connection_label = QLabel("Disconnected")
-<<<<<<< HEAD
-        self._connection_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 11px;"
-        )
-=======
         self._connection_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         connection_layout.addWidget(self._connection_label)
 
         connection_layout.addStretch()
 
         self._orchestrator_url_label = QLabel("")
-<<<<<<< HEAD
-        self._orchestrator_url_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 10px;"
-        )
-=======
         self._orchestrator_url_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         connection_layout.addWidget(self._orchestrator_url_label)
 
         layout.addLayout(connection_layout)
@@ -247,17 +229,8 @@ class RobotPickerPanel(QDockWidget):
         refresh_layout.setSpacing(8)
 
         self._auto_refresh_checkbox = QCheckBox("Auto (60s)")
-<<<<<<< HEAD
-        self._auto_refresh_checkbox.setToolTip(
-            "Automatically refresh robot list every 60 seconds"
-        )
-        self._auto_refresh_checkbox.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 10px;"
-        )
-=======
         self._auto_refresh_checkbox.setToolTip("Automatically refresh robot list every 60 seconds")
         self._auto_refresh_checkbox.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._auto_refresh_checkbox.toggled.connect(self._on_auto_refresh_toggled)
         refresh_layout.addWidget(self._auto_refresh_checkbox)
 
@@ -821,13 +794,7 @@ class RobotPickerPanel(QDockWidget):
         self._update_submit_button_state()
         logger.debug(f"Orchestrator connection status: {connected}")
 
-<<<<<<< HEAD
-    def set_connection_status(
-        self, status: str, message: str = "", url: str = ""
-    ) -> None:
-=======
     def set_connection_status(self, status: str, message: str = "", url: str = "") -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """
         Set detailed connection status.
 
@@ -876,23 +843,11 @@ class RobotPickerPanel(QDockWidget):
     def _update_connection_indicator(self, connected: bool) -> None:
         """Update connection indicator based on simple connected state."""
         if connected:
-<<<<<<< HEAD
-            self._connection_indicator.setStyleSheet(
-                f"color: {THEME.success}; font-size: 14px;"
-            )
-            self._connection_indicator.setToolTip("Connected to orchestrator")
-            self._connection_label.setText("Connected")
-        else:
-            self._connection_indicator.setStyleSheet(
-                f"color: {THEME.error}; font-size: 14px;"
-            )
-=======
             self._connection_indicator.setStyleSheet(f"color: {THEME.success}; font-size: 14px;")
             self._connection_indicator.setToolTip("Connected to orchestrator")
             self._connection_label.setText("Connected")
         else:
             self._connection_indicator.setStyleSheet(f"color: {THEME.error}; font-size: 14px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             self._connection_indicator.setToolTip("Disconnected from orchestrator")
             self._connection_label.setText("Disconnected")
 
@@ -929,13 +884,7 @@ class RobotPickerPanel(QDockWidget):
         """
         if success:
             self._status_label.setText(f"✓ Submitted: {message}")
-<<<<<<< HEAD
-            self._status_label.setStyleSheet(
-                f"color: {THEME.success}; font-size: 11px;"
-            )
-=======
             self._status_label.setStyleSheet(f"color: {THEME.success}; font-size: 11px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         else:
             self._status_label.setText(f"✗ Failed: {message}")
             self._status_label.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")

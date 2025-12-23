@@ -65,13 +65,7 @@ class ToastNotification(QWidget):
         self._apply_style(level="info")
         self.hide()
 
-<<<<<<< HEAD
-    def show_toast(
-        self, message: str, level: str = "info", duration_ms: int = 2500
-    ) -> None:
-=======
     def show_toast(self, message: str, level: str = "info", duration_ms: int = 2500) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Show a toast message.
 
         Args:

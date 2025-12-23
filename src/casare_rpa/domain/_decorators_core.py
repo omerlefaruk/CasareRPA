@@ -156,17 +156,8 @@ def node(
                 """Wrapped _define_ports that enforces configured execution ports."""
                 from casare_rpa.domain.value_objects.types import DataType
 
-<<<<<<< HEAD
-                desired_exec_inputs = (
-                    exec_inputs if exec_inputs is not None else ["exec_in"]
-                )
-                desired_exec_outputs = (
-                    exec_outputs if exec_outputs is not None else ["exec_out"]
-                )
-=======
                 desired_exec_inputs = exec_inputs if exec_inputs is not None else ["exec_in"]
                 desired_exec_outputs = exec_outputs if exec_outputs is not None else ["exec_out"]
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                 # Let the node define its data ports first.
                 original_define(self)
@@ -174,28 +165,14 @@ def node(
                 # Remove any legacy/incorrect exec ports not in the desired set.
                 # (Legacy nodes often add DataType.EXEC via add_input_port/add_output_port)
                 for port_name, port in list(self.input_ports.items()):
-<<<<<<< HEAD
-                    if (
-                        port.data_type == DataType.EXEC
-                        and port_name not in desired_exec_inputs
-                    ):
-=======
                     if port.data_type == DataType.EXEC and port_name not in desired_exec_inputs:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                         logger.warning(
                             f"[{self.node_type}] Removing unconfigured execution input port '{port_name}'. "
                             f"Add '{port_name}' to @node(exec_inputs=[...]) to preserve it."
                         )
                         self.input_ports.pop(port_name, None)
                 for port_name, port in list(self.output_ports.items()):
-<<<<<<< HEAD
-                    if (
-                        port.data_type == DataType.EXEC
-                        and port_name not in desired_exec_outputs
-                    ):
-=======
                     if port.data_type == DataType.EXEC and port_name not in desired_exec_outputs:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                         logger.warning(
                             f"[{self.node_type}] Removing unconfigured execution output port '{port_name}'. "
                             f"Add '{port_name}' to @node(exec_outputs=[...]) to preserve it."
@@ -215,13 +192,7 @@ def node(
     return decorator
 
 
-<<<<<<< HEAD
-def properties(
-    *property_defs: PropertyDef, strict: bool = False
-) -> Callable[[Type[T]], Type[T]]:
-=======
 def properties(*property_defs: PropertyDef, strict: bool = False) -> Callable[[Type[T]], Type[T]]:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     """
     Property schema decorator for nodes.
 
@@ -298,13 +269,7 @@ def properties(*property_defs: PropertyDef, strict: bool = False) -> Callable[[T
                 if strict:
                     raise ValueError(f"Invalid config for {cls.__name__}: {error}")
                 else:
-<<<<<<< HEAD
-                    logger.debug(
-                        f"Config validation skipped for {cls.__name__}: {error}"
-                    )
-=======
                     logger.debug(f"Config validation skipped for {cls.__name__}: {error}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             kwargs["config"] = config
             original_init(self, node_id, *filtered_args, **kwargs)

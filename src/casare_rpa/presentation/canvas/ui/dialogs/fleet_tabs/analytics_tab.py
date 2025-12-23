@@ -73,13 +73,7 @@ class StatCard(QFrame):
         layout.addWidget(self._value_label)
 
         self._subtitle_label = QLabel(self._subtitle)
-<<<<<<< HEAD
-        self._subtitle_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 10px;"
-        )
-=======
         self._subtitle_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         layout.addWidget(self._subtitle_label)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -392,20 +386,9 @@ class AnalyticsTabWidget(QWidget):
         percentiles_group = QGroupBox("Duration Percentiles (Last 7 Days)")
         percentiles_layout = QHBoxLayout(percentiles_group)
 
-<<<<<<< HEAD
-        self._p50_card = StatCard(
-            "jobs", "P50", "-", "median", QColor(THEME.status_success)
-        )
-        self._p90_card = StatCard(
-            "jobs", "P90", "-", "90th percentile", QColor(THEME.status_warning)
-        )
-        self._p99_card = StatCard(
-            "jobs", "P99", "-", "99th percentile", QColor(THEME.status_error)
-=======
         self._p50_card = StatCard("jobs", "P50", "-", "median", QColor(THEME.status_success))
         self._p90_card = StatCard(
             "jobs", "P90", "-", "90th percentile", QColor(THEME.status_warning)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
         self._p99_card = StatCard("jobs", "P99", "-", "99th percentile", QColor(THEME.status_error))
 

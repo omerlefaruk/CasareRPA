@@ -112,13 +112,7 @@ class DraggableHeader(QFrame):
 class HeaderButton(QPushButton):
     """Compact icon button for popup header."""
 
-<<<<<<< HEAD
-    def __init__(
-        self, text: str, tooltip: str, parent: Optional[QWidget] = None
-    ) -> None:
-=======
     def __init__(self, text: str, tooltip: str, parent: Optional[QWidget] = None) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """
         Initialize header button.
 
@@ -603,14 +597,7 @@ class ExpressionEditorPopup(QFrame):
             if "bottom" in edge:
                 new_geo.setBottom(geo.bottom() + delta.y())
 
-<<<<<<< HEAD
-            if (
-                new_geo.width() >= self.MIN_WIDTH
-                and new_geo.height() >= self.MIN_HEIGHT
-            ):
-=======
             if new_geo.width() >= self.MIN_WIDTH and new_geo.height() >= self.MIN_HEIGHT:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 try:
                     screen = QApplication.primaryScreen()
                     if screen is not None:

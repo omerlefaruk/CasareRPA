@@ -154,13 +154,7 @@ class DriveTriggerNode(BaseTriggerNode):
         event_types = [e.strip() for e in event_types_str.split(",") if e.strip()]
 
         file_types_str = self.get_parameter("file_types", "")
-<<<<<<< HEAD
-        file_types = [
-            ft.strip().lstrip(".") for ft in file_types_str.split(",") if ft.strip()
-        ]
-=======
         file_types = [ft.strip().lstrip(".") for ft in file_types_str.split(",") if ft.strip()]
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         mime_types_str = self.get_parameter("mime_types", "")
         mime_types = [mt.strip() for mt in mime_types_str.split(",") if mt.strip()]

@@ -59,13 +59,7 @@ class RobotIdentity:
             worker_robot_id=str(data["worker_robot_id"]),
             worker_robot_name=str(data["worker_robot_name"]),
             fleet_robot_id=str(data.get("fleet_robot_id") or data["worker_robot_id"]),
-<<<<<<< HEAD
-            fleet_robot_name=str(
-                data.get("fleet_robot_name") or data["worker_robot_name"]
-            ),
-=======
             fleet_robot_name=str(data.get("fleet_robot_name") or data["worker_robot_name"]),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             fleet_linked=bool(data.get("fleet_linked", True)),
             fleet_ever_registered=bool(data.get("fleet_ever_registered", False)),
             fleet_unlinked_reason=(
@@ -131,13 +125,7 @@ class RobotIdentityStore:
         existing = self.load()
         if existing is None:
             resolved_hostname = hostname or socket.gethostname()
-<<<<<<< HEAD
-            new_worker_id = (
-                worker_robot_id or f"robot-{resolved_hostname}-{uuid.uuid4().hex[:8]}"
-            )
-=======
             new_worker_id = worker_robot_id or f"robot-{resolved_hostname}-{uuid.uuid4().hex[:8]}"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             new_worker_name = worker_robot_name or f"Robot-{resolved_hostname}"
             identity = RobotIdentity(
                 worker_robot_id=new_worker_id,

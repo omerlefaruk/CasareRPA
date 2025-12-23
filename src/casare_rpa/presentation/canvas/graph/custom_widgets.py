@@ -136,23 +136,6 @@ class CasareCheckBox(NodeCheckBox):
             QCheckBox::indicator {{
                 width: 14px;
                 height: 14px;
-<<<<<<< HEAD
-                border: 1px solid {THEME.border_light};
-                border-radius: 3px;
-                background-color: {THEME.bg_darkest};
-            }}
-            QCheckBox::indicator:unchecked:hover {{
-                border-color: {THEME.accent_primary};
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
-                image: url({checkmark_path});
-            }}
-            QCheckBox::indicator:checked:hover {{
-                background-color: {THEME.accent_hover};
-                border-color: {THEME.accent_hover};
-=======
                 border: 1px solid { THEME.border_light };
                 border-radius: 3px;
                 background-color: { THEME.bg_darkest };
@@ -168,7 +151,6 @@ class CasareCheckBox(NodeCheckBox):
             QCheckBox::indicator:checked:hover {{
                 background-color: { THEME.accent_hover };
                 border-color: { THEME.accent_hover };
->>>>>>> modernize-rendering
             }}
         """
         existing_style = checkbox.styleSheet()

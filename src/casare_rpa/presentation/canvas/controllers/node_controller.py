@@ -309,15 +309,7 @@ class NodeController(BaseController):
 
         # Use view.set_cache_enabled() for proper visual overlay
         view = nearest_node.view
-<<<<<<< HEAD
-        if (
-            view
-            and hasattr(view, "set_cache_enabled")
-            and hasattr(view, "is_cache_enabled")
-        ):
-=======
         if view and hasattr(view, "set_cache_enabled") and hasattr(view, "is_cache_enabled"):
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             # Toggle the cache state using view methods
             current_cached = view.is_cache_enabled()
             new_cached = not current_cached
@@ -325,13 +317,7 @@ class NodeController(BaseController):
 
             # Also sync to casare node config for execution
             casare_node = (
-<<<<<<< HEAD
-                nearest_node.get_casare_node()
-                if hasattr(nearest_node, "get_casare_node")
-                else None
-=======
                 nearest_node.get_casare_node() if hasattr(nearest_node, "get_casare_node") else None
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
             if casare_node:
                 casare_node.config["_cache_enabled"] = new_cached

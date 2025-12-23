@@ -185,13 +185,7 @@ class FleetDashboardManager:
 
         client = self._robot_controller._orchestrator_client
         if not client:
-<<<<<<< HEAD
-            QMessageBox.warning(
-                self._main_window, "Error", "Orchestrator client not available"
-            )
-=======
             QMessageBox.warning(self._main_window, "Error", "Orchestrator client not available")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             return
 
         try:
@@ -243,13 +237,7 @@ class FleetDashboardManager:
             await self._refresh_all_data()
             return
 
-<<<<<<< HEAD
-        QMessageBox.warning(
-            self._main_window, "Revoke Failed", "Failed to revoke API key"
-        )
-=======
         QMessageBox.warning(self._main_window, "Revoke Failed", "Failed to revoke API key")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     def _on_api_key_rotated(self, key_id: str) -> None:
         import asyncio
@@ -370,13 +358,7 @@ class FleetDashboardManager:
                         {
                             "id": s.get("schedule_id", ""),
                             "name": s.get("schedule_name", ""),
-<<<<<<< HEAD
-                            "workflow_name": s.get(
-                                "workflow_name", s.get("schedule_name", "")
-                            ),
-=======
                             "workflow_name": s.get("workflow_name", s.get("schedule_name", "")),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                             "cron_expression": s.get("cron_expression", ""),
                             "enabled": s.get("enabled", True),
                             "next_run": str(s.get("next_run", "") or ""),
@@ -414,13 +396,7 @@ class FleetDashboardManager:
                     }
                 except Exception as e:
                     # Log rate limit/API errors as debug to reduce noise, return empty analytics
-<<<<<<< HEAD
-                    logger.debug(
-                        f"Failed to get analytics from API (likely rate limit): {e}"
-                    )
-=======
                     logger.debug(f"Failed to get analytics from API (likely rate limit): {e}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                     return {
                         "total_robots": len(robots),
                         "robots_by_status": {},
@@ -512,13 +488,7 @@ class FleetDashboardManager:
             base_url = self._normalize_orchestrator_base_url(config.orchestrator.url)
 
             client = OrchestratorClient(
-<<<<<<< HEAD
-                OrchestratorConfig(
-                    base_url=base_url, api_key=config.orchestrator.api_key
-                )
-=======
                 OrchestratorConfig(base_url=base_url, api_key=config.orchestrator.api_key)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
 
             # Add Robot: when robot_id is empty, create a new robot id and register it.
@@ -619,13 +589,7 @@ class FleetDashboardManager:
                         5000,
                     )
                 except Exception as e:
-<<<<<<< HEAD
-                    logger.debug(
-                        f"Failed to unlink local robot identity after deletion: {e}"
-                    )
-=======
                     logger.debug(f"Failed to unlink local robot identity after deletion: {e}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             # 1. Try using the active OrchestratorClient if connected
             if self._robot_controller and self._robot_controller.is_connected:
@@ -637,17 +601,8 @@ class FleetDashboardManager:
                             # Mark as deleted in controller to prevent reappearing
                             self._robot_controller.mark_robot_deleted(robot_id)
                             await _unlink_local_robot_if_needed()
-<<<<<<< HEAD
-                            logger.info(
-                                f"Robot {robot_id} deleted via active OrchestratorClient"
-                            )
-                            self._main_window.show_status(
-                                "Robot deleted successfully", 3000
-                            )
-=======
                             logger.info(f"Robot {robot_id} deleted via active OrchestratorClient")
                             self._main_window.show_status("Robot deleted successfully", 3000)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                             await self._refresh_all_data()
                             return
                         else:
@@ -655,13 +610,7 @@ class FleetDashboardManager:
                                 f"Failed to delete robot {robot_id} via API (success=False)"
                             )
                     except Exception as e:
-<<<<<<< HEAD
-                        logger.warning(
-                            f"Error deleting robot via OrchestratorClient: {e}"
-                        )
-=======
                         logger.warning(f"Error deleting robot via OrchestratorClient: {e}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                         # Fall through to other methods
 
             # 2. Try manual API call if client not available but config exists
@@ -672,39 +621,12 @@ class FleetDashboardManager:
             if config_manager.config_exists():
                 config = config_manager.load()
                 if config.orchestrator.url:
-<<<<<<< HEAD
-                    base_url = self._normalize_orchestrator_base_url(
-                        config.orchestrator.url
-                    )
-=======
                     base_url = self._normalize_orchestrator_base_url(config.orchestrator.url)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                     try:
                         async with httpx.AsyncClient(timeout=30.0) as client:
                             response = await client.delete(
                                 f"{base_url}/robots/{robot_id}",
-<<<<<<< HEAD
-                                headers={
-                                    "Authorization": f"Bearer {config.orchestrator.api_key}"
-                                },
-                            )
-                            response.raise_for_status()
-
-                        logger.info(f"Robot {robot_id} deleted via manual API call")
-                        await _unlink_local_robot_if_needed()
-                        self._main_window.show_status(
-                            "Robot deleted successfully", 3000
-                        )
-                        await self._refresh_all_data()
-                        return
-                    except Exception as e:
-                        logger.warning(
-                            f"Manual API deletion failed, falling back to local: {e}"
-                        )
-                        # Fall through to local deletion
-
-=======
                                 headers={"Authorization": f"Bearer {config.orchestrator.api_key}"},
                             )
                             response.raise_for_status()
@@ -718,7 +640,6 @@ class FleetDashboardManager:
                         logger.warning(f"Manual API deletion failed, falling back to local: {e}")
                         # Fall through to local deletion
 
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             # 3. Local deletion fallback
             from casare_rpa.infrastructure.orchestrator.persistence import (
                 LocalRobotRepository,
@@ -768,13 +689,7 @@ class FleetDashboardManager:
             if config_manager.config_exists():
                 config = config_manager.load()
                 if config.orchestrator.url and config.orchestrator.api_key:
-<<<<<<< HEAD
-                    base_url = self._normalize_orchestrator_base_url(
-                        config.orchestrator.url
-                    )
-=======
                     base_url = self._normalize_orchestrator_base_url(config.orchestrator.url)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                     tmp_client = OrchestratorClient(
                         OrchestratorConfig(
                             base_url=base_url,
@@ -785,23 +700,11 @@ class FleetDashboardManager:
                     await tmp_client.disconnect()
                     if ok:
                         logger.info(f"Job {job_id} cancelled via config client")
-<<<<<<< HEAD
-                        self._main_window.show_status(
-                            "Job cancelled successfully", 3000
-                        )
-                        await self._refresh_all_data()
-                        return
-
-            self._main_window.show_status(
-                "Job cancellation requires orchestrator + API key", 5000
-            )
-=======
                         self._main_window.show_status("Job cancelled successfully", 3000)
                         await self._refresh_all_data()
                         return
 
             self._main_window.show_status("Job cancellation requires orchestrator + API key", 5000)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         except Exception as e:
             logger.error(f"Failed to cancel job: {e}")
             self._main_window.show_status(f"Cancel failed: {e}", 7000)
@@ -822,13 +725,7 @@ class FleetDashboardManager:
                     new_job_id = await client.retry_job(job_id)
                     if new_job_id:
                         logger.info(f"Job {job_id} retried as new job {new_job_id}")
-<<<<<<< HEAD
-                        self._main_window.show_status(
-                            f"Job queued for retry: {new_job_id}", 3000
-                        )
-=======
                         self._main_window.show_status(f"Job queued for retry: {new_job_id}", 3000)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                         await self._refresh_all_data()
                         return
 
@@ -842,17 +739,6 @@ class FleetDashboardManager:
             if config_manager.config_exists():
                 config = config_manager.load()
                 if config.orchestrator.url and config.orchestrator.api_key:
-<<<<<<< HEAD
-                    base_url = self._normalize_orchestrator_base_url(
-                        config.orchestrator.url
-                    )
-                    tmp_client = OrchestratorClient(
-                        OrchestratorConfig(
-                            base_url=base_url,
-                            api_key=config.orchestrator.api_key,
-                        )
-                    )
-=======
                     base_url = self._normalize_orchestrator_base_url(config.orchestrator.url)
                     tmp_client = OrchestratorClient(
                         OrchestratorConfig(
@@ -860,28 +746,15 @@ class FleetDashboardManager:
                             api_key=config.orchestrator.api_key,
                         )
                     )
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                     new_job_id = await tmp_client.retry_job(job_id)
                     await tmp_client.disconnect()
                     if new_job_id:
                         logger.info(f"Job {job_id} retried as new job {new_job_id}")
-<<<<<<< HEAD
-                        self._main_window.show_status(
-                            f"Job queued for retry: {new_job_id}", 3000
-                        )
-                        await self._refresh_all_data()
-                        return
-
-            self._main_window.show_status(
-                "Job retry requires orchestrator + API key", 5000
-            )
-=======
                         self._main_window.show_status(f"Job queued for retry: {new_job_id}", 3000)
                         await self._refresh_all_data()
                         return
 
             self._main_window.show_status("Job retry requires orchestrator + API key", 5000)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         except Exception as e:
             logger.error(f"Failed to retry job: {e}")
             self._main_window.show_status(f"Retry failed: {e}", 7000)

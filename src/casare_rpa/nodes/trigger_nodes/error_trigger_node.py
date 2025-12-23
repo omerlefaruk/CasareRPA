@@ -105,13 +105,7 @@ class ErrorTriggerNode(BaseTriggerNode):
             error_types = [e.strip() for e in error_types_str.split(",") if e.strip()]
 
         workflow_filter_str = self.get_parameter("workflow_filter", "")
-<<<<<<< HEAD
-        workflow_filter = [
-            w.strip() for w in workflow_filter_str.split(",") if w.strip()
-        ]
-=======
         workflow_filter = [w.strip() for w in workflow_filter_str.split(",") if w.strip()]
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         return {
             "error_types": error_types,

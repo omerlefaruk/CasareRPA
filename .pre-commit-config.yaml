@@ -126,3 +126,63 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+      - id: node-registry-sync
+        name: Verify nodes are registered (backend + visual)
+        entry: python scripts/check_node_registry_sync.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: domain-purity
+        name: Enforce domain layer purity (no external deps)
+        entry: python scripts/check_domain_purity.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: event-serialization
+        name: Verify domain events use serializable types
+        entry: python scripts/check_event_serialization.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: theme-colors
+        name: Block hardcoded colors in presentation/
+        entry: python scripts/check_theme_colors.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: blocking-io
+        name: Detect blocking I/O in async functions
+        entry: python scripts/check_blocking_io.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: signal-slot-rules
+        name: Enforce Signal/Slot best practices (@Slot, no lambdas)
+        entry: python scripts/check_signal_slot_usage.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: http-client-usage
+        name: Enforce UnifiedHttpClient (no raw aiohttp/httpx)
+        entry: python scripts/check_http_client_usage.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: node-port-definitions
+        name: Verify Modern Node Standard port definitions
+        entry: python scripts/check_node_port_definitions.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: check-secrets
+        name: Block hardcoded secrets (API keys, tokens)
+        entry: python scripts/check_secrets.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: logger-usage
+        name: Enforce logger in infrastructure/nodes (no print)
+        entry: python scripts/check_logger_usage.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

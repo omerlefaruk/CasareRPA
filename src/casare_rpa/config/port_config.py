@@ -114,31 +114,6 @@ class PortConfig:
                 or os.getenv("PORT"),
                 8000,
             ),
-<<<<<<< HEAD
-            database=_parse_int(
-                os.getenv("CASARE_PORT_DATABASE") or os.getenv("DB_PORT"), 5432
-            ),
-            vault=_parse_int(
-                os.getenv("CASARE_PORT_VAULT") or os.getenv("VAULT_PORT"), 8200
-            ),
-            vite_dev=_parse_int(
-                os.getenv("CASARE_PORT_VITE_DEV") or os.getenv("VITE_PORT"), 5173
-            ),
-            redis=_parse_int(
-                os.getenv("CASARE_PORT_REDIS") or os.getenv("REDIS_PORT"), 6379
-            ),
-            metrics=_parse_int(
-                os.getenv("CASARE_PORT_METRICS") or os.getenv("METRICS_PORT"), 9090
-            ),
-            websocket=_parse_int(
-                os.getenv("CASARE_PORT_WEBSOCKET") or os.getenv("WS_PORT"), 8001
-            ),
-        )
-
-    def get_orchestrator_url(
-        self, host: str = "localhost", scheme: str = "http"
-    ) -> str:
-=======
             database=_parse_int(os.getenv("CASARE_PORT_DATABASE") or os.getenv("DB_PORT"), 5432),
             vault=_parse_int(os.getenv("CASARE_PORT_VAULT") or os.getenv("VAULT_PORT"), 8200),
             vite_dev=_parse_int(os.getenv("CASARE_PORT_VITE_DEV") or os.getenv("VITE_PORT"), 5173),
@@ -148,7 +123,6 @@ class PortConfig:
         )
 
     def get_orchestrator_url(self, host: str = "localhost", scheme: str = "http") -> str:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """
         Build orchestrator base URL.
 

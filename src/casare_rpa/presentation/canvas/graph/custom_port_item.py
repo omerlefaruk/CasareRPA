@@ -1,15 +1,4 @@
 """
-<<<<<<< HEAD
-Custom Port Item for CasareRPA.
-
-Provides specialized port rendering with different shapes based on DataType.
-"""
-
-from PySide6.QtCore import QPointF, QRectF
-from PySide6.QtGui import QPainter, QColor, QPen
-from NodeGraphQt.qgraphics.port import PortItem
-from NodeGraphQt.constants import PortTypeEnum, PortEnum
-=======
 Custom modernized PortItem for NodeGraphQt.
 
 Implements data-type-based port shapes and handles label truncation.
@@ -21,26 +10,10 @@ from PySide6.QtWidgets import QGraphicsTextItem
 
 from NodeGraphQt.qgraphics.port import PortItem
 from NodeGraphQt.constants import PortTypeEnum, PortEnum, ITEM_CACHE_MODE
->>>>>>> modernize-rendering
 
 from casare_rpa.presentation.canvas.graph.port_shapes import draw_port_shape
 from casare_rpa.domain.value_objects.types import DataType
 
-<<<<<<< HEAD
-
-class CasarePortItem(PortItem):
-    """
-    CasareRPA specialized PortItem with shape-based data type visualization.
-    """
-
-    def paint(self, painter, option, widget):
-        """
-        Draw the port with shape based on data type.
-        """
-        painter.save()
-
-        # Calculate port rect (same as original NodeGraphQt)
-=======
 # Port label truncation constants
 PORT_LABEL_MAX_LENGTH = 12
 PORT_LABEL_MAX_WIDTH_PX = 80
@@ -57,7 +30,6 @@ class CasarePortItem(PortItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
         # Calculate port rect
->>>>>>> modernize-rendering
         rect_w = self._width / 1.8
         rect_h = self._height / 1.8
         rect_x = self.boundingRect().center().x() - (rect_w / 2)
@@ -77,49 +49,26 @@ class CasarePortItem(PortItem):
             fill_color = self.color
             border_color = self.border_color
 
-<<<<<<< HEAD
-        # Determine data type and if it's an exec port
-=======
         # Try to get data type from visual node
->>>>>>> modernize-rendering
         data_type = None
         is_exec = False
         is_output = self.port_type == PortTypeEnum.OUT.value
 
         try:
-<<<<<<< HEAD
-            # Get parent node item
-            node_item = self.node
-            if node_item:
-                # Get visual node via NodeGraphQt's internal _node attribute or .node
-                visual_node = getattr(node_item, "_node", None) or getattr(node_item, "node", None)
-                if visual_node and hasattr(visual_node, "get_port_type"):
-                    port_name = self.name
-                    data_type = visual_node.get_port_type(port_name)
-
-                    # Check if it's an exec port
-=======
             node_item = self.node
             if node_item:
                 visual_node = getattr(node_item, "_node", None)
                 if visual_node and hasattr(visual_node, "get_port_type"):
                     port_name = self.name
                     data_type = visual_node.get_port_type(port_name)
->>>>>>> modernize-rendering
                     if hasattr(visual_node, "is_exec_port"):
                         is_exec = visual_node.is_exec_port(port_name)
                     elif data_type is None:
                         is_exec = True
         except Exception:
-<<<<<<< HEAD
-            pass  # Fall back to default circle if type detection fails
-
-        # Draw port shape using the centralized drawing utility
-=======
             pass
 
         # Draw port shape
->>>>>>> modernize-rendering
         draw_port_shape(
             painter=painter,
             center=QPointF(center.x(), center.y()),
@@ -131,11 +80,7 @@ class CasarePortItem(PortItem):
             is_output=is_output,
         )
 
-<<<<<<< HEAD
-        # Draw inner connection indicator for non-hovered connected ports
-=======
         # Draw connected indicator
->>>>>>> modernize-rendering
         if self.connected_pipes and not self._hovered:
             inner_size = size * 0.4
             border_qcolor = QColor(*border_color)
@@ -143,10 +88,6 @@ class CasarePortItem(PortItem):
             painter.setBrush(border_qcolor)
             painter.drawEllipse(center, inner_size, inner_size)
         elif self._hovered:
-<<<<<<< HEAD
-            # Hover indicator (inner circle)
-=======
->>>>>>> modernize-rendering
             if self.multi_connection:
                 inner_size = size * 0.55
                 border_qcolor = QColor(*border_color)
@@ -163,14 +104,7 @@ class CasarePortItem(PortItem):
         painter.restore()
 
 
-<<<<<<< HEAD
-# =============================================================================
-# MODERNIZATION: Patch NodeGraphQt.PortItem.paint to use our custom logic
-# This ensures all ports (even in non-Casare nodes) benefit from typed shapes.
-# =============================================================================
-=======
 # Apply class-level patch to PortItem to use our modernized paint logic
->>>>>>> modernize-rendering
 try:
     from NodeGraphQt.qgraphics.port import PortItem as OriginalPortItem
 

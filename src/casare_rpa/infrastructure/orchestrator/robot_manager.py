@@ -450,13 +450,7 @@ class RobotManager:
         # Persist job assignment
         if self._repository:
             try:
-<<<<<<< HEAD
-                await self._repository.add_job_to_robot(
-                    target_robot.robot_id, job.job_id
-                )
-=======
                 await self._repository.add_job_to_robot(target_robot.robot_id, job.job_id)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             except Exception as e:
                 logger.error(f"Failed to persist job assignment: {e}")
 
@@ -498,13 +492,7 @@ class RobotManager:
             # Rollback persistence
             if self._repository:
                 try:
-<<<<<<< HEAD
-                    await self._repository.remove_job_from_robot(
-                        target_robot.robot_id, job.job_id
-                    )
-=======
                     await self._repository.remove_job_from_robot(target_robot.robot_id, job.job_id)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 except Exception as e2:
                     logger.error(f"Failed to rollback job assignment: {e2}")
 
@@ -610,13 +598,7 @@ class RobotManager:
         # Persist job assignment
         if self._repository:
             try:
-<<<<<<< HEAD
-                await self._repository.add_job_to_robot(
-                    target_robot.robot_id, job.job_id
-                )
-=======
                 await self._repository.add_job_to_robot(target_robot.robot_id, job.job_id)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             except Exception as e:
                 logger.error(f"Failed to persist job assignment: {e}")
 
@@ -646,13 +628,7 @@ class RobotManager:
                     )
                 )
 
-<<<<<<< HEAD
-            logger.info(
-                f"Requeued job {job.job_id} assigned to robot {target_robot.robot_name}"
-            )
-=======
             logger.info(f"Requeued job {job.job_id} assigned to robot {target_robot.robot_name}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             return True
 
         except Exception as e:
@@ -664,13 +640,7 @@ class RobotManager:
             # Rollback persistence
             if self._repository:
                 try:
-<<<<<<< HEAD
-                    await self._repository.remove_job_from_robot(
-                        target_robot.robot_id, job.job_id
-                    )
-=======
                     await self._repository.remove_job_from_robot(target_robot.robot_id, job.job_id)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 except Exception as e2:
                     logger.error(f"Failed to rollback job assignment: {e2}")
 
@@ -709,14 +679,7 @@ class RobotManager:
                             robot_id=robot_id,
                             success=success,
                             execution_time_ms=int(
-<<<<<<< HEAD
-                                (
-                                    datetime.now(timezone.utc) - job.created_at
-                                ).total_seconds()
-                                * 1000
-=======
                                 (datetime.now(timezone.utc) - job.created_at).total_seconds() * 1000
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                             ),
                         )
                     )

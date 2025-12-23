@@ -213,13 +213,7 @@ class PgRobotRepository(RobotRepository):
         now = datetime.now(timezone.utc)
 
         # Prepare JSON fields
-<<<<<<< HEAD
-        capabilities_json = orjson.dumps(
-            [cap.value for cap in robot.capabilities]
-        ).decode()
-=======
         capabilities_json = orjson.dumps([cap.value for cap in robot.capabilities]).decode()
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         current_jobs_json = orjson.dumps(robot.current_job_ids).decode()
         tags_json = orjson.dumps(robot.tags).decode()
         metrics_json = orjson.dumps(robot.metrics).decode()
@@ -334,13 +328,7 @@ class PgRobotRepository(RobotRepository):
             orphaned_jobs = list(robot.current_job_ids)
             await self.update_status(robot_id, RobotStatus.OFFLINE)
             await self.update_current_jobs(robot_id, [])
-<<<<<<< HEAD
-            logger.info(
-                f"Marked robot {robot_id} offline with {len(orphaned_jobs)} orphaned jobs"
-            )
-=======
             logger.info(f"Marked robot {robot_id} offline with {len(orphaned_jobs)} orphaned jobs")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         return orphaned_jobs
 

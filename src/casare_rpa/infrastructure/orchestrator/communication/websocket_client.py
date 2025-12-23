@@ -199,13 +199,7 @@ class RobotClient:
 
                 self._connected = True
                 self._reconnect_count = 0
-<<<<<<< HEAD
-                self._current_backoff = (
-                    self._initial_backoff
-                )  # Reset backoff on success
-=======
                 self._current_backoff = self._initial_backoff  # Reset backoff on success
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                 # Start background tasks
                 self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())

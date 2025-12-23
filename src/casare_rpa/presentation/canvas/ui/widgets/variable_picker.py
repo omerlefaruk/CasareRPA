@@ -1512,13 +1512,7 @@ class VariableAwareLineEdit(QLineEdit):
     validation_changed = Signal(object)  # ValidationResult
     expand_clicked = Signal()  # Emitted when expand button is clicked
 
-<<<<<<< HEAD
-    def __init__(
-        self, parent: Optional[QWidget] = None, show_expand_button: bool = True
-    ) -> None:
-=======
     def __init__(self, parent: Optional[QWidget] = None, show_expand_button: bool = True) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Initialize the widget.
 
         Args:

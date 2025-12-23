@@ -93,13 +93,7 @@ def _sanitize_fs_segment(name: str) -> str:
     if not name:
         return "_"
     invalid = '<>:"/\\\\|?*'
-<<<<<<< HEAD
-    cleaned = "".join(
-        "_" if (ch in invalid or ord(ch) < 32) else ch for ch in str(name)
-    ).strip()
-=======
     cleaned = "".join("_" if (ch in invalid or ord(ch) < 32) else ch for ch in str(name)).strip()
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     cleaned = cleaned.strip(". ")
     return cleaned or "_"
 
@@ -192,13 +186,7 @@ def _ensure_file_extension(filename: str, mime_type: str) -> str:
     # Add extension based on MIME type
     extension = MIME_TO_EXTENSION.get(mime_type.lower(), "")
     if extension:
-<<<<<<< HEAD
-        logger.debug(
-            f"Adding extension '{extension}' to filename '{filename}' (MIME: {mime_type})"
-        )
-=======
         logger.debug(f"Adding extension '{extension}' to filename '{filename}' (MIME: {mime_type})")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         return filename + extension
 
     # Fallback: try to get extension from mimetypes module
@@ -206,13 +194,7 @@ def _ensure_file_extension(filename: str, mime_type: str) -> str:
 
     ext = mimetypes.guess_extension(mime_type)
     if ext:
-<<<<<<< HEAD
-        logger.debug(
-            f"Adding extension '{ext}' to filename '{filename}' (MIME: {mime_type})"
-        )
-=======
         logger.debug(f"Adding extension '{ext}' to filename '{filename}' (MIME: {mime_type})")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         return filename + ext
 
     return filename
@@ -471,15 +453,9 @@ class DriveDownloadFileNode(DriveBaseNode):
         """Download a single file from Google Drive."""
         # Get parameters
         file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
-<<<<<<< HEAD
-        destination_path = self.get_parameter(
-            "destination_path"
-        ) or self.get_input_value("destination_path")
-=======
         destination_path = self.get_parameter("destination_path") or self.get_input_value(
             "destination_path"
         )
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Resolve variable references
         if file_id:
@@ -510,13 +486,7 @@ class DriveDownloadFileNode(DriveBaseNode):
         dest_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Ensure filename has proper extension (Google Photos files often lack them)
-<<<<<<< HEAD
-        dest_filename = _ensure_file_extension(
-            dest_path.name, file_info.mime_type or ""
-        )
-=======
         dest_filename = _ensure_file_extension(dest_path.name, file_info.mime_type or "")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         dest_path = dest_path.parent / dest_filename
 
         # Download file
@@ -618,15 +588,9 @@ class DriveDownloadFolderNode(DriveBaseNode):
         """Download all files from a Google Drive folder."""
         # Get parameters
         folder_id = self.get_parameter("folder_id") or self.get_input_value("folder_id")
-<<<<<<< HEAD
-        destination_folder = self.get_parameter(
-            "destination_folder"
-        ) or self.get_input_value("destination_folder")
-=======
         destination_folder = self.get_parameter("destination_folder") or self.get_input_value(
             "destination_folder"
         )
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Resolve variable references
         if folder_id:
@@ -667,13 +631,7 @@ class DriveDownloadFolderNode(DriveBaseNode):
 
         # Filter out folders and Google Workspace files
         files_to_download = [
-<<<<<<< HEAD
-            f
-            for f in files
-            if not f.mime_type.startswith("application/vnd.google-apps.")
-=======
             f for f in files if not f.mime_type.startswith("application/vnd.google-apps.")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         ]
 
         if not files_to_download:
@@ -701,19 +659,9 @@ class DriveDownloadFolderNode(DriveBaseNode):
         for file_info in files_to_download:
             try:
                 # Ensure filename has proper extension (Google Photos often lacks them)
-<<<<<<< HEAD
-                filename = _ensure_file_extension(
-                    file_info.name, file_info.mime_type or ""
-                )
-                dest_path = dest_folder / filename
-                logger.debug(
-                    f"Downloading file from Drive: {file_info.id} -> {dest_path}"
-                )
-=======
                 filename = _ensure_file_extension(file_info.name, file_info.mime_type or "")
                 dest_path = dest_folder / filename
                 logger.debug(f"Downloading file from Drive: {file_info.id} -> {dest_path}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
                 downloaded_path = await client.download_file(
                     file_id=file_info.id,
@@ -838,19 +786,10 @@ class DriveBatchDownloadNode(DriveBaseNode):
     ) -> ExecutionResult:
         """Download a list of files from Google Drive."""
         files_list = self.get_input_value("files")
-<<<<<<< HEAD
-        folder_id_or_url = self.get_parameter("folder_id") or self.get_input_value(
-            "folder_id"
-        )
-        destination_folder = self.get_parameter(
-            "destination_folder"
-        ) or self.get_input_value("destination_folder")
-=======
         folder_id_or_url = self.get_parameter("folder_id") or self.get_input_value("folder_id")
         destination_folder = self.get_parameter("destination_folder") or self.get_input_value(
             "destination_folder"
         )
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         if folder_id_or_url:
             folder_id_or_url = self._resolve_value(context, folder_id_or_url)
@@ -871,13 +810,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
         max_concurrent_downloads_raw = self.get_parameter("max_concurrent_downloads")
         try:
             max_concurrent_downloads = int(
-<<<<<<< HEAD
-                max_concurrent_downloads_raw
-                if max_concurrent_downloads_raw is not None
-                else 8
-=======
                 max_concurrent_downloads_raw if max_concurrent_downloads_raw is not None else 8
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
         except Exception:
             max_concurrent_downloads = 8
@@ -944,13 +877,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
                                     "id": child_id,
                                     "name": child_name,
                                     "mime_type": child_mime,
-<<<<<<< HEAD
-                                    "relative_dir": ""
-                                    if rel_path == Path()
-                                    else str(rel_path),
-=======
                                     "relative_dir": "" if rel_path == Path() else str(rel_path),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                                 }
                             )
 
@@ -984,13 +911,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
         reserved: set[Path] = set()
 
         def _reserve_destination(file_info: dict[str, str]) -> Path:
-<<<<<<< HEAD
-            filename = _ensure_file_extension(
-                file_info["name"], file_info.get("mime_type", "")
-            )
-=======
             filename = _ensure_file_extension(file_info["name"], file_info.get("mime_type", ""))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             filename = _sanitize_fs_segment(filename)
 
             rel_dir = file_info.get("relative_dir", "")
@@ -1022,13 +943,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
         async def _download_one(file_info: dict[str, str], dest_path: Path) -> None:
             async with semaphore:
                 try:
-<<<<<<< HEAD
-                    logger.debug(
-                        f"Downloading file from Drive: {file_info['id']} -> {dest_path}"
-                    )
-=======
                     logger.debug(f"Downloading file from Drive: {file_info['id']} -> {dest_path}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                     downloaded_path = await client.download_file(
                         file_id=file_info["id"],
                         destination_path=str(dest_path),
@@ -1042,13 +957,7 @@ class DriveBatchDownloadNode(DriveBaseNode):
 
         tasks: list[asyncio.Task[None]] = []
         for file_info in files_to_download:
-<<<<<<< HEAD
-            if file_info.get("mime_type", "").startswith(
-                "application/vnd.google-apps."
-            ):
-=======
             if file_info.get("mime_type", "").startswith("application/vnd.google-apps."):
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 logger.debug(f"Skipping Google Workspace file: {file_info['name']}")
                 continue
 
@@ -1762,21 +1671,11 @@ class DriveExportFileNode(DriveBaseNode):
         """Export a Google Workspace file to a standard format."""
         # Get parameters
         file_id = self.get_parameter("file_id") or self.get_input_value("file_id")
-<<<<<<< HEAD
-        destination_path = self.get_parameter(
-            "destination_path"
-        ) or self.get_input_value("destination_path")
-        export_format = (
-            self.get_parameter("export_format")
-            or self.get_input_value("export_format")
-            or "pdf"
-=======
         destination_path = self.get_parameter("destination_path") or self.get_input_value(
             "destination_path"
         )
         export_format = (
             self.get_parameter("export_format") or self.get_input_value("export_format") or "pdf"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
 
         # Resolve variable references
@@ -1853,13 +1752,7 @@ class DriveExportFileNode(DriveBaseNode):
         # Create parent directory
         dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-<<<<<<< HEAD
-        logger.debug(
-            f"Exporting {file_info.name} ({file_info.mime_type}) -> {dest_path}"
-        )
-=======
         logger.debug(f"Exporting {file_info.name} ({file_info.mime_type}) -> {dest_path}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Export file
         exported_path = await client.export_file(

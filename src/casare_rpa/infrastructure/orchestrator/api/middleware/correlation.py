@@ -131,13 +131,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         return response
 
 
-<<<<<<< HEAD
-def inject_correlation_header(
-    headers: dict, correlation_id: Optional[str] = None
-) -> dict:
-=======
 def inject_correlation_header(headers: dict, correlation_id: Optional[str] = None) -> dict:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     """
     Inject correlation ID into outgoing request headers.
 

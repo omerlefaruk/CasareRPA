@@ -97,13 +97,7 @@ class SuperNodeMixin:
         if hasattr(self, "_configure_port_colors"):
             self._configure_port_colors()
 
-<<<<<<< HEAD
-        logger.debug(
-            f"SuperNodeMixin: Created ports synchronously for action '{action}'"
-        )
-=======
         logger.debug(f"SuperNodeMixin: Created ports synchronously for action '{action}'")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     def _apply_initial_widget_filter(self) -> None:
         """Apply widget filter after casare node is set.
@@ -116,13 +110,7 @@ class SuperNodeMixin:
 
         action = self.get_current_action()
         if action:
-<<<<<<< HEAD
-            logger.debug(
-                f"SuperNodeMixin: Applying widget filter for action '{action}'"
-            )
-=======
             logger.debug(f"SuperNodeMixin: Applying widget filter for action '{action}'")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             # Sync the combo widget to match the config action value
             # This is needed because the combo may still have the default value
@@ -390,13 +378,7 @@ class SuperNodeMixin:
                 if hasattr(self, "_casare_node") and self._casare_node is not None:
                     if hasattr(self._casare_node, "config"):
                         self._casare_node.config[prop_name] = value
-<<<<<<< HEAD
-                        logger.debug(
-                            f"  Synced hidden widget value to config: {prop_name}={value}"
-                        )
-=======
                         logger.debug(f"  Synced hidden widget value to config: {prop_name}={value}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             except Exception:
                 pass
 

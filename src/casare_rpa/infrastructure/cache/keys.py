@@ -30,13 +30,7 @@ class CacheKeyGenerator:
             # Serialize with sorted keys for determinism
             serialized = orjson.dumps(
                 data,
-<<<<<<< HEAD
-                option=orjson.OPT_SORT_KEYS
-                | orjson.OPT_NON_STR_KEYS
-                | orjson.OPT_SERIALIZE_NUMPY,
-=======
                 option=orjson.OPT_SORT_KEYS | orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
 
             # Generate SHA-256 hash

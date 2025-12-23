@@ -159,13 +159,7 @@ class SheetsTriggerNode(BaseTriggerNode):
         """Get Sheets-specific configuration."""
         # Parse comma-separated columns
         watch_columns_str = self.get_parameter("watch_columns", "")
-<<<<<<< HEAD
-        watch_columns = [
-            c.strip().upper() for c in watch_columns_str.split(",") if c.strip()
-        ]
-=======
         watch_columns = [c.strip().upper() for c in watch_columns_str.split(",") if c.strip()]
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         return {
             "credential_name": self.get_parameter("credential_name", "google"),
@@ -174,13 +168,7 @@ class SheetsTriggerNode(BaseTriggerNode):
             "range": self.get_parameter("range", ""),
             "polling_interval": self.get_parameter("polling_interval", 30),
             "trigger_on_new_row": self.get_parameter("trigger_on_new_row", True),
-<<<<<<< HEAD
-            "trigger_on_cell_change": self.get_parameter(
-                "trigger_on_cell_change", True
-            ),
-=======
             "trigger_on_cell_change": self.get_parameter("trigger_on_cell_change", True),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             "trigger_on_delete": self.get_parameter("trigger_on_delete", False),
             "watch_columns": watch_columns,
             "ignore_empty_rows": self.get_parameter("ignore_empty_rows", True),

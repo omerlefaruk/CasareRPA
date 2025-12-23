@@ -104,13 +104,7 @@ class OrchestratorJobConsumer:
                     )
 
                 text = await resp.text()
-<<<<<<< HEAD
-                logger.warning(
-                    f"Orchestrator claim_job failed: {resp.status} {text[:200]}"
-                )
-=======
                 logger.warning(f"Orchestrator claim_job failed: {resp.status} {text[:200]}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return None
 
         except aiohttp.ClientError as e:
@@ -227,13 +221,7 @@ class OrchestratorJobConsumer:
             logger.exception(f"Orchestrator extend_lease unexpected error: {e}")
             return False
 
-<<<<<<< HEAD
-    async def update_progress(
-        self, job_id: str, progress: int, current_node: str
-    ) -> bool:
-=======
     async def update_progress(self, job_id: str, progress: int, current_node: str) -> bool:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         # Progress reporting is optional; keep robot execution robust even if
         # the orchestrator deployment doesn't support progress persistence yet.
         return True

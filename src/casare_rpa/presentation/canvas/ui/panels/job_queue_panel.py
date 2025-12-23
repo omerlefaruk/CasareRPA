@@ -121,13 +121,7 @@ class JobQueuePanel(QDockWidget):
         header_layout.addStretch()
 
         self._queue_stats_label = QLabel("Queue: 0 | Running: 0")
-<<<<<<< HEAD
-        self._queue_stats_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-size: 11px;"
-        )
-=======
         self._queue_stats_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         header_layout.addWidget(self._queue_stats_label)
 
         self._refresh_btn = QPushButton("↻ Refresh")
@@ -358,25 +352,11 @@ class JobQueuePanel(QDockWidget):
             self._pending_table.setItem(
                 row, 0, QTableWidgetItem(job.get("workflow_name", "Unknown"))
             )
-<<<<<<< HEAD
-            self._pending_table.setItem(
-                row, 1, QTableWidgetItem(str(job.get("priority", 10)))
-            )
-            self._pending_table.setItem(
-                row, 2, QTableWidgetItem(job.get("submitted_at", "-"))
-            )
-
-            # Store job ID in first column
-            self._pending_table.item(row, 0).setData(
-                Qt.ItemDataRole.UserRole, job.get("job_id")
-            )
-=======
             self._pending_table.setItem(row, 1, QTableWidgetItem(str(job.get("priority", 10))))
             self._pending_table.setItem(row, 2, QTableWidgetItem(job.get("submitted_at", "-")))
 
             # Store job ID in first column
             self._pending_table.item(row, 0).setData(Qt.ItemDataRole.UserRole, job.get("job_id"))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     def _populate_running_table(self) -> None:
         """Populate running jobs table."""
@@ -385,13 +365,7 @@ class JobQueuePanel(QDockWidget):
             self._running_table.setItem(
                 row, 0, QTableWidgetItem(job.get("workflow_name", "Unknown"))
             )
-<<<<<<< HEAD
-            self._running_table.setItem(
-                row, 1, QTableWidgetItem(job.get("robot_name", "-"))
-            )
-=======
             self._running_table.setItem(row, 1, QTableWidgetItem(job.get("robot_name", "-")))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             progress = job.get("progress", 0)
             progress_item = QTableWidgetItem(f"{progress}%")
@@ -399,21 +373,10 @@ class JobQueuePanel(QDockWidget):
                 progress_item.setForeground(QBrush(_hex_to_qcolor(THEME.success)))
             self._running_table.setItem(row, 2, progress_item)
 
-<<<<<<< HEAD
-            self._running_table.setItem(
-                row, 3, QTableWidgetItem(job.get("started_at", "-"))
-            )
-
-            # Store job ID
-            self._running_table.item(row, 0).setData(
-                Qt.ItemDataRole.UserRole, job.get("job_id")
-            )
-=======
             self._running_table.setItem(row, 3, QTableWidgetItem(job.get("started_at", "-")))
 
             # Store job ID
             self._running_table.item(row, 0).setData(Qt.ItemDataRole.UserRole, job.get("job_id"))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     def _populate_completed_table(self) -> None:
         """Populate completed jobs table."""
@@ -422,21 +385,9 @@ class JobQueuePanel(QDockWidget):
             self._completed_table.setItem(
                 row, 0, QTableWidgetItem(job.get("workflow_name", "Unknown"))
             )
-<<<<<<< HEAD
-            self._completed_table.setItem(
-                row, 1, QTableWidgetItem(job.get("robot_name", "-"))
-            )
-            self._completed_table.setItem(
-                row, 2, QTableWidgetItem(job.get("duration", "-"))
-            )
-            self._completed_table.setItem(
-                row, 3, QTableWidgetItem(job.get("completed_at", "-"))
-            )
-=======
             self._completed_table.setItem(row, 1, QTableWidgetItem(job.get("robot_name", "-")))
             self._completed_table.setItem(row, 2, QTableWidgetItem(job.get("duration", "-")))
             self._completed_table.setItem(row, 3, QTableWidgetItem(job.get("completed_at", "-")))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     def _populate_failed_table(self) -> None:
         """Populate failed/DLQ jobs table."""
@@ -450,25 +401,11 @@ class JobQueuePanel(QDockWidget):
             error_item.setForeground(QBrush(_hex_to_qcolor(THEME.error)))
             self._failed_table.setItem(row, 1, error_item)
 
-<<<<<<< HEAD
-            self._failed_table.setItem(
-                row, 2, QTableWidgetItem(str(job.get("retry_count", 0)))
-            )
-            self._failed_table.setItem(
-                row, 3, QTableWidgetItem(job.get("failed_at", "-"))
-            )
-
-            # Store job ID
-            self._failed_table.item(row, 0).setData(
-                Qt.ItemDataRole.UserRole, job.get("job_id")
-            )
-=======
             self._failed_table.setItem(row, 2, QTableWidgetItem(str(job.get("retry_count", 0))))
             self._failed_table.setItem(row, 3, QTableWidgetItem(job.get("failed_at", "-")))
 
             # Store job ID
             self._failed_table.item(row, 0).setData(Qt.ItemDataRole.UserRole, job.get("job_id"))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     # ==================== Slot Handlers ====================
 

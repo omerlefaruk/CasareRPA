@@ -232,13 +232,7 @@ def validate_app_config() -> AppConfig:
     config = get_app_config()
     errors = config.validate()
     if errors:
-<<<<<<< HEAD
-        error_msg = "Configuration validation failed:\n" + "\n".join(
-            f"  - {e}" for e in errors
-        )
-=======
         error_msg = "Configuration validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         raise ValueError(error_msg)
     return config
 

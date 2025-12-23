@@ -224,13 +224,7 @@ class OrchestratorEngine:
         self._server_host = host
         self._server_port = port
 
-<<<<<<< HEAD
-        logger.warning(
-            f"OrchestratorServer has been removed. Cannot start server on {host}:{port}"
-        )
-=======
         logger.warning(f"OrchestratorServer has been removed. Cannot start server on {host}:{port}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         self._server = None
 
         # Wire callbacks from server to engine

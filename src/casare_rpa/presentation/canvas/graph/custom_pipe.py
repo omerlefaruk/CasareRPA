@@ -1013,14 +1013,9 @@ class CasarePipe(PipeItem):
             except Exception:
                 pass
             live_pen.setWidthF(max(live_pen.widthF(), 2.5))
-<<<<<<< HEAD
-            # Use OpenGL-compatible manual dashed line drawing
-            _draw_dashed_path(painter, path, live_pen)
-=======
             live_pen.setStyle(Qt.PenStyle.SolidLine)
             painter.setPen(live_pen)
             painter.drawPath(path)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         else:
             # Solid line for complete connections
             pen.setStyle(Qt.PenStyle.SolidLine)
@@ -1088,15 +1083,10 @@ class CasarePipe(PipeItem):
             else:
                 live_color = QColor(wire_color).lighter(150)
                 live_color.setAlpha(255)
-<<<<<<< HEAD
-                pen = QPen(live_color, max(wire_thickness, 2.5))
-            _draw_dashed_path(painter, self.path(), pen)
-=======
                 pen = QPen(live_color, wire_thickness)
             pen.setStyle(Qt.PenStyle.SolidLine)
             painter.setPen(pen)
             painter.drawPath(self.path())
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         else:
             # Connection is complete - use solid line with type color
             # Priority: insert highlight > hover > type-colored

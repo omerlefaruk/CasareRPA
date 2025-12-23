@@ -56,13 +56,7 @@ class WorkflowCache:
         """
         # Filter out internal keys that would change fingerprint
         clean_data = {
-<<<<<<< HEAD
-            k: v
-            for k, v in workflow_data.items()
-            if k not in WorkflowCache._INTERNAL_KEYS
-=======
             k: v for k, v in workflow_data.items() if k not in WorkflowCache._INTERNAL_KEYS
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         }
         content = orjson.dumps(clean_data, option=orjson.OPT_SORT_KEYS)
         return hashlib.sha256(content).hexdigest()[:16]

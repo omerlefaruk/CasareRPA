@@ -402,13 +402,7 @@ class WorkflowValidator:
         self._port_cache[node_type] = ports
         return ports
 
-<<<<<<< HEAD
-    def _extract_ports_from_backend_node(
-        self, node_type: str
-    ) -> Optional[Dict[str, List[str]]]:
-=======
     def _extract_ports_from_backend_node(self, node_type: str) -> Optional[Dict[str, List[str]]]:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """
         Extract port definitions from backend node class using live instantiation.
 

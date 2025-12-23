@@ -66,13 +66,7 @@ class UnifiedHttpClientAdapter:
         )
         self._client = UnifiedHttpClient(config)
 
-<<<<<<< HEAD
-    async def post(
-        self, url: str, json: Dict[str, Any]
-    ) -> tuple[int, Dict[str, Any], str]:
-=======
     async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """POST request with JSON payload."""
         try:
             response = await self._client.post(url, json=json)

@@ -119,27 +119,13 @@ async def register_robot(
 
         def _dedupe_name(name: str, robot_id: str, attempt: int) -> str:
             suffix = robot_id[-8:] if robot_id else "robot"
-<<<<<<< HEAD
-            candidate = (
-                f"{name} ({suffix})"
-                if attempt == 0
-                else f"{name} ({suffix}-{attempt + 1})"
-            )
-=======
             candidate = f"{name} ({suffix})" if attempt == 0 else f"{name} ({suffix}-{attempt + 1})"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             return candidate[:128]
 
         def _dedupe_hostname(hostname: str, robot_id: str, attempt: int) -> str:
             suffix = robot_id[-8:] if robot_id else "robot"
             candidate = (
-<<<<<<< HEAD
-                f"{hostname}-{suffix}"
-                if attempt == 0
-                else f"{hostname}-{suffix}-{attempt + 1}"
-=======
                 f"{hostname}-{suffix}" if attempt == 0 else f"{hostname}-{suffix}-{attempt + 1}"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
             return candidate[:255]
 
@@ -332,27 +318,13 @@ async def update_robot(
 
         def _dedupe_name(name: str, robot_id: str, attempt: int) -> str:
             suffix = robot_id[-8:] if robot_id else "robot"
-<<<<<<< HEAD
-            candidate = (
-                f"{name} ({suffix})"
-                if attempt == 0
-                else f"{name} ({suffix}-{attempt + 1})"
-            )
-=======
             candidate = f"{name} ({suffix})" if attempt == 0 else f"{name} ({suffix}-{attempt + 1})"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             return candidate[:128]
 
         def _dedupe_hostname(hostname: str, robot_id: str, attempt: int) -> str:
             suffix = robot_id[-8:] if robot_id else "robot"
             candidate = (
-<<<<<<< HEAD
-                f"{hostname}-{suffix}"
-                if attempt == 0
-                else f"{hostname}-{suffix}-{attempt + 1}"
-=======
                 f"{hostname}-{suffix}" if attempt == 0 else f"{hostname}-{suffix}-{attempt + 1}"
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
             return candidate[:255]
 
@@ -419,13 +391,7 @@ async def update_robot(
                         and update.name is not None
                         and name_param_pos is not None
                     ):
-<<<<<<< HEAD
-                        params[name_param_pos] = _dedupe_name(
-                            str(update.name), robot_id, attempt
-                        )
-=======
                         params[name_param_pos] = _dedupe_name(str(update.name), robot_id, attempt)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                         continue
                     if (
                         ("robots_hostname_unique" in msg or "hostname" in msg)
@@ -439,13 +405,7 @@ async def update_robot(
                     raise
 
             if row is None:
-<<<<<<< HEAD
-                raise HTTPException(
-                    status_code=404, detail=f"Robot {robot_id} not found"
-                )
-=======
                 raise HTTPException(status_code=404, detail=f"Robot {robot_id} not found")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             return _row_to_response(dict(row))
 
@@ -478,13 +438,7 @@ async def update_robot_status(
         async with pool.acquire() as conn:
             now = datetime.utcnow()
             normalized_status = (
-<<<<<<< HEAD
-                "online"
-                if status_update.status.lower() == "idle"
-                else status_update.status.lower()
-=======
                 "online" if status_update.status.lower() == "idle" else status_update.status.lower()
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             )
             if normalized_status == "online":
                 # keep online
@@ -506,13 +460,7 @@ async def update_robot_status(
             )
 
             if row is None:
-<<<<<<< HEAD
-                raise HTTPException(
-                    status_code=404, detail=f"Robot {robot_id} not found"
-                )
-=======
                 raise HTTPException(status_code=404, detail=f"Robot {robot_id} not found")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             return _row_to_response(dict(row))
 
@@ -685,13 +633,7 @@ def _row_to_response(row: Dict[str, Any]) -> RobotResponse:
         robot_id=row.get("robot_id", ""),
         name=row.get("name", ""),
         hostname=row.get("hostname", ""),
-<<<<<<< HEAD
-        status="idle"
-        if row.get("status") == "online"
-        else row.get("status", "offline"),
-=======
         status="idle" if row.get("status") == "online" else row.get("status", "offline"),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         environment=row.get("environment", "default"),
         max_concurrent_jobs=row.get("max_concurrent_jobs", 1),
         capabilities=parse_jsonb_list(row.get("capabilities")),

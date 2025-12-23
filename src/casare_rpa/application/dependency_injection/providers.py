@@ -177,13 +177,7 @@ class InfrastructureProvider(BaseProvider):
         container.register_singleton(
             "recovery_strategy_registry", factory=recovery_registry_factory
         )
-<<<<<<< HEAD
-        container.register_singleton(
-            "healing_telemetry", factory=healing_telemetry_factory
-        )
-=======
         container.register_singleton("healing_telemetry", factory=healing_telemetry_factory)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         container.register_singleton("api_key_store", factory=api_key_store_factory)
         container.register_singleton("credential_store", factory=credential_store_factory)
         container.register_singleton("memory_queue", factory=memory_queue_factory)

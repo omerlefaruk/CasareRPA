@@ -34,13 +34,7 @@ class VisualBrowserEvaluateNode(VisualNode):
         # Input ports
         self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("script", DataType.STRING)
-<<<<<<< HEAD
-        self.add_typed_input(
-            "args", DataType.LIST
-        )  # Optional arguments to pass to script
-=======
         self.add_typed_input("args", DataType.LIST)  # Optional arguments to pass to script
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Output ports
         self.add_typed_output("page", DataType.PAGE)
