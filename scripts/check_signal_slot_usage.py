@@ -40,7 +40,7 @@ class SignalSlotChecker(ast.NodeVisitor):
         self.filepath = filepath
         self.errors = []
         self.in_class = False
-        self.has_slot_decorator = False
+        self._function_depth = 0
 
     def visit_ClassDef(self, node):
         old_in_class = self.in_class
@@ -49,14 +49,13 @@ class SignalSlotChecker(ast.NodeVisitor):
         self.in_class = old_in_class
 
     def visit_FunctionDef(self, node):
-        if self.in_class:
-            # Check if method has @Slot or @AsyncSlot decorator
+        # Only validate direct class methods (ignore nested functions inside methods).
+        if self.in_class and self._function_depth == 0:
             has_slot = any(
                 isinstance(dec, ast.Name) and dec.id in ("Slot", "AsyncSlot")
                 for dec in node.decorator_list
             )
 
-            # Check for Qt signal/slot naming convention
             is_slot_method = node.name.startswith("on_")
 
             if is_slot_method and not has_slot and "test" not in self.filepath:
@@ -68,7 +67,9 @@ class SignalSlotChecker(ast.NodeVisitor):
                         f"{self.filepath}:{node.lineno} - Slot method '{node.name}' missing @Slot decorator"
                     )
 
+        self._function_depth += 1
         self.generic_visit(node)
+        self._function_depth -= 1
 
 
 def check_lambdas(filepath: str) -> list[str]:
