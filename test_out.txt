@@ -1,0 +1,163 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.5.0 -- C:\Users\Rau\miniconda3\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\Rau\Desktop\CasareRPA
+configfile: pyproject.toml
+plugins: anyio-4.11.0, asyncio-1.3.0, cov-7.0.0, qt-4.5.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=function
+2025-12-23 04:41:08.678 | DEBUG    | casare_rpa.infrastructure.observability.telemetry:<module>:96 - OpenTelemetry packages not installed: No module named 'opentelemetry.exporter.otlp.proto.http'. Telemetry disabled. Install with: pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc opentelemetry-exporter-otlp-proto-http
+2025-12-23 04:41:08.896 | DEBUG    | casare_rpa.presentation.canvas.graph.patches:apply_fix:63 - Applied QFont.setPointSize fix
+2025-12-23 04:41:08.975 | DEBUG    | casare_rpa.presentation.canvas.graph.patches:apply_fix:33 - Applied QGraphicsTextItem.font fix
+collecting ... collected 5 items
+
+QFontDatabase: Cannot find font directory C:/Users/Rau/miniconda3/Lib/site-packages/PySide6/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+2025-12-23 04:41:09.019 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_configure_viewer:89 - Replaced default live pipe with CasareLivePipe
+QOpenGLWidget is not supported on this platform.
+2025-12-23 04:41:09.022 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_setup_opengl_viewport:153 - GPU rendering enabled (OpenGL 3.3)
+2025-12-23 04:41:09.023 | DEBUG    | casare_rpa.presentation.canvas.graph.connection_handler:setup_validation:69 - Connection validation enabled
+2025-12-23 04:41:09.023 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:setup_viewport_culling:192 - Viewport culling signals connected
+2025-12-23 04:41:09.023 | DEBUG    | casare_rpa.presentation.canvas.connections.reroute_insert:_setup_event_filter:64 - RerouteInsertManager event filter installed
+2025-12-23 04:41:09.023 | DEBUG    | casare_rpa.presentation.canvas.graph.node_quick_actions:_setup_context_menu:74 - Node quick actions event filter installed on viewport
+2025-12-23 04:41:09.024 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:_setup_paste_hook:1133 - Paste hook for duplicate ID detection enabled
+2025-12-23 04:41:09.035 | DEBUG    | casare_rpa.presentation.canvas.ui.panels.port_legend_panel:__init__:326 - PortLegendPanel initialized
+2025-12-23 04:41:09.036 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:clear_node_type_caches:1991 - Node type lookup caches cleared
+2025-12-23 04:41:09.297 | INFO     | casare_rpa.utils.gpu.gpu_utils:get_gpu_capabilities:133 - GPU capabilities: OpenGL 3.3+
+2025-12-23 04:41:09.377 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:_load_mapping_from_cache:102 - Loaded node mapping from cache (364 entries)
+2025-12-23 04:41:09.484 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:_build_casare_node_mapping_with_cache:191 - Reconstructed mapping from cache (363/364 entries)
+2025-12-23 04:41:09.485 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:_build_node_type_mapping:343 - Built unified node type mapping with 371 types
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+2025-12-23 04:41:09.494 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.base_visual_node:_auto_create_casare_node:758 - _auto_create_casare_node failed for VisualExcelOpenNode: super(type, obj): obj (instance of NodeCheckBox) is not an instance or subtype of type (CasareCheckBox).
+2025-12-23 04:41:09.495 | ERROR    | casare_rpa.presentation.canvas.graph.node_registry:create_node_from_type:513 - Failed to create node ExcelOpenNode: "show_excel" property already exists.
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_excel_creates_excel_open[.xlsx] DEBUG: casare_rpa location: C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\__init__.py
+DEBUG: START _on_node_data_dropped on <CasareNodeGraph("root") object at 0x1d14f19d1c0>
+DEBUG: Creating node ExcelOpenNode for C:/Users/Rau/AppData/Local/Temp/pytest-of-Rau/pytest-562/test_drop_excel_creates_excel_0/book.xlsx
+DEBUG: Created node: None
+2025-12-23 04:41:09.926 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:cleanup:1613 - NodeGraphWidget cleanup completed
+FAILED
+2025-12-23 04:41:09.933 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_configure_viewer:89 - Replaced default live pipe with CasareLivePipe
+QOpenGLWidget is not supported on this platform.
+2025-12-23 04:41:09.934 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_setup_opengl_viewport:153 - GPU rendering enabled (OpenGL 3.3)
+2025-12-23 04:41:09.934 | DEBUG    | casare_rpa.presentation.canvas.graph.connection_handler:setup_validation:69 - Connection validation enabled
+2025-12-23 04:41:09.934 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:setup_viewport_culling:192 - Viewport culling signals connected
+2025-12-23 04:41:09.934 | DEBUG    | casare_rpa.presentation.canvas.connections.reroute_insert:_setup_event_filter:64 - RerouteInsertManager event filter installed
+2025-12-23 04:41:09.934 | DEBUG    | casare_rpa.presentation.canvas.graph.node_quick_actions:_setup_context_menu:74 - Node quick actions event filter installed on viewport
+2025-12-23 04:41:09.934 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:_setup_paste_hook:1133 - Paste hook for duplicate ID detection enabled
+2025-12-23 04:41:09.945 | DEBUG    | casare_rpa.presentation.canvas.ui.panels.port_legend_panel:__init__:326 - PortLegendPanel initialized
+2025-12-23 04:41:09.945 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:clear_node_type_caches:1991 - Node type lookup caches cleared
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+2025-12-23 04:41:09.949 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.base_visual_node:_auto_create_casare_node:758 - _auto_create_casare_node failed for VisualExcelOpenNode: super(type, obj): obj (instance of NodeCheckBox) is not an instance or subtype of type (CasareCheckBox).
+2025-12-23 04:41:09.951 | ERROR    | casare_rpa.presentation.canvas.graph.node_registry:create_node_from_type:513 - Failed to create node ExcelOpenNode: "show_excel" property already exists.
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_excel_creates_excel_open[.xls] DEBUG: casare_rpa location: C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\__init__.py
+DEBUG: START _on_node_data_dropped on <CasareNodeGraph("root") object at 0x1d17eaaf900>
+DEBUG: Creating node ExcelOpenNode for C:/Users/Rau/AppData/Local/Temp/pytest-of-Rau/pytest-562/test_drop_excel_creates_excel_1/book.xls
+DEBUG: Created node: None
+2025-12-23 04:41:09.956 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:cleanup:1613 - NodeGraphWidget cleanup completed
+FAILED
+2025-12-23 04:41:09.962 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_configure_viewer:89 - Replaced default live pipe with CasareLivePipe
+QOpenGLWidget is not supported on this platform.
+2025-12-23 04:41:09.963 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_setup_opengl_viewport:153 - GPU rendering enabled (OpenGL 3.3)
+2025-12-23 04:41:09.963 | DEBUG    | casare_rpa.presentation.canvas.graph.connection_handler:setup_validation:69 - Connection validation enabled
+2025-12-23 04:41:09.963 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:setup_viewport_culling:192 - Viewport culling signals connected
+2025-12-23 04:41:09.963 | DEBUG    | casare_rpa.presentation.canvas.connections.reroute_insert:_setup_event_filter:64 - RerouteInsertManager event filter installed
+2025-12-23 04:41:09.963 | DEBUG    | casare_rpa.presentation.canvas.graph.node_quick_actions:_setup_context_menu:74 - Node quick actions event filter installed on viewport
+2025-12-23 04:41:09.963 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:_setup_paste_hook:1133 - Paste hook for duplicate ID detection enabled
+2025-12-23 04:41:09.974 | DEBUG    | casare_rpa.presentation.canvas.ui.panels.port_legend_panel:__init__:326 - PortLegendPanel initialized
+2025-12-23 04:41:09.974 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:clear_node_type_caches:1991 - Node type lookup caches cleared
+2025-12-23 04:41:09.976 | DEBUG    | casare_rpa.presentation.canvas.graph.custom_graph:_is_nodegraph_session_file:200 - Drop file not parseable as NodeGraphQt session: C:/Users/Rau/AppData/Local/Temp/pytest-of-Rau/pytest-562/test_drop_file_creates_file_sy0/data.json (Expecting value: line 1 column 1 (char 0))
+2025-12-23 04:41:09.979 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.base_visual_node:_auto_create_casare_node:758 - _auto_create_casare_node failed for VisualFileSystemSuperNode: super(type, obj): obj (instance of NodeComboBox) is not an instance or subtype of type (CasareComboBox).
+2025-12-23 04:41:09.979 | ERROR    | casare_rpa.presentation.canvas.graph.node_registry:create_node_from_type:513 - Failed to create node FileSystemSuperNode: "action" property already exists.
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_file_creates_file_system_read[.json] DEBUG: casare_rpa location: C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\__init__.py
+DEBUG: START _on_node_data_dropped on <CasareNodeGraph("root") object at 0x1d17eacdc80>
+DEBUG: Creating node FileSystemSuperNode for C:/Users/Rau/AppData/Local/Temp/pytest-of-Rau/pytest-562/test_drop_file_creates_file_sy0/data.json
+DEBUG: Created node: None
+2025-12-23 04:41:09.984 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin:_connect_action_listener:189 - SuperNodeMixin: No 'action' widget found after defer
+2025-12-23 04:41:09.985 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:cleanup:1613 - NodeGraphWidget cleanup completed
+FAILED
+2025-12-23 04:41:09.990 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_configure_viewer:89 - Replaced default live pipe with CasareLivePipe
+QOpenGLWidget is not supported on this platform.
+2025-12-23 04:41:09.990 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_setup_opengl_viewport:153 - GPU rendering enabled (OpenGL 3.3)
+2025-12-23 04:41:09.990 | DEBUG    | casare_rpa.presentation.canvas.graph.connection_handler:setup_validation:69 - Connection validation enabled
+2025-12-23 04:41:09.991 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:setup_viewport_culling:192 - Viewport culling signals connected
+2025-12-23 04:41:09.991 | DEBUG    | casare_rpa.presentation.canvas.connections.reroute_insert:_setup_event_filter:64 - RerouteInsertManager event filter installed
+2025-12-23 04:41:09.991 | DEBUG    | casare_rpa.presentation.canvas.graph.node_quick_actions:_setup_context_menu:74 - Node quick actions event filter installed on viewport
+2025-12-23 04:41:09.991 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:_setup_paste_hook:1133 - Paste hook for duplicate ID detection enabled
+2025-12-23 04:41:10.001 | DEBUG    | casare_rpa.presentation.canvas.ui.panels.port_legend_panel:__init__:326 - PortLegendPanel initialized
+2025-12-23 04:41:10.002 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:clear_node_type_caches:1991 - Node type lookup caches cleared
+2025-12-23 04:41:10.004 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.base_visual_node:_auto_create_casare_node:758 - _auto_create_casare_node failed for VisualFileSystemSuperNode: super(type, obj): obj (instance of NodeComboBox) is not an instance or subtype of type (CasareComboBox).
+2025-12-23 04:41:10.004 | ERROR    | casare_rpa.presentation.canvas.graph.node_registry:create_node_from_type:513 - Failed to create node FileSystemSuperNode: "action" property already exists.
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_file_creates_file_system_read[.xml] DEBUG: casare_rpa location: C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\__init__.py
+DEBUG: START _on_node_data_dropped on <CasareNodeGraph("root") object at 0x1d17f50d540>
+DEBUG: Creating node FileSystemSuperNode for C:/Users/Rau/AppData/Local/Temp/pytest-of-Rau/pytest-562/test_drop_file_creates_file_sy1/data.xml
+DEBUG: Created node: None
+2025-12-23 04:41:10.010 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin:_connect_action_listener:189 - SuperNodeMixin: No 'action' widget found after defer
+2025-12-23 04:41:10.010 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:cleanup:1613 - NodeGraphWidget cleanup completed
+FAILED
+2025-12-23 04:41:10.015 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_configure_viewer:89 - Replaced default live pipe with CasareLivePipe
+QOpenGLWidget is not supported on this platform.
+2025-12-23 04:41:10.015 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:_setup_opengl_viewport:153 - GPU rendering enabled (OpenGL 3.3)
+2025-12-23 04:41:10.016 | DEBUG    | casare_rpa.presentation.canvas.graph.connection_handler:setup_validation:69 - Connection validation enabled
+2025-12-23 04:41:10.016 | DEBUG    | casare_rpa.presentation.canvas.graph.graph_setup:setup_viewport_culling:192 - Viewport culling signals connected
+2025-12-23 04:41:10.016 | DEBUG    | casare_rpa.presentation.canvas.connections.reroute_insert:_setup_event_filter:64 - RerouteInsertManager event filter installed
+2025-12-23 04:41:10.016 | DEBUG    | casare_rpa.presentation.canvas.graph.node_quick_actions:_setup_context_menu:74 - Node quick actions event filter installed on viewport
+2025-12-23 04:41:10.016 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:_setup_paste_hook:1133 - Paste hook for duplicate ID detection enabled
+2025-12-23 04:41:10.026 | DEBUG    | casare_rpa.presentation.canvas.ui.panels.port_legend_panel:__init__:326 - PortLegendPanel initialized
+2025-12-23 04:41:10.027 | DEBUG    | casare_rpa.presentation.canvas.graph.node_registry:clear_node_type_caches:1991 - Node type lookup caches cleared
+2025-12-23 04:41:10.029 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.base_visual_node:_auto_create_casare_node:758 - _auto_create_casare_node failed for VisualFileSystemSuperNode: super(type, obj): obj (instance of NodeComboBox) is not an instance or subtype of type (CasareComboBox).
+2025-12-23 04:41:10.029 | ERROR    | casare_rpa.presentation.canvas.graph.node_registry:create_node_from_type:513 - Failed to create node FileSystemSuperNode: "action" property already exists.
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_file_creates_file_system_read[.txt] DEBUG: casare_rpa location: C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\__init__.py
+DEBUG: START _on_node_data_dropped on <CasareNodeGraph("root") object at 0x1d17f50cb40>
+DEBUG: Creating node FileSystemSuperNode for C:/Users/Rau/AppData/Local/Temp/pytest-of-Rau/pytest-562/test_drop_file_creates_file_sy2/data.txt
+DEBUG: Created node: None
+2025-12-23 04:41:10.034 | WARNING  | casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin:_connect_action_listener:189 - SuperNodeMixin: No 'action' widget found after defer
+2025-12-23 04:41:10.034 | DEBUG    | casare_rpa.presentation.canvas.graph.node_graph_widget:cleanup:1613 - NodeGraphWidget cleanup completed
+FAILED
+
+================================== FAILURES ===================================
+__________________ test_drop_excel_creates_excel_open[.xlsx] __________________
+tests\presentation\canvas\graph\test_custom_graph_drop.py:50: in test_drop_excel_creates_excel_open
+    assert len(excel_nodes) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+__________________ test_drop_excel_creates_excel_open[.xls] ___________________
+tests\presentation\canvas\graph\test_custom_graph_drop.py:50: in test_drop_excel_creates_excel_open
+    assert len(excel_nodes) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_______________ test_drop_file_creates_file_system_read[.json] ________________
+tests\presentation\canvas\graph\test_custom_graph_drop.py:63: in test_drop_file_creates_file_system_read
+    assert len(file_nodes) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+________________ test_drop_file_creates_file_system_read[.xml] ________________
+tests\presentation\canvas\graph\test_custom_graph_drop.py:63: in test_drop_file_creates_file_system_read
+    assert len(file_nodes) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+________________ test_drop_file_creates_file_system_read[.txt] ________________
+tests\presentation\canvas\graph\test_custom_graph_drop.py:63: in test_drop_file_creates_file_system_read
+    assert len(file_nodes) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+============================== warnings summary ===============================
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_excel_creates_excel_open[.xlsx]
+tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_excel_creates_excel_open[.xls]
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\presentation\canvas\visual_nodes\base_visual_node.py:244: RuntimeWarning: Failed to disconnect (None) from signal "expand_clicked()".
+    line_edit.expand_clicked.disconnect()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_excel_creates_excel_open[.xlsx] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_excel_creates_excel_open[.xls] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_file_creates_file_system_read[.json] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_file_creates_file_system_read[.xml] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/presentation/canvas/graph/test_custom_graph_drop.py::test_drop_file_creates_file_system_read[.txt] - assert 0 == 1
+ +  where 0 = len([])
+======================== 5 failed, 2 warnings in 3.44s ========================

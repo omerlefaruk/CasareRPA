@@ -14,6 +14,7 @@
 
 - **Reload Action**: Exposed "Reload" action (Ctrl+Shift+R) in main toolbar and Edit menu for easier access.
 - **Reload Icon**: Added standard `SP_BrowserReload` mapping to icon system.
+- **Graph Updates**: Resolved rebase conflicts in `custom_graph.py` and `node_graph_widget.py`.
 
 ### Orchestrator-first Robot Job Execution (Foundation)
 
