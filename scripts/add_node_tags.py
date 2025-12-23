@@ -33,7 +33,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-
 # Known dependencies and their import patterns
 DEPENDENCY_PATTERNS: dict[str, list[str]] = {
     "playwright": ["playwright", "playwright.async_api"],
@@ -184,7 +183,7 @@ class NodeTagExtractor:
         # Sort by line number for consistent processing
         return sorted(node_classes, key=lambda c: c.lineno)
 
-    def _get_base_name(self, base: ast.expr) -> Optional[str]:
+    def _get_base_name(self, base: ast.expr) -> str | None:
         """Extract base class name from AST node."""
         if isinstance(base, ast.Name):
             return base.id
@@ -239,7 +238,7 @@ class NodeTagExtractor:
 
         return ports
 
-    def _extract_string_value(self, node: ast.expr) -> Optional[str]:
+    def _extract_string_value(self, node: ast.expr) -> str | None:
         """Extract string value from AST node."""
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
             return node.value

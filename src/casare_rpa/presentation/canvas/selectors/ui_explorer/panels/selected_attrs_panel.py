@@ -23,10 +23,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
-    SelectorModel,
     SelectorAttribute,
+    SelectorModel,
 )
 
 
@@ -48,8 +47,8 @@ class SelectedAttributesPanel(QFrame):
 
     def __init__(
         self,
-        model: Optional[SelectorModel] = None,
-        parent: Optional[QWidget] = None,
+        model: SelectorModel | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the selected attributes panel.
@@ -61,7 +60,7 @@ class SelectedAttributesPanel(QFrame):
         super().__init__(parent)
 
         self._model = model
-        self._items: Dict[str, QTreeWidgetItem] = {}
+        self._items: dict[str, QTreeWidgetItem] = {}
         self._updating = False  # Prevent signal loops
 
         self._setup_ui()
@@ -260,7 +259,7 @@ class SelectedAttributesPanel(QFrame):
             # Initial load
             self._refresh_from_model()
 
-    def get_model(self) -> Optional[SelectorModel]:
+    def get_model(self) -> SelectorModel | None:
         """Get the current model."""
         return self._model
 
@@ -276,7 +275,7 @@ class SelectedAttributesPanel(QFrame):
         self._items.clear()
         self._update_count()
 
-    def get_checked_names(self) -> List[str]:
+    def get_checked_names(self) -> list[str]:
         """
         Get list of checked attribute names.
 

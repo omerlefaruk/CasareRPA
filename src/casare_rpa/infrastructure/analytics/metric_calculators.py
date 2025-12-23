@@ -20,24 +20,24 @@ from typing import Any, Dict, List, Optional, Protocol
 class MetricsDataSource(Protocol):
     """Protocol for metrics data sources."""
 
-    def get_workflow_data(self, workflow_id: str) -> Dict[str, Any]:
+    def get_workflow_data(self, workflow_id: str) -> dict[str, Any]:
         """Get workflow metrics data."""
         ...
 
     def get_job_records(
         self,
-        workflow_id: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[Dict[str, Any]]:
+        workflow_id: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[dict[str, Any]]:
         """Get job execution records."""
         ...
 
-    def get_healing_data(self, workflow_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_healing_data(self, workflow_id: str | None = None) -> dict[str, Any]:
         """Get healing metrics data."""
         ...
 
-    def get_error_data(self, workflow_id: Optional[str] = None) -> Dict[str, int]:
+    def get_error_data(self, workflow_id: str | None = None) -> dict[str, int]:
         """Get error count data."""
         ...
 
@@ -54,9 +54,9 @@ class EfficiencyScoreResult:
     resource_score: float = 0.0
     maintainability_score: float = 0.0
     trend: str = "stable"
-    factors: Dict[str, Any] = field(default_factory=dict)
+    factors: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -226,10 +226,10 @@ class CostAnalysisResult:
     total_cost: float = 0.0
     cost_per_execution: float = 0.0
     cost_per_successful_execution: float = 0.0
-    workflow_cost_breakdown: Dict[str, float] = field(default_factory=dict)
+    workflow_cost_breakdown: dict[str, float] = field(default_factory=dict)
     savings_vs_manual: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "period_start": self.period_start.isoformat(),
@@ -280,7 +280,7 @@ class CostAnalysisCalculator:
 
     def calculate(
         self,
-        records: List[Dict[str, Any]],
+        records: list[dict[str, Any]],
         period_start: datetime,
         period_end: datetime,
     ) -> CostAnalysisResult:
@@ -323,7 +323,7 @@ class CostAnalysisCalculator:
         savings = (estimated_manual_hours * self.manual_cost_per_hour) - total_cost
 
         # Workflow breakdown
-        workflow_costs: Dict[str, float] = {}
+        workflow_costs: dict[str, float] = {}
         for r in records:
             wf_id = r.get("workflow_id", "unknown")
             wf_hours = r.get("duration_ms", 0) / 1000 / 3600
@@ -364,9 +364,9 @@ class SLAComplianceResult:
     availability_compliant: bool = False
     overall_compliant: bool = False
     compliance_percentage: float = 0.0
-    violations: List[Dict[str, Any]] = field(default_factory=list)
+    violations: list[dict[str, Any]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -424,9 +424,9 @@ class SLAComplianceCalculator:
         actual_success_rate: float,
         actual_p95_ms: float,
         actual_availability: float = 100.0,
-        target_success_rate: Optional[float] = None,
-        target_p95_ms: Optional[float] = None,
-        target_availability: Optional[float] = None,
+        target_success_rate: float | None = None,
+        target_p95_ms: float | None = None,
+        target_availability: float | None = None,
     ) -> SLAComplianceResult:
         """
         Check SLA compliance for a workflow.
@@ -523,14 +523,14 @@ class BottleneckAnalysisResult:
     """Result of bottleneck analysis."""
 
     workflow_id: str
-    bottleneck_nodes: List[Dict[str, Any]] = field(default_factory=list)
+    bottleneck_nodes: list[dict[str, Any]] = field(default_factory=list)
     queue_wait_time_avg_ms: float = 0.0
     queue_depth_avg: float = 0.0
     robot_contention_rate: float = 0.0
-    resource_bottlenecks: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    resource_bottlenecks: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -558,7 +558,7 @@ class BottleneckAnalysisCalculator:
     def analyze(
         self,
         workflow_id: str,
-        records: List[Dict[str, Any]],
+        records: list[dict[str, Any]],
         failure_rate: float = 0.0,
         healing_attempts: int = 0,
     ) -> BottleneckAnalysisResult:
@@ -633,7 +633,7 @@ class VersionComparisonResult:
     confidence: float = 0.0
     sample_size_sufficient: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -674,7 +674,7 @@ class VersionComparisonCalculator:
     SIGNIFICANT_DURATION_DIFF = 0.2  # 20% difference is significant
 
     @staticmethod
-    def _calculate_percentile(values: List[float], percentile: float) -> float:
+    def _calculate_percentile(values: list[float], percentile: float) -> float:
         """Calculate percentile from sorted values."""
         if not values:
             return 0.0
@@ -697,8 +697,8 @@ class VersionComparisonCalculator:
         workflow_id: str,
         version_a: str,
         version_b: str,
-        records_a: List[Dict[str, Any]],
-        records_b: List[Dict[str, Any]],
+        records_a: list[dict[str, Any]],
+        records_b: list[dict[str, Any]],
     ) -> VersionComparisonResult:
         """
         Compare two workflow versions.

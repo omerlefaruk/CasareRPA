@@ -20,9 +20,9 @@ Related:
     - See domain.interfaces.IExecutionContext for context services
 """
 
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, TYPE_CHECKING
 import logging
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class BaseNode(ABC):
     - Return ExecutionResult dict from execute(), don't raise exceptions
     """
 
-    def __init__(self, node_id: NodeId, config: Optional[NodeConfig] = None) -> None:
+    def __init__(self, node_id: NodeId, config: NodeConfig | None = None) -> None:
         """
         Initialize base node.
 
@@ -70,11 +70,11 @@ class BaseNode(ABC):
         self.node_id = node_id
         self.config = config or {}
         self.status = NodeStatus.IDLE
-        self.error_message: Optional[str] = None
+        self.error_message: str | None = None
 
         # Ports
-        self.input_ports: Dict[str, Port] = {}
-        self.output_ports: Dict[str, Port] = {}
+        self.input_ports: dict[str, Port] = {}
+        self.output_ports: dict[str, Port] = {}
 
         # Metadata
         self.node_type = self.__class__.__name__
@@ -84,8 +84,8 @@ class BaseNode(ABC):
         # Debug support
         self.breakpoint_enabled: bool = False
         self.execution_count: int = 0
-        self.last_execution_time: Optional[float] = None
-        self.last_output: Optional[Dict[str, Any]] = None
+        self.last_execution_time: float | None = None
+        self.last_output: dict[str, Any] | None = None
 
         # Caching support
         self.cacheable: bool = False
@@ -93,7 +93,7 @@ class BaseNode(ABC):
 
         # Execution context reference for auto-resolution in get_parameter()
         # Set during execute() lifecycle, cleared after execution
-        self._execution_context: Optional["IExecutionContext"] = None
+        self._execution_context: IExecutionContext | None = None
 
         # Initialize ports
         self._define_ports()
@@ -145,7 +145,7 @@ class BaseNode(ABC):
         """
         pass
 
-    def validate(self) -> tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """
         Validate node configuration and inputs.
 
@@ -181,7 +181,7 @@ class BaseNode(ABC):
 
         return True, None
 
-    def _validate_config(self) -> tuple[bool, Optional[str]]:
+    def _validate_config(self) -> tuple[bool, str | None]:
         """
         Validate node-specific configuration.
         Override in subclasses for custom validation.
@@ -195,7 +195,7 @@ class BaseNode(ABC):
         self,
         name: str,
         data_type: DataType,
-        label: Optional[str] = None,
+        label: str | None = None,
         required: bool = True,
     ) -> None:
         """Add an input port to the node."""
@@ -206,7 +206,7 @@ class BaseNode(ABC):
         self,
         name: str,
         data_type: DataType,
-        label: Optional[str] = None,
+        label: str | None = None,
         required: bool = False,
     ) -> None:
         """Add an output port to the node."""
@@ -356,7 +356,7 @@ class BaseNode(ABC):
         config = data.get("config", {})
         return cls(node_id, config)
 
-    def set_status(self, status: NodeStatus, error_message: Optional[str] = None) -> None:
+    def set_status(self, status: NodeStatus, error_message: str | None = None) -> None:
         """Update node status."""
         self.status = status
         self.error_message = error_message
@@ -392,7 +392,7 @@ class BaseNode(ABC):
         """Check if this node has a breakpoint set."""
         return self.breakpoint_enabled
 
-    def get_debug_info(self) -> Dict[str, Any]:
+    def get_debug_info(self) -> dict[str, Any]:
         """
         Get debug information about this node.
 

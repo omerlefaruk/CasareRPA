@@ -18,12 +18,12 @@ Type Definitions:
 """
 
 from casare_rpa.infrastructure.queue.dlq_manager import (
+    JITTER_FACTOR,
+    RETRY_SCHEDULE,
     DLQEntry,
     DLQManager,
     DLQManagerConfig,
     FailedJob,
-    JITTER_FACTOR,
-    RETRY_SCHEDULE,
     RetryAction,
     RetryResult,
 )
@@ -51,41 +51,41 @@ from casare_rpa.infrastructure.queue.pgqueuer_producer import (
 from casare_rpa.infrastructure.queue.types import (
     # Job Payload Types
     ClaimedJobPayload,
-    JobPayload,
-    JobVariables,
-    # Queue Message Types
-    EnqueueRequest,
-    EnqueueResponse,
-    QueueMessage,
-    # Job Result Types
-    JobFailureResult,
-    JobResult,
-    JobResultData,
-    # Job Status Types
-    JobDetailedStatus,
-    JobStatusInfo,
-    # Queue Statistics Types
-    QueueStats,
     # Consumer/Producer Statistics Types
     ConsumerConfigStats,
     ConsumerStats,
-    ProducerConfigStats,
-    ProducerStats,
+    # Type Aliases
+    DatabaseRecord,
+    DatabaseRecordList,
+    # Queue Message Types
+    EnqueueRequest,
+    EnqueueResponse,
+    Environment,
     # Callback Protocols
     HeartbeatCallback,
     JobClaimedCallback,
     JobCompletedCallback,
+    # Job Status Types
+    JobDetailedStatus,
     JobFailedCallback,
-    StateChangeCallback,
+    # Job Result Types
+    JobFailureResult,
+    JobId,
+    JobPayload,
+    JobResult,
+    JobResultData,
+    JobStatusInfo,
+    JobVariables,
+    Priority,
+    ProducerConfigStats,
+    ProducerStats,
     # Error Types
     QueueError,
-    # Type Aliases
-    DatabaseRecord,
-    DatabaseRecordList,
-    Environment,
-    JobId,
-    Priority,
+    QueueMessage,
+    # Queue Statistics Types
+    QueueStats,
     RobotId,
+    StateChangeCallback,
     WorkflowId,
 )
 

@@ -5,14 +5,14 @@ Press a single key to instantly create a node at cursor position.
 """
 
 import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, List, Tuple
-from dataclasses import dataclass, asdict
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-from PySide6.QtGui import QAction, QKeySequence, QCursor
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
 from loguru import logger
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QCursor, QKeySequence
+from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -29,7 +29,7 @@ class QuickNodeBinding:
 
 
 # Default hotkey bindings - single lowercase letters for speed
-DEFAULT_BINDINGS: List[QuickNodeBinding] = [
+DEFAULT_BINDINGS: list[QuickNodeBinding] = [
     # Browser nodes
     QuickNodeBinding("b", "LaunchBrowserNode", "Launch Browser", "browser"),
     QuickNodeBinding("u", "GoToURLNode", "Go To URL", "browser"),
@@ -78,8 +78,8 @@ class QuickNodeManager:
             main_window: Parent MainWindow instance
         """
         self._main_window = main_window
-        self._bindings: Dict[str, QuickNodeBinding] = {}
-        self._actions: Dict[str, QAction] = {}
+        self._bindings: dict[str, QuickNodeBinding] = {}
+        self._actions: dict[str, QAction] = {}
         self._enabled = True
 
         # Load bindings and enabled state
@@ -110,7 +110,7 @@ class QuickNodeManager:
 
         if config_path.exists():
             try:
-                with open(config_path, "r", encoding="utf-8") as f:
+                with open(config_path, encoding="utf-8") as f:
                     data = json.load(f)
                     for item in data.get("bindings", []):
                         binding = QuickNodeBinding(**item)
@@ -152,7 +152,7 @@ class QuickNodeManager:
 
         logger.info(f"Created {len(self._actions)} quick node actions")
 
-    def _create_action(self, binding: QuickNodeBinding) -> Optional[QAction]:
+    def _create_action(self, binding: QuickNodeBinding) -> QAction | None:
         """
         Create a QAction for a binding.
 
@@ -278,7 +278,7 @@ class QuickNodeManager:
         """Check if quick node creation is enabled."""
         return self._enabled
 
-    def get_bindings(self) -> Dict[str, QuickNodeBinding]:
+    def get_bindings(self) -> dict[str, QuickNodeBinding]:
         """Get all current bindings."""
         return self._bindings.copy()
 
@@ -347,7 +347,7 @@ class QuickNodeManager:
 
         logger.info("Reset quick node bindings to defaults")
 
-    def get_available_keys(self) -> List[str]:
+    def get_available_keys(self) -> list[str]:
         """
         Get list of available (unbound) single letter keys.
 
@@ -358,7 +358,7 @@ class QuickNodeManager:
         used_keys = set(self._bindings.keys())
         return sorted(all_keys - used_keys)
 
-    def get_all_node_types(self) -> List[Tuple[str, str]]:
+    def get_all_node_types(self) -> list[tuple[str, str]]:
         """
         Get all available node types for binding.
 

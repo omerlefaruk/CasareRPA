@@ -12,18 +12,17 @@ Follows the pattern from variable_picker.py.
 
 from __future__ import annotations
 
-from typing import Optional, List, Tuple
-
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QComboBox,
-    QPushButton,
-    QLabel,
-)
+from typing import List, Optional, Tuple
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -157,14 +156,14 @@ class GoogleCredentialPicker(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
-        required_scopes: Optional[List[str]] = None,
+        parent: QWidget | None = None,
+        required_scopes: list[str] | None = None,
     ) -> None:
         super().__init__(parent)
 
-        self._current_credential_id: Optional[str] = None
-        self._credentials: List[Tuple[str, str]] = []  # [(id, display_name), ...]
-        self._required_scopes: List[str] = required_scopes or []
+        self._current_credential_id: str | None = None
+        self._credentials: list[tuple[str, str]] = []  # [(id, display_name), ...]
+        self._required_scopes: list[str] = required_scopes or []
 
         self._setup_ui()
         self._apply_styles()
@@ -310,7 +309,7 @@ class GoogleCredentialPicker(QWidget):
     # Public API
     # =========================================================================
 
-    def get_credential_id(self) -> Optional[str]:
+    def get_credential_id(self) -> str | None:
         """Get the currently selected credential ID."""
         return self._current_credential_id
 
@@ -362,7 +361,7 @@ class GoogleCredentialPickerWithLabel(QWidget):
     def __init__(
         self,
         label: str = "Google Account:",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
 
@@ -378,7 +377,7 @@ class GoogleCredentialPickerWithLabel(QWidget):
         self._picker.credential_changed.connect(self.credential_changed.emit)
         layout.addWidget(self._picker, 1)
 
-    def get_credential_id(self) -> Optional[str]:
+    def get_credential_id(self) -> str | None:
         """Get the currently selected credential ID."""
         return self._picker.get_credential_id()
 

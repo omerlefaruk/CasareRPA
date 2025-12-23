@@ -14,7 +14,6 @@ from typing import Any, Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-
 T = TypeVar("T")
 
 
@@ -53,8 +52,8 @@ class ErrorDetail(BaseModel):
 
     code: ErrorCode = Field(..., description="Machine-readable error code")
     message: str = Field(..., description="Human-readable error message")
-    details: Optional[dict[str, Any]] = Field(None, description="Additional error context")
-    field: Optional[str] = Field(None, description="Field causing the error")
+    details: dict[str, Any] | None = Field(None, description="Additional error context")
+    field: str | None = Field(None, description="Field causing the error")
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -67,10 +66,10 @@ class ResponseMeta(BaseModel):
         default_factory=datetime.utcnow,
         description="Response timestamp (UTC)",
     )
-    page: Optional[int] = Field(None, ge=1, description="Current page number")
-    page_size: Optional[int] = Field(None, ge=1, le=1000, description="Items per page")
-    total_items: Optional[int] = Field(None, ge=0, description="Total items available")
-    total_pages: Optional[int] = Field(None, ge=0, description="Total pages available")
+    page: int | None = Field(None, ge=1, description="Current page number")
+    page_size: int | None = Field(None, ge=1, le=1000, description="Items per page")
+    total_items: int | None = Field(None, ge=0, description="Total items available")
+    total_pages: int | None = Field(None, ge=0, description="Total pages available")
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, v: datetime) -> str:
@@ -88,8 +87,8 @@ class APIResponse(BaseModel, Generic[T]):
     """
 
     success: bool = Field(..., description="Whether the request succeeded")
-    data: Optional[T] = Field(None, description="Response payload (on success)")
-    error: Optional[ErrorDetail] = Field(None, description="Error details (on failure)")
+    data: T | None = Field(None, description="Response payload (on success)")
+    error: ErrorDetail | None = Field(None, description="Error details (on failure)")
     meta: ResponseMeta = Field(..., description="Response metadata")
 
     model_config = ConfigDict(
@@ -107,7 +106,7 @@ class APIResponse(BaseModel, Generic[T]):
     )
 
 
-class PaginatedResponse(APIResponse[List[T]], Generic[T]):
+class PaginatedResponse(APIResponse[list[T]], Generic[T]):
     """
     Paginated API response for list endpoints.
 
@@ -141,9 +140,9 @@ class PaginatedResponse(APIResponse[List[T]], Generic[T]):
 def success_response(
     data: Any,
     request_id: str,
-    page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    total_items: Optional[int] = None,
+    page: int | None = None,
+    page_size: int | None = None,
+    total_items: int | None = None,
 ) -> dict:
     """
     Create a successful API response.
@@ -181,8 +180,8 @@ def error_response(
     code: ErrorCode,
     message: str,
     request_id: str,
-    details: Optional[dict] = None,
-    field: Optional[str] = None,
+    details: dict | None = None,
+    field: str | None = None,
 ) -> dict:
     """
     Create an error API response.

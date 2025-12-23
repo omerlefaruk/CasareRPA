@@ -10,17 +10,16 @@ Provides a Markdown editor with:
 
 from typing import Optional
 
-from PySide6.QtCore import Qt, Slot, QTimer
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtGui import QKeySequence, QShortcut, QTextCursor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QPlainTextEdit,
-    QTextBrowser,
     QSplitter,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
@@ -56,7 +55,7 @@ class MarkdownEditor(BaseExpressionEditor):
 
     PREVIEW_DELAY_MS = 300  # Debounce delay for preview updates
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the Markdown editor.
 
@@ -66,7 +65,7 @@ class MarkdownEditor(BaseExpressionEditor):
         super().__init__(parent)
         self._editor_type = EditorType.CODE_MARKDOWN
         self._preview_visible = True
-        self._preview_timer: Optional[QTimer] = None
+        self._preview_timer: QTimer | None = None
 
         self._setup_ui()
         self._setup_toolbar()

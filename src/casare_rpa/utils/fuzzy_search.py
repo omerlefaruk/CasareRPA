@@ -8,8 +8,8 @@ Optimized for instant responsiveness with:
 - Aggressive early termination
 """
 
-from typing import List, Tuple, Dict
 from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 
 @dataclass(slots=True, frozen=True)
@@ -20,7 +20,7 @@ class IndexedItem:
     name: str
     description: str
     name_lower: str
-    name_words: Tuple[str, ...]  # Words in the name
+    name_words: tuple[str, ...]  # Words in the name
     initials: str  # First char of each word
     all_chars: frozenset  # All unique chars in name_lower
 
@@ -37,19 +37,19 @@ class SearchIndex:
 
     __slots__ = ("_indexed", "_cache", "_cache_limit")
 
-    def __init__(self, items: List[Tuple[str, str, str]]):
+    def __init__(self, items: list[tuple[str, str, str]]):
         """
         Create a search index from items.
 
         Args:
             items: List of (category, name, description) tuples
         """
-        self._indexed: List[IndexedItem] = []
-        self._cache: Dict[str, List[Tuple[str, str, str, int, List[int]]]] = {}
+        self._indexed: list[IndexedItem] = []
+        self._cache: dict[str, list[tuple[str, str, str, int, list[int]]]] = {}
         self._cache_limit = 100  # Max cached queries
         self._build_index(items)
 
-    def _build_index(self, items: List[Tuple[str, str, str]]):
+    def _build_index(self, items: list[tuple[str, str, str]]):
         """Pre-compute all searchable data."""
         for category, name, description in items:
             name_lower = name.lower()
@@ -74,7 +74,7 @@ class SearchIndex:
 
     def search(
         self, query: str, max_results: int = 15
-    ) -> List[Tuple[str, str, str, int, List[int]]]:
+    ) -> list[tuple[str, str, str, int, list[int]]]:
         """
         Search indexed items using optimized fuzzy matching.
 
@@ -142,7 +142,7 @@ class SearchIndex:
         self._cache.clear()
 
 
-def _split_into_words(text: str) -> List[str]:
+def _split_into_words(text: str) -> list[str]:
     """Split text into words by space, dash, underscore, or camelCase."""
     words = []
     current = []
@@ -165,7 +165,7 @@ def _split_into_words(text: str) -> List[str]:
     return words
 
 
-def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[int, List[int]]:
+def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> tuple[int, list[int]]:
     """
     Match query against item using multiple strategies.
     Returns (score, positions) where lower score is better.
@@ -210,8 +210,8 @@ def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[in
 
 
 def _get_initial_positions(
-    words: Tuple[str, ...], count: int, full_name: str, start: int = 0
-) -> List[int]:
+    words: tuple[str, ...], count: int, full_name: str, start: int = 0
+) -> list[int]:
     """Get positions of first characters of words."""
     positions = []
     pos = 0
@@ -230,8 +230,8 @@ def _get_initial_positions(
 
 
 def _match_abbreviation(
-    query: str, words: Tuple[str, ...], full_name: str
-) -> Tuple[int, List[int]]:
+    query: str, words: tuple[str, ...], full_name: str
+) -> tuple[int, list[int]]:
     """
     Match query as abbreviation of words.
 
@@ -279,7 +279,7 @@ def _match_abbreviation(
     return (10000, [])
 
 
-def _match_subsequence_fast(query: str, target: str) -> Tuple[int, List[int]]:
+def _match_subsequence_fast(query: str, target: str) -> tuple[int, list[int]]:
     """
     Fast linear subsequence matching.
     Find all query chars in order in target.
@@ -327,7 +327,7 @@ def _match_subsequence_fast(query: str, target: str) -> Tuple[int, List[int]]:
 # ============================================================================
 
 
-def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
+def fuzzy_match(query: str, target: str) -> tuple[bool, int, list[int]]:
     """
     Quick fuzzy match for a single query-target pair.
 
@@ -359,8 +359,8 @@ def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
 
 
 def fuzzy_search(
-    query: str, items: List[Tuple[str, str, str]], max_results: int = 15
-) -> List[Tuple[str, str, str, int, List[int]]]:
+    query: str, items: list[tuple[str, str, str]], max_results: int = 15
+) -> list[tuple[str, str, str, int, list[int]]]:
     """
     Search items using fuzzy matching.
 
@@ -379,7 +379,7 @@ def fuzzy_search(
     return index.search(query, max_results)
 
 
-def highlight_matches(text: str, positions: List[int]) -> str:
+def highlight_matches(text: str, positions: list[int]) -> str:
     """
     Create HTML string with matched characters highlighted.
 

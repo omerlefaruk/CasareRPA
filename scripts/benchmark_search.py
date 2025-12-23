@@ -3,15 +3,16 @@ Benchmark script for the ChromaDB semantic search.
 """
 
 import asyncio
+import sys
 import time
 from pathlib import Path
-import sys
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 from fastembed import TextEmbedding
+
+from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 
 PERSIST_PATH = str(project_root / ".chroma")
 COLLECTION = "casare_codebase"

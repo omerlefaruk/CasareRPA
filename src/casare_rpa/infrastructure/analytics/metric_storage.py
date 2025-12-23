@@ -15,17 +15,17 @@ from __future__ import annotations
 import statistics
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from threading import Lock
-from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from loguru import logger
 
 from casare_rpa.infrastructure.analytics.aggregation_strategies import (
     TimeSeriesDataPoint,
 )
-
 
 T = TypeVar("T")
 
@@ -43,14 +43,14 @@ class JobRecord:
     duration_ms: float
     queue_wait_ms: float
     started_at: datetime
-    completed_at: Optional[datetime]
-    error_type: Optional[str]
-    error_message: Optional[str]
+    completed_at: datetime | None
+    error_type: str | None
+    error_message: str | None
     nodes_executed: int
     healing_attempts: int
     healing_successes: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "job_id": self.job_id,
@@ -82,9 +82,9 @@ class WorkflowMetricsData:
     failed_executions: int = 0
     cancelled_executions: int = 0
     timeout_executions: int = 0
-    last_execution: Optional[datetime] = None
-    first_execution: Optional[datetime] = None
-    error_breakdown: Dict[str, int] = field(default_factory=dict)
+    last_execution: datetime | None = None
+    first_execution: datetime | None = None
+    error_breakdown: dict[str, int] = field(default_factory=dict)
 
     @property
     def success_rate(self) -> float:
@@ -137,7 +137,7 @@ class RobotMetricsData:
     avg_job_duration_ms: float = 0.0
     jobs_per_hour: float = 0.0
     current_status: str = "offline"
-    last_active: Optional[datetime] = None
+    last_active: datetime | None = None
 
     @property
     def utilization_percent(self) -> float:
@@ -190,7 +190,7 @@ class MetricStorage(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def get_all(self) -> List[T]:
+    def get_all(self) -> list[T]:
         """Get all items."""
         pass
 
@@ -198,7 +198,7 @@ class MetricStorage(ABC, Generic[T]):
     def get_filtered(
         self,
         filter_func: Callable[[T], bool],
-    ) -> List[T]:
+    ) -> list[T]:
         """Get filtered items."""
         pass
 
@@ -222,7 +222,7 @@ class InMemoryJobRecordStorage(MetricStorage[JobRecord]):
         Args:
             max_records: Maximum records to retain.
         """
-        self._records: List[JobRecord] = []
+        self._records: list[JobRecord] = []
         self._lock = Lock()
         self._max_records = max_records
 
@@ -233,7 +233,7 @@ class InMemoryJobRecordStorage(MetricStorage[JobRecord]):
             if len(self._records) > self._max_records:
                 self._records = self._records[-self._max_records :]
 
-    def get_all(self) -> List[JobRecord]:
+    def get_all(self) -> list[JobRecord]:
         """Get all records."""
         with self._lock:
             return list(self._records)
@@ -241,18 +241,18 @@ class InMemoryJobRecordStorage(MetricStorage[JobRecord]):
     def get_filtered(
         self,
         filter_func: Callable[[JobRecord], bool],
-    ) -> List[JobRecord]:
+    ) -> list[JobRecord]:
         """Get filtered records."""
         with self._lock:
             return [r for r in self._records if filter_func(r)]
 
     def get_by_time_range(
         self,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[JobRecord]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[JobRecord]:
         """Get records within time range."""
-        end_time = end_time or datetime.now(timezone.utc)
+        end_time = end_time or datetime.now(UTC)
         start_time = start_time or (end_time - timedelta(hours=24))
 
         return self.get_filtered(lambda r: start_time <= r.started_at <= end_time)
@@ -260,9 +260,9 @@ class InMemoryJobRecordStorage(MetricStorage[JobRecord]):
     def get_by_workflow(
         self,
         workflow_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[JobRecord]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[JobRecord]:
         """Get records for a specific workflow."""
         records = self.get_by_time_range(start_time, end_time)
         return [r for r in records if r.workflow_id == workflow_id]
@@ -270,9 +270,9 @@ class InMemoryJobRecordStorage(MetricStorage[JobRecord]):
     def get_by_robot(
         self,
         robot_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[JobRecord]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[JobRecord]:
         """Get records for a specific robot."""
         records = self.get_by_time_range(start_time, end_time)
         return [r for r in records if r.robot_id == robot_id]
@@ -281,7 +281,7 @@ class InMemoryJobRecordStorage(MetricStorage[JobRecord]):
         self,
         workflow_id: str,
         version: str,
-    ) -> List[JobRecord]:
+    ) -> list[JobRecord]:
         """Get records for a specific workflow version."""
         return self.get_filtered(
             lambda r: r.workflow_id == workflow_id and r.workflow_version == version
@@ -307,9 +307,9 @@ class WorkflowMetricsCache:
         Args:
             max_duration_samples: Max duration samples per workflow.
         """
-        self._metrics: Dict[str, WorkflowMetricsData] = {}
-        self._durations: Dict[str, List[float]] = defaultdict(list)
-        self._hourly_data: Dict[str, List[TimeSeriesDataPoint]] = defaultdict(list)
+        self._metrics: dict[str, WorkflowMetricsData] = {}
+        self._durations: dict[str, list[float]] = defaultdict(list)
+        self._hourly_data: dict[str, list[TimeSeriesDataPoint]] = defaultdict(list)
         self._lock = Lock()
         self._max_duration_samples = max_duration_samples
 
@@ -361,17 +361,17 @@ class WorkflowMetricsCache:
         if len(hourly) > 168:
             self._hourly_data[workflow_id] = hourly[-168:]
 
-    def get(self, workflow_id: str) -> Optional[WorkflowMetricsData]:
+    def get(self, workflow_id: str) -> WorkflowMetricsData | None:
         """Get metrics for a workflow."""
         with self._lock:
             return self._metrics.get(workflow_id)
 
-    def get_all(self) -> List[WorkflowMetricsData]:
+    def get_all(self) -> list[WorkflowMetricsData]:
         """Get all workflow metrics."""
         with self._lock:
             return list(self._metrics.values())
 
-    def get_durations(self, workflow_id: str) -> List[float]:
+    def get_durations(self, workflow_id: str) -> list[float]:
         """Get duration samples for a workflow."""
         with self._lock:
             return list(self._durations.get(workflow_id, []))
@@ -380,7 +380,7 @@ class WorkflowMetricsCache:
         self,
         workflow_id: str,
         limit: int = 24,
-    ) -> List[TimeSeriesDataPoint]:
+    ) -> list[TimeSeriesDataPoint]:
         """Get hourly time series data."""
         with self._lock:
             data = self._hourly_data.get(workflow_id, [])
@@ -403,7 +403,7 @@ class RobotMetricsCache:
 
     def __init__(self):
         """Initialize cache."""
-        self._metrics: Dict[str, RobotMetricsData] = {}
+        self._metrics: dict[str, RobotMetricsData] = {}
         self._lock = Lock()
 
     def update(self, record: JobRecord) -> None:
@@ -422,12 +422,12 @@ class RobotMetricsCache:
 
             self._metrics[robot_id].update_from_record(record)
 
-    def get(self, robot_id: str) -> Optional[RobotMetricsData]:
+    def get(self, robot_id: str) -> RobotMetricsData | None:
         """Get metrics for a robot."""
         with self._lock:
             return self._metrics.get(robot_id)
 
-    def get_all(self) -> List[RobotMetricsData]:
+    def get_all(self) -> list[RobotMetricsData]:
         """Get all robot metrics."""
         with self._lock:
             return list(self._metrics.values())
@@ -453,8 +453,8 @@ class ErrorTrackingStorage:
 
     def __init__(self):
         """Initialize storage."""
-        self._global_counts: Dict[str, int] = defaultdict(int)
-        self._workflow_counts: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._global_counts: dict[str, int] = defaultdict(int)
+        self._workflow_counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self._lock = Lock()
 
     def record_error(
@@ -467,12 +467,12 @@ class ErrorTrackingStorage:
             self._global_counts[error_type] += 1
             self._workflow_counts[workflow_id][error_type] += 1
 
-    def get_global_counts(self) -> Dict[str, int]:
+    def get_global_counts(self) -> dict[str, int]:
         """Get global error counts."""
         with self._lock:
             return dict(self._global_counts)
 
-    def get_workflow_counts(self, workflow_id: str) -> Dict[str, int]:
+    def get_workflow_counts(self, workflow_id: str) -> dict[str, int]:
         """Get error counts for a workflow."""
         with self._lock:
             return dict(self._workflow_counts.get(workflow_id, {}))
@@ -480,8 +480,8 @@ class ErrorTrackingStorage:
     def get_top_errors(
         self,
         n: int = 10,
-        workflow_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        workflow_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Get top N errors."""
         with self._lock:
             if workflow_id:
@@ -517,8 +517,8 @@ class HealingMetricsStorage:
 
     def __init__(self):
         """Initialize storage."""
-        self._by_tier: Dict[str, int] = defaultdict(int)
-        self._by_workflow: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._by_tier: dict[str, int] = defaultdict(int)
+        self._by_workflow: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
         self._lock = Lock()
 
     def record_healing(
@@ -544,7 +544,7 @@ class HealingMetricsStorage:
                 self._by_workflow[record.workflow_id]["attempts"] += record.healing_attempts
                 self._by_workflow[record.workflow_id]["successes"] += record.healing_successes
 
-    def get_by_tier(self) -> Dict[str, Dict[str, Any]]:
+    def get_by_tier(self) -> dict[str, dict[str, Any]]:
         """Get healing metrics by tier."""
         with self._lock:
             tier_data = dict(self._by_tier)
@@ -563,7 +563,7 @@ class HealingMetricsStorage:
 
         return result
 
-    def get_by_workflow(self, workflow_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_by_workflow(self, workflow_id: str | None = None) -> dict[str, Any]:
         """Get healing metrics for a workflow or globally."""
         with self._lock:
             if workflow_id:
@@ -604,13 +604,13 @@ class QueueDepthStorage:
         Args:
             max_points: Maximum data points (default: 24 hours at 1-min intervals).
         """
-        self._history: List[TimeSeriesDataPoint] = []
+        self._history: list[TimeSeriesDataPoint] = []
         self._lock = Lock()
         self._max_points = max_points
 
     def record(self, depth: int) -> None:
         """Record current queue depth."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         with self._lock:
             self._history.append(
                 TimeSeriesDataPoint(
@@ -625,16 +625,16 @@ class QueueDepthStorage:
         self,
         hours: int = 24,
         limit: int = 100,
-    ) -> List[TimeSeriesDataPoint]:
+    ) -> list[TimeSeriesDataPoint]:
         """Get queue depth history."""
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
 
         with self._lock:
             filtered = [dp for dp in self._history if dp.timestamp >= cutoff]
 
         return filtered[-limit:]
 
-    def get_statistics(self, hours: int = 24) -> Dict[str, Any]:
+    def get_statistics(self, hours: int = 24) -> dict[str, Any]:
         """Get queue depth statistics."""
         history = self.get_history(hours)
 

@@ -4,10 +4,10 @@ Recent Files Manager for CasareRPA.
 Manages a list of recently opened workflow files for quick access.
 """
 
-from typing import List, Optional
-from pathlib import Path
 import json
 from datetime import datetime
+from pathlib import Path
+from typing import List, Optional
 
 from loguru import logger
 
@@ -30,14 +30,14 @@ class RecentFilesManager:
 
     def __init__(self) -> None:
         """Initialize the recent files manager."""
-        self._recent_files: List[dict] = []
+        self._recent_files: list[dict] = []
         self._load()
 
     def _load(self) -> None:
         """Load recent files from disk."""
         try:
             if self.RECENT_FILES_PATH.exists():
-                with open(self.RECENT_FILES_PATH, "r", encoding="utf-8") as f:
+                with open(self.RECENT_FILES_PATH, encoding="utf-8") as f:
                     data = json.load(f)
                     self._recent_files = data.get("files", [])
 
@@ -86,7 +86,7 @@ class RecentFilesManager:
         self._save()
         logger.debug(f"Added to recent files: {file_path.name}")
 
-    def get_recent_files(self) -> List[dict]:
+    def get_recent_files(self) -> list[dict]:
         """
         Get the list of recent files.
 
@@ -122,7 +122,7 @@ class RecentFilesManager:
 # Module-level singleton with thread-safe lazy initialization
 import threading
 
-_recent_files_manager: Optional[RecentFilesManager] = None
+_recent_files_manager: RecentFilesManager | None = None
 _manager_lock = threading.Lock()
 
 

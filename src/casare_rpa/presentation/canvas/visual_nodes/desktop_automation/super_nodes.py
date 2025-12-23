@@ -5,14 +5,14 @@ Consolidated visual nodes that replace multiple atomic nodes
 with a single action-driven interface.
 """
 
+from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.nodes.desktop_nodes.window_super_node import (
+    WINDOW_PORT_SCHEMA,
+    WindowManagementSuperNode,
+)
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import (
     SuperNodeMixin,
-)
-from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.desktop_nodes.window_super_node import (
-    WindowManagementSuperNode,
-    WINDOW_PORT_SCHEMA,
 )
 
 

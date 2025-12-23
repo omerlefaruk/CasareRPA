@@ -7,15 +7,15 @@ All nodes use cascading credential pickers:
 """
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.graph.node_widgets import (
+    NodeDirectoryPathWidget,
+    NodeFilePathWidget,
     NodeGoogleCredentialWidget,
     NodeGoogleDriveFileWidget,
     NodeGoogleDriveFolderWidget,
-    NodeFilePathWidget,
-    NodeDirectoryPathWidget,
     NodeTextWidget,
 )
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # Google Drive API scopes
 DRIVE_READONLY_SCOPE = ["https://www.googleapis.com/auth/drive.readonly"]

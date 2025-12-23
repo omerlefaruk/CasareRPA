@@ -4,32 +4,31 @@ Workflow Settings Dialog UI Component.
 Modal dialog for editing workflow-level settings and metadata.
 """
 
-from typing import Optional, Any, Dict
-
-from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QFormLayout,
-    QLabel,
-    QLineEdit,
-    QTextEdit,
-    QSpinBox,
-    QCheckBox,
-    QComboBox,
-    QDialogButtonBox,
-    QGroupBox,
-    QTabWidget,
-    QWidget,
-)
-from PySide6.QtCore import Signal
+from typing import Any, Dict, Optional
 
 from loguru import logger
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QLabel,
+    QLineEdit,
+    QSpinBox,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
     DialogSize,
+    DialogStyles,
     apply_dialog_style,
 )
-from PySide6.QtWidgets import QDialog
 
 
 class WorkflowSettingsDialog(QDialog):
@@ -50,8 +49,8 @@ class WorkflowSettingsDialog(QDialog):
 
     def __init__(
         self,
-        settings: Optional[Dict[str, Any]] = None,
-        parent: Optional[QWidget] = None,
+        settings: dict[str, Any] | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize workflow settings dialog.
@@ -324,7 +323,7 @@ class WorkflowSettingsDialog(QDialog):
         if "init_from_file" in self.settings:
             self._init_from_file.setChecked(bool(self.settings["init_from_file"]))
 
-    def _gather_settings(self) -> Dict[str, Any]:
+    def _gather_settings(self) -> dict[str, Any]:
         """
         Gather settings from widgets.
 
@@ -381,7 +380,7 @@ class WorkflowSettingsDialog(QDialog):
 
         logger.debug("Workflow settings saved")
 
-    def get_settings(self) -> Dict[str, Any]:
+    def get_settings(self) -> dict[str, Any]:
         """
         Get the current settings.
 

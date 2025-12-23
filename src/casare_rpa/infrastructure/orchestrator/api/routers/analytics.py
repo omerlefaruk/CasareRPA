@@ -5,7 +5,7 @@ Provides process mining, bottleneck detection, and execution analysis
 for workflow optimization and monitoring.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -15,21 +15,21 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from casare_rpa.infrastructure.analytics import (
-    # Process Mining
-    get_process_miner,
-    ExecutionTrace,
     Activity,
     ActivityStatus,
     BottleneckDetector,
     ExecutionAnalyzer,
+    ExecutionTrace,
+    # Process Mining
+    get_process_miner,
 )
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 # Singleton instances
-_bottleneck_detector: Optional[BottleneckDetector] = None
-_execution_analyzer: Optional[ExecutionAnalyzer] = None
+_bottleneck_detector: BottleneckDetector | None = None
+_execution_analyzer: ExecutionAnalyzer | None = None
 
 
 def get_bottleneck_detector() -> BottleneckDetector:
@@ -57,17 +57,17 @@ class ProcessModelResponse(BaseModel):
     """Response model for discovered process."""
 
     workflow_id: str
-    nodes: List[str]
-    node_types: Dict[str, str]
-    edges: Dict[str, Dict[str, Dict[str, Any]]]
-    variants: Dict[str, int]
-    variant_paths: Dict[str, List[str]]
-    entry_nodes: List[str]
-    exit_nodes: List[str]
-    loop_nodes: List[str]
-    parallel_pairs: List[List[str]]
+    nodes: list[str]
+    node_types: dict[str, str]
+    edges: dict[str, dict[str, dict[str, Any]]]
+    variants: dict[str, int]
+    variant_paths: dict[str, list[str]]
+    entry_nodes: list[str]
+    exit_nodes: list[str]
+    loop_nodes: list[str]
+    parallel_pairs: list[list[str]]
     trace_count: int
-    most_common_path: List[str]
+    most_common_path: list[str]
     mermaid_diagram: str
 
 
@@ -75,7 +75,7 @@ class VariantInfo(BaseModel):
     """Information about a process variant."""
 
     variant_hash: str
-    path: List[str]
+    path: list[str]
     count: int
     percentage: float
 
@@ -86,14 +86,14 @@ class VariantsResponse(BaseModel):
     workflow_id: str
     total_traces: int
     variant_count: int
-    variants: List[VariantInfo]
+    variants: list[VariantInfo]
 
 
 class ConformanceCheckRequest(BaseModel):
     """Request to check conformance of a trace."""
 
     workflow_id: str
-    trace_activities: List[Dict[str, Any]]
+    trace_activities: list[dict[str, Any]]
 
 
 class ConformanceSummaryResponse(BaseModel):
@@ -105,7 +105,7 @@ class ConformanceSummaryResponse(BaseModel):
     conformance_rate: float
     average_fitness: float
     average_precision: float
-    deviation_summary: Dict[str, int]
+    deviation_summary: dict[str, int]
 
 
 class ProcessInsightResponse(BaseModel):
@@ -115,9 +115,9 @@ class ProcessInsightResponse(BaseModel):
     title: str
     description: str
     impact: str
-    affected_nodes: List[str]
+    affected_nodes: list[str]
     recommendation: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 class BottleneckResponse(BaseModel):
@@ -130,7 +130,7 @@ class BottleneckResponse(BaseModel):
     impact_ms: float
     frequency: float
     recommendation: str
-    evidence: Dict[str, Any]
+    evidence: dict[str, Any]
 
 
 class NodeStatsResponse(BaseModel):
@@ -146,7 +146,7 @@ class NodeStatsResponse(BaseModel):
     min_duration_ms: float
     max_duration_ms: float
     p95_duration_ms: float
-    error_types: Dict[str, int]
+    error_types: dict[str, int]
 
 
 class BottleneckAnalysisResponse(BaseModel):
@@ -155,11 +155,11 @@ class BottleneckAnalysisResponse(BaseModel):
     workflow_id: str
     analysis_period_days: int
     total_executions: int
-    bottlenecks: List[BottleneckResponse]
-    node_stats: List[NodeStatsResponse]
-    slowest_nodes: List[str]
-    failing_nodes: List[str]
-    recommendations: List[str]
+    bottlenecks: list[BottleneckResponse]
+    node_stats: list[NodeStatsResponse]
+    slowest_nodes: list[str]
+    failing_nodes: list[str]
+    recommendations: list[str]
 
 
 class TrendResponse(BaseModel):
@@ -179,15 +179,15 @@ class InsightResponse(BaseModel):
     title: str
     description: str
     significance: float
-    data: Dict[str, Any]
-    recommended_action: Optional[str]
+    data: dict[str, Any]
+    recommended_action: str | None
 
 
 class TimeDistributionResponse(BaseModel):
     """Response for execution time distribution."""
 
-    hour_distribution: Dict[int, int]
-    day_of_week_distribution: Dict[int, int]
+    hour_distribution: dict[int, int]
+    day_of_week_distribution: dict[int, int]
     peak_hour: int
     peak_day: int
 
@@ -201,8 +201,8 @@ class ExecutionAnalysisResponse(BaseModel):
     duration_trend: TrendResponse
     success_rate_trend: TrendResponse
     time_distribution: TimeDistributionResponse
-    insights: List[InsightResponse]
-    summary: Dict[str, Any]
+    insights: list[InsightResponse]
+    summary: dict[str, Any]
 
 
 # =============================================================================
@@ -389,7 +389,7 @@ async def get_process_insights(
     request: Request,
     workflow_id: str,
     limit: int = Query(100, ge=10, le=1000, description="Max traces to analyze"),
-) -> List[ProcessInsightResponse]:
+) -> list[ProcessInsightResponse]:
     """
     Get AI-generated insights for process optimization.
 
@@ -435,7 +435,7 @@ async def get_process_insights(
 
 @router.get("/analytics/process-mining/workflows")
 @limiter.limit("60/minute")
-async def list_workflows_with_traces(request: Request) -> List[Dict[str, Any]]:
+async def list_workflows_with_traces(request: Request) -> list[dict[str, Any]]:
     """
     List all workflows that have execution traces.
 
@@ -487,7 +487,7 @@ async def analyze_bottlenecks(
         detector = get_bottleneck_detector()
 
         # Get traces for the analysis period
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=days)
         traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
@@ -570,7 +570,7 @@ async def get_node_performance(
         detector = get_bottleneck_detector()
 
         # Get traces
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=days)
         traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
@@ -639,7 +639,7 @@ async def analyze_execution(
         analyzer = get_execution_analyzer()
 
         # Get traces for analysis
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=days)
         traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
@@ -713,7 +713,7 @@ async def get_execution_timeline(
     workflow_id: str,
     days: int = Query(7, ge=1, le=30, description="Timeline period in days"),
     granularity: str = Query("hour", description="Granularity: hour, day"),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get execution timeline data for visualization.
 
@@ -729,7 +729,7 @@ async def get_execution_timeline(
     try:
         miner = get_process_miner()
 
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=days)
         traces = miner.event_log.get_traces_in_timerange(start_time, end_time, workflow_id)
 
@@ -740,7 +740,7 @@ async def get_execution_timeline(
             )
 
         # Aggregate by time bucket
-        timeline: Dict[str, Dict[str, Any]] = {}
+        timeline: dict[str, dict[str, Any]] = {}
 
         for trace in traces:
             if granularity == "hour":
@@ -803,7 +803,7 @@ async def get_execution_timeline(
 
 @router.post("/analytics/traces")
 @limiter.limit("100/minute")
-async def add_trace(request: Request, trace_data: Dict[str, Any]) -> Dict[str, str]:
+async def add_trace(request: Request, trace_data: dict[str, Any]) -> dict[str, str]:
     """
     Add an execution trace to the event log.
 
@@ -866,8 +866,8 @@ async def get_traces(
     request: Request,
     workflow_id: str,
     limit: int = Query(50, ge=1, le=500),
-    status: Optional[str] = Query(None, description="Filter by status"),
-) -> List[Dict[str, Any]]:
+    status: str | None = Query(None, description="Filter by status"),
+) -> list[dict[str, Any]]:
     """
     Get execution traces for a workflow.
 
@@ -886,7 +886,7 @@ async def get_traces(
 
 @router.delete("/analytics/traces/{workflow_id}")
 @limiter.limit("10/minute")
-async def clear_traces(request: Request, workflow_id: str) -> Dict[str, str]:
+async def clear_traces(request: Request, workflow_id: str) -> dict[str, str]:
     """
     Clear all traces for a workflow.
 

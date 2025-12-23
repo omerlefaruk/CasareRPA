@@ -22,10 +22,10 @@ import threading
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from casare_rpa.config.timeout_config import TimeoutConfig, get_timeout_config
+from casare_rpa.config.limits_config import LimitsConfig, get_limits_config
 from casare_rpa.config.port_config import PortConfig, get_port_config
 from casare_rpa.config.retry_config import RetryConfig, get_retry_config
-from casare_rpa.config.limits_config import LimitsConfig, get_limits_config
+from casare_rpa.config.timeout_config import TimeoutConfig, get_timeout_config
 
 if TYPE_CHECKING:
     pass
@@ -206,10 +206,10 @@ def reset_app_config() -> None:
         _app_config = None
 
     # Reset sub-config singletons
-    from casare_rpa.config.timeout_config import reset_timeout_config
+    from casare_rpa.config.limits_config import reset_limits_config
     from casare_rpa.config.port_config import reset_port_config
     from casare_rpa.config.retry_config import reset_retry_config
-    from casare_rpa.config.limits_config import reset_limits_config
+    from casare_rpa.config.timeout_config import reset_timeout_config
 
     reset_timeout_config()
     reset_port_config()

@@ -6,19 +6,18 @@ and API response models (Pydantic).
 """
 
 import json
-from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
+from datetime import UTC, datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
 if TYPE_CHECKING:
     import asyncpg
 
+from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
 from casare_rpa.infrastructure.observability.metrics import (
     RPAMetricsCollector,
 )
-from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
-
 
 # Valid job statuses for filtering
 VALID_JOB_STATUSES = frozenset({"pending", "claimed", "completed", "failed"})
@@ -55,7 +54,7 @@ class MonitoringDataAdapter:
         """Check if database pool is available for historical queries."""
         return self._db_pool is not None
 
-    async def get_fleet_summary_async(self) -> Dict:
+    async def get_fleet_summary_async(self) -> dict:
         """
         Get fleet-wide metrics summary from database.
 
@@ -116,7 +115,7 @@ class MonitoringDataAdapter:
             logger.error(f"Database error in get_fleet_summary_async: {e}")
             return self.get_fleet_summary()
 
-    def get_fleet_summary(self) -> Dict:
+    def get_fleet_summary(self) -> dict:
         """
         Get fleet-wide metrics summary (in-memory fallback).
 
@@ -150,7 +149,7 @@ class MonitoringDataAdapter:
             "average_job_duration_seconds": average_duration,
         }
 
-    async def get_robot_list_async(self, status: Optional[str] = None) -> List[Dict]:
+    async def get_robot_list_async(self, status: str | None = None) -> list[dict]:
         """
         Get list of all robots from database with optional status filter.
 
@@ -267,7 +266,7 @@ class MonitoringDataAdapter:
             logger.error(f"Database error in get_robot_list_async: {e}")
             return self.get_robot_list(status)
 
-    def get_robot_list(self, status: Optional[str] = None) -> List[Dict]:
+    def get_robot_list(self, status: str | None = None) -> list[dict]:
         """
         Get list of all robots with optional status filter (in-memory fallback).
 
@@ -301,7 +300,7 @@ class MonitoringDataAdapter:
 
         return result
 
-    def get_robot_details(self, robot_id: str) -> Optional[Dict]:
+    def get_robot_details(self, robot_id: str) -> dict | None:
         """
         Get detailed metrics for a single robot.
 
@@ -333,10 +332,10 @@ class MonitoringDataAdapter:
     async def get_job_history(
         self,
         limit: int = 50,
-        status: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        status: str | None = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Get job execution history from pgqueuer_jobs table.
 
@@ -372,10 +371,10 @@ class MonitoringDataAdapter:
         self,
         conn: Any,  # asyncpg.Connection
         limit: int,
-        status: Optional[str],
-        workflow_id: Optional[str],
-        robot_id: Optional[str],
-    ) -> List[Dict[str, Any]]:
+        status: str | None,
+        workflow_id: str | None,
+        robot_id: str | None,
+    ) -> list[dict[str, Any]]:
         """
         Execute parameterized query for job history.
 
@@ -403,7 +402,7 @@ class MonitoringDataAdapter:
             """
         ]
 
-        params: List[Any] = []
+        params: list[Any] = []
         param_idx = 1
 
         if status:
@@ -431,7 +430,7 @@ class MonitoringDataAdapter:
 
         return [self._row_to_job_summary(row) for row in rows]
 
-    def _row_to_job_summary(self, row: Any) -> Dict[str, Any]:
+    def _row_to_job_summary(self, row: Any) -> dict[str, Any]:
         """
         Convert database row to JobSummary dict format.
 
@@ -448,7 +447,7 @@ class MonitoringDataAdapter:
             "duration_ms": row["duration_ms"],
         }
 
-    def get_job_details(self, job_id: str) -> Optional[Dict]:
+    def get_job_details(self, job_id: str) -> dict | None:
         """
         Get detailed execution information for a single job.
 
@@ -484,7 +483,7 @@ class MonitoringDataAdapter:
         # Use get_job_details_async() for database-backed historical queries
         return None
 
-    async def get_job_details_async(self, job_id: str) -> Optional[Dict[str, Any]]:
+    async def get_job_details_async(self, job_id: str) -> dict[str, Any] | None:
         """
         Get detailed execution information for a single job from database.
 
@@ -507,7 +506,7 @@ class MonitoringDataAdapter:
                 "workflow_name": job.get("workflow_name"),
                 "robot_id": job.get("robot_id"),
                 "status": "running",
-                "created_at": job.get("started_at", datetime.now(timezone.utc)),
+                "created_at": job.get("started_at", datetime.now(UTC)),
                 "claimed_at": job.get("started_at"),
                 "completed_at": None,
                 "duration_ms": None,
@@ -533,7 +532,7 @@ class MonitoringDataAdapter:
         self,
         conn: Any,  # asyncpg.Connection
         job_id: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Execute parameterized query for single job details.
 
@@ -602,7 +601,7 @@ class MonitoringDataAdapter:
             return None
 
         # Parse node_executions from JSONB if present
-        node_executions: List[Dict[str, Any]] = []
+        node_executions: list[dict[str, Any]] = []
         if row["node_executions_json"]:
             try:
                 raw_executions = row["node_executions_json"]
@@ -629,7 +628,7 @@ class MonitoringDataAdapter:
             "node_executions": node_executions,
         }
 
-    def get_analytics(self) -> Dict:
+    def get_analytics(self) -> dict:
         """
         Get aggregated analytics (sync fallback using in-memory data).
 
@@ -671,7 +670,7 @@ class MonitoringDataAdapter:
         ]
 
         # Get percentiles from in-memory data if available
-        all_durations: List[float] = []
+        all_durations: list[float] = []
         for wf in workflow_metrics:
             if wf.duration_distribution.total_executions > 0:
                 all_durations.extend(
@@ -710,7 +709,7 @@ class MonitoringDataAdapter:
     async def get_analytics_async(
         self,
         days: int = 7,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get aggregated analytics with database-backed percentile calculations.
 
@@ -729,7 +728,7 @@ class MonitoringDataAdapter:
 
         try:
             async with self._db_pool.acquire() as conn:
-                cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+                cutoff = datetime.now(UTC) - timedelta(days=days)
 
                 # Query 1: Basic counts and percentiles using PERCENTILE_CONT
                 stats_query = """
@@ -860,7 +859,7 @@ class MonitoringDataAdapter:
                 healing_attempts = healing_row["total_attempts"] or 0
                 healing_successes = healing_row["total_successes"] or 0
 
-                self_healing_success_rate: Optional[float] = None
+                self_healing_success_rate: float | None = None
                 if healing_attempts > 0:
                     self_healing_success_rate = round(
                         (healing_successes / healing_attempts) * 100, 2
@@ -891,9 +890,9 @@ class MonitoringDataAdapter:
     async def get_activity_events_async(
         self,
         limit: int = 50,
-        since: Optional[datetime] = None,
-        event_type: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        since: datetime | None = None,
+        event_type: str | None = None,
+    ) -> dict[str, Any]:
         """
         Get historical activity events for the dashboard.
 
@@ -931,7 +930,7 @@ class MonitoringDataAdapter:
 
         try:
             async with self._db_pool.acquire() as conn:
-                events: List[Dict[str, Any]] = []
+                events: list[dict[str, Any]] = []
 
                 # Query job events
                 job_events = await self._query_job_activity_events(conn, limit, since, event_type)
@@ -962,16 +961,16 @@ class MonitoringDataAdapter:
         self,
         conn: Any,
         limit: int,
-        since: Optional[datetime],
-        event_type: Optional[str],
-    ) -> List[Dict[str, Any]]:
+        since: datetime | None,
+        event_type: str | None,
+    ) -> list[dict[str, Any]]:
         """
         Query job-related activity events from pgqueuer_jobs.
 
         Generates events for job status transitions (started, completed, failed).
         """
         # Map event_type filter to status conditions
-        status_filter: Optional[str] = None
+        status_filter: str | None = None
         if event_type == "job_started":
             status_filter = "claimed"
         elif event_type == "job_completed":
@@ -998,7 +997,7 @@ class MonitoringDataAdapter:
             """
         ]
 
-        params: List[Any] = []
+        params: list[Any] = []
         param_idx = 1
 
         if status_filter:
@@ -1017,7 +1016,7 @@ class MonitoringDataAdapter:
         query = "\n".join(query_parts)
         rows = await conn.fetch(query, *params)
 
-        events: List[Dict[str, Any]] = []
+        events: list[dict[str, Any]] = []
 
         for row in rows:
             job_id = row["job_id"]
@@ -1073,9 +1072,9 @@ class MonitoringDataAdapter:
         self,
         conn: Any,
         limit: int,
-        since: Optional[datetime],
-        event_type: Optional[str],
-    ) -> List[Dict[str, Any]]:
+        since: datetime | None,
+        event_type: str | None,
+    ) -> list[dict[str, Any]]:
         """
         Query robot status change events from robots table.
 
@@ -1103,7 +1102,7 @@ class MonitoringDataAdapter:
             """
         ]
 
-        params: List[Any] = []
+        params: list[Any] = []
         param_idx = 1
 
         if event_type == "robot_online":
@@ -1122,7 +1121,7 @@ class MonitoringDataAdapter:
         query = "\n".join(query_parts)
         rows = await conn.fetch(query, *params)
 
-        events: List[Dict[str, Any]] = []
+        events: list[dict[str, Any]] = []
 
         for row in rows:
             robot_id = row["robot_id"]
@@ -1144,7 +1143,7 @@ class MonitoringDataAdapter:
                 )
             elif status in ("online", "busy"):
                 # For online events, we only include if recently seen
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 if (now - timestamp).total_seconds() < 300:  # Last 5 minutes
                     events.append(
                         {

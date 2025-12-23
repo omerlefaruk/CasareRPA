@@ -6,8 +6,10 @@ Integrates with SelectorManager and healing chain for context capture.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,
@@ -17,14 +19,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
     SelectorStrategy,
 )
-from PySide6.QtCore import Signal
 
 if TYPE_CHECKING:
     from playwright.async_api import Page
@@ -44,9 +44,9 @@ class BrowserSelectorTab(BaseSelectorTab):
     # Signal emitted when element screenshot is captured (for image matching)
     element_screenshot_captured = Signal(bytes)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._browser_page: Optional["Page"] = None
+        self._browser_page: Page | None = None
         self._selector_manager = None
         self._healing_chain = None
         self._target_node = None
@@ -254,7 +254,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         self.stop_btn.setEnabled(False)
         self._emit_status("")
 
-    def get_current_selector(self) -> Optional[SelectorResult]:
+    def get_current_selector(self) -> SelectorResult | None:
         """Get current selector result."""
         return self._current_result
 
@@ -274,7 +274,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             finally:
                 self._pending_capture_task = None
 
-    def get_strategies(self) -> List[SelectorStrategy]:
+    def get_strategies(self) -> list[SelectorStrategy]:
         """Get generated strategies."""
         return self._strategies
 
@@ -366,7 +366,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             f"Selected <{fingerprint.tag_name}> - {len(self._strategies)} selectors generated"
         )
 
-    async def _capture_healing_context(self, selector: str, context: Dict[str, Any]) -> None:
+    async def _capture_healing_context(self, selector: str, context: dict[str, Any]) -> None:
         """Capture healing context for the selector."""
         if not self._browser_page or not self._healing_chain:
             return
@@ -406,7 +406,7 @@ class BrowserSelectorTab(BaseSelectorTab):
             logger.debug(f"Failed to capture healing context: {e}")
 
     async def _capture_all_healing_data(
-        self, selector: str, fingerprint, context: Dict[str, Any]
+        self, selector: str, fingerprint, context: dict[str, Any]
     ) -> None:
         """
         Capture all healing data including context and screenshot.
@@ -485,7 +485,7 @@ class BrowserSelectorTab(BaseSelectorTab):
         except Exception as e:
             logger.debug(f"Failed to capture element screenshot: {e}")
 
-    async def test_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
+    async def test_selector(self, selector: str, selector_type: str) -> dict[str, Any]:
         """Test selector against browser page."""
         if not self._browser_page:
             return {"success": False, "error": "No browser page"}

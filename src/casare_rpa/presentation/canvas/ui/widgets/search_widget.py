@@ -4,22 +4,22 @@ Search Widget UI Component.
 Provides search functionality with fuzzy matching.
 """
 
-from typing import Optional, List, Callable
+from collections.abc import Callable
+from typing import List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeyEvent
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
@@ -46,7 +46,7 @@ class SearchWidget(BaseWidget):
     def __init__(
         self,
         placeholder: str = "Search...",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize search widget.
@@ -56,8 +56,8 @@ class SearchWidget(BaseWidget):
             parent: Optional parent widget
         """
         self._placeholder = placeholder
-        self._items: List[tuple] = []  # (text, data)
-        self._fuzzy_match_func: Optional[Callable] = None
+        self._items: list[tuple] = []  # (text, data)
+        self._fuzzy_match_func: Callable | None = None
 
         super().__init__(parent)
 
@@ -115,7 +115,7 @@ class SearchWidget(BaseWidget):
         # Install event filter for keyboard navigation
         self._search_input.installEventFilter(self)
 
-    def set_items(self, items: List[tuple]) -> None:
+    def set_items(self, items: list[tuple]) -> None:
         """
         Set searchable items.
 

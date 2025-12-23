@@ -5,37 +5,34 @@ Displays job queue and history with monitoring capabilities.
 Supports real-time job updates with progress bars via WebSocketBridge.
 """
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QBrush
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QComboBox,
+    QGroupBox,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QProgressBar,
+    QPushButton,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QComboBox,
-    QLineEdit,
-    QLabel,
     QTextEdit,
-    QGroupBox,
-    QProgressBar,
+    QVBoxLayout,
+    QWidget,
 )
-from functools import partial
 
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QBrush
-
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     JOB_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
 )
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
-
-from casare_rpa.presentation.canvas.theme import THEME
-
 
 if TYPE_CHECKING:
     pass
@@ -65,12 +62,12 @@ class JobsTabWidget(QWidget):
     job_retried = Signal(str)
     refresh_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._jobs: List[Dict[str, Any]] = []
-        self._job_map: Dict[str, Dict[str, Any]] = {}
-        self._selected_job: Optional[Dict[str, Any]] = None
-        self._context_job: Optional[Dict[str, Any]] = None  # Context menu target
+        self._jobs: list[dict[str, Any]] = []
+        self._job_map: dict[str, dict[str, Any]] = {}
+        self._selected_job: dict[str, Any] | None = None
+        self._context_job: dict[str, Any] | None = None  # Context menu target
         self._setup_ui()
         self._apply_styles()
 
@@ -221,7 +218,7 @@ class JobsTabWidget(QWidget):
     def _apply_styles(self) -> None:
         self.setStyleSheet(TAB_WIDGET_BASE_STYLE)
 
-    def update_jobs(self, jobs: List[Dict[str, Any]]) -> None:
+    def update_jobs(self, jobs: list[dict[str, Any]]) -> None:
         """Update table with job list."""
         self._jobs = jobs
         self._job_map = {j.get("job_id", ""): j for j in jobs}
@@ -236,7 +233,7 @@ class JobsTabWidget(QWidget):
         for row, job in enumerate(self._jobs):
             self._add_table_row(row, job)
 
-    def _add_table_row(self, row: int, job: Dict[str, Any]) -> None:
+    def _add_table_row(self, row: int, job: dict[str, Any]) -> None:
         """Add a row to the table."""
         self._table.insertRow(row)
 

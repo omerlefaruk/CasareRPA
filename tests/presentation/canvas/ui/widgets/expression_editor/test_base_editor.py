@@ -15,9 +15,9 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_base_editor.py -v
 """
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 
 # =============================================================================
 # EditorType Enum Tests
@@ -97,6 +97,7 @@ class TestEditorTypeEnum:
     def test_editor_type_is_enum(self) -> None:
         """Test EditorType is a proper Enum type."""
         from enum import Enum
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             EditorType,
         )
@@ -132,10 +133,11 @@ class TestBaseExpressionEditorInterface:
 
     def test_has_value_changed_signal(self, qapp) -> None:
         """Test BaseExpressionEditor has value_changed signal defined."""
+        from PySide6.QtCore import Signal
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
             BaseExpressionEditor,
         )
-        from PySide6.QtCore import Signal
 
         # Check signal exists at class level
         assert hasattr(BaseExpressionEditor, "value_changed")
@@ -190,10 +192,11 @@ class TestBaseExpressionEditorConcreteImplementation:
     @pytest.fixture
     def concrete_editor(self, qapp):
         """Create a concrete test implementation for testing."""
+        from PySide6.QtWidgets import QWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
             BaseExpressionEditor,
         )
-        from PySide6.QtWidgets import QWidget
 
         class TestEditor(BaseExpressionEditor):
             """Minimal concrete implementation for testing."""
@@ -268,26 +271,14 @@ class TestBaseExpressionEditorConcreteImplementation:
         concrete_editor._cursor_pos = 42
         assert concrete_editor.get_cursor_position() == 42
 
-<<<<<<< HEAD
-    def test_insert_variable_delegates_to_insert_at_cursor(
-        self, concrete_editor
-    ) -> None:
-=======
     def test_insert_variable_delegates_to_insert_at_cursor(self, concrete_editor) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test insert_variable calls insert_at_cursor."""
         concrete_editor.set_value("Value: ")
         concrete_editor._cursor_pos = 7
         concrete_editor.insert_variable("{{node.output}}")
         assert concrete_editor.get_value() == "Value: {{node.output}}"
 
-<<<<<<< HEAD
-    def test_value_changed_signal_emitted_on_set(
-        self, concrete_editor, signal_capture
-    ) -> None:
-=======
     def test_value_changed_signal_emitted_on_set(self, concrete_editor, signal_capture) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test value_changed signal is emitted when value is set."""
         concrete_editor.value_changed.connect(signal_capture.slot)
 
@@ -296,13 +287,7 @@ class TestBaseExpressionEditorConcreteImplementation:
         assert signal_capture.called
         assert signal_capture.last_args == ("Test content",)
 
-<<<<<<< HEAD
-    def test_value_changed_signal_emitted_on_insert(
-        self, concrete_editor, signal_capture
-    ) -> None:
-=======
     def test_value_changed_signal_emitted_on_insert(self, concrete_editor, signal_capture) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """Test value_changed signal is emitted when text is inserted."""
         concrete_editor.set_value("Start")
         signal_capture.clear()
@@ -338,22 +323,25 @@ class TestQABCMeta:
 
     def test_metaclass_combines_qt_and_abc(self) -> None:
         """Test QABCMeta properly combines Qt metaclass with ABCMeta."""
-        from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
-            QABCMeta,
-            BaseExpressionEditor,
-        )
-        from PySide6.QtWidgets import QWidget
         from abc import ABCMeta
+
+        from PySide6.QtWidgets import QWidget
+
+        from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
+            BaseExpressionEditor,
+            QABCMeta,
+        )
 
         # Verify QABCMeta is used
         assert isinstance(BaseExpressionEditor, QABCMeta)
 
     def test_base_editor_inherits_from_qwidget(self, qapp) -> None:
         """Test BaseExpressionEditor inherits from QWidget."""
+        from PySide6.QtWidgets import QWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
             BaseExpressionEditor,
         )
-        from PySide6.QtWidgets import QWidget
 
         assert issubclass(BaseExpressionEditor, QWidget)
 
@@ -386,13 +374,7 @@ class TestBaseExpressionEditorEdgeCases:
                 self._content = value
 
             def insert_at_cursor(self, text):
-<<<<<<< HEAD
-                self._content = (
-                    self._content[: self._cursor] + text + self._content[self._cursor :]
-                )
-=======
                 self._content = self._content[: self._cursor] + text + self._content[self._cursor :]
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 self._cursor += len(text)
 
             def get_cursor_position(self):

@@ -1,14 +1,13 @@
 """Visual nodes for messaging category (Telegram, WhatsApp)."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.nodes.messaging.telegram import (
-    TelegramSendMessageNode,
-    TelegramSendPhotoNode,
     TelegramSendDocumentNode,
     TelegramSendLocationNode,
+    TelegramSendMessageNode,
+    TelegramSendPhotoNode,
 )
-
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
 # Telegram Nodes

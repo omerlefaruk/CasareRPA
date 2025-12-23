@@ -15,7 +15,7 @@ class LocalTriggerRepository(TriggerRepository):
     def __init__(self, storage: LocalStorageRepository):
         self._storage = storage
 
-    async def get_by_id(self, trigger_id: str) -> Optional[BaseTriggerConfig]:
+    async def get_by_id(self, trigger_id: str) -> BaseTriggerConfig | None:
         """Get trigger by ID."""
         triggers = self._storage.get_triggers()
         for t in triggers:
@@ -23,31 +23,31 @@ class LocalTriggerRepository(TriggerRepository):
                 return BaseTriggerConfig.from_dict(t)
         return None
 
-    async def get_all(self) -> List[BaseTriggerConfig]:
+    async def get_all(self) -> list[BaseTriggerConfig]:
         """Get all triggers."""
         triggers = self._storage.get_triggers()
         return [BaseTriggerConfig.from_dict(t) for t in triggers]
 
-    async def get_enabled(self) -> List[BaseTriggerConfig]:
+    async def get_enabled(self) -> list[BaseTriggerConfig]:
         """Get all enabled triggers."""
         triggers = self._storage.get_triggers()
         return [BaseTriggerConfig.from_dict(t) for t in triggers if t.get("enabled", True)]
 
-    async def get_by_scenario(self, scenario_id: str) -> List[BaseTriggerConfig]:
+    async def get_by_scenario(self, scenario_id: str) -> list[BaseTriggerConfig]:
         """Get all triggers for a scenario."""
         triggers = self._storage.get_triggers()
         return [
             BaseTriggerConfig.from_dict(t) for t in triggers if t.get("scenario_id") == scenario_id
         ]
 
-    async def get_by_workflow(self, workflow_id: str) -> List[BaseTriggerConfig]:
+    async def get_by_workflow(self, workflow_id: str) -> list[BaseTriggerConfig]:
         """Get all triggers for a workflow."""
         triggers = self._storage.get_triggers()
         return [
             BaseTriggerConfig.from_dict(t) for t in triggers if t.get("workflow_id") == workflow_id
         ]
 
-    async def get_by_type(self, trigger_type: TriggerType) -> List[BaseTriggerConfig]:
+    async def get_by_type(self, trigger_type: TriggerType) -> list[BaseTriggerConfig]:
         """Get all triggers of a specific type."""
         triggers = self._storage.get_triggers()
         return [

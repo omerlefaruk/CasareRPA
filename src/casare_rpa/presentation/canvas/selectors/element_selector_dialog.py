@@ -12,15 +12,17 @@ Modern, compact design with:
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QImage, QPixmap, QKeyEvent
+from PySide6.QtGui import QFont, QImage, QKeyEvent, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QCheckBox,
     QComboBox,
+    QDialog,
     QFileDialog,
     QFrame,
     QGraphicsDropShadowEffect,
@@ -37,9 +39,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
-from PySide6.QtWidgets import QDialog
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
@@ -679,11 +679,11 @@ class ElementSelectorDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         mode: str = "browser",
-        browser_page: Optional["Page"] = None,
+        browser_page: Page | None = None,
         initial_selector: str = "",
-        target_node: Optional[Any] = None,
+        target_node: Any | None = None,
         property_name: str = "selector",
         target_property: str = None,
         initial_mode: str = None,
@@ -698,13 +698,13 @@ class ElementSelectorDialog(QDialog):
         self._target_node = target_node
         self._target_property = property_name
         self._browser_page = browser_page
-        self._current_result: Optional[SelectorResult] = None
+        self._current_result: SelectorResult | None = None
         self._current_mode = mode
-        self._strategies: List[SelectorStrategy] = []
+        self._strategies: list[SelectorStrategy] = []
         self._ctrl_pressed = False
-        self._anchor_data: Optional[Dict[str, Any]] = None
+        self._anchor_data: dict[str, Any] | None = None
         self._picking_anchor: bool = False
-        self._tabs: Dict[str, BaseSelectorTab] = {}
+        self._tabs: dict[str, BaseSelectorTab] = {}
 
         self.setWindowTitle("Element Selector")
         self.setMinimumSize(480, 520)
@@ -1432,11 +1432,11 @@ class ElementSelectorDialog(QDialog):
             from casare_rpa.presentation.canvas.selectors.tabs.desktop_tab import (
                 DesktopSelectorTab,
             )
-            from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import (
-                OCRSelectorTab,
-            )
             from casare_rpa.presentation.canvas.selectors.tabs.image_match_tab import (
                 ImageMatchTab,
+            )
+            from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import (
+                OCRSelectorTab,
             )
 
             self._browser_tab = BrowserSelectorTab(self)
@@ -1516,7 +1516,7 @@ class ElementSelectorDialog(QDialog):
     # Public API
     # =========================================================================
 
-    def set_browser_page(self, page: "Page"):
+    def set_browser_page(self, page: Page):
         self._browser_page = page
         for tab in self._tabs.values():
             tab.set_browser_page(page)
@@ -1525,7 +1525,7 @@ class ElementSelectorDialog(QDialog):
         self._target_node = node
         self._target_property = property_name
 
-    def get_result(self) -> Optional[SelectorResult]:
+    def get_result(self) -> SelectorResult | None:
         return self._current_result
 
     # =========================================================================
@@ -1570,7 +1570,7 @@ class ElementSelectorDialog(QDialog):
             self._set_status(f"🎯 Picking {mode}...", "info")
             asyncio.ensure_future(tab.start_picking())
 
-    def _on_strategies_generated(self, strategies: List[SelectorStrategy]):
+    def _on_strategies_generated(self, strategies: list[SelectorStrategy]):
         if self._picking_anchor:
             self._picking_anchor = False
             self._pick_anchor_btn.setText("🎯 Pick Anchor")
@@ -1625,7 +1625,7 @@ class ElementSelectorDialog(QDialog):
         if strategies:
             self._strict_row.set_selector(strategies[0].value)
 
-    def _on_strategy_changed(self, current: Optional[QListWidgetItem], _previous):
+    def _on_strategy_changed(self, current: QListWidgetItem | None, _previous):
         if not current:
             self._confirm_btn.setEnabled(False)
             return
@@ -1736,8 +1736,9 @@ class ElementSelectorDialog(QDialog):
                 logger.info("Waiting for pending capture to complete...")
                 try:
                     # Process events while waiting for capture to complete
-                    from PySide6.QtCore import QCoreApplication
                     import time
+
+                    from PySide6.QtCore import QCoreApplication
 
                     start = time.time()
                     timeout = 5.0  # 5 second timeout

@@ -105,7 +105,7 @@ class AppEventTriggerNode(BaseTriggerNode):
     trigger_icon = "app"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "App Event Trigger"
         self.node_type = "AppEventTriggerNode"
@@ -122,7 +122,7 @@ class AppEventTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.APP_EVENT
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get app event-specific configuration."""
         return {
             "event_source": self.get_parameter("event_source", "windows"),

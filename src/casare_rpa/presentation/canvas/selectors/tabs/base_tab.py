@@ -5,7 +5,7 @@ Abstract base class defining the interface for all selector tabs.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
@@ -33,7 +33,7 @@ class AnchorData:
     stability_score: float = 0.0
     """Stability score 0.0-1.0."""
 
-    attributes: Dict[str, str] = field(default_factory=dict)
+    attributes: dict[str, str] = field(default_factory=dict)
     """Anchor element attributes."""
 
     offset_x: int = 0
@@ -42,7 +42,7 @@ class AnchorData:
     offset_y: int = 0
     """Vertical offset in pixels from anchor to target."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "selector": self.selector,
@@ -56,7 +56,7 @@ class AnchorData:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AnchorData":
+    def from_dict(cls, data: dict[str, Any]) -> "AnchorData":
         """Create from dictionary."""
         return cls(
             selector=data.get("selector", ""),
@@ -86,23 +86,23 @@ class SelectorResult:
     is_unique: bool = True
     """Whether selector matches exactly one element."""
 
-    healing_context: Dict[str, Any] = field(default_factory=dict)
+    healing_context: dict[str, Any] = field(default_factory=dict)
     """Optional healing context for runtime resilience."""
 
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     """Additional metadata (element info, match details, etc.)."""
 
-    anchor: Optional[AnchorData] = None
+    anchor: AnchorData | None = None
     """Optional anchor element for reliable location."""
 
-    fallback_selectors: List[str] = field(default_factory=list)
+    fallback_selectors: list[str] = field(default_factory=list)
     """Fallback selectors to try if primary fails."""
 
     def has_anchor(self) -> bool:
         """Check if an anchor is configured."""
         return self.anchor is not None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         result = {
             "selector_value": self.selector_value,
@@ -118,7 +118,7 @@ class SelectorResult:
         return result
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SelectorResult":
+    def from_dict(cls, data: dict[str, Any]) -> "SelectorResult":
         """Create from dictionary."""
         anchor = None
         if data.get("anchor"):
@@ -177,10 +177,10 @@ class BaseSelectorTab(QWidget):
     selectors_generated = Signal(list)  # List[SelectorStrategy]
     status_changed = Signal(str)  # Status message
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._current_result: Optional[SelectorResult] = None
-        self._strategies: List[SelectorStrategy] = []
+        self._current_result: SelectorResult | None = None
+        self._strategies: list[SelectorStrategy] = []
         self._is_active = False
 
     @property
@@ -210,11 +210,11 @@ class BaseSelectorTab(QWidget):
         """Stop element picking mode."""
         raise NotImplementedError("Subclass must implement stop_picking")
 
-    def get_current_selector(self) -> Optional[SelectorResult]:
+    def get_current_selector(self) -> SelectorResult | None:
         """Get the currently selected/configured selector."""
         raise NotImplementedError("Subclass must implement get_current_selector")
 
-    def get_strategies(self) -> List[SelectorStrategy]:
+    def get_strategies(self) -> list[SelectorStrategy]:
         """Get all generated selector strategies."""
         raise NotImplementedError("Subclass must implement get_strategies")
 
@@ -245,7 +245,7 @@ class BaseSelectorTab(QWidget):
         """
         pass
 
-    def validate_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
+    def validate_selector(self, selector: str, selector_type: str) -> dict[str, Any]:
         """
         Validate a selector and return results.
 
@@ -256,7 +256,7 @@ class BaseSelectorTab(QWidget):
         """
         return {"success": False, "error": "Not implemented"}
 
-    async def test_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
+    async def test_selector(self, selector: str, selector_type: str) -> dict[str, Any]:
         """
         Test selector against current context (browser page, desktop, etc.)
 

@@ -27,7 +27,7 @@ import asyncio
 import os
 import signal
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -38,9 +38,9 @@ import typer
 from dotenv import load_dotenv
 from loguru import logger
 from rich.console import Console
+from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
-from rich.live import Live
 
 # Load environment variables from multiple locations
 # Priority (highest to lowest):
@@ -88,28 +88,28 @@ class RobotCLIState:
         """Initialize CLI state."""
         import threading
 
-        self._shutdown_event: Optional[asyncio.Event] = None
-        self._agent: Optional[Any] = None
+        self._shutdown_event: asyncio.Event | None = None
+        self._agent: Any | None = None
         self._lock = threading.Lock()
 
     @property
-    def shutdown_event(self) -> Optional[asyncio.Event]:
+    def shutdown_event(self) -> asyncio.Event | None:
         """Get the shutdown event."""
         return self._shutdown_event
 
     @shutdown_event.setter
-    def shutdown_event(self, event: Optional[asyncio.Event]) -> None:
+    def shutdown_event(self, event: asyncio.Event | None) -> None:
         """Set the shutdown event."""
         with self._lock:
             self._shutdown_event = event
 
     @property
-    def agent(self) -> Optional[Any]:
+    def agent(self) -> Any | None:
         """Get the robot agent."""
         return self._agent
 
     @agent.setter
-    def agent(self, agent: Optional[Any]) -> None:
+    def agent(self, agent: Any | None) -> None:
         """Set the robot agent."""
         with self._lock:
             self._agent = agent
@@ -317,12 +317,12 @@ def _setup_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
 
 async def _run_agent(
     postgres_url: str,
-    robot_id: Optional[str] = None,
-    robot_name: Optional[str] = None,
+    robot_id: str | None = None,
+    robot_name: str | None = None,
     environment: str = "default",
     max_concurrent_jobs: int = 1,
     poll_interval: float = 1.0,
-    config_file: Optional[Path] = None,
+    config_file: Path | None = None,
     daemon: bool = False,
 ) -> int:
     """Run the unified robot agent."""
@@ -389,13 +389,13 @@ async def _run_agent(
 
 @app.command()
 def start(
-    robot_id: Optional[str] = typer.Option(
+    robot_id: str | None = typer.Option(
         None,
         "--robot-id",
         "-r",
         help="Robot ID (auto-generated if not specified)",
     ),
-    robot_name: Optional[str] = typer.Option(
+    robot_name: str | None = typer.Option(
         None,
         "--name",
         "-n",
@@ -419,7 +419,7 @@ def start(
         "-p",
         help="Seconds between job polls",
     ),
-    config_file: Optional[Path] = typer.Option(
+    config_file: Path | None = typer.Option(
         None,
         "--config",
         "-c",
@@ -649,7 +649,7 @@ def stop(
 
 @app.command()
 def status(
-    robot_id: Optional[str] = typer.Option(
+    robot_id: str | None = typer.Option(
         None,
         "--robot-id",
         "-r",
@@ -680,8 +680,9 @@ def status(
         casare robot status --json
         casare robot status --watch
     """
-    import orjson
     import socket
+
+    import orjson
 
     target_robot_id = robot_id or f"robot-{socket.gethostname()}"
 
@@ -714,8 +715,8 @@ def status(
                             "memory_mb": round(process.memory_info().rss / (1024 * 1024), 2),
                             "uptime_seconds": int(
                                 (
-                                    datetime.now(timezone.utc)
-                                    - datetime.fromtimestamp(process.create_time(), timezone.utc)
+                                    datetime.now(UTC)
+                                    - datetime.fromtimestamp(process.create_time(), UTC)
                                 ).total_seconds()
                             ),
                         }
@@ -785,7 +786,7 @@ def status(
 
 @app.command()
 def logs(
-    robot_id: Optional[str] = typer.Option(
+    robot_id: str | None = typer.Option(
         None,
         "--robot-id",
         "-r",
@@ -867,7 +868,7 @@ def logs(
         import time
 
         try:
-            with open(log_file, "r") as f:
+            with open(log_file) as f:
                 # Show last N lines first
                 lines = f.readlines()
                 for line in lines[-tail:]:
@@ -887,7 +888,7 @@ def logs(
             pass
     else:
         try:
-            with open(log_file, "r") as f:
+            with open(log_file) as f:
                 lines = f.readlines()
                 for line in lines[-tail:]:
                     if should_show_line(line):

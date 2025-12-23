@@ -7,15 +7,15 @@ Unicode symbols and custom drawing.
 All colors are sourced from the unified theme system (theme.py).
 """
 
-from typing import Dict, Tuple, Optional
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QFont
-from PySide6.QtCore import Qt, QRectF
-import tempfile
 import os
+import tempfile
+from typing import Dict, Optional, Tuple
+
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen, QPixmap
 
 # Import unified theme system for all colors
 from casare_rpa.presentation.canvas.ui.theme import Theme
-
 
 # ============================================================================
 # CATEGORY COLORS - Delegated to unified theme system
@@ -25,10 +25,10 @@ from casare_rpa.presentation.canvas.ui.theme import Theme
 # nodes, icons, and wires.
 
 # Cache for QColor objects (populated on first access)
-_CATEGORY_COLORS_CACHE: Optional[Dict[str, QColor]] = None
+_CATEGORY_COLORS_CACHE: dict[str, QColor] | None = None
 
 
-def _init_category_colors() -> Dict[str, QColor]:
+def _init_category_colors() -> dict[str, QColor]:
     """
     Initialize category colors from unified theme system.
 
@@ -86,7 +86,7 @@ def get_category_color_qcolor(category: str) -> QColor:
 class _CategoryColorsProxy:
     """Lazy proxy for CATEGORY_COLORS that delegates to theme."""
 
-    def get(self, key: str, default: Optional[QColor] = None) -> QColor:
+    def get(self, key: str, default: QColor | None = None) -> QColor:
         colors = _init_category_colors()
         return colors.get(key, default or Theme.get_category_qcolor("utility"))
 
@@ -196,7 +196,7 @@ NODE_ICONS = {
 }
 
 
-def create_node_icon(node_name: str, size: int = 24, custom_color: Optional[QColor] = None) -> str:
+def create_node_icon(node_name: str, size: int = 24, custom_color: QColor | None = None) -> str:
     """
     Create a professional icon for a node type.
 
@@ -331,7 +331,7 @@ def register_custom_icon(node_name: str, symbol: str, category: str):
     NODE_ICONS[node_name] = (symbol, category)
 
 
-def get_all_node_icons() -> Dict[str, Tuple[str, str]]:
+def get_all_node_icons() -> dict[str, tuple[str, str]]:
     """
     Get all registered node icons.
 
@@ -344,12 +344,12 @@ def get_all_node_icons() -> Dict[str, Tuple[str, str]]:
 # Dual-cache system for performance + serialization:
 # - QPixmap cache for fast rendering (in-memory)
 # - File path cache for NodeGraphQt model.icon (required for copy/paste serialization)
-_icon_pixmap_cache: Dict[str, QPixmap] = {}
-_icon_path_cache: Dict[str, str] = {}
+_icon_pixmap_cache: dict[str, QPixmap] = {}
+_icon_path_cache: dict[str, str] = {}
 
 
 def create_node_icon_pixmap(
-    node_name: str, size: int = 24, custom_color: Optional[QColor] = None
+    node_name: str, size: int = 24, custom_color: QColor | None = None
 ) -> QPixmap:
     """
     Create a professional icon for a node type and return QPixmap directly.

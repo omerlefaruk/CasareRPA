@@ -9,12 +9,6 @@ This package contains visualization widgets for process mining:
 - ProcessMiningDock: Main dock container with tabs
 """
 
-from casare_rpa.presentation.canvas.ui.widgets.process_mining.process_map import (
-    ProcessMapWidget,
-)
-from casare_rpa.presentation.canvas.ui.widgets.process_mining.variants_widget import (
-    VariantsWidget,
-)
 from casare_rpa.presentation.canvas.ui.widgets.process_mining.bottlenecks_widget import (
     BottlenecksWidget,
 )
@@ -23,6 +17,12 @@ from casare_rpa.presentation.canvas.ui.widgets.process_mining.conformance_widget
 )
 from casare_rpa.presentation.canvas.ui.widgets.process_mining.dock import (
     ProcessMiningDock,
+)
+from casare_rpa.presentation.canvas.ui.widgets.process_mining.process_map import (
+    ProcessMapWidget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.process_mining.variants_widget import (
+    VariantsWidget,
 )
 
 __all__ = [

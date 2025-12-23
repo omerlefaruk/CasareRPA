@@ -14,9 +14,9 @@ Usage:
 """
 
 from casare_rpa.infrastructure.events import (
-    MonitoringEventType,
     MonitoringEvent,
     MonitoringEventBus,
+    MonitoringEventType,
     get_monitoring_event_bus,
 )
 

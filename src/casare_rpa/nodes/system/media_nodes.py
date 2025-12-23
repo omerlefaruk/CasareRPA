@@ -16,15 +16,14 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-
 
 # =============================================================================
 # TextToSpeechNode - Read text aloud using pyttsx3
@@ -91,7 +90,7 @@ class TextToSpeechNode(BaseNode):
         self.add_input_port("text", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -208,7 +207,7 @@ class PDFPreviewDialogNode(BaseNode):
         self.add_output_port("current_page", DataType.INTEGER)
         self.add_output_port("page_count", DataType.INTEGER)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -248,18 +247,18 @@ class PDFPreviewDialogNode(BaseNode):
 
             initial_page = max(1, min(initial_page, page_count))
 
+            from PySide6.QtCore import Qt
+            from PySide6.QtGui import QImage, QPixmap
             from PySide6.QtWidgets import (
+                QApplication,
                 QDialog,
-                QVBoxLayout,
                 QHBoxLayout,
                 QLabel,
                 QPushButton,
                 QScrollArea,
                 QSpinBox,
-                QApplication,
+                QVBoxLayout,
             )
-            from PySide6.QtCore import Qt
-            from PySide6.QtGui import QPixmap, QImage
 
             app = QApplication.instance()
             if app is None:
@@ -459,7 +458,7 @@ class WebcamCaptureNode(BaseNode):
         self.add_output_port("width", DataType.INTEGER)
         self.add_output_port("height", DataType.INTEGER)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -488,7 +487,7 @@ class WebcamCaptureNode(BaseNode):
                     },
                 }
 
-            def capture_image() -> Dict[str, Any]:
+            def capture_image() -> dict[str, Any]:
                 cap = cv2.VideoCapture(camera_id)
 
                 if not cap.isOpened():

@@ -23,12 +23,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from casare_rpa.nodes.file.super_node import (
-    StructuredDataSuperNode,
-    StructuredDataAction,
-    STRUCTURED_DATA_PORT_SCHEMA,
-)
 from casare_rpa.nodes.file.file_security import PathSecurityError
+from casare_rpa.nodes.file.super_node import (
+    STRUCTURED_DATA_PORT_SCHEMA,
+    StructuredDataAction,
+    StructuredDataSuperNode,
+)
 
 
 def setup_action_ports(node: StructuredDataSuperNode, action: str) -> None:
@@ -110,13 +110,7 @@ class TestReadCSVAction:
     """Tests for Read CSV action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_csv_success(
-        self, execution_context, temp_csv_file: Path
-    ) -> None:
-=======
     async def test_read_csv_success(self, execution_context, temp_csv_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Read existing CSV file."""
         node = StructuredDataSuperNode(
             "test_read_csv",
@@ -142,13 +136,7 @@ class TestReadCSVAction:
         assert data[0]["city"] == "New York"
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_csv_without_header(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_read_csv_without_header(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Read CSV without headers."""
         csv_file = tmp_path / "no_header.csv"
         csv_file.write_text("A,B,C\nD,E,F\n")
@@ -171,13 +159,7 @@ class TestReadCSVAction:
         assert data[0] == ["A", "B", "C"]
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_csv_custom_delimiter(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_read_csv_custom_delimiter(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Read CSV with custom delimiter."""
         csv_file = tmp_path / "semicolon.csv"
         csv_file.write_text("name;age;city\nBob;25;Boston\n")
@@ -199,13 +181,7 @@ class TestReadCSVAction:
         assert headers == ["name", "age", "city"]
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_csv_file_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_read_csv_file_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: CSV file does not exist."""
         non_existent = tmp_path / "missing.csv"
 
@@ -224,13 +200,7 @@ class TestReadCSVAction:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_csv_max_rows(
-        self, execution_context, temp_csv_file: Path
-    ) -> None:
-=======
     async def test_read_csv_max_rows(self, execution_context, temp_csv_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """EDGE CASE: Limit number of rows read."""
         node = StructuredDataSuperNode(
             "test_read_csv",
@@ -288,13 +258,7 @@ class TestWriteCSVAction:
         assert "Alice,30" in content
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_write_csv_without_header(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_write_csv_without_header(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Write CSV without headers."""
         output_file = tmp_path / "no_header.csv"
         test_data = [["A", "B"], ["C", "D"]]
@@ -328,13 +292,7 @@ class TestReadJSONAction:
     """Tests for Read JSON action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_json_success(
-        self, execution_context, temp_json_file: Path
-    ) -> None:
-=======
     async def test_read_json_success(self, execution_context, temp_json_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Read existing JSON file."""
         node = StructuredDataSuperNode(
             "test_read_json",
@@ -375,13 +333,7 @@ class TestReadJSONAction:
         assert data == [1, 2, 3, "four"]
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_json_file_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_read_json_file_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: JSON file does not exist."""
         non_existent = tmp_path / "missing.json"
 
@@ -576,13 +528,7 @@ class TestUnzipFilesAction:
         assert len(files) >= 3
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_unzip_file_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_unzip_file_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: ZIP file does not exist."""
         non_existent = tmp_path / "missing.zip"
         extract_dir = tmp_path / "extracted"
@@ -603,13 +549,7 @@ class TestUnzipFilesAction:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_unzip_zip_slip_protection(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_unzip_zip_slip_protection(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SECURITY: Block Zip Slip attack."""
         # Create a malicious ZIP with path traversal
         malicious_zip = tmp_path / "malicious.zip"
@@ -635,14 +575,7 @@ class TestUnzipFilesAction:
 
         # Should fail due to Zip Slip detection
         assert result["success"] is False
-<<<<<<< HEAD
-        assert (
-            "zip slip" in result["error"].lower()
-            or "outside" in result["error"].lower()
-        )
-=======
         assert "zip slip" in result["error"].lower() or "outside" in result["error"].lower()
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 # =============================================================================
@@ -680,13 +613,7 @@ class TestImageConvertAction:
         assert node.get_output_value("format") == "JPEG"
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_image_convert_scale_percent(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_image_convert_scale_percent(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: scale_percent resizes output dimensions."""
         from PIL import Image
 
@@ -764,13 +691,7 @@ class TestImageConvertAction:
         assert node.get_output_value("output_path") == str(expected)
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_image_convert_batch_folder(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_image_convert_batch_folder(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Convert all images in a folder."""
         from PIL import Image
 
@@ -820,13 +741,7 @@ class TestImageConvertAction:
         assert "unsupported" in result["error"].lower()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_image_convert_file_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_image_convert_file_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: Source image does not exist."""
         non_existent = tmp_path / "missing.png"
 
@@ -887,13 +802,7 @@ class TestStructuredDataPortSchema:
 
     def test_read_csv_action_ports(self) -> None:
         """Verify Read CSV action port configuration."""
-<<<<<<< HEAD
-        config = STRUCTURED_DATA_PORT_SCHEMA.get_config(
-            StructuredDataAction.READ_CSV.value
-        )
-=======
         config = STRUCTURED_DATA_PORT_SCHEMA.get_config(StructuredDataAction.READ_CSV.value)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         input_names = [p.name for p in config.inputs]
         output_names = [p.name for p in config.outputs]
 
@@ -916,13 +825,7 @@ class TestStructuredDataPortSchema:
 
     def test_image_convert_action_ports(self) -> None:
         """Verify Image Convert action port configuration."""
-<<<<<<< HEAD
-        config = STRUCTURED_DATA_PORT_SCHEMA.get_config(
-            StructuredDataAction.IMAGE_CONVERT.value
-        )
-=======
         config = STRUCTURED_DATA_PORT_SCHEMA.get_config(StructuredDataAction.IMAGE_CONVERT.value)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         input_names = [p.name for p in config.inputs]
         output_names = [p.name for p in config.outputs]
 

@@ -13,14 +13,14 @@ class WorkflowGenerationError(Exception):
         self,
         message: str,
         error_type: str = "GENERATION_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.error_type = error_type
         self.details = details or {}
         self.timestamp = time.time()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize exception to dictionary."""
         return {
             "error_type": self.error_type,
@@ -33,7 +33,7 @@ class WorkflowGenerationError(Exception):
 class LLMCallError(WorkflowGenerationError):
     """Error during LLM API call."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(message, "LLM_CALL_ERROR", details)
 
 
@@ -51,7 +51,7 @@ class JSONParseError(WorkflowGenerationError):
 class ValidationError(WorkflowGenerationError):
     """Error during workflow validation."""
 
-    def __init__(self, message: str, validation_errors: List[str]) -> None:
+    def __init__(self, message: str, validation_errors: list[str]) -> None:
         super().__init__(
             message,
             "VALIDATION_ERROR",
@@ -62,7 +62,7 @@ class ValidationError(WorkflowGenerationError):
 class MaxRetriesExceededError(WorkflowGenerationError):
     """Maximum retry attempts exceeded."""
 
-    def __init__(self, attempts: int, last_error: Optional[str] = None) -> None:
+    def __init__(self, attempts: int, last_error: str | None = None) -> None:
         super().__init__(
             f"Max retries ({attempts}) exceeded",
             "MAX_RETRIES_EXCEEDED",

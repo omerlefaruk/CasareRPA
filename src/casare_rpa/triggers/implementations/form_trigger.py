@@ -5,7 +5,7 @@ Trigger that fires when a form is submitted.
 This is a specialized webhook for handling form data.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -60,8 +60,8 @@ class FormTrigger(BaseTrigger):
         return True
 
     async def process_submission(
-        self, form_data: Dict[str, Any], submitter_ip: Optional[str] = None
-    ) -> tuple[bool, Optional[str]]:
+        self, form_data: dict[str, Any], submitter_ip: str | None = None
+    ) -> tuple[bool, str | None]:
         """
         Process a form submission.
 
@@ -95,7 +95,7 @@ class FormTrigger(BaseTrigger):
         payload = {
             "form_id": config.get("form_id", self.config.id),
             "fields": form_data,
-            "submitted_at": datetime.now(timezone.utc).isoformat(),
+            "submitted_at": datetime.now(UTC).isoformat(),
             "submitter_ip": submitter_ip,
         }
 
@@ -110,7 +110,7 @@ class FormTrigger(BaseTrigger):
         success = await self.emit(payload, metadata)
         return success, None if success else "Failed to process form"
 
-    def _validate_field(self, field_name: str, field_value: Any, field_type: str) -> Optional[str]:
+    def _validate_field(self, field_name: str, field_value: Any, field_type: str) -> str | None:
         """Validate a form field value."""
         if field_type == "string":
             if not isinstance(field_value, str):
@@ -145,13 +145,13 @@ class FormTrigger(BaseTrigger):
 
         return None
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate form trigger configuration."""
         # Form trigger has minimal required config
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for form trigger configuration."""
         return {
             "type": "object",

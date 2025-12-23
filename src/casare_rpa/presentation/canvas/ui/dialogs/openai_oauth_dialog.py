@@ -6,24 +6,24 @@ Allows adding OAuth 2.0 credentials for OpenAI, Azure OpenAI, or other providers
 
 from __future__ import annotations
 
-import webbrowser
 import urllib.parse
+import webbrowser
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Dict
-from datetime import datetime, timedelta, timezone
 
-from PySide6.QtCore import Signal, QThread, QObject, Slot
+from loguru import logger
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
-    QVBoxLayout,
     QFormLayout,
+    QGroupBox,
     QLabel,
     QLineEdit,
-    QPushButton,
-    QGroupBox,
     QMessageBox,
-    QComboBox,
+    QPushButton,
+    QVBoxLayout,
 )
-from loguru import logger
 
 from casare_rpa.infrastructure.security.oauth_server import LocalOAuthServer
 
@@ -33,7 +33,7 @@ class OAuthExchangeWorker(QObject):
 
     finished = Signal(bool, str, str)  # success, message, credential_id
 
-    def __init__(self, config: Dict[str, str], code: str, redirect_uri: str):
+    def __init__(self, config: dict[str, str], code: str, redirect_uri: str):
         super().__init__()
         self.config = config
         self.code = code
@@ -57,6 +57,7 @@ class OAuthExchangeWorker(QObject):
     async def _process_async(self):
         """Async implementation of exchange and save."""
         import aiohttp
+
         from casare_rpa.infrastructure.security.credential_store import get_credential_store
 
         client_id = self.config["client_id"]
@@ -92,7 +93,7 @@ class OAuthExchangeWorker(QObject):
             return False, "No access_token in response", None
 
         # Calculate expiry
-        token_expiry = (datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))).isoformat()
+        token_expiry = (datetime.now(UTC) + timedelta(seconds=int(expires_in))).isoformat()
 
         # 3. Save to Store
         store = get_credential_store()
@@ -284,7 +285,7 @@ class OpenAIOAuthDialog(QDialog):
         # Since we are in a thread, we must not touch UI directly.
         # We will use QMetaObject.invokeMethod pattern or simple signals if self was a QObject
         # self is a QDialog (QObject).
-        from PySide6.QtCore import QMetaObject, Qt, Q_ARG
+        from PySide6.QtCore import Q_ARG, QMetaObject, Qt
 
         if code:
             QMetaObject.invokeMethod(

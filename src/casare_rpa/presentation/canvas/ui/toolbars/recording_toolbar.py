@@ -6,14 +6,13 @@ Provides recording controls for desktop and browser action recording.
 
 from typing import Optional
 
-from PySide6.QtCore import Signal, QTimer
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QToolBar, QWidget, QLabel
-
 from loguru import logger
+from PySide6.QtCore import QTimer, Signal
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QLabel, QToolBar, QWidget
 
-from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 
 class RecordingToolbar(QToolBar):
@@ -42,7 +41,7 @@ class RecordingToolbar(QToolBar):
     pause_recording_requested = Signal()
     resume_recording_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the recording toolbar.
 
@@ -57,7 +56,7 @@ class RecordingToolbar(QToolBar):
 
         self._is_recording = False
         self._is_paused = False
-        self._recording_type: Optional[str] = None
+        self._recording_type: str | None = None
         self._action_count = 0
         self._recording_seconds = 0
 
@@ -234,7 +233,7 @@ class RecordingToolbar(QToolBar):
     def set_recording_state(
         self,
         is_recording: bool,
-        recording_type: Optional[str] = None,
+        recording_type: str | None = None,
         is_paused: bool = False,
     ) -> None:
         """

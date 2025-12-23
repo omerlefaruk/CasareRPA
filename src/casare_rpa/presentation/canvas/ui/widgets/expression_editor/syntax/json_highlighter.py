@@ -64,7 +64,7 @@ class JsonHighlighter(QSyntaxHighlighter):
         super().__init__(document)
 
         self._formats = {}
-        self._rules: List[Tuple[re.Pattern, str]] = []
+        self._rules: list[tuple[re.Pattern, str]] = []
 
         self._create_formats()
         self._create_rules()

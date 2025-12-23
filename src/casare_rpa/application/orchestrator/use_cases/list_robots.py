@@ -31,7 +31,7 @@ class ListRobotsUseCase:
     def __init__(
         self,
         robot_repository: RobotRepository,
-        assignment_repository: Optional[WorkflowAssignmentRepository] = None,
+        assignment_repository: WorkflowAssignmentRepository | None = None,
     ) -> None:
         """Initialize use case with repositories.
 
@@ -43,7 +43,7 @@ class ListRobotsUseCase:
         self._robot_repo = robot_repository
         self._assignment_repo = assignment_repository
 
-    async def get_all(self) -> List[Robot]:
+    async def get_all(self) -> list[Robot]:
         """Get all registered robots.
 
         Returns:
@@ -54,7 +54,7 @@ class ListRobotsUseCase:
         logger.debug(f"Found {len(robots)} robots")
         return robots
 
-    async def get_available(self) -> List[Robot]:
+    async def get_available(self) -> list[Robot]:
         """Get robots that can accept jobs.
 
         A robot is available if:
@@ -72,7 +72,7 @@ class ListRobotsUseCase:
     async def get_by_capability(
         self,
         capability: RobotCapability,
-    ) -> List[Robot]:
+    ) -> list[Robot]:
         """Get robots with a specific capability.
 
         Args:
@@ -88,8 +88,8 @@ class ListRobotsUseCase:
 
     async def get_by_capabilities(
         self,
-        capabilities: List[RobotCapability],
-    ) -> List[Robot]:
+        capabilities: list[RobotCapability],
+    ) -> list[Robot]:
         """Get robots with all specified capabilities.
 
         Args:
@@ -107,7 +107,7 @@ class ListRobotsUseCase:
     async def get_for_workflow(
         self,
         workflow_id: str,
-    ) -> List[Robot]:
+    ) -> list[Robot]:
         """Get robots assigned to a workflow.
 
         Args:
@@ -132,7 +132,7 @@ class ListRobotsUseCase:
             return []
 
         # Fetch robots for each assignment
-        robots: List[Robot] = []
+        robots: list[Robot] = []
         for assignment in assignments:
             robot = await self._robot_repo.get_by_id(assignment.robot_id)
             if robot:
@@ -144,7 +144,7 @@ class ListRobotsUseCase:
     async def get_default_for_workflow(
         self,
         workflow_id: str,
-    ) -> Optional[Robot]:
+    ) -> Robot | None:
         """Get the default robot for a workflow.
 
         Args:
@@ -176,7 +176,7 @@ class ListRobotsUseCase:
     async def get_by_id(
         self,
         robot_id: str,
-    ) -> Optional[Robot]:
+    ) -> Robot | None:
         """Get a specific robot by ID.
 
         Args:
@@ -191,7 +191,7 @@ class ListRobotsUseCase:
     async def get_by_name(
         self,
         name: str,
-    ) -> Optional[Robot]:
+    ) -> Robot | None:
         """Get a robot by name/hostname.
 
         Args:
@@ -203,7 +203,7 @@ class ListRobotsUseCase:
         logger.debug(f"Fetching robot by name: {name}")
         return await self._robot_repo.get_by_hostname(name)
 
-    async def get_online(self) -> List[Robot]:
+    async def get_online(self) -> list[Robot]:
         """Get all online robots.
 
         Returns:
@@ -216,7 +216,7 @@ class ListRobotsUseCase:
         logger.debug(f"Found {len(robots)} online robots")
         return robots
 
-    async def get_offline(self) -> List[Robot]:
+    async def get_offline(self) -> list[Robot]:
         """Get all offline robots.
 
         Returns:
@@ -229,7 +229,7 @@ class ListRobotsUseCase:
         logger.debug(f"Found {len(robots)} offline robots")
         return robots
 
-    async def get_busy(self) -> List[Robot]:
+    async def get_busy(self) -> list[Robot]:
         """Get all busy robots (at max capacity).
 
         Returns:
@@ -245,7 +245,7 @@ class ListRobotsUseCase:
     async def get_with_available_capacity(
         self,
         min_capacity: int = 1,
-    ) -> List[Robot]:
+    ) -> list[Robot]:
         """Get robots with at least minimum available capacity.
 
         Args:
@@ -268,7 +268,7 @@ class ListRobotsUseCase:
     async def search(
         self,
         query: str,
-    ) -> List[Robot]:
+    ) -> list[Robot]:
         """Search robots by name or tags.
 
         Args:

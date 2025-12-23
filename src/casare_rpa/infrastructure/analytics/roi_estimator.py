@@ -48,9 +48,9 @@ class ROIEstimate:
     recommendation: RecommendationLevel
     complexity: ComplexityLevel
     confidence: float  # 0-1, how confident is this estimate
-    factors: Dict[str, Any] = field(default_factory=dict)
+    factors: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "pattern_id": self.pattern_id,
@@ -75,7 +75,7 @@ class ROIConfig:
     maintenance_factor: float = 0.1  # Annual maintenance as % of dev cost
     hours_per_year: float = 2080.0  # Work hours per year
     dev_hours_per_activity: float = 2.0  # Base dev hours per activity in pattern
-    complexity_multipliers: Dict[str, float] = field(
+    complexity_multipliers: dict[str, float] = field(
         default_factory=lambda: {
             "browser": 1.5,  # Browser automation more complex
             "desktop": 2.0,  # Desktop automation most complex
@@ -98,7 +98,7 @@ class ROIEstimator:
     and payback periods for identified patterns.
     """
 
-    def __init__(self, config: Optional[ROIConfig] = None) -> None:
+    def __init__(self, config: ROIConfig | None = None) -> None:
         """
         Initialize ROI estimator.
 
@@ -111,7 +111,7 @@ class ROIEstimator:
     def estimate_roi(
         self,
         pattern: RecognizedPattern,
-        executions_per_year: Optional[int] = None,
+        executions_per_year: int | None = None,
     ) -> ROIEstimate:
         """
         Estimate ROI for automating a pattern.
@@ -200,9 +200,9 @@ class ROIEstimator:
 
     def estimate_batch(
         self,
-        patterns: List[RecognizedPattern],
-        executions_per_year: Optional[Dict[str, int]] = None,
-    ) -> List[ROIEstimate]:
+        patterns: list[RecognizedPattern],
+        executions_per_year: dict[str, int] | None = None,
+    ) -> list[ROIEstimate]:
         """
         Estimate ROI for multiple patterns.
 
@@ -420,9 +420,9 @@ class ROIEstimator:
 
     def generate_report(
         self,
-        estimates: List[ROIEstimate],
+        estimates: list[ROIEstimate],
         title: str = "Automation ROI Analysis",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate a summary report of ROI estimates.
 

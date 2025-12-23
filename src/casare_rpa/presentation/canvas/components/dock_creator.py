@@ -6,21 +6,25 @@ Centralizes creation of dock widgets (panels).
 
 from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 
-from loguru import logger
-
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
-    from ..ui.panels import BottomPanelDock, SidePanelDock, BreakpointsPanel
-    from ..ui.panels import ProjectExplorerPanel, CredentialsPanel
-    from ..ui.panels.process_mining_panel import ProcessMiningPanel
-    from ..ui.panels.analytics_panel import AnalyticsPanel
-    from ..ui.panels.robot_picker_panel import RobotPickerPanel
-    from ..ui.debug_panel import DebugPanel
-    from ..debugger.debug_controller import DebugController
     from ..controllers.robot_controller import RobotController
+    from ..debugger.debug_controller import DebugController
+    from ..main_window import MainWindow
+    from ..ui.debug_panel import DebugPanel
+    from ..ui.panels import (
+        BottomPanelDock,
+        BreakpointsPanel,
+        CredentialsPanel,
+        ProjectExplorerPanel,
+        SidePanelDock,
+    )
+    from ..ui.panels.analytics_panel import AnalyticsPanel
+    from ..ui.panels.process_mining_panel import ProcessMiningPanel
+    from ..ui.panels.robot_picker_panel import RobotPickerPanel
     from ..ui.widgets.ai_assistant import AIAssistantDock
 
 

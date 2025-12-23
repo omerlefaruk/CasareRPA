@@ -6,14 +6,14 @@ It handles the transformation of visual nodes to executable nodes internally,
 permitting the reuse of any workflow without explicit subflow packaging.
 """
 
-import orjson
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+import orjson
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
@@ -57,7 +57,7 @@ class ExecuteWorkflowNode(BaseNode):
     def __init__(
         self,
         node_id: str,
-        config: Optional[Dict] = None,
+        config: dict | None = None,
         **kwargs,
     ) -> None:
         """Initialize ExecuteWorkflowNode."""
@@ -125,10 +125,10 @@ class ExecuteWorkflowNode(BaseNode):
 
     async def _run_workflow(
         self,
-        workflow_data: Dict[str, Any],
+        workflow_data: dict[str, Any],
         context: "ExecutionContext",
         name: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run the raw workflow data using SubflowExecutor.
 
@@ -141,8 +141,10 @@ class ExecuteWorkflowNode(BaseNode):
             Result dict
         """
         from casare_rpa.application.use_cases.subflow_executor import (
-            SubflowExecutor,
             Subflow as SubflowData,
+        )
+        from casare_rpa.application.use_cases.subflow_executor import (
+            SubflowExecutor,
         )
         from casare_rpa.domain.entities.workflow import WorkflowSchema
 
@@ -199,15 +201,15 @@ class ExecuteWorkflowNode(BaseNode):
             return {"success": False, "error": result.error}
 
     def _transform_nodes_for_execution(
-        self, nodes: Dict[str, Any]
-    ) -> tuple[Dict[str, Any], Dict[str, str], Dict[str, tuple[str, str]]]:
+        self, nodes: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, str], dict[str, tuple[str, str]]]:
         """
         Transform node data to executable format.
         (Copied/Adapted from SubflowNode logic for standalone use)
         """
-        executable_nodes: Dict[str, Any] = {}
-        id_mapping: Dict[str, str] = {}
-        reroute_mapping: Dict[str, tuple[str, str]] = {}
+        executable_nodes: dict[str, Any] = {}
+        id_mapping: dict[str, str] = {}
+        reroute_mapping: dict[str, tuple[str, str]] = {}
 
         for visual_key, node_data in nodes.items():
             type_str = node_data.get("type_", "") or node_data.get("type", "")
@@ -255,10 +257,10 @@ class ExecuteWorkflowNode(BaseNode):
 
     def _transform_connections_for_execution(
         self,
-        connections: List[Dict[str, Any]],
-        id_mapping: Dict[str, str],
-        reroute_mapping: Dict[str, tuple[str, str]],
-    ) -> List[Any]:
+        connections: list[dict[str, Any]],
+        id_mapping: dict[str, str],
+        reroute_mapping: dict[str, tuple[str, str]],
+    ) -> list[Any]:
         """Transform connections."""
         from casare_rpa.domain.entities.node_connection import NodeConnection
 

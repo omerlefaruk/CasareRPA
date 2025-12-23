@@ -44,12 +44,12 @@ class UIExplorerElement:
     tag_or_control: str
     element_id: str
     name: str
-    attributes: Dict[str, str] = field(default_factory=dict)
-    rect: Optional[Dict[str, int]] = None
-    children: List["UIExplorerElement"] = field(default_factory=list)
+    attributes: dict[str, str] = field(default_factory=dict)
+    rect: dict[str, int] | None = None
+    children: list[UIExplorerElement] = field(default_factory=list)
     children_loaded: bool = False
-    parent: Optional["UIExplorerElement"] = None
-    raw_data: Optional[Any] = field(default=None, repr=False)
+    parent: UIExplorerElement | None = None
+    raw_data: Any | None = field(default=None, repr=False)
 
     @property
     def display_name(self) -> str:
@@ -84,7 +84,7 @@ class UIExplorerElement:
         return self.tag_or_control
 
     @property
-    def css_classes(self) -> List[str]:
+    def css_classes(self) -> list[str]:
         """Get CSS classes (browser only)."""
         if self.source != ElementSource.BROWSER:
             return []
@@ -149,7 +149,7 @@ class UIExplorerElement:
                 control_name = control_name[:-7]
             return control_name not in desktop_leaf_controls
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "source": self.source.value,
@@ -164,9 +164,9 @@ class UIExplorerElement:
     @classmethod
     def from_browser_data(
         cls,
-        data: Dict[str, Any],
-        parent: Optional["UIExplorerElement"] = None,
-    ) -> "UIExplorerElement":
+        data: dict[str, Any],
+        parent: UIExplorerElement | None = None,
+    ) -> UIExplorerElement:
         """
         Create element from browser DOM data.
 
@@ -249,9 +249,9 @@ class UIExplorerElement:
     @classmethod
     def from_desktop_data(
         cls,
-        data: Dict[str, Any],
-        parent: Optional["UIExplorerElement"] = None,
-    ) -> "UIExplorerElement":
+        data: dict[str, Any],
+        parent: UIExplorerElement | None = None,
+    ) -> UIExplorerElement:
         """
         Create element from desktop UIAutomation data.
 
@@ -316,8 +316,8 @@ class UIExplorerElement:
     def from_desktop_element(
         cls,
         desktop_element: Any,
-        parent: Optional["UIExplorerElement"] = None,
-    ) -> "UIExplorerElement":
+        parent: UIExplorerElement | None = None,
+    ) -> UIExplorerElement:
         """
         Create from DesktopElement instance (casare_rpa.desktop.element).
 

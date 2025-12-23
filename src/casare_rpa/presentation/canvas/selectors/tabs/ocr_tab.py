@@ -6,10 +6,11 @@ Uses CVHealer for text detection.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -21,7 +22,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
@@ -44,11 +44,11 @@ class OCRSelectorTab(BaseSelectorTab):
     - Return click coordinates for matched text
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._browser_page: Optional["Page"] = None
+        self._browser_page: Page | None = None
         self._cv_healer = None
-        self._screenshot_bytes: Optional[bytes] = None
+        self._screenshot_bytes: bytes | None = None
         self._matches = []
 
         self.setup_ui()
@@ -225,11 +225,11 @@ class OCRSelectorTab(BaseSelectorTab):
         """Stop picking mode."""
         pass
 
-    def get_current_selector(self) -> Optional[SelectorResult]:
+    def get_current_selector(self) -> SelectorResult | None:
         """Get current selector result."""
         return self._current_result
 
-    def get_strategies(self) -> List[SelectorStrategy]:
+    def get_strategies(self) -> list[SelectorStrategy]:
         """Get generated strategies."""
         return self._strategies
 
@@ -252,8 +252,9 @@ class OCRSelectorTab(BaseSelectorTab):
 
         # Fallback: desktop screenshot
         try:
-            from PIL import ImageGrab
             import io
+
+            from PIL import ImageGrab
 
             img = ImageGrab.grab()
             buffer = io.BytesIO()
@@ -393,7 +394,7 @@ class OCRSelectorTab(BaseSelectorTab):
             self.results_info.setText(f"Error: {e}")
             self._emit_status(f"OCR error: {e}")
 
-    async def test_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
+    async def test_selector(self, selector: str, selector_type: str) -> dict[str, Any]:
         """Test selector - re-run OCR search."""
         if not self._cv_healer or not self._screenshot_bytes:
             return {"success": False, "error": "OCR not available or no screenshot"}

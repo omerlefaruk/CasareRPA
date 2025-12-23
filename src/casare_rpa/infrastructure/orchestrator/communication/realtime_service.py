@@ -8,12 +8,15 @@ Provides real-time updates for:
 """
 
 import asyncio
-from typing import Optional, Dict, Any, Callable, List
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional
+
 from loguru import logger
 
 try:
-    from supabase import create_client, Client
     from realtime import RealtimeChannel
+
+    from supabase import Client, create_client
 
     SUPABASE_AVAILABLE = True
 except ImportError:
@@ -34,9 +37,9 @@ class RealtimeService:
         self,
         url: str,
         key: str,
-        on_job_update: Optional[Callable[[Dict], None]] = None,
-        on_robot_update: Optional[Callable[[Dict], None]] = None,
-        on_job_progress: Optional[Callable[[str, Dict], None]] = None,
+        on_job_update: Callable[[dict], None] | None = None,
+        on_robot_update: Callable[[dict], None] | None = None,
+        on_job_progress: Callable[[str, dict], None] | None = None,
     ):
         """
         Initialize realtime service.
@@ -54,13 +57,13 @@ class RealtimeService:
         self._on_robot_update = on_robot_update
         self._on_job_progress = on_job_progress
 
-        self._client: Optional[Client] = None
+        self._client: Client | None = None
         self._subscribed = False
-        self._channels: List[Any] = []
+        self._channels: list[Any] = []
 
         # Polling fallback for progress
-        self._polling_task: Optional[asyncio.Task] = None
-        self._polling_jobs: Dict[str, Dict] = {}  # job_id -> last_progress
+        self._polling_task: asyncio.Task | None = None
+        self._polling_jobs: dict[str, dict] = {}  # job_id -> last_progress
 
     async def connect(self) -> bool:
         """Connect and subscribe to realtime channels."""
@@ -220,9 +223,9 @@ class JobProgressTracker:
 
     def __init__(self, realtime_service: RealtimeService):
         self._service = realtime_service
-        self._callbacks: Dict[str, List[Callable[[Dict], None]]] = {}
+        self._callbacks: dict[str, list[Callable[[dict], None]]] = {}
 
-    def subscribe(self, job_id: str, callback: Callable[[Dict], None]):
+    def subscribe(self, job_id: str, callback: Callable[[dict], None]):
         """
         Subscribe to progress updates for a job.
 
@@ -236,7 +239,7 @@ class JobProgressTracker:
 
         self._callbacks[job_id].append(callback)
 
-    def unsubscribe(self, job_id: str, callback: Callable[[Dict], None]):
+    def unsubscribe(self, job_id: str, callback: Callable[[dict], None]):
         """Unsubscribe from progress updates."""
         if job_id in self._callbacks:
             if callback in self._callbacks[job_id]:
@@ -246,7 +249,7 @@ class JobProgressTracker:
                 del self._callbacks[job_id]
                 self._service.untrack_job(job_id)
 
-    def on_progress(self, job_id: str, progress: Dict):
+    def on_progress(self, job_id: str, progress: dict):
         """Handle progress update from realtime service."""
         callbacks = self._callbacks.get(job_id, [])
         for callback in callbacks:
@@ -265,19 +268,19 @@ class RobotStatusTracker:
 
     def __init__(self, realtime_service: RealtimeService):
         self._service = realtime_service
-        self._callbacks: List[Callable[[Dict], None]] = []
-        self._robot_status: Dict[str, Dict] = {}
+        self._callbacks: list[Callable[[dict], None]] = []
+        self._robot_status: dict[str, dict] = {}
 
-    def subscribe(self, callback: Callable[[Dict], None]):
+    def subscribe(self, callback: Callable[[dict], None]):
         """Subscribe to robot status updates."""
         self._callbacks.append(callback)
 
-    def unsubscribe(self, callback: Callable[[Dict], None]):
+    def unsubscribe(self, callback: Callable[[dict], None]):
         """Unsubscribe from robot status updates."""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
 
-    def on_robot_update(self, robot: Dict):
+    def on_robot_update(self, robot: dict):
         """Handle robot update from realtime service."""
         robot_id = robot.get("id")
         if robot_id:
@@ -289,10 +292,10 @@ class RobotStatusTracker:
             except Exception as e:
                 logger.error(f"Robot callback error: {e}")
 
-    def get_robot_status(self, robot_id: str) -> Optional[Dict]:
+    def get_robot_status(self, robot_id: str) -> dict | None:
         """Get cached robot status."""
         return self._robot_status.get(robot_id)
 
-    def get_all_robots(self) -> List[Dict]:
+    def get_all_robots(self) -> list[dict]:
         """Get all cached robot statuses."""
         return list(self._robot_status.values())

@@ -7,29 +7,27 @@ Provides a standardized way to select:
 - Model (filtered by provider)
 """
 
+import json
+import urllib.request
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
     QComboBox,
     QGroupBox,
-    QPushButton,
+    QHBoxLayout,
+    QLabel,
     QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal
-import urllib.request
-import json
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
-
 # Available models organized by provider
-LLM_MODELS: Dict[str, List[str]] = {
+LLM_MODELS: dict[str, list[str]] = {
     "OpenAI": [
         "gpt-4o",
         "gpt-4o-mini",
@@ -99,7 +97,7 @@ PROVIDER_TO_CATEGORY = {
 }
 
 
-def get_all_models() -> List[str]:
+def get_all_models() -> list[str]:
     """Get flat list of all available models."""
     all_models = []
     for models in LLM_MODELS.values():
@@ -107,7 +105,7 @@ def get_all_models() -> List[str]:
     return all_models
 
 
-def get_llm_credentials() -> List[Dict[str, Any]]:
+def get_llm_credentials() -> list[dict[str, Any]]:
     """Get available LLM credentials from credential store.
 
     Returns:
@@ -222,7 +220,7 @@ class AISettingsWidget(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         title: str = "AI Settings",
         show_credential: bool = True,
         show_provider: bool = True,
@@ -509,7 +507,7 @@ class AISettingsWidget(QWidget):
                 self._fetch_btn.setEnabled(True)
                 self._fetch_btn.setText("Refresh")
 
-    def _get_openrouter_api_key(self) -> Optional[str]:
+    def _get_openrouter_api_key(self) -> str | None:
         """Get OpenRouter API key from credentials."""
         try:
             from casare_rpa.infrastructure.security.credential_store import (
@@ -559,7 +557,7 @@ class AISettingsWidget(QWidget):
             self._fetch_btn.setEnabled(True)
             self._fetch_btn.setText("Refresh")
 
-    def _fetch_openrouter_models(self, api_key: str) -> List[str]:
+    def _fetch_openrouter_models(self, api_key: str) -> list[str]:
         """Call OpenRouter API to get models."""
         url = "https://openrouter.ai/api/v1/models"
         headers = {
@@ -595,7 +593,7 @@ class AISettingsWidget(QWidget):
         settings = self.get_settings()
         self.settings_changed.emit(settings)
 
-    def get_settings(self) -> Dict[str, Any]:
+    def get_settings(self) -> dict[str, Any]:
         """Get current AI settings.
 
         Returns:
@@ -615,7 +613,7 @@ class AISettingsWidget(QWidget):
 
         return settings
 
-    def set_settings(self, settings: Dict[str, Any]) -> None:
+    def set_settings(self, settings: dict[str, Any]) -> None:
         """Set AI settings.
 
         Args:
@@ -683,7 +681,7 @@ class AISettingsWidget(QWidget):
             if idx >= 0:
                 self._provider_combo.setCurrentIndex(idx)
 
-    def get_credential_id(self) -> Optional[str]:
+    def get_credential_id(self) -> str | None:
         """Get currently selected credential ID.
 
         Returns 'auto' for environment variable detection, or the stored credential ID.

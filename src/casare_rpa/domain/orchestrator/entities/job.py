@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from casare_rpa.utils.datetime_helpers import parse_datetime
 
@@ -42,16 +42,16 @@ class Job:
     priority: JobPriority = JobPriority.NORMAL
     environment: str = "default"
     workflow_json: str = "{}"
-    scheduled_time: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    scheduled_time: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     duration_ms: int = 0
     progress: int = 0  # 0-100 percentage
     current_node: str = ""
-    result: Dict[str, Any] = field(default_factory=dict)
+    result: dict[str, Any] = field(default_factory=dict)
     logs: str = ""
     error_message: str = ""
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
     created_by: str = ""
 
     # State machine transitions
@@ -148,7 +148,7 @@ class Job:
         return f"{hours:.1f}h"
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Job":
+    def from_dict(cls, data: dict[str, Any]) -> "Job":
         """Create Job from dictionary.
 
         Args:
@@ -199,7 +199,7 @@ class Job:
             created_by=data.get("created_by", ""),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Job to dictionary.
 
         Returns:

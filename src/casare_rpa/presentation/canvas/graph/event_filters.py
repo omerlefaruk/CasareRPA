@@ -7,9 +7,8 @@ various mouse and keyboard interactions.
 Follows Single Responsibility Principle - each filter handles one interaction type.
 """
 
-from PySide6.QtCore import QEvent, QObject, Qt
-
 from loguru import logger
+from PySide6.QtCore import QEvent, QObject, Qt
 
 
 class TooltipBlocker(QObject):

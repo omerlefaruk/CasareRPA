@@ -9,10 +9,10 @@ from casare_rpa.presentation.canvas.services.trigger_event_handler import (
     create_trigger_event_handler,
 )
 from casare_rpa.presentation.canvas.services.websocket_bridge import (
-    WebSocketBridge,
-    RobotStatusUpdate,
     JobStatusUpdate,
     QueueMetricsUpdate,
+    RobotStatusUpdate,
+    WebSocketBridge,
     get_websocket_bridge,
 )
 

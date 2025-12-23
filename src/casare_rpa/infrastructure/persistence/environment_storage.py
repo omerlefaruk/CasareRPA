@@ -17,22 +17,23 @@ Result Pattern:
             error = result.error  # FileSystemError with context
 """
 
-import orjson
-from loguru import logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import orjson
+from loguru import logger
+
 from casare_rpa.domain.entities.project.environment import (
+    ENVIRONMENT_INHERITANCE,
     Environment,
     EnvironmentType,
-    ENVIRONMENT_INHERITANCE,
 )
 from casare_rpa.domain.errors import (
-    Result,
-    Ok,
     Err,
-    FileSystemError,
     ErrorContext,
+    FileSystemError,
+    Ok,
+    Result,
 )
 
 
@@ -113,7 +114,7 @@ class EnvironmentStorage:
             )
 
     @staticmethod
-    def load_environment(env_id: str, environments_dir: Path) -> Optional[Environment]:
+    def load_environment(env_id: str, environments_dir: Path) -> Environment | None:
         """
         Load an environment by ID.
 
@@ -194,7 +195,7 @@ class EnvironmentStorage:
     @staticmethod
     def load_environment_by_type(
         env_type: EnvironmentType, environments_dir: Path
-    ) -> Optional[Environment]:
+    ) -> Environment | None:
         """
         Load an environment by type.
 
@@ -221,7 +222,7 @@ class EnvironmentStorage:
         return None
 
     @staticmethod
-    def load_all_environments(environments_dir: Path) -> List[Environment]:
+    def load_all_environments(environments_dir: Path) -> list[Environment]:
         """
         Load all environments for a project.
 
@@ -258,7 +259,7 @@ class EnvironmentStorage:
     @staticmethod
     def load_all_environments_safe(
         environments_dir: Path,
-    ) -> Result[List[Environment], FileSystemError]:
+    ) -> Result[list[Environment], FileSystemError]:
         """
         Load all environments with explicit error handling.
 
@@ -383,7 +384,7 @@ class EnvironmentStorage:
         return Ok(False)
 
     @staticmethod
-    def create_default_environments(environments_dir: Path) -> List[Environment]:
+    def create_default_environments(environments_dir: Path) -> list[Environment]:
         """
         Create default dev/staging/prod environments for a new project.
 
@@ -403,7 +404,7 @@ class EnvironmentStorage:
     @staticmethod
     def resolve_variables_with_inheritance(
         environment: Environment, environments_dir: Path
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Resolve environment variables with inheritance chain.
 
@@ -441,10 +442,10 @@ class EnvironmentStorage:
 
     @staticmethod
     def get_active_environment(
-        environment_ids: List[str],
-        active_env_id: Optional[str],
+        environment_ids: list[str],
+        active_env_id: str | None,
         environments_dir: Path,
-    ) -> Optional[Environment]:
+    ) -> Environment | None:
         """
         Get the active environment for a project.
 

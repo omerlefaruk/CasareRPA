@@ -36,15 +36,15 @@ class KeyboardNavigator:
             graph: NodeGraph instance to navigate
         """
         self._graph = graph
-        self._current_node_id: Optional[str] = None
+        self._current_node_id: str | None = None
         self._node_cycle_index: int = 0
 
     @property
-    def current_node_id(self) -> Optional[str]:
+    def current_node_id(self) -> str | None:
         """Get the currently focused node ID."""
         return self._current_node_id
 
-    def set_current_node(self, node_id: Optional[str]) -> None:
+    def set_current_node(self, node_id: str | None) -> None:
         """
         Set the currently focused node.
 

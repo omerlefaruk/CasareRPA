@@ -5,14 +5,14 @@ Consolidated visual node that replaces 14 atomic text nodes
 with a single action-driven interface.
 """
 
+from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.nodes.text.super_node import (
+    TEXT_PORT_SCHEMA,
+    TextSuperNode,
+)
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import (
     SuperNodeMixin,
-)
-from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.nodes.text.super_node import (
-    TextSuperNode,
-    TEXT_PORT_SCHEMA,
 )
 
 

@@ -6,12 +6,13 @@ with hover highlighting and click-to-select functionality.
 """
 
 from typing import Optional
-from PySide6.QtWidgets import QWidget, QApplication, QLabel
-from PySide6.QtCore import Signal, Qt, QTimer, QRect
-from PySide6.QtGui import QPainter, QPen, QColor, QCursor
-from loguru import logger
 
 import uiautomation as auto
+from loguru import logger
+from PySide6.QtCore import QRect, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QCursor, QPainter, QPen
+from PySide6.QtWidgets import QApplication, QLabel, QWidget
+
 from casare_rpa.desktop.element import DesktopElement
 
 
@@ -33,9 +34,9 @@ class ElementPickerOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.current_element: Optional[DesktopElement] = None
-        self.current_rect: Optional[QRect] = None
-        self.hover_timer: Optional[QTimer] = None
+        self.current_element: DesktopElement | None = None
+        self.current_rect: QRect | None = None
+        self.hover_timer: QTimer | None = None
 
         self._setup_ui()
         self._start_tracking()

@@ -17,7 +17,6 @@ from casare_rpa.domain.entities.project import (
 )
 from casare_rpa.domain.repositories import ProjectRepository
 
-
 # =============================================================================
 # Result Types
 # =============================================================================
@@ -28,8 +27,8 @@ class ProjectResult:
     """Result of a project operation."""
 
     success: bool
-    project: Optional[Project] = None
-    error: Optional[str] = None
+    project: Project | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -37,8 +36,8 @@ class ScenarioResult:
     """Result of a scenario operation."""
 
     success: bool
-    scenario: Optional[Scenario] = None
-    error: Optional[str] = None
+    scenario: Scenario | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -46,8 +45,8 @@ class ProjectListResult:
     """Result of listing projects."""
 
     success: bool
-    projects: List[Project] = None
-    error: Optional[str] = None
+    projects: list[Project] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.projects is None:
@@ -82,7 +81,7 @@ class CreateProjectUseCase:
         path: Path,
         description: str = "",
         author: str = "",
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> ProjectResult:
         """
         Create a new project.
@@ -150,8 +149,8 @@ class LoadProjectUseCase:
 
     async def execute(
         self,
-        project_id: Optional[str] = None,
-        path: Optional[Path] = None,
+        project_id: str | None = None,
+        path: Path | None = None,
     ) -> ProjectResult:
         """
         Load a project by ID or path.
@@ -242,7 +241,7 @@ class ListProjectsUseCase:
         """Initialize use case."""
         self._repository = repository
 
-    async def execute(self, limit: Optional[int] = None) -> ProjectListResult:
+    async def execute(self, limit: int | None = None) -> ProjectListResult:
         """
         List projects.
 
@@ -336,8 +335,8 @@ class CreateScenarioUseCase:
         self,
         project_id: str,
         name: str,
-        workflow: Optional[dict] = None,
-        tags: Optional[List[str]] = None,
+        workflow: dict | None = None,
+        tags: list[str] | None = None,
     ) -> ScenarioResult:
         """
         Create a new scenario.
@@ -487,7 +486,7 @@ class ListScenariosUseCase:
         """Initialize use case."""
         self._repository = repository
 
-    async def execute(self, project_id: str) -> List[Scenario]:
+    async def execute(self, project_id: str) -> list[Scenario]:
         """
         List scenarios in a project.
 

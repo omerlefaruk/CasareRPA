@@ -12,14 +12,14 @@ Features:
 - Serialization to/from JSON files in workflows/subflows/
 """
 
+import logging
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
-import uuid
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 import orjson
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +27,12 @@ if TYPE_CHECKING:
     from casare_rpa.domain.schemas.property_schema import PropertyDef
 
 from casare_rpa.domain.entities.node_connection import NodeConnection
+from casare_rpa.domain.schemas.property_types import PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     NodeId,
     SerializedNode,
 )
-from casare_rpa.domain.schemas.property_types import PropertyType
-
 
 # =============================================================================
 # CONSTANTS
@@ -50,7 +49,7 @@ def generate_subflow_id() -> str:
 
 
 # Type alias for serialized connection data
-SerializedConnection = Dict[str, Any]
+SerializedConnection = dict[str, Any]
 
 
 @dataclass
@@ -86,7 +85,7 @@ class SubflowPort:
         if not self.name.replace("_", "").replace("-", "").isalnum():
             raise ValueError(f"SubflowPort name '{self.name}' contains invalid characters")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize port to dictionary."""
         return {
             "name": self.name,
@@ -101,7 +100,7 @@ class SubflowPort:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SubflowPort":
+    def from_dict(cls, data: dict[str, Any]) -> "SubflowPort":
         """Create port from dictionary."""
         data_type_value = data.get("type")
         if data_type_value is None:
@@ -173,12 +172,12 @@ class SubflowParameter:
 
     # Validation
     required: bool = False
-    min_value: Optional[float] = None
-    max_value: Optional[float] = None
-    choices: Optional[List[str]] = None
+    min_value: float | None = None
+    max_value: float | None = None
+    choices: list[str] | None = None
 
     # Nested subflow chaining (max depth = 2)
-    chain: Optional[List[str]] = None
+    chain: list[str] | None = None
 
     def __post_init__(self) -> None:
         """Validate and set defaults after initialization."""
@@ -191,7 +190,7 @@ class SubflowParameter:
         if not self.label:
             self.label = self.display_name
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for JSON storage."""
         return {
             "name": self.name,
@@ -213,7 +212,7 @@ class SubflowParameter:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SubflowParameter":
+    def from_dict(cls, data: dict[str, Any]) -> "SubflowParameter":
         """Create from dictionary."""
         property_type_value = data.get("property_type")
         if property_type_value is None:
@@ -286,10 +285,10 @@ class SubflowMetadata:
 
     icon: str = "subflow"
     author: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     color: str = "#6366F1"  # Indigo default for subflows
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize metadata to dictionary."""
         return {
             "icon": self.icon,
@@ -299,7 +298,7 @@ class SubflowMetadata:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SubflowMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "SubflowMetadata":
         """Create metadata from dictionary."""
         return cls(
             icon=data.get("icon", "subflow"),
@@ -352,27 +351,27 @@ class Subflow:
     updated_at: datetime = field(default_factory=datetime.now)
 
     # Port definitions (detected from unconnected boundary ports)
-    inputs: List[SubflowPort] = field(default_factory=list)
-    outputs: List[SubflowPort] = field(default_factory=list)
+    inputs: list[SubflowPort] = field(default_factory=list)
+    outputs: list[SubflowPort] = field(default_factory=list)
 
     # Internal structure (serialized nodes and connections)
-    nodes: Dict[NodeId, SerializedNode] = field(default_factory=dict)
-    connections: List[SerializedConnection] = field(default_factory=list)
+    nodes: dict[NodeId, SerializedNode] = field(default_factory=dict)
+    connections: list[SerializedConnection] = field(default_factory=list)
 
     # Promoted parameters (expose internal node properties at subflow level)
-    parameters: List[SubflowParameter] = field(default_factory=list)
+    parameters: list[SubflowParameter] = field(default_factory=list)
 
     # Additional metadata
     metadata: SubflowMetadata = field(default_factory=SubflowMetadata)
 
     # Visual layout hints
-    bounds: Optional[Dict[str, float]] = None  # {"x", "y", "width", "height"}
+    bounds: dict[str, float] | None = None  # {"x", "y", "width", "height"}
 
     # Schema version for compatibility
     schema_version: str = SUBFLOW_SCHEMA_VERSION
 
     # Runtime properties (not serialized)
-    _path: Optional[Path] = field(default=None, repr=False)
+    _path: Path | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         """Validate subflow attributes after initialization."""
@@ -399,7 +398,7 @@ class Subflow:
         self.updated_at = datetime.now()
 
     @property
-    def path(self) -> Optional[Path]:
+    def path(self) -> Path | None:
         """Get subflow file path."""
         return self._path
 
@@ -472,14 +471,14 @@ class Subflow:
                 return True
         return False
 
-    def get_input(self, port_name: str) -> Optional[SubflowPort]:
+    def get_input(self, port_name: str) -> SubflowPort | None:
         """Get input port by name."""
         for port in self.inputs:
             if port.name == port_name:
                 return port
         return None
 
-    def get_output(self, port_name: str) -> Optional[SubflowPort]:
+    def get_output(self, port_name: str) -> SubflowPort | None:
         """Get output port by name."""
         for port in self.outputs:
             if port.name == port_name:
@@ -530,7 +529,7 @@ class Subflow:
         self.connections.append(connection.to_dict())
         self._touch()
 
-    def add_connection_dict(self, connection_data: Dict[str, Any]) -> None:
+    def add_connection_dict(self, connection_data: dict[str, Any]) -> None:
         """
         Add a connection from dictionary data.
 
@@ -576,7 +575,7 @@ class Subflow:
                 return True
         return False
 
-    def get_parameter(self, param_name: str) -> Optional[SubflowParameter]:
+    def get_parameter(self, param_name: str) -> SubflowParameter | None:
         """
         Get a promoted parameter by name.
 
@@ -591,14 +590,14 @@ class Subflow:
                 return param
         return None
 
-    def validate_parameters(self) -> List[str]:
+    def validate_parameters(self) -> list[str]:
         """
         Validate that all promoted parameters still reference valid internal nodes.
 
         Returns:
             List of warning messages for invalid parameters
         """
-        warnings: List[str] = []
+        warnings: list[str] = []
         for param in self.parameters:
             if param.internal_node_id not in self.nodes:
                 warnings.append(
@@ -610,14 +609,14 @@ class Subflow:
     # NESTING AND CIRCULAR REFERENCE DETECTION
     # =========================================================================
 
-    def get_nested_subflow_ids(self) -> Set[str]:
+    def get_nested_subflow_ids(self) -> set[str]:
         """
         Get IDs of all subflows nested within this subflow.
 
         Returns:
             Set of subflow IDs referenced by SubflowNode instances
         """
-        subflow_ids: Set[str] = set()
+        subflow_ids: set[str] = set()
         for node_data in self.nodes.values():
             node_type = node_data.get("node_type", "")
             if node_type == "SubflowNode":
@@ -628,7 +627,7 @@ class Subflow:
 
     def validate_nesting_depth(
         self,
-        subflow_registry: Dict[str, "Subflow"],
+        subflow_registry: dict[str, "Subflow"],
         current_depth: int = 0,
     ) -> tuple[bool, str]:
         """
@@ -660,9 +659,9 @@ class Subflow:
 
     def detect_circular_reference(
         self,
-        subflow_registry: Dict[str, "Subflow"],
-        visited: Optional[Set[str]] = None,
-    ) -> tuple[bool, List[str]]:
+        subflow_registry: dict[str, "Subflow"],
+        visited: set[str] | None = None,
+    ) -> tuple[bool, list[str]]:
         """
         Detect circular references in subflow nesting.
 
@@ -738,7 +737,7 @@ class Subflow:
 
         return self.version
 
-    def clone(self, new_id: Optional[str] = None, new_name: Optional[str] = None) -> "Subflow":
+    def clone(self, new_id: str | None = None, new_name: str | None = None) -> "Subflow":
         """
         Create a deep copy of this subflow with a new ID.
 
@@ -777,7 +776,7 @@ class Subflow:
     # SERIALIZATION
     # =========================================================================
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize subflow to dictionary for JSON storage.
 
@@ -803,7 +802,7 @@ class Subflow:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Subflow":
+    def from_dict(cls, data: dict[str, Any]) -> "Subflow":
         """
         Create subflow from dictionary.
 
@@ -859,7 +858,7 @@ class Subflow:
 
         return subflow
 
-    def save_to_file(self, file_path: Optional[str] = None) -> Path:
+    def save_to_file(self, file_path: str | None = None) -> Path:
         """
         Save subflow to JSON file.
 

@@ -14,9 +14,11 @@ Features:
 
 from typing import Optional
 
+from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QApplication,
     QComboBox,
     QFrame,
     QHBoxLayout,
@@ -25,16 +27,13 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
-    QApplication,
 )
 
-from loguru import logger
-
-from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.xml_highlighter import (
-    XMLHighlighter,
-)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorModel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.xml_highlighter import (
+    XMLHighlighter,
 )
 
 
@@ -71,7 +70,7 @@ class SelectorPreviewPanel(QFrame):
     FORMAT_CSS = "css"
     FORMAT_XPATH = "xpath"
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the selector preview panel.
 
@@ -80,7 +79,7 @@ class SelectorPreviewPanel(QFrame):
         """
         super().__init__(parent)
 
-        self._selector_model: Optional[SelectorModel] = None
+        self._selector_model: SelectorModel | None = None
         self._current_format = self.FORMAT_XML
         self._is_editable = False
 

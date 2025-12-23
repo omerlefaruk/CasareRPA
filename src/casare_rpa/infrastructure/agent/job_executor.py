@@ -8,9 +8,10 @@ collection for the robot agent.
 
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Awaitable, Callable, Dict, Optional
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
@@ -31,7 +32,7 @@ class JobExecutionResult:
 
     workflow_id: str
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
     executed_nodes: int = 0
     total_nodes: int = 0
     duration_ms: int = 0
@@ -53,7 +54,7 @@ class JobExecutor:
 
     def __init__(
         self,
-        progress_callback: Optional[Callable[[str, int, str], None]] = None,
+        progress_callback: Callable[[str, int, str], None] | None = None,
         continue_on_error: bool = False,
         job_timeout: float = 3600.0,
         node_timeout: float = 120.0,
@@ -73,14 +74,14 @@ class JobExecutor:
         self.node_timeout = node_timeout
 
         # Track active executions
-        self._active_jobs: Dict[str, asyncio.Task] = {}
-        self._job_results: Dict[str, Dict[str, Any]] = {}
+        self._active_jobs: dict[str, asyncio.Task] = {}
+        self._job_results: dict[str, dict[str, Any]] = {}
 
     async def execute(
         self,
-        job_data: Dict[str, Any],
-        initial_variables: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        job_data: dict[str, Any],
+        initial_variables: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Execute a job and return the result.
 
@@ -109,8 +110,8 @@ class JobExecutor:
 
         logger.info(f"Starting job execution: {job_id} ({workflow_name})")
 
-        started_at = datetime.now(timezone.utc)
-        result: Dict[str, Any] = {
+        started_at = datetime.now(UTC)
+        result: dict[str, Any] = {
             "success": False,
             "job_id": job_id,
             "started_at": started_at.isoformat(),
@@ -162,9 +163,9 @@ class JobExecutor:
             )
             from casare_rpa.domain.events import (
                 EventBus,
-                NodeStarted,
                 NodeCompleted,
                 NodeFailed,
+                NodeStarted,
             )
 
             # Create a local event bus for this execution
@@ -194,11 +195,11 @@ class JobExecutor:
                     use_case.execute(),
                     timeout=self.job_timeout,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise JobExecutionError(f"Job execution timed out after {self.job_timeout}s")
 
             # Collect results
-            completed_at = datetime.now(timezone.utc)
+            completed_at = datetime.now(UTC)
             duration_ms = int((completed_at - started_at).total_seconds() * 1000)
 
             result["success"] = success
@@ -230,19 +231,15 @@ class JobExecutor:
 
         except JobExecutionError as e:
             result["error"] = str(e)
-            result["completed_at"] = datetime.now(timezone.utc).isoformat()
-            result["duration_ms"] = int(
-                (datetime.now(timezone.utc) - started_at).total_seconds() * 1000
-            )
+            result["completed_at"] = datetime.now(UTC).isoformat()
+            result["duration_ms"] = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
             await self._report_progress(job_id, 100, f"Job error: {e}")
             logger.error(f"Job {job_id} execution error: {e}")
 
         except Exception as e:
             result["error"] = f"Unexpected error: {str(e)}"
-            result["completed_at"] = datetime.now(timezone.utc).isoformat()
-            result["duration_ms"] = int(
-                (datetime.now(timezone.utc) - started_at).total_seconds() * 1000
-            )
+            result["completed_at"] = datetime.now(UTC).isoformat()
+            result["duration_ms"] = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
             await self._report_progress(job_id, 100, f"Job error: {e}")
             logger.exception(f"Job {job_id} unexpected error")
 
@@ -266,9 +263,9 @@ class JobExecutor:
         self,
         workflow_json: str,
         workflow_id: str,
-        initial_variables: Optional[Dict[str, Any]] = None,
+        initial_variables: dict[str, Any] | None = None,
         wait_for_result: bool = True,
-        on_progress: Optional[Callable[[int, str], Awaitable[None]]] = None,
+        on_progress: Callable[[int, str], Awaitable[None]] | None = None,
     ) -> JobExecutionResult:
         """
         Execute a workflow with DBOS-like semantics.
@@ -348,7 +345,7 @@ class JobExecutor:
             return True
         return False
 
-    def get_result(self, job_id: str) -> Optional[Dict[str, Any]]:
+    def get_result(self, job_id: str) -> dict[str, Any] | None:
         """
         Get the result of a completed job.
 
@@ -376,7 +373,7 @@ class _ProgressTracker:
     def __init__(
         self,
         job_id: str,
-        callback: Optional[Callable[[str, int, str], None]],
+        callback: Callable[[str, int, str], None] | None,
     ):
         self.job_id = job_id
         self.callback = callback

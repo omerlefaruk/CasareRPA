@@ -9,9 +9,10 @@ Handles all viewport-related operations:
 """
 
 from typing import TYPE_CHECKING, Optional
-from PySide6.QtCore import QPointF, QVariantAnimation, Signal, QEasingCurve
-from PySide6.QtWidgets import QMessageBox
+
 from loguru import logger
+from PySide6.QtCore import QEasingCurve, QPointF, QVariantAnimation, Signal
+from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 from casare_rpa.presentation.canvas.ui.theme import ANIMATIONS
@@ -53,8 +54,8 @@ class ViewportController(BaseController):
         super().__init__(main_window)
         self._current_zoom: float = 100.0
         self._minimap_visible: bool = False
-        self._zoom_animation: Optional[QVariantAnimation] = None
-        self._zoom_center: Optional[QPointF] = None
+        self._zoom_animation: QVariantAnimation | None = None
+        self._zoom_center: QPointF | None = None
 
     def initialize(self) -> None:
         """Initialize controller resources and connections."""
@@ -79,9 +80,9 @@ class ViewportController(BaseController):
         """
         try:
             from ..graph.node_frame import (
-                group_selected_nodes,
-                create_frame,
                 NodeFrame,
+                create_frame,
+                group_selected_nodes,
             )
 
             graph = self._get_graph()
@@ -217,7 +218,7 @@ class ViewportController(BaseController):
         """
         return self._current_zoom
 
-    def smooth_zoom(self, factor: float, center: Optional[QPointF] = None) -> None:
+    def smooth_zoom(self, factor: float, center: QPointF | None = None) -> None:
         """
         Animate zoom with InOutSine easing curve.
 

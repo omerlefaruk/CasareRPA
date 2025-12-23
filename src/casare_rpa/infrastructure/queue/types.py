@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Protocol, TypedDict, Union
 
-
 # =============================================================================
 # Job Payload Types
 # =============================================================================
@@ -30,8 +29,8 @@ class JobVariables(TypedDict, total=False):
     input_file: str
     output_file: str
     url: str
-    credentials: Dict[str, str]
-    parameters: Dict[str, Any]
+    credentials: dict[str, str]
+    parameters: dict[str, Any]
 
 
 class JobPayload(TypedDict):
@@ -47,7 +46,7 @@ class JobPayload(TypedDict):
     workflow_json: str
     priority: int
     environment: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     created_at: str  # ISO format datetime
     retry_count: int
     max_retries: int
@@ -77,9 +76,9 @@ class QueueMessage(TypedDict):
 
     message_id: str
     message_type: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     timestamp: str  # ISO format datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class EnqueueRequest(TypedDict):
@@ -94,7 +93,7 @@ class EnqueueRequest(TypedDict):
     workflow_json: str
     priority: int
     environment: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     max_retries: int
     delay_seconds: int
 
@@ -126,9 +125,9 @@ class JobResultData(TypedDict, total=False):
     """
 
     output: Any
-    artifacts: List[str]
-    metrics: Dict[str, Union[int, float]]
-    logs: List[str]
+    artifacts: list[str]
+    metrics: dict[str, int | float]
+    logs: list[str]
 
 
 class JobResult(TypedDict):
@@ -139,7 +138,7 @@ class JobResult(TypedDict):
     success: bool
     data: JobResultData
     execution_time_ms: int
-    node_results: List[Dict[str, Any]]
+    node_results: list[dict[str, Any]]
 
 
 class JobFailureResult(TypedDict):
@@ -150,8 +149,8 @@ class JobFailureResult(TypedDict):
     success: bool
     error: str
     error_code: str
-    traceback: Optional[str]
-    node_id: Optional[str]
+    traceback: str | None
+    node_id: str | None
     retry_count: int
     will_retry: bool
 
@@ -168,8 +167,8 @@ class JobStatusInfo(TypedDict):
 
     id: str
     status: str
-    robot_id: Optional[str]
-    visible_after: Optional[str]  # ISO format datetime
+    robot_id: str | None
+    visible_after: str | None  # ISO format datetime
 
 
 class JobDetailedStatus(TypedDict):
@@ -179,13 +178,13 @@ class JobDetailedStatus(TypedDict):
 
     job_id: str
     status: str
-    robot_id: Optional[str]
+    robot_id: str | None
     priority: int
     environment: str
-    created_at: Optional[str]
-    started_at: Optional[str]
-    completed_at: Optional[str]
-    error_message: Optional[str]
+    created_at: str | None
+    started_at: str | None
+    completed_at: str | None
+    error_message: str | None
     retry_count: int
     max_retries: int
 
@@ -246,7 +245,7 @@ class ConsumerStats(TypedDict):
     state: str
     is_connected: bool
     active_jobs: int
-    active_job_ids: List[str]
+    active_job_ids: list[str]
     reconnect_attempts: int
     config: ConsumerConfigStats
 
@@ -354,7 +353,7 @@ class HeartbeatCallback(Protocol):
     Protocol for heartbeat callbacks.
     """
 
-    def __call__(self, job_ids: List[str]) -> None:
+    def __call__(self, job_ids: list[str]) -> None:
         """
         Handle heartbeat event.
 
@@ -376,7 +375,7 @@ class QueueError(TypedDict):
 
     error: str
     error_code: str
-    details: Optional[Dict[str, Any]]
+    details: dict[str, Any] | None
     timestamp: str
 
 
@@ -392,5 +391,5 @@ Environment = str
 Priority = int
 
 # Database record type (from asyncpg)
-DatabaseRecord = Dict[str, Any]
-DatabaseRecordList = List[DatabaseRecord]
+DatabaseRecord = dict[str, Any]
+DatabaseRecordList = list[DatabaseRecord]

@@ -9,9 +9,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
-
 # Cron aliases for human-readable scheduling
-CRON_ALIASES: Dict[str, str] = {
+CRON_ALIASES: dict[str, str] = {
     "@yearly": "0 0 1 1 *",
     "@annually": "0 0 1 1 *",
     "@monthly": "0 0 1 * *",
@@ -44,8 +43,8 @@ class SchedulingStrategy(ABC):
     def get_next_run_time(
         self,
         current_time: datetime,
-        last_run: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        last_run: datetime | None = None,
+    ) -> datetime | None:
         """
         Calculate the next run time based on the strategy.
 
@@ -59,7 +58,7 @@ class SchedulingStrategy(ABC):
         pass
 
     @abstractmethod
-    def validate(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """
         Validate the strategy configuration.
 
@@ -84,7 +83,7 @@ class CronExpressionParser:
     FIELD_NAMES_6 = ["second", "minute", "hour", "day", "month", "day_of_week"]
 
     @classmethod
-    def parse(cls, expression: str) -> Dict[str, str]:
+    def parse(cls, expression: str) -> dict[str, str]:
         """
         Parse cron expression into APScheduler trigger kwargs.
 
@@ -109,9 +108,9 @@ class CronExpressionParser:
         parts = expression.split()
 
         if len(parts) == 5:
-            return dict(zip(cls.FIELD_NAMES, parts))
+            return dict(zip(cls.FIELD_NAMES, parts, strict=False))
         elif len(parts) == 6:
-            return dict(zip(cls.FIELD_NAMES_6, parts))
+            return dict(zip(cls.FIELD_NAMES_6, parts, strict=False))
         else:
             raise ValueError(
                 f"Invalid cron expression: {expression}. "
@@ -119,7 +118,7 @@ class CronExpressionParser:
             )
 
     @classmethod
-    def validate(cls, expression: str) -> Tuple[bool, Optional[str]]:
+    def validate(cls, expression: str) -> tuple[bool, str | None]:
         """
         Validate a cron expression.
 
@@ -185,7 +184,7 @@ class CronExpressionParser:
         return descriptions.get(alias.lower(), f"Custom schedule: {alias}")
 
     @classmethod
-    def _build_description(cls, parts: Dict[str, str]) -> str:
+    def _build_description(cls, parts: dict[str, str]) -> str:
         """Build description from parsed cron parts."""
         descriptions = []
 
@@ -283,7 +282,7 @@ class CronExpressionParser:
         return " ".join(descriptions)
 
     @classmethod
-    def get_available_aliases(cls) -> Dict[str, str]:
+    def get_available_aliases(cls) -> dict[str, str]:
         """Get all available cron aliases with descriptions."""
         result = {}
         for alias in CRON_ALIASES:
@@ -308,7 +307,7 @@ class CronSchedulingStrategy(SchedulingStrategy):
         """
         self._expression = cron_expression
         self._timezone = timezone
-        self._parsed: Optional[Dict[str, str]] = None
+        self._parsed: dict[str, str] | None = None
 
     @property
     def expression(self) -> str:
@@ -320,7 +319,7 @@ class CronSchedulingStrategy(SchedulingStrategy):
         """Get the timezone."""
         return self._timezone
 
-    def get_parsed(self) -> Dict[str, str]:
+    def get_parsed(self) -> dict[str, str]:
         """Get parsed cron parameters."""
         if self._parsed is None:
             self._parsed = CronExpressionParser.parse(self._expression)
@@ -329,14 +328,14 @@ class CronSchedulingStrategy(SchedulingStrategy):
     def get_next_run_time(
         self,
         current_time: datetime,
-        last_run: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        last_run: datetime | None = None,
+    ) -> datetime | None:
         """Calculate next run time based on cron expression."""
         # Delegate to APScheduler's CronTrigger for actual calculation
         # This is a placeholder - actual implementation uses APScheduler
         return None
 
-    def validate(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """Validate the cron expression."""
         return CronExpressionParser.validate(self._expression)
 
@@ -376,8 +375,8 @@ class IntervalSchedulingStrategy(SchedulingStrategy):
     def get_next_run_time(
         self,
         current_time: datetime,
-        last_run: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        last_run: datetime | None = None,
+    ) -> datetime | None:
         """Calculate next run time based on interval."""
         from datetime import timedelta
 
@@ -385,7 +384,7 @@ class IntervalSchedulingStrategy(SchedulingStrategy):
             return current_time
         return last_run + timedelta(seconds=self._interval)
 
-    def validate(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """Validate the interval configuration."""
         if self._interval <= 0:
             return False, "Interval must be positive"
@@ -438,8 +437,8 @@ class OneTimeSchedulingStrategy(SchedulingStrategy):
     def get_next_run_time(
         self,
         current_time: datetime,
-        last_run: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        last_run: datetime | None = None,
+    ) -> datetime | None:
         """Return the scheduled time if not yet executed."""
         if self._executed or last_run is not None:
             return None
@@ -451,7 +450,7 @@ class OneTimeSchedulingStrategy(SchedulingStrategy):
         """Mark this one-time schedule as executed."""
         self._executed = True
 
-    def validate(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """Validate the one-time configuration."""
         if self._run_at is None:
             return False, "Run time must be specified"
@@ -473,7 +472,7 @@ class EventDrivenStrategy(SchedulingStrategy):
         self,
         event_type: str,
         event_source: str,
-        event_filter: Optional[Dict[str, Any]] = None,
+        event_filter: dict[str, Any] | None = None,
     ):
         """
         Initialize event-driven strategy.
@@ -498,19 +497,19 @@ class EventDrivenStrategy(SchedulingStrategy):
         return self._event_source
 
     @property
-    def event_filter(self) -> Dict[str, Any]:
+    def event_filter(self) -> dict[str, Any]:
         """Get the event filter."""
         return self._event_filter
 
     def get_next_run_time(
         self,
         current_time: datetime,
-        last_run: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        last_run: datetime | None = None,
+    ) -> datetime | None:
         """Event-driven schedules don't have a predetermined next run time."""
         return None
 
-    def validate(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """Validate the event-driven configuration."""
         if not self._event_type:
             return False, "Event type must be specified"
@@ -566,12 +565,12 @@ class DependencySchedulingStrategy(SchedulingStrategy):
     def get_next_run_time(
         self,
         current_time: datetime,
-        last_run: Optional[datetime] = None,
-    ) -> Optional[datetime]:
+        last_run: datetime | None = None,
+    ) -> datetime | None:
         """Dependency schedules don't have a predetermined next run time."""
         return None
 
-    def validate(self) -> Tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """Validate the dependency configuration."""
         if not self._depends_on:
             return False, "At least one dependency must be specified"

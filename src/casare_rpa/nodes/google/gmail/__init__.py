@@ -4,20 +4,20 @@ CasareRPA - Gmail Nodes
 Nodes for sending, reading, and managing emails via Gmail API v1.
 """
 
-from casare_rpa.nodes.google.google_base import GmailBaseNode
+from casare_rpa.nodes.google.gmail.gmail_read import (
+    GmailGetAttachmentNode,
+    GmailGetEmailNode,
+    GmailGetThreadNode,
+    GmailSearchEmailsNode,
+)
 from casare_rpa.nodes.google.gmail.gmail_send import (
+    GmailCreateDraftNode,
+    GmailForwardEmailNode,
+    GmailReplyToEmailNode,
     GmailSendEmailNode,
     GmailSendWithAttachmentNode,
-    GmailReplyToEmailNode,
-    GmailForwardEmailNode,
-    GmailCreateDraftNode,
 )
-from casare_rpa.nodes.google.gmail.gmail_read import (
-    GmailGetEmailNode,
-    GmailSearchEmailsNode,
-    GmailGetThreadNode,
-    GmailGetAttachmentNode,
-)
+from casare_rpa.nodes.google.google_base import GmailBaseNode
 
 __all__ = [
     # Base

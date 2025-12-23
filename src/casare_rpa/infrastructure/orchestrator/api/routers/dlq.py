@@ -15,7 +15,6 @@ from slowapi.util import get_remote_address
 
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import get_dlq_manager
 
-
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
@@ -31,19 +30,19 @@ class DLQEntryResponse(BaseModel):
     workflow_id: str
     workflow_name: str
     error_message: str
-    error_details: Optional[Dict[str, Any]] = None
+    error_details: dict[str, Any] | None = None
     retry_count: int
     first_failed_at: datetime
     last_failed_at: datetime
     created_at: datetime
-    reprocessed_at: Optional[datetime] = None
-    reprocessed_by: Optional[str] = None
+    reprocessed_at: datetime | None = None
+    reprocessed_by: str | None = None
 
 
 class DLQListResponse(BaseModel):
     """Response model for listing DLQ entries."""
 
-    entries: List[DLQEntryResponse]
+    entries: list[DLQEntryResponse]
     total: int
     pending: int
     limit: int
@@ -72,7 +71,7 @@ class DLQStatsResponse(BaseModel):
     total: int
     pending: int
     reprocessed: int
-    workflow_id: Optional[str] = None
+    workflow_id: str | None = None
 
 
 class DLQPurgeResponse(BaseModel):
@@ -90,7 +89,7 @@ class DLQPurgeResponse(BaseModel):
 @limiter.limit("60/minute")
 async def list_dlq_entries(
     request: Request,
-    workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
+    workflow_id: str | None = Query(None, description="Filter by workflow ID"),
     pending_only: bool = Query(True, description="Only show entries not yet reprocessed"),
     limit: int = Query(50, ge=1, le=500, description="Maximum entries to return"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
@@ -151,7 +150,7 @@ async def list_dlq_entries(
 @limiter.limit("120/minute")
 async def get_dlq_stats(
     request: Request,
-    workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
+    workflow_id: str | None = Query(None, description="Filter by workflow ID"),
 ):
     """
     Get Dead Letter Queue statistics.

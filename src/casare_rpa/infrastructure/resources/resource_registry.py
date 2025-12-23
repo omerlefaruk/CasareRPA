@@ -62,8 +62,8 @@ class ResourceRegistry:
 
     def __init__(self) -> None:
         """Initialize empty resource registry."""
-        self._resources: Dict[str, "ResourceNode"] = {}
-        self._initialization_order: List[str] = []
+        self._resources: dict[str, ResourceNode] = {}
+        self._initialization_order: list[str] = []
 
     def register(self, resource_node: "ResourceNode") -> None:
         """
@@ -112,7 +112,7 @@ class ResourceRegistry:
         """
         return self._resources.get(resource_id)
 
-    def get_resource(self, resource_id: str) -> Optional[Any]:
+    def get_resource(self, resource_id: str) -> Any | None:
         """
         Get the actual resource instance by ID.
 
@@ -128,7 +128,7 @@ class ResourceRegistry:
         node = self._resources.get(resource_id)
         return node.resource if node else None
 
-    def get_all_nodes(self) -> List["ResourceNode"]:
+    def get_all_nodes(self) -> list["ResourceNode"]:
         """
         Get all registered resource nodes.
 
@@ -232,7 +232,7 @@ class ResourceRegistry:
         logger.debug("Resource registry cleared")
 
     @property
-    def resource_ids(self) -> List[str]:
+    def resource_ids(self) -> list[str]:
         """
         Get list of all registered resource IDs.
 
@@ -242,7 +242,7 @@ class ResourceRegistry:
         return list(self._resources.keys())
 
     @property
-    def initialized_ids(self) -> List[str]:
+    def initialized_ids(self) -> list[str]:
         """
         Get list of initialized resource IDs in initialization order.
 
@@ -294,7 +294,7 @@ class ResourceRegistry:
 
 
 # Module-level singleton
-_registry: Optional[ResourceRegistry] = None
+_registry: ResourceRegistry | None = None
 
 
 def get_resource_registry() -> ResourceRegistry:

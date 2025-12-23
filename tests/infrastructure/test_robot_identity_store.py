@@ -5,13 +5,7 @@ from pathlib import Path
 from casare_rpa.robot.identity_store import RobotIdentityStore
 
 
-<<<<<<< HEAD
-def test_identity_store_resolve_creates_and_persists(
-    tmp_path: Path, monkeypatch
-) -> None:
-=======
 def test_identity_store_resolve_creates_and_persists(tmp_path: Path, monkeypatch) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     identity_path = tmp_path / "robot_identity.json"
     monkeypatch.setenv("CASARE_ROBOT_IDENTITY_PATH", str(identity_path))
 

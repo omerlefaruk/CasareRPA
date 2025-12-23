@@ -11,6 +11,7 @@ Provides:
 
 from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import (
@@ -19,8 +20,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QWidget,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -53,7 +52,7 @@ class ZoomWidget(QWidget):
     ZOOM_PRESETS = [25, 50, 75, 100, 150, 200, 400]
     ZOOM_STEP = 0.1
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize zoom widget.
 
@@ -63,7 +62,7 @@ class ZoomWidget(QWidget):
         super().__init__(parent)
 
         self._current_zoom: float = 1.0
-        self._graph: Optional["NodeGraph"] = None
+        self._graph: NodeGraph | None = None
 
         self._setup_ui()
         self._apply_style()

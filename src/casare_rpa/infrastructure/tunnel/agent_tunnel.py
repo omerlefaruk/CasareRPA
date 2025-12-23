@@ -8,14 +8,15 @@ robots to cloud control plane with mTLS authentication.
 import asyncio
 import json
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import websockets
-from websockets.client import WebSocketClientProtocol
 from loguru import logger
+from websockets.client import WebSocketClientProtocol
 
 from casare_rpa.infrastructure.tunnel.mtls import MTLSConfig
 
@@ -60,10 +61,10 @@ class RobotCapabilities:
     """Robot capabilities advertised to control plane."""
 
     robot_type: str = "desktop"  # browser, desktop, hybrid
-    browser_types: List[str] = field(default_factory=lambda: ["chromium"])
+    browser_types: list[str] = field(default_factory=lambda: ["chromium"])
     desktop_supported: bool = True
     max_concurrent_jobs: int = 1
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     os_info: str = ""
     memory_mb: int = 0
     cpu_cores: int = 0
@@ -89,7 +90,7 @@ class TunnelConfig:
     control_plane_url: str
     mtls_config: MTLSConfig
     robot_name: str = "On-Prem Robot"
-    robot_id: Optional[str] = None
+    robot_id: str | None = None
     capabilities: RobotCapabilities = field(default_factory=RobotCapabilities)
     heartbeat_interval: int = 30
     reconnect_delay: float = 1.0
@@ -137,20 +138,20 @@ class AgentTunnel:
         """
         self.config = config
         self._state = TunnelState.DISCONNECTED
-        self._ws: Optional[WebSocketClientProtocol] = None
+        self._ws: WebSocketClientProtocol | None = None
         self._running = False
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._receive_task: Optional[asyncio.Task] = None
+        self._heartbeat_task: asyncio.Task | None = None
+        self._receive_task: asyncio.Task | None = None
         self._reconnect_delay = config.reconnect_delay
 
         # Callbacks
-        self.on_job_received: Optional[Callable[[Dict[str, Any]], None]] = None
-        self.on_state_changed: Optional[Callable[[TunnelState], None]] = None
-        self.on_error: Optional[Callable[[str], None]] = None
+        self.on_job_received: Callable[[dict[str, Any]], None] | None = None
+        self.on_state_changed: Callable[[TunnelState], None] | None = None
+        self.on_error: Callable[[str], None] | None = None
 
         # Metrics
-        self._connected_at: Optional[datetime] = None
-        self._last_heartbeat: Optional[datetime] = None
+        self._connected_at: datetime | None = None
+        self._last_heartbeat: datetime | None = None
         self._jobs_received: int = 0
         self._reconnect_count: int = 0
 
@@ -205,7 +206,7 @@ class AgentTunnel:
             )
 
             self._set_state(TunnelState.CONNECTED)
-            self._connected_at = datetime.now(timezone.utc)
+            self._connected_at = datetime.now(UTC)
             self._reconnect_delay = self.config.reconnect_delay  # Reset backoff
 
             # Register with control plane
@@ -297,12 +298,12 @@ class AgentTunnel:
                 "memory_mb": self.config.capabilities.memory_mb,
                 "cpu_cores": self.config.capabilities.cpu_cores,
             },
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         await self._send(message)
 
-    async def _send(self, message: Dict[str, Any]) -> None:
+    async def _send(self, message: dict[str, Any]) -> None:
         """Send message to control plane."""
         if not self._ws:
             raise RuntimeError("Not connected")
@@ -320,10 +321,10 @@ class AgentTunnel:
                     message = {
                         "type": MessageType.HEARTBEAT.value,
                         "robot_id": self.config.robot_id,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                     await self._send(message)
-                    self._last_heartbeat = datetime.now(timezone.utc)
+                    self._last_heartbeat = datetime.now(UTC)
 
             except asyncio.CancelledError:
                 break
@@ -349,7 +350,7 @@ class AgentTunnel:
             except Exception as e:
                 logger.error(f"Receive error: {e}")
 
-    async def _handle_message(self, message: Dict[str, Any]) -> None:
+    async def _handle_message(self, message: dict[str, Any]) -> None:
         """Handle received message."""
         msg_type = message.get("type", "")
         logger.debug(f"Received: {msg_type}")
@@ -371,7 +372,7 @@ class AgentTunnel:
             if self.on_error:
                 self.on_error(error_msg)
 
-    async def _handle_job_assignment(self, message: Dict[str, Any]) -> None:
+    async def _handle_job_assignment(self, message: dict[str, Any]) -> None:
         """Handle job assignment from control plane."""
         job_id = message.get("job_id")
         message.get("workflow_json")
@@ -389,7 +390,7 @@ class AgentTunnel:
                         "type": MessageType.JOB_ACCEPT.value,
                         "job_id": job_id,
                         "robot_id": self.config.robot_id,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 )
             except Exception as e:
@@ -400,7 +401,7 @@ class AgentTunnel:
                         "job_id": job_id,
                         "robot_id": self.config.robot_id,
                         "reason": str(e),
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 )
         else:
@@ -411,7 +412,7 @@ class AgentTunnel:
                     "job_id": job_id,
                     "robot_id": self.config.robot_id,
                     "reason": "No job handler configured",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
 
@@ -419,7 +420,7 @@ class AgentTunnel:
         self,
         job_id: str,
         progress: float,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> None:
         """
         Report job progress to control plane.
@@ -436,14 +437,14 @@ class AgentTunnel:
                 "robot_id": self.config.robot_id,
                 "progress": progress,
                 "message": message,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
     async def report_job_complete(
         self,
         job_id: str,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
     ) -> None:
         """
         Report job completion to control plane.
@@ -458,7 +459,7 @@ class AgentTunnel:
                 "job_id": job_id,
                 "robot_id": self.config.robot_id,
                 "result": result,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -466,7 +467,7 @@ class AgentTunnel:
         self,
         job_id: str,
         error: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """
         Report job failure to control plane.
@@ -483,11 +484,11 @@ class AgentTunnel:
                 "robot_id": self.config.robot_id,
                 "error": error,
                 "details": details,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
-    async def update_status(self, status: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+    async def update_status(self, status: str, metadata: dict[str, Any] | None = None) -> None:
         """
         Update robot status on control plane.
 
@@ -501,11 +502,11 @@ class AgentTunnel:
                 "robot_id": self.config.robot_id,
                 "status": status,
                 "metadata": metadata or {},
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get tunnel metrics."""
         return {
             "state": self._state.value,

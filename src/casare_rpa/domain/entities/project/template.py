@@ -4,11 +4,11 @@ CasareRPA - Project Template Entity
 Project templates for quick-start workflows.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-import uuid
 
 from casare_rpa.domain.entities.project.settings import ProjectSettings
 
@@ -50,7 +50,7 @@ class TemplateVariable:
     description: str = ""
     required: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "name": self.name,
@@ -61,7 +61,7 @@ class TemplateVariable:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TemplateVariable":
+    def from_dict(cls, data: dict[str, Any]) -> "TemplateVariable":
         """Create from dictionary."""
         return cls(
             name=data.get("name", ""),
@@ -81,7 +81,7 @@ class TemplateCredential:
     description: str = ""
     required: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "alias": self.alias,
@@ -91,7 +91,7 @@ class TemplateCredential:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TemplateCredential":
+    def from_dict(cls, data: dict[str, Any]) -> "TemplateCredential":
         """Create from dictionary."""
         return cls(
             alias=data.get("alias", ""),
@@ -140,12 +140,12 @@ class ProjectTemplate:
     category: TemplateCategory = TemplateCategory.CUSTOM
     icon: str = "template"
     color: str = "#2196F3"
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     # Template content
-    base_workflow: Dict[str, Any] = field(default_factory=dict)
-    default_variables: List[TemplateVariable] = field(default_factory=list)
-    default_credentials: List[TemplateCredential] = field(default_factory=list)
+    base_workflow: dict[str, Any] = field(default_factory=dict)
+    default_variables: list[TemplateVariable] = field(default_factory=list)
+    default_credentials: list[TemplateCredential] = field(default_factory=list)
     default_settings: ProjectSettings = field(default_factory=ProjectSettings)
 
     # Metadata
@@ -156,8 +156,8 @@ class ProjectTemplate:
     is_builtin: bool = False
     is_public: bool = True
 
-    created_at: Optional[datetime] = None
-    modified_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    modified_at: datetime | None = None
 
     def __post_init__(self) -> None:
         """Initialize timestamps if not provided."""
@@ -166,7 +166,7 @@ class ProjectTemplate:
         if self.modified_at is None:
             self.modified_at = datetime.now()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -191,7 +191,7 @@ class ProjectTemplate:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ProjectTemplate":
+    def from_dict(cls, data: dict[str, Any]) -> "ProjectTemplate":
         """Create from dictionary."""
         created_at = None
         if data.get("created_at"):
@@ -280,10 +280,10 @@ class TemplatesFile:
     Can store both built-in and user-created templates.
     """
 
-    templates: Dict[str, ProjectTemplate] = field(default_factory=dict)
+    templates: dict[str, ProjectTemplate] = field(default_factory=dict)
     schema_version: str = "2.0.0"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
@@ -291,7 +291,7 @@ class TemplatesFile:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TemplatesFile":
+    def from_dict(cls, data: dict[str, Any]) -> "TemplatesFile":
         """Create from dictionary."""
         templates_data = data.get("templates", {})
 
@@ -305,7 +305,7 @@ class TemplatesFile:
             schema_version=data.get("$schema_version", "2.0.0"),
         )
 
-    def get_template(self, template_id: str) -> Optional[ProjectTemplate]:
+    def get_template(self, template_id: str) -> ProjectTemplate | None:
         """Get template by ID."""
         return self.templates.get(template_id)
 
@@ -320,14 +320,14 @@ class TemplatesFile:
             return True
         return False
 
-    def get_by_category(self, category: TemplateCategory) -> List[ProjectTemplate]:
+    def get_by_category(self, category: TemplateCategory) -> list[ProjectTemplate]:
         """Get all templates in a category."""
         return [t for t in self.templates.values() if t.category == category]
 
-    def get_builtin(self) -> List[ProjectTemplate]:
+    def get_builtin(self) -> list[ProjectTemplate]:
         """Get all built-in templates."""
         return [t for t in self.templates.values() if t.is_builtin]
 
-    def get_public(self) -> List[ProjectTemplate]:
+    def get_public(self) -> list[ProjectTemplate]:
         """Get all public templates."""
         return [t for t in self.templates.values() if t.is_public]

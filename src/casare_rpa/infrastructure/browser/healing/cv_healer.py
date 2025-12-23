@@ -17,7 +17,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -126,7 +126,7 @@ class OCRMatch:
         """Center Y coordinate for clicking."""
         return self.y + self.height // 2
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "text": self.text,
@@ -172,7 +172,7 @@ class TemplateMatch:
         """Center Y coordinate for clicking."""
         return self.y + self.height // 2
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "x": self.x,
@@ -204,28 +204,28 @@ class CVHealingResult:
     confidence: float
     """Confidence score of the result."""
 
-    click_x: Optional[int] = None
+    click_x: int | None = None
     """X coordinate to click."""
 
-    click_y: Optional[int] = None
+    click_y: int | None = None
     """Y coordinate to click."""
 
-    bounding_box: Optional[Dict[str, int]] = None
+    bounding_box: dict[str, int] | None = None
     """Bounding box of detected element."""
 
-    detected_text: Optional[str] = None
+    detected_text: str | None = None
     """Text detected (for OCR strategy)."""
 
     healing_time_ms: float = 0.0
     """Time taken for CV healing."""
 
-    candidates: List[Dict[str, Any]] = field(default_factory=list)
+    candidates: list[dict[str, Any]] = field(default_factory=list)
     """Alternative matches found."""
 
-    error_message: Optional[str] = None
+    error_message: str | None = None
     """Error message if failed."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "success": self.success,
@@ -253,22 +253,22 @@ class CVContext:
     text_content: str
     """Expected visible text of the element."""
 
-    template_image: Optional[bytes] = None
+    template_image: bytes | None = None
     """Screenshot of the element as template."""
 
-    expected_position: Optional[Tuple[int, int]] = None
+    expected_position: tuple[int, int] | None = None
     """Expected (x, y) position as fallback."""
 
-    expected_size: Optional[Tuple[int, int]] = None
+    expected_size: tuple[int, int] | None = None
     """Expected (width, height) of element."""
 
-    element_type: Optional[str] = None
+    element_type: str | None = None
     """Type of element (button, input, etc.)."""
 
-    visual_features: Dict[str, Any] = field(default_factory=dict)
+    visual_features: dict[str, Any] = field(default_factory=dict)
     """Additional visual features for detection."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (excludes binary data)."""
         return {
             "text_content": self.text_content,
@@ -318,7 +318,7 @@ class CVHealer:
         ocr_confidence_threshold: float = 0.7,
         template_similarity_threshold: float = 0.8,
         budget_ms: float = 2000.0,
-        tesseract_cmd: Optional[str] = None,
+        tesseract_cmd: str | None = None,
     ) -> None:
         """
         Initialize the CV healer.
@@ -334,8 +334,8 @@ class CVHealer:
         self._budget_ms = budget_ms
         self._tesseract_cmd = tesseract_cmd
 
-        self._contexts: Dict[str, CVContext] = {}
-        self._cv_available: Optional[bool] = None
+        self._contexts: dict[str, CVContext] = {}
+        self._cv_available: bool | None = None
 
         logger.debug(
             f"CVHealer initialized (ocr_threshold={ocr_confidence_threshold}, "
@@ -371,7 +371,7 @@ class CVHealer:
         self._contexts[selector] = context
         logger.debug(f"Stored CV context for: {selector}")
 
-    def get_context(self, selector: str) -> Optional[CVContext]:
+    def get_context(self, selector: str) -> CVContext | None:
         """Get stored CV context for a selector."""
         return self._contexts.get(selector)
 
@@ -379,7 +379,7 @@ class CVHealer:
         self,
         page: Page,
         selector: str,
-    ) -> Optional[CVContext]:
+    ) -> CVContext | None:
         """
         Capture visual context of an element for future CV healing.
 
@@ -409,7 +409,7 @@ class CVHealer:
             element_type = await element.get_attribute("type") or tag_name
 
             # Take element screenshot as template
-            template_bytes: Optional[bytes] = None
+            template_bytes: bytes | None = None
             try:
                 template_bytes = await element.screenshot(type="png")
             except Exception as e:
@@ -443,9 +443,9 @@ class CVHealer:
         self,
         page: Page,
         selector: str,
-        search_text: Optional[str] = None,
-        template_path: Optional[Path] = None,
-        context: Optional[CVContext] = None,
+        search_text: str | None = None,
+        template_path: Path | None = None,
+        context: CVContext | None = None,
     ) -> CVHealingResult:
         """
         Attempt CV-based healing for a broken selector.
@@ -625,7 +625,7 @@ class CVHealer:
                 healing_time_ms=(time.perf_counter() - start_time) * 1000,
             )
 
-    def _perform_ocr(self, screenshot: Any, search_text: str) -> List[OCRMatch]:
+    def _perform_ocr(self, screenshot: Any, search_text: str) -> list[OCRMatch]:
         """
         Perform OCR on screenshot and find matching text regions.
 
@@ -647,7 +647,7 @@ class CVHealer:
             config="--psm 11",  # Sparse text mode
         )
 
-        matches: List[OCRMatch] = []
+        matches: list[OCRMatch] = []
         search_lower = search_text.lower().strip()
 
         n_boxes = len(ocr_data["text"])
@@ -689,9 +689,9 @@ class CVHealer:
 
     def _find_multiword_matches(
         self,
-        ocr_data: Dict[str, Any],
+        ocr_data: dict[str, Any],
         search_text: str,
-    ) -> List[OCRMatch]:
+    ) -> list[OCRMatch]:
         """
         Find multi-word text by combining adjacent OCR results.
 
@@ -702,7 +702,7 @@ class CVHealer:
         Returns:
             List of matches for combined words.
         """
-        matches: List[OCRMatch] = []
+        matches: list[OCRMatch] = []
         search_words = search_text.lower().split()
 
         n_boxes = len(ocr_data["text"])
@@ -849,7 +849,7 @@ class CVHealer:
         self,
         screenshot: Any,
         template: Any,
-    ) -> List[TemplateMatch]:
+    ) -> list[TemplateMatch]:
         """
         Perform template matching on screenshot.
 
@@ -876,7 +876,7 @@ class CVHealer:
             _cv2.TM_CCORR_NORMED,
         ]
 
-        matches: List[TemplateMatch] = []
+        matches: list[TemplateMatch] = []
 
         for method in methods:
             # Use GPU-accelerated template matching if available
@@ -889,7 +889,7 @@ class CVHealer:
             threshold = 0.6
             locations = _np.where(result >= threshold)
 
-            for pt in zip(*locations[::-1]):
+            for pt in zip(*locations[::-1], strict=False):
                 similarity = result[pt[1], pt[0]]
                 matches.append(
                     TemplateMatch(
@@ -909,9 +909,9 @@ class CVHealer:
 
     def _dedupe_matches(
         self,
-        matches: List[TemplateMatch],
+        matches: list[TemplateMatch],
         distance_threshold: int = 20,
-    ) -> List[TemplateMatch]:
+    ) -> list[TemplateMatch]:
         """
         Remove duplicate matches that are too close together.
 
@@ -925,7 +925,7 @@ class CVHealer:
         if not matches:
             return []
 
-        deduped: List[TemplateMatch] = []
+        deduped: list[TemplateMatch] = []
         for match in sorted(matches, key=lambda m: -m.similarity):
             is_duplicate = False
             for existing in deduped:
@@ -1034,10 +1034,10 @@ class CVHealer:
     def _detect_visual_elements(
         self,
         screenshot: Any,
-        expected_size: Tuple[int, int],
-        expected_pos: Optional[Tuple[int, int]],
-        element_type: Optional[str],
-    ) -> List[Dict[str, Any]]:
+        expected_size: tuple[int, int],
+        expected_pos: tuple[int, int] | None,
+        element_type: str | None,
+    ) -> list[dict[str, Any]]:
         """
         Detect UI elements by visual analysis.
 
@@ -1063,7 +1063,7 @@ class CVHealer:
         contours, _ = _cv2.findContours(dilated, _cv2.RETR_EXTERNAL, _cv2.CHAIN_APPROX_SIMPLE)
 
         exp_w, exp_h = expected_size
-        candidates: List[Dict[str, Any]] = []
+        candidates: list[dict[str, Any]] = []
 
         for contour in contours:
             x, y, w, h = _cv2.boundingRect(contour)
@@ -1177,7 +1177,7 @@ class CVHealer:
         page: Page,
         text: str,
         exact_match: bool = False,
-    ) -> List[OCRMatch]:
+    ) -> list[OCRMatch]:
         """
         Find all occurrences of text on a page using OCR.
 
@@ -1214,7 +1214,7 @@ class CVHealer:
         self,
         page: Page,
         template_path: Path,
-    ) -> List[TemplateMatch]:
+    ) -> list[TemplateMatch]:
         """
         Find all occurrences of a template image on a page.
 

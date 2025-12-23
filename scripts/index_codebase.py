@@ -11,25 +11,26 @@ This script:
 4. Stores embeddings in ChromaDB via the internal VectorStore.
 """
 
-import os
 import ast
-import json
 import asyncio
 import hashlib
-from pathlib import Path
-from typing import Generator, List, Dict, Any
-
-from loguru import logger
-from fastembed import TextEmbedding
+import json
+import os
 
 # Add project root to path
 import sys
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any, Dict, List
+
+from fastembed import TextEmbedding
+from loguru import logger
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from casare_rpa.infrastructure.ai.vector_store import get_vector_store, Document
 from casare_rpa.infrastructure.ai.embedding_manager import get_embedding_manager
+from casare_rpa.infrastructure.ai.vector_store import Document, get_vector_store
 
 # Configuration
 COLLECTION_NAME = "casare_codebase"
@@ -47,7 +48,7 @@ def get_file_hash(filepath: Path) -> str:
     return hasher.hexdigest()
 
 
-def load_cache() -> Dict[str, str]:
+def load_cache() -> dict[str, str]:
     if CACHE_FILE.exists():
         try:
             return json.loads(CACHE_FILE.read_text())
@@ -56,7 +57,7 @@ def load_cache() -> Dict[str, str]:
     return {}
 
 
-def save_cache(cache: Dict[str, str]):
+def save_cache(cache: dict[str, str]):
     CACHE_FILE.write_text(json.dumps(cache, indent=2))
 
 
@@ -112,7 +113,7 @@ def _detect_category(filepath: Path, class_name: str = "") -> str:
     return "general"
 
 
-def _extract_base_classes(node: ast.ClassDef) -> List[str]:
+def _extract_base_classes(node: ast.ClassDef) -> list[str]:
     bases = []
     for base in node.bases:
         if isinstance(base, ast.Name):
@@ -122,7 +123,7 @@ def _extract_base_classes(node: ast.ClassDef) -> List[str]:
     return bases
 
 
-def _extract_decorators(node) -> List[str]:
+def _extract_decorators(node) -> list[str]:
     decorators = []
     for dec in node.decorator_list:
         if isinstance(dec, ast.Name):
@@ -135,7 +136,7 @@ def _extract_decorators(node) -> List[str]:
     return decorators
 
 
-def extract_code_chunks(filepath: Path) -> Generator[Dict[str, Any], None, None]:
+def extract_code_chunks(filepath: Path) -> Generator[dict[str, Any], None, None]:
     try:
         content = filepath.read_text(encoding="utf-8")
     except Exception as e:

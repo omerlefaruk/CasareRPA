@@ -10,13 +10,12 @@ Provides:
 - Backward compatibility validation
 """
 
+import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Set, Tuple
-import re
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +57,8 @@ class SemanticVersion:
     major: int
     minor: int
     patch: int
-    prerelease: Optional[str] = None
-    build: Optional[str] = None
+    prerelease: str | None = None
+    build: str | None = None
 
     SEMVER_PATTERN = re.compile(
         r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
@@ -212,11 +211,11 @@ class BreakingChange:
     change_type: BreakingChangeType
     element_id: str  # ID of affected element (node_id, variable name, etc.)
     description: str
-    old_value: Optional[Any] = None
-    new_value: Optional[Any] = None
+    old_value: Any | None = None
+    new_value: Any | None = None
     severity: str = "error"  # error, warning
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "change_type": self.change_type.name,
@@ -233,8 +232,8 @@ class CompatibilityResult:
     """Result of compatibility check between workflow versions."""
 
     is_compatible: bool
-    breaking_changes: List[BreakingChange] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    breaking_changes: list[BreakingChange] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     migration_required: bool = False
     auto_migratable: bool = True
 
@@ -248,7 +247,7 @@ class CompatibilityResult:
         """Count breaking changes with error severity."""
         return sum(1 for bc in self.breaking_changes if bc.severity == "error")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "is_compatible": self.is_compatible,
@@ -265,16 +264,16 @@ class VersionDiff:
 
     from_version: str
     to_version: str
-    nodes_added: Set[str] = field(default_factory=set)
-    nodes_removed: Set[str] = field(default_factory=set)
-    nodes_modified: Set[str] = field(default_factory=set)
-    connections_added: List[Dict[str, str]] = field(default_factory=list)
-    connections_removed: List[Dict[str, str]] = field(default_factory=list)
-    variables_added: Set[str] = field(default_factory=set)
-    variables_removed: Set[str] = field(default_factory=set)
-    variables_modified: Set[str] = field(default_factory=set)
-    settings_changed: Dict[str, Tuple[Any, Any]] = field(default_factory=dict)
-    metadata_changed: Dict[str, Tuple[Any, Any]] = field(default_factory=dict)
+    nodes_added: set[str] = field(default_factory=set)
+    nodes_removed: set[str] = field(default_factory=set)
+    nodes_modified: set[str] = field(default_factory=set)
+    connections_added: list[dict[str, str]] = field(default_factory=list)
+    connections_removed: list[dict[str, str]] = field(default_factory=list)
+    variables_added: set[str] = field(default_factory=set)
+    variables_removed: set[str] = field(default_factory=set)
+    variables_modified: set[str] = field(default_factory=set)
+    settings_changed: dict[str, tuple[Any, Any]] = field(default_factory=dict)
+    metadata_changed: dict[str, tuple[Any, Any]] = field(default_factory=dict)
 
     @property
     def has_changes(self) -> bool:
@@ -291,7 +290,7 @@ class VersionDiff:
             or bool(self.settings_changed)
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "from_version": self.from_version,
@@ -325,12 +324,12 @@ class WorkflowVersion:
     workflow_id: str  # UUID of the workflow
     version: SemanticVersion
     status: VersionStatus
-    workflow_data: Dict[str, Any]  # Complete serialized workflow
+    workflow_data: dict[str, Any]  # Complete serialized workflow
     created_at: datetime = field(default_factory=datetime.now)
-    created_by: Optional[str] = None
-    parent_version: Optional[str] = None  # Version string of parent
+    created_by: str | None = None
+    parent_version: str | None = None  # Version string of parent
     change_summary: str = ""
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     # Computed fields
     node_count: int = 0
@@ -347,6 +346,7 @@ class WorkflowVersion:
     def _compute_checksum(self) -> None:
         """Compute content checksum for integrity verification."""
         import hashlib
+
         import orjson
 
         # Exclude volatile fields from checksum
@@ -417,7 +417,7 @@ class WorkflowVersion:
         logger.warning(f"Invalid status transition: {self.status.name} -> {new_status.name}")
         return False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for storage."""
         return {
             "workflow_id": self.workflow_id,
@@ -435,7 +435,7 @@ class WorkflowVersion:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowVersion":
+    def from_dict(cls, data: dict[str, Any]) -> "WorkflowVersion":
         """Create instance from dictionary."""
         return cls(
             workflow_id=data["workflow_id"],
@@ -476,19 +476,19 @@ class VersionHistory:
             workflow_id: UUID of the workflow
         """
         self.workflow_id = workflow_id
-        self.versions: Dict[str, WorkflowVersion] = {}  # version string -> WorkflowVersion
-        self._version_order: List[str] = []  # Ordered list of version strings
-        self._active_version: Optional[str] = None
+        self.versions: dict[str, WorkflowVersion] = {}  # version string -> WorkflowVersion
+        self._version_order: list[str] = []  # Ordered list of version strings
+        self._active_version: str | None = None
 
     @property
-    def active_version(self) -> Optional[WorkflowVersion]:
+    def active_version(self) -> WorkflowVersion | None:
         """Get the currently active version."""
         if self._active_version:
             return self.versions.get(self._active_version)
         return None
 
     @property
-    def latest_version(self) -> Optional[WorkflowVersion]:
+    def latest_version(self) -> WorkflowVersion | None:
         """Get the most recent version (regardless of status)."""
         if self._version_order:
             return self.versions.get(self._version_order[-1])
@@ -523,7 +523,7 @@ class VersionHistory:
 
         logger.debug(f"Added version {version_str} to history for {self.workflow_id}")
 
-    def get_version(self, version_str: str) -> Optional[WorkflowVersion]:
+    def get_version(self, version_str: str) -> WorkflowVersion | None:
         """Get a specific version."""
         return self.versions.get(version_str)
 
@@ -565,10 +565,10 @@ class VersionHistory:
 
     def create_new_version(
         self,
-        workflow_data: Dict[str, Any],
+        workflow_data: dict[str, Any],
         bump_type: str = "patch",
         change_summary: str = "",
-        created_by: Optional[str] = None,
+        created_by: str | None = None,
     ) -> WorkflowVersion:
         """
         Create a new version based on the latest version.
@@ -609,7 +609,7 @@ class VersionHistory:
         self.add_version(version)
         return version
 
-    def generate_diff(self, from_version: str, to_version: str) -> Optional[VersionDiff]:
+    def generate_diff(self, from_version: str, to_version: str) -> VersionDiff | None:
         """
         Generate diff between two versions.
 
@@ -835,7 +835,7 @@ class VersionHistory:
 
         return result
 
-    def can_rollback_to(self, version_str: str) -> Tuple[bool, str]:
+    def can_rollback_to(self, version_str: str) -> tuple[bool, str]:
         """
         Check if rollback to a version is safe.
 
@@ -863,11 +863,11 @@ class VersionHistory:
 
         return True, "Rollback is safe"
 
-    def get_versions_by_status(self, status: VersionStatus) -> List[WorkflowVersion]:
+    def get_versions_by_status(self, status: VersionStatus) -> list[WorkflowVersion]:
         """Get all versions with a specific status."""
         return [v for v in self.versions.values() if v.status == status]
 
-    def get_version_timeline(self) -> List[Dict[str, Any]]:
+    def get_version_timeline(self) -> list[dict[str, Any]]:
         """Get ordered timeline of all versions."""
         return [
             {
@@ -880,7 +880,7 @@ class VersionHistory:
             for v_str in self._version_order
         ]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize version history."""
         return {
             "workflow_id": self.workflow_id,
@@ -890,7 +890,7 @@ class VersionHistory:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VersionHistory":
+    def from_dict(cls, data: dict[str, Any]) -> "VersionHistory":
         """Create instance from dictionary."""
         history = cls(workflow_id=data["workflow_id"])
         history._version_order = data.get("version_order", [])

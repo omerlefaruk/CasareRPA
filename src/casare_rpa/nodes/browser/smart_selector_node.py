@@ -94,7 +94,7 @@ class SmartSelectorNode(BrowserBaseNode):
     # @requires: litellm playwright
     # @ports: page, description, hints -> selector, selector_type, confidence, element_description, alternatives, is_unique, page
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Smart Selector node."""
         super().__init__(node_id, config)
         self.name = "Smart Selector"
@@ -252,12 +252,12 @@ class SmartSelectorNode(BrowserBaseNode):
         generator = SmartSelectorGenerator(model=model)
 
         # Build context
-        context: Dict[str, Any] = {}
+        context: dict[str, Any] = {}
         if hints:
             context["hints"] = hints
 
         # Get screenshot if enabled
-        screenshot: Optional[bytes] = None
+        screenshot: bytes | None = None
         if use_screenshot:
             try:
                 screenshot = await page.screenshot(type="png")
@@ -332,7 +332,7 @@ class SmartSelectorOptionsNode(BrowserBaseNode):
     # @requires: litellm playwright
     # @ports: page, description -> options, best_selector, page
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Smart Selector Options node."""
         super().__init__(node_id, config)
         self.name = "Smart Selector Options"
@@ -465,7 +465,7 @@ class RefineSelectorNode(BrowserBaseNode):
     # @requires: litellm playwright
     # @ports: page, original_selector, description -> selector, selector_type, confidence, is_unique, page
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Refine Selector node."""
         super().__init__(node_id, config)
         self.name = "Refine Selector"

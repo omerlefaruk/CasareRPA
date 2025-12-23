@@ -5,12 +5,12 @@ Runs each workflow JSON through ExecuteWorkflowUseCase and logs outputs.
 """
 
 import asyncio
-import json
-import sys
-from pathlib import Path
 
 # Fix Windows console encoding
 import io
+import json
+import sys
+from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -25,11 +25,11 @@ load_dotenv()
 
 async def execute_workflow(workflow_path: Path) -> dict:
     """Execute a workflow and return results."""
-    from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
     from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
+    from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
     # Load workflow data
-    with open(workflow_path, "r", encoding="utf-8") as f:
+    with open(workflow_path, encoding="utf-8") as f:
         workflow_data = json.load(f)
 
     # Load into WorkflowSchema

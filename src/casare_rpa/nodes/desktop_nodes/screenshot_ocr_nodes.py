@@ -10,8 +10,8 @@ Provides nodes for capturing screenshots and extracting text:
 
 from typing import Any, Dict
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.utils import safe_int
@@ -66,7 +66,7 @@ class CaptureScreenshotNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Capture Screenshot",
     ):
         default_config = {"format": "PNG"}
@@ -84,7 +84,7 @@ class CaptureScreenshotNode(BaseNode):
         self.add_output_port("file_path", DataType.STRING, "Saved file path")
         self.add_output_port("success", DataType.BOOLEAN, "Capture succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute screenshot capture"""
         file_path = self.get_input_value("file_path")
         region = self.get_input_value("region")
@@ -172,7 +172,7 @@ class CaptureElementImageNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Capture Element Image",
     ):
         default_config = {"format": "PNG", "padding": 0}
@@ -191,7 +191,7 @@ class CaptureElementImageNode(BaseNode):
         self.add_output_port("file_path", DataType.STRING, "Saved file path")
         self.add_output_port("success", DataType.BOOLEAN, "Capture succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute element image capture"""
         element = self.get_input_value("element")
         file_path = self.get_input_value("file_path")
@@ -305,7 +305,7 @@ class OCRExtractTextNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "OCR Extract Text",
     ):
         default_config = {"engine": "auto", "language": "eng", "config": ""}
@@ -324,7 +324,7 @@ class OCRExtractTextNode(BaseNode):
         self.add_output_port("engine_used", DataType.STRING, "OCR engine used")
         self.add_output_port("success", DataType.BOOLEAN, "Extraction succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute OCR text extraction"""
         image = self.get_input_value("image")
         image_path = self.get_input_value("image_path")
@@ -437,7 +437,7 @@ class CompareImagesNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Compare Images",
     ):
         default_config = {"method": "histogram", "threshold": 0.9}
@@ -457,7 +457,7 @@ class CompareImagesNode(BaseNode):
         self.add_output_port("is_match", DataType.BOOLEAN, "Images match")
         self.add_output_port("method", DataType.STRING, "Comparison method")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute image comparison"""
         image1 = self.get_input_value("image1")
         image2 = self.get_input_value("image2")

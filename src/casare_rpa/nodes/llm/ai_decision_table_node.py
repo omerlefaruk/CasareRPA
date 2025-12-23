@@ -244,7 +244,7 @@ Return ONLY the JSON, no other text."""
             self._set_decision_error(error_msg)
             return {"success": False, "error": error_msg, "next_nodes": []}
 
-    def _format_rules_for_prompt(self, rules: List[Dict[str, Any]]) -> str:
+    def _format_rules_for_prompt(self, rules: list[dict[str, Any]]) -> str:
         """Format rules as a readable string for the prompt."""
         lines = []
         for i, rule in enumerate(rules):

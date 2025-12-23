@@ -12,6 +12,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()

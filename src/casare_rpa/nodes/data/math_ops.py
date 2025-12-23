@@ -6,8 +6,8 @@ for consistent package organization.
 """
 
 from casare_rpa.nodes.math_nodes import (
-    MathOperationNode,
     ComparisonNode,
+    MathOperationNode,
 )
 
 __all__ = [

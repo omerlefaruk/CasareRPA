@@ -11,22 +11,21 @@ Features:
 - Clear anchor button
 """
 
-from typing import Optional, Any
-
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLineEdit,
-    QToolButton,
-    QLabel,
-    QComboBox,
-    QCheckBox,
-    QFrame,
-)
+from typing import Any, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.nodes.browser.anchor_config import NodeAnchorConfig
 from casare_rpa.presentation.canvas.ui.theme import THEME
@@ -48,7 +47,7 @@ class AnchorSelectorWidget(QWidget):
         self,
         initial_selector: str = "",
         initial_anchor_config: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the anchor selector widget.

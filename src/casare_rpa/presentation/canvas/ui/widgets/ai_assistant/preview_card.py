@@ -14,6 +14,7 @@ Features:
 
 from typing import Any, Dict, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -26,7 +27,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
@@ -51,10 +51,10 @@ class PreviewCard(QFrame):
     regenerate_clicked = Signal()
     preview_toggled = Signal(bool)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize preview card."""
         super().__init__(parent)
-        self._workflow: Optional[Dict[str, Any]] = None
+        self._workflow: dict[str, Any] | None = None
         self._is_preview_expanded = False
         self._is_validated = False
 
@@ -325,7 +325,7 @@ class PreviewCard(QFrame):
         self._preview_toggle_btn.setText("Hide JSON" if checked else "Show JSON")
         self.preview_toggled.emit(checked)
 
-    def _format_workflow_json(self, workflow: Dict[str, Any]) -> str:
+    def _format_workflow_json(self, workflow: dict[str, Any]) -> str:
         """Format workflow as pretty JSON."""
         import json
 
@@ -346,7 +346,7 @@ class PreviewCard(QFrame):
             node_list = nodes
 
         # Count node types
-        type_counts: Dict[str, int] = {}
+        type_counts: dict[str, int] = {}
         for node in node_list:
             if isinstance(node, dict):
                 # Support both "type" and "node_type" keys
@@ -363,7 +363,7 @@ class PreviewCard(QFrame):
 
     # ==================== Public API ====================
 
-    def set_workflow(self, workflow: Dict[str, Any]) -> None:
+    def set_workflow(self, workflow: dict[str, Any]) -> None:
         """
         Set the workflow to preview.
 
@@ -435,7 +435,7 @@ class PreviewCard(QFrame):
             # Still enable append but show warning
             self._append_btn.setEnabled(True)
 
-    def get_workflow(self) -> Optional[Dict[str, Any]]:
+    def get_workflow(self) -> dict[str, Any] | None:
         """
         Get the current workflow.
 

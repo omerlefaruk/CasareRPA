@@ -9,8 +9,9 @@ Provides application-layer operations for UiPath-style transaction queues:
 """
 
 import uuid
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -34,8 +35,8 @@ class QueueService:
 
     def __init__(
         self,
-        on_queue_changed: Optional[Callable[[str], None]] = None,
-        on_item_changed: Optional[Callable[[str, str], None]] = None,
+        on_queue_changed: Callable[[str], None] | None = None,
+        on_item_changed: Callable[[str, str], None] | None = None,
     ):
         """
         Initialize queue service.
@@ -44,8 +45,8 @@ class QueueService:
             on_queue_changed: Callback when queue is modified (queue_id)
             on_item_changed: Callback when item is modified (queue_id, item_id)
         """
-        self._queues: Dict[str, Queue] = {}
-        self._items: Dict[str, Dict[str, QueueItem]] = {}
+        self._queues: dict[str, Queue] = {}
+        self._items: dict[str, dict[str, QueueItem]] = {}
         self._on_queue_changed = on_queue_changed
         self._on_item_changed = on_item_changed
 
@@ -55,7 +56,7 @@ class QueueService:
         self,
         name: str,
         description: str = "",
-        schema: Optional[Dict[str, Any]] = None,
+        schema: dict[str, Any] | None = None,
         max_retries: int = 3,
         retry_delay_seconds: int = 60,
         auto_retry: bool = True,
@@ -87,7 +88,7 @@ class QueueService:
             retry_delay_seconds=retry_delay_seconds,
             auto_retry=auto_retry,
             enforce_unique_reference=enforce_unique_reference,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
 
         self._queues[queue_id] = queue
@@ -102,14 +103,14 @@ class QueueService:
     def update_queue(
         self,
         queue_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        schema: Optional[Dict[str, Any]] = None,
-        max_retries: Optional[int] = None,
-        retry_delay_seconds: Optional[int] = None,
-        auto_retry: Optional[bool] = None,
-        enforce_unique_reference: Optional[bool] = None,
-    ) -> Optional[Queue]:
+        name: str | None = None,
+        description: str | None = None,
+        schema: dict[str, Any] | None = None,
+        max_retries: int | None = None,
+        retry_delay_seconds: int | None = None,
+        auto_retry: bool | None = None,
+        enforce_unique_reference: bool | None = None,
+    ) -> Queue | None:
         """
         Update an existing queue.
 
@@ -175,30 +176,30 @@ class QueueService:
         logger.info(f"Queue {queue_id[:8]} deleted")
         return True
 
-    def get_queue(self, queue_id: str) -> Optional[Queue]:
+    def get_queue(self, queue_id: str) -> Queue | None:
         """Get queue by ID."""
         return self._queues.get(queue_id)
 
-    def get_queue_by_name(self, name: str) -> Optional[Queue]:
+    def get_queue_by_name(self, name: str) -> Queue | None:
         """Get queue by name."""
         for queue in self._queues.values():
             if queue.name == name:
                 return queue
         return None
 
-    def list_queues(self) -> List[Queue]:
+    def list_queues(self) -> list[Queue]:
         """Get all queues."""
         return list(self._queues.values())
 
     def add_queue_item(
         self,
         queue_id: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         reference: str = "",
         priority: int = 1,
-        deadline: Optional[datetime] = None,
-        postpone_until: Optional[datetime] = None,
-    ) -> Optional[QueueItem]:
+        deadline: datetime | None = None,
+        postpone_until: datetime | None = None,
+    ) -> QueueItem | None:
         """
         Add a new item to a queue.
 
@@ -234,7 +235,7 @@ class QueueService:
             priority=priority,
             deadline=deadline,
             postpone_until=postpone_until,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
 
         self._items.setdefault(queue_id, {})[item_id] = item
@@ -249,8 +250,8 @@ class QueueService:
     def add_queue_items(
         self,
         queue_id: str,
-        items_data: List[Dict[str, Any]],
-    ) -> List[QueueItem]:
+        items_data: list[dict[str, Any]],
+    ) -> list[QueueItem]:
         """
         Add multiple items to a queue (bulk operation).
 
@@ -281,9 +282,9 @@ class QueueService:
     def get_next_item(
         self,
         queue_id: str,
-        robot_id: Optional[str] = None,
+        robot_id: str | None = None,
         robot_name: str = "",
-    ) -> Optional[QueueItem]:
+    ) -> QueueItem | None:
         """
         Get next available item from queue (for performer pattern).
 
@@ -299,7 +300,7 @@ class QueueService:
             QueueItem or None if no items available
         """
         queue_items = self._items.get(queue_id, {})
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         available = []
         for item in queue_items.values():
@@ -332,7 +333,7 @@ class QueueService:
         self,
         queue_id: str,
         item_id: str,
-        output: Optional[Dict[str, Any]] = None,
+        output: dict[str, Any] | None = None,
     ) -> bool:
         """
         Mark an item as completed.
@@ -354,7 +355,7 @@ class QueueService:
             logger.warning(f"Item {item_id} not in progress")
             return False
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         item.status = QueueItemStatus.COMPLETED
         item.completed_at = now
         item.output = output or {}
@@ -405,7 +406,7 @@ class QueueService:
             logger.warning(f"Item {item_id} not in progress")
             return False
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         item.error_message = error_message
         item.error_type = error_type
         item.processing_exception_type = exception_type
@@ -488,17 +489,17 @@ class QueueService:
         logger.debug(f"Item {item_id[:8]} deleted")
         return True
 
-    def get_item(self, queue_id: str, item_id: str) -> Optional[QueueItem]:
+    def get_item(self, queue_id: str, item_id: str) -> QueueItem | None:
         """Get item by ID."""
         return self._items.get(queue_id, {}).get(item_id)
 
     def list_items(
         self,
         queue_id: str,
-        status: Optional[QueueItemStatus] = None,
+        status: QueueItemStatus | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[QueueItem]:
+    ) -> list[QueueItem]:
         """
         List items in a queue with optional filtering.
 
@@ -520,7 +521,7 @@ class QueueService:
 
         return queue_items[offset : offset + limit]
 
-    def get_queue_statistics(self, queue_id: str) -> Dict[str, Any]:
+    def get_queue_statistics(self, queue_id: str) -> dict[str, Any]:
         """
         Get statistics for a queue.
 
@@ -584,7 +585,7 @@ class QueueService:
         if not queue:
             return 0
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         count = 0
 
         for item in self._items.get(queue_id, {}).values():
@@ -592,7 +593,7 @@ class QueueService:
                 continue
 
             if item.started_at:
-                retry_after = item.started_at.replace(tzinfo=timezone.utc) + __import__(
+                retry_after = item.started_at.replace(tzinfo=UTC) + __import__(
                     "datetime"
                 ).timedelta(seconds=queue.retry_delay_seconds)
                 if now >= retry_after:

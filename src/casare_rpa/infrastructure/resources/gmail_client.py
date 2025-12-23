@@ -26,8 +26,8 @@ class GmailAPIError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[int] = None,
-        reason: Optional[str] = None,
+        error_code: int | None = None,
+        reason: str | None = None,
     ):
         self.error_code = error_code
         self.reason = reason
@@ -70,7 +70,7 @@ class GmailMessage:
     raw: dict = field(default_factory=dict)
 
     @classmethod
-    def from_response(cls, data: dict) -> "GmailMessage":
+    def from_response(cls, data: dict) -> GmailMessage:
         """Create GmailMessage from API response."""
         message = cls(
             id=data.get("id", ""),
@@ -173,7 +173,7 @@ class GmailThread:
     raw: dict = field(default_factory=dict)
 
     @classmethod
-    def from_response(cls, data: dict) -> "GmailThread":
+    def from_response(cls, data: dict) -> GmailThread:
         """Create GmailThread from API response."""
         messages = [GmailMessage.from_response(msg) for msg in data.get("messages", [])]
         return cls(
@@ -190,11 +190,11 @@ class GmailDraft:
     """Represents a Gmail draft."""
 
     id: str
-    message: Optional[GmailMessage] = None
+    message: GmailMessage | None = None
     raw: dict = field(default_factory=dict)
 
     @classmethod
-    def from_response(cls, data: dict) -> "GmailDraft":
+    def from_response(cls, data: dict) -> GmailDraft:
         """Create GmailDraft from API response."""
         message = None
         if "message" in data:
@@ -237,9 +237,9 @@ class GmailClient:
             config: GmailConfig with access token and settings
         """
         self.config = config
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
-    async def __aenter__(self) -> "GmailClient":
+    async def __aenter__(self) -> GmailClient:
         """Enter async context manager."""
         await self._ensure_session()
         return self
@@ -269,10 +269,10 @@ class GmailClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[dict] = None,
-        json_data: Optional[dict] = None,
-        data: Optional[bytes] = None,
-        headers: Optional[dict] = None,
+        params: dict | None = None,
+        json_data: dict | None = None,
+        data: bytes | None = None,
+        headers: dict | None = None,
     ) -> dict:
         """
         Make a request to the Gmail API.
@@ -360,12 +360,12 @@ class GmailClient:
         subject: str,
         body: str,
         body_type: str = "plain",
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
-        from_address: Optional[str] = None,
-        reply_to: Optional[str] = None,
-        attachments: Optional[list[Union[str, Path, dict]]] = None,
-        thread_id: Optional[str] = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        from_address: str | None = None,
+        reply_to: str | None = None,
+        attachments: list[str | Path | dict] | None = None,
+        thread_id: str | None = None,
     ) -> GmailMessage:
         """
         Send an email message.
@@ -411,9 +411,9 @@ class GmailClient:
         thread_id: str,
         body: str,
         body_type: str = "plain",
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
-        attachments: Optional[list[Union[str, Path, dict]]] = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        attachments: list[str | Path | dict] | None = None,
     ) -> GmailMessage:
         """
         Reply to an existing message.
@@ -476,9 +476,9 @@ class GmailClient:
         self,
         message_id: str,
         to: list[str],
-        body: Optional[str] = None,
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
+        body: str | None = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
     ) -> GmailMessage:
         """
         Forward an existing message.
@@ -545,9 +545,9 @@ class GmailClient:
         subject: str,
         body: str,
         body_type: str = "plain",
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
-        attachments: Optional[list[Union[str, Path, dict]]] = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        attachments: list[str | Path | dict] | None = None,
     ) -> GmailDraft:
         """
         Create a draft email.
@@ -585,13 +585,13 @@ class GmailClient:
         subject: str,
         body: str,
         body_type: str = "plain",
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
-        from_address: Optional[str] = None,
-        reply_to: Optional[str] = None,
-        attachments: Optional[list[Union[str, Path, dict]]] = None,
-        in_reply_to: Optional[str] = None,
-        references: Optional[str] = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        from_address: str | None = None,
+        reply_to: str | None = None,
+        attachments: list[str | Path | dict] | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
     ) -> str:
         """Create base64-encoded email message."""
         if attachments:
@@ -624,9 +624,7 @@ class GmailClient:
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
         return raw
 
-    async def _create_attachment_part(
-        self, attachment: Union[str, Path, dict]
-    ) -> Optional[MIMEBase]:
+    async def _create_attachment_part(self, attachment: str | Path | dict) -> MIMEBase | None:
         """Create MIME attachment part."""
         if isinstance(attachment, dict):
             # Attachment dict with data
@@ -713,10 +711,10 @@ class GmailClient:
         self,
         query: str = "",
         max_results: int = 100,
-        label_ids: Optional[list[str]] = None,
+        label_ids: list[str] | None = None,
         include_spam_trash: bool = False,
-        page_token: Optional[str] = None,
-    ) -> tuple[list[GmailMessage], Optional[str]]:
+        page_token: str | None = None,
+    ) -> tuple[list[GmailMessage], str | None]:
         """
         Search for messages.
 
@@ -802,8 +800,8 @@ class GmailClient:
     async def modify_labels(
         self,
         message_id: str,
-        add_labels: Optional[list[str]] = None,
-        remove_labels: Optional[list[str]] = None,
+        add_labels: list[str] | None = None,
+        remove_labels: list[str] | None = None,
     ) -> GmailMessage:
         """
         Modify message labels.

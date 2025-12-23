@@ -20,24 +20,24 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
-    QVBoxLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QCheckBox,
-    QWidget,
-    QStackedWidget,
-    QSpacerItem,
     QSizePolicy,
+    QSpacerItem,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
-    DialogSize,
-    DIALOG_DIMENSIONS,
     COLORS,
+    DIALOG_DIMENSIONS,
+    DialogSize,
+    DialogStyles,
 )
 
 
@@ -53,7 +53,7 @@ class LoginDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         require_mfa: bool = False,
     ) -> None:
         """
@@ -66,7 +66,7 @@ class LoginDialog(QDialog):
         super().__init__(parent)
         self._require_mfa = require_mfa
         self._authenticated_user = None
-        self._access_token: Optional[str] = None
+        self._access_token: str | None = None
         self._pending_mfa = False
 
         self._setup_ui()
@@ -78,7 +78,7 @@ class LoginDialog(QDialog):
         return self._authenticated_user
 
     @property
-    def access_token(self) -> Optional[str]:
+    def access_token(self) -> str | None:
         """Get the access token after successful login."""
         return self._access_token
 
@@ -409,9 +409,9 @@ class LoginDialog(QDialog):
         self,
         success: bool,
         user=None,
-        token: Optional[str] = None,
+        token: str | None = None,
         requires_mfa: bool = False,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ) -> None:
         """
         Set authentication result from external handler.
@@ -490,8 +490,8 @@ class LoginDialog(QDialog):
     def set_mfa_result(
         self,
         success: bool,
-        token: Optional[str] = None,
-        error_message: Optional[str] = None,
+        token: str | None = None,
+        error_message: str | None = None,
     ) -> None:
         """
         Set MFA verification result from external handler.

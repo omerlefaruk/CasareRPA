@@ -7,14 +7,12 @@ plus shared PropertyDef constants for email-related nodes.
 
 from __future__ import annotations
 
-
 from email.header import decode_header
 from email.message import Message as EmailMessage
 from email.utils import parsedate_to_datetime
 from typing import Any, Dict
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
 
 # =============================================================================
 # Email-specific PropertyDef constants
@@ -79,7 +77,7 @@ def decode_header_value(value: str) -> str:
     return "".join(result)
 
 
-def parse_email_message(msg: EmailMessage) -> Dict[str, Any]:
+def parse_email_message(msg: EmailMessage) -> dict[str, Any]:
     """
     Parse an email message into a dictionary.
 

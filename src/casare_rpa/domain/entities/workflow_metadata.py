@@ -25,8 +25,8 @@ class WorkflowMetadata:
         description: str = "",
         author: str = "",
         version: str = "1.0.0",
-        tags: Optional[List[str]] = None,
-        id: Optional[str] = None,
+        tags: list[str] | None = None,
+        id: str | None = None,
     ) -> None:
         """
         Initialize workflow metadata.
@@ -65,7 +65,7 @@ class WorkflowMetadata:
         """Update the modified timestamp to current time."""
         self.modified_at = datetime.now().isoformat()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize metadata to dictionary.
 
@@ -85,7 +85,7 @@ class WorkflowMetadata:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "WorkflowMetadata":
         """
         Create metadata from dictionary.
 

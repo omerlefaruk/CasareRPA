@@ -21,66 +21,65 @@ All components:
 """
 
 from casare_rpa.presentation.canvas.ui.base_widget import (
-    BaseWidget,
-    BaseDockWidget,
     BaseDialog,
+    BaseDockWidget,
+    BaseWidget,
 )
+from casare_rpa.presentation.canvas.ui.debug_panel import DebugPanel
 
-# Theme System
-from casare_rpa.presentation.canvas.ui.theme import (
-    Theme,
-    ThemeMode,
-    Colors,
-    CanvasColors,
-    Spacing,
-    BorderRadius,
-    FontSizes,
-    ButtonSizes,
-    IconSizes,
-    Animations,
-    DARK_COLORS,
-    DARK_CANVAS_COLORS,
-    CATEGORY_COLOR_MAP,
-    THEME,
-    TYPE_COLORS,
-    TYPE_BADGES,
-    get_canvas_stylesheet,
-    get_node_status_color,
-    get_wire_color,
-    get_status_color,
-    get_type_color,
-    get_type_badge,
+# Dialogs
+from casare_rpa.presentation.canvas.ui.dialogs import (
+    NodePropertiesDialog,
+    PreferencesDialog,
+    WorkflowSettingsDialog,
 )
 
 # Panels
 from casare_rpa.presentation.canvas.ui.panels import (
-    VariablesPanel,
-    MinimapPanel,
-    MinimapChangeTracker,
-    VARIABLE_TYPES,
     TYPE_DEFAULTS,
+    VARIABLE_TYPES,
+    MinimapChangeTracker,
+    MinimapPanel,
+    VariablesPanel,
 )
-from casare_rpa.presentation.canvas.ui.debug_panel import DebugPanel
+
+# Theme System
+from casare_rpa.presentation.canvas.ui.theme import (
+    CATEGORY_COLOR_MAP,
+    DARK_CANVAS_COLORS,
+    DARK_COLORS,
+    THEME,
+    TYPE_BADGES,
+    TYPE_COLORS,
+    Animations,
+    BorderRadius,
+    ButtonSizes,
+    CanvasColors,
+    Colors,
+    FontSizes,
+    IconSizes,
+    Spacing,
+    Theme,
+    ThemeMode,
+    get_canvas_stylesheet,
+    get_node_status_color,
+    get_status_color,
+    get_type_badge,
+    get_type_color,
+    get_wire_color,
+)
 
 # Toolbars
 from casare_rpa.presentation.canvas.ui.toolbars import (
     MainToolbar,
 )
 
-# Dialogs
-from casare_rpa.presentation.canvas.ui.dialogs import (
-    NodePropertiesDialog,
-    WorkflowSettingsDialog,
-    PreferencesDialog,
-)
-
 # Widgets
 from casare_rpa.presentation.canvas.ui.widgets import (
-    VariableEditorWidget,
     OutputConsoleWidget,
     SearchWidget,
+    VariableEditorWidget,
 )
-
 
 __all__ = [
     # Base Classes

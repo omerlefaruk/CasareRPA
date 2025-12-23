@@ -15,37 +15,35 @@ from __future__ import annotations
 import asyncio
 import json
 import webbrowser
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-
-from PySide6.QtCore import Signal, QThread, QObject
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QGroupBox,
-    QCheckBox,
-    QFileDialog,
-    QMessageBox,
-    QWidget,
-    QProgressBar,
-    QScrollArea,
-    QGridLayout,
-    QFrame,
-    QRadioButton,
-    QButtonGroup,
-)
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QDialog,
+    QFileDialog,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QRadioButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Import scopes from google_client
 from casare_rpa.infrastructure.resources.google_client import GoogleScope
-
 
 # Scope definitions with human-readable names
 GOOGLE_SCOPES = {
@@ -114,7 +112,7 @@ class OAuthWorker(QObject):
         client_secret: str,
         auth_code: str,
         redirect_uri: str,
-        scopes: List[str],
+        scopes: list[str],
     ) -> None:
         super().__init__()
         self.client_id = client_id
@@ -140,7 +138,7 @@ class OAuthWorker(QObject):
 
             # Calculate token expiry
             expires_in = result.get("expires_in", 3600)
-            token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+            token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
 
             token_data = {
                 "access_token": result["access_token"],
@@ -158,7 +156,7 @@ class OAuthWorker(QObject):
             logger.error(f"OAuth token exchange error: {e}")
             self.finished.emit(False, f"Error: {str(e)}", None)
 
-    async def _exchange_token_async(self) -> tuple[Dict[str, Any], Optional[str]]:
+    async def _exchange_token_async(self) -> tuple[dict[str, Any], str | None]:
         """Async token exchange using UnifiedHttpClient."""
         from casare_rpa.infrastructure.http import (
             UnifiedHttpClient,
@@ -190,7 +188,7 @@ class OAuthWorker(QObject):
                 return result, None
 
             # Try to get user info
-            user_email: Optional[str] = None
+            user_email: str | None = None
             try:
                 headers = {"Authorization": f"Bearer {result['access_token']}"}
                 user_response = await client.get(
@@ -218,7 +216,7 @@ class OAuthThread(QThread):
         client_secret: str,
         auth_code: str,
         redirect_uri: str,
-        scopes: List[str],
+        scopes: list[str],
         parent=None,
     ):
         super().__init__(parent)
@@ -247,14 +245,14 @@ class GoogleOAuthDialog(QDialog):
 
     credential_created = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self._oauth_server = None
-        self._oauth_thread: Optional[OAuthThread] = None
+        self._oauth_thread: OAuthThread | None = None
         self._waiting_for_callback = False
-        self._current_redirect_uri: Optional[str] = None
-        self._current_state: Optional[str] = None
+        self._current_redirect_uri: str | None = None
+        self._current_state: str | None = None
 
         self.setWindowTitle("Add Google Account")
         self.setMinimumWidth(550)
@@ -411,7 +409,7 @@ class GoogleOAuthDialog(QDialog):
         scope_grid = QGridLayout(scope_container)
         scope_grid.setSpacing(8)
 
-        self._scope_checkboxes: Dict[str, QCheckBox] = {}
+        self._scope_checkboxes: dict[str, QCheckBox] = {}
         row = 0
         col = 0
 
@@ -506,7 +504,7 @@ class GoogleOAuthDialog(QDialog):
             return
 
         try:
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 data = json.load(f)
 
             # Handle both formats: direct and nested under "installed" or "web"
@@ -551,7 +549,7 @@ class GoogleOAuthDialog(QDialog):
                 f"Failed to load credentials: {e}",
             )
 
-    def _get_selected_scopes(self) -> List[str]:
+    def _get_selected_scopes(self) -> list[str]:
         """Get list of selected OAuth scopes."""
         scopes = []
         for scope_key, checkbox in self._scope_checkboxes.items():
@@ -660,8 +658,8 @@ class GoogleOAuthDialog(QDialog):
         try:
             from casare_rpa.infrastructure.security.oauth_server import (
                 build_google_auth_url,
-                get_cloud_redirect_uri,
                 generate_oauth_state,
+                get_cloud_redirect_uri,
             )
 
             redirect_uri = get_cloud_redirect_uri()
@@ -773,7 +771,7 @@ class GoogleOAuthDialog(QDialog):
         self._oauth_thread.start()
 
     def _on_token_exchange_complete(
-        self, success: bool, message: str, token_data: Optional[Dict[str, Any]]
+        self, success: bool, message: str, token_data: dict[str, Any] | None
     ) -> None:
         """Handle token exchange completion."""
         self._progress_bar.setVisible(False)

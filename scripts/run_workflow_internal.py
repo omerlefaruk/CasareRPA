@@ -1,25 +1,26 @@
 import asyncio
-import os
 import json
+import os
 from pathlib import Path
-from loguru import logger
+
 from dotenv import load_dotenv
+from loguru import logger
 
 # Load environment variables
 load_dotenv()
 
 # Import necessary modules
-from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 from casare_rpa.application.use_cases.execute_workflow import (
     ExecuteWorkflowUseCase,
     ExecutionSettings,
 )
 from casare_rpa.domain.events.bus import get_event_bus
+from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
 
 async def run_internal_workflow(workflow_path: str):
     # Load workflow data
-    with open(workflow_path, "r", encoding="utf-8") as f:
+    with open(workflow_path, encoding="utf-8") as f:
         workflow_data = json.load(f)
 
     # Load workflow schema

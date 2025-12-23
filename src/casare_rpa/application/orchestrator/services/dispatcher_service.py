@@ -4,11 +4,12 @@ Handles robot selection, load balancing, and job assignment.
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, List, Set, Callable, Any
-from collections import defaultdict
-from enum import Enum
 import random
+from collections import defaultdict
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
@@ -38,9 +39,9 @@ class RobotPool:
     def __init__(
         self,
         name: str,
-        tags: Optional[List[str]] = None,
-        max_concurrent_jobs: Optional[int] = None,
-        allowed_workflows: Optional[Set[str]] = None,
+        tags: list[str] | None = None,
+        max_concurrent_jobs: int | None = None,
+        allowed_workflows: set[str] | None = None,
     ):
         """
         Initialize robot pool.
@@ -55,7 +56,7 @@ class RobotPool:
         self.tags = set(tags) if tags else set()
         self.max_concurrent_jobs = max_concurrent_jobs
         self.allowed_workflows = allowed_workflows
-        self._robots: Dict[str, Robot] = {}
+        self._robots: dict[str, Robot] = {}
 
     def add_robot(self, robot: Robot) -> bool:
         """Add a robot to the pool if it matches tags."""
@@ -71,11 +72,11 @@ class RobotPool:
         """Remove a robot from the pool."""
         self._robots.pop(robot_id, None)
 
-    def get_robots(self) -> List[Robot]:
+    def get_robots(self) -> list[Robot]:
         """Get all robots in the pool."""
         return list(self._robots.values())
 
-    def get_available_robots(self) -> List[Robot]:
+    def get_available_robots(self) -> list[Robot]:
         """Get available robots in the pool."""
         return [r for r in self._robots.values() if r.is_available]
 
@@ -145,33 +146,33 @@ class JobDispatcher:
         self._health_check_interval = health_check_interval_seconds
         self._stale_timeout = timedelta(seconds=stale_robot_timeout_seconds)
 
-        self._robots: Dict[str, Robot] = {}
-        self._pools: Dict[str, RobotPool] = {}
+        self._robots: dict[str, Robot] = {}
+        self._pools: dict[str, RobotPool] = {}
         self._default_pool = RobotPool("default")
 
         # Round-robin state
         self._rr_index = 0
 
         # Affinity tracking: workflow_id -> {robot_id -> success_count}
-        self._affinity: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._affinity: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
         # Callbacks
-        self._on_robot_status_change: Optional[
-            Callable[[Robot, RobotStatus, RobotStatus], None]
-        ] = None
-        self._on_job_dispatched: Optional[Callable[[Job, Robot], None]] = None
+        self._on_robot_status_change: Callable[[Robot, RobotStatus, RobotStatus], None] | None = (
+            None
+        )
+        self._on_job_dispatched: Callable[[Job, Robot], None] | None = None
 
         # Running state
         self._running = False
-        self._dispatch_task: Optional[asyncio.Task] = None
-        self._health_task: Optional[asyncio.Task] = None
+        self._dispatch_task: asyncio.Task | None = None
+        self._health_task: asyncio.Task | None = None
 
         logger.info(f"JobDispatcher initialized with {strategy.value} strategy")
 
     def set_callbacks(
         self,
-        on_robot_status_change: Optional[Callable[[Robot, RobotStatus, RobotStatus], None]] = None,
-        on_job_dispatched: Optional[Callable[[Job, Robot], None]] = None,
+        on_robot_status_change: Callable[[Robot, RobotStatus, RobotStatus], None] | None = None,
+        on_job_dispatched: Callable[[Job, Robot], None] | None = None,
     ):
         """Set event callbacks."""
         self._on_robot_status_change = on_robot_status_change
@@ -224,22 +225,22 @@ class JobDispatcher:
         """Update robot heartbeat timestamp."""
         robot = self._robots.get(robot_id)
         if robot:
-            robot.last_heartbeat = datetime.now(timezone.utc)
-            robot.last_seen = datetime.now(timezone.utc)
+            robot.last_heartbeat = datetime.now(UTC)
+            robot.last_seen = datetime.now(UTC)
 
-    def get_robot(self, robot_id: str) -> Optional[Robot]:
+    def get_robot(self, robot_id: str) -> Robot | None:
         """Get robot by ID."""
         return self._robots.get(robot_id)
 
-    def get_all_robots(self) -> List[Robot]:
+    def get_all_robots(self) -> list[Robot]:
         """Get all registered robots."""
         return list(self._robots.values())
 
-    def get_available_robots(self) -> List[Robot]:
+    def get_available_robots(self) -> list[Robot]:
         """Get all available robots."""
         return [r for r in self._robots.values() if r.is_available]
 
-    def get_robots_by_status(self, status: RobotStatus) -> List[Robot]:
+    def get_robots_by_status(self, status: RobotStatus) -> list[Robot]:
         """Get robots by status."""
         return [r for r in self._robots.values() if r.status == status]
 
@@ -248,9 +249,9 @@ class JobDispatcher:
     def create_pool(
         self,
         name: str,
-        tags: Optional[List[str]] = None,
-        max_concurrent_jobs: Optional[int] = None,
-        allowed_workflows: Optional[Set[str]] = None,
+        tags: list[str] | None = None,
+        max_concurrent_jobs: int | None = None,
+        allowed_workflows: set[str] | None = None,
     ) -> RobotPool:
         """Create a robot pool."""
         pool = RobotPool(name, tags, max_concurrent_jobs, allowed_workflows)
@@ -269,11 +270,11 @@ class JobDispatcher:
             return False
         return self._pools.pop(name, None) is not None
 
-    def get_pool(self, name: str) -> Optional[RobotPool]:
+    def get_pool(self, name: str) -> RobotPool | None:
         """Get a pool by name."""
         return self._pools.get(name, self._default_pool if name == "default" else None)
 
-    def get_all_pools(self) -> Dict[str, RobotPool]:
+    def get_all_pools(self) -> dict[str, RobotPool]:
         """Get all pools."""
         pools = dict(self._pools)
         pools["default"] = self._default_pool
@@ -281,7 +282,7 @@ class JobDispatcher:
 
     # ==================== JOB DISPATCH ====================
 
-    def select_robot(self, job: Job, pool_name: Optional[str] = None) -> Optional[Robot]:
+    def select_robot(self, job: Job, pool_name: str | None = None) -> Robot | None:
         """
         Select the best robot for a job.
 
@@ -325,26 +326,26 @@ class JobDispatcher:
 
         return candidates[0] if candidates else None
 
-    def _select_round_robin(self, candidates: List[Robot]) -> Optional[Robot]:
+    def _select_round_robin(self, candidates: list[Robot]) -> Robot | None:
         """Round-robin robot selection."""
         if not candidates:
             return None
         self._rr_index = (self._rr_index + 1) % len(candidates)
         return candidates[self._rr_index]
 
-    def _select_least_loaded(self, candidates: List[Robot]) -> Optional[Robot]:
+    def _select_least_loaded(self, candidates: list[Robot]) -> Robot | None:
         """Select robot with lowest utilization."""
         if not candidates:
             return None
         return min(candidates, key=lambda r: r.utilization)
 
-    def _select_random(self, candidates: List[Robot]) -> Optional[Robot]:
+    def _select_random(self, candidates: list[Robot]) -> Robot | None:
         """Random robot selection."""
         if not candidates:
             return None
         return random.choice(candidates)
 
-    def _select_affinity(self, job: Job, candidates: List[Robot]) -> Optional[Robot]:
+    def _select_affinity(self, job: Job, candidates: list[Robot]) -> Robot | None:
         """Select robot with best affinity for workflow."""
         if not candidates:
             return None
@@ -462,7 +463,7 @@ class JobDispatcher:
 
     async def _check_robot_health(self):
         """Check health of all robots."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for robot in list(self._robots.values()):
             if robot.status == RobotStatus.OFFLINE:
@@ -487,7 +488,7 @@ class JobDispatcher:
 
     # ==================== STATISTICS ====================
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get dispatcher statistics."""
         total_robots = len(self._robots)
         online = sum(1 for r in self._robots.values() if r.status == RobotStatus.ONLINE)

@@ -10,9 +10,8 @@ to improve perceived startup performance.
 
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QTimer
-
 from loguru import logger
+from PySide6.QtCore import QTimer
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QMenu

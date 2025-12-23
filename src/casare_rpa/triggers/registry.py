@@ -12,8 +12,8 @@ from loguru import logger
 from casare_rpa.triggers.base import (
     BaseTrigger,
     BaseTriggerConfig,
-    TriggerType,
     TriggerEventCallback,
+    TriggerType,
 )
 
 
@@ -49,7 +49,7 @@ class TriggerRegistry:
         """Ensure singleton pattern."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._triggers: Dict[TriggerType, Type[BaseTrigger]] = {}
+            cls._instance._triggers: dict[TriggerType, type[BaseTrigger]] = {}
             cls._instance._initialized = False
         return cls._instance
 
@@ -69,7 +69,7 @@ class TriggerRegistry:
         except ImportError as e:
             logger.warning(f"Could not load trigger implementations: {e}")
 
-    def register(self, trigger_class: Type[BaseTrigger]) -> None:
+    def register(self, trigger_class: type[BaseTrigger]) -> None:
         """
         Register a trigger class.
 
@@ -104,7 +104,7 @@ class TriggerRegistry:
             return True
         return False
 
-    def get(self, trigger_type: TriggerType) -> Optional[Type[BaseTrigger]]:
+    def get(self, trigger_type: TriggerType) -> type[BaseTrigger] | None:
         """
         Get trigger class by type.
 
@@ -117,7 +117,7 @@ class TriggerRegistry:
         self._ensure_initialized()
         return self._triggers.get(trigger_type)
 
-    def get_all(self) -> Dict[TriggerType, Type[BaseTrigger]]:
+    def get_all(self) -> dict[TriggerType, type[BaseTrigger]]:
         """
         Get all registered triggers.
 
@@ -127,7 +127,7 @@ class TriggerRegistry:
         self._ensure_initialized()
         return dict(self._triggers)
 
-    def get_types(self) -> List[TriggerType]:
+    def get_types(self) -> list[TriggerType]:
         """
         Get all registered trigger types.
 
@@ -154,8 +154,8 @@ class TriggerRegistry:
         self,
         trigger_type: TriggerType,
         config: BaseTriggerConfig,
-        event_callback: Optional[TriggerEventCallback] = None,
-    ) -> Optional[BaseTrigger]:
+        event_callback: TriggerEventCallback | None = None,
+    ) -> BaseTrigger | None:
         """
         Create a trigger instance.
 
@@ -178,7 +178,7 @@ class TriggerRegistry:
             logger.error(f"Failed to create trigger {trigger_type.value}: {e}")
             return None
 
-    def get_display_info(self) -> List[Dict]:
+    def get_display_info(self) -> list[dict]:
         """
         Get display information for all registered triggers.
 
@@ -193,7 +193,7 @@ class TriggerRegistry:
             info_list.append(trigger_class.get_display_info())
         return info_list
 
-    def get_config_schemas(self) -> Dict[str, Dict]:
+    def get_config_schemas(self) -> dict[str, dict]:
         """
         Get configuration schemas for all registered triggers.
 
@@ -211,7 +211,7 @@ class TriggerRegistry:
         return f"TriggerRegistry(registered={list(self._triggers.keys())})"
 
 
-def register_trigger(cls: Type[BaseTrigger]) -> Type[BaseTrigger]:
+def register_trigger(cls: type[BaseTrigger]) -> type[BaseTrigger]:
     """
     Decorator to register a trigger class with the global registry.
 

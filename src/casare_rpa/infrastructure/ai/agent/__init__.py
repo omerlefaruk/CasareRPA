@@ -7,20 +7,22 @@ from casare_rpa.infrastructure.ai.agent.core import (
     generate_smart_workflow,
 )
 from casare_rpa.infrastructure.ai.agent.exceptions import (
-    WorkflowGenerationError,
-    LLMCallError,
     JSONParseError,
-    ValidationError,
+    LLMCallError,
     MaxRetriesExceededError,
+    ValidationError,
+    WorkflowGenerationError,
+)
+from casare_rpa.infrastructure.ai.agent.prompts import (
+    MULTI_TURN_SYSTEM_PROMPT as _MULTI_TURN_SYSTEM_PROMPT,
+)
+from casare_rpa.infrastructure.ai.agent.prompts import (
+    REFINE_SYSTEM_PROMPT as _REFINE_SYSTEM_PROMPT,
 )
 from casare_rpa.infrastructure.ai.agent.sandbox import HeadlessWorkflowSandbox
 from casare_rpa.infrastructure.ai.agent.types import (
     GenerationAttempt,
     WorkflowGenerationResult,
-)
-from casare_rpa.infrastructure.ai.agent.prompts import (
-    MULTI_TURN_SYSTEM_PROMPT as _MULTI_TURN_SYSTEM_PROMPT,
-    REFINE_SYSTEM_PROMPT as _REFINE_SYSTEM_PROMPT,
 )
 
 __all__ = [

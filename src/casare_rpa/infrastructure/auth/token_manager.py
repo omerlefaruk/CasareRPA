@@ -22,7 +22,7 @@ Usage:
 
 import secrets
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 from uuid import UUID
@@ -31,7 +31,6 @@ import jwt
 from loguru import logger
 
 from casare_rpa.domain.entities.user import User
-
 
 # =============================================================================
 # CONSTANTS
@@ -64,7 +63,7 @@ class TokenType(str, Enum):
 class TokenError(Exception):
     """Base exception for token operations."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
         self.details = details or {}
         super().__init__(message)
@@ -111,12 +110,12 @@ class TokenPayload:
     email: str
     role: str
     token_type: TokenType
-    tenant_id: Optional[str] = None
-    exp: Optional[datetime] = None
-    iat: Optional[datetime] = None
-    jti: Optional[str] = None  # JWT ID for revocation tracking
+    tenant_id: str | None = None
+    exp: datetime | None = None
+    iat: datetime | None = None
+    jti: str | None = None  # JWT ID for revocation tracking
     mfa_verified: bool = True
-    extra: Dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
     @property
     def user_id(self) -> UUID:
@@ -128,7 +127,7 @@ class TokenPayload:
         """Check if token has expired."""
         if self.exp is None:
             return False
-        return datetime.now(timezone.utc) > self.exp
+        return datetime.now(UTC) > self.exp
 
     @property
     def is_access_token(self) -> bool:
@@ -161,7 +160,7 @@ class TokenManager:
     def __init__(
         self,
         secret_key: str,
-        config: Optional[TokenConfig] = None,
+        config: TokenConfig | None = None,
         algorithm: str = JWT_ALGORITHM,
     ) -> None:
         """
@@ -184,7 +183,7 @@ class TokenManager:
         self,
         user: User,
         mfa_verified: bool = True,
-        extra_claims: Optional[Dict[str, Any]] = None,
+        extra_claims: dict[str, Any] | None = None,
     ) -> str:
         """
         Generate an access token for a user.
@@ -197,7 +196,7 @@ class TokenManager:
         Returns:
             JWT access token string
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(minutes=self._config.access_token_minutes)
 
         # Determine token type based on MFA status
@@ -225,7 +224,7 @@ class TokenManager:
     def generate_refresh_token(
         self,
         user: User,
-        extra_claims: Optional[Dict[str, Any]] = None,
+        extra_claims: dict[str, Any] | None = None,
     ) -> str:
         """
         Generate a refresh token for a user.
@@ -237,7 +236,7 @@ class TokenManager:
         Returns:
             JWT refresh token string
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(days=self._config.refresh_token_days)
 
         payload = self._build_payload(
@@ -258,7 +257,7 @@ class TokenManager:
     def validate_token(
         self,
         token: str,
-        expected_type: Optional[TokenType] = None,
+        expected_type: TokenType | None = None,
         verify_expiration: bool = True,
     ) -> TokenPayload:
         """
@@ -308,11 +307,11 @@ class TokenManager:
         # Parse expiration
         exp = None
         if "exp" in payload:
-            exp = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+            exp = datetime.fromtimestamp(payload["exp"], tz=UTC)
 
         iat = None
         if "iat" in payload:
-            iat = datetime.fromtimestamp(payload["iat"], tz=timezone.utc)
+            iat = datetime.fromtimestamp(payload["iat"], tz=UTC)
 
         return TokenPayload(
             sub=payload["sub"],
@@ -387,7 +386,7 @@ class TokenManager:
         except TokenError:
             return False
 
-    def decode_without_verification(self, token: str) -> Dict[str, Any]:
+    def decode_without_verification(self, token: str) -> dict[str, Any]:
         """
         Decode token without verifying signature.
 
@@ -412,8 +411,8 @@ class TokenManager:
         expires: datetime,
         issued_at: datetime,
         mfa_verified: bool,
-        extra_claims: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        extra_claims: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Build JWT payload dictionary."""
         payload = {
             "sub": str(user.id),

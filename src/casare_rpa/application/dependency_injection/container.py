@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import atexit
 import threading
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, Generic, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, cast
 
 from loguru import logger
-
 
 T = TypeVar("T")
 
@@ -33,13 +33,13 @@ class Registration:
     """Represents a registered dependency."""
 
     name: str
-    implementation: Optional[Type[Any]] = None
-    factory: Optional[Callable[..., Any]] = None
+    implementation: type[Any] | None = None
+    factory: Callable[..., Any] | None = None
     lifecycle: Lifecycle = Lifecycle.SINGLETON
-    instance: Optional[Any] = None
-    dependencies: Dict[str, str] = field(default_factory=dict)
+    instance: Any | None = None
+    dependencies: dict[str, str] = field(default_factory=dict)
 
-    def create_instance(self, container: "DIContainer") -> Any:
+    def create_instance(self, container: DIContainer) -> Any:
         """Create an instance of the registered type."""
         kwargs = {}
         for param_name, dep_name in self.dependencies.items():
@@ -60,10 +60,10 @@ class Scope:
     but have their own scoped instances.
     """
 
-    def __init__(self, container: "DIContainer") -> None:
+    def __init__(self, container: DIContainer) -> None:
         """Initialize scope with reference to parent container."""
         self._container = container
-        self._scoped_instances: Dict[str, Any] = {}
+        self._scoped_instances: dict[str, Any] = {}
         self._lock = threading.Lock()
 
     def get_or_create(self, registration: Registration) -> Any:
@@ -103,18 +103,18 @@ class DIContainer:
     - Proper cleanup on shutdown
     """
 
-    _instance: Optional["DIContainer"] = None
+    _instance: DIContainer | None = None
     _instance_lock = threading.Lock()
 
     def __init__(self) -> None:
         """Initialize the container."""
-        self._registrations: Dict[str, Registration] = {}
+        self._registrations: dict[str, Registration] = {}
         self._lock = threading.RLock()  # Reentrant for nested resolves
-        self._current_scope: Optional[Scope] = None
+        self._current_scope: Scope | None = None
         self._disposed = False
 
     @classmethod
-    def get_instance(cls) -> "DIContainer":
+    def get_instance(cls) -> DIContainer:
         """
         Get the singleton container instance.
 
@@ -144,9 +144,9 @@ class DIContainer:
     def register_singleton(
         self,
         name: str,
-        implementation: Optional[Type[T]] = None,
-        factory: Optional[Callable[..., T]] = None,
-        dependencies: Optional[Dict[str, str]] = None,
+        implementation: type[T] | None = None,
+        factory: Callable[..., T] | None = None,
+        dependencies: dict[str, str] | None = None,
     ) -> None:
         """
         Register a singleton dependency.
@@ -168,9 +168,9 @@ class DIContainer:
     def register_scoped(
         self,
         name: str,
-        implementation: Optional[Type[T]] = None,
-        factory: Optional[Callable[..., T]] = None,
-        dependencies: Optional[Dict[str, str]] = None,
+        implementation: type[T] | None = None,
+        factory: Callable[..., T] | None = None,
+        dependencies: dict[str, str] | None = None,
     ) -> None:
         """
         Register a scoped dependency.
@@ -188,9 +188,9 @@ class DIContainer:
     def register_transient(
         self,
         name: str,
-        implementation: Optional[Type[T]] = None,
-        factory: Optional[Callable[..., T]] = None,
-        dependencies: Optional[Dict[str, str]] = None,
+        implementation: type[T] | None = None,
+        factory: Callable[..., T] | None = None,
+        dependencies: dict[str, str] | None = None,
     ) -> None:
         """
         Register a transient dependency.
@@ -222,10 +222,10 @@ class DIContainer:
     def _register(
         self,
         name: str,
-        implementation: Optional[Type[Any]],
-        factory: Optional[Callable[..., Any]],
+        implementation: type[Any] | None,
+        factory: Callable[..., Any] | None,
         lifecycle: Lifecycle,
-        dependencies: Optional[Dict[str, str]],
+        dependencies: dict[str, str] | None,
     ) -> None:
         """Internal registration method."""
         if not implementation and not factory:
@@ -279,7 +279,7 @@ class DIContainer:
             # Transient: create new instance each time
             return registration.create_instance(self)
 
-    def resolve_optional(self, name: str) -> Optional[Any]:
+    def resolve_optional(self, name: str) -> Any | None:
         """
         Resolve a dependency, returning None if not registered.
 
@@ -362,7 +362,7 @@ class TypedContainer(Generic[T]):
         container = DIContainer.get_instance()
         return cast(T, container.resolve(self._name))
 
-    def get_optional(self) -> Optional[T]:
+    def get_optional(self) -> T | None:
         """Get the typed dependency or None."""
         container = DIContainer.get_instance()
-        return cast(Optional[T], container.resolve_optional(self._name))
+        return cast(T | None, container.resolve_optional(self._name))

@@ -3,12 +3,13 @@ Robot management service.
 Handles robot registration, status updates, and availability checks.
 """
 
-import os
 import asyncio
-from typing import List, Optional, Callable
+import os
+from collections.abc import Callable
+from typing import List, Optional
 
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities import Robot, RobotStatus
 from casare_rpa.domain.orchestrator.repositories import RobotRepository
@@ -32,7 +33,7 @@ class RobotManagementService:
         self._use_local = True  # Default to local mode
 
         # Event callbacks
-        self._on_robot_update: Optional[Callable[[Robot], None]] = None
+        self._on_robot_update: Callable[[Robot], None] | None = None
 
     @property
     def is_cloud_mode(self) -> bool:
@@ -62,7 +63,7 @@ class RobotManagementService:
 
     # ==================== ROBOT OPERATIONS ====================
 
-    async def get_robots(self) -> List[Robot]:
+    async def get_robots(self) -> list[Robot]:
         """Get all registered robots."""
         if self._use_local:
             return await self._robot_repository.get_all()
@@ -80,7 +81,7 @@ class RobotManagementService:
                 logger.error(f"Failed to fetch robots: {e}")
                 return []
 
-    async def get_robot(self, robot_id: str) -> Optional[Robot]:
+    async def get_robot(self, robot_id: str) -> Robot | None:
         """Get a specific robot by ID."""
         robots = await self.get_robots()
         for robot in robots:
@@ -88,7 +89,7 @@ class RobotManagementService:
                 return robot
         return None
 
-    async def get_available_robots(self) -> List[Robot]:
+    async def get_available_robots(self) -> list[Robot]:
         """Get robots that can accept new jobs."""
         robots = await self.get_robots()
         return [r for r in robots if r.is_available]

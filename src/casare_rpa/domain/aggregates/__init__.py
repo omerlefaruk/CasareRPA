@@ -40,19 +40,16 @@ Usage:
 """
 
 from casare_rpa.domain.aggregates.workflow import (
-    # Value Objects
-    WorkflowId,
+    Connection,
     NodeIdValue,
     PortReference,
-    Connection,
-    # Entities
-    WorkflowNode,
     # Aggregate Root
     Workflow,
+    # Value Objects
+    WorkflowId,
+    # Entities
+    WorkflowNode,
 )
-
-# Re-export Position from value_objects for convenience
-from casare_rpa.domain.value_objects.position import Position
 
 # Re-export workflow structure events from events module
 from casare_rpa.domain.events.workflow_events import (
@@ -61,6 +58,9 @@ from casare_rpa.domain.events.workflow_events import (
     NodeDisconnected,
     NodeRemoved,
 )
+
+# Re-export Position from value_objects for convenience
+from casare_rpa.domain.value_objects.position import Position
 
 __all__ = [
     # Aggregate Root

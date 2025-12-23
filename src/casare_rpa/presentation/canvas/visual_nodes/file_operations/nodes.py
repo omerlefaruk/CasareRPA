@@ -6,12 +6,12 @@ This file contains standalone (non-super) visual nodes:
 - Image Convert node for quick access from the Tab menu
 """
 
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.graph.node_widgets import (
-    NodeFilePathWidget,
     NodeDirectoryPathWidget,
+    NodeFilePathWidget,
 )
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
 def _replace_widget(node: VisualNode, widget) -> None:

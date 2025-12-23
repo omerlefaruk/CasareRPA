@@ -15,7 +15,7 @@ Much faster than human CAPTCHA solving services (~2-5 seconds vs 15-60 seconds).
 import asyncio
 import base64
 import re
-from typing import Optional, List, Tuple, Any
+from typing import Any, List, Optional, Tuple
 
 import aiohttp
 from loguru import logger
@@ -36,7 +36,7 @@ GOOGLE_GENAI_API_URL = (
 )
 
 
-def _get_default_credential(config: Optional[Any] = None) -> str:
+def _get_default_credential(config: Any | None = None) -> str:
     """Get the default credential (Google OAuth only)."""
     try:
         from casare_rpa.infrastructure.security.credential_store import get_credential_store
@@ -132,9 +132,9 @@ class SolveCaptchaAINode(BrowserBaseNode):
 
         try:
             from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                LLMResourceManager,
                 LLMConfig,
                 LLMProvider,
+                LLMResourceManager,
             )
 
             page = self.get_page(context)
@@ -373,8 +373,8 @@ class SolveCaptchaAINode(BrowserBaseNode):
             return None
 
     async def _analyze_challenge(
-        self, frame, llm_client, model: str, access_token: Optional[str] = None
-    ) -> Tuple[str, List[Tuple[int, int]], Tuple[int, int]]:
+        self, frame, llm_client, model: str, access_token: str | None = None
+    ) -> tuple[str, list[tuple[int, int]], tuple[int, int]]:
         """
         Analyze the CAPTCHA challenge using AI vision.
 
@@ -484,7 +484,7 @@ class SolveCaptchaAINode(BrowserBaseNode):
                     logger.error(f"Failed to parse Google AI response: {result}")
                     raise Exception(f"Failed to parse Google AI response: {e}")
 
-    async def _get_grid_size(self, frame) -> Tuple[int, int]:
+    async def _get_grid_size(self, frame) -> tuple[int, int]:
         """Determine the CAPTCHA grid size (3x3 or 4x4)."""
         try:
             # Count tiles
@@ -508,7 +508,7 @@ class SolveCaptchaAINode(BrowserBaseNode):
         except Exception:
             return (3, 3)
 
-    def _build_analysis_prompt(self, instruction: str, grid_size: Tuple[int, int]) -> str:
+    def _build_analysis_prompt(self, instruction: str, grid_size: tuple[int, int]) -> str:
         """Build the prompt for AI analysis."""
         rows, cols = grid_size
 
@@ -549,8 +549,8 @@ RESPOND WITH ONLY THE COORDINATES, nothing else."""
         return prompt
 
     def _parse_ai_response(
-        self, response: str, instruction: str, grid_size: Tuple[int, int]
-    ) -> Tuple[str, List[Tuple[int, int]]]:
+        self, response: str, instruction: str, grid_size: tuple[int, int]
+    ) -> tuple[str, list[tuple[int, int]]]:
         """Parse AI response to extract grid coordinates."""
         target = "requested object"
         if instruction:
@@ -584,7 +584,7 @@ RESPOND WITH ONLY THE COORDINATES, nothing else."""
         return target, unique_coords
 
     async def _click_images(
-        self, frame, coords: List[Tuple[int, int]], grid_size: Tuple[int, int]
+        self, frame, coords: list[tuple[int, int]], grid_size: tuple[int, int]
     ) -> None:
         """Click the images at the specified grid coordinates."""
         rows, cols = grid_size

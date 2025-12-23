@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from casare_rpa.utils.datetime_helpers import parse_datetime
 
@@ -27,9 +27,9 @@ class Workflow:
     version: int = 1
     status: WorkflowStatus = WorkflowStatus.DRAFT
     created_by: str = ""
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    tags: List[str] = field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    tags: list[str] = field(default_factory=list)
     execution_count: int = 0
     success_count: int = 0
     avg_duration_ms: int = 0
@@ -64,7 +64,7 @@ class Workflow:
         return (self.success_count / self.execution_count) * 100
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Workflow":
+    def from_dict(cls, data: dict[str, Any]) -> "Workflow":
         """Create Workflow from dictionary.
 
         Args:
@@ -98,7 +98,7 @@ class Workflow:
             avg_duration_ms=data.get("avg_duration_ms", 0),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Workflow to dictionary.
 
         Returns:

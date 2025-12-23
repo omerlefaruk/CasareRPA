@@ -35,8 +35,8 @@ Related:
 from casare_rpa.domain.interfaces.execution_context import IExecutionContext
 from casare_rpa.domain.interfaces.node import INode
 from casare_rpa.domain.interfaces.repositories import (
-    IFolderStorage,
     IEnvironmentStorage,
+    IFolderStorage,
     ITemplateStorage,
 )
 from casare_rpa.domain.interfaces.unit_of_work import AbstractUnitOfWork

@@ -14,62 +14,49 @@ NOTE: Structured data (CSV/JSON/ZIP) are available as atomic nodes for clarity.
 """
 
 # Super Nodes (consolidated operations)
-from casare_rpa.presentation.canvas.visual_nodes.file_operations.super_nodes import (
-    VisualFileSystemSuperNode,
-)
-
 # Structured data operations
-from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
-    VisualReadCSVNode,
-    VisualWriteCSVNode,
-    VisualReadJSONFileNode,
-    VisualWriteJSONFileNode,
-    VisualZipFilesNode,
-    VisualUnzipFilesNode,
-)
-
 # XML operations
-from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
-    VisualImageConvertNode,
-    VisualParseXMLNode,
-    VisualReadXMLFileNode,
-    VisualWriteXMLFileNode,
-    VisualXPathQueryNode,
-    VisualGetXMLElementNode,
-    VisualGetXMLAttributeNode,
-    VisualXMLToJsonNode,
-    VisualJsonToXMLNode,
-)
-
 # PDF operations (not yet consolidated)
-from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
-    VisualReadPDFTextNode,
-    VisualGetPDFInfoNode,
-    VisualMergePDFsNode,
-    VisualSplitPDFNode,
-    VisualExtractPDFPagesNode,
-    VisualPDFToImagesNode,
-)
-
 # FTP operations (not yet consolidated)
+# Directory and path operations
 from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualCreateDirectoryNode,
+    VisualExtractPDFPagesNode,
+    VisualFileExistsNode,
     VisualFTPConnectNode,
-    VisualFTPUploadNode,
-    VisualFTPDownloadNode,
-    VisualFTPListNode,
     VisualFTPDeleteNode,
+    VisualFTPDisconnectNode,
+    VisualFTPDownloadNode,
+    VisualFTPGetSizeNode,
+    VisualFTPListNode,
     VisualFTPMakeDirNode,
     VisualFTPRemoveDirNode,
     VisualFTPRenameNode,
-    VisualFTPDisconnectNode,
-    VisualFTPGetSizeNode,
-)
-
-# Directory and path operations
-from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
+    VisualFTPUploadNode,
+    VisualGetPDFInfoNode,
+    VisualGetXMLAttributeNode,
+    VisualGetXMLElementNode,
+    VisualImageConvertNode,
+    VisualJsonToXMLNode,
     VisualListDirectoryNode,
-    VisualFileExistsNode,
-    VisualCreateDirectoryNode,
+    VisualMergePDFsNode,
+    VisualParseXMLNode,
+    VisualPDFToImagesNode,
+    VisualReadCSVNode,
+    VisualReadJSONFileNode,
+    VisualReadPDFTextNode,
+    VisualReadXMLFileNode,
+    VisualSplitPDFNode,
+    VisualUnzipFilesNode,
+    VisualWriteCSVNode,
+    VisualWriteJSONFileNode,
+    VisualWriteXMLFileNode,
+    VisualXMLToJsonNode,
+    VisualXPathQueryNode,
+    VisualZipFilesNode,
+)
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.super_nodes import (
+    VisualFileSystemSuperNode,
 )
 
 __all__ = [

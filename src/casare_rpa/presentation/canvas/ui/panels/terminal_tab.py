@@ -9,9 +9,9 @@ Provides raw stdout/stderr output display during workflow execution with improve
 
 from typing import Optional
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
-from PySide6.QtCore import Signal, Slot
 from loguru import logger
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
@@ -37,7 +37,7 @@ class TerminalTab(QWidget):
 
     output_received = Signal(str, str)  # text, level
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the Terminal tab.
 

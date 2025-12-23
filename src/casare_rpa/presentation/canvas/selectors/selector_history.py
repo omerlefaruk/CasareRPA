@@ -8,13 +8,12 @@ Supports per-project history and global recent selectors.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
-
 
 # Maximum history entries
 MAX_HISTORY_ENTRIES = 50
@@ -45,18 +44,18 @@ class SelectorHistoryEntry:
     project_id: str = ""
     use_count: int = 1
     success_rate: float = 1.0
-    healing_context: Dict[str, Any] = field(default_factory=dict)
+    healing_context: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.timestamp:
             self.timestamp = datetime.now().isoformat()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> SelectorHistoryEntry:
+    def from_dict(cls, data: dict[str, Any]) -> SelectorHistoryEntry:
         """Create from dictionary."""
         return cls(
             selector=data.get("selector", ""),
@@ -90,7 +89,7 @@ class SelectorHistory:
 
     def __init__(
         self,
-        storage_path: Optional[Path] = None,
+        storage_path: Path | None = None,
         max_entries: int = MAX_HISTORY_ENTRIES,
     ) -> None:
         """
@@ -106,7 +105,7 @@ class SelectorHistory:
 
         self._storage_path = storage_path
         self._max_entries = max_entries
-        self._entries: List[SelectorHistoryEntry] = []
+        self._entries: list[SelectorHistoryEntry] = []
         self._loaded = False
 
     def _ensure_loaded(self) -> None:
@@ -121,7 +120,7 @@ class SelectorHistory:
             return
 
         try:
-            with open(self._storage_path, "r", encoding="utf-8") as f:
+            with open(self._storage_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             entries_data = data.get("entries", [])
@@ -159,7 +158,7 @@ class SelectorHistory:
         element_tag: str = "",
         element_id: str = "",
         project_id: str = "",
-        healing_context: Optional[Dict[str, Any]] = None,
+        healing_context: dict[str, Any] | None = None,
     ) -> None:
         """
         Add or update a selector in history.
@@ -215,9 +214,9 @@ class SelectorHistory:
     def get_recent(
         self,
         limit: int = MAX_RECENT_ENTRIES,
-        project_id: Optional[str] = None,
-        selector_type: Optional[str] = None,
-    ) -> List[SelectorHistoryEntry]:
+        project_id: str | None = None,
+        selector_type: str | None = None,
+    ) -> list[SelectorHistoryEntry]:
         """
         Get recent selectors.
 
@@ -244,8 +243,8 @@ class SelectorHistory:
     def get_selectors(
         self,
         limit: int = MAX_RECENT_ENTRIES,
-        project_id: Optional[str] = None,
-    ) -> List[str]:
+        project_id: str | None = None,
+    ) -> list[str]:
         """
         Get recent selector strings only.
 
@@ -324,7 +323,7 @@ class SelectorHistory:
 
         return False
 
-    def clear(self, project_id: Optional[str] = None) -> int:
+    def clear(self, project_id: str | None = None) -> int:
         """
         Clear history.
 
@@ -353,7 +352,7 @@ class SelectorHistory:
         self,
         query: str,
         limit: int = 10,
-    ) -> List[SelectorHistoryEntry]:
+    ) -> list[SelectorHistoryEntry]:
         """
         Search history for matching selectors.
 
@@ -383,7 +382,7 @@ class SelectorHistory:
 
 
 # Global singleton instance
-_history_instance: Optional[SelectorHistory] = None
+_history_instance: SelectorHistory | None = None
 
 
 def get_selector_history() -> SelectorHistory:

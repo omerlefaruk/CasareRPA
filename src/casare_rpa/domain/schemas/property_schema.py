@@ -8,20 +8,20 @@ Note: Use the @properties decorator from casare_rpa.domain.decorators
 to apply PropertyDef definitions to node classes.
 """
 
-from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Literal, Optional, Type, Tuple
 import logging
 import re
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Literal, Optional, Tuple, Type
 
 logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.schemas.property_types import PropertyType
 
-
 # PERFORMANCE: Module-level type validators to avoid rebuilding on every call
 # Previously rebuilt with 18 lambdas on every _validate_type() invocation
-TYPE_VALIDATORS: Dict[PropertyType, Callable[[Any], bool]] = {
+TYPE_VALIDATORS: dict[PropertyType, Callable[[Any], bool]] = {
     PropertyType.STRING: lambda v: isinstance(v, str),
     PropertyType.TEXT: lambda v: isinstance(v, str),
     PropertyType.INTEGER: lambda v: isinstance(v, int) and not isinstance(v, bool),
@@ -63,13 +63,13 @@ class PropertyDef:
     default: Any = None
     """Default value for the property."""
 
-    label: Optional[str] = None
+    label: str | None = None
     """Display label in UI (auto-generated from name if None)."""
 
     placeholder: str = ""
     """Placeholder text for input widgets."""
 
-    choices: Optional[List[str]] = None
+    choices: list[str] | None = None
     """Available choices for CHOICE/MULTI_CHOICE types."""
 
     tab: str = "properties"
@@ -84,13 +84,13 @@ class PropertyDef:
     required: bool = False
     """Whether property must have a value (not None/empty)."""
 
-    min_value: Optional[float] = None
+    min_value: float | None = None
     """Minimum value for numeric types."""
 
-    max_value: Optional[float] = None
+    max_value: float | None = None
     """Maximum value for numeric types."""
 
-    widget_class: Optional[Type] = None
+    widget_class: type | None = None
     """Custom widget class for CUSTOM type or special rendering."""
 
     essential: bool = False
@@ -103,31 +103,31 @@ class PropertyDef:
     order: int = 0
     """Sort order for property display (lower = first)."""
 
-    display_when: Optional[Dict[str, Any]] = None
+    display_when: dict[str, Any] | None = None
     """Conditional display: show only when other properties match these values."""
 
-    hidden_when: Optional[Dict[str, Any]] = None
+    hidden_when: dict[str, Any] | None = None
     """Conditional hiding: hide when other properties match these values."""
 
-    dynamic_choices: Optional[Callable[[Dict[str, Any]], List[str]]] = None
+    dynamic_choices: Callable[[dict[str, Any]], list[str]] | None = None
     """Callable that returns choices based on current config state."""
 
-    dynamic_default: Optional[Callable[[Dict[str, Any]], Any]] = None
+    dynamic_default: Callable[[dict[str, Any]], Any] | None = None
     """Callable that returns default value based on current config state."""
 
-    group: Optional[str] = None
+    group: str | None = None
     """Group name for organizing related properties together."""
 
     group_collapsed: bool = True
     """Whether the group starts collapsed in UI."""
 
-    pattern: Optional[str] = None
+    pattern: str | None = None
     """Regex pattern for STRING validation."""
 
     supports_expressions: bool = True
     """Whether this property supports expression syntax (e.g., {{variable}})."""
 
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     """Additional metadata attributes for the property."""
 
     def __init__(
@@ -135,26 +135,26 @@ class PropertyDef:
         name: str,
         type: PropertyType,
         default: Any = None,
-        label: Optional[str] = None,
+        label: str | None = None,
         placeholder: str = "",
-        choices: Optional[List[str]] = None,
+        choices: list[str] | None = None,
         tab: str = "properties",
         readonly: bool = False,
         tooltip: str = "",
         required: bool = False,
-        min_value: Optional[float] = None,
-        max_value: Optional[float] = None,
-        widget_class: Optional[Type] = None,
+        min_value: float | None = None,
+        max_value: float | None = None,
+        widget_class: type | None = None,
         essential: bool = False,
         visibility: Literal["essential", "normal", "advanced", "internal"] = "normal",
         order: int = 0,
-        display_when: Optional[Dict[str, Any]] = None,
-        hidden_when: Optional[Dict[str, Any]] = None,
-        dynamic_choices: Optional[Callable[[Dict[str, Any]], List[str]]] = None,
-        dynamic_default: Optional[Callable[[Dict[str, Any]], Any]] = None,
-        group: Optional[str] = None,
+        display_when: dict[str, Any] | None = None,
+        hidden_when: dict[str, Any] | None = None,
+        dynamic_choices: Callable[[dict[str, Any]], list[str]] | None = None,
+        dynamic_default: Callable[[dict[str, Any]], Any] | None = None,
+        group: str | None = None,
         group_collapsed: bool = True,
-        pattern: Optional[str] = None,
+        pattern: str | None = None,
         supports_expressions: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -211,10 +211,10 @@ class NodeSchema:
     Attached to node classes via @properties decorator.
     """
 
-    properties: List[PropertyDef] = field(default_factory=list)
+    properties: list[PropertyDef] = field(default_factory=list)
     """List of property definitions."""
 
-    def get_default_config(self) -> Dict[str, Any]:
+    def get_default_config(self) -> dict[str, Any]:
         """
         Generate default configuration dictionary from schema.
 
@@ -223,7 +223,7 @@ class NodeSchema:
         """
         return {prop.name: prop.default for prop in self.properties}
 
-    def validate_config(self, config: Dict[str, Any]) -> Tuple[bool, str]:
+    def validate_config(self, config: dict[str, Any]) -> tuple[bool, str]:
         """
         Validate configuration against schema.
 
@@ -361,7 +361,7 @@ class NodeSchema:
 
         return value
 
-    def get_property(self, name: str) -> Optional[PropertyDef]:
+    def get_property(self, name: str) -> PropertyDef | None:
         """
         Get property definition by name.
 
@@ -376,7 +376,7 @@ class NodeSchema:
                 return prop
         return None
 
-    def get_essential_properties(self) -> List[str]:
+    def get_essential_properties(self) -> list[str]:
         """
         Get list of essential property names.
 
@@ -387,7 +387,7 @@ class NodeSchema:
         """
         return [prop.name for prop in self.properties if prop.essential]
 
-    def get_collapsible_properties(self) -> List[str]:
+    def get_collapsible_properties(self) -> list[str]:
         """
         Get list of collapsible (non-essential) property names.
 
@@ -398,7 +398,7 @@ class NodeSchema:
         """
         return [prop.name for prop in self.properties if not prop.essential]
 
-    def should_display(self, prop_name: str, current_config: Dict[str, Any]) -> bool:
+    def should_display(self, prop_name: str, current_config: dict[str, Any]) -> bool:
         """
         Check if property should be displayed based on conditions.
 
@@ -444,7 +444,7 @@ class NodeSchema:
 
         return True
 
-    def get_sorted_properties(self) -> List[PropertyDef]:
+    def get_sorted_properties(self) -> list[PropertyDef]:
         """
         Get properties sorted by order field.
 
@@ -453,7 +453,7 @@ class NodeSchema:
         """
         return sorted(self.properties, key=lambda p: p.order)
 
-    def get_properties_by_visibility(self, visibility: str) -> List[PropertyDef]:
+    def get_properties_by_visibility(self, visibility: str) -> list[PropertyDef]:
         """
         Get properties filtered by visibility level.
 
@@ -465,7 +465,7 @@ class NodeSchema:
         """
         return [p for p in self.properties if p.visibility == visibility]
 
-    def get_properties_by_group(self) -> Dict[Optional[str], List[PropertyDef]]:
+    def get_properties_by_group(self) -> dict[str | None, list[PropertyDef]]:
         """
         Group properties by their group field.
 
@@ -474,14 +474,14 @@ class NodeSchema:
         Returns:
             Dict mapping group names to lists of PropertyDef
         """
-        groups: Dict[Optional[str], List[PropertyDef]] = defaultdict(list)
+        groups: dict[str | None, list[PropertyDef]] = defaultdict(list)
         for prop in self.get_sorted_properties():
             groups[prop.group].append(prop)
         return dict(groups)
 
     def get_dynamic_choices(
-        self, prop_name: str, current_config: Dict[str, Any]
-    ) -> Optional[List[str]]:
+        self, prop_name: str, current_config: dict[str, Any]
+    ) -> list[str] | None:
         """
         Get dynamic choices for a property based on current config.
 
@@ -502,7 +502,7 @@ class NodeSchema:
             logger.warning(f"Error getting dynamic choices for {prop_name}: {e}")
             return prop.choices  # Fall back to static choices
 
-    def get_dynamic_default(self, prop_name: str, current_config: Dict[str, Any]) -> Any:
+    def get_dynamic_default(self, prop_name: str, current_config: dict[str, Any]) -> Any:
         """
         Get dynamic default value for a property based on current config.
 

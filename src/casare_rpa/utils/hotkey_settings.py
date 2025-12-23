@@ -5,16 +5,16 @@ This module handles loading and saving custom keyboard shortcuts to a JSON file.
 Uses orjson for fast serialization.
 """
 
-import orjson
 from pathlib import Path
 from typing import Dict, List, Optional
+
+import orjson
 from loguru import logger
 
 from casare_rpa.config import HOTKEYS_FILE
 
-
 # Default hotkeys configuration
-DEFAULT_HOTKEYS: Dict[str, List[str]] = {
+DEFAULT_HOTKEYS: dict[str, list[str]] = {
     "new": ["Ctrl+N"],
     "open": ["Ctrl+O"],
     "save": ["Ctrl+S"],
@@ -45,7 +45,7 @@ DEFAULT_HOTKEYS: Dict[str, List[str]] = {
 class HotkeySettings:
     """Manager for hotkey settings with persistent storage."""
 
-    def __init__(self, settings_file: Optional[Path] = None):
+    def __init__(self, settings_file: Path | None = None):
         """
         Initialize hotkey settings manager.
 
@@ -53,7 +53,7 @@ class HotkeySettings:
             settings_file: Path to settings file (defaults to HOTKEYS_FILE)
         """
         self._settings_file = settings_file or HOTKEYS_FILE
-        self._hotkeys: Dict[str, List[str]] = {}
+        self._hotkeys: dict[str, list[str]] = {}
         self.load()
 
     def load(self) -> None:
@@ -80,7 +80,7 @@ class HotkeySettings:
         except Exception as e:
             logger.error(f"Failed to save hotkeys: {e}")
 
-    def get_shortcuts(self, action_name: str) -> List[str]:
+    def get_shortcuts(self, action_name: str) -> list[str]:
         """
         Get shortcuts for an action.
 
@@ -92,7 +92,7 @@ class HotkeySettings:
         """
         return self._hotkeys.get(action_name, [])
 
-    def set_shortcuts(self, action_name: str, shortcuts: List[str]) -> None:
+    def set_shortcuts(self, action_name: str, shortcuts: list[str]) -> None:
         """
         Set shortcuts for an action.
 
@@ -111,7 +111,7 @@ class HotkeySettings:
         self._hotkeys = DEFAULT_HOTKEYS.copy()
         logger.info("Reset hotkeys to defaults")
 
-    def get_all_hotkeys(self) -> Dict[str, List[str]]:
+    def get_all_hotkeys(self) -> dict[str, list[str]]:
         """Get all hotkeys."""
         return self._hotkeys.copy()
 

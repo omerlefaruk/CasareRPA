@@ -5,36 +5,38 @@ Dockable container with tabs for Debug, Process Mining, Robot Picker, and Analyt
 Provides a unified right-side panel for advanced features.
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QTabWidget,
-    QSizePolicy,
     QScrollArea,
+    QSizePolicy,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QSize
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
+    from ...controllers.robot_controller import RobotController
+    from ...debugger.debug_controller import DebugController
     from ..debug_panel import DebugPanel
+    from .analytics_panel import AnalyticsPanel
     from .process_mining_panel import ProcessMiningPanel
     from .robot_picker_panel import RobotPickerPanel
-    from .analytics_panel import AnalyticsPanel
-    from ...debugger.debug_controller import DebugController
-    from ...controllers.robot_controller import RobotController
 
 try:
-    from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
-        ProfilingTreeWidget,
+    from casare_rpa.domain.events import (
+        EventType as DomainEventType,
     )
     from casare_rpa.domain.events import (
         get_event_bus,
-        EventType as DomainEventType,
+    )
+    from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
+        ProfilingTreeWidget,
     )
 
     HAS_PROFILING = True
@@ -77,7 +79,7 @@ class SidePanelDock(QDockWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         debug_controller: Optional["DebugController"] = None,
         robot_controller: Optional["RobotController"] = None,
     ) -> None:
@@ -95,11 +97,11 @@ class SidePanelDock(QDockWidget):
         self._debug_controller = debug_controller
         self._robot_controller = robot_controller
 
-        self._debug_tab: Optional["DebugPanel"] = None
-        self._process_mining_tab: Optional["ProcessMiningPanel"] = None
-        self._robot_picker_tab: Optional["RobotPickerPanel"] = None
-        self._analytics_tab: Optional["AnalyticsPanel"] = None
-        self._profiling_tab: Optional["ProfilingTreeWidget"] = None
+        self._debug_tab: DebugPanel | None = None
+        self._process_mining_tab: ProcessMiningPanel | None = None
+        self._robot_picker_tab: RobotPickerPanel | None = None
+        self._analytics_tab: AnalyticsPanel | None = None
+        self._profiling_tab: ProfilingTreeWidget | None = None
 
         self._setup_dock()
         self._setup_ui()
@@ -160,9 +162,9 @@ class SidePanelDock(QDockWidget):
     def _create_tabs(self) -> None:
         """Create all tab widgets with scroll area wrappers."""
         from ..debug_panel import DebugPanel
+        from .analytics_panel import AnalyticsPanel
         from .process_mining_panel import ProcessMiningPanel
         from .robot_picker_panel import RobotPickerPanel
-        from .analytics_panel import AnalyticsPanel
 
         # Debug tab - create dock and extract widget
         self._debug_dock = DebugPanel(None, self._debug_controller)

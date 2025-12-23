@@ -12,11 +12,11 @@ Performance benefits:
 - Less texture memory fragmentation
 """
 
-from typing import Dict, Tuple, Optional
-from PySide6.QtGui import QPixmap, QPainter
-from PySide6.QtCore import Qt, QRect
+from typing import Dict, Optional, Tuple
 
 from loguru import logger
+from PySide6.QtCore import QRect, Qt
+from PySide6.QtGui import QPainter, QPixmap
 
 
 class IconTextureAtlas:
@@ -46,8 +46,8 @@ class IconTextureAtlas:
     def __new__(cls) -> "IconTextureAtlas":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._atlas: Optional[QPixmap] = None
-            cls._instance._icon_positions: Dict[str, Tuple[int, int]] = {}
+            cls._instance._atlas: QPixmap | None = None
+            cls._instance._icon_positions: dict[str, tuple[int, int]] = {}
             cls._instance._next_slot = 0
             cls._instance._initialized = False
         return cls._instance
@@ -66,7 +66,7 @@ class IconTextureAtlas:
         self._initialized = True
         logger.debug("Icon texture atlas initialized")
 
-    def add_icon(self, identifier: str, pixmap: QPixmap) -> Tuple[int, int]:
+    def add_icon(self, identifier: str, pixmap: QPixmap) -> tuple[int, int]:
         """
         Add icon to atlas.
 
@@ -117,7 +117,7 @@ class IconTextureAtlas:
 
         return (x, y)
 
-    def get_atlas(self) -> Optional[QPixmap]:
+    def get_atlas(self) -> QPixmap | None:
         """
         Get the combined atlas pixmap.
 
@@ -175,7 +175,7 @@ class IconTextureAtlas:
         painter.drawPixmap(target_rect, self._atlas, source_rect)
         return True
 
-    def get_icon_pixmap(self, identifier: str) -> Optional[QPixmap]:
+    def get_icon_pixmap(self, identifier: str) -> QPixmap | None:
         """
         Get a copy of an icon as a separate pixmap.
 

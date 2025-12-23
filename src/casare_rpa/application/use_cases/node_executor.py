@@ -39,34 +39,34 @@ Related:
 import asyncio
 import re
 import time
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.events import (
-    EventBus,
-    NodeStarted,
-    NodeCompleted,
-    NodeFailed,
-)
-from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-
-# Interface for type hints (dependency inversion)
-from casare_rpa.domain.interfaces import IExecutionContext, INode
-from casare_rpa.utils.performance.performance_metrics import get_metrics
-
 # Result pattern for explicit error handling
 from casare_rpa.domain.errors import (
-    Result,
-    Ok,
     Err,
+    ErrorContext,
     NodeExecutionError,
     NodeTimeoutError,
     NodeValidationError,
-    ErrorContext,
+    Ok,
+    Result,
 )
-from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+from casare_rpa.domain.events import (
+    EventBus,
+    NodeCompleted,
+    NodeFailed,
+    NodeStarted,
+)
+
+# Interface for type hints (dependency inversion)
+from casare_rpa.domain.interfaces import IExecutionContext, INode
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
+from casare_rpa.infrastructure.cache.manager import TieredCacheManager
+from casare_rpa.utils.performance.performance_metrics import get_metrics
 
 
 class NodeExecutionResult:
@@ -75,7 +75,7 @@ class NodeExecutionResult:
     def __init__(
         self,
         success: bool,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
         execution_time: float = 0.0,
         error_captured: bool = False,
     ) -> None:
@@ -109,10 +109,10 @@ class NodeExecutor:
     def __init__(
         self,
         context: IExecutionContext,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
         node_timeout: float = 120.0,
-        progress_calculator: Optional[Callable[[], float]] = None,
-        cache_manager: Optional[TieredCacheManager] = None,
+        progress_calculator: Callable[[], float] | None = None,
+        cache_manager: TieredCacheManager | None = None,
     ) -> None:
         """
         Initialize node executor.
@@ -152,7 +152,7 @@ class NodeExecutor:
         node: INode,
         node_type: str,
         execution_time: float,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
     ) -> None:
         """Publish NodeCompleted event to the event bus."""
         if self.event_bus:
@@ -369,7 +369,7 @@ class NodeExecutor:
             execution_time=0.0,
         )
 
-    def _validate_node(self, node: INode, start_time: float) -> Optional[NodeExecutionResult]:
+    def _validate_node(self, node: INode, start_time: float) -> NodeExecutionResult | None:
         """
         Validate node before execution.
 
@@ -406,7 +406,7 @@ class NodeExecutor:
 
         return None  # Validation passed
 
-    async def _execute_with_timeout(self, node: INode) -> Dict[str, Any]:
+    async def _execute_with_timeout(self, node: INode) -> dict[str, Any]:
         """
         Execute node with timeout.
 
@@ -452,11 +452,11 @@ class NodeExecutor:
             # EDGE CASE: Some nodes may return None instead of proper dict
             # Treat as failure to enforce the contract
             return result or {"success": False, "error": "No result returned"}
-        except asyncio.TimeoutError:
-            raise asyncio.TimeoutError(f"Node {node.node_id} timed out after {self.node_timeout}s")
+        except TimeoutError:
+            raise TimeoutError(f"Node {node.node_id} timed out after {self.node_timeout}s")
 
     def _process_result(
-        self, node: INode, result: Optional[Dict[str, Any]], execution_time: float
+        self, node: INode, result: dict[str, Any] | None, execution_time: float
     ) -> NodeExecutionResult:
         """
         Process execution result and update node status.
@@ -600,7 +600,7 @@ class NodeExecutor:
         try:
             result = await self.execute(node)
             return Ok(result)
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             # Timeout is a distinct error type for retry decisions
             return Err(
                 NodeTimeoutError(
@@ -664,7 +664,7 @@ class NodeExecutor:
 
     async def execute_with_timeout_safe(
         self, node: INode
-    ) -> Result[Dict[str, Any], NodeExecutionError]:
+    ) -> Result[dict[str, Any], NodeExecutionError]:
         """
         Execute node with timeout and explicit error handling.
 
@@ -709,7 +709,7 @@ class NodeExecutor:
                     )
                 )
             return Ok(result)
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             return Err(
                 NodeTimeoutError(
                     message=f"Node timed out after {self.node_timeout}s",
@@ -762,10 +762,10 @@ class NodeExecutorWithTryCatch(NodeExecutor):
     def __init__(
         self,
         context: IExecutionContext,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
         node_timeout: float = 120.0,
-        progress_calculator: Optional[Callable[[], float]] = None,
-        error_capturer: Optional[Callable[..., bool]] = None,
+        progress_calculator: Callable[[], float] | None = None,
+        error_capturer: Callable[..., bool] | None = None,
     ) -> None:
         """
         Initialize node executor with try-catch support.

@@ -53,7 +53,7 @@ class DataMasker:
     """
 
     # Sensitive key names (lowercase for comparison)
-    SENSITIVE_KEYS: FrozenSet[str] = frozenset(
+    SENSITIVE_KEYS: frozenset[str] = frozenset(
         {
             "password",
             "passwd",
@@ -126,7 +126,7 @@ class DataMasker:
 
     # Patterns for detecting sensitive values in strings
     # Each tuple: (compiled_regex, group_index_to_mask)
-    SENSITIVE_PATTERNS: List[Tuple[re.Pattern, int]] = [
+    SENSITIVE_PATTERNS: list[tuple[re.Pattern, int]] = [
         # Password patterns
         (
             re.compile(r'password["\']?\s*[:=]\s*["\']?([^"\'}\s,\n]+)', re.IGNORECASE),
@@ -210,7 +210,7 @@ class DataMasker:
         ),
     ]
 
-    def __init__(self, config: Optional[MaskingConfig] = None) -> None:
+    def __init__(self, config: MaskingConfig | None = None) -> None:
         """
         Initialize the data masker.
 
@@ -290,9 +290,9 @@ class DataMasker:
 
     def mask_dict(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         deep_copy: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Mask sensitive values in a dictionary.
 
@@ -408,7 +408,7 @@ class DataMasker:
             logger.warning(f"Error masking object for logging: {e}")
             return "<masked due to error>"
 
-    def get_sensitive_keys_in_dict(self, data: Dict[str, Any]) -> Set[str]:
+    def get_sensitive_keys_in_dict(self, data: dict[str, Any]) -> set[str]:
         """
         Find all sensitive keys in a dictionary.
 
@@ -420,9 +420,9 @@ class DataMasker:
         Returns:
             Set of sensitive key names found
         """
-        sensitive_found: Set[str] = set()
+        sensitive_found: set[str] = set()
 
-        def scan(d: Dict[str, Any], prefix: str = "") -> None:
+        def scan(d: dict[str, Any], prefix: str = "") -> None:
             for key, value in d.items():
                 full_key = f"{prefix}.{key}" if prefix else key
                 if self.is_sensitive_key(key):
@@ -455,7 +455,7 @@ class MaskedLogger:
 
     def __init__(
         self,
-        masker: Optional[DataMasker] = None,
+        masker: DataMasker | None = None,
     ) -> None:
         """
         Initialize masked logger.
@@ -465,7 +465,7 @@ class MaskedLogger:
         """
         self._masker = masker or DataMasker()
 
-    def _mask_args(self, message: str, **kwargs: Any) -> Tuple[str, Dict[str, Any]]:
+    def _mask_args(self, message: str, **kwargs: Any) -> tuple[str, dict[str, Any]]:
         """Mask message and keyword arguments."""
         masked_msg = self._masker.mask_string(str(message))
         masked_kwargs = self._masker.mask_dict(dict(kwargs))
@@ -513,7 +513,7 @@ class MaskedLogger:
 
 
 # Global default masker instance
-_default_masker: Optional[DataMasker] = None
+_default_masker: DataMasker | None = None
 
 
 def get_masker() -> DataMasker:
@@ -529,7 +529,7 @@ def get_masker() -> DataMasker:
     return _default_masker
 
 
-def mask_sensitive_data(data: Union[str, Dict, Any]) -> Union[str, Dict, Any]:
+def mask_sensitive_data(data: str | dict | Any) -> str | dict | Any:
     """
     Convenience function to mask sensitive data.
 

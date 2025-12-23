@@ -7,16 +7,15 @@ Default error handler for node execution errors.
 import random
 from typing import List, Optional
 
-from casare_rpa.domain.value_objects.types import ErrorCode
-
 from casare_rpa.domain.errors.context import ErrorContext, RecoveryDecision
+from casare_rpa.domain.errors.handlers.base import ErrorHandler
 from casare_rpa.domain.errors.types import (
     ErrorCategory,
     ErrorClassification,
     ErrorSeverity,
     RecoveryAction,
 )
-from casare_rpa.domain.errors.handlers.base import ErrorHandler
+from casare_rpa.domain.value_objects.types import ErrorCode
 
 
 class NodeErrorHandler(ErrorHandler):
@@ -29,7 +28,7 @@ class NodeErrorHandler(ErrorHandler):
 
     def __init__(
         self,
-        node_types: Optional[List[str]] = None,
+        node_types: list[str] | None = None,
         default_max_retries: int = 3,
         retry_on_transient: bool = True,
     ) -> None:

@@ -9,12 +9,12 @@ import asyncio
 import threading
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
 from functools import wraps
+from typing import Any, Dict, Optional, TypeVar, Union
 
 from loguru import logger
-
 
 T = TypeVar("T")
 
@@ -57,7 +57,7 @@ class RateLimitStats:
     requests_rejected: int = 0
     """Number of requests rejected due to rate limit exceeded."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_requests": self.total_requests,
@@ -88,7 +88,7 @@ class RateLimiter:
             # ... make the actual request
     """
 
-    def __init__(self, config: Optional[RateLimitConfig] = None):
+    def __init__(self, config: RateLimitConfig | None = None):
         """
         Initialize rate limiter.
 
@@ -364,7 +364,7 @@ def rate_limited(requests_per_second: float = 10.0, burst_size: int = 1) -> Call
 # Use OrderedDict for LRU-like eviction when max size reached
 from collections import OrderedDict
 
-_global_limiters: OrderedDict[str, Union[RateLimiter, SlidingWindowRateLimiter]] = OrderedDict()
+_global_limiters: OrderedDict[str, RateLimiter | SlidingWindowRateLimiter] = OrderedDict()
 _MAX_GLOBAL_LIMITERS = 100  # Prevent unbounded growth
 
 

@@ -27,20 +27,20 @@ class ExecutionLogDTO:
     workflow_id: str
     workflow_name: str
     started_at: datetime
-    completed_at: Optional[datetime]
+    completed_at: datetime | None
     status: str  # "running", "completed", "failed", "cancelled"
     nodes_executed: int
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
 class ExecutionFilter:
     """Filter criteria for execution queries."""
 
-    workflow_id: Optional[str] = None
-    status: Optional[str] = None
-    started_after: Optional[datetime] = None
-    started_before: Optional[datetime] = None
+    workflow_id: str | None = None
+    status: str | None = None
+    started_after: datetime | None = None
+    started_before: datetime | None = None
     limit: int = 20
     offset: int = 0
 
@@ -70,7 +70,7 @@ class ExecutionQueryService:
     async def get_recent_executions(
         self,
         limit: int = 20,
-    ) -> List[ExecutionLogDTO]:
+    ) -> list[ExecutionLogDTO]:
         """
         Get recent workflow executions.
 
@@ -90,7 +90,7 @@ class ExecutionQueryService:
         self,
         workflow_id: str,
         limit: int = 10,
-    ) -> List[ExecutionLogDTO]:
+    ) -> list[ExecutionLogDTO]:
         """
         Get execution history for a specific workflow.
 
@@ -107,7 +107,7 @@ class ExecutionQueryService:
     async def get_execution_by_id(
         self,
         execution_id: str,
-    ) -> Optional[ExecutionLogDTO]:
+    ) -> ExecutionLogDTO | None:
         """
         Get a specific execution by ID.
 
@@ -133,7 +133,7 @@ class ExecutionQueryService:
         self,
         status: str,
         limit: int = 20,
-    ) -> List[ExecutionLogDTO]:
+    ) -> list[ExecutionLogDTO]:
         """
         Get executions filtered by status.
 
@@ -147,7 +147,7 @@ class ExecutionQueryService:
         filter = ExecutionFilter(status=status, limit=limit)
         return await self._query_executions(filter)
 
-    async def get_running_executions(self) -> List[ExecutionLogDTO]:
+    async def get_running_executions(self) -> list[ExecutionLogDTO]:
         """
         Get all currently running executions.
 
@@ -159,7 +159,7 @@ class ExecutionQueryService:
     async def _query_executions(
         self,
         filter: ExecutionFilter,
-    ) -> List[ExecutionLogDTO]:
+    ) -> list[ExecutionLogDTO]:
         """
         Query executions with filter criteria.
 
@@ -169,7 +169,7 @@ class ExecutionQueryService:
         Returns:
             List of matching execution DTOs
         """
-        result: List[ExecutionLogDTO] = []
+        result: list[ExecutionLogDTO] = []
 
         try:
             if not self._storage_path.exists():
@@ -206,14 +206,14 @@ class ExecutionQueryService:
     async def _read_execution_log(
         self,
         execution_file: Path,
-    ) -> Optional[ExecutionLogDTO]:
+    ) -> ExecutionLogDTO | None:
         """
         Read execution log from file.
 
         Extracts only the fields needed for display.
         """
         try:
-            with open(execution_file, "r", encoding="utf-8") as f:
+            with open(execution_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Extract required fields
@@ -262,14 +262,14 @@ class ExecutionQueryService:
     async def _find_execution_by_id(
         self,
         execution_id: str,
-    ) -> Optional[ExecutionLogDTO]:
+    ) -> ExecutionLogDTO | None:
         """Find execution by searching ID in file contents."""
         try:
             execution_files = list(self._storage_path.glob("*.json"))
 
             for execution_file in execution_files:
                 try:
-                    with open(execution_file, "r", encoding="utf-8") as f:
+                    with open(execution_file, encoding="utf-8") as f:
                         data = json.load(f)
 
                     file_id = data.get("execution_id") or data.get("id")
@@ -314,8 +314,8 @@ class ExecutionQueryService:
 
     def _parse_datetime(
         self,
-        value: Optional[str],
-    ) -> Optional[datetime]:
+        value: str | None,
+    ) -> datetime | None:
         """Parse datetime from string."""
         if not value:
             return None

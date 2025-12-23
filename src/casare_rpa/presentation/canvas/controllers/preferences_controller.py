@@ -9,12 +9,13 @@ Handles application preferences and settings:
 """
 
 from typing import TYPE_CHECKING, Any, Dict
-from PySide6.QtCore import Signal
+
 from loguru import logger
+from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
 if TYPE_CHECKING:
@@ -281,7 +282,7 @@ class PreferencesController(BaseController):
             logger.error(f"Failed to update hotkey: {e}")
             return False
 
-    def get_hotkeys(self) -> Dict[str, str]:
+    def get_hotkeys(self) -> dict[str, str]:
         """
         Get all hotkey bindings.
 

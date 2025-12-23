@@ -37,10 +37,11 @@ Usage:
     bus.unsubscribe(EventType.WORKFLOW_SAVED, on_workflow_saved)
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, Any, Set
-from collections import defaultdict, deque
-from threading import RLock
 import time
+from collections import defaultdict, deque
+from collections.abc import Callable
+from threading import RLock
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
 
@@ -49,7 +50,7 @@ from loguru import logger
 BATCH_INTERVAL_MS = 16  # ~60fps, batches events within this window
 
 from casare_rpa.presentation.canvas.events.event import Event, EventFilter
-from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
+from casare_rpa.presentation.canvas.events.event_types import EventCategory, EventType
 
 # Slow handler threshold in seconds (100ms)
 SLOW_HANDLER_THRESHOLD_SEC = 0.1
@@ -127,17 +128,17 @@ class EventBus:
 
         # Filtered subscription cache: (EventType, source) -> List[EventHandler]
         # Cache invalidated on subscribe/unsubscribe for performance optimization
-        self._filtered_cache: Dict[Tuple[EventType, str], List[EventHandler]] = {}
+        self._filtered_cache: dict[tuple[EventType, str], list[EventHandler]] = {}
 
         # Thread safety
         self._lock = RLock()
 
         # PERFORMANCE: Event batching for rapid events
         # Reduces UI updates during fast workflow execution
-        self._batched_events: Dict[EventType, Event] = {}
+        self._batched_events: dict[EventType, Event] = {}
         self._batch_timer: Any = None  # QTimer for deferred flush
         self._last_batch_flush = time.perf_counter()
-        self._batchable_types: Set[EventType] = {
+        self._batchable_types: set[EventType] = {
             EventType.NODE_EXECUTION_COMPLETED,
             EventType.NODE_EXECUTION_STARTED,
             EventType.VARIABLE_SET,
@@ -421,7 +422,7 @@ class EventBus:
                 self._metrics["cache_hits"] += 1
             else:
                 # Build and cache handler list
-                handlers: List[EventHandler] = []
+                handlers: list[EventHandler] = []
 
                 # 1. Type-specific subscribers
                 if event_type in self._subscribers:
@@ -486,10 +487,10 @@ class EventBus:
 
     def get_history(
         self,
-        event_type: Optional[EventType] = None,
-        category: Optional[EventCategory] = None,
-        source: Optional[str] = None,
-        limit: Optional[int] = None,
+        event_type: EventType | None = None,
+        category: EventCategory | None = None,
+        source: str | None = None,
+        limit: int | None = None,
     ) -> list[Event]:
         """
         Get event history with optional filtering.

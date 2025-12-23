@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+
 from dotenv import load_dotenv
 
 # Load environment BEFORE importing casare_rpa
@@ -9,8 +10,8 @@ load_dotenv()
 
 
 async def test():
-    from casare_rpa.infrastructure.ai import SmartWorkflowAgent
     from casare_rpa.domain.ai import SIMPLE_FAST_CONFIG
+    from casare_rpa.infrastructure.ai import SmartWorkflowAgent
 
     print("Creating agent...")
     agent = SmartWorkflowAgent(config=SIMPLE_FAST_CONFIG)

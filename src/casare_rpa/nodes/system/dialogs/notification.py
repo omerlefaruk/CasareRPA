@@ -4,17 +4,17 @@ Notification and alert nodes.
 Nodes for displaying tooltips, notifications, snackbars, and playing sounds.
 """
 
-import sys
 import asyncio
+import sys
 from typing import Tuple
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -196,8 +196,8 @@ class TooltipNode(BaseNode):
 
     def _format_message_with_variables(self, original: str, context: "ExecutionContext") -> str:
         """Format message with variable values highlighted in bold blue."""
-        import re
         import html
+        import re
 
         pattern = re.compile(r"\{\{(\w+)\}\}")
         result = []
@@ -231,9 +231,9 @@ class TooltipNode(BaseNode):
         fade_animation: bool,
     ) -> None:
         """Show a tooltip popup."""
-        from PySide6.QtWidgets import QApplication, QLabel, QWidget, QHBoxLayout
-        from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
+        from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
         from PySide6.QtGui import QCursor, QFont
+        from PySide6.QtWidgets import QApplication, QHBoxLayout, QLabel, QWidget
 
         app = QApplication.instance()
         if app is None:
@@ -525,15 +525,15 @@ class SystemNotificationNode(BaseNode):
 
     async def _show_notification(
         self, title: str, message: str, duration: int, icon_type: str, play_sound: bool
-    ) -> Tuple[bool, bool]:
+    ) -> tuple[bool, bool]:
         """Show a Windows system notification. Returns (shown, clicked)."""
 
         if sys.platform != "win32":
             return False, False
 
         try:
-            from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QStyle
             from PySide6.QtCore import QTimer
+            from PySide6.QtWidgets import QApplication, QStyle, QSystemTrayIcon
 
             app = QApplication.instance()
             if app is None:
@@ -721,15 +721,15 @@ class SnackbarNode(BaseNode):
         bg_color: str,
     ) -> bool:
         """Show a Material-style snackbar."""
+        from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
+        from PySide6.QtGui import QFont
         from PySide6.QtWidgets import (
-            QWidget,
+            QApplication,
+            QHBoxLayout,
             QLabel,
             QPushButton,
-            QHBoxLayout,
-            QApplication,
+            QWidget,
         )
-        from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
-        from PySide6.QtGui import QFont
 
         app = QApplication.instance()
         if app is None:
@@ -961,9 +961,9 @@ class BalloonTipNode(BaseNode):
         icon_type: str,
     ) -> None:
         """Show a balloon tooltip."""
-        from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QApplication
-        from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
-        from PySide6.QtGui import QCursor, QFont, QPainter, QPainterPath, QColor, QPen
+        from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
+        from PySide6.QtGui import QColor, QCursor, QFont, QPainter, QPainterPath, QPen
+        from PySide6.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
         app = QApplication.instance()
         if app is None:

@@ -41,12 +41,12 @@ from typing import Any, Optional
 from loguru import logger
 
 from casare_rpa.utils.security.vault_client import (
+    HVAC_AVAILABLE,
     VaultClient,
     VaultConfig,
-    VaultSecretNotFoundError,
-    VaultPermissionError,
     VaultConnectionError,
-    HVAC_AVAILABLE,
+    VaultPermissionError,
+    VaultSecretNotFoundError,
 )
 
 
@@ -108,22 +108,22 @@ class Credential:
 
     name: str
     credential_type: CredentialType = CredentialType.GENERIC
-    username: Optional[str] = None
-    password: Optional[str] = None
-    api_key: Optional[str] = None
-    access_token: Optional[str] = None
-    refresh_token: Optional[str] = None
-    certificate: Optional[str] = None
-    private_key: Optional[str] = None
+    username: str | None = None
+    password: str | None = None
+    api_key: str | None = None
+    access_token: str | None = None
+    refresh_token: str | None = None
+    certificate: str | None = None
+    private_key: str | None = None
     # Messaging integrations
-    bot_token: Optional[str] = None
-    phone_number_id: Optional[str] = None
-    business_account_id: Optional[str] = None
-    verify_token: Optional[str] = None
+    bot_token: str | None = None
+    phone_number_id: str | None = None
+    business_account_id: str | None = None
+    verify_token: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    expires_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert credential to dictionary for storage."""
@@ -169,7 +169,7 @@ class Credential:
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Credential":
+    def from_dict(cls, data: dict[str, Any]) -> Credential:
         """Create Credential from dictionary."""
         return cls(
             name=data.get("name", ""),
@@ -251,11 +251,11 @@ class CredentialManager:
     @classmethod
     def create(
         cls,
-        vault_url: Optional[str] = None,
-        vault_token: Optional[str] = None,
-        vault_role_id: Optional[str] = None,
-        vault_secret_id: Optional[str] = None,
-    ) -> "CredentialManager":
+        vault_url: str | None = None,
+        vault_token: str | None = None,
+        vault_role_id: str | None = None,
+        vault_secret_id: str | None = None,
+    ) -> CredentialManager:
         """Factory method to create a CredentialManager.
 
         SECURITY: This method REQUIRES HashiCorp Vault. Local storage is disabled.
@@ -326,7 +326,7 @@ class CredentialManager:
         self,
         name: str,
         scope: CredentialScope,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
     ) -> str:
         """Build the storage path for a credential."""
         if scope_id:
@@ -337,7 +337,7 @@ class CredentialManager:
         self,
         name: str,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
     ) -> Credential:
         """Retrieve a credential by name.
 
@@ -369,14 +369,14 @@ class CredentialManager:
     def store_credential(
         self,
         name: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
         credential_type: CredentialType = CredentialType.USERNAME_PASSWORD,
-        api_key: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
-        expires_at: Optional[datetime] = None,
+        api_key: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        expires_at: datetime | None = None,
     ) -> None:
         """Store a credential securely.
 
@@ -414,7 +414,7 @@ class CredentialManager:
         self,
         name: str,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
         permanent: bool = False,
     ) -> None:
         """Delete a credential.
@@ -434,7 +434,7 @@ class CredentialManager:
     def list_credentials(
         self,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
     ) -> list[str]:
         """List all credentials in a scope.
 
@@ -456,7 +456,7 @@ class CredentialManager:
         self,
         name: str,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
     ) -> bool:
         """Check if a credential exists.
 
@@ -483,8 +483,8 @@ class CredentialManager:
         name: str,
         bot_token: str,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        scope_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """Store Telegram bot credentials.
 
@@ -515,11 +515,11 @@ class CredentialManager:
         name: str,
         access_token: str,
         phone_number_id: str,
-        business_account_id: Optional[str] = None,
-        verify_token: Optional[str] = None,
+        business_account_id: str | None = None,
+        verify_token: str | None = None,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        scope_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """Store WhatsApp Business credentials.
 
@@ -555,7 +555,7 @@ class CredentialManager:
         self,
         name: str,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
     ) -> Credential:
         """Get Telegram bot credentials.
 
@@ -582,7 +582,7 @@ class CredentialManager:
         self,
         name: str,
         scope: CredentialScope = CredentialScope.GLOBAL,
-        scope_id: Optional[str] = None,
+        scope_id: str | None = None,
     ) -> Credential:
         """Get WhatsApp Business credentials.
 
@@ -613,7 +613,7 @@ class CredentialManager:
 # NOTE: These functions REQUIRE HashiCorp Vault to be configured.
 # Set VAULT_ADDR and VAULT_TOKEN environment variables before use.
 
-_default_manager: Optional[CredentialManager] = None
+_default_manager: CredentialManager | None = None
 
 
 def get_default_manager() -> CredentialManager:
@@ -633,7 +633,7 @@ def get_default_manager() -> CredentialManager:
 def get_credential(
     name: str,
     scope: CredentialScope = CredentialScope.GLOBAL,
-    scope_id: Optional[str] = None,
+    scope_id: str | None = None,
 ) -> Credential:
     """Convenience function to get a credential using default manager.
 
@@ -648,10 +648,10 @@ def get_credential(
 
 def store_credential(
     name: str,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
+    username: str | None = None,
+    password: str | None = None,
     scope: CredentialScope = CredentialScope.GLOBAL,
-    scope_id: Optional[str] = None,
+    scope_id: str | None = None,
     **kwargs,
 ) -> None:
     """Convenience function to store a credential using default manager.

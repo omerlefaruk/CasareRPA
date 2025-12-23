@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Type
 # =============================================================================
 
 # Maps visual node class names to their module paths (relative to visual_nodes)
-_VISUAL_NODE_REGISTRY: Dict[str, str] = {
+_VISUAL_NODE_REGISTRY: dict[str, str] = {
     # Basic (3 nodes)
     "VisualStartNode": "basic.nodes",
     "VisualEndNode": "basic.nodes",
@@ -433,14 +433,14 @@ _VISUAL_NODE_REGISTRY: Dict[str, str] = {
 }
 
 # Cache for loaded modules and classes
-_loaded_modules: Dict[str, Any] = {}
-_loaded_classes: Dict[str, Type] = {}
+_loaded_modules: dict[str, Any] = {}
+_loaded_classes: dict[str, type] = {}
 
 # Cached list of all visual node classes (built on first access)
-_all_visual_node_classes: List[Type] = None
+_all_visual_node_classes: list[type] = None
 
 
-def _lazy_import(name: str) -> Type:
+def _lazy_import(name: str) -> type:
     """
     Lazily import a visual node class by name.
 
@@ -504,7 +504,7 @@ def __getattr__(name: str) -> Any:
     )
 
 
-def __dir__() -> List[str]:
+def __dir__() -> list[str]:
     """Return the list of available attributes for tab completion."""
     return list(_VISUAL_NODE_REGISTRY.keys()) + [
         "ALL_VISUAL_NODE_CLASSES",
@@ -513,7 +513,7 @@ def __dir__() -> List[str]:
     ]
 
 
-def get_all_visual_node_classes() -> List[Type]:
+def get_all_visual_node_classes() -> list[type]:
     """
     Get all visual node classes.
 
@@ -548,7 +548,7 @@ def get_all_visual_node_classes() -> List[Type]:
     return _all_visual_node_classes
 
 
-def preload_visual_nodes(node_names: List[str] = None) -> None:
+def preload_visual_nodes(node_names: list[str] = None) -> None:
     """
     Preload specific visual nodes or all visual nodes.
 

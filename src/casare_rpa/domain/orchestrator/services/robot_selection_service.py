@@ -9,21 +9,21 @@ This is a PURE domain service with NO infrastructure dependencies:
 All robot data and assignments must be passed in as parameters.
 """
 
-from typing import List, Optional, Set, Dict
 import logging
+from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability
-from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
-    RobotAssignment,
+from casare_rpa.domain.orchestrator.errors import (
+    NoAvailableRobotError,
+    RobotNotFoundError,
 )
 from casare_rpa.domain.orchestrator.value_objects.node_robot_override import (
     NodeRobotOverride,
 )
-from casare_rpa.domain.orchestrator.errors import (
-    NoAvailableRobotError,
-    RobotNotFoundError,
+from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
+    RobotAssignment,
 )
 
 
@@ -42,9 +42,9 @@ class RobotSelectionService:
     def select_robot_for_workflow(
         self,
         workflow_id: str,
-        robots: List[Robot],
-        assignments: List[RobotAssignment],
-        required_capabilities: Optional[Set[RobotCapability]] = None,
+        robots: list[Robot],
+        assignments: list[RobotAssignment],
+        required_capabilities: set[RobotCapability] | None = None,
     ) -> str:
         """Select the best robot to execute a workflow.
 
@@ -120,10 +120,10 @@ class RobotSelectionService:
         self,
         workflow_id: str,
         node_id: str,
-        robots: List[Robot],
-        assignments: List[RobotAssignment],
-        overrides: List[NodeRobotOverride],
-        default_capabilities: Optional[Set[RobotCapability]] = None,
+        robots: list[Robot],
+        assignments: list[RobotAssignment],
+        overrides: list[NodeRobotOverride],
+        default_capabilities: set[RobotCapability] | None = None,
     ) -> str:
         """Select the best robot to execute a specific node.
 
@@ -194,9 +194,9 @@ class RobotSelectionService:
 
     def get_available_robots(
         self,
-        robots: List[Robot],
-        required_capabilities: Optional[Set[RobotCapability]] = None,
-    ) -> List[Robot]:
+        robots: list[Robot],
+        required_capabilities: set[RobotCapability] | None = None,
+    ) -> list[Robot]:
         """Get list of available robots matching required capabilities.
 
         A robot is available if:
@@ -211,7 +211,7 @@ class RobotSelectionService:
         Returns:
             List of available robots sorted by utilization (lowest first).
         """
-        available: List[Robot] = []
+        available: list[Robot] = []
 
         for robot in robots:
             if not robot.can_accept_job():
@@ -234,10 +234,10 @@ class RobotSelectionService:
 
     def get_robots_by_capability(
         self,
-        robots: List[Robot],
+        robots: list[Robot],
         capability: RobotCapability,
         available_only: bool = True,
-    ) -> List[Robot]:
+    ) -> list[Robot]:
         """Get robots that have a specific capability.
 
         Args:
@@ -248,7 +248,7 @@ class RobotSelectionService:
         Returns:
             List of robots with the capability.
         """
-        result: List[Robot] = []
+        result: list[Robot] = []
 
         for robot in robots:
             if not robot.has_capability(capability):
@@ -263,11 +263,11 @@ class RobotSelectionService:
 
     def calculate_robot_scores(
         self,
-        robots: List[Robot],
+        robots: list[Robot],
         workflow_id: str,
-        assignments: List[RobotAssignment],
-        required_capabilities: Optional[Set[RobotCapability]] = None,
-    ) -> Dict[str, float]:
+        assignments: list[RobotAssignment],
+        required_capabilities: set[RobotCapability] | None = None,
+    ) -> dict[str, float]:
         """Calculate selection scores for robots.
 
         Scoring factors (higher = better):
@@ -286,7 +286,7 @@ class RobotSelectionService:
         Returns:
             Dictionary mapping robot_id to score.
         """
-        scores: Dict[str, float] = {}
+        scores: dict[str, float] = {}
         assigned_robot_id = self._get_workflow_assignment(workflow_id, assignments)
 
         for robot in robots:
@@ -318,8 +318,8 @@ class RobotSelectionService:
     def _get_workflow_assignment(
         self,
         workflow_id: str,
-        assignments: List[RobotAssignment],
-    ) -> Optional[str]:
+        assignments: list[RobotAssignment],
+    ) -> str | None:
         """Find the default robot assignment for a workflow.
 
         Args:
@@ -344,8 +344,8 @@ class RobotSelectionService:
         self,
         workflow_id: str,
         node_id: str,
-        overrides: List[NodeRobotOverride],
-    ) -> Optional[NodeRobotOverride]:
+        overrides: list[NodeRobotOverride],
+    ) -> NodeRobotOverride | None:
         """Find the override for a specific node.
 
         Args:
@@ -368,8 +368,8 @@ class RobotSelectionService:
     def _find_robot_by_id(
         self,
         robot_id: str,
-        robots: List[Robot],
-    ) -> Optional[Robot]:
+        robots: list[Robot],
+    ) -> Robot | None:
         """Find a robot by ID.
 
         Args:
@@ -384,7 +384,7 @@ class RobotSelectionService:
                 return robot
         return None
 
-    def _select_least_loaded(self, robots: List[Robot]) -> Robot:
+    def _select_least_loaded(self, robots: list[Robot]) -> Robot:
         """Select the least loaded robot from a list.
 
         Args:

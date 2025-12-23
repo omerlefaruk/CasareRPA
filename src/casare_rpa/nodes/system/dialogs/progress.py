@@ -6,13 +6,13 @@ Nodes for displaying progress bars and splash screens.
 
 import asyncio
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -105,8 +105,8 @@ class ProgressDialogNode(BaseNode):
             value = max(0, min(100, value))
 
             try:
-                from PySide6.QtWidgets import QProgressDialog, QApplication
                 from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QApplication, QProgressDialog
 
                 app = QApplication.instance()
                 if app is None:
@@ -144,7 +144,7 @@ class ProgressDialogNode(BaseNode):
                 else:
                     try:
                         canceled = await asyncio.wait_for(future, timeout=0.5)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         canceled = False
                         dialog.close()
 
@@ -248,16 +248,16 @@ class SplashScreenNode(BaseNode):
             show_progress = self.get_parameter("progress", True)
 
             try:
+                from PySide6.QtCore import Qt, QTimer
+                from PySide6.QtGui import QColor, QPainter, QPixmap
                 from PySide6.QtWidgets import (
-                    QSplashScreen,
                     QApplication,
-                    QWidget,
-                    QVBoxLayout,
                     QLabel,
                     QProgressBar,
+                    QSplashScreen,
+                    QVBoxLayout,
+                    QWidget,
                 )
-                from PySide6.QtCore import Qt, QTimer
-                from PySide6.QtGui import QPixmap, QColor, QPainter
 
                 app = QApplication.instance()
                 if app is None:

@@ -24,7 +24,7 @@ class GoogleSheetsError(Exception):
         self,
         message: str,
         status_code: int = 0,
-        error_details: Optional[Dict[str, Any]] = None,
+        error_details: dict[str, Any] | None = None,
     ):
         super().__init__(message)
         self.status_code = status_code
@@ -51,7 +51,7 @@ class GoogleSheetsConfig:
     service_account_file: str = ""
 
     # Or provide credentials directly
-    service_account_json: Optional[Dict[str, Any]] = None
+    service_account_json: dict[str, Any] | None = None
 
     # Or use OAuth 2.0 access token
     access_token: str = ""
@@ -84,7 +84,7 @@ class SpreadsheetProperties:
     locale: str = ""
     auto_recalc: str = "ON_CHANGE"
     time_zone: str = "UTC"
-    sheets: List[Dict[str, Any]] = field(default_factory=list)
+    sheets: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -123,8 +123,8 @@ class GoogleSheetsClient:
 
     def __init__(self, config: GoogleSheetsConfig) -> None:
         self.config = config
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._access_token: Optional[str] = None
+        self._session: aiohttp.ClientSession | None = None
+        self._access_token: str | None = None
         self._token_expires_at: float = 0
 
     async def __aenter__(self) -> GoogleSheetsClient:
@@ -149,8 +149,9 @@ class GoogleSheetsClient:
     async def _authenticate_service_account(self) -> None:
         """Authenticate using service account credentials."""
         try:
-            import jwt
             import time
+
+            import jwt
 
             # Load service account credentials
             creds = self.config.service_account_json
@@ -213,7 +214,7 @@ class GoogleSheetsClient:
                 raise
             raise GoogleAuthError(f"Service account authentication failed: {e}")
 
-    def _get_headers(self, use_api_key: bool = False) -> Dict[str, str]:
+    def _get_headers(self, use_api_key: bool = False) -> dict[str, str]:
         """Get request headers with authentication.
 
         Args:
@@ -247,9 +248,9 @@ class GoogleSheetsClient:
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Make authenticated API request with retry logic."""
         if not self._session:
             raise GoogleSheetsError("Client not initialized. Use async context manager.")
@@ -258,7 +259,7 @@ class GoogleSheetsClient:
         url = self._get_url(endpoint)
         headers = self._get_headers(use_api_key=use_api_key)
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         for attempt in range(max(1, self.config.max_retries)):
             try:
@@ -323,7 +324,7 @@ class GoogleSheetsClient:
     async def create_spreadsheet(
         self,
         title: str,
-        sheets: Optional[List[str]] = None,
+        sheets: list[str] | None = None,
         locale: str = "en_US",
     ) -> SpreadsheetProperties:
         """
@@ -522,7 +523,7 @@ class GoogleSheetsClient:
         range_notation: str,
         value_render_option: str = "FORMATTED_VALUE",
         date_time_render_option: str = "SERIAL_NUMBER",
-    ) -> List[List[Any]]:
+    ) -> list[list[Any]]:
         """
         Get values from a range.
 
@@ -552,9 +553,9 @@ class GoogleSheetsClient:
         self,
         spreadsheet_id: str,
         range_notation: str,
-        values: List[List[Any]],
+        values: list[list[Any]],
         value_input_option: str = "USER_ENTERED",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update values in a range.
 
@@ -587,10 +588,10 @@ class GoogleSheetsClient:
         self,
         spreadsheet_id: str,
         range_notation: str,
-        values: List[List[Any]],
+        values: list[list[Any]],
         value_input_option: str = "USER_ENTERED",
         insert_data_option: str = "INSERT_ROWS",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Append values to a range.
 
@@ -627,7 +628,7 @@ class GoogleSheetsClient:
         self,
         spreadsheet_id: str,
         range_notation: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Clear values from a range.
 
@@ -652,9 +653,9 @@ class GoogleSheetsClient:
     async def batch_get_values(
         self,
         spreadsheet_id: str,
-        ranges: List[str],
+        ranges: list[str],
         value_render_option: str = "FORMATTED_VALUE",
-    ) -> Dict[str, List[List[Any]]]:
+    ) -> dict[str, list[list[Any]]]:
         """
         Get values from multiple ranges in one request.
 
@@ -688,9 +689,9 @@ class GoogleSheetsClient:
     async def batch_update_values(
         self,
         spreadsheet_id: str,
-        data: List[Dict[str, Any]],
+        data: list[dict[str, Any]],
         value_input_option: str = "USER_ENTERED",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update multiple ranges in one request.
 
@@ -718,8 +719,8 @@ class GoogleSheetsClient:
     async def batch_clear_values(
         self,
         spreadsheet_id: str,
-        ranges: List[str],
-    ) -> Dict[str, Any]:
+        ranges: list[str],
+    ) -> dict[str, Any]:
         """
         Clear multiple ranges in one request.
 
@@ -745,8 +746,8 @@ class GoogleSheetsClient:
     async def batch_update(
         self,
         spreadsheet_id: str,
-        requests: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        requests: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """
         Execute batch spreadsheet updates (formatting, structure, etc.).
 
@@ -796,7 +797,7 @@ class GoogleSheetsClient:
         self,
         spreadsheet_id: str,
         sheet_name: str,
-    ) -> Optional[SheetProperties]:
+    ) -> SheetProperties | None:
         """
         Get sheet properties by name.
 

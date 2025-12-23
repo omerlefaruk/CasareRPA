@@ -20,7 +20,7 @@ Security:
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.domain.ai.config import AgentConfig
@@ -833,7 +833,7 @@ class PromptBuilder:
     enabling fine-grained control over AI behavior for workflow generation.
     """
 
-    def __init__(self, config: Optional[AgentConfig] = None) -> None:
+    def __init__(self, config: AgentConfig | None = None) -> None:
         """
         Initialize prompt builder.
 
@@ -985,8 +985,8 @@ Output ONLY the JSON object, nothing else."""
         self,
         original_json: str,
         error: str,
-        node_id: Optional[str] = None,
-        issue_type: Optional[str] = None,
+        node_id: str | None = None,
+        issue_type: str | None = None,
     ) -> str:
         """
         Build error repair prompt for failed validation.
@@ -1018,7 +1018,7 @@ def get_workflow_generation_prompt(
     node_manifest: str,
     include_robustness: bool = True,
     allow_node_creation: bool = True,
-    config: Optional[AgentConfig] = None,
+    config: AgentConfig | None = None,
 ) -> str:
     """
     Build complete workflow generation prompt.
@@ -1081,8 +1081,8 @@ def get_workflow_generation_prompt(
 def get_repair_prompt(
     original_json: str,
     error: str,
-    node_id: Optional[str] = None,
-    issue_type: Optional[str] = None,
+    node_id: str | None = None,
+    issue_type: str | None = None,
 ) -> str:
     """
     Build error repair prompt for failed validation.
@@ -1105,10 +1105,10 @@ def get_repair_prompt(
 
 
 def get_append_prompt(
-    existing_workflow: Dict[str, Any],
+    existing_workflow: dict[str, Any],
     user_request: str,
     node_manifest: str,
-    config: Optional[AgentConfig] = None,
+    config: AgentConfig | None = None,
 ) -> str:
     """
     Build prompt for appending to existing workflow.
@@ -1184,11 +1184,11 @@ def get_performance_optimized_prompt(
     try:
         from casare_rpa.domain.ai.config import (
             AgentConfig,
+            ErrorHandlingMode,
+            ParallelizationMode,
             PerformanceConfig,
             PromptRules,
             WaitStrategy,
-            ParallelizationMode,
-            ErrorHandlingMode,
         )
 
         config = AgentConfig(

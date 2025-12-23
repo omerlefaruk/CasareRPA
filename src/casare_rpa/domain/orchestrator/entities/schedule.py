@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from casare_rpa.domain.orchestrator.entities.job import JobPriority
 from casare_rpa.utils.datetime_helpers import parse_datetime
@@ -28,18 +28,18 @@ class Schedule:
     name: str
     workflow_id: str
     workflow_name: str = ""
-    robot_id: Optional[str] = None  # None = any available robot
+    robot_id: str | None = None  # None = any available robot
     robot_name: str = ""
     frequency: ScheduleFrequency = ScheduleFrequency.DAILY
     cron_expression: str = ""
     timezone: str = "UTC"
     enabled: bool = True
     priority: JobPriority = JobPriority.NORMAL
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
+    last_run: datetime | None = None
+    next_run: datetime | None = None
     run_count: int = 0
     success_count: int = 0
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
     created_by: str = ""
 
     def __post_init__(self):
@@ -72,7 +72,7 @@ class Schedule:
         return (self.success_count / self.run_count) * 100
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Schedule":
+    def from_dict(cls, data: dict[str, Any]) -> "Schedule":
         """Create Schedule from dictionary.
 
         Args:
@@ -120,7 +120,7 @@ class Schedule:
             created_by=data.get("created_by", ""),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Schedule to dictionary.
 
         Returns:

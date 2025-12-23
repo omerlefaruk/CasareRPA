@@ -5,31 +5,31 @@ Visual representations of trigger nodes for the canvas.
 """
 
 from casare_rpa.presentation.canvas.visual_nodes.triggers.base import (
-    VisualTriggerNode,
     TRIGGER_ACCENT_COLOR,
     TRIGGER_LISTENING_COLOR,
+    VisualTriggerNode,
 )
 from casare_rpa.presentation.canvas.visual_nodes.triggers.nodes import (
-    # General triggers
-    VisualWebhookTriggerNode,
-    VisualScheduleTriggerNode,
-    VisualFileWatchTriggerNode,
-    VisualEmailTriggerNode,
     VisualAppEventTriggerNode,
-    VisualErrorTriggerNode,
-    VisualWorkflowCallTriggerNode,
-    VisualFormTriggerNode,
+    VisualCalendarTriggerNode,
     VisualChatTriggerNode,
+    VisualDriveTriggerNode,
+    VisualEmailTriggerNode,
+    VisualErrorTriggerNode,
+    VisualFileWatchTriggerNode,
+    VisualFormTriggerNode,
+    # Google triggers
+    VisualGmailTriggerNode,
     VisualRSSFeedTriggerNode,
+    VisualScheduleTriggerNode,
+    VisualSheetsTriggerNode,
     VisualSSETriggerNode,
     # Messaging triggers
     VisualTelegramTriggerNode,
+    # General triggers
+    VisualWebhookTriggerNode,
     VisualWhatsAppTriggerNode,
-    # Google triggers
-    VisualGmailTriggerNode,
-    VisualDriveTriggerNode,
-    VisualSheetsTriggerNode,
-    VisualCalendarTriggerNode,
+    VisualWorkflowCallTriggerNode,
 )
 
 __all__ = [

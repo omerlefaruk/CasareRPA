@@ -31,14 +31,14 @@ Usage:
 """
 
 from typing import Optional
-
-from PySide6.QtCore import QObject, Signal
+from collections.abc import Callable
 
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.events.event import Event
-from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
+from casare_rpa.presentation.canvas.events.event_types import EventCategory, EventType
 
 
 class QtSignalBridge(QObject):
@@ -97,7 +97,7 @@ class QtSignalBridge(QObject):
     debug_event = Signal(Event)
     trigger_event = Signal(Event)
 
-    def __init__(self, event_bus: Optional[EventBus] = None, parent: Optional[QObject] = None):
+    def __init__(self, event_bus: EventBus | None = None, parent: QObject | None = None):
         """
         Initialize Qt signal bridge.
 
@@ -235,8 +235,8 @@ class QtEventEmitter(QObject):
 
     def __init__(
         self,
-        parent: Optional[QObject] = None,
-        event_bus: Optional[EventBus] = None,
+        parent: QObject | None = None,
+        event_bus: EventBus | None = None,
     ):
         """
         Initialize Qt event emitter.
@@ -303,8 +303,8 @@ class QtEventSubscriber(QObject):
 
     def __init__(
         self,
-        parent: Optional[QObject] = None,
-        event_bus: Optional[EventBus] = None,
+        parent: QObject | None = None,
+        event_bus: EventBus | None = None,
     ):
         """
         Initialize Qt event subscriber.
@@ -315,7 +315,7 @@ class QtEventSubscriber(QObject):
         """
         super().__init__(parent)
         self._event_bus = event_bus or EventBus()
-        self._subscriptions: list[tuple[EventType, callable]] = []
+        self._subscriptions: list[tuple[EventType, Callable]] = []
 
     def subscribe(self, event_type: EventType) -> None:
         """

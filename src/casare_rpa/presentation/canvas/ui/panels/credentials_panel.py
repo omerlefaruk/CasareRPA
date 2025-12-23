@@ -15,25 +15,24 @@ Features:
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
-    QLabel,
-    QMenu,
-    QMessageBox,
-    QLineEdit,
-    QGroupBox,
-    QFormLayout,
-)
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
-
-from loguru import logger
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class CredentialsPanel(QDockWidget):
@@ -55,7 +54,7 @@ class CredentialsPanel(QDockWidget):
     credential_updated = Signal(str)
     credential_deleted = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
+    def __init__(self, parent: QWidget | None = None, embedded: bool = False) -> None:
         """
         Initialize the credentials panel.
 
@@ -65,7 +64,7 @@ class CredentialsPanel(QDockWidget):
         """
         self._embedded = embedded
         self._store = None
-        self._current_credential_id: Optional[str] = None
+        self._current_credential_id: str | None = None
         self._event_bus = None
 
         if embedded:
@@ -390,7 +389,7 @@ class CredentialsPanel(QDockWidget):
         item.setForeground(QColor("#888888"))
         self._credentials_list.addItem(item)
 
-    def _create_credential_item(self, cred: Dict[str, Any]) -> QListWidgetItem:
+    def _create_credential_item(self, cred: dict[str, Any]) -> QListWidgetItem:
         """Create a list item for a credential."""
         name = cred.get("name", "Unknown")
         cred_type = cred.get("type", "unknown").replace("_", " ").title()
@@ -450,7 +449,7 @@ class CredentialsPanel(QDockWidget):
         if cred_id:
             self._edit_credential(cred_id)
 
-    def _update_detail_panel(self, cred_id: Optional[str]) -> None:
+    def _update_detail_panel(self, cred_id: str | None) -> None:
         """Update the details panel with credential info."""
         if not cred_id:
             self._detail_name.setText("-")
@@ -695,10 +694,11 @@ class CredentialsPanel(QDockWidget):
     def _test_google_oauth(self, cred_id: str) -> None:
         """Test a Google OAuth credential."""
         try:
+            import asyncio
+
             from casare_rpa.infrastructure.security.google_oauth import (
                 GoogleOAuthManager,
             )
-            import asyncio
 
             async def do_test():
                 manager = GoogleOAuthManager()
@@ -740,7 +740,7 @@ class CredentialsPanel(QDockWidget):
             )
 
     def _open_credential_manager_dialog(
-        self, mode: str = "add", credential_id: Optional[str] = None
+        self, mode: str = "add", credential_id: str | None = None
     ) -> None:
         """Open the credential manager dialog."""
         try:
@@ -791,7 +791,7 @@ class CredentialsPanel(QDockWidget):
         """Public method to refresh the credentials list."""
         self._load_credentials()
 
-    def get_selected_credential_id(self) -> Optional[str]:
+    def get_selected_credential_id(self) -> str | None:
         """Get the currently selected credential ID."""
         return self._current_credential_id
 

@@ -56,7 +56,7 @@ def detect_selector_type(selector: str) -> str:
     return get_selector_facade().detect_type(selector)
 
 
-def validate_selector_format(selector: str) -> Tuple[bool, str]:
+def validate_selector_format(selector: str) -> tuple[bool, str]:
     """
     Validate if a selector has valid format.
 

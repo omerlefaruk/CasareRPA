@@ -12,7 +12,6 @@ Usage:
 
 from typing import TYPE_CHECKING, Optional
 
-
 if TYPE_CHECKING:
     from ..main_window import MainWindow
     from ..ui.panels import BottomPanelDock, SidePanelDock
@@ -263,13 +262,13 @@ class PanelManager:
         """Check if side panel is visible."""
         return self._mw._side_panel is not None and self._mw._side_panel.isVisible()
 
-    def get_active_bottom_tab(self) -> Optional[str]:
+    def get_active_bottom_tab(self) -> str | None:
         """Get the name of the currently active bottom panel tab."""
         if self._mw._bottom_panel:
             return self._mw._bottom_panel.current_tab_name()
         return None
 
-    def get_active_side_tab(self) -> Optional[str]:
+    def get_active_side_tab(self) -> str | None:
         """Get the name of the currently active side panel tab."""
         if self._mw._side_panel:
             return self._mw._side_panel.current_tab_name()

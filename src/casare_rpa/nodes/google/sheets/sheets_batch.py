@@ -8,14 +8,13 @@ Nodes for efficient batch operations on spreadsheets:
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
-
 
 import json
 from typing import Any, Dict, List
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -115,7 +114,7 @@ class SheetsBatchUpdateNode(SheetsBaseNode):
         value_input_option = self.get_parameter("value_input_option", "USER_ENTERED")
 
         # Validate and transform updates format
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         for update in updates:
             if not isinstance(update, dict):
                 self._set_error_outputs("Each update must be an object with 'range' and 'values'")

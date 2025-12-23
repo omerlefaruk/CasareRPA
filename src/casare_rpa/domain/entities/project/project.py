@@ -44,20 +44,20 @@ class Project:
     name: str
     description: str = ""
     author: str = ""
-    created_at: Optional[datetime] = None
-    modified_at: Optional[datetime] = None
-    tags: List[str] = field(default_factory=list)
+    created_at: datetime | None = None
+    modified_at: datetime | None = None
+    tags: list[str] = field(default_factory=list)
     settings: ProjectSettings = field(default_factory=ProjectSettings)
     schema_version: str = PROJECT_SCHEMA_VERSION
 
     # v2.0.0 fields
-    folder_id: Optional[str] = None
-    template_id: Optional[str] = None
-    environment_ids: List[str] = field(default_factory=list)
-    active_environment_id: Optional[str] = None
+    folder_id: str | None = None
+    template_id: str | None = None
+    environment_ids: list[str] = field(default_factory=list)
+    active_environment_id: str | None = None
 
     # Runtime properties (not serialized)
-    _path: Optional[Path] = field(default=None, repr=False)
+    _path: Path | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         """Initialize timestamps if not provided."""
@@ -67,7 +67,7 @@ class Project:
             self.modified_at = datetime.now()
 
     @property
-    def path(self) -> Optional[Path]:
+    def path(self) -> Path | None:
         """Get project folder path."""
         return self._path
 
@@ -77,41 +77,41 @@ class Project:
         self._path = value
 
     @property
-    def scenarios_dir(self) -> Optional[Path]:
+    def scenarios_dir(self) -> Path | None:
         """Get scenarios directory path."""
         if self._path:
             return self._path / "scenarios"
         return None
 
     @property
-    def project_file(self) -> Optional[Path]:
+    def project_file(self) -> Path | None:
         """Get project.json file path."""
         if self._path:
             return self._path / "project.json"
         return None
 
     @property
-    def variables_file(self) -> Optional[Path]:
+    def variables_file(self) -> Path | None:
         """Get variables.json file path."""
         if self._path:
             return self._path / "variables.json"
         return None
 
     @property
-    def credentials_file(self) -> Optional[Path]:
+    def credentials_file(self) -> Path | None:
         """Get credentials.json file path."""
         if self._path:
             return self._path / "credentials.json"
         return None
 
     @property
-    def environments_dir(self) -> Optional[Path]:
+    def environments_dir(self) -> Path | None:
         """Get environments directory path (v2.0.0)."""
         if self._path:
             return self._path / "environments"
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for project.json."""
         return {
             "$schema_version": self.schema_version,
@@ -131,7 +131,7 @@ class Project:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Project":
+    def from_dict(cls, data: dict[str, Any]) -> "Project":
         """Create from dictionary."""
         created_at = None
         if data.get("created_at"):

@@ -22,19 +22,19 @@ from casare_rpa.infrastructure.analytics.process_mining import (
 class FrequentSubsequence:
     """A frequently occurring subsequence of activities."""
 
-    sequence: List[str]
+    sequence: list[str]
     support: int  # Number of traces containing this subsequence
     support_ratio: float  # support / total_traces
     avg_duration_ms: float
-    node_types: List[str]
-    positions: Dict[str, List[int]]  # trace_id -> list of start positions
+    node_types: list[str]
+    positions: dict[str, list[int]]  # trace_id -> list of start positions
 
     @property
     def length(self) -> int:
         """Length of the subsequence."""
         return len(self.sequence)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "sequence": self.sequence,
@@ -52,10 +52,10 @@ class FrequentPatternResult:
 
     min_support: float
     total_traces: int
-    subsequences: List[FrequentSubsequence]
+    subsequences: list[FrequentSubsequence]
     mining_time_ms: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "min_support": self.min_support,
@@ -79,7 +79,7 @@ class FrequentPatternMiner:
 
     def mine_patterns(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         min_support: float = 0.3,
         max_length: int = 10,
         min_length: int = 2,
@@ -113,8 +113,8 @@ class FrequentPatternMiner:
         min_support_count = max(1, int(min_support * total_traces))
 
         # Extract sequences and build activity info
-        sequences: List[List[str]] = []
-        activity_info: Dict[str, Dict[str, Any]] = {}  # node_id -> {type, durations}
+        sequences: list[list[str]] = []
+        activity_info: dict[str, dict[str, Any]] = {}  # node_id -> {type, durations}
 
         for trace in traces:
             seq = []
@@ -186,21 +186,21 @@ class FrequentPatternMiner:
 
     def _prefixspan(
         self,
-        sequences: List[List[str]],
+        sequences: list[list[str]],
         min_support_count: int,
         max_length: int,
-    ) -> List[Tuple[Tuple[str, ...], int, Dict[str, List[int]]]]:
+    ) -> list[tuple[tuple[str, ...], int, dict[str, list[int]]]]:
         """
         PrefixSpan algorithm for sequential pattern mining.
 
         Returns list of (pattern, support, positions) tuples.
         """
         # Find frequent 1-sequences
-        item_counts: Dict[str, int] = defaultdict(int)
-        item_positions: Dict[str, Dict[int, List[int]]] = defaultdict(lambda: defaultdict(list))
+        item_counts: dict[str, int] = defaultdict(int)
+        item_positions: dict[str, dict[int, list[int]]] = defaultdict(lambda: defaultdict(list))
 
         for seq_idx, seq in enumerate(sequences):
-            seen: Set[str] = set()
+            seen: set[str] = set()
             for pos, item in enumerate(seq):
                 if item not in seen:
                     item_counts[item] += 1
@@ -214,7 +214,7 @@ class FrequentPatternMiner:
             return []
 
         # Results
-        results: List[Tuple[Tuple[str, ...], int, Dict[str, List[int]]]] = []
+        results: list[tuple[tuple[str, ...], int, dict[str, list[int]]]] = []
 
         # Add frequent 1-sequences
         for item in frequent_items:
@@ -240,16 +240,16 @@ class FrequentPatternMiner:
 
     def _build_projected_database(
         self,
-        sequences: List[List[str]],
-        prefix: Tuple[str, ...],
-        start_positions: Dict[int, List[int]],
-    ) -> Dict[int, List[Tuple[int, List[str]]]]:
+        sequences: list[list[str]],
+        prefix: tuple[str, ...],
+        start_positions: dict[int, list[int]],
+    ) -> dict[int, list[tuple[int, list[str]]]]:
         """
         Build projected database for a prefix.
 
         Returns dict: seq_idx -> list of (start_pos, suffix) tuples.
         """
-        projected: Dict[int, List[Tuple[int, List[str]]]] = {}
+        projected: dict[int, list[tuple[int, list[str]]]] = {}
 
         for seq_idx, positions in start_positions.items():
             seq = sequences[seq_idx]
@@ -269,23 +269,23 @@ class FrequentPatternMiner:
 
     def _prefixspan_recursive(
         self,
-        prefix: Tuple[str, ...],
-        projected_db: Dict[int, List[Tuple[int, List[str]]]],
-        sequences: List[List[str]],
+        prefix: tuple[str, ...],
+        projected_db: dict[int, list[tuple[int, list[str]]]],
+        sequences: list[list[str]],
         min_support_count: int,
         max_length: int,
-        results: List[Tuple[Tuple[str, ...], int, Dict[str, List[int]]]],
+        results: list[tuple[tuple[str, ...], int, dict[str, list[int]]]],
     ) -> None:
         """Recursive PrefixSpan pattern growth."""
         if len(prefix) >= max_length:
             return
 
         # Find frequent items in projected database
-        item_counts: Dict[str, int] = defaultdict(int)
-        item_positions: Dict[str, Dict[int, List[int]]] = defaultdict(lambda: defaultdict(list))
+        item_counts: dict[str, int] = defaultdict(int)
+        item_positions: dict[str, dict[int, list[int]]] = defaultdict(lambda: defaultdict(list))
 
         for seq_idx, suffixes in projected_db.items():
-            seen: Set[str] = set()
+            seen: set[str] = set()
             for start_pos, suffix in suffixes:
                 for i, item in enumerate(suffix):
                     if item not in seen:
@@ -321,11 +321,11 @@ class FrequentPatternMiner:
 
     def _build_projected_database_from_suffix(
         self,
-        projected_db: Dict[int, List[Tuple[int, List[str]]]],
+        projected_db: dict[int, list[tuple[int, list[str]]]],
         item: str,
-    ) -> Dict[int, List[Tuple[int, List[str]]]]:
+    ) -> dict[int, list[tuple[int, list[str]]]]:
         """Build new projected database by extending suffixes with item."""
-        new_projected: Dict[int, List[Tuple[int, List[str]]]] = {}
+        new_projected: dict[int, list[tuple[int, list[str]]]] = {}
 
         for seq_idx, suffixes in projected_db.items():
             new_suffixes = []
@@ -347,7 +347,7 @@ class FrequentPatternMiner:
 
         return new_projected
 
-    def find_maximal_patterns(self, result: FrequentPatternResult) -> List[FrequentSubsequence]:
+    def find_maximal_patterns(self, result: FrequentPatternResult) -> list[FrequentSubsequence]:
         """
         Find maximal frequent patterns (not subsumed by longer patterns).
 
@@ -365,8 +365,8 @@ class FrequentPatternMiner:
         # Sort by length descending to check longer patterns first
         sorted_seqs = sorted(result.subsequences, key=lambda s: s.length, reverse=True)
 
-        maximal: List[FrequentSubsequence] = []
-        maximal_sequences: Set[Tuple[str, ...]] = set()
+        maximal: list[FrequentSubsequence] = []
+        maximal_sequences: set[tuple[str, ...]] = set()
 
         for subseq in sorted_seqs:
             seq_tuple = tuple(subseq.sequence)
@@ -384,7 +384,7 @@ class FrequentPatternMiner:
 
         return maximal
 
-    def _is_subsequence(self, short: Tuple[str, ...], long: Tuple[str, ...]) -> bool:
+    def _is_subsequence(self, short: tuple[str, ...], long: tuple[str, ...]) -> bool:
         """Check if short is a subsequence of long."""
         if len(short) >= len(long):
             return False
@@ -398,9 +398,9 @@ class FrequentPatternMiner:
 
     def find_pattern_gaps(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         pattern: FrequentSubsequence,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analyze gaps between pattern elements in traces.
 
@@ -413,7 +413,7 @@ class FrequentPatternMiner:
         Returns:
             Dict with gap statistics.
         """
-        gaps: List[List[int]] = [[] for _ in range(len(pattern.sequence) - 1)]
+        gaps: list[list[int]] = [[] for _ in range(len(pattern.sequence) - 1)]
 
         for trace in traces:
             activities = trace.activities
@@ -422,7 +422,7 @@ class FrequentPatternMiner:
 
             # Find pattern in trace
             pattern_idx = 0
-            prev_end_time: Optional[int] = None
+            prev_end_time: int | None = None
 
             for pos, activity in enumerate(activities):
                 if activity.node_id == pattern.sequence[pattern_idx]:

@@ -5,28 +5,27 @@ Dockable panel for selecting robots and toggling execution mode.
 Allows users to choose between local execution and cloud robot submission.
 """
 
-from typing import Optional, List, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
     QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
     QRadioButton,
     QTreeWidget,
     QTreeWidgetItem,
-    QPushButton,
-    QComboBox,
-    QLabel,
-    QHeaderView,
-    QButtonGroup,
-    QCheckBox,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, Slot, QTimer
-from PySide6.QtGui import QColor, QBrush
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
@@ -75,7 +74,7 @@ class RobotPickerPanel(QDockWidget):
     refresh_requested = Signal()
     submit_to_cloud_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
+    def __init__(self, parent: QWidget | None = None, embedded: bool = False) -> None:
         """
         Initialize the Robot Picker Panel.
 
@@ -90,10 +89,10 @@ class RobotPickerPanel(QDockWidget):
             super().__init__("Robot Picker", parent)
             self.setObjectName("RobotPickerDock")
 
-        self._selected_robot_id: Optional[str] = None
+        self._selected_robot_id: str | None = None
         self._execution_mode: str = "local"
-        self._robots: List["Robot"] = []
-        self._robot_items: Dict[str, QTreeWidgetItem] = {}
+        self._robots: list[Robot] = []
+        self._robot_items: dict[str, QTreeWidgetItem] = {}
         self._connected_to_orchestrator: bool = False
 
         if not embedded:
@@ -548,7 +547,7 @@ class RobotPickerPanel(QDockWidget):
                 f"Submit current workflow to '{robot_name}' for execution"
             )
 
-    def update_robots(self, robots: List["Robot"]) -> None:
+    def update_robots(self, robots: list["Robot"]) -> None:
         """
         Update robot list from data.
 
@@ -712,7 +711,7 @@ class RobotPickerPanel(QDockWidget):
         font.setBold(True)
         item.setFont(1, font)
 
-    def get_selected_robot(self) -> Optional[str]:
+    def get_selected_robot(self) -> str | None:
         """
         Get selected robot ID.
 

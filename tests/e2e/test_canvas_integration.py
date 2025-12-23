@@ -4,11 +4,12 @@ import sys
 # 1. Force Headless Mode before generic imports
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
-import pytest
 import asyncio
 from unittest.mock import MagicMock
-from PySide6.QtWidgets import QApplication
+
+import pytest
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
 
 # Import strictly what is needed
 from casare_rpa.presentation.canvas.app import CasareRPAApp

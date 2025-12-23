@@ -2,8 +2,8 @@
 VisualExecuteWorkflowNode - Visual representation for ExecuteWorkflowNode.
 """
 
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.graph.node_widgets import NodeFilePathWidget
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
 def _replace_widget(node: VisualNode, widget) -> None:

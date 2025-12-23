@@ -10,23 +10,22 @@ Shows real-time validation with visual feedback:
 Design follows VSCode dark theme styling.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
 
-from PySide6.QtCore import Qt, Signal, QTimer
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QVBoxLayout,
+    QWidget,
 )
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.ui.theme import THEME
-
 
 # =============================================================================
 # Validation Status Types
@@ -141,15 +140,15 @@ class ValidatedLineEdit(QLineEdit):
 
     validation_changed = Signal(ValidationResult)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the widget."""
         super().__init__(parent)
 
-        self._validators: List[ValidatorFunc] = []
+        self._validators: list[ValidatorFunc] = []
         self._validation_status = ValidationStatus.VALID
         self._validation_message = ""
         self._validate_on_change = False  # Validate on every keystroke
-        self._debounce_timer: Optional[QTimer] = None
+        self._debounce_timer: QTimer | None = None
         self._debounce_delay_ms = 300  # Debounce delay for change validation
 
         self._setup_validation()
@@ -296,7 +295,7 @@ class ValidatedInputWidget(QWidget):
     def __init__(
         self,
         input_widget: QWidget,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the container.
@@ -308,7 +307,7 @@ class ValidatedInputWidget(QWidget):
         super().__init__(parent)
 
         self._input_widget = input_widget
-        self._validators: List[ValidatorFunc] = []
+        self._validators: list[ValidatorFunc] = []
         self._validation_status = ValidationStatus.VALID
         self._validation_message = ""
 

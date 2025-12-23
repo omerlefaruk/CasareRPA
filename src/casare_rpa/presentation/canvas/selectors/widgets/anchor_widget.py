@@ -5,19 +5,19 @@ Provides anchor configuration UI for reliable element location.
 Uses UiPath-style anchor-target relationship.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QComboBox,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QComboBox,
     QPushButton,
     QTextEdit,
-    QGroupBox,
+    QVBoxLayout,
+    QWidget,
 )
 
 
@@ -46,7 +46,7 @@ class AnchorWidget(QWidget):
     clear_anchor_requested = Signal()
     position_changed = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._has_anchor = False
         self._setup_ui()
@@ -371,7 +371,7 @@ class AnchorWidget(QWidget):
         """Get anchor selector."""
         return self._selector_display.toPlainText().strip()
 
-    def get_anchor_data(self) -> Optional[Dict[str, Any]]:
+    def get_anchor_data(self) -> dict[str, Any] | None:
         """Get anchor data as dictionary."""
         if not self.has_anchor():
             return None

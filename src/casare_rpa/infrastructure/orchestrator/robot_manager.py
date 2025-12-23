@@ -14,7 +14,7 @@ Architecture:
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional, Protocol, Set
 
 import orjson
@@ -37,16 +37,16 @@ from casare_rpa.domain.orchestrator.events import (
 class RobotRepositoryProtocol(Protocol):
     """Protocol for robot repository (for type hints without circular import)."""
 
-    async def get_by_id(self, robot_id: str) -> Optional[Robot]: ...
-    async def get_all_online(self) -> List[Robot]: ...
+    async def get_by_id(self, robot_id: str) -> Robot | None: ...
+    async def get_all_online(self) -> list[Robot]: ...
     async def save(self, robot: Robot) -> None: ...
     async def update_status(self, robot_id: str, status: RobotStatus) -> None: ...
     async def update_heartbeat(
-        self, robot_id: str, metrics: Optional[Dict[str, Any]] = None
+        self, robot_id: str, metrics: dict[str, Any] | None = None
     ) -> None: ...
     async def add_job_to_robot(self, robot_id: str, job_id: str) -> None: ...
     async def remove_job_from_robot(self, robot_id: str, job_id: str) -> None: ...
-    async def mark_offline(self, robot_id: str) -> List[str]: ...
+    async def mark_offline(self, robot_id: str) -> list[str]: ...
 
 
 @dataclass
@@ -60,13 +60,13 @@ class ConnectedRobot:
     robot_id: str
     robot_name: str
     websocket: WebSocket
-    capabilities: List[str] = field(default_factory=list)
+    capabilities: list[str] = field(default_factory=list)
     max_concurrent_jobs: int = 1
-    current_job_ids: Set[str] = field(default_factory=set)
-    connected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_heartbeat: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    current_job_ids: set[str] = field(default_factory=set)
+    connected_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_heartbeat: datetime = field(default_factory=lambda: datetime.now(UTC))
     environment: str = "production"
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
     hostname: str = ""
 
     @property
@@ -85,7 +85,7 @@ class ConnectedRobot:
 
     def to_domain_robot(self) -> Robot:
         """Convert to domain Robot entity for persistence."""
-        capabilities_set: Set[RobotCapability] = set()
+        capabilities_set: set[RobotCapability] = set()
         for cap in self.capabilities:
             try:
                 capabilities_set.add(RobotCapability(cap))
@@ -102,7 +102,7 @@ class ConnectedRobot:
             status=status,
             environment=self.environment,
             max_concurrent_jobs=self.max_concurrent_jobs,
-            last_seen=datetime.now(timezone.utc),
+            last_seen=datetime.now(UTC),
             last_heartbeat=self.last_heartbeat,
             created_at=self.connected_at,
             capabilities=capabilities_set,
@@ -116,17 +116,17 @@ class PendingJob:
 
     job_id: str
     workflow_id: str
-    workflow_data: Dict[str, Any]
-    variables: Dict[str, Any]
+    workflow_data: dict[str, Any]
+    variables: dict[str, Any]
     priority: int
-    target_robot_id: Optional[str]
-    required_capabilities: List[str]
+    target_robot_id: str | None
+    required_capabilities: list[str]
     timeout: int
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     status: str = "pending"
-    assigned_robot_id: Optional[str] = None
-    tenant_id: Optional[str] = None
-    rejected_by: Set[str] = field(default_factory=set)
+    assigned_robot_id: str | None = None
+    tenant_id: str | None = None
+    rejected_by: set[str] = field(default_factory=set)
 
 
 class RobotManager:
@@ -142,7 +142,7 @@ class RobotManager:
     def __init__(
         self,
         job_timeout_default: int = 3600,
-        robot_repository: Optional[RobotRepositoryProtocol] = None,
+        robot_repository: RobotRepositoryProtocol | None = None,
         publish_events: bool = True,
     ):
         """Initialize robot manager.
@@ -157,11 +157,11 @@ class RobotManager:
         self._publish_events = publish_events
 
         # In-memory state (always needed for WebSocket connections)
-        self._connections: Dict[str, WebSocket] = {}  # robot_id -> websocket
-        self._robots: Dict[str, ConnectedRobot] = {}  # robot_id -> connected robot
-        self._jobs: Dict[str, PendingJob] = {}
-        self._admin_connections: Set[WebSocket] = set()
-        self._api_key_cache: Dict[str, str] = {}  # hash -> robot_id
+        self._connections: dict[str, WebSocket] = {}  # robot_id -> websocket
+        self._robots: dict[str, ConnectedRobot] = {}  # robot_id -> connected robot
+        self._jobs: dict[str, PendingJob] = {}
+        self._admin_connections: set[WebSocket] = set()
+        self._api_key_cache: dict[str, str] = {}  # hash -> robot_id
         self._lock = asyncio.Lock()
 
         # Event bus for domain events
@@ -182,9 +182,9 @@ class RobotManager:
         websocket: WebSocket,
         robot_id: str,
         robot_name: str,
-        capabilities: Dict[str, Any],
+        capabilities: dict[str, Any],
         environment: str = "production",
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
         hostname: str = "",
     ) -> ConnectedRobot:
         """Register a new robot connection."""
@@ -241,7 +241,7 @@ class RobotManager:
                     "robot_name": robot_name,
                     "capabilities": caps,
                     "tenant_id": tenant_id,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
 
@@ -289,14 +289,14 @@ class RobotManager:
                         "type": "robot_disconnected",
                         "robot_id": robot_id,
                         "orphaned_jobs": orphaned_jobs,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 )
 
-    async def update_heartbeat(self, robot_id: str, metrics: Dict[str, Any]) -> None:
+    async def update_heartbeat(self, robot_id: str, metrics: dict[str, Any]) -> None:
         """Update robot heartbeat timestamp."""
         if robot_id in self._robots:
-            self._robots[robot_id].last_heartbeat = datetime.now(timezone.utc)
+            self._robots[robot_id].last_heartbeat = datetime.now(UTC)
 
             # Persist heartbeat
             if self._repository:
@@ -321,22 +321,22 @@ class RobotManager:
                     "type": "robot_heartbeat",
                     "robot_id": robot_id,
                     "metrics": metrics,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
 
-    def get_robot(self, robot_id: str) -> Optional[ConnectedRobot]:
+    def get_robot(self, robot_id: str) -> ConnectedRobot | None:
         """Get a connected robot by ID."""
         return self._robots.get(robot_id)
 
-    def get_websocket(self, robot_id: str) -> Optional[WebSocket]:
+    def get_websocket(self, robot_id: str) -> WebSocket | None:
         """Get WebSocket connection for a robot."""
         return self._connections.get(robot_id)
 
     def get_all_robots(
         self,
-        tenant_id: Optional[str] = None,
-    ) -> List[ConnectedRobot]:
+        tenant_id: str | None = None,
+    ) -> list[ConnectedRobot]:
         """Get all connected robots, optionally filtered by tenant."""
         robots = list(self._robots.values())
         if tenant_id is not None:
@@ -345,9 +345,9 @@ class RobotManager:
 
     def get_available_robots(
         self,
-        required_capabilities: Optional[List[str]] = None,
-        tenant_id: Optional[str] = None,
-    ) -> List[ConnectedRobot]:
+        required_capabilities: list[str] | None = None,
+        tenant_id: str | None = None,
+    ) -> list[ConnectedRobot]:
         """Get robots with available capacity matching capabilities."""
         available = []
         for robot in self._robots.values():
@@ -364,13 +364,13 @@ class RobotManager:
     async def submit_job(
         self,
         workflow_id: str,
-        workflow_data: Dict[str, Any],
-        variables: Dict[str, Any],
+        workflow_data: dict[str, Any],
+        variables: dict[str, Any],
         priority: int = 5,
-        target_robot_id: Optional[str] = None,
-        required_capabilities: Optional[List[str]] = None,
-        timeout: Optional[int] = None,
-        tenant_id: Optional[str] = None,
+        target_robot_id: str | None = None,
+        required_capabilities: list[str] | None = None,
+        timeout: int | None = None,
+        tenant_id: str | None = None,
     ) -> PendingJob:
         """Submit a new job to the queue."""
         async with self._lock:
@@ -418,7 +418,7 @@ class RobotManager:
         if job.status != "pending":
             return False
 
-        target_robot: Optional[ConnectedRobot] = None
+        target_robot: ConnectedRobot | None = None
 
         if job.target_robot_id:
             target_robot = self._robots.get(job.target_robot_id)
@@ -464,7 +464,7 @@ class RobotManager:
                         "workflow_data": job.workflow_data,
                         "variables": job.variables,
                         "timeout": job.timeout,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 ).decode()
             )
@@ -556,7 +556,7 @@ class RobotManager:
                     "job_id": job_id,
                     "rejected_by": robot_id,
                     "reason": reason,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
 
@@ -565,13 +565,13 @@ class RobotManager:
     async def _try_assign_job_excluding(
         self,
         job: PendingJob,
-        excluded_robots: Set[str],
+        excluded_robots: set[str],
     ) -> bool:
         """Try to assign a job to an available robot, excluding specified robots."""
         if job.status != "pending":
             return False
 
-        target_robot: Optional[ConnectedRobot] = None
+        target_robot: ConnectedRobot | None = None
 
         if job.target_robot_id and job.target_robot_id not in excluded_robots:
             target_robot = self._robots.get(job.target_robot_id)
@@ -612,7 +612,7 @@ class RobotManager:
                         "workflow_data": job.workflow_data,
                         "variables": job.variables,
                         "timeout": job.timeout,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 ).decode()
             )
@@ -651,7 +651,7 @@ class RobotManager:
         robot_id: str,
         job_id: str,
         success: bool,
-        result: Dict[str, Any],
+        result: dict[str, Any],
     ) -> None:
         """Handle job completion notification."""
         async with self._lock:
@@ -679,7 +679,7 @@ class RobotManager:
                             robot_id=robot_id,
                             success=success,
                             execution_time_ms=int(
-                                (datetime.now(timezone.utc) - job.created_at).total_seconds() * 1000
+                                (datetime.now(UTC) - job.created_at).total_seconds() * 1000
                             ),
                         )
                     )
@@ -691,19 +691,19 @@ class RobotManager:
                         "robot_id": robot_id,
                         "success": success,
                         "result": result,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
                 )
 
-    def get_job(self, job_id: str) -> Optional[PendingJob]:
+    def get_job(self, job_id: str) -> PendingJob | None:
         """Get a job by ID."""
         return self._jobs.get(job_id)
 
-    def get_pending_jobs(self) -> List[PendingJob]:
+    def get_pending_jobs(self) -> list[PendingJob]:
         """Get all pending jobs."""
         return [j for j in self._jobs.values() if j.status == "pending"]
 
-    def get_all_jobs(self) -> Dict[str, PendingJob]:
+    def get_all_jobs(self) -> dict[str, PendingJob]:
         """Get all jobs."""
         return self._jobs
 
@@ -717,7 +717,7 @@ class RobotManager:
         self._admin_connections.discard(websocket)
         logger.info(f"Admin disconnected. Total: {len(self._admin_connections)}")
 
-    async def _broadcast_admin(self, message: Dict[str, Any]) -> None:
+    async def _broadcast_admin(self, message: dict[str, Any]) -> None:
         """Broadcast message to all admin connections."""
         disconnected = set()
         for conn in self._admin_connections:
@@ -732,7 +732,7 @@ class RobotManager:
         for conn in disconnected:
             self._admin_connections.discard(conn)
 
-    async def get_fleet_stats(self) -> Dict[str, Any]:
+    async def get_fleet_stats(self) -> dict[str, Any]:
         """Get fleet statistics.
 
         Returns summary of all robots and jobs.

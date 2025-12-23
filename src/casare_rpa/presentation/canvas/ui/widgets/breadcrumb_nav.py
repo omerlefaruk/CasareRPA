@@ -10,21 +10,20 @@ Minimal breadcrumb display: root / SubflowName
 Example display: root / My Subflow
 """
 
-from typing import Optional, List
 from dataclasses import dataclass, field
+from typing import List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
-    QWidget,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QFrame,
     QSizePolicy,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QCursor
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -35,7 +34,7 @@ class BreadcrumbItem:
 
     id: str  # Workflow or subflow ID
     name: str  # Display name
-    path: Optional[str] = None  # File path if applicable
+    path: str | None = None  # File path if applicable
     data: dict = field(default_factory=dict)  # Additional data (nodes, connections, etc.)
 
 
@@ -125,7 +124,7 @@ class BreadcrumbNavWidget(QFrame):
         super().__init__(parent)
 
         # Navigation stack
-        self._items: List[BreadcrumbItem] = []
+        self._items: list[BreadcrumbItem] = []
         self._current_index: int = -1
 
         self._setup_ui()
@@ -162,7 +161,7 @@ class BreadcrumbNavWidget(QFrame):
             }
         """)
 
-    def set_path(self, items: List[BreadcrumbItem]) -> None:
+    def set_path(self, items: list[BreadcrumbItem]) -> None:
         """
         Set the breadcrumb path.
 
@@ -195,7 +194,7 @@ class BreadcrumbNavWidget(QFrame):
 
         logger.debug(f"Breadcrumb: pushed '{item.name}', depth={len(self._items)}")
 
-    def pop(self) -> Optional[BreadcrumbItem]:
+    def pop(self) -> BreadcrumbItem | None:
         """
         Pop the current level and go back to parent.
 
@@ -215,7 +214,7 @@ class BreadcrumbNavWidget(QFrame):
         logger.debug(f"Breadcrumb: popped '{popped.name}', depth={len(self._items)}")
         return popped
 
-    def navigate_to_level(self, index: int) -> List[BreadcrumbItem]:
+    def navigate_to_level(self, index: int) -> list[BreadcrumbItem]:
         """
         Navigate to a specific level, popping all deeper levels.
 
@@ -238,19 +237,19 @@ class BreadcrumbNavWidget(QFrame):
 
         return popped
 
-    def get_current(self) -> Optional[BreadcrumbItem]:
+    def get_current(self) -> BreadcrumbItem | None:
         """Get the current breadcrumb item."""
         if 0 <= self._current_index < len(self._items):
             return self._items[self._current_index]
         return None
 
-    def get_parent(self) -> Optional[BreadcrumbItem]:
+    def get_parent(self) -> BreadcrumbItem | None:
         """Get the parent breadcrumb item."""
         if self._current_index > 0:
             return self._items[self._current_index - 1]
         return None
 
-    def get_path(self) -> List[BreadcrumbItem]:
+    def get_path(self) -> list[BreadcrumbItem]:
         """Get the full navigation path."""
         return self._items.copy()
 
@@ -320,7 +319,7 @@ class SubflowNavigationController:
         self._main_window = main_window
 
         # Stack of saved workflow states for going back
-        self._state_stack: List[dict] = []
+        self._state_stack: list[dict] = []
 
         # Connect signals
         self._breadcrumb.navigate_back.connect(self.go_back)

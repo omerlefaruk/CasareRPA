@@ -43,13 +43,12 @@ from __future__ import annotations
 
 import asyncio
 import random
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import (
     Any,
-    Awaitable,
-    Callable,
     Dict,
     List,
     Optional,
@@ -174,7 +173,7 @@ class JobInsertedPayload:
     queue_name: str = "default"
 
     @classmethod
-    def from_postgres_change(cls, payload: Dict[str, Any]) -> "JobInsertedPayload":
+    def from_postgres_change(cls, payload: dict[str, Any]) -> JobInsertedPayload:
         """
         Parse from Postgres Changes payload.
 
@@ -191,9 +190,9 @@ class JobInsertedPayload:
             try:
                 created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
             except ValueError:
-                created_at = datetime.now(timezone.utc)
+                created_at = datetime.now(UTC)
         else:
-            created_at = datetime.now(timezone.utc)
+            created_at = datetime.now(UTC)
 
         return cls(
             job_id=str(record.get("id", "")),
@@ -215,13 +214,13 @@ class ControlCommandPayload:
     """
 
     command: str  # cancel_job, shutdown, pause, resume
-    target_robot_id: Optional[str] = None  # None = broadcast to all
-    job_id: Optional[str] = None  # For cancel_job command
-    reason: Optional[str] = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    target_robot_id: str | None = None  # None = broadcast to all
+    job_id: str | None = None  # For cancel_job command
+    reason: str | None = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     @classmethod
-    def from_broadcast(cls, payload: Dict[str, Any]) -> "ControlCommandPayload":
+    def from_broadcast(cls, payload: dict[str, Any]) -> ControlCommandPayload:
         """
         Parse from broadcast payload.
 
@@ -236,9 +235,9 @@ class ControlCommandPayload:
             try:
                 timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
             except ValueError:
-                timestamp = datetime.now(timezone.utc)
+                timestamp = datetime.now(UTC)
         else:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         return cls(
             command=payload.get("command", ""),
@@ -259,17 +258,17 @@ class RobotPresenceInfo:
 
     robot_id: str
     status: str  # idle, busy, paused, shutting_down
-    current_job_id: Optional[str] = None
+    current_job_id: str | None = None
     cpu_percent: float = 0.0
     memory_percent: float = 0.0
     jobs_completed: int = 0
     jobs_failed: int = 0
     uptime_seconds: float = 0.0
     environment: str = "default"
-    capabilities: List[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    capabilities: list[str] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for presence tracking."""
         return {
             "robot_id": self.robot_id,
@@ -294,18 +293,18 @@ class PresenceState:
     Used for load balancing and fleet monitoring.
     """
 
-    robots: Dict[str, RobotPresenceInfo] = field(default_factory=dict)
-    last_sync: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    robots: dict[str, RobotPresenceInfo] = field(default_factory=dict)
+    last_sync: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def get_idle_robots(self) -> List[RobotPresenceInfo]:
+    def get_idle_robots(self) -> list[RobotPresenceInfo]:
         """Get all idle robots."""
         return [r for r in self.robots.values() if r.status == "idle"]
 
-    def get_busy_robots(self) -> List[RobotPresenceInfo]:
+    def get_busy_robots(self) -> list[RobotPresenceInfo]:
         """Get all busy robots."""
         return [r for r in self.robots.values() if r.status == "busy"]
 
-    def get_robot_by_id(self, robot_id: str) -> Optional[RobotPresenceInfo]:
+    def get_robot_by_id(self, robot_id: str) -> RobotPresenceInfo | None:
         """Get robot by ID."""
         return self.robots.get(robot_id)
 
@@ -314,8 +313,8 @@ class PresenceState:
 JobInsertCallback = Callable[[JobInsertedPayload], Awaitable[None]]
 ControlCommandCallback = Callable[[ControlCommandPayload], Awaitable[None]]
 PresenceSyncCallback = Callable[[PresenceState], Awaitable[None]]
-PresenceJoinCallback = Callable[[List[RobotPresenceInfo]], Awaitable[None]]
-PresenceLeaveCallback = Callable[[List[str]], Awaitable[None]]
+PresenceJoinCallback = Callable[[list[RobotPresenceInfo]], Awaitable[None]]
+PresenceLeaveCallback = Callable[[list[str]], Awaitable[None]]
 ConnectionStateCallback = Callable[[RealtimeConnectionState], None]
 
 T = TypeVar("T")
@@ -331,16 +330,16 @@ class SubscriptionManager:
 
     def __init__(self) -> None:
         """Initialize subscription manager."""
-        self._channels: Dict[str, Any] = {}  # channel_name -> channel object
-        self._states: Dict[str, ChannelState] = {}  # channel_name -> state
-        self._callbacks: Dict[str, List[Callable]] = {}  # channel_name -> callbacks
+        self._channels: dict[str, Any] = {}  # channel_name -> channel object
+        self._states: dict[str, ChannelState] = {}  # channel_name -> state
+        self._callbacks: dict[str, list[Callable]] = {}  # channel_name -> callbacks
         self._lock = asyncio.Lock()
 
     def register_channel(
         self,
         name: str,
         channel: Any,
-        callbacks: Optional[List[Callable]] = None,
+        callbacks: list[Callable] | None = None,
     ) -> None:
         """
         Register a channel for management.
@@ -373,9 +372,9 @@ class SubscriptionManager:
 
         try:
             subscribed = asyncio.Event()
-            error_msg: Optional[str] = None
+            error_msg: str | None = None
 
-            def on_subscribe(status: Any, err: Optional[Exception]) -> None:
+            def on_subscribe(status: Any, err: Exception | None) -> None:
                 nonlocal error_msg
                 if HAS_REALTIME:
                     if status == RealtimeSubscribeStates.SUBSCRIBED:
@@ -398,7 +397,7 @@ class SubscriptionManager:
             # Wait for subscription result with timeout
             try:
                 await asyncio.wait_for(subscribed.wait(), timeout=10.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._states[name] = ChannelState.ERROR
                 logger.error(f"Timeout waiting for channel '{name}' subscription")
                 return False
@@ -451,7 +450,7 @@ class SubscriptionManager:
         """Check if channel is subscribed."""
         return self._states.get(name) == ChannelState.SUBSCRIBED
 
-    def get_all_states(self) -> Dict[str, ChannelState]:
+    def get_all_states(self) -> dict[str, ChannelState]:
         """Get all channel states."""
         return dict(self._states)
 
@@ -518,27 +517,27 @@ class RealtimeClient:
         self._reconnect_attempts = 0
 
         # Client and channels
-        self._client: Optional[AsyncRealtimeClient] = None
+        self._client: AsyncRealtimeClient | None = None
         self._subscription_manager = SubscriptionManager()
 
         # Presence state
         self._presence_state = PresenceState()
-        self._robot_presence: Optional[RobotPresenceInfo] = None
+        self._robot_presence: RobotPresenceInfo | None = None
 
         # Notification event for hybrid model
         self._job_notification_event = asyncio.Event()
 
         # Callbacks
-        self._on_job_inserted_callbacks: List[JobInsertCallback] = []
-        self._on_control_command_callbacks: List[ControlCommandCallback] = []
-        self._on_presence_sync_callbacks: List[PresenceSyncCallback] = []
-        self._on_presence_join_callbacks: List[PresenceJoinCallback] = []
-        self._on_presence_leave_callbacks: List[PresenceLeaveCallback] = []
-        self._on_connection_state_callbacks: List[ConnectionStateCallback] = []
+        self._on_job_inserted_callbacks: list[JobInsertCallback] = []
+        self._on_control_command_callbacks: list[ControlCommandCallback] = []
+        self._on_presence_sync_callbacks: list[PresenceSyncCallback] = []
+        self._on_presence_join_callbacks: list[PresenceJoinCallback] = []
+        self._on_presence_leave_callbacks: list[PresenceLeaveCallback] = []
+        self._on_connection_state_callbacks: list[ConnectionStateCallback] = []
 
         # Background tasks
-        self._reconnect_task: Optional[asyncio.Task] = None
-        self._presence_task: Optional[asyncio.Task] = None
+        self._reconnect_task: asyncio.Task | None = None
+        self._presence_task: asyncio.Task | None = None
 
         logger.info(
             f"RealtimeClient initialized for robot '{config.robot_id}' " f"at {config.supabase_url}"
@@ -885,7 +884,7 @@ class RealtimeClient:
         self._presence_task = asyncio.create_task(self._presence_update_loop())
         return True
 
-    def _handle_job_inserted(self, payload: Dict[str, Any]) -> None:
+    def _handle_job_inserted(self, payload: dict[str, Any]) -> None:
         """
         Handle job insert CDC event.
 
@@ -906,23 +905,23 @@ class RealtimeClient:
         except Exception as e:
             logger.error(f"Error handling job insert: {e}")
 
-    def _handle_cancel_job_broadcast(self, payload: Dict[str, Any]) -> None:
+    def _handle_cancel_job_broadcast(self, payload: dict[str, Any]) -> None:
         """Handle cancel_job control command."""
         self._handle_control_command("cancel_job", payload)
 
-    def _handle_shutdown_broadcast(self, payload: Dict[str, Any]) -> None:
+    def _handle_shutdown_broadcast(self, payload: dict[str, Any]) -> None:
         """Handle shutdown control command."""
         self._handle_control_command("shutdown", payload)
 
-    def _handle_pause_broadcast(self, payload: Dict[str, Any]) -> None:
+    def _handle_pause_broadcast(self, payload: dict[str, Any]) -> None:
         """Handle pause control command."""
         self._handle_control_command("pause", payload)
 
-    def _handle_resume_broadcast(self, payload: Dict[str, Any]) -> None:
+    def _handle_resume_broadcast(self, payload: dict[str, Any]) -> None:
         """Handle resume control command."""
         self._handle_control_command("resume", payload)
 
-    def _handle_control_command(self, command: str, payload: Dict[str, Any]) -> None:
+    def _handle_control_command(self, command: str, payload: dict[str, Any]) -> None:
         """
         Handle control command broadcast.
 
@@ -966,7 +965,7 @@ class RealtimeClient:
         except Exception as e:
             logger.error(f"Error handling presence sync: {e}")
 
-    def _handle_presence_join(self, new_presences: Dict[str, Any]) -> None:
+    def _handle_presence_join(self, new_presences: dict[str, Any]) -> None:
         """Handle presence join event."""
         try:
             joined_robots = self._parse_presence_list(new_presences)
@@ -979,7 +978,7 @@ class RealtimeClient:
         except Exception as e:
             logger.error(f"Error handling presence join: {e}")
 
-    def _handle_presence_leave(self, left_presences: Dict[str, Any]) -> None:
+    def _handle_presence_leave(self, left_presences: dict[str, Any]) -> None:
         """Handle presence leave event."""
         try:
             left_ids = list(left_presences.keys()) if isinstance(left_presences, dict) else []
@@ -996,7 +995,7 @@ class RealtimeClient:
         except Exception as e:
             logger.error(f"Error handling presence leave: {e}")
 
-    def _update_presence_state(self, raw_state: Dict[str, Any]) -> None:
+    def _update_presence_state(self, raw_state: dict[str, Any]) -> None:
         """
         Update presence state from raw channel state.
 
@@ -1022,9 +1021,9 @@ class RealtimeClient:
                         capabilities=presence_data.get("capabilities", []),
                     )
 
-        self._presence_state.last_sync = datetime.now(timezone.utc)
+        self._presence_state.last_sync = datetime.now(UTC)
 
-    def _parse_presence_list(self, presences: Dict[str, Any]) -> List[RobotPresenceInfo]:
+    def _parse_presence_list(self, presences: dict[str, Any]) -> list[RobotPresenceInfo]:
         """Parse presence dictionary to list of RobotPresenceInfo."""
         result = []
         for key, presence_list in presences.items():
@@ -1106,7 +1105,7 @@ class RealtimeClient:
     async def send_broadcast(
         self,
         event: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         channel_name: str = CHANNEL_CONTROL,
     ) -> bool:
         """
@@ -1160,7 +1159,7 @@ class RealtimeClient:
             "job_id": job_id,
             "progress_percent": progress_percent,
             "current_node": current_node,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if psutil:
@@ -1190,10 +1189,10 @@ class RealtimeClient:
         try:
             await asyncio.wait_for(self._job_notification_event.wait(), timeout=timeout)
             return True
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return False
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """
         Get comprehensive client status.
 
@@ -1218,7 +1217,7 @@ class RealtimeClient:
             },
         }
 
-    async def __aenter__(self) -> "RealtimeClient":
+    async def __aenter__(self) -> RealtimeClient:
         """Async context manager entry."""
         await self.connect()
         await self.subscribe_all()

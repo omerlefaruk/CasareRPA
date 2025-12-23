@@ -13,18 +13,19 @@ Handles:
 
 from typing import TYPE_CHECKING, Optional, Set
 
-from PySide6.QtCore import Signal, QObject
-
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
+
 from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
-    from casare_rpa.presentation.canvas.graph.viewport_culling import (
-        ViewportCullingManager,
-    )
+
     from casare_rpa.presentation.canvas.connections.connection_validator import (
         ConnectionValidator,
+    )
+    from casare_rpa.presentation.canvas.graph.viewport_culling import (
+        ViewportCullingManager,
     )
 
 
@@ -56,7 +57,7 @@ class ConnectionHandler(QObject):
         self._graph = graph
         self._culler = culler
         self._validator = validator
-        self._port_signature_cache: dict[type, Optional[dict]] = {}
+        self._port_signature_cache: dict[type, dict | None] = {}
 
     def setup_validation(self) -> None:
         """Setup connection validation hooks."""
@@ -262,7 +263,7 @@ class ConnectionHandler(QObject):
         except Exception as e:
             logger.debug(f"Error during orphaned pipe cleanup: {e}")
 
-    def _check_pipe_orphaned(self, pipe, deleted_ids: Set[str]) -> bool:
+    def _check_pipe_orphaned(self, pipe, deleted_ids: set[str]) -> bool:
         """
         Check if a pipe is orphaned (either endpoint missing/invalid).
 
@@ -427,7 +428,7 @@ class ConnectionHandler(QObject):
             node = None
             if node_item is not None:
                 node = getattr(node_item, "node", None) or getattr(node_item, "_node", None)
-            if node and hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+            if node and hasattr(node, "get_port_type") and callable(node.get_port_type):
                 return node.get_port_type(port_name)
         except Exception:
             pass
@@ -446,7 +447,7 @@ class ConnectionHandler(QObject):
         except Exception:
             return None
 
-    def _get_node_port_signature(self, node_class: type) -> Optional[dict]:
+    def _get_node_port_signature(self, node_class: type) -> dict | None:
         """Get cached port signature for a visual node class."""
         if node_class in self._port_signature_cache:
             return self._port_signature_cache[node_class]
@@ -470,8 +471,8 @@ class ConnectionHandler(QObject):
             casare_cls = get_node_class(casare_class_name)
             casare_node = casare_cls(node_id="__sig__", config={})
 
-            inputs: dict[str, Optional[DataType]] = {}
-            outputs: dict[str, Optional[DataType]] = {}
+            inputs: dict[str, DataType | None] = {}
+            outputs: dict[str, DataType | None] = {}
             has_exec_in = False
             has_exec_out = False
 

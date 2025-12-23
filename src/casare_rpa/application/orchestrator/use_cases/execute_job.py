@@ -3,8 +3,8 @@
 from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities import Job, JobStatus
-from casare_rpa.domain.orchestrator.repositories import JobRepository, RobotRepository
 from casare_rpa.domain.orchestrator.errors import JobTransitionError
+from casare_rpa.domain.orchestrator.repositories import JobRepository, RobotRepository
 
 
 class ExecuteJobUseCase:

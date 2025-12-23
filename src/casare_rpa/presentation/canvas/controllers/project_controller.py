@@ -5,16 +5,16 @@ Coordinates between the ProjectManagerDialog and the application layer use cases
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, List, Optional
 
-from PySide6.QtCore import Signal
 from loguru import logger
+from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.domain.entities.project import Project, ProjectIndexEntry
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class ProjectController(BaseController):
@@ -47,7 +47,7 @@ class ProjectController(BaseController):
             main_window: Reference to main window
         """
         super().__init__(main_window)
-        self._current_project: Optional["Project"] = None
+        self._current_project: Project | None = None
         self._repository = None
         self._dialog = None
 
@@ -83,7 +83,7 @@ class ProjectController(BaseController):
         """Check if a project is currently open."""
         return self._current_project is not None
 
-    async def get_recent_projects(self) -> List["ProjectIndexEntry"]:
+    async def get_recent_projects(self) -> list["ProjectIndexEntry"]:
         """
         Get list of recent projects.
 
@@ -131,7 +131,7 @@ class ProjectController(BaseController):
             # No event loop, show dialog without recent projects
             self._show_dialog_with_projects([])
 
-    def _show_dialog_with_projects(self, recent_projects: List["ProjectIndexEntry"]) -> None:
+    def _show_dialog_with_projects(self, recent_projects: list["ProjectIndexEntry"]) -> None:
         """
         Show project manager dialog.
 

@@ -14,8 +14,9 @@ modifying core agent code.
 from __future__ import annotations
 
 import enum
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     pass
@@ -79,16 +80,16 @@ class PromptRules:
     """
 
     # Custom rules to append to system prompt
-    custom_rules: List[str] = field(default_factory=list)
+    custom_rules: list[str] = field(default_factory=list)
 
     # Required node types that must be included
-    required_node_types: List[str] = field(default_factory=list)
+    required_node_types: list[str] = field(default_factory=list)
 
     # Forbidden node types that must NOT be used
-    forbidden_node_types: List[str] = field(default_factory=list)
+    forbidden_node_types: list[str] = field(default_factory=list)
 
     # Selector strategy preference
-    selector_priority: List[str] = field(
+    selector_priority: list[str] = field(
         default_factory=lambda: [
             "data-testid",
             "data-cy",
@@ -363,15 +364,15 @@ class AgentConfig:
     validate_before_return: bool = True
 
     # Custom system prompt override (if set, replaces default)
-    custom_system_prompt: Optional[str] = None
+    custom_system_prompt: str | None = None
 
     # Additional context to include in prompts
     additional_context: str = ""
 
     # Callback for logging/monitoring
-    on_generation_attempt: Optional[Callable[[int, str], None]] = None
-    on_validation_error: Optional[Callable[[str, List[str]], None]] = None
-    on_success: Optional[Callable[[Dict[str, Any], int], None]] = None
+    on_generation_attempt: Callable[[int, str], None] | None = None
+    on_validation_error: Callable[[str, list[str]], None] | None = None
+    on_success: Callable[[dict[str, Any], int], None] | None = None
 
     def get_effective_temperature(self, attempt: int) -> float:
         """Calculate temperature for a given retry attempt."""
@@ -436,7 +437,7 @@ class AgentConfig:
 
         return "\n".join(lines)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize config to dictionary."""
         return {
             "performance": {
@@ -462,7 +463,7 @@ class AgentConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentConfig":
+    def from_dict(cls, data: dict[str, Any]) -> AgentConfig:
         """Create config from dictionary."""
         perf_data = data.get("performance", {})
         rules_data = data.get("prompt_rules", {})

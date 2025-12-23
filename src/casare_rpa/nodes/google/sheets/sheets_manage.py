@@ -12,14 +12,13 @@ Nodes for managing spreadsheets and worksheets:
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
 
 from typing import Any, Dict
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -626,7 +625,7 @@ class SheetsDuplicateSheetNode(SheetsBaseNode):
         insert_index = self.get_parameter("insert_index")
 
         # Build duplicate request
-        dup_request: Dict[str, Any] = {
+        dup_request: dict[str, Any] = {
             "sourceSheetId": int(source_sheet_id),
         }
         if new_name:

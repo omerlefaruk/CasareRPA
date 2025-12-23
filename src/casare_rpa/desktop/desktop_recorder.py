@@ -6,10 +6,12 @@ Converts recorded actions into workflow nodes.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any, Callable
+from typing import Any, Dict, List, Optional
+
 from loguru import logger
 
 try:
@@ -21,7 +23,7 @@ except ImportError:
     logger.warning("uiautomation not available - desktop recording limited")
 
 try:
-    from pynput import mouse, keyboard
+    from pynput import keyboard, mouse
 
     HAS_PYNPUT = True
 except ImportError:
@@ -56,7 +58,7 @@ class DesktopRecordedAction:
 
     # Keyboard properties
     text: str = ""
-    keys: List[str] = field(default_factory=list)
+    keys: list[str] = field(default_factory=list)
 
     # Element properties (from UI Automation)
     element_name: str = ""
@@ -66,9 +68,9 @@ class DesktopRecordedAction:
     window_title: str = ""
 
     # Selector for replay
-    selector: Dict[str, Any] = field(default_factory=dict)
+    selector: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert action to dictionary."""
         return {
             "action_type": self.action_type.value,
@@ -121,20 +123,20 @@ class DesktopRecorder:
 
     def __init__(self):
         """Initialize the desktop recorder."""
-        self.actions: List[DesktopRecordedAction] = []
+        self.actions: list[DesktopRecordedAction] = []
         self.is_recording = False
         self.is_paused = False
-        self.start_time: Optional[datetime] = None
+        self.start_time: datetime | None = None
 
         # Listeners
-        self._mouse_listener: Optional[mouse.Listener] = None
-        self._keyboard_listener: Optional[keyboard.Listener] = None
+        self._mouse_listener: mouse.Listener | None = None
+        self._keyboard_listener: keyboard.Listener | None = None
 
         # Callbacks
-        self._on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = None
-        self._on_recording_started: Optional[Callable[[], None]] = None
-        self._on_recording_stopped: Optional[Callable[[], None]] = None
-        self._on_recording_paused: Optional[Callable[[bool], None]] = None
+        self._on_action_recorded: Callable[[DesktopRecordedAction], None] | None = None
+        self._on_recording_started: Callable[[], None] | None = None
+        self._on_recording_stopped: Callable[[], None] | None = None
+        self._on_recording_paused: Callable[[bool], None] | None = None
 
         # Keyboard state tracking
         self._pressed_keys: set = set()
@@ -143,7 +145,7 @@ class DesktopRecorder:
         self._text_flush_delay: float = 0.5  # Flush text after 500ms of no typing
 
         # Mouse state tracking
-        self._drag_start: Optional[tuple] = None
+        self._drag_start: tuple | None = None
         self._last_click_time: float = 0
         self._double_click_threshold: float = 0.3
 
@@ -154,10 +156,10 @@ class DesktopRecorder:
 
     def set_callbacks(
         self,
-        on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = None,
-        on_recording_started: Optional[Callable[[], None]] = None,
-        on_recording_stopped: Optional[Callable[[], None]] = None,
-        on_recording_paused: Optional[Callable[[bool], None]] = None,
+        on_action_recorded: Callable[[DesktopRecordedAction], None] | None = None,
+        on_recording_started: Callable[[], None] | None = None,
+        on_recording_stopped: Callable[[], None] | None = None,
+        on_recording_paused: Callable[[bool], None] | None = None,
     ):
         """Set callback functions for recording events."""
         self._on_action_recorded = on_action_recorded
@@ -189,7 +191,7 @@ class DesktopRecorder:
         if self._on_recording_started:
             self._on_recording_started()
 
-    def stop(self) -> List[DesktopRecordedAction]:
+    def stop(self) -> list[DesktopRecordedAction]:
         """Stop recording and return recorded actions."""
         if not self.is_recording:
             logger.warning("No recording in progress")
@@ -423,7 +425,7 @@ class DesktopRecorder:
             self._add_action(action)
             self._text_buffer = ""
 
-    def _get_element_at_position(self, x: int, y: int) -> Dict[str, Any]:
+    def _get_element_at_position(self, x: int, y: int) -> dict[str, Any]:
         """Get UI element information at the given position."""
         result = {
             "element_name": "",
@@ -472,7 +474,7 @@ class DesktopRecorder:
         if self._on_action_recorded:
             self._on_action_recorded(action)
 
-    def get_actions(self) -> List[DesktopRecordedAction]:
+    def get_actions(self) -> list[DesktopRecordedAction]:
         """Get all recorded actions."""
         return self.actions.copy()
 
@@ -487,7 +489,7 @@ class WorkflowGenerator:
     """Generates workflow nodes from recorded desktop actions."""
 
     @staticmethod
-    def generate_workflow_data(actions: List[DesktopRecordedAction]) -> Dict[str, Any]:
+    def generate_workflow_data(actions: list[DesktopRecordedAction]) -> dict[str, Any]:
         """
         Generate workflow JSON data from recorded actions.
 
@@ -566,7 +568,7 @@ class WorkflowGenerator:
     @staticmethod
     def _action_to_node(
         action: DesktopRecordedAction, node_id: str, y_pos: int
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Convert a recorded action to a workflow node."""
 
         if action.action_type in (

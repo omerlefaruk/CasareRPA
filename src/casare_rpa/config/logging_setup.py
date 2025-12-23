@@ -12,7 +12,6 @@ from loguru import logger
 
 from casare_rpa.config.paths import APP_NAME, APP_VERSION, LOGS_DIR
 
-
 # Logging configuration constants
 LOG_FILE_PATH: Final[Path] = LOGS_DIR / "casare_rpa_{time:YYYY-MM-DD}.log"
 LOG_RETENTION: Final[str] = "30 days"

@@ -6,11 +6,13 @@ Uses the unified SelectorFacade for consistent selector management.
 """
 
 import asyncio
-from PySide6.QtCore import QObject, Signal
-from loguru import logger
 
-from casare_rpa.utils.selectors import SelectorFacade
+from loguru import logger
+from PySide6.QtCore import QObject, Signal
+
 from casare_rpa.domain.entities.selector import ElementFingerprint
+from casare_rpa.utils.selectors import SelectorFacade
+
 from .unified_selector_dialog import UnifiedSelectorDialog
 
 

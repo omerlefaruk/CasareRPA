@@ -9,6 +9,7 @@ import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
+
 import aiohttp
 from loguru import logger
 
@@ -19,9 +20,9 @@ class WhatsAppAPIError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[int] = None,
-        error_subcode: Optional[int] = None,
-        error_type: Optional[str] = None,
+        error_code: int | None = None,
+        error_subcode: int | None = None,
+        error_type: str | None = None,
     ):
         self.error_code = error_code
         self.error_subcode = error_subcode
@@ -35,7 +36,7 @@ class WhatsAppConfig:
 
     access_token: str
     phone_number_id: str
-    business_account_id: Optional[str] = None
+    business_account_id: str | None = None
     api_version: str = "v18.0"
     base_url: str = "https://graph.facebook.com"
     timeout: float = 30.0
@@ -135,7 +136,7 @@ class WhatsAppClient:
             config: WhatsAppConfig with access token and phone number ID
         """
         self.config = config
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self) -> "WhatsAppClient":
         """Enter async context manager."""
@@ -167,8 +168,8 @@ class WhatsAppClient:
         self,
         method: str,
         url: str,
-        data: Optional[dict] = None,
-        files: Optional[dict] = None,
+        data: dict | None = None,
+        files: dict | None = None,
     ) -> dict:
         """
         Make a request to the WhatsApp Cloud API.
@@ -284,7 +285,7 @@ class WhatsAppClient:
         to: str,
         template_name: str,
         language_code: str = "en_US",
-        components: Optional[list] = None,
+        components: list | None = None,
     ) -> WhatsAppMessage:
         """
         Send a template message.
@@ -321,8 +322,8 @@ class WhatsAppClient:
     async def send_image(
         self,
         to: str,
-        image: Union[str, Path],
-        caption: Optional[str] = None,
+        image: str | Path,
+        caption: str | None = None,
     ) -> WhatsAppMessage:
         """
         Send an image message.
@@ -363,9 +364,9 @@ class WhatsAppClient:
     async def send_document(
         self,
         to: str,
-        document: Union[str, Path],
-        filename: Optional[str] = None,
-        caption: Optional[str] = None,
+        document: str | Path,
+        filename: str | None = None,
+        caption: str | None = None,
     ) -> WhatsAppMessage:
         """
         Send a document message.
@@ -408,7 +409,7 @@ class WhatsAppClient:
     async def send_audio(
         self,
         to: str,
-        audio: Union[str, Path],
+        audio: str | Path,
     ) -> WhatsAppMessage:
         """
         Send an audio message.
@@ -444,8 +445,8 @@ class WhatsAppClient:
     async def send_video(
         self,
         to: str,
-        video: Union[str, Path],
-        caption: Optional[str] = None,
+        video: str | Path,
+        caption: str | None = None,
     ) -> WhatsAppMessage:
         """
         Send a video message.
@@ -487,8 +488,8 @@ class WhatsAppClient:
         to: str,
         latitude: float,
         longitude: float,
-        name: Optional[str] = None,
-        address: Optional[str] = None,
+        name: str | None = None,
+        address: str | None = None,
     ) -> WhatsAppMessage:
         """
         Send a location message.
@@ -559,8 +560,8 @@ class WhatsAppClient:
         interactive_type: str,
         body_text: str,
         action: dict,
-        header: Optional[dict] = None,
-        footer_text: Optional[str] = None,
+        header: dict | None = None,
+        footer_text: str | None = None,
     ) -> WhatsAppMessage:
         """
         Send an interactive message (buttons, lists).

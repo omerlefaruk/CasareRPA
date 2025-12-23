@@ -12,26 +12,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, TYPE_CHECKING
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QLineEdit,
-    QPushButton,
-    QHeaderView,
-    QStyledItemDelegate,
-    QStyleOptionViewItem,
-    QStyle,
-    QAbstractItemView,
-)
-from PySide6.QtCore import Qt, Signal, QRect, QModelIndex
-from PySide6.QtGui import QPainter, QColor, QBrush, QPen
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import QModelIndex, QRect, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QHeaderView,
+    QLineEdit,
+    QPushButton,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
@@ -47,10 +46,10 @@ class ProfilingEntry:
     node_name: str
     node_type: str
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     duration_ms: float = 0.0
-    parent_id: Optional[str] = None
-    children: List["ProfilingEntry"] = field(default_factory=list)
+    parent_id: str | None = None
+    children: list[ProfilingEntry] = field(default_factory=list)
     percentage: float = 0.0
     status: str = "running"  # running, completed, failed
 
@@ -187,14 +186,14 @@ class ProfilingTreeWidget(QWidget):
     # Root node identifier
     ROOT_NODE_ID = "__root__"
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
 
-        self._entries: Dict[str, ProfilingEntry] = {}
-        self._root_entries: List[str] = []
+        self._entries: dict[str, ProfilingEntry] = {}
+        self._root_entries: list[str] = []
         self._total_duration_ms: float = 0.0
-        self._tree_items: Dict[str, QTreeWidgetItem] = {}
-        self._root_item: Optional[QTreeWidgetItem] = None
+        self._tree_items: dict[str, QTreeWidgetItem] = {}
+        self._root_item: QTreeWidgetItem | None = None
         self._workflow_name: str = "Workflow Execution"
 
         self._setup_ui()
@@ -384,7 +383,7 @@ class ProfilingTreeWidget(QWidget):
         node_id: str,
         node_name: str,
         node_type: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
     ) -> None:
         """
         Add a new profiling entry when node execution starts.

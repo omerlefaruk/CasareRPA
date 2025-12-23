@@ -9,17 +9,16 @@ Designed for enterprise RPA security requirements:
 - TTL-based caching with automatic refresh
 """
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from enum import Enum
-from typing import Any, Dict, List, Optional
 import asyncio
 import secrets
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
 from loguru import logger
-
+from pydantic import BaseModel, Field, SecretStr, field_validator
 
 # =============================================================================
 # ENUMS
@@ -73,7 +72,7 @@ class AuditEventType(str, Enum):
 class VaultError(Exception):
     """Base exception for all vault operations."""
 
-    def __init__(self, message: str, path: Optional[str] = None) -> None:
+    def __init__(self, message: str, path: str | None = None) -> None:
         self.message = message
         self.path = path
         super().__init__(message)
@@ -119,40 +118,40 @@ class SecretMetadata(BaseModel):
 
     path: str = Field(..., description="Vault path for the secret")
     version: int = Field(default=1, ge=1, description="Secret version number")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = Field(
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime | None = Field(
         default=None, description="Expiration time for dynamic secrets"
     )
     credential_type: CredentialType = Field(default=CredentialType.CUSTOM)
     is_dynamic: bool = Field(
         default=False, description="Whether this is a dynamically generated secret"
     )
-    lease_id: Optional[str] = Field(default=None, description="Lease ID for dynamic secrets")
-    lease_duration: Optional[int] = Field(default=None, description="Lease duration in seconds")
+    lease_id: str | None = Field(default=None, description="Lease ID for dynamic secrets")
+    lease_duration: int | None = Field(default=None, description="Lease duration in seconds")
     renewable: bool = Field(default=False, description="Whether the lease can be renewed")
-    custom_metadata: Dict[str, Any] = Field(default_factory=dict)
+    custom_metadata: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def is_expired(self) -> bool:
         """Check if the secret has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
     @property
-    def time_until_expiry(self) -> Optional[timedelta]:
+    def time_until_expiry(self) -> timedelta | None:
         """Get time remaining until expiration."""
         if self.expires_at is None:
             return None
-        remaining = self.expires_at - datetime.now(timezone.utc)
+        remaining = self.expires_at - datetime.now(UTC)
         return remaining if remaining.total_seconds() > 0 else timedelta(0)
 
 
 class SecretValue(BaseModel):
     """Container for secret data with metadata."""
 
-    data: Dict[str, Any] = Field(..., description="Secret key-value pairs")
+    data: dict[str, Any] = Field(..., description="Secret key-value pairs")
     metadata: SecretMetadata = Field(...)
 
     model_config = {"extra": "forbid"}
@@ -161,21 +160,21 @@ class SecretValue(BaseModel):
         """Get a value from the secret data."""
         return self.data.get(key, default)
 
-    def get_username(self) -> Optional[str]:
+    def get_username(self) -> str | None:
         """Extract username from common credential formats."""
         for key in ["username", "user", "login", "email", "user_id"]:
             if key in self.data:
                 return str(self.data[key])
         return None
 
-    def get_password(self) -> Optional[str]:
+    def get_password(self) -> str | None:
         """Extract password from common credential formats."""
         for key in ["password", "pass", "secret", "pwd", "passwd"]:
             if key in self.data:
                 return str(self.data[key])
         return None
 
-    def get_api_key(self) -> Optional[str]:
+    def get_api_key(self) -> str | None:
         """Extract API key from common formats."""
         for key in ["api_key", "apikey", "key", "token", "access_token"]:
             if key in self.data:
@@ -188,15 +187,15 @@ class AuditEvent(BaseModel):
 
     event_id: str = Field(default_factory=lambda: secrets.token_hex(16))
     event_type: AuditEventType
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    path: Optional[str] = None
-    workflow_id: Optional[str] = None
-    robot_id: Optional[str] = None
-    user_id: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    path: str | None = None
+    workflow_id: str | None = None
+    robot_id: str | None = None
+    user_id: str | None = None
     success: bool = True
-    error_message: Optional[str] = None
-    client_ip: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    error_message: str | None = None
+    client_ip: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     def to_log_string(self) -> str:
         """Format as log string for structured logging."""
@@ -218,9 +217,9 @@ class VaultConfig(BaseModel):
     backend: VaultBackend = Field(default=VaultBackend.SQLITE, description="Vault backend to use")
 
     # HashiCorp Vault settings
-    hashicorp_url: Optional[str] = Field(default=None, description="HashiCorp Vault server URL")
-    hashicorp_token: Optional[SecretStr] = Field(default=None, description="HashiCorp Vault token")
-    hashicorp_namespace: Optional[str] = Field(
+    hashicorp_url: str | None = Field(default=None, description="HashiCorp Vault server URL")
+    hashicorp_token: SecretStr | None = Field(default=None, description="HashiCorp Vault token")
+    hashicorp_namespace: str | None = Field(
         default=None, description="Vault namespace for enterprise"
     )
     hashicorp_mount_point: str = Field(
@@ -231,14 +230,14 @@ class VaultConfig(BaseModel):
     )
 
     # Supabase Vault settings
-    supabase_url: Optional[str] = Field(default=None, description="Supabase project URL")
-    supabase_key: Optional[SecretStr] = Field(default=None, description="Supabase service role key")
+    supabase_url: str | None = Field(default=None, description="Supabase project URL")
+    supabase_key: SecretStr | None = Field(default=None, description="Supabase service role key")
 
     # SQLite fallback settings
     sqlite_path: str = Field(
         default=".casare/vault.db", description="Path to SQLite vault database"
     )
-    sqlite_encryption_key: Optional[SecretStr] = Field(
+    sqlite_encryption_key: SecretStr | None = Field(
         default=None, description="Encryption key for SQLite vault"
     )
 
@@ -257,53 +256,53 @@ class VaultConfig(BaseModel):
 
     # TLS settings
     tls_verify: bool = Field(default=True, description="Verify TLS certificates")
-    tls_ca_cert: Optional[str] = Field(default=None, description="Path to CA certificate")
-    tls_client_cert: Optional[str] = Field(default=None, description="Path to client certificate")
-    tls_client_key: Optional[str] = Field(default=None, description="Path to client private key")
+    tls_ca_cert: str | None = Field(default=None, description="Path to CA certificate")
+    tls_client_cert: str | None = Field(default=None, description="Path to client certificate")
+    tls_client_key: str | None = Field(default=None, description="Path to client private key")
 
     # Azure Key Vault settings
-    azure_vault_url: Optional[str] = Field(
+    azure_vault_url: str | None = Field(
         default=None,
         description="Azure Key Vault URL (e.g., https://myvault.vault.azure.net/)",
     )
-    azure_tenant_id: Optional[str] = Field(
+    azure_tenant_id: str | None = Field(
         default=None, description="Azure AD tenant ID for Service Principal auth"
     )
-    azure_client_id: Optional[str] = Field(
+    azure_client_id: str | None = Field(
         default=None, description="Azure AD client ID for Service Principal auth"
     )
-    azure_client_secret: Optional[SecretStr] = Field(
+    azure_client_secret: SecretStr | None = Field(
         default=None, description="Azure AD client secret for Service Principal auth"
     )
     azure_use_managed_identity: bool = Field(
         default=False, description="Use Azure Managed Identity for authentication"
     )
-    azure_managed_identity_client_id: Optional[str] = Field(
+    azure_managed_identity_client_id: str | None = Field(
         default=None, description="Client ID for user-assigned managed identity"
     )
 
     # AWS Secrets Manager settings
-    aws_region: Optional[str] = Field(default=None, description="AWS region for Secrets Manager")
-    aws_access_key_id: Optional[str] = Field(
+    aws_region: str | None = Field(default=None, description="AWS region for Secrets Manager")
+    aws_access_key_id: str | None = Field(
         default=None,
         description="AWS access key ID (optional, uses env/IAM if not set)",
     )
-    aws_secret_access_key: Optional[SecretStr] = Field(
+    aws_secret_access_key: SecretStr | None = Field(
         default=None, description="AWS secret access key"
     )
-    aws_session_token: Optional[SecretStr] = Field(
+    aws_session_token: SecretStr | None = Field(
         default=None, description="AWS session token for temporary credentials"
     )
-    aws_profile: Optional[str] = Field(
+    aws_profile: str | None = Field(
         default=None, description="AWS profile name from ~/.aws/credentials"
     )
-    aws_endpoint_url: Optional[str] = Field(
+    aws_endpoint_url: str | None = Field(
         default=None, description="Custom AWS endpoint URL (for LocalStack, testing)"
     )
 
     @field_validator("hashicorp_url")
     @classmethod
-    def validate_hashicorp_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_hashicorp_url(cls, v: str | None) -> str | None:
         """Ensure HashiCorp URL has proper scheme."""
         if v is not None and not v.startswith(("http://", "https://")):
             return f"https://{v}"
@@ -338,7 +337,7 @@ class CacheEntry:
     @property
     def is_expired(self) -> bool:
         """Check if cache entry has expired."""
-        age = (datetime.now(timezone.utc) - self.cached_at).total_seconds()
+        age = (datetime.now(UTC) - self.cached_at).total_seconds()
         return age > self.ttl_seconds
 
 
@@ -346,14 +345,14 @@ class SecretCache:
     """Thread-safe LRU cache for secrets."""
 
     def __init__(self, max_size: int = 1000, default_ttl: int = 300) -> None:
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._max_size = max_size
         self._default_ttl = default_ttl
         self._lock = asyncio.Lock()
         self._hits = 0
         self._misses = 0
 
-    async def get(self, path: str) -> Optional[SecretValue]:
+    async def get(self, path: str) -> SecretValue | None:
         """Get secret from cache if valid."""
         async with self._lock:
             entry = self._cache.get(path)
@@ -376,7 +375,7 @@ class SecretCache:
             self._hits += 1
             return entry.value
 
-    async def set(self, path: str, value: SecretValue, ttl: Optional[int] = None) -> None:
+    async def set(self, path: str, value: SecretValue, ttl: int | None = None) -> None:
         """Store secret in cache."""
         async with self._lock:
             # Evict if at capacity
@@ -385,7 +384,7 @@ class SecretCache:
 
             self._cache[path] = CacheEntry(
                 value=value,
-                cached_at=datetime.now(timezone.utc),
+                cached_at=datetime.now(UTC),
                 ttl_seconds=ttl or self._default_ttl,
             )
 
@@ -420,7 +419,7 @@ class SecretCache:
         lru_key = min(self._cache, key=lambda k: self._cache[k].access_count)
         del self._cache[lru_key]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         total = self._hits + self._misses
         hit_rate = (self._hits / total * 100) if total > 0 else 0.0
@@ -457,7 +456,7 @@ class VaultProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
+    async def get_secret(self, path: str, version: int | None = None) -> SecretValue:
         """
         Retrieve a secret from the vault.
 
@@ -478,9 +477,9 @@ class VaultProvider(ABC):
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """
         Store a secret in the vault.
@@ -510,7 +509,7 @@ class VaultProvider(ABC):
         pass
 
     @abstractmethod
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """
         List secret paths under a prefix.
 
@@ -522,9 +521,7 @@ class VaultProvider(ABC):
         """
         pass
 
-    async def get_dynamic_secret(
-        self, path: str, role: str, ttl: Optional[int] = None
-    ) -> SecretValue:
+    async def get_dynamic_secret(self, path: str, role: str, ttl: int | None = None) -> SecretValue:
         """
         Get a dynamically generated secret (e.g., database credentials).
 
@@ -541,7 +538,7 @@ class VaultProvider(ABC):
         """
         raise NotImplementedError(f"{self.__class__.__name__} does not support dynamic secrets")
 
-    async def renew_lease(self, lease_id: str, increment: Optional[int] = None) -> int:
+    async def renew_lease(self, lease_id: str, increment: int | None = None) -> int:
         """
         Renew a secret lease.
 
@@ -621,10 +618,10 @@ class AuditLogger:
         self._enabled = enabled
         self._log_reads = log_reads
         self._use_persistent_storage = use_persistent_storage
-        self._events: List[AuditEvent] = []
+        self._events: list[AuditEvent] = []
         self._max_buffer_size = 1000
-        self._pending_events: List[AuditEvent] = []
-        self._flush_task: Optional[asyncio.Task] = None
+        self._pending_events: list[AuditEvent] = []
+        self._flush_task: asyncio.Task | None = None
         self._repository = None
 
     async def _get_repository(self):
@@ -702,9 +699,9 @@ class AuditLogger:
         self,
         path: str,
         success: bool = True,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
-        error: Optional[str] = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
+        error: str | None = None,
     ) -> None:
         """Log a secret read operation."""
         self.log(
@@ -722,8 +719,8 @@ class AuditLogger:
         self,
         path: str,
         success: bool = True,
-        user_id: Optional[str] = None,
-        error: Optional[str] = None,
+        user_id: str | None = None,
+        error: str | None = None,
     ) -> None:
         """Log a secret write operation."""
         self.log(
@@ -745,19 +742,19 @@ class AuditLogger:
             )
         )
 
-    def get_recent_events(self, count: int = 100) -> List[AuditEvent]:
+    def get_recent_events(self, count: int = 100) -> list[AuditEvent]:
         """Get recent audit events from memory."""
         return self._events[-count:]
 
     async def get_events_from_storage(
         self,
-        event_type: Optional[str] = None,
-        resource: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        event_type: str | None = None,
+        resource: str | None = None,
+        workflow_id: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 100,
-    ) -> List[AuditEvent]:
+    ) -> list[AuditEvent]:
         """
         Query events from persistent storage.
 
@@ -785,7 +782,7 @@ class AuditLogger:
             limit=limit,
         )
 
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """
         Get audit statistics.
 
@@ -802,7 +799,7 @@ class AuditLogger:
 
         return await repository.get_statistics()
 
-    async def verify_integrity(self, limit: int = 1000) -> Dict[str, Any]:
+    async def verify_integrity(self, limit: int = 1000) -> dict[str, Any]:
         """
         Verify audit chain integrity.
 
@@ -822,8 +819,8 @@ class AuditLogger:
         self,
         output_path: str,
         format_type: str = "json",
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> int:
         """
         Export audit events to file.
@@ -846,7 +843,7 @@ class AuditLogger:
         else:
             return await repository.export_to_json(output_path, start_time, end_time)
 
-    async def cleanup_old_events(self, retention_days: int = 90) -> Dict[str, Any]:
+    async def cleanup_old_events(self, retention_days: int = 90) -> dict[str, Any]:
         """
         Remove old events per retention policy.
 
@@ -899,7 +896,7 @@ class VaultClient:
     def __init__(
         self,
         config: VaultConfig,
-        provider: Optional[VaultProvider] = None,
+        provider: VaultProvider | None = None,
     ) -> None:
         """
         Initialize vault client.
@@ -919,13 +916,13 @@ class VaultClient:
             log_reads=config.audit_log_reads,
         )
         self._connected = False
-        self._workflow_id: Optional[str] = None
-        self._robot_id: Optional[str] = None
+        self._workflow_id: str | None = None
+        self._robot_id: str | None = None
 
     def set_context(
         self,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
     ) -> None:
         """Set execution context for audit logging."""
         self._workflow_id = workflow_id
@@ -976,7 +973,7 @@ class VaultClient:
     async def get_secret(
         self,
         path: str,
-        version: Optional[int] = None,
+        version: int | None = None,
         bypass_cache: bool = False,
     ) -> SecretValue:
         """
@@ -1002,7 +999,7 @@ class VaultClient:
             self._audit.log_cache_event(path, hit=False)
 
         # Fetch from provider with retry
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for attempt in range(self._config.max_retries + 1):
             try:
                 secret = await self._provider.get_secret(path, version)
@@ -1059,9 +1056,9 @@ class VaultClient:
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """
         Store a secret in vault.
@@ -1115,7 +1112,7 @@ class VaultClient:
             )
             raise
 
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """List secrets under a path prefix."""
         if not self._connected:
             raise VaultConnectionError("Not connected to vault")
@@ -1125,7 +1122,7 @@ class VaultClient:
         self,
         path: str,
         role: str,
-        ttl: Optional[int] = None,
+        ttl: int | None = None,
     ) -> SecretValue:
         """Get a dynamically generated secret."""
         if not self._connected:
@@ -1143,7 +1140,7 @@ class VaultClient:
     async def renew_lease(
         self,
         lease_id: str,
-        increment: Optional[int] = None,
+        increment: int | None = None,
     ) -> int:
         """Renew a secret lease."""
         if not self._connected:
@@ -1187,7 +1184,7 @@ class VaultClient:
         )
         return result
 
-    async def invalidate_cache(self, path: Optional[str] = None) -> int:
+    async def invalidate_cache(self, path: str | None = None) -> int:
         """
         Invalidate cache entries.
 
@@ -1206,11 +1203,11 @@ class VaultClient:
         else:
             return 1 if await self._cache.invalidate(path) else 0
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return self._cache.get_stats()
 
-    def get_audit_events(self, count: int = 100) -> List[AuditEvent]:
+    def get_audit_events(self, count: int = 100) -> list[AuditEvent]:
         """Get recent audit events."""
         return self._audit.get_recent_events(count)
 

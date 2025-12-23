@@ -5,16 +5,16 @@ Provides a horizontal button row for formatting actions in Markdown
 and Rich Text editors. THEME-styled with hover effects.
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
+    QFrame,
     QHBoxLayout,
     QPushButton,
-    QFrame,
+    QWidget,
 )
-
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
@@ -37,7 +37,7 @@ class EditorToolbar(QWidget):
         toolbar.add_action("#", "Heading", self.insert_heading)
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the toolbar.
 

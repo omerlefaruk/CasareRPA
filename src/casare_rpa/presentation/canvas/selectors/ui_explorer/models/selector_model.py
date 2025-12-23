@@ -8,13 +8,12 @@ Uses Qt signals for reactive updates to UI panels.
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import QObject, Signal
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
-    UIExplorerElement,
     ElementSource,
+    UIExplorerElement,
 )
 
 
@@ -219,26 +218,26 @@ class SelectorModel(QObject):
     attribute_toggled = Signal(str, bool)  # name, included
     preview_updated = Signal(str)  # xml_string
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         """Initialize the selector model."""
         super().__init__(parent)
 
-        self._attributes: List[SelectorAttribute] = []
-        self._element: Optional[UIExplorerElement] = None
-        self._source: Optional[ElementSource] = None
+        self._attributes: list[SelectorAttribute] = []
+        self._element: UIExplorerElement | None = None
+        self._source: ElementSource | None = None
 
     @property
-    def attributes(self) -> List[SelectorAttribute]:
+    def attributes(self) -> list[SelectorAttribute]:
         """Get list of all attributes."""
         return self._attributes
 
     @property
-    def element(self) -> Optional[UIExplorerElement]:
+    def element(self) -> UIExplorerElement | None:
         """Get the current element."""
         return self._element
 
     @property
-    def source(self) -> Optional[ElementSource]:
+    def source(self) -> ElementSource | None:
         """Get the element source (browser/desktop)."""
         return self._source
 
@@ -263,7 +262,7 @@ class SelectorModel(QObject):
             priority = DESKTOP_ATTRIBUTE_PRIORITY
 
         # Build attributes dict combining tag/control with other attrs
-        attrs_dict: Dict[str, str] = {}
+        attrs_dict: dict[str, str] = {}
 
         # Add tag/control type first
         if element.source == ElementSource.BROWSER:
@@ -325,7 +324,7 @@ class SelectorModel(QObject):
         self.changed.emit()
         self._emit_preview_update()
 
-    def load_from_dict(self, element_data: Dict[str, Any]) -> None:
+    def load_from_dict(self, element_data: dict[str, Any]) -> None:
         """
         Load attributes from an element data dictionary.
 
@@ -423,7 +422,7 @@ class SelectorModel(QObject):
 
         return False
 
-    def get_attribute(self, name: str) -> Optional[SelectorAttribute]:
+    def get_attribute(self, name: str) -> SelectorAttribute | None:
         """
         Get attribute by name.
 
@@ -438,7 +437,7 @@ class SelectorModel(QObject):
                 return attr
         return None
 
-    def get_included_attributes(self) -> List[SelectorAttribute]:
+    def get_included_attributes(self) -> list[SelectorAttribute]:
         """
         Get list of included attributes only.
 
@@ -447,7 +446,7 @@ class SelectorModel(QObject):
         """
         return [attr for attr in self._attributes if attr.included]
 
-    def get_included_names(self) -> List[str]:
+    def get_included_names(self) -> list[str]:
         """
         Get list of included attribute names.
 
@@ -547,7 +546,7 @@ class SelectorModel(QObject):
         else:
             return self._to_uia_selector(included)
 
-    def _to_css_selector(self, included: List[SelectorAttribute]) -> str:
+    def _to_css_selector(self, included: list[SelectorAttribute]) -> str:
         """Generate CSS selector from included attributes."""
         parts = []
 
@@ -613,7 +612,7 @@ class SelectorModel(QObject):
 
         return "".join(parts) if parts else ""
 
-    def _to_uia_selector(self, included: List[SelectorAttribute]) -> str:
+    def _to_uia_selector(self, included: list[SelectorAttribute]) -> str:
         """Generate UIA selector from included attributes."""
         parts = []
 

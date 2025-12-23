@@ -12,7 +12,7 @@ from loguru import logger
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.infrastructure.browser.form_detector import FormDetector, DetectedForm
+from casare_rpa.infrastructure.browser.form_detector import DetectedForm, FormDetector
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 
@@ -81,7 +81,7 @@ class DetectFormsNode(BrowserBaseNode):
         self.add_output_port("field_count", DataType.INTEGER)
         self.add_output_port("fields", DataType.LIST)
 
-    async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any]:
         """
         Execute form detection.
 
@@ -154,8 +154,8 @@ class DetectFormsNode(BrowserBaseNode):
             return self.error_result(str(e))
 
     def _forms_to_dict(
-        self, forms: List[DetectedForm], include_hidden: bool
-    ) -> List[Dict[str, Any]]:
+        self, forms: list[DetectedForm], include_hidden: bool
+    ) -> list[dict[str, Any]]:
         """
         Convert DetectedForm objects to serializable dictionaries.
 
@@ -185,7 +185,7 @@ class DetectFormsNode(BrowserBaseNode):
             )
         return result
 
-    def _fields_to_dict(self, fields: List, include_hidden: bool) -> List[Dict[str, Any]]:
+    def _fields_to_dict(self, fields: list, include_hidden: bool) -> list[dict[str, Any]]:
         """
         Convert FormField objects to serializable dictionaries.
 
@@ -201,7 +201,7 @@ class DetectFormsNode(BrowserBaseNode):
 
         return [self._field_to_dict(f) for f in fields]
 
-    def _field_to_dict(self, field) -> Dict[str, Any]:
+    def _field_to_dict(self, field) -> dict[str, Any]:
         """
         Convert a single FormField to dictionary.
 

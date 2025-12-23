@@ -16,17 +16,16 @@ Classes:
 from functools import partial
 from typing import Optional
 
+from loguru import logger
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QColor, QFont, QTransform
 from PySide6.QtWidgets import (
     QComboBox,
+    QFileDialog,
     QHBoxLayout,
     QPushButton,
-    QFileDialog,
     QSizePolicy,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -106,7 +105,7 @@ class CasareCheckBox:
     """
 
     # Path to checkmark SVG asset
-    _checkmark_path: Optional[str] = None
+    _checkmark_path: str | None = None
 
     @classmethod
     def _get_checkmark_path(cls) -> str:
@@ -320,7 +319,9 @@ def apply_all_node_widget_fixes() -> None:
 
     # Import and trigger custom items to ensure their patches (if any) are applied
     try:
-        from casare_rpa.presentation.canvas.graph.custom_port_item import CasarePortItem  # noqa: F401
+        from casare_rpa.presentation.canvas.graph.custom_port_item import (
+            CasarePortItem,  # noqa: F401
+        )
     except ImportError:
         pass
 
@@ -422,6 +423,7 @@ def create_variable_text_widget(
     """
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
             VariableProvider,
         )
@@ -1316,6 +1318,7 @@ def create_google_credential_widget(
     """
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.google_credential_picker import (
             GoogleCredentialPicker,
         )
@@ -1374,6 +1377,7 @@ def create_google_spreadsheet_widget(
     """
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
             GoogleSpreadsheetPicker,
         )
@@ -1443,6 +1447,7 @@ def create_google_sheet_widget(
     """
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
             GoogleSheetPicker,
         )
@@ -1512,6 +1517,7 @@ def create_google_drive_file_widget(
     """
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
             GoogleDriveFilePicker,
         )
@@ -1601,6 +1607,7 @@ def _create_simple_folder_widget(
     """Create simple folder dropdown widget (original implementation)."""
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
             GoogleDriveFolderPicker,
         )
@@ -1662,6 +1669,7 @@ def _create_enhanced_folder_widget(
     """
     try:
         from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.google_folder_navigator import (
             GoogleDriveFolderNavigator,
         )

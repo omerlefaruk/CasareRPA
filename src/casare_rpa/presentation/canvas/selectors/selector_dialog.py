@@ -3,25 +3,27 @@ Selector Picker Dialog - PySide6 UI
 Beautiful, modern dialog for managing and testing selectors
 """
 
-from typing import Optional, Callable
+from collections.abc import Callable
+from typing import Optional
+
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QComboBox,
+    QDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
-    QTextEdit,
     QListWidget,
     QListWidgetItem,
-    QWidget,
+    QPushButton,
     QSplitter,
-    QGroupBox,
-    QComboBox,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont
-from loguru import logger
 
-from PySide6.QtWidgets import QDialog
 from casare_rpa.utils.selectors.selector_generator import (
     ElementFingerprint,
     SelectorStrategy,
@@ -40,7 +42,7 @@ class SelectorDialog(QDialog):
     def __init__(
         self,
         fingerprint: ElementFingerprint,
-        test_callback: Optional[Callable] = None,
+        test_callback: Callable | None = None,
         target_node=None,
         target_property: str = "selector",
         parent=None,
@@ -51,7 +53,7 @@ class SelectorDialog(QDialog):
         self.test_callback = test_callback
         self.target_node = target_node
         self.target_property = target_property
-        self.selected_strategy: Optional[SelectorStrategy] = None
+        self.selected_strategy: SelectorStrategy | None = None
 
         self.setWindowTitle("Element Selector")
         self.setMinimumSize(800, 600)

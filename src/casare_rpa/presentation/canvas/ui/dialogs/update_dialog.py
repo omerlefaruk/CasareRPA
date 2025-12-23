@@ -7,29 +7,27 @@ Integrates with TUF UpdateManager for secure software updates.
 
 from typing import Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QProgressBar,
-    QGroupBox,
+    QPushButton,
     QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
 
-from PySide6.QtWidgets import QDialog
-from PySide6.QtCore import Signal, Slot, Qt, QTimer
-from PySide6.QtGui import QFont
-
-from loguru import logger
-
+from casare_rpa.infrastructure.updater.tuf_updater import (
+    DownloadProgress,
+    UpdateInfo,
+)
 from casare_rpa.infrastructure.updater.update_manager import (
     UpdateManager,
-)
-from casare_rpa.infrastructure.updater.tuf_updater import (
-    UpdateInfo,
-    DownloadProgress,
 )
 
 
@@ -57,8 +55,8 @@ class UpdateDialog(QDialog):
     def __init__(
         self,
         update_info: UpdateInfo,
-        update_manager: Optional[UpdateManager] = None,
-        parent: Optional[QWidget] = None,
+        update_manager: UpdateManager | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize update dialog.
@@ -473,8 +471,8 @@ class UpdateNotificationWidget(QWidget):
 
     def __init__(
         self,
-        update_info: Optional[UpdateInfo] = None,
-        parent: Optional[QWidget] = None,
+        update_info: UpdateInfo | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize notification widget.
@@ -510,7 +508,7 @@ class UpdateNotificationWidget(QWidget):
         self.clicked.emit()
         super().mousePressEvent(event)
 
-    def set_update_info(self, update_info: Optional[UpdateInfo]) -> None:
+    def set_update_info(self, update_info: UpdateInfo | None) -> None:
         """
         Set update info and update visibility.
 

@@ -4,23 +4,23 @@ CasareRPA - ChromaDB Semantic Search MCP Server
 Exposes the local ChromaDB index to AI models via the Model Context Protocol.
 """
 
-import os
 import asyncio
-from pathlib import Path
-from typing import List, Optional
-
-from fastmcp import FastMCP
-from loguru import logger
-from fastembed import TextEmbedding
+import os
 
 # Add project root to path
 import sys
+from pathlib import Path
+from typing import List, Optional
+
+from fastembed import TextEmbedding
+from fastmcp import FastMCP
+from loguru import logger
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from casare_rpa.infrastructure.ai.vector_store import get_vector_store, SearchResult
 from casare_rpa.infrastructure.ai.embedding_manager import get_embedding_manager
+from casare_rpa.infrastructure.ai.vector_store import SearchResult, get_vector_store
 
 # Initialize FastMCP
 mcp = FastMCP("CasareRPA Codebase Search")
@@ -59,7 +59,7 @@ async def search_codebase(query: str, top_k: int = 5) -> str:
         query_embedding = embeddings[0].tolist()
 
         # Perform search
-        results: List[SearchResult] = await vector_store.search(
+        results: list[SearchResult] = await vector_store.search(
             query=query,
             collection=COLLECTION_NAME,
             top_k=top_k,

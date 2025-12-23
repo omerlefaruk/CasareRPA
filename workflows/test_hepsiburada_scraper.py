@@ -8,8 +8,8 @@ import asyncio
 import csv
 import os
 from datetime import datetime
-from playwright.async_api import async_playwright
 
+from playwright.async_api import async_playwright
 
 # Verified selectors (tested and working)
 SELECTORS = {
@@ -21,9 +21,7 @@ SELECTORS = {
 
 TARGET_URL = "https://www.hepsiburada.com/dji/gimbal-c-80781000"
 OUTPUT_DIR = "./output"
-OUTPUT_FILE = (
-    f"{OUTPUT_DIR}/hepsiburada_products_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-)
+OUTPUT_FILE = f"{OUTPUT_DIR}/hepsiburada_products_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
 
 async def scrape_products():

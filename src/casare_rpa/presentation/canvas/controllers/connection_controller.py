@@ -8,9 +8,10 @@ Handles all connection-related operations:
 - Auto-connect mode
 """
 
-from typing import Optional, Tuple, TYPE_CHECKING
-from PySide6.QtCore import Signal
+from typing import TYPE_CHECKING, Optional, Tuple
+
 from loguru import logger
+from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
@@ -113,7 +114,7 @@ class ConnectionController(BaseController):
         source_port: str,
         target_node_id: str,
         target_port: str,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Validate a connection before creation.
 

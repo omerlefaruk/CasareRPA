@@ -75,10 +75,10 @@ class SystemMetricsCollector:
         print(f"System CPU: {system.cpu_percent}%")
     """
 
-    _instance: Optional["SystemMetricsCollector"] = None
+    _instance: SystemMetricsCollector | None = None
     _lock: threading.Lock = threading.Lock()
 
-    def __new__(cls) -> "SystemMetricsCollector":
+    def __new__(cls) -> SystemMetricsCollector:
         """Thread-safe singleton pattern."""
         if cls._instance is None:
             with cls._lock:
@@ -88,7 +88,7 @@ class SystemMetricsCollector:
         return cls._instance
 
     @classmethod
-    def get_instance(cls) -> "SystemMetricsCollector":
+    def get_instance(cls) -> SystemMetricsCollector:
         """Get the singleton instance."""
         return cls()
 
@@ -97,7 +97,7 @@ class SystemMetricsCollector:
         if hasattr(self, "_initialized") and self._initialized:
             return
 
-        self._process: Optional["psutil.Process"] = None
+        self._process: psutil.Process | None = None
         self._last_cpu_call_time: float = 0.0
 
         if HAS_PSUTIL:

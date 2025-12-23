@@ -10,10 +10,10 @@ Handles all selector validation logic:
 """
 
 import re
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from PySide6.QtCore import QObject, Signal
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
@@ -32,7 +32,7 @@ class ValidationResult:
         success: bool,
         count: int = 0,
         time_ms: float = 0.0,
-        error: Optional[str] = None,
+        error: str | None = None,
         is_unique: bool = False,
     ) -> None:
         self.success = success
@@ -41,7 +41,7 @@ class ValidationResult:
         self.error = error
         self.is_unique = count == 1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "success": self.success,
@@ -81,9 +81,9 @@ class SelectorValidator(QObject):
     validation_completed = Signal(object)
     status_changed = Signal(str)
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self._tabs: Dict[str, BaseSelectorTab] = {}
+        self._tabs: dict[str, BaseSelectorTab] = {}
         self._current_mode: str = "browser"
 
     def register_tab(self, mode: str, tab: BaseSelectorTab) -> None:
@@ -98,7 +98,7 @@ class SelectorValidator(QObject):
         self,
         selector: str,
         selector_type: str = "xpath",
-        mode: Optional[str] = None,
+        mode: str | None = None,
     ) -> ValidationResult:
         """
         Validate a selector against the current context.
@@ -145,7 +145,7 @@ class SelectorValidator(QObject):
         self,
         selector: str,
         selector_type: str = "xpath",
-        mode: Optional[str] = None,
+        mode: str | None = None,
     ) -> bool:
         """
         Highlight elements matching selector in the target context.
@@ -170,7 +170,7 @@ class SelectorValidator(QObject):
             logger.error(f"Highlight failed: {e}")
             return False
 
-    def generate_wildcard_selector(self, selector: str) -> Optional[str]:
+    def generate_wildcard_selector(self, selector: str) -> str | None:
         """
         Generate a wildcard version of a selector.
 
@@ -264,10 +264,10 @@ class SelectorValidator(QObject):
         selector_type: str,
         confidence: float,
         is_unique: bool,
-        fuzzy_settings: Optional[Dict[str, Any]] = None,
-        cv_settings: Optional[Dict[str, Any]] = None,
-        image_settings: Optional[Dict[str, Any]] = None,
-        anchor_data: Optional[Dict[str, Any]] = None,
+        fuzzy_settings: dict[str, Any] | None = None,
+        cv_settings: dict[str, Any] | None = None,
+        image_settings: dict[str, Any] | None = None,
+        anchor_data: dict[str, Any] | None = None,
     ) -> SelectorResult:
         """
         Build a complete SelectorResult with all metadata.
@@ -285,7 +285,7 @@ class SelectorValidator(QObject):
         Returns:
             Complete SelectorResult
         """
-        metadata: Dict[str, Any] = {}
+        metadata: dict[str, Any] = {}
 
         if fuzzy_settings:
             metadata["fuzzy_accuracy"] = fuzzy_settings.get("accuracy", 0.8)

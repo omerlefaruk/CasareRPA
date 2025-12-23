@@ -7,6 +7,8 @@ at the subflow level for external configuration.
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -24,8 +26,6 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem,
     QVBoxLayout,
 )
-from PySide6.QtCore import Qt
-from loguru import logger
 
 from casare_rpa.domain.entities.subflow import Subflow, SubflowParameter
 from casare_rpa.domain.schemas.property_types import PropertyType
@@ -46,7 +46,7 @@ class ParameterPromotionDialog(QDialog):
     def __init__(
         self,
         subflow: Subflow,
-        node_schemas: Optional[Dict[str, Any]] = None,
+        node_schemas: dict[str, Any] | None = None,
         parent=None,
     ):
         """
@@ -62,18 +62,18 @@ class ParameterPromotionDialog(QDialog):
         self.node_schemas = node_schemas or {}
 
         # Track selections: {qualified_name: SubflowParameter}
-        self._selections: Dict[str, SubflowParameter] = {}
+        self._selections: dict[str, SubflowParameter] = {}
 
         # Build lookup for existing promoted params by their internal identifiers
         # This allows matching even if qualified_name format changed
-        self._existing_params_lookup: Dict[str, SubflowParameter] = {}
+        self._existing_params_lookup: dict[str, SubflowParameter] = {}
         for param in subflow.parameters:
             # Key by internal_node_id + internal_property_name for robust matching
             key = f"{param.internal_node_id}:{param.internal_property_name}"
             self._existing_params_lookup[key] = param
 
         # Currently selected item for editing
-        self._current_item: Optional[QTreeWidgetItem] = None
+        self._current_item: QTreeWidgetItem | None = None
 
         self._setup_ui()
         self._populate_tree()
@@ -532,7 +532,7 @@ class ParameterPromotionDialog(QDialog):
                 prop_item = node_item.child(j)
                 prop_item.setCheckState(0, Qt.CheckState.Unchecked)
 
-    def get_promoted_parameters(self) -> List[SubflowParameter]:
+    def get_promoted_parameters(self) -> list[SubflowParameter]:
         """
         Get the list of promoted parameters.
 
@@ -546,9 +546,9 @@ class ParameterPromotionDialog(QDialog):
 
 def show_parameter_promotion_dialog(
     subflow: Subflow,
-    node_schemas: Optional[Dict[str, Any]] = None,
+    node_schemas: dict[str, Any] | None = None,
     parent=None,
-) -> Optional[List[SubflowParameter]]:
+) -> list[SubflowParameter] | None:
     """
     Show the parameter promotion dialog and return selected parameters.
 

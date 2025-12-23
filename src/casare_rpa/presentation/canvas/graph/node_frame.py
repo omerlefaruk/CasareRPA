@@ -14,48 +14,47 @@ References:
 - "Designing Data-Intensive Applications" - Resource pooling
 """
 
-from typing import Any, List, Optional, Set, Dict
+from typing import Any, Dict, List, Optional, Set
+
+from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsRectItem,
     QGraphicsTextItem,
-    QMenu,
     QInputDialog,
+    QMenu,
 )
-from PySide6.QtCore import QRectF, Qt, QPointF
-from PySide6.QtGui import QColor, QPainter
 
-# Import from extracted modules
-from casare_rpa.presentation.canvas.graph.style_manager import (
-    FRAME_COLOR_PALETTE,
-    FRAME_COLORS,
-    DEFAULT_FRAME_COLOR,
-    FrameStyleManager,
-)
-from casare_rpa.presentation.canvas.graph.collapse_components import (
+# Re-export collapse components for backward compatibility
+from casare_rpa.presentation.canvas.graph.collapse_components import (  # noqa: F401
     CollapseButton,
+    ExposedPortIndicator,
     ExposedPortManager,
-)
-from casare_rpa.presentation.canvas.graph.frame_renderer import (
-    FrameRenderer,
-    TitleRenderer,
-)
-from casare_rpa.presentation.canvas.graph.frame_managers import (
-    FrameBoundsManager,
-    FrameDeletedCmd,
 )
 
 # Re-export for backward compatibility
 from casare_rpa.presentation.canvas.graph.frame_factory import (  # noqa: F401
     FrameNode,
+    add_frame_menu_actions,
     create_frame,
     group_selected_nodes,
-    add_frame_menu_actions,
+)
+from casare_rpa.presentation.canvas.graph.frame_managers import (
+    FrameBoundsManager,
+    FrameDeletedCmd,
+)
+from casare_rpa.presentation.canvas.graph.frame_renderer import (
+    FrameRenderer,
+    TitleRenderer,
 )
 
-# Re-export collapse components for backward compatibility
-from casare_rpa.presentation.canvas.graph.collapse_components import (  # noqa: F401
-    ExposedPortIndicator,
+# Import from extracted modules
+from casare_rpa.presentation.canvas.graph.style_manager import (
+    DEFAULT_FRAME_COLOR,
+    FRAME_COLOR_PALETTE,
+    FRAME_COLORS,
+    FrameStyleManager,
 )
 
 __all__ = [
@@ -119,8 +118,8 @@ class NodeFrame(QGraphicsRectItem):
         # Collapse state
         self._is_collapsed = False
         self._expanded_rect = QRectF(0, 0, width, height)
-        self._hidden_node_views: List[Any] = []
-        self._hidden_pipes: Set[Any] = set()
+        self._hidden_node_views: list[Any] = []
+        self._hidden_pipes: set[Any] = set()
 
         # Delegated components
         self._renderer = FrameRenderer(self)
@@ -599,7 +598,7 @@ class NodeFrame(QGraphicsRectItem):
     # SERIALIZATION
     # =========================================================================
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize frame to dictionary."""
         pos = self.pos()
         rect = self.rect() if not self._is_collapsed else self._expanded_rect
@@ -634,7 +633,7 @@ class NodeFrame(QGraphicsRectItem):
 
     @classmethod
     def deserialize(
-        cls, data: Dict[str, Any], node_map: Optional[Dict[str, Any]] = None
+        cls, data: dict[str, Any], node_map: dict[str, Any] | None = None
     ) -> "NodeFrame":
         """Create frame from serialized data."""
         color_data = data.get("color", "gray")

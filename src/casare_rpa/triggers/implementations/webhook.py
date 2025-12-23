@@ -68,7 +68,7 @@ class WebhookTrigger(BaseTrigger):
         logger.info(f"Webhook trigger stopped: {self.config.name}")
         return True
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate webhook configuration."""
         config = self.config.config
 
@@ -106,7 +106,7 @@ class WebhookTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for webhook configuration."""
         return {
             "type": "object",

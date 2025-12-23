@@ -45,8 +45,8 @@ class WorkflowValidationResult:
     """Result of headless workflow validation."""
 
     success: bool
-    errors: List[WorkflowValidationError] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: list[WorkflowValidationError] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     validated_nodes: int = 0
     validated_connections: int = 0
 
@@ -94,12 +94,12 @@ class HeadlessWorkflowSandbox:
 
     def __init__(self) -> None:
         """Initialize validator with node registries."""
-        self._node_registry: Optional[Dict[str, Any]] = None
-        self._visual_registry: Optional[Dict[str, str]] = None
-        self._node_classes_cache: Dict[str, Type] = {}
-        self._node_ports_cache: Dict[str, Dict[str, Any]] = {}
+        self._node_registry: dict[str, Any] | None = None
+        self._visual_registry: dict[str, str] | None = None
+        self._node_classes_cache: dict[str, type] = {}
+        self._node_ports_cache: dict[str, dict[str, Any]] = {}
 
-    def _get_node_registry(self) -> Dict[str, Any]:
+    def _get_node_registry(self) -> dict[str, Any]:
         """Lazy load node registry."""
         if self._node_registry is None:
             try:
@@ -111,7 +111,7 @@ class HeadlessWorkflowSandbox:
                 self._node_registry = {}
         return self._node_registry
 
-    def _get_visual_registry(self) -> Dict[str, str]:
+    def _get_visual_registry(self) -> dict[str, str]:
         """Lazy load visual node registry."""
         if self._visual_registry is None:
             try:
@@ -125,7 +125,7 @@ class HeadlessWorkflowSandbox:
                 self._visual_registry = {}
         return self._visual_registry
 
-    def _get_node_class(self, node_type: str) -> Optional[Type]:
+    def _get_node_class(self, node_type: str) -> type | None:
         """Get node class from registry with caching."""
         if node_type in self._node_classes_cache:
             return self._node_classes_cache[node_type]
@@ -144,7 +144,7 @@ class HeadlessWorkflowSandbox:
             logger.debug(f"Could not load node class {node_type}: {e}")
             return None
 
-    def _get_node_ports(self, node_type: str) -> Dict[str, Any]:
+    def _get_node_ports(self, node_type: str) -> dict[str, Any]:
         """
         Get port definitions for a node type.
 
@@ -184,10 +184,10 @@ class HeadlessWorkflowSandbox:
         self._node_ports_cache[node_type] = ports
         return ports
 
-    def _get_nodes_by_category(self) -> Dict[str, List[str]]:
+    def _get_nodes_by_category(self) -> dict[str, list[str]]:
         """Group node types by category for suggestions."""
         registry = self._get_node_registry()
-        categories: Dict[str, List[str]] = {}
+        categories: dict[str, list[str]] = {}
 
         for node_type, module_path in registry.items():
             if isinstance(module_path, tuple):
@@ -304,7 +304,7 @@ class HeadlessWorkflowSandbox:
             return f"Valid ports for {node_type}: {', '.join(all_ports)}"
         return f"Could not determine valid ports for {node_type}."
 
-    def validate_workflow(self, workflow_json: Dict[str, Any]) -> WorkflowValidationResult:
+    def validate_workflow(self, workflow_json: dict[str, Any]) -> WorkflowValidationResult:
         """
         Validate workflow JSON structure and contents.
 
@@ -344,7 +344,7 @@ class HeadlessWorkflowSandbox:
         return result
 
     def _validate_schema(
-        self, workflow_json: Dict[str, Any], result: WorkflowValidationResult
+        self, workflow_json: dict[str, Any], result: WorkflowValidationResult
     ) -> bool:
         """
         Validate workflow against Pydantic schema.
@@ -375,7 +375,7 @@ class HeadlessWorkflowSandbox:
             return True
         return False
 
-    def _validate_node_types(self, nodes: Dict[str, Any], result: WorkflowValidationResult) -> None:
+    def _validate_node_types(self, nodes: dict[str, Any], result: WorkflowValidationResult) -> None:
         """Validate all node types exist in registry."""
         registry = self._get_node_registry()
 
@@ -405,7 +405,7 @@ class HeadlessWorkflowSandbox:
                 )
 
     def _validate_node_configs(
-        self, nodes: Dict[str, Any], result: WorkflowValidationResult
+        self, nodes: dict[str, Any], result: WorkflowValidationResult
     ) -> None:
         """Validate node configs can initialize nodes."""
         for node_id, node_data in nodes.items():
@@ -449,8 +449,8 @@ class HeadlessWorkflowSandbox:
 
     def _validate_connection_ports(
         self,
-        nodes: Dict[str, Any],
-        connections: List[Dict[str, str]],
+        nodes: dict[str, Any],
+        connections: list[dict[str, str]],
         result: WorkflowValidationResult,
     ) -> None:
         """Validate connections reference valid ports."""
@@ -509,8 +509,8 @@ class HeadlessWorkflowSandbox:
 
     def _validate_port_compatibility(
         self,
-        nodes: Dict[str, Any],
-        connections: List[Dict[str, str]],
+        nodes: dict[str, Any],
+        connections: list[dict[str, str]],
         result: WorkflowValidationResult,
     ) -> None:
         """Validate port type compatibility for connections."""
@@ -571,15 +571,15 @@ class HeadlessWorkflowSandbox:
                     ),
                 )
 
-    def get_available_node_types(self) -> List[str]:
+    def get_available_node_types(self) -> list[str]:
         """Get list of all available node types."""
         return list(self._get_node_registry().keys())
 
-    def get_node_port_info(self, node_type: str) -> Dict[str, Any]:
+    def get_node_port_info(self, node_type: str) -> dict[str, Any]:
         """Get port information for a specific node type."""
         return self._get_node_ports(node_type)
 
-    def get_nodes_by_category(self) -> Dict[str, List[str]]:
+    def get_nodes_by_category(self) -> dict[str, list[str]]:
         """Get node types grouped by category."""
         return self._get_nodes_by_category()
 

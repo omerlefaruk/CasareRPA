@@ -8,9 +8,10 @@ Performance benefit: Node backgrounds are rendered once and cached as QPixmap,
 subsequent paint() calls just draw the cached pixmap (GPU-accelerated blit).
 """
 
-from typing import Dict, Tuple, Optional
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QPainterPath
-from PySide6.QtCore import Qt, QRectF
+from typing import Dict, Optional, Tuple
+
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen, QPixmap
 
 
 class NodeBackgroundCache:
@@ -36,7 +37,7 @@ class NodeBackgroundCache:
     """
 
     _instance: Optional["NodeBackgroundCache"] = None
-    _cache: Dict[Tuple[str, int, int, str], QPixmap]
+    _cache: dict[tuple[str, int, int, str], QPixmap]
     _max_cache_size: int = 200  # Limit memory usage
 
     def __new__(cls) -> "NodeBackgroundCache":

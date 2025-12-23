@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol, Tuple
 
 from loguru import logger
 
@@ -73,14 +73,14 @@ class HealingChainResult:
     total_time_ms: float
     """Total time for the healing chain."""
 
-    tier_results: Dict[str, Any] = field(default_factory=dict)
+    tier_results: dict[str, Any] = field(default_factory=dict)
     """Results from each tier attempted."""
 
-    element: Optional[Any] = None
+    element: Any | None = None
     """The located ElementHandle (if found)."""
 
     @property
-    def cv_click_coordinates(self) -> Optional[Tuple[int, int]]:
+    def cv_click_coordinates(self) -> tuple[int, int] | None:
         """
         Get click coordinates if CV healing was used.
 
@@ -151,11 +151,11 @@ class SelectorHealingChain:
 
     def __init__(
         self,
-        heuristic_healer: Optional[SelectorHealer] = None,
-        anchor_healer: Optional[AnchorHealer] = None,
-        cv_healer: Optional[CVHealer] = None,
-        vision_finder: Optional[Any] = None,
-        telemetry: Optional[HealingTelemetry] = None,
+        heuristic_healer: SelectorHealer | None = None,
+        anchor_healer: AnchorHealer | None = None,
+        cv_healer: CVHealer | None = None,
+        vision_finder: Any | None = None,
+        telemetry: HealingTelemetry | None = None,
         healing_budget_ms: float = 400.0,
         cv_budget_ms: float = 2000.0,
         vision_budget_ms: float = 10000.0,
@@ -210,16 +210,16 @@ class SelectorHealingChain:
                 logger.warning("VisionElementFinder not available")
 
         # Element fingerprints for heuristic healing
-        self._fingerprints: Dict[str, ElementFingerprint] = {}
+        self._fingerprints: dict[str, ElementFingerprint] = {}
 
         # Spatial contexts for anchor healing
-        self._spatial_contexts: Dict[str, SpatialContext] = {}
+        self._spatial_contexts: dict[str, SpatialContext] = {}
 
         # CV contexts for computer vision healing
-        self._cv_contexts: Dict[str, CVContext] = {}
+        self._cv_contexts: dict[str, CVContext] = {}
 
         # Vision contexts (element descriptions for AI)
-        self._vision_contexts: Dict[str, str] = {}
+        self._vision_contexts: dict[str, str] = {}
 
         logger.debug(
             f"SelectorHealingChain initialized (budget={healing_budget_ms}ms, "
@@ -337,7 +337,7 @@ class SelectorHealingChain:
         page: Page,
         selector: str,
         timeout_ms: float = 5000,
-        target_tag: Optional[str] = None,
+        target_tag: str | None = None,
     ) -> HealingChainResult:
         """
         Locate an element using the healing chain.
@@ -354,8 +354,8 @@ class SelectorHealingChain:
             HealingChainResult with the located element or failure details.
         """
         start_time = time.perf_counter()
-        tier_results: Dict[str, Any] = {}
-        tiers_attempted: List[str] = []
+        tier_results: dict[str, Any] = {}
+        tiers_attempted: list[str] = []
 
         # Tier 0: Try original selector first
         try:
@@ -558,7 +558,7 @@ class SelectorHealingChain:
         page: Page,
         selector: str,
         budget_ms: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Attempt Tier 1 heuristic healing.
 
@@ -589,7 +589,7 @@ class SelectorHealingChain:
         self,
         page: Page,
         selector: str,
-        target_tag: Optional[str] = None,
+        target_tag: str | None = None,
     ) -> AnchorHealingResult:
         """
         Attempt Tier 2 anchor healing.
@@ -622,8 +622,8 @@ class SelectorHealingChain:
         self,
         page: Page,
         selector: str,
-        search_text: Optional[str] = None,
-        context: Optional[CVContext] = None,
+        search_text: str | None = None,
+        context: CVContext | None = None,
     ) -> CVHealingResult:
         """
         Attempt Tier 3 CV healing using computer vision.
@@ -672,8 +672,8 @@ class SelectorHealingChain:
         self,
         page: Page,
         selector: str,
-        description: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        description: str | None = None,
+    ) -> dict[str, Any]:
         """
         Attempt Tier 4 Vision AI healing using GPT-4V/Claude Vision.
 
@@ -746,7 +746,7 @@ class SelectorHealingChain:
                 "error": str(e),
             }
 
-    def _selector_to_description(self, selector: str) -> Optional[str]:
+    def _selector_to_description(self, selector: str) -> str | None:
         """
         Convert a CSS/XPath selector to a natural language description.
 
@@ -805,7 +805,7 @@ class SelectorHealingChain:
         self,
         page: Page,
         selector: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Capture a natural language description of an element for vision healing.
 
@@ -889,7 +889,7 @@ class SelectorHealingChain:
         self,
         page: Page,
         selector: str,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Try to locate an element with a selector.
 
@@ -913,10 +913,10 @@ class SelectorHealingChain:
         success: bool,
         tier_used: HealingTier,
         healing_time_ms: float,
-        healed_selector: Optional[str] = None,
+        healed_selector: str | None = None,
         confidence: float = 1.0,
-        tiers_attempted: Optional[List[str]] = None,
-        error_message: Optional[str] = None,
+        tiers_attempted: list[str] | None = None,
+        error_message: str | None = None,
     ) -> None:
         """Record a healing event to telemetry."""
         self._telemetry.record_event(
@@ -931,11 +931,11 @@ class SelectorHealingChain:
             error_message=error_message,
         )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get healing chain statistics."""
         return self._telemetry.get_overall_stats()
 
-    def get_tier_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_tier_stats(self) -> dict[str, dict[str, Any]]:
         """Get per-tier statistics."""
         return self._telemetry.get_tier_stats()
 
@@ -943,11 +943,11 @@ class SelectorHealingChain:
         self,
         min_uses: int = 5,
         max_success_rate: float = 0.8,
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Get selectors that frequently need healing."""
         return self._telemetry.get_problematic_selectors(min_uses, max_success_rate)
 
-    def export_report(self) -> Dict[str, Any]:
+    def export_report(self) -> dict[str, Any]:
         """Export comprehensive healing report."""
         return self._telemetry.export_report()
 

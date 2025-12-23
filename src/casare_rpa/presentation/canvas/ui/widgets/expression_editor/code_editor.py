@@ -10,25 +10,20 @@ Provides a code editor with:
 Based on Qt's Code Editor Example with VSCode Dark+ styling.
 """
 
-from typing import Optional, Any
+from typing import Any, Optional
 
+from loguru import logger
 from PySide6.QtCore import QRect, QSize, Qt, Slot
 from PySide6.QtGui import QColor, QFont, QPainter, QTextCursor
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
     EditorType,
 )
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets.variable_autocomplete import (
-    VariableAutocomplete,
-)
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
-    PythonHighlighter,
-    get_python_editor_stylesheet,
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
+    CodeDetector,
 )
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
     JavaScriptHighlighter,
@@ -38,16 +33,20 @@ from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.json_hig
     JsonHighlighter,
     get_json_editor_stylesheet,
 )
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.yaml_highlighter import (
-    YamlHighlighter,
-    get_yaml_editor_stylesheet,
-)
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
     MarkdownHighlighter,
     get_markdown_editor_stylesheet,
 )
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
-    CodeDetector,
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
+    PythonHighlighter,
+    get_python_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.yaml_highlighter import (
+    YamlHighlighter,
+    get_yaml_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets.variable_autocomplete import (
+    VariableAutocomplete,
 )
 
 
@@ -91,7 +90,7 @@ class CodePlainTextEdit(QPlainTextEdit):
     - Variable autocomplete trigger
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the code text edit."""
         super().__init__(parent)
 
@@ -109,7 +108,7 @@ class CodePlainTextEdit(QPlainTextEdit):
         self._line_number_area = LineNumberArea(self)
 
         # Autocomplete widget (set by parent editor)
-        self._autocomplete: Optional[VariableAutocomplete] = None
+        self._autocomplete: VariableAutocomplete | None = None
 
         # Connect signals
         self.blockCountChanged.connect(self._update_line_number_area_width)
@@ -308,7 +307,7 @@ class CodeExpressionEditor(BaseExpressionEditor):
     def __init__(
         self,
         language: str = "python",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the code expression editor.
@@ -322,8 +321,8 @@ class CodeExpressionEditor(BaseExpressionEditor):
         self._initial_language = language.lower()
         self._language = self._initial_language
         self._highlighter = None
-        self._current_node_id: Optional[str] = None
-        self._graph: Optional[Any] = None
+        self._current_node_id: str | None = None
+        self._graph: Any | None = None
         self._autocomplete_trigger_pos: int = -1
 
         # Set editor type based on language
@@ -365,8 +364,8 @@ class CodeExpressionEditor(BaseExpressionEditor):
 
     def set_node_context(
         self,
-        node_id: Optional[str],
-        graph: Optional[Any],
+        node_id: str | None,
+        graph: Any | None,
     ) -> None:
         """
         Set the current node context for upstream variable detection.

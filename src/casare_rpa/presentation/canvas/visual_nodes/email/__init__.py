@@ -3,14 +3,14 @@ Visual Nodes - Email
 """
 
 from casare_rpa.presentation.canvas.visual_nodes.email.nodes import (
-    VisualSendEmailNode,
-    VisualReadEmailsNode,
-    VisualGetEmailContentNode,
-    VisualSaveAttachmentNode,
-    VisualFilterEmailsNode,
-    VisualMarkEmailNode,
     VisualDeleteEmailNode,
+    VisualFilterEmailsNode,
+    VisualGetEmailContentNode,
+    VisualMarkEmailNode,
     VisualMoveEmailNode,
+    VisualReadEmailsNode,
+    VisualSaveAttachmentNode,
+    VisualSendEmailNode,
 )
 
 __all__ = [

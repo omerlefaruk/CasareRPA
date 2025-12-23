@@ -72,7 +72,7 @@ class ResourceNode(BaseNode):
         resource: The created resource instance (after initialization)
     """
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, node_id: str, config: dict[str, Any] | None = None) -> None:
         """
         Initialize resource node.
 
@@ -83,9 +83,9 @@ class ResourceNode(BaseNode):
                 - resource_name: Human-readable name (defaults to resource_id)
         """
         super().__init__(node_id, config)
-        self._resource_id: Optional[str] = config.get("resource_id") if config else None
+        self._resource_id: str | None = config.get("resource_id") if config else None
         self._resource_name: str = config.get("resource_name", "") if config else ""
-        self._resource: Optional[Any] = None
+        self._resource: Any | None = None
         self._initialized: bool = False
 
     @property
@@ -115,7 +115,7 @@ class ResourceNode(BaseNode):
         return self._resource_name or self.resource_id
 
     @property
-    def resource(self) -> Optional[Any]:
+    def resource(self) -> Any | None:
         """
         The created resource instance, if any.
 
@@ -296,7 +296,7 @@ class ResourceNode(BaseNode):
         super().reset()
         self._initialized = False
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """
         Serialize resource node to dictionary.
 

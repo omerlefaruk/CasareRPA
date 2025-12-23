@@ -6,21 +6,22 @@ User toggles attributes to include in generated selector.
 Provides live validation with debouncing.
 """
 
-from typing import Optional, List, Callable, TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, List, Optional
 
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QCheckBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QCheckBox,
     QLineEdit,
+    QProgressBar,
     QPushButton,
     QScrollArea,
-    QFrame,
-    QProgressBar,
+    QVBoxLayout,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
@@ -42,7 +43,7 @@ class ScoreBar(QProgressBar):
     - Red (#ef4444): 0-59 (low reliability)
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setRange(0, 100)
         self.setValue(0)
@@ -107,7 +108,7 @@ class AttributeRowWidget(QWidget):
         self,
         row_index: int,
         attribute: AttributeRow,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._row_index = row_index
@@ -228,13 +229,13 @@ class SelectorBuilderWidget(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
-        validate_callback: Optional[Callable] = None,
+        parent: QWidget | None = None,
+        validate_callback: Callable | None = None,
     ) -> None:
         super().__init__(parent)
         self._validate_callback = validate_callback
-        self._attribute_rows: List[AttributeRow] = []
-        self._row_widgets: List[AttributeRowWidget] = []
+        self._attribute_rows: list[AttributeRow] = []
+        self._row_widgets: list[AttributeRowWidget] = []
 
         # Debounce timer for validation
         self._validation_timer = QTimer(self)
@@ -387,7 +388,7 @@ class SelectorBuilderWidget(QWidget):
         self._empty_state.setVisible(True)
         layout.addWidget(self._empty_state)
 
-    def set_attributes(self, attributes: List[AttributeRow]) -> None:
+    def set_attributes(self, attributes: list[AttributeRow]) -> None:
         """Set attribute rows."""
         self._attribute_rows = attributes
 

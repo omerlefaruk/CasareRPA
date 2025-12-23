@@ -3,17 +3,18 @@ Job lifecycle service.
 Handles job creation, updates, cancellation, and retries.
 """
 
-import os
 import asyncio
+import os
 import uuid
-from datetime import datetime, timezone
-from typing import List, Optional, Callable, TYPE_CHECKING
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional
 
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
-from casare_rpa.domain.orchestrator.entities import Job, JobStatus, JobPriority
+from casare_rpa.domain.orchestrator.entities import Job, JobPriority, JobStatus
 from casare_rpa.domain.orchestrator.repositories import JobRepository
 
 load_dotenv()
@@ -53,7 +54,7 @@ class JobLifecycleService:
         self._use_local = True  # Default to local mode
 
         # Event callbacks
-        self._on_job_update: Optional[Callable[[Job], None]] = None
+        self._on_job_update: Callable[[Job], None] | None = None
 
     def set_robot_management_service(self, robot_service: "RobotManagementService") -> None:
         """Set the robot management service for robot lookups.
@@ -96,9 +97,9 @@ class JobLifecycleService:
     async def get_jobs(
         self,
         limit: int = 100,
-        status: Optional[JobStatus] = None,
-        robot_id: Optional[str] = None,
-    ) -> List[Job]:
+        status: JobStatus | None = None,
+        robot_id: str | None = None,
+    ) -> list[Job]:
         """Get jobs with optional filtering."""
         if self._use_local:
             if status and robot_id:
@@ -126,7 +127,7 @@ class JobLifecycleService:
                 logger.error(f"Failed to fetch jobs: {e}")
                 return []
 
-    async def get_job(self, job_id: str) -> Optional[Job]:
+    async def get_job(self, job_id: str) -> Job | None:
         """Get a specific job by ID."""
         if self._use_local:
             return await self._job_repository.get_by_id(job_id)
@@ -141,11 +142,11 @@ class JobLifecycleService:
                 logger.error(f"Failed to fetch job {job_id}: {e}")
         return None
 
-    async def get_running_jobs(self) -> List[Job]:
+    async def get_running_jobs(self) -> list[Job]:
         """Get currently running jobs."""
         return await self.get_jobs(status=JobStatus.RUNNING)
 
-    async def get_queued_jobs(self) -> List[Job]:
+    async def get_queued_jobs(self) -> list[Job]:
         """Get jobs waiting in queue."""
         pending = await self.get_jobs(status=JobStatus.PENDING)
         queued = await self.get_jobs(status=JobStatus.QUEUED)
@@ -159,11 +160,11 @@ class JobLifecycleService:
         robot_id: str,
         robot_name: str = "",
         priority: JobPriority = JobPriority.NORMAL,
-        scheduled_time: Optional[datetime] = None,
-    ) -> Optional[Job]:
+        scheduled_time: datetime | None = None,
+    ) -> Job | None:
         """Create a new job."""
         job_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         job_data = {
             "id": job_id,
@@ -208,7 +209,7 @@ class JobLifecycleService:
         logs: str = "",
     ) -> bool:
         """Update job status and progress."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         data = {
             "status": status.value,
             "progress": progress,
@@ -265,7 +266,7 @@ class JobLifecycleService:
         if not job:
             return False
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         if job.status == JobStatus.RUNNING:
             # For running jobs, set cancel_requested flag
@@ -301,7 +302,7 @@ class JobLifecycleService:
                 job_id, JobStatus.CANCELLED, error_message=reason or "Cancelled by user"
             )
 
-    async def retry_job(self, job_id: str) -> Optional[Job]:
+    async def retry_job(self, job_id: str) -> Job | None:
         """Retry a failed job by creating a new one with same parameters."""
         original_job = await self.get_job(job_id)
         if not original_job:
@@ -318,7 +319,7 @@ class JobLifecycleService:
 
     async def dispatch_workflow_file(
         self, file_path: Path, robot_id: str, priority: JobPriority = JobPriority.NORMAL
-    ) -> Optional[Job]:
+    ) -> Job | None:
         """Dispatch a workflow from a file to a robot.
 
         Args:
@@ -332,7 +333,7 @@ class JobLifecycleService:
         try:
             import json
 
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 workflow_json = f.read()
                 workflow_data = json.loads(workflow_json)
 

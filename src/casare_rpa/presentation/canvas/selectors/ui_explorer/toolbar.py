@@ -12,15 +12,14 @@ Toolbar component with action buttons for the UI Explorer dialog:
 
 from typing import Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
+    QFrame,
     QHBoxLayout,
     QToolButton,
-    QFrame,
+    QWidget,
 )
-
-from loguru import logger
 
 
 class UIExplorerToolButton(QToolButton):
@@ -35,7 +34,7 @@ class UIExplorerToolButton(QToolButton):
         text: str,
         tooltip: str,
         checkable: bool = False,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setText(text)
@@ -158,7 +157,7 @@ class UIExplorerToolbar(QWidget):
     find_similar_clicked = Signal()
     ai_suggest_clicked = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setFixedHeight(48)
         self._setup_ui()

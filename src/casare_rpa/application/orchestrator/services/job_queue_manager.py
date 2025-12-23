@@ -3,17 +3,18 @@ Job Queue Manager for CasareRPA Orchestrator.
 Implements priority queue, state machine, deduplication, and timeout management.
 """
 
-import heapq
 import hashlib
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, List, Set, Callable, Any, Tuple
-from collections import defaultdict
+import heapq
 import threading
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
 
-from casare_rpa.domain.orchestrator.entities import Job, JobStatus, JobPriority, Robot
+from casare_rpa.domain.orchestrator.entities import Job, JobPriority, JobStatus, Robot
 
 
 class JobStateError(Exception):
@@ -37,7 +38,7 @@ class JobStateMachine:
     """
 
     # Valid state transitions: from_state -> [to_states]
-    VALID_TRANSITIONS: Dict[JobStatus, List[JobStatus]] = {
+    VALID_TRANSITIONS: dict[JobStatus, list[JobStatus]] = {
         JobStatus.PENDING: [JobStatus.QUEUED, JobStatus.CANCELLED],
         JobStatus.QUEUED: [JobStatus.RUNNING, JobStatus.CANCELLED],
         JobStatus.RUNNING: [
@@ -84,7 +85,7 @@ class JobStateMachine:
             )
 
         # Update timestamps based on transition
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if to_state == JobStatus.RUNNING:
             job.started_at = now
@@ -134,7 +135,7 @@ class PriorityQueueItem:
         if isinstance(created, str):
             created = datetime.fromisoformat(created.replace("Z", ""))
         elif created is None:
-            created = datetime.now(timezone.utc)
+            created = datetime.now(UTC)
         return cls(priority=priority_value, created_at=created, job_id=job.id, job=job)
 
 
@@ -152,11 +153,11 @@ class JobDeduplicator:
             window_seconds: Time window for deduplication (default 5 minutes)
         """
         self._window = timedelta(seconds=window_seconds)
-        self._recent_hashes: Dict[str, datetime] = {}
+        self._recent_hashes: dict[str, datetime] = {}
         self._lock = threading.Lock()
 
     def _compute_hash(
-        self, workflow_id: str, robot_id: Optional[str], params: Optional[Dict] = None
+        self, workflow_id: str, robot_id: str | None, params: dict | None = None
     ) -> str:
         """Compute deduplication hash for a job."""
         hash_input = f"{workflow_id}:{robot_id or 'any'}"
@@ -169,8 +170,8 @@ class JobDeduplicator:
     def is_duplicate(
         self,
         workflow_id: str,
-        robot_id: Optional[str] = None,
-        params: Optional[Dict] = None,
+        robot_id: str | None = None,
+        params: dict | None = None,
     ) -> bool:
         """
         Check if a job would be a duplicate.
@@ -184,7 +185,7 @@ class JobDeduplicator:
             True if job would be duplicate
         """
         job_hash = self._compute_hash(workflow_id, robot_id, params)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         with self._lock:
             # Clean old entries
@@ -200,8 +201,8 @@ class JobDeduplicator:
     def record(
         self,
         workflow_id: str,
-        robot_id: Optional[str] = None,
-        params: Optional[Dict] = None,
+        robot_id: str | None = None,
+        params: dict | None = None,
     ) -> str:
         """
         Record a job submission for deduplication.
@@ -212,13 +213,13 @@ class JobDeduplicator:
         job_hash = self._compute_hash(workflow_id, robot_id, params)
 
         with self._lock:
-            self._recent_hashes[job_hash] = datetime.now(timezone.utc)
+            self._recent_hashes[job_hash] = datetime.now(UTC)
 
         return job_hash
 
     def _cleanup(self):
         """Remove expired entries."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expired = [h for h, t in self._recent_hashes.items() if now - t >= self._window]
         for h in expired:
             del self._recent_hashes[h]
@@ -238,14 +239,14 @@ class JobTimeoutManager:
             default_timeout_seconds: Default timeout (1 hour)
         """
         self._default_timeout = timedelta(seconds=default_timeout_seconds)
-        self._job_timeouts: Dict[str, Tuple[datetime, timedelta]] = {}
+        self._job_timeouts: dict[str, tuple[datetime, timedelta]] = {}
         self._lock = threading.Lock()
 
-    def start_tracking(self, job_id: str, timeout_seconds: Optional[int] = None):
+    def start_tracking(self, job_id: str, timeout_seconds: int | None = None):
         """Start tracking a job's timeout."""
         timeout = timedelta(seconds=timeout_seconds) if timeout_seconds else self._default_timeout
         with self._lock:
-            self._job_timeouts[job_id] = (datetime.now(timezone.utc), timeout)
+            self._job_timeouts[job_id] = (datetime.now(UTC), timeout)
         logger.debug(f"Tracking timeout for job {job_id[:8]}: {timeout}")
 
     def stop_tracking(self, job_id: str):
@@ -253,9 +254,9 @@ class JobTimeoutManager:
         with self._lock:
             self._job_timeouts.pop(job_id, None)
 
-    def get_timed_out_jobs(self) -> List[str]:
+    def get_timed_out_jobs(self) -> list[str]:
         """Get list of job IDs that have timed out."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         timed_out = []
 
         with self._lock:
@@ -265,13 +266,13 @@ class JobTimeoutManager:
 
         return timed_out
 
-    def get_remaining_time(self, job_id: str) -> Optional[timedelta]:
+    def get_remaining_time(self, job_id: str) -> timedelta | None:
         """Get remaining time before timeout."""
         with self._lock:
             if job_id not in self._job_timeouts:
                 return None
             start_time, timeout = self._job_timeouts[job_id]
-            elapsed = datetime.now(timezone.utc) - start_time
+            elapsed = datetime.now(UTC) - start_time
             remaining = timeout - elapsed
             return remaining if remaining.total_seconds() > 0 else timedelta(0)
 
@@ -292,7 +293,7 @@ class JobQueue:
         self,
         dedup_window_seconds: int = 300,
         default_timeout_seconds: int = 3600,
-        on_state_change: Optional[Callable[[Job, JobStatus, JobStatus], None]] = None,
+        on_state_change: Callable[[Job, JobStatus, JobStatus], None] | None = None,
     ):
         """
         Initialize job queue.
@@ -302,10 +303,10 @@ class JobQueue:
             default_timeout_seconds: Default job timeout
             on_state_change: Callback for state changes (job, old_state, new_state)
         """
-        self._queue: List[PriorityQueueItem] = []
-        self._jobs: Dict[str, Job] = {}  # job_id -> Job
-        self._running_jobs: Dict[str, str] = {}  # job_id -> robot_id
-        self._robot_jobs: Dict[str, Set[str]] = defaultdict(set)  # robot_id -> {job_ids}
+        self._queue: list[PriorityQueueItem] = []
+        self._jobs: dict[str, Job] = {}  # job_id -> Job
+        self._running_jobs: dict[str, str] = {}  # job_id -> robot_id
+        self._robot_jobs: dict[str, set[str]] = defaultdict(set)  # robot_id -> {job_ids}
 
         self._deduplicator = JobDeduplicator(dedup_window_seconds)
         self._timeout_manager = JobTimeoutManager(default_timeout_seconds)
@@ -316,8 +317,8 @@ class JobQueue:
         logger.info("JobQueue initialized")
 
     def enqueue(
-        self, job: Job, check_duplicate: bool = True, params: Optional[Dict] = None
-    ) -> Tuple[bool, str]:
+        self, job: Job, check_duplicate: bool = True, params: dict | None = None
+    ) -> tuple[bool, str]:
         """
         Add a job to the queue.
 
@@ -343,7 +344,7 @@ class JobQueue:
             try:
                 old_status = job.status
                 job = JobStateMachine.transition(job, JobStatus.QUEUED)
-                job.created_at = job.created_at or datetime.now(timezone.utc).isoformat()
+                job.created_at = job.created_at or datetime.now(UTC).isoformat()
             except JobStateError as e:
                 return False, str(e)
 
@@ -362,7 +363,7 @@ class JobQueue:
         logger.info(f"Job {job.id[:8]} enqueued with priority {job.priority}")
         return True, "Job enqueued successfully"
 
-    def dequeue(self, robot: Robot) -> Optional[Job]:
+    def dequeue(self, robot: Robot) -> Job | None:
         """
         Get next job for a robot.
 
@@ -439,7 +440,7 @@ class JobQueue:
         logger.info(f"Job {job.id[:8]} assigned to robot {robot.name}")
         return job
 
-    def complete(self, job_id: str, result: Optional[Dict] = None) -> Tuple[bool, str]:
+    def complete(self, job_id: str, result: dict | None = None) -> tuple[bool, str]:
         """
         Mark a job as completed.
 
@@ -452,7 +453,7 @@ class JobQueue:
         """
         return self._finish_job(job_id, JobStatus.COMPLETED, result=result)
 
-    def fail(self, job_id: str, error_message: str) -> Tuple[bool, str]:
+    def fail(self, job_id: str, error_message: str) -> tuple[bool, str]:
         """
         Mark a job as failed.
 
@@ -465,7 +466,7 @@ class JobQueue:
         """
         return self._finish_job(job_id, JobStatus.FAILED, error_message=error_message)
 
-    def timeout(self, job_id: str) -> Tuple[bool, str]:
+    def timeout(self, job_id: str) -> tuple[bool, str]:
         """
         Mark a job as timed out.
 
@@ -477,7 +478,7 @@ class JobQueue:
         """
         return self._finish_job(job_id, JobStatus.TIMEOUT, error_message="Job execution timed out")
 
-    def cancel(self, job_id: str, reason: str = "Cancelled by user") -> Tuple[bool, str]:
+    def cancel(self, job_id: str, reason: str = "Cancelled by user") -> tuple[bool, str]:
         """
         Cancel a job.
 
@@ -521,9 +522,9 @@ class JobQueue:
         self,
         job_id: str,
         new_status: JobStatus,
-        result: Optional[Dict] = None,
+        result: dict | None = None,
         error_message: str = "",
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """Internal method to finish a job."""
         with self._lock:
             job = self._jobs.get(job_id)
@@ -581,7 +582,7 @@ class JobQueue:
 
         return True
 
-    def check_timeouts(self) -> List[str]:
+    def check_timeouts(self) -> list[str]:
         """
         Check for timed out jobs and mark them.
 
@@ -595,11 +596,11 @@ class JobQueue:
 
         return timed_out
 
-    def get_job(self, job_id: str) -> Optional[Job]:
+    def get_job(self, job_id: str) -> Job | None:
         """Get job by ID."""
         return self._jobs.get(job_id)
 
-    def get_queued_jobs(self) -> List[Job]:
+    def get_queued_jobs(self) -> list[Job]:
         """Get all queued jobs."""
         with self._lock:
             return [
@@ -608,12 +609,12 @@ class JobQueue:
                 if item.job_id in self._jobs and self._jobs[item.job_id].status == JobStatus.QUEUED
             ]
 
-    def get_running_jobs(self) -> List[Job]:
+    def get_running_jobs(self) -> list[Job]:
         """Get all running jobs."""
         with self._lock:
             return [self._jobs[job_id] for job_id in self._running_jobs if job_id in self._jobs]
 
-    def get_robot_jobs(self, robot_id: str) -> List[Job]:
+    def get_robot_jobs(self, robot_id: str) -> list[Job]:
         """Get jobs assigned to a specific robot."""
         with self._lock:
             return [
@@ -634,7 +635,7 @@ class JobQueue:
                 ]
             )
 
-    def get_queue_stats(self) -> Dict[str, Any]:
+    def get_queue_stats(self) -> dict[str, Any]:
         """Get queue statistics."""
         with self._lock:
             queued = [

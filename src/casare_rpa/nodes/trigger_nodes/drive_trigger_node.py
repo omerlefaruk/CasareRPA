@@ -124,7 +124,7 @@ class DriveTriggerNode(BaseTriggerNode):
     trigger_icon = "drive"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Drive Trigger"
         self.node_type = "DriveTriggerNode"
@@ -147,7 +147,7 @@ class DriveTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.DRIVE
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get Drive-specific configuration."""
         # Parse comma-separated lists
         event_types_str = self.get_parameter("event_types", "created,modified")

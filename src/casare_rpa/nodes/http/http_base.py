@@ -13,16 +13,15 @@ PERFORMANCE: Uses UnifiedHttpClient for:
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
-
 
 import asyncio
 import json
 from abc import abstractmethod
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -40,8 +39,8 @@ HTTP_CLIENT_RESOURCE_KEY = "_unified_http_client"
 
 
 async def get_http_client_from_context(
-    context: "ExecutionContext",
-) -> "UnifiedHttpClient":
+    context: ExecutionContext,
+) -> UnifiedHttpClient:
     """
     Get or create UnifiedHttpClient from ExecutionContext resources.
 
@@ -69,7 +68,7 @@ async def get_http_client_from_context(
     return context.resources[HTTP_CLIENT_RESOURCE_KEY]
 
 
-async def close_http_client_from_context(context: "ExecutionContext") -> None:
+async def close_http_client_from_context(context: ExecutionContext) -> None:
     """
     Close UnifiedHttpClient stored in ExecutionContext.
 
@@ -210,7 +209,7 @@ class HttpBaseNode(BaseNode):
                 return default if default is not None else {}
         return value
 
-    def _prepare_request_body(self, body: Any) -> Optional[Any]:
+    def _prepare_request_body(self, body: Any) -> Any | None:
         """Prepare request body - return dict for JSON, string otherwise."""
         if not body:
             return None
@@ -231,7 +230,7 @@ class HttpBaseNode(BaseNode):
         self,
         response_body: str,
         status_code: int,
-        response_headers: Dict[str, str],
+        response_headers: dict[str, str],
     ) -> None:
         """Set output values for successful response."""
         success = 200 <= status_code < 300
@@ -250,7 +249,7 @@ class HttpBaseNode(BaseNode):
         self.set_output_value("success", success)
         self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute HTTP request using UnifiedHttpClient.
 
@@ -359,7 +358,7 @@ class HttpBaseNode(BaseNode):
 
                 raise ValueError(error_msg) from e
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error_msg = f"Request timed out after {self.get_parameter('timeout', self.DEFAULT_TIMEOUT)} seconds"
             logger.error(error_msg)
             self._set_error_outputs(error_msg)

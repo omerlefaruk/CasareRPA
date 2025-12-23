@@ -31,51 +31,17 @@ Independent of: Presentation layer
 
 # Agent exports
 from casare_rpa.infrastructure.agent import (
-    JobExecutor,
     HeartbeatService,
     JobExecutionError,
     JobExecutionResult,
-)
-
-# Robot agent (canonical location)
-from casare_rpa.robot.agent import RobotAgent, RobotConfig
-
-# Auth exports
-from casare_rpa.infrastructure.auth import (
-    RobotApiKey,
-    RobotApiKeyService,
-    RobotApiKeyError,
-    ApiKeyValidationResult,
-    generate_api_key_raw,
-    hash_api_key,
-)
-
-# Tunnel exports
-from casare_rpa.infrastructure.tunnel import (
-    AgentTunnel,
-    TunnelConfig,
-    TunnelState,
-    MTLSConfig,
-    CertificateManager,
+    JobExecutor,
 )
 
 # AI exports
 from casare_rpa.infrastructure.ai import (
     SmartWorkflowAgent,
-    generate_smart_workflow,
     WorkflowGenerationResult,
-)
-
-# Browser exports
-from casare_rpa.infrastructure.browser import (
-    PlaywrightManager,
-    get_playwright_singleton,
-)
-
-# Observability exports
-from casare_rpa.infrastructure.observability import (
-    Observability,
-    configure_observability,
+    generate_smart_workflow,
 )
 
 # Analytics exports
@@ -84,10 +50,41 @@ from casare_rpa.infrastructure.analytics import (
     ProcessMiner,
 )
 
-# Security exports
-from casare_rpa.infrastructure.security import (
-    VaultClient,
-    AuthorizationService,
+# Auth exports
+from casare_rpa.infrastructure.auth import (
+    ApiKeyValidationResult,
+    RobotApiKey,
+    RobotApiKeyError,
+    RobotApiKeyService,
+    generate_api_key_raw,
+    hash_api_key,
+)
+
+# Browser exports
+from casare_rpa.infrastructure.browser import (
+    PlaywrightManager,
+    get_playwright_singleton,
+)
+
+# Caching exports
+from casare_rpa.infrastructure.caching import (
+    WorkflowCache,
+    get_workflow_cache,
+)
+
+# HTTP exports
+from casare_rpa.infrastructure.http import (
+    RequestStats,
+    UnifiedHttpClient,
+    UnifiedHttpClientConfig,
+    close_unified_http_client,
+    get_unified_http_client,
+)
+
+# Observability exports
+from casare_rpa.infrastructure.observability import (
+    Observability,
+    configure_observability,
 )
 
 # Queue exports
@@ -96,20 +93,23 @@ from casare_rpa.infrastructure.queue import (
     PgQueuerProducer,
 )
 
-# HTTP exports
-from casare_rpa.infrastructure.http import (
-    UnifiedHttpClient,
-    UnifiedHttpClientConfig,
-    RequestStats,
-    get_unified_http_client,
-    close_unified_http_client,
+# Security exports
+from casare_rpa.infrastructure.security import (
+    AuthorizationService,
+    VaultClient,
 )
 
-# Caching exports
-from casare_rpa.infrastructure.caching import (
-    WorkflowCache,
-    get_workflow_cache,
+# Tunnel exports
+from casare_rpa.infrastructure.tunnel import (
+    AgentTunnel,
+    CertificateManager,
+    MTLSConfig,
+    TunnelConfig,
+    TunnelState,
 )
+
+# Robot agent (canonical location)
+from casare_rpa.robot.agent import RobotAgent, RobotConfig
 
 __all__ = [
     # Agent

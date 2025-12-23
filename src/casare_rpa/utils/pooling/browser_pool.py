@@ -9,8 +9,8 @@ import asyncio
 import time
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Set
-from loguru import logger
 
+from loguru import logger
 from playwright.async_api import Browser, BrowserContext, Playwright
 
 
@@ -74,7 +74,7 @@ class BrowserContextPool:
         max_size: int = 10,
         max_context_age: float = 300.0,  # 5 minutes
         idle_timeout: float = 60.0,  # 1 minute
-        context_options: Optional[Dict[str, Any]] = None,
+        context_options: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize the browser context pool.
@@ -95,8 +95,8 @@ class BrowserContextPool:
         self._context_options = context_options or {}
 
         # Pool state
-        self._available: Deque[PooledContext] = deque()
-        self._in_use: Set[PooledContext] = set()
+        self._available: deque[PooledContext] = deque()
+        self._in_use: set[PooledContext] = set()
         self._lock = asyncio.Lock()
         self._initialized = False
         self._closed = False
@@ -202,7 +202,7 @@ class BrowserContextPool:
             # Check timeout
             elapsed = time.time() - start_time
             if elapsed >= timeout:
-                raise asyncio.TimeoutError(
+                raise TimeoutError(
                     f"Could not acquire browser context within {timeout}s "
                     f"(pool: {len(self._in_use)} in use, {len(self._available)} available)"
                 )
@@ -323,7 +323,7 @@ class BrowserContextPool:
 
         logger.info("Browser context pool closed")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         return {
             **self._stats,
@@ -361,9 +361,9 @@ class BrowserPoolManager:
 
     def __init__(self) -> None:
         """Initialize the pool manager."""
-        self._playwright: Optional[Playwright] = None
-        self._browsers: Dict[str, Browser] = {}
-        self._pools: Dict[str, BrowserContextPool] = {}
+        self._playwright: Playwright | None = None
+        self._browsers: dict[str, Browser] = {}
+        self._pools: dict[str, BrowserContextPool] = {}
         self._lock = asyncio.Lock()
         self._initialized = False
 
@@ -373,7 +373,7 @@ class BrowserPoolManager:
         headless: bool = True,
         pool_min_size: int = 1,
         pool_max_size: int = 10,
-        browser_args: Optional[List[str]] = None,
+        browser_args: list[str] | None = None,
     ) -> None:
         """
         Initialize the pool manager with a browser.
@@ -420,7 +420,7 @@ class BrowserPoolManager:
             self._initialized = True
             logger.info(f"BrowserPoolManager initialized with {browser_type} pool")
 
-    async def get_pool(self, browser_type: str = "chromium") -> Optional[BrowserContextPool]:
+    async def get_pool(self, browser_type: str = "chromium") -> BrowserContextPool | None:
         """Get the context pool for a browser type."""
         return self._pools.get(browser_type)
 
@@ -486,7 +486,7 @@ class BrowserPoolManager:
         self._initialized = False
         logger.info("BrowserPoolManager closed")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get statistics for all pools."""
         return {browser_type: pool.get_stats() for browser_type, pool in self._pools.items()}
 
@@ -497,7 +497,7 @@ class BrowserPoolManager:
 
 
 # Global pool manager instance
-_pool_manager: Optional[BrowserPoolManager] = None
+_pool_manager: BrowserPoolManager | None = None
 
 
 def get_browser_pool_manager() -> BrowserPoolManager:

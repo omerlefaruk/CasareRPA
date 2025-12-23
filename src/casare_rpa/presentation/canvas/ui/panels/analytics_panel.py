@@ -7,27 +7,26 @@ connected to the Orchestrator REST API.
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
+    QGroupBox,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QSpinBox,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
-    QComboBox,
-    QLabel,
-    QHeaderView,
-    QAbstractItemView,
     QTabWidget,
     QTextEdit,
-    QGroupBox,
-    QSpinBox,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
-from PySide6.QtGui import QColor, QBrush, QFont
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -51,8 +50,8 @@ class ApiWorker(QObject):
     def run(self) -> None:
         """Execute the API call in background thread."""
         try:
-            import urllib.request
             import json
+            import urllib.request
 
             req = urllib.request.Request(self.url, method="GET")
             req.add_header("Accept", "application/json")
@@ -86,7 +85,7 @@ class AnalyticsPanel(QDockWidget):
     bottleneck_clicked = Signal(dict)
     insight_clicked = Signal(dict)
 
-    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
+    def __init__(self, parent: QWidget | None = None, embedded: bool = False) -> None:
         """Initialize the analytics panel.
 
         Args:
@@ -101,8 +100,8 @@ class AnalyticsPanel(QDockWidget):
             self.setObjectName("AnalyticsDock")
 
         self._api_base_url = self._get_orchestrator_url()
-        self._current_workflow: Optional[str] = None
-        self._active_workers: List[tuple] = []  # (thread, worker) pairs
+        self._current_workflow: str | None = None
+        self._active_workers: list[tuple] = []  # (thread, worker) pairs
 
         if not embedded:
             self._setup_dock()
@@ -669,7 +668,7 @@ class AnalyticsPanel(QDockWidget):
 
         self._run_in_background(url, self._update_bottlenecks_ui, on_error, timeout=15.0)
 
-    def _update_bottlenecks_ui(self, data: Dict[str, Any]) -> None:
+    def _update_bottlenecks_ui(self, data: dict[str, Any]) -> None:
         """Update bottlenecks UI with API data."""
         # Update summary
         self._exec_count_label.setText(str(data.get("total_executions", 0)))
@@ -755,7 +754,7 @@ class AnalyticsPanel(QDockWidget):
 
         self._run_in_background(url, self._update_execution_ui, on_error, timeout=15.0)
 
-    def _update_execution_ui(self, data: Dict[str, Any]) -> None:
+    def _update_execution_ui(self, data: dict[str, Any]) -> None:
         """Update execution analysis UI."""
         # Update duration trend
         dur_trend = data.get("duration_trend", {})
@@ -861,7 +860,7 @@ class AnalyticsPanel(QDockWidget):
 
         self._run_in_background(url, self._update_timeline_ui, on_error, timeout=15.0)
 
-    def _update_timeline_ui(self, data: Dict[str, Any]) -> None:
+    def _update_timeline_ui(self, data: dict[str, Any]) -> None:
         """Update timeline table."""
         self._timeline_table.setRowCount(0)
 

@@ -31,7 +31,7 @@ class RobotAssignment:
     priority: int = 0
     created_at: datetime = field(default_factory=datetime.utcnow)
     created_by: str = ""
-    notes: Optional[str] = None
+    notes: str | None = None
 
     def __post_init__(self):
         """Validate assignment invariants."""

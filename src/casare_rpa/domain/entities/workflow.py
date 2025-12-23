@@ -3,9 +3,8 @@ CasareRPA - Domain Entity: Workflow
 Workflow aggregate root - manages nodes, connections, and workflow metadata.
 """
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-
 import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class WorkflowSchema:
     Handles serialization and deserialization.
     """
 
-    def __init__(self, metadata: Optional[WorkflowMetadata] = None) -> None:
+    def __init__(self, metadata: WorkflowMetadata | None = None) -> None:
         """
         Initialize workflow schema.
 
@@ -42,11 +41,11 @@ class WorkflowSchema:
             metadata: Workflow metadata (creates default if None)
         """
         self.metadata = metadata or WorkflowMetadata(name="Untitled Workflow")
-        self.nodes: Dict[NodeId, SerializedNode] = {}
-        self.connections: List[NodeConnection] = []
-        self.frames: List[SerializedFrame] = []  # Node frames/groups
-        self.variables: Dict[str, Any] = {}  # Global workflow variables
-        self.settings: Dict[str, Any] = {
+        self.nodes: dict[NodeId, SerializedNode] = {}
+        self.connections: list[NodeConnection] = []
+        self.frames: list[SerializedFrame] = []  # Node frames/groups
+        self.variables: dict[str, Any] = {}  # Global workflow variables
+        self.settings: dict[str, Any] = {
             "stop_on_error": True,
             "timeout": 30,
             "retry_count": 0,
@@ -131,7 +130,7 @@ class WorkflowSchema:
             )
         ]
 
-    def get_node(self, node_id: NodeId) -> Optional[SerializedNode]:
+    def get_node(self, node_id: NodeId) -> SerializedNode | None:
         """
         Get a node by ID.
 
@@ -143,7 +142,7 @@ class WorkflowSchema:
         """
         return self.nodes.get(node_id)
 
-    def get_connections_from(self, node_id: NodeId) -> List[NodeConnection]:
+    def get_connections_from(self, node_id: NodeId) -> list[NodeConnection]:
         """
         Get all connections originating from a node.
 
@@ -155,7 +154,7 @@ class WorkflowSchema:
         """
         return [conn for conn in self.connections if conn.source_node == node_id]
 
-    def get_connections_to(self, node_id: NodeId) -> List[NodeConnection]:
+    def get_connections_to(self, node_id: NodeId) -> list[NodeConnection]:
         """
         Get all connections targeting a node.
 
@@ -167,7 +166,7 @@ class WorkflowSchema:
         """
         return [conn for conn in self.connections if conn.target_node == node_id]
 
-    def validate(self) -> tuple[bool, List[str]]:
+    def validate(self) -> tuple[bool, list[str]]:
         """
         Validate the workflow structure (simple interface).
 

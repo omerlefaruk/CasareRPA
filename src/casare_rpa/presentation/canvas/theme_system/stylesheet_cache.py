@@ -47,7 +47,7 @@ def _compute_theme_hash() -> str:
         return hashlib.md5(_THEME_VERSION.encode()).hexdigest()[:12]
 
 
-def get_cached_stylesheet() -> Optional[str]:
+def get_cached_stylesheet() -> str | None:
     """
     Load stylesheet from disk cache if valid.
 

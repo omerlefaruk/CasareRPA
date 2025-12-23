@@ -137,7 +137,7 @@ class ScheduleTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.SCHEDULED
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get schedule-specific configuration."""
         return {
             "frequency": self.get_parameter("frequency", "daily"),

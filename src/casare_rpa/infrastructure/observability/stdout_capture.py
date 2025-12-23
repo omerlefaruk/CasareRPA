@@ -10,9 +10,9 @@ from __future__ import annotations
 import atexit
 import sys
 import threading
-from typing import Callable, Optional, TextIO
+from collections.abc import Callable
 from contextlib import contextmanager
-
+from typing import Optional, TextIO
 
 # Module-level lock for global state
 _global_lock = threading.Lock()
@@ -28,8 +28,8 @@ class OutputCapture:
 
     def __init__(
         self,
-        stdout_callback: Optional[Callable[[str], None]] = None,
-        stderr_callback: Optional[Callable[[str], None]] = None,
+        stdout_callback: Callable[[str], None] | None = None,
+        stderr_callback: Callable[[str], None] | None = None,
     ):
         """
         Initialize output capture.
@@ -40,8 +40,8 @@ class OutputCapture:
         """
         self._stdout_callback = stdout_callback
         self._stderr_callback = stderr_callback
-        self._original_stdout: Optional[TextIO] = None
-        self._original_stderr: Optional[TextIO] = None
+        self._original_stdout: TextIO | None = None
+        self._original_stderr: TextIO | None = None
         self._capturing = False
         self._lock = threading.Lock()
 
@@ -72,7 +72,7 @@ class OutputCapture:
         self._original_stderr = None
         self._capturing = False
 
-    def __enter__(self) -> "OutputCapture":
+    def __enter__(self) -> OutputCapture:
         """Context manager entry."""
         self.start()
         return self
@@ -92,7 +92,7 @@ class _CallbackWriter:
     def __init__(
         self,
         original: TextIO,
-        callback: Optional[Callable[[str], None]] = None,
+        callback: Callable[[str], None] | None = None,
     ):
         self._original = original
         self._callback = callback
@@ -145,13 +145,13 @@ class _CallbackWriter:
         return getattr(self._original, "encoding", "utf-8")
 
     @property
-    def errors(self) -> Optional[str]:
+    def errors(self) -> str | None:
         """Get error handling."""
         return getattr(self._original, "errors", None)
 
 
 # Module-level capture instance with thread-safe management
-_capture_instance: Optional[OutputCapture] = None
+_capture_instance: OutputCapture | None = None
 
 
 def _cleanup_on_exit() -> None:
@@ -168,8 +168,8 @@ atexit.register(_cleanup_on_exit)
 
 
 def set_output_callbacks(
-    stdout_callback: Optional[Callable[[str], None]] = None,
-    stderr_callback: Optional[Callable[[str], None]] = None,
+    stdout_callback: Callable[[str], None] | None = None,
+    stderr_callback: Callable[[str], None] | None = None,
 ) -> None:
     """
     Set stdout/stderr callbacks (thread-safe).
@@ -201,7 +201,7 @@ def remove_output_callbacks() -> None:
             globals()["_capture_instance"] = None
 
 
-def get_output_capture() -> Optional[OutputCapture]:
+def get_output_capture() -> OutputCapture | None:
     """
     Get the current output capture instance (if any).
 
@@ -214,8 +214,8 @@ def get_output_capture() -> Optional[OutputCapture]:
 
 @contextmanager
 def capture_output(
-    stdout_callback: Optional[Callable[[str], None]] = None,
-    stderr_callback: Optional[Callable[[str], None]] = None,
+    stdout_callback: Callable[[str], None] | None = None,
+    stderr_callback: Callable[[str], None] | None = None,
 ):
     """
     Context manager for capturing stdout/stderr.

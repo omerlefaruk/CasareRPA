@@ -87,7 +87,7 @@ def validate_canvas_config() -> Config:
     return config
 
 
-def print_config_summary(config: Optional[Config] = None) -> None:
+def print_config_summary(config: Config | None = None) -> None:
     """
     Print configuration summary to console.
 
@@ -118,7 +118,7 @@ def print_config_summary(config: Optional[Config] = None) -> None:
 
 def check_required_env_vars(
     required: list[str],
-    optional_warnings: Optional[list[str]] = None,
+    optional_warnings: list[str] | None = None,
 ) -> bool:
     """
     Check for required environment variables and warn about optional ones.

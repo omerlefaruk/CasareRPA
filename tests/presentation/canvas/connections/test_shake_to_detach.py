@@ -4,8 +4,9 @@ Tests for Shake-to-Detach gesture detection.
 Note: These tests use mocks to avoid Qt initialization issues.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestMovementSample:

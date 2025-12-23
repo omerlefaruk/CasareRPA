@@ -9,12 +9,12 @@ from typing import Any, Dict, Optional, Set
 
 from loguru import logger
 
+from casare_rpa.domain.services.workflow_validator import (
+    WorkflowValidator as QtWorkflowValidator,
+)
 from casare_rpa.domain.validation import (
     ValidationResult,
     validate_workflow,
-)
-from casare_rpa.domain.services.workflow_validator import (
-    WorkflowValidator as QtWorkflowValidator,
 )
 
 
@@ -30,11 +30,11 @@ class HeadlessWorkflowSandbox:
 
     def __init__(self) -> None:
         """Initialize the headless sandbox."""
-        self._node_types_cache: Optional[Set[str]] = None
-        self._qt_validator: Optional[QtWorkflowValidator] = None
+        self._node_types_cache: set[str] | None = None
+        self._qt_validator: QtWorkflowValidator | None = None
         logger.debug("HeadlessWorkflowSandbox initialized")
 
-    def _get_valid_node_types(self) -> Set[str]:
+    def _get_valid_node_types(self) -> set[str]:
         """Get set of valid node types from registry."""
         if self._node_types_cache is not None:
             return self._node_types_cache
@@ -60,7 +60,7 @@ class HeadlessWorkflowSandbox:
             logger.debug("Qt WorkflowValidator initialized")
         return self._qt_validator
 
-    def validate_workflow(self, workflow_dict: Dict[str, Any]) -> ValidationResult:
+    def validate_workflow(self, workflow_dict: dict[str, Any]) -> ValidationResult:
         """
         Validate a workflow dictionary in headless mode.
 
@@ -163,7 +163,7 @@ class HeadlessWorkflowSandbox:
 
         return result
 
-    def _validate_node_types(self, workflow_dict: Dict[str, Any], result: ValidationResult) -> None:
+    def _validate_node_types(self, workflow_dict: dict[str, Any], result: ValidationResult) -> None:
         """Validate that all node types are registered."""
         valid_types = self._get_valid_node_types()
         if not valid_types:
@@ -183,7 +183,7 @@ class HeadlessWorkflowSandbox:
                 )
 
     def _validate_connection_ports(
-        self, workflow_dict: Dict[str, Any], result: ValidationResult
+        self, workflow_dict: dict[str, Any], result: ValidationResult
     ) -> None:
         """Validate connection port names are valid."""
         connections = workflow_dict.get("connections", [])

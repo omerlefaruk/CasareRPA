@@ -24,7 +24,8 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import Any, Callable, Dict, Optional, TypeVar, ParamSpec
+from collections.abc import Callable
+from typing import Any, Dict, Optional, ParamSpec, TypeVar
 
 from loguru import logger
 
@@ -38,7 +39,7 @@ def error_handler(
     set_status: bool = True,
     include_traceback: bool = False,
     reraise: bool = False,
-    error_outputs: Optional[Dict[str, Any]] = None,
+    error_outputs: dict[str, Any] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Decorator for standardized error handling in node execute methods.
@@ -90,7 +91,7 @@ def error_handler(
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @functools.wraps(func)
-        async def async_wrapper(self, *args, **kwargs) -> Dict[str, Any]:
+        async def async_wrapper(self, *args, **kwargs) -> dict[str, Any]:
             # Import here to avoid circular imports
             from casare_rpa.domain.value_objects.types import NodeStatus
 
@@ -117,7 +118,7 @@ def error_handler(
                 )
 
         @functools.wraps(func)
-        def sync_wrapper(self, *args, **kwargs) -> Dict[str, Any]:
+        def sync_wrapper(self, *args, **kwargs) -> dict[str, Any]:
             # Import here to avoid circular imports
             from casare_rpa.domain.value_objects.types import NodeStatus
 
@@ -158,8 +159,8 @@ def _handle_error(
     set_status: bool,
     include_traceback: bool,
     reraise: bool,
-    error_outputs: Optional[Dict[str, Any]],
-) -> Dict[str, Any]:
+    error_outputs: dict[str, Any] | None,
+) -> dict[str, Any]:
     """
     Internal helper to handle errors consistently.
 

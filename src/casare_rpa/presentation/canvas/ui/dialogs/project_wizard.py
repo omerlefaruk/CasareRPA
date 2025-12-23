@@ -8,41 +8,39 @@ Project Creation Wizard Dialog.
 """
 
 from pathlib import Path
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
-    from casare_rpa.domain.entities.project_template import ProjectTemplate
     from casare_rpa.domain.entities.project import Project
+    from casare_rpa.domain.entities.project_template import ProjectTemplate
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QCheckBox,
+    QDialog,
+    QFileDialog,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QWidget,
-    QStackedWidget,
     QScrollArea,
-    QGridLayout,
-    QGroupBox,
-    QCheckBox,
+    QStackedWidget,
     QTextEdit,
-    QFileDialog,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
 
-from loguru import logger
-
-from PySide6.QtWidgets import QDialog
-
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
-    DialogSize,
     COLORS,
     DIALOG_DIMENSIONS,
-    show_styled_warning,
+    DialogSize,
+    DialogStyles,
     show_styled_error,
+    show_styled_warning,
 )
 
 
@@ -54,7 +52,7 @@ class TemplateCard(QFrame):
     def __init__(
         self,
         template: "ProjectTemplate",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._template = template
@@ -180,7 +178,7 @@ class TemplateCard(QFrame):
 class TemplatePreviewPanel(QFrame):
     """Panel showing template details."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setMinimumWidth(280)
         self.setMaximumWidth(320)
@@ -339,12 +337,12 @@ class ProjectWizard(QDialog):
 
     project_created = Signal(str, str)  # project_path, template_id
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self._templates: List["ProjectTemplate"] = []
-        self._selected_template: Optional["ProjectTemplate"] = None
-        self._template_cards: List[TemplateCard] = []
+        self._templates: list[ProjectTemplate] = []
+        self._selected_template: ProjectTemplate | None = None
+        self._template_cards: list[TemplateCard] = []
 
         self.setWindowTitle("New Project Wizard")
         self.setMinimumSize(*DIALOG_DIMENSIONS[DialogSize.XL])
@@ -949,6 +947,7 @@ class ProjectWizard(QDialog):
         """Create the project using the use case."""
         try:
             import asyncio
+
             from casare_rpa.application.use_cases.template_management import (
                 CreateProjectFromTemplateUseCase,
             )
@@ -1120,6 +1119,7 @@ class ProjectWizard(QDialog):
         """Import .env variables to project."""
         try:
             import asyncio
+
             from casare_rpa.application.use_cases.template_management import (
                 ImportEnvFileUseCase,
             )
@@ -1139,9 +1139,10 @@ class ProjectWizard(QDialog):
             if result.success and result.variables:
                 # Add to project variables
                 import orjson
+
                 from casare_rpa.domain.entities.project import (
-                    VariablesFile,
                     VariableScope,
+                    VariablesFile,
                 )
                 from casare_rpa.domain.entities.variable import Variable
 
@@ -1194,7 +1195,7 @@ class ProjectWizard(QDialog):
         return DialogStyles.button_inline()
 
 
-def show_project_wizard(parent: Optional[QWidget] = None) -> Optional[str]:
+def show_project_wizard(parent: QWidget | None = None) -> str | None:
     """
     Show project wizard dialog.
 

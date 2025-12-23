@@ -26,7 +26,7 @@ class FormField:
     label: str = ""
     ref: str = ""  # MCP element reference
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "name": self.name,
@@ -46,11 +46,11 @@ class FormInfo:
     selector: str
     action: str = ""
     method: str = "GET"
-    fields: List[FormField] = field(default_factory=list)
-    submit_button: Optional[Dict[str, str]] = None
+    fields: list[FormField] = field(default_factory=list)
+    submit_button: dict[str, str] | None = None
     ref: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "selector": self.selector,
@@ -73,19 +73,19 @@ class PageContext:
 
     url: str
     title: str
-    forms: List[FormInfo] = field(default_factory=list)
-    buttons: List[Dict[str, str]] = field(default_factory=list)
-    links: List[Dict[str, str]] = field(default_factory=list)
-    tables: List[Dict[str, Any]] = field(default_factory=list)
-    inputs: List[Dict[str, str]] = field(default_factory=list)  # Standalone inputs
-    text_areas: List[Dict[str, str]] = field(default_factory=list)
-    dropdowns: List[Dict[str, Any]] = field(default_factory=list)
-    checkboxes: List[Dict[str, str]] = field(default_factory=list)
-    navigation: List[Dict[str, str]] = field(default_factory=list)
-    headings: List[Dict[str, str]] = field(default_factory=list)
+    forms: list[FormInfo] = field(default_factory=list)
+    buttons: list[dict[str, str]] = field(default_factory=list)
+    links: list[dict[str, str]] = field(default_factory=list)
+    tables: list[dict[str, Any]] = field(default_factory=list)
+    inputs: list[dict[str, str]] = field(default_factory=list)  # Standalone inputs
+    text_areas: list[dict[str, str]] = field(default_factory=list)
+    dropdowns: list[dict[str, Any]] = field(default_factory=list)
+    checkboxes: list[dict[str, str]] = field(default_factory=list)
+    navigation: list[dict[str, str]] = field(default_factory=list)
+    headings: list[dict[str, str]] = field(default_factory=list)
     raw_snapshot: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "url": self.url,
@@ -231,8 +231,8 @@ class PageAnalyzer:
 
     def __init__(self) -> None:
         """Initialize page analyzer."""
-        self._current_form: Optional[FormInfo] = None
-        self._form_fields: List[FormField] = []
+        self._current_form: FormInfo | None = None
+        self._form_fields: list[FormField] = []
 
     def analyze_snapshot(
         self,
@@ -264,7 +264,7 @@ class PageAnalyzer:
 
         # Parse line by line
         lines = snapshot.split("\n")
-        element_stack: List[Tuple[int, str, str, str]] = []  # (indent, role, name, ref)
+        element_stack: list[tuple[int, str, str, str]] = []  # (indent, role, name, ref)
 
         for line in lines:
             parsed = self._parse_line(line)
@@ -421,7 +421,7 @@ class PageAnalyzer:
 
         return context
 
-    def _parse_line(self, line: str) -> Optional[Tuple[int, str, str, str, str]]:
+    def _parse_line(self, line: str) -> tuple[int, str, str, str, str] | None:
         """
         Parse a single line from snapshot.
 
@@ -497,14 +497,14 @@ class PageAnalyzer:
 
         return base
 
-    def _extract_attr(self, text: str, attr_name: str) -> Optional[str]:
+    def _extract_attr(self, text: str, attr_name: str) -> str | None:
         """Extract attribute value from text."""
         for match in self.ATTR_PATTERN.finditer(text):
             if match.group(1) == attr_name:
                 return match.group(2)
         return None
 
-    def _extract_options(self, text: str) -> List[str]:
+    def _extract_options(self, text: str) -> list[str]:
         """Extract dropdown options from text."""
         options = []
         # Look for option patterns
@@ -512,7 +512,7 @@ class PageAnalyzer:
         options.extend(option_matches)
         return options[:10]  # Limit to 10 options
 
-    def _extract_table_headers(self, lines: List[str], start_idx: int) -> List[str]:
+    def _extract_table_headers(self, lines: list[str], start_idx: int) -> list[str]:
         """Extract table headers from following lines."""
         headers = []
         for i in range(start_idx + 1, min(start_idx + 20, len(lines))):
@@ -527,8 +527,8 @@ class PageAnalyzer:
         return headers[:10]  # Limit to 10 headers
 
     def _extract_navigation_items(
-        self, lines: List[str], start_idx: int, base_indent: int
-    ) -> List[Dict[str, str]]:
+        self, lines: list[str], start_idx: int, base_indent: int
+    ) -> list[dict[str, str]]:
         """Extract navigation items from following lines."""
         items = []
         for i in range(start_idx + 1, min(start_idx + 30, len(lines))):

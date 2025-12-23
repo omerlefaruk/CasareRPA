@@ -6,9 +6,9 @@ Anchors are stable reference elements (labels, headings) used to
 reliably find dynamic target elements relative to their position.
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any
 import json
+from dataclasses import dataclass
+from typing import Any, Dict
 
 from loguru import logger
 
@@ -69,7 +69,7 @@ class NodeAnchorConfig:
             return cls()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "NodeAnchorConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "NodeAnchorConfig":
         """
         Create config from dictionary.
 
@@ -105,7 +105,7 @@ class NodeAnchorConfig:
 
         return json.dumps(self.to_dict())
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert config to dictionary.
 

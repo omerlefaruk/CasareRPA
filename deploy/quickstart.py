@@ -31,7 +31,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-
 # Paths
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
@@ -113,7 +112,7 @@ def print_header(title: str, char: str = "="):
     print(char * width)
 
 
-def print_step(step: str, status: str = "", success: Optional[bool] = None):
+def print_step(step: str, status: str = "", success: bool | None = None):
     """Print a step with optional status."""
     icon = ""
     if success is True:
@@ -133,7 +132,7 @@ def run_command(
     command: list[str],
     capture: bool = True,
     check: bool = False,
-    cwd: Optional[Path] = None,
+    cwd: Path | None = None,
 ) -> subprocess.CompletedProcess:
     """Run a command and return result."""
     try:

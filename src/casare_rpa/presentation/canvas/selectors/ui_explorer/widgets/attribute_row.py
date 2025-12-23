@@ -10,13 +10,13 @@ Supports multiple visual states for included/excluded/required attributes.
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
     QWidget,
 )
-from PySide6.QtGui import QFont
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorAttribute,
@@ -50,7 +50,7 @@ class AttributeRow(QWidget):
     def __init__(
         self,
         attribute: SelectorAttribute,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the attribute row.

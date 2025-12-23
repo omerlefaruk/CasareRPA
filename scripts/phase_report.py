@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
-from pathlib import Path
 import subprocess
 import sys
+from datetime import UTC, datetime, timezone
+from pathlib import Path
 
 
 def _repo_root() -> Path:
@@ -28,7 +28,7 @@ def _build_block(
 
 
 def _timestamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    return datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _current_branch(root: Path) -> str:

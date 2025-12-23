@@ -11,6 +11,7 @@ Color scheme:
 - Comments: Gray italic
 """
 
+import re
 from typing import Optional
 
 from PySide6.QtGui import (
@@ -20,8 +21,6 @@ from PySide6.QtGui import (
     QTextCharFormat,
     QTextDocument,
 )
-
-import re
 
 
 class XMLHighlighter(QSyntaxHighlighter):
@@ -46,7 +45,7 @@ class XMLHighlighter(QSyntaxHighlighter):
     COMMENT_COLOR = QColor("#6b7280")  # Gray
     BRACKET_COLOR = QColor("#a855f7")  # Purple for < > / =
 
-    def __init__(self, document: Optional[QTextDocument] = None) -> None:
+    def __init__(self, document: QTextDocument | None = None) -> None:
         """
         Initialize the XML highlighter.
 

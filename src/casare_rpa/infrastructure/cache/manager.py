@@ -1,8 +1,9 @@
 import os
-import lz4.frame
 import pickle
-from typing import Any, Optional
 from dataclasses import dataclass
+from typing import Any, Optional
+
+import lz4.frame
 from aiocache import Cache
 from diskcache import Cache as DiskCache
 from loguru import logger
@@ -26,7 +27,7 @@ class TieredCacheManager:
     L2: Disk-based (diskcache) - Slower, persistent, compressed.
     """
 
-    def __init__(self, config: Optional[CacheConfig] = None):
+    def __init__(self, config: CacheConfig | None = None):
         self.config = config or CacheConfig()
 
         # Initialize L1 (Memory)
@@ -42,7 +43,7 @@ class TieredCacheManager:
                 logger.error(f"Failed to initialize DiskCache at {self.config.disk_path}: {e}")
                 self.config.l2_enabled = False
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         """Get value from cache (L1 then L2)."""
         if not self.config.enabled:
             return None
@@ -73,7 +74,7 @@ class TieredCacheManager:
 
         return None
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Set value in cache (L1 and L2)."""
         if not self.config.enabled:
             return

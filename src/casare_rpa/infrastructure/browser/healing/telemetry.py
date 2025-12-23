@@ -67,19 +67,19 @@ class HealingEvent:
     healing_time_ms: float
     """Time spent on healing in milliseconds."""
 
-    healed_selector: Optional[str] = None
+    healed_selector: str | None = None
     """The selector that worked (if healed)."""
 
     confidence: float = 1.0
     """Confidence score of the healed selector."""
 
-    tiers_attempted: List[str] = field(default_factory=list)
+    tiers_attempted: list[str] = field(default_factory=list)
     """List of tiers that were attempted."""
 
-    error_message: Optional[str] = None
+    error_message: str | None = None
     """Error message if failed."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "timestamp": self.timestamp,
@@ -119,13 +119,13 @@ class SelectorStats:
     failures: int = 0
     """Times all attempts failed."""
 
-    tier_usage: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    tier_usage: dict[str, int] = field(default_factory=lambda: defaultdict(int))
     """Count of successes by tier."""
 
     avg_healing_time_ms: float = 0.0
     """Average healing time when healing was needed."""
 
-    last_healed_selector: Optional[str] = None
+    last_healed_selector: str | None = None
     """Most recent healed selector."""
 
     last_used: float = 0.0
@@ -153,7 +153,7 @@ class SelectorStats:
             return 0.0
         return self.healed_successes / attempted
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "selector": self.selector,
@@ -207,7 +207,7 @@ class HealingTelemetry:
 
     def __init__(
         self,
-        storage_path: Optional[Path] = None,
+        storage_path: Path | None = None,
         max_events: int = 10000,
         retention_days: int = 30,
     ) -> None:
@@ -223,15 +223,15 @@ class HealingTelemetry:
         self._max_events = max_events
         self._retention_days = retention_days
 
-        self._events: List[HealingEvent] = []
-        self._selector_stats: Dict[str, SelectorStats] = {}
+        self._events: list[HealingEvent] = []
+        self._selector_stats: dict[str, SelectorStats] = {}
 
         # Aggregate counters
         self._total_uses = 0
         self._total_original_success = 0
         self._total_healed_success = 0
         self._total_failures = 0
-        self._tier_successes: Dict[str, int] = defaultdict(int)
+        self._tier_successes: dict[str, int] = defaultdict(int)
         self._total_healing_time_ms = 0.0
 
         if storage_path and storage_path.exists():
@@ -244,10 +244,10 @@ class HealingTelemetry:
         success: bool,
         tier_used: HealingTier,
         healing_time_ms: float,
-        healed_selector: Optional[str] = None,
+        healed_selector: str | None = None,
         confidence: float = 1.0,
-        tiers_attempted: Optional[List[str]] = None,
-        error_message: Optional[str] = None,
+        tiers_attempted: list[str] | None = None,
+        error_message: str | None = None,
     ) -> HealingEvent:
         """
         Record a healing event.
@@ -334,11 +334,11 @@ class HealingTelemetry:
         else:
             stats.failures += 1
 
-    def get_selector_stats(self, selector: str) -> Optional[SelectorStats]:
+    def get_selector_stats(self, selector: str) -> SelectorStats | None:
         """Get statistics for a specific selector."""
         return self._selector_stats.get(selector)
 
-    def get_overall_stats(self) -> Dict[str, Any]:
+    def get_overall_stats(self) -> dict[str, Any]:
         """
         Get overall healing statistics.
 
@@ -374,14 +374,14 @@ class HealingTelemetry:
             "events_recorded": len(self._events),
         }
 
-    def get_tier_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_tier_stats(self) -> dict[str, dict[str, Any]]:
         """
         Get statistics broken down by healing tier.
 
         Returns:
             Dictionary with per-tier statistics.
         """
-        tier_stats: Dict[str, Dict[str, Any]] = {}
+        tier_stats: dict[str, dict[str, Any]] = {}
 
         for tier in HealingTier:
             count = self._tier_successes.get(tier.value, 0)
@@ -396,7 +396,7 @@ class HealingTelemetry:
         self,
         min_uses: int = 5,
         max_success_rate: float = 0.8,
-    ) -> List[SelectorStats]:
+    ) -> list[SelectorStats]:
         """
         Get selectors that frequently need healing or fail.
 
@@ -419,9 +419,9 @@ class HealingTelemetry:
     def get_recent_events(
         self,
         limit: int = 100,
-        selector: Optional[str] = None,
-        success_only: Optional[bool] = None,
-    ) -> List[HealingEvent]:
+        selector: str | None = None,
+        success_only: bool | None = None,
+    ) -> list[HealingEvent]:
         """
         Get recent healing events.
 
@@ -461,7 +461,7 @@ class HealingTelemetry:
 
         return removed
 
-    def export_report(self) -> Dict[str, Any]:
+    def export_report(self) -> dict[str, Any]:
         """
         Export a comprehensive telemetry report.
 
@@ -486,7 +486,7 @@ class HealingTelemetry:
             return
 
         try:
-            with open(self._storage_path, "r", encoding="utf-8") as f:
+            with open(self._storage_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             self._total_uses = data.get("total_uses", 0)
@@ -541,10 +541,10 @@ class HealingTelemetry:
 
 
 # Global telemetry instance
-_global_telemetry: Optional[HealingTelemetry] = None
+_global_telemetry: HealingTelemetry | None = None
 
 
-def get_healing_telemetry(storage_path: Optional[Path] = None) -> HealingTelemetry:
+def get_healing_telemetry(storage_path: Path | None = None) -> HealingTelemetry:
     """Get or create the global telemetry instance."""
     global _global_telemetry
     if _global_telemetry is None:

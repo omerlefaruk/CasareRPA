@@ -6,12 +6,13 @@ and visual feedback.
 """
 
 import time
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
-from loguru import logger
+from typing import Any, Dict, List, Optional
 
 import uiautomation as auto
+from loguru import logger
+
 from casare_rpa.desktop.element import DesktopElement
 from casare_rpa.desktop.selector import find_element, find_elements, parse_selector
 
@@ -34,8 +35,8 @@ class ValidationResult:
     status: ValidationStatus
     element_count: int
     execution_time_ms: float
-    error_message: Optional[str] = None
-    elements: Optional[List[DesktopElement]] = None
+    error_message: str | None = None
+    elements: list[DesktopElement] | None = None
 
     @property
     def is_valid(self) -> bool:
@@ -89,7 +90,7 @@ class SelectorValidator:
     Validates desktop selectors in real-time
     """
 
-    def __init__(self, parent_control: Optional[auto.Control] = None):
+    def __init__(self, parent_control: auto.Control | None = None):
         """
         Initialize validator
 
@@ -99,7 +100,7 @@ class SelectorValidator:
         self.parent_control = parent_control or auto.GetRootControl()
         logger.debug("Selector validator initialized")
 
-    def validate(self, selector: Dict[str, Any], find_all: bool = False) -> ValidationResult:
+    def validate(self, selector: dict[str, Any], find_all: bool = False) -> ValidationResult:
         """
         Validate a selector.
 
@@ -184,7 +185,7 @@ class SelectorValidator:
                 error_message=error_msg,
             )
 
-    def validate_multiple(self, selectors: List[Dict[str, Any]]) -> List[ValidationResult]:
+    def validate_multiple(self, selectors: list[dict[str, Any]]) -> list[ValidationResult]:
         """
         Validate multiple selectors.
 
@@ -210,7 +211,7 @@ class SelectorValidator:
 
         return results
 
-    def quick_check(self, selector: Dict[str, Any]) -> bool:
+    def quick_check(self, selector: dict[str, Any]) -> bool:
         """
         Quick check if selector finds at least one element.
 
@@ -226,7 +227,7 @@ class SelectorValidator:
         except Exception:
             return False
 
-    def highlight_matches(self, selector: Dict[str, Any], max_count: int = 10):
+    def highlight_matches(self, selector: dict[str, Any], max_count: int = 10):
         """
         Highlight all elements matching selector (for debugging).
 
@@ -252,7 +253,7 @@ class SelectorValidator:
         except Exception as e:
             logger.error(f"Failed to highlight matches: {e}")
 
-    def get_element_at_position(self, x: int, y: int) -> Optional[DesktopElement]:
+    def get_element_at_position(self, x: int, y: int) -> DesktopElement | None:
         """
         Get element at screen position.
 
@@ -274,7 +275,7 @@ class SelectorValidator:
 
 
 def validate_selector_sync(
-    selector: Dict[str, Any], parent_control: Optional[auto.Control] = None
+    selector: dict[str, Any], parent_control: auto.Control | None = None
 ) -> ValidationResult:
     """
     Convenience function to validate a selector synchronously.

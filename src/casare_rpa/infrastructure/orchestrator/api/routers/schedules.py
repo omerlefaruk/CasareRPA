@@ -17,25 +17,24 @@ Endpoints:
 import asyncio
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, field_validator
-from loguru import logger
 from croniter import croniter
+from fastapi import APIRouter, Depends, HTTPException, Query
+from loguru import logger
+from pydantic import BaseModel, Field, field_validator
 
 from casare_rpa.infrastructure.orchestrator.api.auth import (
-    get_current_user,
     AuthenticatedUser,
+    get_current_user,
 )
-
 from casare_rpa.infrastructure.orchestrator.scheduling import (
+    AdvancedSchedule,
+    ScheduleStatus,
+    ScheduleType,
     get_global_scheduler,
     is_scheduler_initialized,
-    AdvancedSchedule,
-    ScheduleType,
-    ScheduleStatus,
 )
 
 try:
@@ -144,8 +143,8 @@ class ScheduleResponse(BaseModel):
     enabled: bool
     priority: int
     execution_mode: str
-    next_run: Optional[datetime]
-    last_run: Optional[datetime]
+    next_run: datetime | None
+    last_run: datetime | None
     run_count: int
     failure_count: int
     created_at: datetime
@@ -157,7 +156,7 @@ class ScheduleResponse(BaseModel):
 # =========================
 
 
-def calculate_next_run(cron_expression: str, base_time: Optional[datetime] = None) -> datetime:
+def calculate_next_run(cron_expression: str, base_time: datetime | None = None) -> datetime:
     """
     Calculate next run time from cron expression.
 
@@ -169,7 +168,7 @@ def calculate_next_run(cron_expression: str, base_time: Optional[datetime] = Non
         Next run datetime (UTC)
     """
     if base_time is None:
-        base_time = datetime.now(timezone.utc)
+        base_time = datetime.now(UTC)
 
     cron = croniter(cron_expression, base_time)
     next_run = cron.get_next(datetime)
@@ -197,6 +196,9 @@ async def _execute_scheduled_workflow(schedule: AdvancedSchedule) -> None:
 
     try:
         # Import dependencies for job submission
+        from casare_rpa.application.orchestrator.services.dispatcher_service import (
+            JobDispatcher,
+        )
         from casare_rpa.application.orchestrator.use_cases import SubmitJobUseCase
         from casare_rpa.domain.orchestrator.entities.job import JobPriority
         from casare_rpa.domain.orchestrator.services.robot_selection_service import (
@@ -204,12 +206,9 @@ async def _execute_scheduled_workflow(schedule: AdvancedSchedule) -> None:
         )
         from casare_rpa.infrastructure.persistence.repositories import (
             JobRepository,
+            NodeOverrideRepository,
             RobotRepository,
             WorkflowAssignmentRepository,
-            NodeOverrideRepository,
-        )
-        from casare_rpa.application.orchestrator.services.dispatcher_service import (
-            JobDispatcher,
         )
 
         # Get workflow data from schedule metadata or storage
@@ -269,8 +268,8 @@ async def _execute_scheduled_workflow(schedule: AdvancedSchedule) -> None:
         # Publish event for monitoring
         try:
             from casare_rpa.infrastructure.events import (
-                get_monitoring_event_bus,
                 MonitoringEventType,
+                get_monitoring_event_bus,
             )
 
             event_bus = get_monitoring_event_bus()
@@ -283,7 +282,7 @@ async def _execute_scheduled_workflow(schedule: AdvancedSchedule) -> None:
                     "source": "scheduler",
                     "schedule_id": schedule.id,
                     "schedule_name": schedule.name,
-                    "triggered_at": datetime.now(timezone.utc).isoformat(),
+                    "triggered_at": datetime.now(UTC).isoformat(),
                 },
             )
         except Exception as event_error:
@@ -306,8 +305,8 @@ async def _execute_scheduled_workflow(schedule: AdvancedSchedule) -> None:
         # Publish failure event
         try:
             from casare_rpa.infrastructure.events import (
-                get_monitoring_event_bus,
                 MonitoringEventType,
+                get_monitoring_event_bus,
             )
 
             event_bus = get_monitoring_event_bus()
@@ -321,14 +320,14 @@ async def _execute_scheduled_workflow(schedule: AdvancedSchedule) -> None:
                     "schedule_id": schedule.id,
                     "schedule_name": schedule.name,
                     "error": str(e),
-                    "triggered_at": datetime.now(timezone.utc).isoformat(),
+                    "triggered_at": datetime.now(UTC).isoformat(),
                 },
             )
         except Exception as event_error:
             logger.warning("Failed to publish failure event: {}", event_error)
 
 
-async def _get_workflow_data(schedule: AdvancedSchedule) -> Optional[Dict[str, Any]]:
+async def _get_workflow_data(schedule: AdvancedSchedule) -> dict[str, Any] | None:
     """
     Retrieve workflow data for scheduled execution.
 
@@ -414,8 +413,8 @@ async def _publish_fallback_job_event(job_id: str, schedule: AdvancedSchedule) -
     """
     try:
         from casare_rpa.infrastructure.events import (
-            get_monitoring_event_bus,
             MonitoringEventType,
+            get_monitoring_event_bus,
         )
 
         event_bus = get_monitoring_event_bus()
@@ -428,7 +427,7 @@ async def _publish_fallback_job_event(job_id: str, schedule: AdvancedSchedule) -
                 "source": "scheduler",
                 "schedule_id": schedule.id,
                 "schedule_name": schedule.name,
-                "triggered_at": datetime.now(timezone.utc).isoformat(),
+                "triggered_at": datetime.now(UTC).isoformat(),
                 "fallback": True,
             },
         )
@@ -444,7 +443,7 @@ def _convert_to_advanced_schedule(
     schedule_id: str,
     request: ScheduleRequest,
     now: datetime,
-    next_run: Optional[datetime],
+    next_run: datetime | None,
 ) -> AdvancedSchedule:
     """
     Convert API request to AdvancedSchedule for APScheduler.
@@ -478,7 +477,7 @@ def _convert_to_advanced_schedule(
     )
 
 
-def _schedule_to_response(schedule: AdvancedSchedule) -> Dict[str, Any]:
+def _schedule_to_response(schedule: AdvancedSchedule) -> dict[str, Any]:
     """
     Convert AdvancedSchedule to API response format.
 
@@ -500,8 +499,8 @@ def _schedule_to_response(schedule: AdvancedSchedule) -> Dict[str, Any]:
         "last_run": schedule.last_run,
         "run_count": schedule.run_count,
         "failure_count": schedule.failure_count,
-        "created_at": schedule.created_at or datetime.now(timezone.utc),
-        "updated_at": schedule.updated_at or datetime.now(timezone.utc),
+        "created_at": schedule.created_at or datetime.now(UTC),
+        "updated_at": schedule.updated_at or datetime.now(UTC),
     }
 
 
@@ -511,7 +510,7 @@ def _schedule_to_response(schedule: AdvancedSchedule) -> Dict[str, Any]:
 # Used when scheduler is not initialized or as backup storage.
 # Thread-safe with asyncio.Lock.
 
-_schedules: Dict[str, Dict[str, Any]] = {}
+_schedules: dict[str, dict[str, Any]] = {}
 _schedules_lock = asyncio.Lock()
 
 
@@ -541,7 +540,7 @@ async def create_schedule(
     validate_uuid_format(request.workflow_id, "workflow_id")
     try:
         schedule_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Calculate next run time
         next_run = calculate_next_run(request.cron_expression) if request.enabled else None
@@ -609,13 +608,13 @@ async def create_schedule(
         raise HTTPException(status_code=500, detail=f"Failed to create schedule: {str(e)}")
 
 
-@router.get("/schedules", response_model=List[ScheduleResponse])
+@router.get("/schedules", response_model=list[ScheduleResponse])
 async def list_schedules(
-    workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
-    enabled: Optional[bool] = Query(None, description="Filter by enabled status"),
+    workflow_id: str | None = Query(None, description="Filter by workflow ID"),
+    enabled: bool | None = Query(None, description="Filter by enabled status"),
     limit: int = Query(100, ge=1, le=1000),
     current_user: AuthenticatedUser = Depends(get_current_user),
-) -> List[ScheduleResponse]:
+) -> list[ScheduleResponse]:
     """
     List all schedules with optional filtering.
 
@@ -628,7 +627,7 @@ async def list_schedules(
         List of schedules
     """
     try:
-        schedules: List[Dict[str, Any]] = []
+        schedules: list[dict[str, Any]] = []
 
         # Get from APScheduler if available
         scheduler = get_global_scheduler()
@@ -650,7 +649,7 @@ async def list_schedules(
 
         # Sort by created_at descending
         schedules.sort(
-            key=lambda s: s.get("created_at") or datetime.min.replace(tzinfo=timezone.utc),
+            key=lambda s: s.get("created_at") or datetime.min.replace(tzinfo=UTC),
             reverse=True,
         )
 
@@ -751,7 +750,7 @@ async def enable_schedule(
     async with _schedules_lock:
         schedule_data["enabled"] = True
         schedule_data["next_run"] = calculate_next_run(schedule_data["cron_expression"])
-        schedule_data["updated_at"] = datetime.now(timezone.utc)
+        schedule_data["updated_at"] = datetime.now(UTC)
 
     logger.info("Schedule enabled: {}", schedule_id)
     return ScheduleResponse(**schedule_data)
@@ -811,7 +810,7 @@ async def disable_schedule(
     async with _schedules_lock:
         schedule_data["enabled"] = False
         schedule_data["next_run"] = None
-        schedule_data["updated_at"] = datetime.now(timezone.utc)
+        schedule_data["updated_at"] = datetime.now(UTC)
 
     logger.info("Schedule disabled: {}", schedule_id)
     return ScheduleResponse(**schedule_data)
@@ -912,7 +911,7 @@ async def trigger_schedule_now(
                 job = scheduler._scheduler.get_job(schedule_id)
                 if job:
                     # Modify next run time to now for immediate execution
-                    job.modify(next_run_time=datetime.now(timezone.utc))
+                    job.modify(next_run_time=datetime.now(UTC))
                     logger.info(
                         "Schedule triggered immediately via APScheduler: {} (job={})",
                         schedule_id,
@@ -950,8 +949,8 @@ async def trigger_schedule_now(
     # No scheduler available - create manual job event
     try:
         from casare_rpa.infrastructure.events import (
-            get_monitoring_event_bus,
             MonitoringEventType,
+            get_monitoring_event_bus,
         )
 
         event_bus = get_monitoring_event_bus()
@@ -964,7 +963,7 @@ async def trigger_schedule_now(
                 "source": "manual_trigger",
                 "schedule_id": schedule_id,
                 "schedule_name": schedule_data["schedule_name"],
-                "triggered_at": datetime.now(timezone.utc).isoformat(),
+                "triggered_at": datetime.now(UTC).isoformat(),
             },
         )
         logger.info("Schedule triggered manually: {} (job={})", schedule_id, job_id)
@@ -979,12 +978,12 @@ async def trigger_schedule_now(
     }
 
 
-@router.get("/schedules/upcoming", response_model=List[dict])
+@router.get("/schedules/upcoming", response_model=list[dict])
 async def get_upcoming_schedules(
     limit: int = Query(20, ge=1, le=100),
-    workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
+    workflow_id: str | None = Query(None, description="Filter by workflow ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-) -> List[dict]:
+) -> list[dict]:
     """
     Get upcoming scheduled runs.
 

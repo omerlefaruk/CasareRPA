@@ -20,15 +20,15 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any, Optional
 
 from loguru import logger
 
 # Import hvac conditionally to allow graceful degradation
 try:
     import hvac
-    from hvac.exceptions import InvalidPath, Forbidden, VaultError
+    from hvac.exceptions import Forbidden, InvalidPath, VaultError
 
     HVAC_AVAILABLE = True
 except ImportError:
@@ -81,21 +81,21 @@ class VaultConfig:
     """
 
     url: str
-    namespace: Optional[str] = None
+    namespace: str | None = None
     auth_method: str = "approle"
-    role_id: Optional[str] = None
-    secret_id: Optional[str] = None
-    token: Optional[str] = None
-    ldap_username: Optional[str] = None
-    ldap_password: Optional[str] = None
-    kubernetes_role: Optional[str] = None
+    role_id: str | None = None
+    secret_id: str | None = None
+    token: str | None = None
+    ldap_username: str | None = None
+    ldap_password: str | None = None
+    kubernetes_role: str | None = None
     verify_ssl: bool = True
-    ca_cert: Optional[str] = None
+    ca_cert: str | None = None
     timeout: int = 30
     mount_point: str = "casarerpa"
 
     @classmethod
-    def from_env(cls) -> "VaultConfig":
+    def from_env(cls) -> VaultConfig:
         """Create VaultConfig from environment variables.
 
         Environment variables:
@@ -120,7 +120,7 @@ class VaultConfig:
         )
 
     @classmethod
-    def from_file(cls, config_path: Path) -> "VaultConfig":
+    def from_file(cls, config_path: Path) -> VaultConfig:
         """Load VaultConfig from a JSON configuration file."""
         import json
 
@@ -170,7 +170,7 @@ class VaultClient:
             raise VaultConnectionError("hvac library not installed. Install with: pip install hvac")
 
         self.config = config
-        self._client: Optional[hvac.Client] = None
+        self._client: hvac.Client | None = None
         self._authenticated = False
 
     @property
@@ -291,7 +291,7 @@ class VaultClient:
         self,
         path: str,
         data: dict[str, Any],
-        cas: Optional[int] = None,
+        cas: int | None = None,
     ) -> dict[str, Any]:
         """Store a secret in Vault KV v2 engine.
 
@@ -415,10 +415,10 @@ class VaultClient:
 
 
 def create_vault_client(
-    url: Optional[str] = None,
-    token: Optional[str] = None,
-    role_id: Optional[str] = None,
-    secret_id: Optional[str] = None,
+    url: str | None = None,
+    token: str | None = None,
+    role_id: str | None = None,
+    secret_id: str | None = None,
 ) -> VaultClient:
     """Factory function to create a Vault client.
 

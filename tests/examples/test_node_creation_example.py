@@ -34,13 +34,7 @@ from casare_rpa.domain.value_objects import DataType
         essential=True,
         tooltip="Text to transform",
     ),
-<<<<<<< HEAD
-    PropertyDef(
-        "uppercase", PropertyType.BOOLEAN, default=True, tooltip="Convert to uppercase"
-    ),
-=======
     PropertyDef("uppercase", PropertyType.BOOLEAN, default=True, tooltip="Convert to uppercase"),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     # Non-essential properties are in advanced section
     PropertyDef("prefix", PropertyType.STRING, default="", tooltip="Prefix to add"),
 )

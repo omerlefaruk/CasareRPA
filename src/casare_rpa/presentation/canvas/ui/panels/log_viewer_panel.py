@@ -11,27 +11,26 @@ import json
 from datetime import datetime
 from typing import Any, Dict, Optional
 
+from loguru import logger
+from PySide6.QtCore import QObject, Qt, QThread, Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QPushButton,
+    QAbstractItemView,
+    QCheckBox,
     QComboBox,
+    QDockWidget,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
-    QHeaderView,
-    QAbstractItemView,
-    QFileDialog,
-    QCheckBox,
-    QGroupBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QThread, QObject
-from PySide6.QtGui import QColor, QBrush
-
-from loguru import logger
 
 
 class LogStreamWorker(QObject):
@@ -46,8 +45,8 @@ class LogStreamWorker(QObject):
         self,
         orchestrator_url: str,
         api_secret: str,
-        robot_id: Optional[str] = None,
-        tenant_id: Optional[str] = None,
+        robot_id: str | None = None,
+        tenant_id: str | None = None,
         min_level: str = "DEBUG",
     ) -> None:
         """Initialize worker with connection parameters."""
@@ -109,7 +108,7 @@ class LogStreamWorker(QObject):
                         message = await asyncio.wait_for(ws.recv(), timeout=30)
                         data = json.loads(message)
                         self.log_received.emit(data)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         # Send ping
                         await ws.send("ping")
                     except Exception:
@@ -150,20 +149,20 @@ class LogViewerPanel(QDockWidget):
     COL_SOURCE = 3
     COL_MESSAGE = 4
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the log viewer panel."""
         super().__init__("Log Viewer", parent)
         self.setObjectName("LogViewerDock")
 
         # Connection state
-        self._orchestrator_url: Optional[str] = None
-        self._api_secret: Optional[str] = None
-        self._current_robot: Optional[str] = None
-        self._current_tenant: Optional[str] = None
+        self._orchestrator_url: str | None = None
+        self._api_secret: str | None = None
+        self._current_robot: str | None = None
+        self._current_tenant: str | None = None
 
         # Worker thread
-        self._thread: Optional[QThread] = None
-        self._worker: Optional[LogStreamWorker] = None
+        self._thread: QThread | None = None
+        self._worker: LogStreamWorker | None = None
 
         # Log buffer
         self._max_entries = 5000
@@ -419,7 +418,7 @@ class LogViewerPanel(QDockWidget):
         self,
         orchestrator_url: str,
         api_secret: str,
-        tenant_id: Optional[str] = None,
+        tenant_id: str | None = None,
     ) -> None:
         """
         Configure connection settings.
@@ -568,7 +567,7 @@ class LogViewerPanel(QDockWidget):
         self._status_label.setStyleSheet("color: #f44747;")
         logger.error(f"Log viewer error: {error_msg}")
 
-    def _on_log_received(self, data: Dict[str, Any]) -> None:
+    def _on_log_received(self, data: dict[str, Any]) -> None:
         """Handle received log entry."""
         if self._paused:
             return
@@ -578,7 +577,7 @@ class LogViewerPanel(QDockWidget):
         if msg_type == "log_entry":
             self._add_log_entry(data)
 
-    def _add_log_entry(self, data: Dict[str, Any]) -> None:
+    def _add_log_entry(self, data: dict[str, Any]) -> None:
         """Add a log entry to the table."""
         # Parse timestamp
         timestamp_str = data.get("timestamp", "")

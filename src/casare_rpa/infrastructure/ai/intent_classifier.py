@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -56,12 +56,12 @@ class IntentClassification:
 
     intent: UserIntent
     confidence: float
-    matched_patterns: List[str] = field(default_factory=list)
-    extracted_entities: Dict[str, Any] = field(default_factory=dict)
-    suggested_template: Optional[str] = None
+    matched_patterns: list[str] = field(default_factory=list)
+    extracted_entities: dict[str, Any] = field(default_factory=dict)
+    suggested_template: str | None = None
     requires_llm_fallback: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "intent": self.intent.value,
@@ -87,10 +87,10 @@ class PatternRule:
     """
 
     intent: UserIntent
-    patterns: List[str]
+    patterns: list[str]
     weight: float = 1.0
     extract_entities: bool = False
-    entity_groups: List[str] = field(default_factory=list)
+    entity_groups: list[str] = field(default_factory=list)
 
 
 class IntentClassifier:
@@ -114,7 +114,7 @@ class IntentClassifier:
     MAX_PATTERN_CONFIDENCE = 0.95
 
     # Pattern rules organized by intent
-    _PATTERN_RULES: List[PatternRule] = [
+    _PATTERN_RULES: list[PatternRule] = [
         # CREATE_WORKFLOW patterns
         PatternRule(
             intent=UserIntent.NEW_WORKFLOW,
@@ -257,7 +257,7 @@ class IntentClassifier:
     ]
 
     # Template keyword mappings
-    _TEMPLATE_KEYWORDS: Dict[str, str] = {
+    _TEMPLATE_KEYWORDS: dict[str, str] = {
         "login": "web_login",
         "authentication": "web_login",
         "sign in": "web_login",
@@ -282,7 +282,7 @@ class IntentClassifier:
     }
 
     # Node type patterns for entity extraction
-    _NODE_TYPE_PATTERNS: Dict[str, str] = {
+    _NODE_TYPE_PATTERNS: dict[str, str] = {
         r"\bclick\b": "ClickElementNode",
         r"\btype\b|\benter\b|\binput\b": "TypeTextNode",
         r"\bwait\b": "WaitForElementNode",
@@ -297,7 +297,7 @@ class IntentClassifier:
     def __init__(
         self,
         confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
-        llm_client: Optional["LLMResourceManager"] = None,
+        llm_client: LLMResourceManager | None = None,
     ) -> None:
         """
         Initialize intent classifier.
@@ -308,7 +308,7 @@ class IntentClassifier:
         """
         self._confidence_threshold = confidence_threshold
         self._llm_client = llm_client
-        self._compiled_patterns: Dict[UserIntent, List[Tuple[re.Pattern, float]]] = {}
+        self._compiled_patterns: dict[UserIntent, list[tuple[re.Pattern, float]]] = {}
 
         # Compile all patterns
         self._compile_patterns()
@@ -335,7 +335,7 @@ class IntentClassifier:
         self,
         message: str,
         has_workflow: bool = False,
-        context: Optional[str] = None,
+        context: str | None = None,
     ) -> IntentClassification:
         """
         Classify user intent from message text.
@@ -357,8 +357,8 @@ class IntentClassifier:
         message_lower = message.lower().strip()
 
         # Score each intent
-        intent_scores: Dict[UserIntent, float] = {}
-        matched_patterns: Dict[UserIntent, List[str]] = {}
+        intent_scores: dict[UserIntent, float] = {}
+        matched_patterns: dict[UserIntent, list[str]] = {}
 
         for intent, patterns in self._compiled_patterns.items():
             score = 0.0
@@ -466,9 +466,9 @@ class IntentClassifier:
         self,
         message: str,
         intent: UserIntent,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Extract relevant entities from message based on intent."""
-        entities: Dict[str, Any] = {}
+        entities: dict[str, Any] = {}
 
         # Extract URLs
         url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
@@ -510,7 +510,7 @@ class IntentClassifier:
 
         return entities
 
-    def _detect_template(self, message: str) -> Optional[str]:
+    def _detect_template(self, message: str) -> str | None:
         """Detect if user is requesting a known template."""
         for keyword, template_id in self._TEMPLATE_KEYWORDS.items():
             if keyword in message:
@@ -521,7 +521,7 @@ class IntentClassifier:
         self,
         message: str,
         has_workflow: bool = False,
-        context: Optional[str] = None,
+        context: str | None = None,
     ) -> IntentClassification:
         """
         Classify intent using LLM for ambiguous cases.
@@ -565,7 +565,7 @@ class IntentClassifier:
         self,
         message: str,
         has_workflow: bool,
-        context: Optional[str],
+        context: str | None,
     ) -> str:
         """Build prompt for LLM intent classification."""
         intent_descriptions = "\n".join(

@@ -9,26 +9,24 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.value_objects.types import NodeStatus, DataType
-
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.nodes.desktop_nodes.desktop_base import (
     DesktopNodeBase,
     ElementInteractionMixin,
 )
 from casare_rpa.nodes.desktop_nodes.properties import (
-    SELECTOR_PROP,
-    TIMEOUT_PROP,
-    THROW_ON_NOT_FOUND_PROP,
-    SIMULATE_PROP,
-    X_OFFSET_PROP,
-    Y_OFFSET_PROP,
-    TEXT_PROP,
     CLEAR_FIRST_PROP,
     INTERVAL_PROP,
+    SELECTOR_PROP,
+    SIMULATE_PROP,
+    TEXT_PROP,
+    THROW_ON_NOT_FOUND_PROP,
+    TIMEOUT_PROP,
     VARIABLE_NAME_PROP,
+    X_OFFSET_PROP,
+    Y_OFFSET_PROP,
 )
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
 
 # Custom property for property_name (specific to GetElementPropertyNode)
 PROPERTY_NAME_PROP = PropertyDef(
@@ -83,8 +81,8 @@ class FindElementNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Find Element",
     ):
         super().__init__(node_id, config, name)
@@ -97,7 +95,7 @@ class FindElementNode(DesktopNodeBase):
         self.add_output_port("element", DataType.ANY)
         self.add_output_port("found", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - find element."""
         window = self.get_input_value("window")
         selector = self.get_parameter("selector", context)
@@ -182,8 +180,8 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Click Element",
     ):
         super().__init__(node_id, config, name)
@@ -197,7 +195,7 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
         self.add_input_port("selector", DataType.ANY, required=False)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - click element."""
         desktop_ctx = self.get_desktop_context(context)
         timeout = self.get_parameter("timeout", context)
@@ -268,8 +266,8 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Type Text",
     ):
         super().__init__(node_id, config, name)
@@ -284,7 +282,7 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
         self.add_input_port("text", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - type text."""
         text = self.get_parameter("text", context)
 
@@ -354,8 +352,8 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Get Element Text",
     ):
         super().__init__(node_id, config, name)
@@ -370,7 +368,7 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
         self.add_output_port("text", DataType.STRING)
         self.add_output_port("element", DataType.ANY)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - get element text."""
         desktop_ctx = self.get_desktop_context(context)
         timeout = self.get_parameter("timeout", context)
@@ -438,8 +436,8 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Get Element Property",
     ):
         super().__init__(node_id, config, name)
@@ -455,7 +453,7 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
         self.add_output_port("value", DataType.ANY)
         self.add_output_port("element", DataType.ANY)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - get element property."""
         property_name = self.get_parameter("property_name", context)
         desktop_ctx = self.get_desktop_context(context)

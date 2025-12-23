@@ -34,7 +34,6 @@ from typing import Optional
 
 from loguru import logger
 
-
 # =============================================================================
 # CONSTANTS
 # =============================================================================
@@ -119,7 +118,7 @@ class TOTPManager:
         self,
         secret: str,
         user_email: str,
-        issuer: Optional[str] = None,
+        issuer: str | None = None,
     ) -> str:
         """
         Generate otpauth:// URI for authenticator app setup.
@@ -199,7 +198,7 @@ class TOTPManager:
         self,
         secret: str,
         code: str,
-        valid_window: Optional[int] = None,
+        valid_window: int | None = None,
     ) -> bool:
         """
         Verify a TOTP code.

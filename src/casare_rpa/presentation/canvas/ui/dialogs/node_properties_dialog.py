@@ -4,8 +4,10 @@ Node Properties Dialog UI Component.
 Modal dialog for editing comprehensive node properties.
 """
 
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 
+from loguru import logger
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -21,15 +23,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Signal
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
-    DialogSize,
-    apply_dialog_style,
     COLORS,
+    DialogSize,
+    DialogStyles,
+    apply_dialog_style,
 )
 
 
@@ -53,8 +52,8 @@ class NodePropertiesDialog(QDialog):
         self,
         node_id: str,
         node_type: str,
-        properties: Optional[Dict[str, Any]] = None,
-        parent: Optional[QWidget] = None,
+        properties: dict[str, Any] | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize node properties dialog.
@@ -70,7 +69,7 @@ class NodePropertiesDialog(QDialog):
         self.node_id = node_id
         self.node_type = node_type
         self.properties = properties or {}
-        self._property_widgets: Dict[str, QWidget] = {}
+        self._property_widgets: dict[str, QWidget] = {}
 
         self.setWindowTitle(f"Node Properties - {node_type}")
         self.setModal(True)
@@ -241,7 +240,7 @@ class NodePropertiesDialog(QDialog):
         if "log_output" in self.properties:
             self._log_output.setChecked(bool(self.properties["log_output"]))
 
-    def _gather_properties(self) -> Dict[str, Any]:
+    def _gather_properties(self) -> dict[str, Any]:
         """
         Gather properties from widgets.
 
@@ -288,7 +287,7 @@ class NodePropertiesDialog(QDialog):
 
         logger.debug(f"Node properties saved for {self.node_id}")
 
-    def get_properties(self) -> Dict[str, Any]:
+    def get_properties(self) -> dict[str, Any]:
         """
         Get the current properties.
 

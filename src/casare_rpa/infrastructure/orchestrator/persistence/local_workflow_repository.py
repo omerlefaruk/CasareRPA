@@ -15,7 +15,7 @@ class LocalWorkflowRepository(WorkflowRepository):
     def __init__(self, storage: LocalStorageRepository):
         self._storage = storage
 
-    async def get_by_id(self, workflow_id: str) -> Optional[Workflow]:
+    async def get_by_id(self, workflow_id: str) -> Workflow | None:
         """Get workflow by ID."""
         workflows = self._storage.get_workflows()
         for w in workflows:
@@ -23,12 +23,12 @@ class LocalWorkflowRepository(WorkflowRepository):
                 return Workflow.from_dict(w)
         return None
 
-    async def get_all(self) -> List[Workflow]:
+    async def get_all(self) -> list[Workflow]:
         """Get all workflows."""
         workflows = self._storage.get_workflows()
         return [Workflow.from_dict(w) for w in workflows]
 
-    async def get_by_status(self, status: WorkflowStatus) -> List[Workflow]:
+    async def get_by_status(self, status: WorkflowStatus) -> list[Workflow]:
         """Get workflows by status."""
         workflows = self._storage.get_workflows()
         return [Workflow.from_dict(w) for w in workflows if w.get("status") == status.value]

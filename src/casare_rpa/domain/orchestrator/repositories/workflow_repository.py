@@ -10,17 +10,17 @@ class WorkflowRepository(ABC):
     """Repository interface for Workflow aggregate."""
 
     @abstractmethod
-    async def get_by_id(self, workflow_id: str) -> Optional[Workflow]:
+    async def get_by_id(self, workflow_id: str) -> Workflow | None:
         """Get workflow by ID."""
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[Workflow]:
+    async def get_all(self) -> list[Workflow]:
         """Get all workflows."""
         pass
 
     @abstractmethod
-    async def get_by_status(self, status: WorkflowStatus) -> List[Workflow]:
+    async def get_by_status(self, status: WorkflowStatus) -> list[Workflow]:
         """Get workflows by status."""
         pass
 

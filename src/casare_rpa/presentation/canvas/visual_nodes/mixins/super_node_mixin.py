@@ -19,11 +19,11 @@ from loguru import logger
 from PySide6.QtCore import QTimer, Slot
 
 if TYPE_CHECKING:
+    from casare_rpa.domain.schemas import NodeSchema
     from casare_rpa.domain.value_objects.dynamic_port_config import (
         ActionPortConfig,
         DynamicPortSchema,
     )
-    from casare_rpa.domain.schemas import NodeSchema
 
 
 class SuperNodeMixin:
@@ -164,9 +164,9 @@ class SuperNodeMixin:
         """
         # Initialize storage for hidden widgets and their values
         if not hasattr(self, "_hidden_widgets"):
-            self._hidden_widgets: Dict[str, Any] = {}
+            self._hidden_widgets: dict[str, Any] = {}
         if not hasattr(self, "_widget_values"):
-            self._widget_values: Dict[str, Any] = {}
+            self._widget_values: dict[str, Any] = {}
 
         # Ensure super nodes start in expanded state (not collapsed)
         # This prevents all non-essential widgets from being hidden on init
@@ -261,7 +261,7 @@ class SuperNodeMixin:
             action: The currently selected action
         """
         # Try to get schema from casare_node first
-        schema: Optional["NodeSchema"] = None
+        schema: NodeSchema | None = None
 
         if hasattr(self, "_casare_node") and self._casare_node is not None:
             schema = getattr(self._casare_node.__class__, "__node_schema__", None)
@@ -521,7 +521,7 @@ class SuperNodeMixin:
             except Exception as e:
                 logger.debug(f"Could not create output port {port_def.name}: {e}")
 
-    def get_current_action(self) -> Optional[str]:
+    def get_current_action(self) -> str | None:
         """
         Get the currently selected action.
 

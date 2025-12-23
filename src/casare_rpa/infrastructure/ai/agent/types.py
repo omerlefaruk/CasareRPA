@@ -17,9 +17,9 @@ class GenerationAttempt:
     success: bool
     temperature: float
     duration_ms: float
-    error: Optional[str] = None
-    validation_result: Optional[ValidationResult] = None
-    token_usage: Optional[Dict[str, int]] = None
+    error: str | None = None
+    validation_result: ValidationResult | None = None
+    token_usage: dict[str, int] | None = None
 
 
 @dataclass
@@ -39,15 +39,15 @@ class WorkflowGenerationResult:
     """
 
     success: bool
-    workflow: Optional[Dict[str, Any]] = None
+    workflow: dict[str, Any] | None = None
     attempts: int = 0
-    error: Optional[str] = None
-    validation_history: List[ValidationResult] = field(default_factory=list)
+    error: str | None = None
+    validation_history: list[ValidationResult] = field(default_factory=list)
     generation_time_ms: float = 0.0
-    attempt_history: List[GenerationAttempt] = field(default_factory=list)
-    raw_response: Optional[str] = None
+    attempt_history: list[GenerationAttempt] = field(default_factory=list)
+    raw_response: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "success": self.success,

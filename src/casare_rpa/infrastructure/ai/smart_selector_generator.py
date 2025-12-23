@@ -35,11 +35,11 @@ class GeneratedSelector:
     xpath_selector: str
     confidence: float
     element_description: str
-    alternatives: List[str] = field(default_factory=list)
+    alternatives: list[str] = field(default_factory=list)
     validation_status: bool = False
     matched_elements_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "css_selector": self.css_selector,
@@ -52,7 +52,7 @@ class GeneratedSelector:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> GeneratedSelector:
+    def from_dict(cls, data: dict[str, Any]) -> GeneratedSelector:
         """Create from dictionary."""
         return cls(
             css_selector=data.get("css_selector", ""),
@@ -124,15 +124,15 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         self._model = model
         self._temperature = temperature
         self._max_tokens = max_tokens
-        self._llm_manager: Optional[Any] = None
+        self._llm_manager: Any | None = None
 
     async def _get_llm_manager(self) -> Any:
         """Get or create LLM resource manager."""
         if self._llm_manager is None:
             from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                LLMResourceManager,
                 LLMConfig,
                 LLMProvider,
+                LLMResourceManager,
             )
 
             self._llm_manager = LLMResourceManager()
@@ -186,7 +186,7 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         self,
         description: str,
         page_html: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> str:
         """Build the selector generation prompt."""
         simplified_html = self._simplify_html(page_html)
@@ -256,8 +256,8 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         self,
         description: str,
         page_html: str,
-        screenshot: Optional[bytes] = None,
-        context: Optional[Dict[str, Any]] = None,
+        screenshot: bytes | None = None,
+        context: dict[str, Any] | None = None,
     ) -> GeneratedSelector:
         """
         Generate selectors from a natural language description.
@@ -326,8 +326,8 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         self,
         description: str,
         page: Any,
-        screenshot: Optional[bytes] = None,
-        context: Optional[Dict[str, Any]] = None,
+        screenshot: bytes | None = None,
+        context: dict[str, Any] | None = None,
     ) -> GeneratedSelector:
         """
         Generate selectors and validate them against the page.
@@ -459,7 +459,7 @@ If the element cannot be found or description is ambiguous, set confidence to 0 
         description: str,
         page: Any,
         count: int = 5,
-    ) -> List[GeneratedSelector]:
+    ) -> list[GeneratedSelector]:
         """
         Generate multiple selector options for user to choose from.
 

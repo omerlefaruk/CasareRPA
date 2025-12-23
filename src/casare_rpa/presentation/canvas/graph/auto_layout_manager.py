@@ -8,12 +8,11 @@ organizing workflow nodes in a readable, hierarchical arrangement.
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Any
-
-from PySide6.QtCore import QObject, QPointF, QPropertyAnimation, QEasingCurve, Signal
-from PySide6.QtWidgets import QGraphicsObject
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
+from PySide6.QtCore import QEasingCurve, QObject, QPointF, QPropertyAnimation, Signal
+from PySide6.QtWidgets import QGraphicsObject
 
 
 class LayoutDirection(Enum):
@@ -73,8 +72,8 @@ class LayoutNode:
     position: int = 0
     x: float = 0
     y: float = 0
-    predecessors: List[str] = field(default_factory=list)
-    successors: List[str] = field(default_factory=list)
+    predecessors: list[str] = field(default_factory=list)
+    successors: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -117,7 +116,7 @@ class AutoLayoutManager(QObject):
     # Signal emitted for each node position update (for animation)
     node_position_changed = Signal(str, float, float)  # node_id, x, y
 
-    def __init__(self, graph: Any = None, parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph: Any = None, parent: QObject | None = None) -> None:
         """
         Initialize the auto-layout manager.
 
@@ -128,7 +127,7 @@ class AutoLayoutManager(QObject):
         super().__init__(parent)
         self._graph = graph
         self._options = LayoutOptions()
-        self._animations: List[QPropertyAnimation] = []
+        self._animations: list[QPropertyAnimation] = []
         self._pending_animations = 0
 
     def set_graph(self, graph: Any) -> None:
@@ -146,11 +145,11 @@ class AutoLayoutManager(QObject):
 
     def layout_workflow(
         self,
-        nodes: Optional[List[Any]] = None,
-        connections: Optional[List[Any]] = None,
-        direction: Optional[str] = None,
-        animate: Optional[bool] = None,
-    ) -> Dict[str, QPointF]:
+        nodes: list[Any] | None = None,
+        connections: list[Any] | None = None,
+        direction: str | None = None,
+        animate: bool | None = None,
+    ) -> dict[str, QPointF]:
         """
         Layout all or specified nodes in the workflow.
 
@@ -203,10 +202,10 @@ class AutoLayoutManager(QObject):
 
     def layout_selection(
         self,
-        selected_nodes: List[Any],
-        direction: Optional[str] = None,
-        animate: Optional[bool] = None,
-    ) -> Dict[str, QPointF]:
+        selected_nodes: list[Any],
+        direction: str | None = None,
+        animate: bool | None = None,
+    ) -> dict[str, QPointF]:
         """
         Layout only the selected nodes.
 
@@ -234,7 +233,7 @@ class AutoLayoutManager(QObject):
             animate=animate,
         )
 
-    def _get_all_connections(self) -> List[Tuple[str, str, bool]]:
+    def _get_all_connections(self) -> list[tuple[str, str, bool]]:
         """
         Get all connections from the graph.
 
@@ -259,7 +258,7 @@ class AutoLayoutManager(QObject):
             logger.debug(f"Error getting connections: {e}")
         return connections
 
-    def _get_connections_between(self, node_ids: Set[str]) -> List[Tuple[str, str, bool]]:
+    def _get_connections_between(self, node_ids: set[str]) -> list[tuple[str, str, bool]]:
         """Get connections where both endpoints are in the given set."""
         all_connections = self._get_all_connections()
         return [
@@ -280,8 +279,8 @@ class AutoLayoutManager(QObject):
         return str(id(node))
 
     def _build_layout_graph(
-        self, nodes: List[Any], connections: List[Tuple[str, str, bool]]
-    ) -> Tuple[Dict[str, LayoutNode], List[LayoutEdge]]:
+        self, nodes: list[Any], connections: list[tuple[str, str, bool]]
+    ) -> tuple[dict[str, LayoutNode], list[LayoutEdge]]:
         """
         Build internal graph representation for layout.
 
@@ -292,8 +291,8 @@ class AutoLayoutManager(QObject):
         Returns:
             Tuple of (layout_nodes dict, layout_edges list)
         """
-        layout_nodes: Dict[str, LayoutNode] = {}
-        layout_edges: List[LayoutEdge] = []
+        layout_nodes: dict[str, LayoutNode] = {}
+        layout_edges: list[LayoutEdge] = []
 
         # Create layout nodes
         for node in nodes:
@@ -328,8 +327,8 @@ class AutoLayoutManager(QObject):
         return layout_nodes, layout_edges
 
     def _compute_layout(
-        self, nodes: Dict[str, LayoutNode], edges: List[LayoutEdge]
-    ) -> Dict[str, QPointF]:
+        self, nodes: dict[str, LayoutNode], edges: list[LayoutEdge]
+    ) -> dict[str, QPointF]:
         """
         Compute node positions using layered layout algorithm.
 
@@ -360,7 +359,7 @@ class AutoLayoutManager(QObject):
 
         return positions
 
-    def _assign_layers(self, nodes: Dict[str, LayoutNode]) -> None:
+    def _assign_layers(self, nodes: dict[str, LayoutNode]) -> None:
         """
         Assign layers to nodes using longest-path algorithm.
 
@@ -375,7 +374,7 @@ class AutoLayoutManager(QObject):
             roots = [next(iter(nodes.keys()))]
 
         # BFS to assign layers
-        visited: Set[str] = set()
+        visited: set[str] = set()
         queue = deque(roots)
 
         # Initialize root layers
@@ -405,15 +404,15 @@ class AutoLayoutManager(QObject):
             if node.layer == -1:
                 node.layer = 0
 
-    def _group_by_layer(self, nodes: Dict[str, LayoutNode]) -> Dict[int, List[str]]:
+    def _group_by_layer(self, nodes: dict[str, LayoutNode]) -> dict[int, list[str]]:
         """Group nodes by their assigned layer."""
-        layers: Dict[int, List[str]] = defaultdict(list)
+        layers: dict[int, list[str]] = defaultdict(list)
         for node_id, node in nodes.items():
             layers[node.layer].append(node_id)
         return dict(layers)
 
     def _order_within_layers(
-        self, nodes: Dict[str, LayoutNode], layers: Dict[int, List[str]]
+        self, nodes: dict[str, LayoutNode], layers: dict[int, list[str]]
     ) -> None:
         """
         Order nodes within each layer to minimize edge crossings.
@@ -460,8 +459,8 @@ class AutoLayoutManager(QObject):
 
     def _order_layer_by_barycenter(
         self,
-        nodes: Dict[str, LayoutNode],
-        layers: Dict[int, List[str]],
+        nodes: dict[str, LayoutNode],
+        layers: dict[int, list[str]],
         layer_idx: int,
         ref_layer_idx: int,
     ) -> None:
@@ -479,7 +478,7 @@ class AutoLayoutManager(QObject):
         ref_positions = {nid: pos for pos, nid in enumerate(ref_layer)}
 
         # Calculate barycenter for each node
-        barycenters: Dict[str, float] = {}
+        barycenters: dict[str, float] = {}
         for nid in layer_nodes:
             node = nodes[nid]
             connected = node.predecessors + node.successors
@@ -499,8 +498,8 @@ class AutoLayoutManager(QObject):
             nodes[nid].position = pos
 
     def _compute_coordinates(
-        self, nodes: Dict[str, LayoutNode], layers: Dict[int, List[str]]
-    ) -> Dict[str, QPointF]:
+        self, nodes: dict[str, LayoutNode], layers: dict[int, list[str]]
+    ) -> dict[str, QPointF]:
         """
         Compute final X, Y coordinates for each node.
 
@@ -511,7 +510,7 @@ class AutoLayoutManager(QObject):
         Returns:
             Dictionary mapping node_id to QPointF position
         """
-        positions: Dict[str, QPointF] = {}
+        positions: dict[str, QPointF] = {}
         direction = self._options.direction
 
         # Determine base position from start node or (0, 0)
@@ -574,7 +573,7 @@ class AutoLayoutManager(QObject):
 
         return positions
 
-    def _apply_positions(self, nodes: Dict[str, LayoutNode], positions: Dict[str, QPointF]) -> None:
+    def _apply_positions(self, nodes: dict[str, LayoutNode], positions: dict[str, QPointF]) -> None:
         """
         Apply computed positions to nodes.
 
@@ -593,7 +592,7 @@ class AutoLayoutManager(QObject):
         self.layout_completed.emit()
 
     def _set_positions_immediate(
-        self, nodes: Dict[str, LayoutNode], positions: Dict[str, QPointF]
+        self, nodes: dict[str, LayoutNode], positions: dict[str, QPointF]
     ) -> None:
         """Set node positions immediately without animation."""
         for node_id, pos in positions.items():
@@ -612,7 +611,7 @@ class AutoLayoutManager(QObject):
             self.node_position_changed.emit(node_id, pos.x(), pos.y())
 
     def _animate_positions(
-        self, nodes: Dict[str, LayoutNode], positions: Dict[str, QPointF]
+        self, nodes: dict[str, LayoutNode], positions: dict[str, QPointF]
     ) -> None:
         """Animate nodes to their new positions."""
         self._pending_animations = len(positions)
@@ -681,7 +680,7 @@ class AutoLayoutManager(QObject):
 
 
 # Module-level singleton
-_auto_layout_manager: Optional[AutoLayoutManager] = None
+_auto_layout_manager: AutoLayoutManager | None = None
 
 
 def get_auto_layout_manager() -> AutoLayoutManager:

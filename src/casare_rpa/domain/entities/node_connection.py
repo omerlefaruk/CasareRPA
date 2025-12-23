@@ -67,7 +67,7 @@ class NodeConnection:
         """Get full target port ID (node_id.port_name)."""
         return f"{self._target_node}.{self._target_port}"
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """
         Serialize connection to dictionary.
 
@@ -82,7 +82,7 @@ class NodeConnection:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, str]) -> "NodeConnection":
+    def from_dict(cls, data: dict[str, str]) -> "NodeConnection":
         """
         Create connection from dictionary.
 

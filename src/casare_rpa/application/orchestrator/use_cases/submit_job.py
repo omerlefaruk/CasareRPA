@@ -14,26 +14,26 @@ from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
+from casare_rpa.application.orchestrator.services.dispatcher_service import (
+    JobDispatcher,
+)
 from casare_rpa.domain.orchestrator.entities.job import Job, JobPriority, JobStatus
 from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability
+from casare_rpa.domain.orchestrator.errors import (
+    NoAvailableRobotError,
+    RobotNotFoundError,
+)
 from casare_rpa.domain.orchestrator.services.robot_selection_service import (
     RobotSelectionService,
 )
 from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
     RobotAssignment,
 )
-from casare_rpa.domain.orchestrator.errors import (
-    NoAvailableRobotError,
-    RobotNotFoundError,
-)
 from casare_rpa.infrastructure.persistence.repositories import (
     JobRepository,
+    NodeOverrideRepository,
     RobotRepository,
     WorkflowAssignmentRepository,
-    NodeOverrideRepository,
-)
-from casare_rpa.application.orchestrator.services.dispatcher_service import (
-    JobDispatcher,
 )
 
 
@@ -81,15 +81,15 @@ class SubmitJobUseCase:
     async def execute(
         self,
         workflow_id: str,
-        workflow_data: Dict[str, Any],
-        robot_id: Optional[str] = None,
+        workflow_data: dict[str, Any],
+        robot_id: str | None = None,
         priority: JobPriority = JobPriority.NORMAL,
-        variables: Optional[Dict[str, Any]] = None,
+        variables: dict[str, Any] | None = None,
         timeout_seconds: int = 3600,
-        workflow_name: Optional[str] = None,
+        workflow_name: str | None = None,
         environment: str = "default",
         created_by: str = "",
-        scheduled_time: Optional[datetime] = None,
+        scheduled_time: datetime | None = None,
     ) -> Job:
         """Submit a job for execution on a robot.
 
@@ -120,10 +120,10 @@ class SubmitJobUseCase:
             raise ValueError("workflow_id cannot be empty")
 
         # 1. Load all robots
-        all_robots: List[Robot] = await self._robot_repo.get_all()
+        all_robots: list[Robot] = await self._robot_repo.get_all()
 
         # 2. Load workflow assignments
-        assignments: List[RobotAssignment] = await self._assignment_repo.get_by_workflow(
+        assignments: list[RobotAssignment] = await self._assignment_repo.get_by_workflow(
             workflow_id
         )
 
@@ -206,8 +206,8 @@ class SubmitJobUseCase:
 
     def _analyze_workflow_capabilities(
         self,
-        workflow_data: Dict[str, Any],
-    ) -> Optional[Set[RobotCapability]]:
+        workflow_data: dict[str, Any],
+    ) -> set[RobotCapability] | None:
         """Analyze workflow to determine required robot capabilities.
 
         Inspects workflow nodes to determine what capabilities are needed.
@@ -218,7 +218,7 @@ class SubmitJobUseCase:
         Returns:
             Set of required capabilities, or None if no special requirements.
         """
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         nodes = workflow_data.get("nodes", {})
         if not isinstance(nodes, dict):
             return None
@@ -253,8 +253,8 @@ class SubmitJobUseCase:
 
     def _prepare_workflow_json(
         self,
-        workflow_data: Dict[str, Any],
-        variables: Optional[Dict[str, Any]],
+        workflow_data: dict[str, Any],
+        variables: dict[str, Any] | None,
     ) -> str:
         """Prepare workflow JSON with injected variables.
 
@@ -283,7 +283,7 @@ class SubmitJobUseCase:
     async def _dispatch_job(
         self,
         job: Job,
-        robot: Optional[Robot],
+        robot: Robot | None,
     ) -> None:
         """Dispatch job to robot via dispatcher.
 

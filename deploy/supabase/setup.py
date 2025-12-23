@@ -31,7 +31,7 @@ import socket
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -117,7 +117,7 @@ class SupabaseConfig:
         return f"postgresql://{user}:{self.db_password}@{self.pooler_host}:5432/postgres"
 
     @classmethod
-    def from_env(cls, env_path: Path = ENV_FILE) -> Optional["SupabaseConfig"]:
+    def from_env(cls, env_path: Path = ENV_FILE) -> SupabaseConfig | None:
         """Load configuration from .env file."""
         if not env_path.exists():
             return None
@@ -166,9 +166,9 @@ class SupabaseSetupClient:
 
     def __init__(self, config: SupabaseConfig):
         self.config = config
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
-    async def __aenter__(self) -> "SupabaseSetupClient":
+    async def __aenter__(self) -> SupabaseSetupClient:
         self._client = httpx.AsyncClient(timeout=30.0)
         return self
 
@@ -292,7 +292,7 @@ class SupabaseSetupClient:
         token = secrets.token_urlsafe(32)
         raw_key = f"crpa_{token}"
         key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+        expires_at = datetime.now(UTC) + timedelta(days=days)
 
         data = {
             "robot_id": robot_id,
@@ -451,9 +451,7 @@ def _parse_sql_statements(sql: str) -> list[str]:
 # =============================================================================
 
 
-def deploy_edge_functions(
-    function_name: Optional[str] = None, dry_run: bool = False
-) -> SetupResult:
+def deploy_edge_functions(function_name: str | None = None, dry_run: bool = False) -> SetupResult:
     """Deploy edge functions using Supabase CLI."""
     # Check if supabase CLI is installed
     try:
@@ -529,7 +527,7 @@ def deploy_edge_functions(
 # =============================================================================
 
 
-def generate_types_from_schema(output_path: Optional[Path] = None) -> SetupResult:
+def generate_types_from_schema(output_path: Path | None = None) -> SetupResult:
     """Generate Python types from Supabase schema."""
     output_path = output_path or SCRIPT_DIR / "supabase_types.py"
     migration_file = MIGRATIONS_DIR / "001_initial_schema.sql"

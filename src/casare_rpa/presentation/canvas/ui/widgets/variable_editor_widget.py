@@ -4,17 +4,17 @@ Variable Editor Widget UI Component.
 Provides inline variable editing functionality.
 """
 
-from typing import Optional, Any, Dict
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-)
-from PySide6.QtCore import Signal
+from typing import Any, Dict, Optional
 
 from loguru import logger
-
-from PySide6.QtWidgets import QPushButton, QLineEdit, QComboBox
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
@@ -41,7 +41,7 @@ class VariableEditorWidget(BaseWidget):
         name: str = "",
         var_type: str = "String",
         value: Any = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize variable editor widget.
@@ -163,7 +163,7 @@ class VariableEditorWidget(BaseWidget):
             logger.warning(f"Failed to convert value: {e}")
             return value
 
-    def get_variable(self) -> Dict[str, Any]:
+    def get_variable(self) -> dict[str, Any]:
         """
         Get variable data.
 

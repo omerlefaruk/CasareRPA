@@ -13,7 +13,8 @@ Usage:
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 
@@ -25,7 +26,7 @@ class BaseProvider:
     """Base class for dependency providers."""
 
     @classmethod
-    def register(cls, container: "DIContainer") -> None:
+    def register(cls, container: DIContainer) -> None:
         """Register all dependencies managed by this provider."""
         raise NotImplementedError
 
@@ -39,7 +40,7 @@ class ConfigProvider(BaseProvider):
     """
 
     @classmethod
-    def register(cls, container: "DIContainer") -> None:
+    def register(cls, container: DIContainer) -> None:
         """Register configuration dependencies."""
 
         def config_factory() -> Any:
@@ -60,7 +61,7 @@ class EventBusProvider(BaseProvider):
     """
 
     @classmethod
-    def register(cls, container: "DIContainer") -> None:
+    def register(cls, container: DIContainer) -> None:
         """Register event system dependencies."""
 
         def event_bus_factory() -> Any:
@@ -85,7 +86,7 @@ class StorageProvider(BaseProvider):
     """
 
     @classmethod
-    def register(cls, container: "DIContainer") -> None:
+    def register(cls, container: DIContainer) -> None:
         """Register storage dependencies."""
 
         def schedule_storage_factory() -> Any:
@@ -130,7 +131,7 @@ class InfrastructureProvider(BaseProvider):
     """
 
     @classmethod
-    def register(cls, container: "DIContainer") -> None:
+    def register(cls, container: DIContainer) -> None:
         """Register infrastructure dependencies."""
 
         def recovery_registry_factory() -> Any:
@@ -197,13 +198,13 @@ class OutputCaptureController:
 
     def __init__(self) -> None:
         """Initialize the controller."""
-        self._capture: Optional[Any] = None
+        self._capture: Any | None = None
         self._lock = threading.Lock()
 
     def set_callbacks(
         self,
-        stdout_callback: Optional[Callable[[str], None]] = None,
-        stderr_callback: Optional[Callable[[str], None]] = None,
+        stdout_callback: Callable[[str], None] | None = None,
+        stderr_callback: Callable[[str], None] | None = None,
     ) -> None:
         """
         Set output callbacks.
@@ -243,8 +244,8 @@ class UILogController:
 
     def __init__(self) -> None:
         """Initialize the controller."""
-        self._sink: Optional[Any] = None
-        self._handler_id: Optional[int] = None
+        self._sink: Any | None = None
+        self._handler_id: int | None = None
         self._lock = threading.Lock()
 
     def set_callback(
@@ -260,6 +261,7 @@ class UILogController:
             min_level: Minimum log level
         """
         from loguru import logger
+
         from casare_rpa.infrastructure.observability.logging import UILoguruSink
 
         with self._lock:
@@ -305,7 +307,7 @@ class PresentationProvider(BaseProvider):
     """
 
     @classmethod
-    def register(cls, container: "DIContainer") -> None:
+    def register(cls, container: DIContainer) -> None:
         """Register presentation dependencies."""
         container.register_singleton(
             "output_capture_controller",
@@ -318,7 +320,7 @@ class PresentationProvider(BaseProvider):
         logger.debug("PresentationProvider registered")
 
 
-def register_all_providers(container: "DIContainer") -> None:
+def register_all_providers(container: DIContainer) -> None:
     """
     Register all providers with the container.
 

@@ -10,11 +10,11 @@ Analyzes:
 
 import ast
 import os
-import sys
-from pathlib import Path
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Tuple
 import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -33,11 +33,11 @@ class FileMetrics:
     loc: int
     blank_lines: int
     comment_lines: int
-    functions: List[FunctionMetrics]
+    functions: list[FunctionMetrics]
     classes: int
     type_hint_coverage: float
     docstring_coverage: float
-    imports: List[str]
+    imports: list[str]
 
 
 def calculate_cyclomatic_complexity(node: ast.FunctionDef) -> int:
@@ -80,7 +80,7 @@ def analyze_function(node: ast.FunctionDef) -> FunctionMetrics:
     )
 
 
-def analyze_file(file_path: Path) -> Optional[FileMetrics]:
+def analyze_file(file_path: Path) -> FileMetrics | None:
     """Analyze a single Python file."""
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -138,7 +138,7 @@ def analyze_file(file_path: Path) -> Optional[FileMetrics]:
     )
 
 
-def check_architecture_compliance(file_path: Path, imports: List[str]) -> Dict[str, bool]:
+def check_architecture_compliance(file_path: Path, imports: list[str]) -> dict[str, bool]:
     """Check if file follows architecture rules."""
     path_str = str(file_path).replace("\\", "/")
 

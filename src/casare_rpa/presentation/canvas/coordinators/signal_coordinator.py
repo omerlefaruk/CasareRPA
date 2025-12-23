@@ -10,13 +10,12 @@ Usage:
     # Actions are connected via ActionManager, handlers route here
 """
 
-from typing import TYPE_CHECKING, Any, Dict
 import asyncio
-
-from PySide6.QtCore import QTimer, Slot
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
+from typing import TYPE_CHECKING, Any, Dict
 
 from loguru import logger
+from PySide6.QtCore import QTimer, Slot
+from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -681,7 +680,7 @@ class SignalCoordinator:
         if not nodes_data:
             return
 
-        final_nodes: Dict[str, Dict[str, Any]] = {}
+        final_nodes: dict[str, dict[str, Any]] = {}
         connections = []
 
         for i, node in enumerate(nodes_data):

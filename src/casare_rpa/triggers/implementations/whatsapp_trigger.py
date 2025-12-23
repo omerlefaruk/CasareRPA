@@ -13,6 +13,11 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
+from casare_rpa.infrastructure.resources.whatsapp_client import (
+    WhatsAppAPIError,
+    WhatsAppClient,
+    WhatsAppConfig,
+)
 from casare_rpa.triggers.base import (
     BaseTrigger,
     BaseTriggerConfig,
@@ -20,11 +25,6 @@ from casare_rpa.triggers.base import (
     TriggerType,
 )
 from casare_rpa.triggers.registry import register_trigger
-from casare_rpa.infrastructure.resources.whatsapp_client import (
-    WhatsAppClient,
-    WhatsAppConfig,
-    WhatsAppAPIError,
-)
 
 
 @register_trigger
@@ -68,8 +68,8 @@ class WhatsAppTrigger(BaseTrigger):
         event_callback=None,
     ) -> None:
         super().__init__(config, event_callback)
-        self._client: Optional[WhatsAppClient] = None
-        self._verify_token: Optional[str] = None
+        self._client: WhatsAppClient | None = None
+        self._verify_token: str | None = None
 
     async def _get_client(self) -> WhatsAppClient:
         """Get or create WhatsApp client."""
@@ -92,7 +92,7 @@ class WhatsAppTrigger(BaseTrigger):
         self._client = WhatsAppClient(config)
         return self._client
 
-    async def _get_access_token(self) -> Optional[str]:
+    async def _get_access_token(self) -> str | None:
         """
         Get access token using unified credential resolution.
 
@@ -163,7 +163,7 @@ class WhatsAppTrigger(BaseTrigger):
         # Try environment
         return os.environ.get("WHATSAPP_ACCESS_TOKEN")
 
-    async def _get_phone_number_id(self) -> Optional[str]:
+    async def _get_phone_number_id(self) -> str | None:
         """
         Get phone number ID using unified credential resolution.
 
@@ -314,7 +314,7 @@ class WhatsAppTrigger(BaseTrigger):
             logger.error(f"Error stopping WhatsApp trigger: {e}")
             return False
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate WhatsApp trigger configuration."""
         config = self.config.config
 
@@ -364,7 +364,7 @@ class WhatsAppTrigger(BaseTrigger):
         mode: str,
         token: str,
         challenge: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Verify webhook subscription request from Meta.
 
@@ -430,9 +430,9 @@ class WhatsAppTrigger(BaseTrigger):
 
     async def handle_webhook_update(
         self,
-        payload: Dict[str, Any],
-        signature: Optional[str] = None,
-        raw_body: Optional[bytes] = None,
+        payload: dict[str, Any],
+        signature: str | None = None,
+        raw_body: bytes | None = None,
     ) -> bool:
         """
         Handle an update received via webhook.
@@ -461,7 +461,7 @@ class WhatsAppTrigger(BaseTrigger):
             logger.error(f"Error processing WhatsApp webhook: {e}")
             return False
 
-    async def _process_webhook(self, payload: Dict[str, Any]) -> None:
+    async def _process_webhook(self, payload: dict[str, Any]) -> None:
         """Process WhatsApp webhook payload."""
         # WhatsApp webhook structure:
         # {
@@ -492,7 +492,7 @@ class WhatsAppTrigger(BaseTrigger):
                     value = change.get("value", {})
                     await self._process_messages_change(value)
 
-    async def _process_messages_change(self, value: Dict[str, Any]) -> None:
+    async def _process_messages_change(self, value: dict[str, Any]) -> None:
         """Process messages change from webhook."""
         metadata = value.get("metadata", {})
         phone_number_id = metadata.get("phone_number_id")
@@ -510,7 +510,7 @@ class WhatsAppTrigger(BaseTrigger):
 
     async def _process_message(
         self,
-        message: Dict[str, Any],
+        message: dict[str, Any],
         phone_number_id: str,
         display_phone: str,
     ) -> None:
@@ -536,7 +536,7 @@ class WhatsAppTrigger(BaseTrigger):
             },
         )
 
-    async def _process_status(self, status: Dict[str, Any]) -> None:
+    async def _process_status(self, status: dict[str, Any]) -> None:
         """Process a message status update (optional handling)."""
         # Status updates: sent, delivered, read, failed
         # Can be used for tracking message delivery
@@ -564,10 +564,10 @@ class WhatsAppTrigger(BaseTrigger):
 
     def _build_payload(
         self,
-        message: Dict[str, Any],
+        message: dict[str, Any],
         phone_number_id: str,
         display_phone: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build payload from WhatsApp message."""
         message_type = message.get("type", "unknown")
 
@@ -628,7 +628,7 @@ class WhatsAppTrigger(BaseTrigger):
         }
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for WhatsApp trigger configuration."""
         return {
             "type": "object",

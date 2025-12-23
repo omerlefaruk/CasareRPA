@@ -8,17 +8,18 @@ Provides nodes for try/catch/finally error handling:
 """
 
 from typing import Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
-    NodeStatus,
     ExecutionResult,
+    NodeStatus,
 )
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 @properties()  # No config - paired with Catch/Finally
@@ -42,7 +43,7 @@ class TryNode(BaseNode):
     # @requires: none
     # @ports: exec_in -> exec_out, try_body
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Try node."""
         super().__init__(node_id, config)
         self.name = "Try"
@@ -125,7 +126,7 @@ class CatchNode(BaseNode):
     # @requires: none
     # @ports: exec_in -> catch_body, error_message, error_type, stack_trace
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Catch node."""
         super().__init__(node_id, config)
         self.name = "Catch"
@@ -231,7 +232,7 @@ class FinallyNode(BaseNode):
     # @requires: none
     # @ports: exec_in -> finally_body, had_error
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Finally node."""
         super().__init__(node_id, config)
         self.name = "Finally"

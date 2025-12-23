@@ -8,23 +8,28 @@ Delegates to:
 - BrowserResourceManager (infrastructure) for Playwright resources
 """
 
+from __future__ import annotations
+
+
 import asyncio
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from loguru import logger
 
-from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
 from casare_rpa.domain.entities.execution_state import ExecutionState
+from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
+from casare_rpa.infrastructure.execution.variable_cache import (
+    CacheStats,
+    VariableResolutionCache,
+)
 from casare_rpa.infrastructure.resources.browser_resource_manager import (
     BrowserResourceManager,
-)
-from casare_rpa.infrastructure.execution.variable_cache import (
-    VariableResolutionCache,
-    CacheStats,
 )
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
+
     from casare_rpa.domain.services.project_context import ProjectContext
     from casare_rpa.infrastructure.security.credential_provider import (
         VaultCredentialProvider,
@@ -48,9 +53,9 @@ class ExecutionContext:
         self,
         workflow_name: str = "Untitled",
         mode: ExecutionMode = ExecutionMode.NORMAL,
-        initial_variables: Optional[Dict[str, Any]] = None,
+        initial_variables: dict[str, Any] | None = None,
         project_context: Optional["ProjectContext"] = None,
-        pause_event: Optional[asyncio.Event] = None,
+        pause_event: asyncio.Event | None = None,
     ) -> None:
         """
         Initialize execution context.
@@ -84,10 +89,10 @@ class ExecutionContext:
         self.pause_event.set()  # Initially not paused
 
         # Resource registry for nodes (telegram client, credential provider, etc.)
-        self.resources: Dict[str, Any] = {}
+        self.resources: dict[str, Any] = {}
 
         # Credential provider (lazy-initialized)
-        self._credential_provider: Optional["VaultCredentialProvider"] = None
+        self._credential_provider: VaultCredentialProvider | None = None
 
     # ========================================================================
     # VARIABLE MANAGEMENT - Delegate to ExecutionState (domain)
@@ -112,7 +117,7 @@ class ExecutionContext:
         # Publish VARIABLE_SET event (skip internal variables starting with _)
         if not name.startswith("_"):
             try:
-                from casare_rpa.domain.events import get_event_bus, VariableSet
+                from casare_rpa.domain.events import VariableSet, get_event_bus
 
                 event_bus = get_event_bus()
                 event_bus.publish(
@@ -198,7 +203,7 @@ class ExecutionContext:
         """
         return self._var_cache.get_stats()
 
-    def resolve_credential_path(self, alias: str) -> Optional[str]:
+    def resolve_credential_path(self, alias: str) -> str | None:
         """
         Resolve a credential alias to its Vault path.
 
@@ -267,7 +272,7 @@ class ExecutionContext:
         self,
         alias: str,
         required: bool = False,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Resolve a credential by alias from the vault.
 
@@ -313,7 +318,7 @@ class ExecutionContext:
         """Mark the execution as completed."""
         self._state.mark_completed()
 
-    def get_execution_summary(self) -> Dict[str, Any]:
+    def get_execution_summary(self) -> dict[str, Any]:
         """
         Get a summary of the execution.
 
@@ -409,27 +414,27 @@ class ExecutionContext:
         return self._state.started_at
 
     @property
-    def completed_at(self) -> Optional[datetime]:
+    def completed_at(self) -> datetime | None:
         """Get execution completion time."""
         return self._state.completed_at
 
     @property
-    def variables(self) -> Dict[str, Any]:
+    def variables(self) -> dict[str, Any]:
         """Get variables dict (direct access for backward compatibility)."""
         return self._state.variables
 
     @property
-    def current_node_id(self) -> Optional[NodeId]:
+    def current_node_id(self) -> NodeId | None:
         """Get current node ID."""
         return self._state.current_node_id
 
     @property
-    def execution_path(self) -> List[NodeId]:
+    def execution_path(self) -> list[NodeId]:
         """Get execution path."""
         return self._state.execution_path
 
     @property
-    def errors(self) -> List[tuple[NodeId, str]]:
+    def errors(self) -> list[tuple[NodeId, str]]:
         """Get errors list."""
         return self._state.errors
 
@@ -452,12 +457,12 @@ class ExecutionContext:
             self._resources.set_browser(value)
 
     @property
-    def browser_contexts(self) -> List["BrowserContext"]:
+    def browser_contexts(self) -> list["BrowserContext"]:
         """Get browser contexts list."""
         return self._resources.browser_contexts
 
     @property
-    def pages(self) -> Dict[str, "Page"]:
+    def pages(self) -> dict[str, "Page"]:
         """Get pages dict."""
         return self._resources.pages
 
@@ -520,7 +525,7 @@ class ExecutionContext:
 
         return branch_context
 
-    def merge_branch_results(self, branch_name: str, branch_variables: Dict[str, Any]) -> None:
+    def merge_branch_results(self, branch_name: str, branch_variables: dict[str, Any]) -> None:
         """
         Merge variables from a completed branch back to main context.
 

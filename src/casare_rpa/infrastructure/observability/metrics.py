@@ -16,26 +16,27 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
 from threading import Lock
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from casare_rpa.infrastructure.observability.telemetry import (
-    TelemetryProvider,
-    get_meter,
-    OTEL_AVAILABLE,
+from casare_rpa.infrastructure.events import (
+    MonitoringEventType,
+    get_monitoring_event_bus,
 )
 from casare_rpa.infrastructure.observability.system_metrics import (
     get_system_metrics_collector,
 )
-from casare_rpa.infrastructure.events import (
-    get_monitoring_event_bus,
-    MonitoringEventType,
+from casare_rpa.infrastructure.observability.telemetry import (
+    OTEL_AVAILABLE,
+    TelemetryProvider,
+    get_meter,
 )
 
 if OTEL_AVAILABLE:
@@ -107,9 +108,9 @@ class RobotMetrics:
     jobs_failed: int = 0
     total_busy_seconds: float = 0.0
     total_idle_seconds: float = 0.0
-    last_job_at: Optional[datetime] = None
-    current_job_id: Optional[str] = None
-    current_job_started_at: Optional[datetime] = None
+    last_job_at: datetime | None = None
+    current_job_id: str | None = None
+    current_job_started_at: datetime | None = None
 
     @property
     def utilization_percent(self) -> float:
@@ -142,10 +143,10 @@ class RPAMetricsCollector:
         collector.record_job_complete("job-123", success=True, duration=45.2)
     """
 
-    _instance: Optional["RPAMetricsCollector"] = None
+    _instance: RPAMetricsCollector | None = None
     _lock: Lock = Lock()
 
-    def __new__(cls) -> "RPAMetricsCollector":
+    def __new__(cls) -> RPAMetricsCollector:
         """Thread-safe singleton pattern."""
         if cls._instance is None:
             with cls._lock:
@@ -155,7 +156,7 @@ class RPAMetricsCollector:
         return cls._instance
 
     @classmethod
-    def get_instance(cls) -> "RPAMetricsCollector":
+    def get_instance(cls) -> RPAMetricsCollector:
         """Get the singleton instance."""
         return cls()
 
@@ -173,32 +174,32 @@ class RPAMetricsCollector:
         self._emit_events = emit_events
 
         # Job tracking
-        self._active_jobs: Dict[str, Dict[str, Any]] = {}
+        self._active_jobs: dict[str, dict[str, Any]] = {}
         self._job_metrics = JobMetrics()
 
         # Robot tracking
-        self._robots: Dict[str, RobotMetrics] = {}
+        self._robots: dict[str, RobotMetrics] = {}
 
         # Queue tracking
         self._queue_depth: int = 0
-        self._queue_throughput_window: List[float] = []  # timestamps of dequeues
+        self._queue_throughput_window: list[float] = []  # timestamps of dequeues
 
         # Node execution tracking (per type)
-        self._node_metrics: Dict[str, Dict[str, Any]] = {}
+        self._node_metrics: dict[str, dict[str, Any]] = {}
 
         # Self-healing tracking
         self._healing_attempts: int = 0
         self._healing_successes: int = 0
 
         # Initialize OTel instrument attributes to None
-        self._job_queue_wait_histogram: Optional[Any] = None
-        self._job_retry_counter: Optional[Any] = None
-        self._node_latency_histogram: Optional[Any] = None
-        self._healing_attempt_counter: Optional[Any] = None
-        self._healing_success_counter: Optional[Any] = None
-        self._browser_pool_active: Optional[Any] = None
-        self._active_jobs_gauge: Optional[Any] = None
-        self._queue_throughput_gauge: Optional[Any] = None
+        self._job_queue_wait_histogram: Any | None = None
+        self._job_retry_counter: Any | None = None
+        self._node_latency_histogram: Any | None = None
+        self._healing_attempt_counter: Any | None = None
+        self._healing_success_counter: Any | None = None
+        self._browser_pool_active: Any | None = None
+        self._active_jobs_gauge: Any | None = None
+        self._queue_throughput_gauge: Any | None = None
 
         # OTel instruments (may be None if not initialized)
         self._init_instruments()
@@ -283,7 +284,7 @@ class RPAMetricsCollector:
     def _emit_monitoring_event(
         self,
         event_type: MonitoringEventType,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
     ) -> None:
         """
         Emit a monitoring event (fire-and-forget).
@@ -357,7 +358,7 @@ class RPAMetricsCollector:
     def record_job_start(
         self,
         job_id: str,
-        robot_id: Optional[str] = None,
+        robot_id: str | None = None,
     ) -> None:
         """
         Record a job starting execution.
@@ -415,7 +416,7 @@ class RPAMetricsCollector:
         success: bool,
         duration_seconds: float,
         nodes_executed: int = 0,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ) -> None:
         """
         Record a job completing execution.
@@ -557,7 +558,7 @@ class RPAMetricsCollector:
         self,
         robot_id: str,
         status: RobotStatus,
-        job_id: Optional[str],
+        job_id: str | None,
     ) -> None:
         """Update robot status and track time in each state."""
         if robot_id not in self._robots:
@@ -615,11 +616,11 @@ class RPAMetricsCollector:
             active_robots=active_count,
         )
 
-    def get_robot_metrics(self, robot_id: str) -> Optional[RobotMetrics]:
+    def get_robot_metrics(self, robot_id: str) -> RobotMetrics | None:
         """Get metrics for a specific robot."""
         return self._robots.get(robot_id)
 
-    def get_all_robot_metrics(self) -> Dict[str, RobotMetrics]:
+    def get_all_robot_metrics(self) -> dict[str, RobotMetrics]:
         """Get metrics for all registered robots."""
         return self._robots.copy()
 
@@ -696,11 +697,11 @@ class RPAMetricsCollector:
             duration_ms=duration_ms,
         )
 
-    def get_node_metrics(self, node_type: str) -> Optional[Dict[str, Any]]:
+    def get_node_metrics(self, node_type: str) -> dict[str, Any] | None:
         """Get aggregated metrics for a node type."""
         return self._node_metrics.get(node_type)
 
-    def get_all_node_metrics(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_node_metrics(self) -> dict[str, dict[str, Any]]:
         """Get aggregated metrics for all node types."""
         return self._node_metrics.copy()
 
@@ -713,7 +714,7 @@ class RPAMetricsCollector:
         selector: str,
         healing_strategy: str,
         success: bool,
-        fallback_selector: Optional[str] = None,
+        fallback_selector: str | None = None,
     ) -> None:
         """
         Record a self-healing attempt.
@@ -757,7 +758,7 @@ class RPAMetricsCollector:
                 f"using strategy: {healing_strategy}"
             )
 
-    def get_healing_stats(self) -> Dict[str, Any]:
+    def get_healing_stats(self) -> dict[str, Any]:
         """Get self-healing statistics."""
         with self._lock:
             success_rate = (
@@ -798,7 +799,7 @@ class RPAMetricsCollector:
         """Get current queue depth."""
         return self._queue_depth
 
-    def get_active_jobs(self) -> Dict[str, Dict[str, Any]]:
+    def get_active_jobs(self) -> dict[str, dict[str, Any]]:
         """Get all currently active jobs."""
         return self._active_jobs.copy()
 
@@ -870,9 +871,9 @@ class MetricsSnapshot:
     healing_success_rate: float
 
     # Node metrics summary (top 5 by execution count)
-    top_nodes: List[Dict[str, Any]]
+    top_nodes: list[dict[str, Any]]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return asdict(self)
 
@@ -885,7 +886,7 @@ class MetricsSnapshot:
         cls,
         collector: RPAMetricsCollector,
         environment: str = "development",
-    ) -> "MetricsSnapshot":
+    ) -> MetricsSnapshot:
         """
         Create snapshot from metrics collector state.
 
@@ -1002,16 +1003,16 @@ class MetricsExporter:
         self._interval = interval_seconds
         self._environment = environment
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
         self._lock = Lock()
 
         # Registered callbacks
-        self._json_callbacks: List[Callable[[str], None]] = []
-        self._dict_callbacks: List[Callable[[Dict[str, Any]], None]] = []
-        self._prometheus_callbacks: List[Callable[[str], None]] = []
+        self._json_callbacks: list[Callable[[str], None]] = []
+        self._dict_callbacks: list[Callable[[dict[str, Any]], None]] = []
+        self._prometheus_callbacks: list[Callable[[str], None]] = []
 
         # Last snapshot for on-demand access
-        self._last_snapshot: Optional[MetricsSnapshot] = None
+        self._last_snapshot: MetricsSnapshot | None = None
 
     def add_json_callback(self, callback: Callable[[str], None]) -> None:
         """
@@ -1023,7 +1024,7 @@ class MetricsExporter:
         with self._lock:
             self._json_callbacks.append(callback)
 
-    def add_dict_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
+    def add_dict_callback(self, callback: Callable[[dict[str, Any]], None]) -> None:
         """
         Add callback that receives dict on each export.
 
@@ -1056,7 +1057,7 @@ class MetricsExporter:
                 except ValueError:
                     pass
 
-    def get_last_snapshot(self) -> Optional[MetricsSnapshot]:
+    def get_last_snapshot(self) -> MetricsSnapshot | None:
         """Get most recent snapshot."""
         return self._last_snapshot
 
@@ -1066,7 +1067,7 @@ class MetricsExporter:
         snapshot = MetricsSnapshot.from_collector(collector, self._environment)
         return snapshot.to_json()
 
-    def get_snapshot_dict(self) -> Dict[str, Any]:
+    def get_snapshot_dict(self) -> dict[str, Any]:
         """Get current metrics as dictionary."""
         collector = get_metrics_collector()
         snapshot = MetricsSnapshot.from_collector(collector, self._environment)
@@ -1241,7 +1242,7 @@ class MetricsExporter:
 
 
 # Singleton exporter instance
-_metrics_exporter: Optional[MetricsExporter] = None
+_metrics_exporter: MetricsExporter | None = None
 
 
 def get_metrics_exporter(

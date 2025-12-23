@@ -28,11 +28,11 @@ Usage:
 
 from typing import Dict, List, Set
 
-from PySide6.QtCore import QTimer
 from loguru import logger
+from PySide6.QtCore import QTimer
 
-from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
 # Maximum pending events per type before overflow warning
@@ -63,7 +63,7 @@ class EventBatcher:
         QTimer ensures proper Qt event loop integration.
     """
 
-    BATCHABLE_EVENTS: Set[EventType] = {
+    BATCHABLE_EVENTS: set[EventType] = {
         EventType.VARIABLE_UPDATED,
         EventType.NODE_PROPERTY_CHANGED,
         EventType.NODE_POSITION_CHANGED,
@@ -79,7 +79,7 @@ class EventBatcher:
                         Default is 16ms (~60fps).
         """
         self.interval_ms = interval_ms
-        self.pending: Dict[EventType, List[Event]] = {}
+        self.pending: dict[EventType, list[Event]] = {}
         self.timer = QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self._flush)

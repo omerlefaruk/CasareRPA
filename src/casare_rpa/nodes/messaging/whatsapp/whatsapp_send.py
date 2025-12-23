@@ -6,8 +6,8 @@ Nodes for sending messages, templates, media, and locations via WhatsApp Busines
 
 from __future__ import annotations
 
-from typing import Any
 import json
+from typing import Any
 
 from loguru import logger
 
@@ -20,7 +20,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.whatsapp_client import WhatsAppClient
 from casare_rpa.nodes.messaging.whatsapp.whatsapp_base import WhatsAppBaseNode
-
 
 # ============================================================================
 # Reusable Property Definitions for WhatsApp Nodes

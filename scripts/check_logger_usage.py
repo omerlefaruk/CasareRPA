@@ -5,6 +5,7 @@ Enforce logging standards:
 - Use loguru logger instead
 - OK in: presentation (UI), tests, scripts
 """
+
 import os
 import re
 import sys
@@ -14,26 +15,26 @@ from pathlib import Path
 def check_file(filepath: str) -> list[str]:
     """Check for print() usage in restricted areas"""
     errors = []
-    
+
     # Only check infrastructure and nodes
     if not ("infrastructure" in filepath or "nodes/" in filepath):
         return errors
-    
+
     # Skip test files
     if "test" in filepath:
         return errors
-    
-    with open(filepath, "r") as f:
+
+    with open(filepath) as f:
         lines = f.readlines()
         for i, line in enumerate(lines, 1):
             # Look for print() calls
-            if re.search(r'\bprint\s*\(', line) and not line.strip().startswith("#"):
+            if re.search(r"\bprint\s*\(", line) and not line.strip().startswith("#"):
                 # Make sure it's not in a string or comment
                 if "print" in line and "logger" not in line:
                     errors.append(
                         f"{filepath}:{i} - Use logger instead of print()\n  {line.strip()}"
                     )
-    
+
     return errors
 
 

@@ -17,6 +17,7 @@ import asyncio
 import json
 import time
 from dataclasses import dataclass, field
+from datetime import UTC
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -25,8 +26,8 @@ import aiohttp
 from loguru import logger
 
 from casare_rpa.utils.resilience.rate_limiter import (
-    SlidingWindowRateLimiter,
     RateLimitExceeded,
+    SlidingWindowRateLimiter,
 )
 
 
@@ -36,8 +37,8 @@ class GoogleAPIError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[int] = None,
-        error_details: Optional[Dict[str, Any]] = None,
+        error_code: int | None = None,
+        error_details: dict[str, Any] | None = None,
     ):
         self.error_code = error_code
         self.error_details = error_details or {}
@@ -56,8 +57,8 @@ class GoogleQuotaError(GoogleAPIError):
     def __init__(
         self,
         message: str,
-        retry_after: Optional[int] = None,
-        error_details: Optional[Dict[str, Any]] = None,
+        retry_after: int | None = None,
+        error_details: dict[str, Any] | None = None,
     ):
         self.retry_after = retry_after
         super().__init__(message, error_code=429, error_details=error_details)
@@ -119,15 +120,15 @@ class GoogleCredentials:
     """OAuth2 credentials for Google APIs."""
 
     access_token: str
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
     token_uri: str = "https://oauth2.googleapis.com/token"
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
-    scopes: List[str] = field(default_factory=list)
-    expiry: Optional[float] = None
+    client_id: str | None = None
+    client_secret: str | None = None
+    scopes: list[str] = field(default_factory=list)
+    expiry: float | None = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GoogleCredentials":
+    def from_dict(cls, data: dict[str, Any]) -> GoogleCredentials:
         """Create credentials from dictionary."""
         return cls(
             access_token=data.get("access_token", ""),
@@ -140,7 +141,7 @@ class GoogleCredentials:
         )
 
     @classmethod
-    def from_service_account(cls, service_account_info: Dict[str, Any]) -> "GoogleCredentials":
+    def from_service_account(cls, service_account_info: dict[str, Any]) -> GoogleCredentials:
         """Create credentials from service account JSON."""
         try:
             from google.oauth2 import service_account
@@ -157,7 +158,7 @@ class GoogleCredentials:
                 "Install with: pip install google-auth google-auth-oauthlib"
             )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert credentials to dictionary."""
         data = {
             "access_token": self.access_token,
@@ -186,10 +187,10 @@ class GoogleCredentials:
 class GoogleConfig:
     """Configuration for Google API client."""
 
-    credentials: Optional[GoogleCredentials] = None
-    credential_id: Optional[str] = None  # For OAuth auto-refresh via GoogleOAuthManager
-    service_account_file: Optional[str] = None
-    service_account_info: Optional[Dict[str, Any]] = None
+    credentials: GoogleCredentials | None = None
+    credential_id: str | None = None  # For OAuth auto-refresh via GoogleOAuthManager
+    service_account_file: str | None = None
+    service_account_info: dict[str, Any] | None = None
     timeout: float = 30.0
     max_retries: int = 3
     retry_delay: float = 1.0
@@ -244,9 +245,9 @@ class GoogleAPIClient:
             config: GoogleConfig with credentials and settings
         """
         self.config = config
-        self._credentials: Optional[GoogleCredentials] = config.credentials
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._services: Dict[str, Any] = {}
+        self._credentials: GoogleCredentials | None = config.credentials
+        self._session: aiohttp.ClientSession | None = None
+        self._services: dict[str, Any] = {}
         self._rate_limiter = SlidingWindowRateLimiter(
             max_requests=config.rate_limit_requests,
             window_seconds=config.rate_limit_window,
@@ -254,7 +255,7 @@ class GoogleAPIClient:
         )
         self._lock = asyncio.Lock()
 
-    async def __aenter__(self) -> "GoogleAPIClient":
+    async def __aenter__(self) -> GoogleAPIClient:
         """Enter async context manager."""
         await self._ensure_session()
         return self
@@ -279,8 +280,8 @@ class GoogleAPIClient:
 
     async def authenticate(
         self,
-        scopes: Optional[List[str]] = None,
-        credentials: Optional[Dict[str, Any]] = None,
+        scopes: list[str] | None = None,
+        credentials: dict[str, Any] | None = None,
     ) -> None:
         """
         Authenticate with Google APIs.
@@ -328,7 +329,7 @@ class GoogleAPIClient:
                 "Provide credentials, service_account_file, or service_account_info."
             )
 
-    async def _authenticate_service_account_file(self, scopes: List[str]) -> None:
+    async def _authenticate_service_account_file(self, scopes: list[str]) -> None:
         """Authenticate using service account JSON file."""
         try:
             from google.oauth2 import service_account
@@ -337,7 +338,7 @@ class GoogleAPIClient:
             if not file_path.exists():
                 raise GoogleAuthError(f"Service account file not found: {file_path}")
 
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 info = json.load(f)
 
             creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
@@ -367,12 +368,12 @@ class GoogleAPIClient:
             raise GoogleAuthError(f"Service account authentication failed: {e}") from e
 
     async def _authenticate_service_account_info(
-        self, info: Dict[str, Any], scopes: List[str]
+        self, info: dict[str, Any], scopes: list[str]
     ) -> None:
         """Authenticate using service account info dictionary."""
         try:
-            from google.oauth2 import service_account
             from google.auth.transport.requests import Request
+            from google.oauth2 import service_account
 
             creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
 
@@ -481,18 +482,19 @@ class GoogleAPIClient:
             expires_in: Token expiry time in seconds
         """
         try:
+            from datetime import datetime, timedelta, timezone
+
             from casare_rpa.infrastructure.security.credential_store import (
-                get_credential_store,
                 CredentialType,
+                get_credential_store,
             )
-            from datetime import datetime, timezone, timedelta
 
             store = get_credential_store()
             info = store.get_credential_info(self.config.credential_id)
 
             if info:
                 # Build updated credential data
-                token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+                token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
                 data = {
                     "client_id": self._credentials.client_id,
                     "client_secret": self._credentials.client_secret,
@@ -528,7 +530,7 @@ class GoogleAPIClient:
 
         return self._credentials.access_token
 
-    async def get_service(self, api: str, version: Optional[str] = None) -> Any:
+    async def get_service(self, api: str, version: str | None = None) -> Any:
         """
         Get a Google API service client.
 
@@ -555,8 +557,8 @@ class GoogleAPIClient:
             return self._services[cache_key]
 
         try:
-            from googleapiclient.discovery import build
             from google.oauth2.credentials import Credentials
+            from googleapiclient.discovery import build
 
             # Ensure valid token
             await self._ensure_valid_token()
@@ -589,7 +591,7 @@ class GoogleAPIClient:
         self,
         request: Any,
         auto_retry: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute a Google API request with rate limiting and retry logic.
 
@@ -610,7 +612,7 @@ class GoogleAPIClient:
         except RateLimitExceeded as e:
             raise GoogleQuotaError(f"Client-side rate limit exceeded: {e}") from e
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         for attempt in range(self.config.max_retries):
             try:
@@ -663,9 +665,9 @@ class GoogleAPIClient:
 
     async def execute_batch(
         self,
-        requests: List[Any],
-        callback: Optional[Any] = None,
-    ) -> List[Dict[str, Any]]:
+        requests: list[Any],
+        callback: Any | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Execute multiple requests as a batch.
 
@@ -685,8 +687,8 @@ class GoogleAPIClient:
         try:
             from googleapiclient.http import BatchHttpRequest
 
-            results: List[Dict[str, Any]] = []
-            errors: List[Exception] = []
+            results: list[dict[str, Any]] = []
+            errors: list[Exception] = []
 
             def batch_callback(request_id, response, exception):
                 if exception:
@@ -716,7 +718,7 @@ class GoogleAPIClient:
         except Exception as e:
             raise GoogleAPIError(f"Batch request failed: {e}") from e
 
-    def _extract_retry_after(self, error: Exception) -> Optional[int]:
+    def _extract_retry_after(self, error: Exception) -> int | None:
         """Extract retry-after value from error if present."""
         error_str = str(error)
         # Try to find retry-after in error message
@@ -733,7 +735,7 @@ class GoogleAPIClient:
     # =========================================================================
 
     @property
-    def credentials(self) -> Optional[GoogleCredentials]:
+    def credentials(self) -> GoogleCredentials | None:
         """Get current credentials."""
         return self._credentials
 
@@ -743,17 +745,17 @@ class GoogleAPIClient:
         return self._credentials is not None and bool(self._credentials.access_token)
 
     @property
-    def rate_limit_stats(self) -> Dict[str, Any]:
+    def rate_limit_stats(self) -> dict[str, Any]:
         """Get rate limiting statistics."""
         return self._rate_limiter.stats.to_dict()
 
 
 # Factory function for easy client creation
 async def create_google_client(
-    credentials: Optional[Dict[str, Any]] = None,
-    service_account_file: Optional[str] = None,
-    service_account_info: Optional[Dict[str, Any]] = None,
-    scopes: Optional[List[str]] = None,
+    credentials: dict[str, Any] | None = None,
+    service_account_file: str | None = None,
+    service_account_info: dict[str, Any] | None = None,
+    scopes: list[str] | None = None,
 ) -> GoogleAPIClient:
     """
     Factory function to create and authenticate a Google API client.

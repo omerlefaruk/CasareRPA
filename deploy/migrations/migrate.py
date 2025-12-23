@@ -30,7 +30,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +60,7 @@ class MigrationFile:
     checksum: str
 
     @classmethod
-    def from_path(cls, path: Path) -> "MigrationFile":
+    def from_path(cls, path: Path) -> MigrationFile:
         """Create MigrationFile from a path."""
         # Extract version from filename (e.g., "001_initial_schema.sql" -> "001")
         match = re.match(r"^(\d+)_(.+)\.sql$", path.name)
@@ -228,14 +228,12 @@ async def cmd_up(
 
         # Read and execute migration
         sql = migration.path.read_text(encoding="utf-8")
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             async with conn.transaction():
                 await conn.execute(sql)
-                execution_time_ms = int(
-                    (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-                )
+                execution_time_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
                 await record_migration(conn, migration, execution_time_ms, git_commit)
                 print(f"      Applied in {execution_time_ms}ms")
                 applied_count += 1
@@ -290,15 +288,13 @@ async def cmd_down(
 
         # Read and execute rollback
         sql = down_path.read_text(encoding="utf-8")
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             async with conn.transaction():
                 await conn.execute(sql)
                 await remove_migration_record(conn, applied_migration.version)
-                execution_time_ms = int(
-                    (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-                )
+                execution_time_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
                 print(f"      Rolled back in {execution_time_ms}ms")
         except Exception as e:
             print(f"      ERROR: {e}")

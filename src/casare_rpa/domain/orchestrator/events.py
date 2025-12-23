@@ -17,7 +17,6 @@ from typing import Any, Dict, Tuple
 
 from casare_rpa.domain.events.base import DomainEvent
 
-
 # =============================================================================
 # Robot Events
 # =============================================================================
@@ -35,11 +34,11 @@ class RobotRegistered(DomainEvent):
     robot_name: str = ""
     hostname: str = ""
     environment: str = "production"
-    capabilities: Tuple[str, ...] = ()
+    capabilities: tuple[str, ...] = ()
     max_concurrent_jobs: int = 1
     tenant_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -66,10 +65,10 @@ class RobotDisconnected(DomainEvent):
 
     robot_id: str = ""
     robot_name: str = ""
-    orphaned_job_ids: Tuple[str, ...] = ()
+    orphaned_job_ids: tuple[str, ...] = ()
     reason: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -96,7 +95,7 @@ class RobotHeartbeat(DomainEvent):
     memory_mb: float = 0.0
     current_job_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -121,7 +120,7 @@ class RobotStatusChanged(DomainEvent):
     old_status: str = ""
     new_status: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -153,7 +152,7 @@ class JobSubmitted(DomainEvent):
     target_robot_id: str = ""
     tenant_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -181,7 +180,7 @@ class JobAssigned(DomainEvent):
     robot_name: str = ""
     workflow_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -207,7 +206,7 @@ class JobRequeued(DomainEvent):
     reason: str = ""
     rejected_by_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -233,7 +232,7 @@ class JobCompletedOnOrchestrator(DomainEvent):
     success: bool = True
     execution_time_ms: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(
@@ -260,7 +259,7 @@ class JobMovedToDLQ(DomainEvent):
     retry_count: int = 0
     max_retries: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize event to dictionary."""
         result = super().to_dict()
         result.update(

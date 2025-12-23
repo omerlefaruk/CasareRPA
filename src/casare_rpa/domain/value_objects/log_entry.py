@@ -5,15 +5,15 @@ Defines immutable log entry value objects for streaming robot logs
 to the orchestrator with 30-day retention policy.
 """
 
+import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional, Union
-import uuid
 
 # Type alias for JSON-serializable log extra data
 JsonValue = Union[str, int, float, bool, None, list, dict]
-LogExtraData = Dict[str, JsonValue]
+LogExtraData = dict[str, JsonValue]
 
 
 class LogLevel(Enum):
@@ -105,8 +105,8 @@ class LogEntry:
     level: LogLevel
     message: str
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    source: Optional[str] = None
-    extra: Optional[LogExtraData] = None
+    source: str | None = None
+    extra: LogExtraData | None = None
 
     def __post_init__(self) -> None:
         """Validate log entry data."""
@@ -117,7 +117,7 @@ class LogEntry:
         if not self.message:
             raise ValueError("message is required")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary.
 
@@ -136,7 +136,7 @@ class LogEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LogEntry":
+    def from_dict(cls, data: dict[str, Any]) -> "LogEntry":
         """
         Deserialize from dictionary.
 
@@ -153,7 +153,7 @@ class LogEntry:
                 timestamp = timestamp[:-1] + "+00:00"
             timestamp = datetime.fromisoformat(timestamp)
         elif timestamp is None:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         level = data.get("level", "INFO")
         if isinstance(level, str):
@@ -188,7 +188,7 @@ class LogBatch:
     entries: tuple  # Tuple of LogEntry for immutability
     sequence: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary for WebSocket transmission.
 
@@ -212,7 +212,7 @@ class LogBatch:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], tenant_id: str) -> "LogBatch":
+    def from_dict(cls, data: dict[str, Any], tenant_id: str) -> "LogBatch":
         """
         Deserialize from dictionary.
 
@@ -259,12 +259,12 @@ class LogQuery:
     """
 
     tenant_id: str
-    robot_id: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
+    robot_id: str | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
     min_level: LogLevel = LogLevel.DEBUG
-    source: Optional[str] = None
-    search_text: Optional[str] = None
+    source: str | None = None
+    search_text: str | None = None
     limit: int = 100
     offset: int = 0
 
@@ -277,7 +277,7 @@ class LogQuery:
         if self.offset < 0:
             raise ValueError("offset cannot be negative")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary.
 
@@ -314,13 +314,13 @@ class LogStats:
 
     tenant_id: str
     total_count: int
-    by_level: Dict[str, int]
-    oldest_log: Optional[datetime]
-    newest_log: Optional[datetime]
+    by_level: dict[str, int]
+    oldest_log: datetime | None
+    newest_log: datetime | None
     storage_bytes: int
-    robot_id: Optional[str] = None
+    robot_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary.
 

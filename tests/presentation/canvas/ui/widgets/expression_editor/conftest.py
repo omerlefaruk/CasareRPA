@@ -5,9 +5,11 @@ Provides Qt application fixtures and common mocks for testing
 expression editor components without full Qt integration.
 """
 
-import pytest
-from typing import Generator, Optional
+from collections.abc import Generator
+from typing import Optional
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture(scope="session")

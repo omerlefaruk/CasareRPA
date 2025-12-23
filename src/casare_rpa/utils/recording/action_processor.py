@@ -13,8 +13,8 @@ from typing import List, Optional
 from loguru import logger
 
 from casare_rpa.utils.recording.browser_recorder import (
-    BrowserRecordedAction,
     BrowserActionType,
+    BrowserRecordedAction,
 )
 
 
@@ -55,7 +55,7 @@ class ActionProcessor:
     - Optimize for reliable playback
     """
 
-    def __init__(self, config: Optional[ProcessingConfig] = None):
+    def __init__(self, config: ProcessingConfig | None = None):
         """
         Initialize action processor.
 
@@ -64,7 +64,7 @@ class ActionProcessor:
         """
         self.config = config or ProcessingConfig()
 
-    def process(self, actions: List[BrowserRecordedAction]) -> List[BrowserRecordedAction]:
+    def process(self, actions: list[BrowserRecordedAction]) -> list[BrowserRecordedAction]:
         """
         Process and optimize a list of recorded actions.
 
@@ -91,8 +91,8 @@ class ActionProcessor:
         return processed
 
     def _merge_consecutive_types(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+        self, actions: list[BrowserRecordedAction]
+    ) -> list[BrowserRecordedAction]:
         """Merge consecutive TYPE actions on the same element."""
         if len(actions) < 2:
             return actions
@@ -149,8 +149,8 @@ class ActionProcessor:
         return result
 
     def _deduplicate_navigations(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+        self, actions: list[BrowserRecordedAction]
+    ) -> list[BrowserRecordedAction]:
         """Remove duplicate consecutive navigations to the same URL."""
         if not self.config.dedupe_navigations or len(actions) < 2:
             return actions
@@ -172,8 +172,8 @@ class ActionProcessor:
         return result
 
     def _merge_consecutive_clicks(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+        self, actions: list[BrowserRecordedAction]
+    ) -> list[BrowserRecordedAction]:
         """Merge rapid clicks on the same element (detect double-click)."""
         if not self.config.merge_consecutive_clicks or len(actions) < 2:
             return actions
@@ -210,8 +210,8 @@ class ActionProcessor:
         return result
 
     def _insert_auto_waits(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+        self, actions: list[BrowserRecordedAction]
+    ) -> list[BrowserRecordedAction]:
         """Insert automatic waits after navigations."""
         if not self.config.auto_wait_after_navigation:
             return actions
@@ -244,8 +244,8 @@ class ActionProcessor:
         return result
 
     def _filter_accidental_actions(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+        self, actions: list[BrowserRecordedAction]
+    ) -> list[BrowserRecordedAction]:
         """Filter out actions that appear to be accidental."""
         result = []
 
@@ -268,8 +268,8 @@ class ActionProcessor:
         return result
 
     def add_element_waits(
-        self, actions: List[BrowserRecordedAction]
-    ) -> List[BrowserRecordedAction]:
+        self, actions: list[BrowserRecordedAction]
+    ) -> list[BrowserRecordedAction]:
         """
         Add wait-for-element actions before each interaction.
 

@@ -20,6 +20,7 @@ Design follows n8n output inspector UX.
 import json
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import (
     QEasingCurve,
     QMimeData,
@@ -57,14 +58,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
     JsonSyntaxHighlighter,
     get_json_highlighter_stylesheet,
 )
-
 
 # ============================================================================
 # COLOR CONSTANTS (Using THEME)
@@ -230,7 +228,7 @@ class SchemaItemWidget(QWidget):
         node_name: str,
         port_name: str,
         value: Any,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize schema item widget.
@@ -248,7 +246,7 @@ class SchemaItemWidget(QWidget):
         self._node_name = node_name
         self._port_name = port_name
         self._value = value
-        self._drag_start_pos: Optional[QPoint] = None
+        self._drag_start_pos: QPoint | None = None
 
         self.setFixedHeight(26)  # Compact row height
         self.setCursor(Qt.CursorShape.OpenHandCursor)
@@ -397,7 +395,7 @@ class OutputSchemaView(QListWidget):
     Supports drag-and-drop to insert variable references.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the schema view."""
         super().__init__(parent)
 
@@ -465,7 +463,7 @@ class OutputSchemaView(QListWidget):
         self._node_id = node_id
         self._node_name = node_name
 
-    def set_data(self, data: Dict[str, Any]) -> None:
+    def set_data(self, data: dict[str, Any]) -> None:
         """
         Populate the list with output port data.
 
@@ -526,7 +524,7 @@ class OutputTableView(QTableWidget):
     - Type: Value type
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the table view."""
         super().__init__(parent)
 
@@ -601,7 +599,7 @@ class OutputTableView(QTableWidget):
             }}
         """)
 
-    def set_data(self, data: Dict[str, Any]) -> None:
+    def set_data(self, data: dict[str, Any]) -> None:
         """
         Populate the table with output data.
 
@@ -641,10 +639,10 @@ class OutputTableView(QTableWidget):
 
     def _flatten_data(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         prefix: str = "",
         max_depth: int = 3,
-    ) -> List[tuple]:
+    ) -> list[tuple]:
         """
         Flatten nested data for table display.
 
@@ -733,7 +731,7 @@ class OutputJsonView(QWidget):
     Displays output as formatted JSON with VSCode Dark+ colors.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the JSON view."""
         super().__init__(parent)
 
@@ -753,7 +751,7 @@ class OutputJsonView(QWidget):
 
         layout.addWidget(self._editor)
 
-    def set_data(self, data: Dict[str, Any]) -> None:
+    def set_data(self, data: dict[str, Any]) -> None:
         """
         Display data as formatted JSON.
 
@@ -799,7 +797,7 @@ class VariableItemWidget(QFrame):
         value: Any,
         source: str = "workflow",
         insertion_text: str = None,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize variable item widget.
@@ -818,7 +816,7 @@ class VariableItemWidget(QFrame):
         self._value = value
         self._source = source
         self._insertion_text = insertion_text or f"{{{{{var_name}}}}}"
-        self._drag_start_pos: Optional[QPoint] = None
+        self._drag_start_pos: QPoint | None = None
 
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         self._setup_ui()
@@ -1005,11 +1003,11 @@ class VariablesView(QWidget):
     - Drag support for insertion
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the variables view."""
         super().__init__(parent)
         self._main_window = None
-        self._items: List[VariableItemWidget] = []
+        self._items: list[VariableItemWidget] = []
 
         self._setup_ui()
         self._apply_styles()
@@ -1074,8 +1072,8 @@ class VariablesView(QWidget):
         # Get variables from provider
         try:
             from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
-                VariableProvider,
                 VariableInfo,
+                VariableProvider,
             )
 
             provider = VariableProvider.get_instance()
@@ -1237,7 +1235,7 @@ class VariablesView(QWidget):
 class HeaderButton(QPushButton):
     """Compact icon button for header."""
 
-    def __init__(self, text: str, tooltip: str, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, text: str, tooltip: str, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setFixedSize(24, 24)
         self.setToolTip(tooltip)
@@ -1271,10 +1269,10 @@ class HeaderButton(QPushButton):
 class DraggableHeader(QFrame):
     """Header that supports dragging to move the parent window."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._drag_pos: Optional[QPoint] = None
-        self._parent_window: Optional[QWidget] = None
+        self._drag_pos: QPoint | None = None
+        self._parent_window: QWidget | None = None
         self.setCursor(Qt.CursorShape.SizeAllCursor)
 
     def set_parent_window(self, window: QWidget) -> None:
@@ -1311,7 +1309,7 @@ class DraggableHeader(QFrame):
 class ViewModeButton(QPushButton):
     """Compact tab-style button for view mode selection."""
 
-    def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setCheckable(True)
         self.setFixedHeight(22)
@@ -1392,28 +1390,28 @@ class NodeOutputPopup(QFrame):
     # Resize edge margin
     RESIZE_MARGIN = 8
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the popup."""
         super().__init__(parent)
 
-        self._node_id: Optional[str] = None
+        self._node_id: str | None = None
         self._node_name: str = ""
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
         self._is_pinned: bool = False
         self._is_loading: bool = False
-        self._error_message: Optional[str] = None
+        self._error_message: str | None = None
         self._has_error: bool = False
         self._search_visible: bool = False
 
         # Resize state
-        self._resize_edge: Optional[str] = None  # 'left', 'right', 'top', 'bottom', or corners
-        self._resize_start_pos: Optional[QPoint] = None
+        self._resize_edge: str | None = None  # 'left', 'right', 'top', 'bottom', or corners
+        self._resize_start_pos: QPoint | None = None
         self._resize_start_geometry = None
 
         # Position tracking - to follow node on pan/zoom
-        self._tracked_node_item: Optional[QGraphicsItem] = None
-        self._tracked_view: Optional[QGraphicsView] = None
-        self._position_timer: Optional[QTimer] = None
+        self._tracked_node_item: QGraphicsItem | None = None
+        self._tracked_view: QGraphicsView | None = None
+        self._position_timer: QTimer | None = None
 
         # Enable mouse tracking for cursor changes
         self.setMouseTracking(True)
@@ -1439,7 +1437,7 @@ class NodeOutputPopup(QFrame):
         self._apply_styles()
 
         # Fade-in animation
-        self._animation: Optional[QPropertyAnimation] = None
+        self._animation: QPropertyAnimation | None = None
 
     def _setup_ui(self) -> None:
         """Setup the user interface."""
@@ -1689,7 +1687,7 @@ class NodeOutputPopup(QFrame):
         self._node_name = node_name
         self._schema_view.set_node_info(node_id, node_name)
 
-    def set_data(self, data: Dict[str, Any]) -> None:
+    def set_data(self, data: dict[str, Any]) -> None:
         """
         Set the output data to display.
 
@@ -1934,7 +1932,7 @@ class NodeOutputPopup(QFrame):
         self.show()
 
     @property
-    def node_id(self) -> Optional[str]:
+    def node_id(self) -> str | None:
         """Get the node ID being inspected."""
         return self._node_id
 
@@ -1999,7 +1997,7 @@ class NodeOutputPopup(QFrame):
     # RESIZE HANDLING
     # =========================================================================
 
-    def _get_resize_edge(self, pos: QPoint) -> Optional[str]:
+    def _get_resize_edge(self, pos: QPoint) -> str | None:
         """Determine which corner the mouse is near for resizing (corners only)."""
         m = self.RESIZE_MARGIN
         rect = self.rect()
@@ -2022,7 +2020,7 @@ class NodeOutputPopup(QFrame):
             return "bottom-right"
         return None
 
-    def _update_cursor_for_edge(self, edge: Optional[str]) -> None:
+    def _update_cursor_for_edge(self, edge: str | None) -> None:
         """Update cursor based on resize corner."""
         if edge in ("top-left", "bottom-right"):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)

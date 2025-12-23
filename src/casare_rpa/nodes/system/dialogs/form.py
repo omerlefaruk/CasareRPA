@@ -6,13 +6,13 @@ Nodes for displaying custom forms and multi-step wizards.
 
 import asyncio
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -94,19 +94,19 @@ class FormDialogNode(BaseNode):
                 return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
             try:
+                from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import (
+                    QApplication,
+                    QCheckBox,
+                    QComboBox,
                     QDialog,
-                    QVBoxLayout,
+                    QDialogButtonBox,
+                    QDoubleSpinBox,
                     QFormLayout,
                     QLineEdit,
                     QSpinBox,
-                    QDoubleSpinBox,
-                    QCheckBox,
-                    QComboBox,
-                    QDialogButtonBox,
-                    QApplication,
+                    QVBoxLayout,
                 )
-                from PySide6.QtCore import Qt
 
                 app = QApplication.instance()
                 if app is None:
@@ -301,22 +301,22 @@ class WizardDialogNode(BaseNode):
                 return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
             try:
+                from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import (
-                    QDialog,
-                    QVBoxLayout,
-                    QHBoxLayout,
-                    QLabel,
-                    QStackedWidget,
-                    QPushButton,
-                    QFormLayout,
-                    QLineEdit,
-                    QSpinBox,
+                    QApplication,
                     QCheckBox,
                     QComboBox,
-                    QApplication,
+                    QDialog,
+                    QFormLayout,
+                    QHBoxLayout,
+                    QLabel,
+                    QLineEdit,
+                    QPushButton,
+                    QSpinBox,
+                    QStackedWidget,
+                    QVBoxLayout,
                     QWidget,
                 )
-                from PySide6.QtCore import Qt
 
                 app = QApplication.instance()
                 if app is None:

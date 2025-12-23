@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 
 base_dir = r"C:\Users\Rau\.opencode\agent"
 # Use recursive glob to catch all .md files in all subdirectories (commands, agents, rules, etc.)
@@ -10,7 +10,7 @@ for path in md_files:
     if os.path.isdir(path):
         continue
 
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         try:
             lines = f.readlines()
         except Exception:
@@ -32,13 +32,7 @@ for path in md_files:
                     # Properly escape existing quotes if necessary, but here we just wrap
                     lines[i] = f'description: "{desc_content}"\n'
                     modified = True
-<<<<<<< HEAD
-                    print(
-                        f"  - Quoted description in {os.path.relpath(path, base_dir)}"
-                    )
-=======
                     print(f"  - Quoted description in {os.path.relpath(path, base_dir)}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     if modified:
         with open(path, "w", encoding="utf-8") as f:

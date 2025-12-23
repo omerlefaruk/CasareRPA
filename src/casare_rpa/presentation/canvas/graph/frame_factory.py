@@ -8,8 +8,9 @@ Separates creation logic from core frame implementation.
 """
 
 from typing import TYPE_CHECKING, List, Optional, Tuple
-from PySide6.QtCore import QRectF
+
 from NodeGraphQt.base.node import NodeObject
+from PySide6.QtCore import QRectF
 
 from casare_rpa.presentation.canvas.graph.style_manager import FRAME_COLORS
 
@@ -45,8 +46,8 @@ def create_frame(
     graph_view,
     title: str = "Group",
     color_name: str = "blue",
-    position: Tuple[float, float] = (0, 0),
-    size: Tuple[float, float] = (400, 300),
+    position: tuple[float, float] = (0, 0),
+    size: tuple[float, float] = (400, 300),
     graph=None,
 ) -> "NodeFrame":
     """
@@ -88,7 +89,7 @@ def create_frame(
 
 
 def group_selected_nodes(
-    graph_view, title: str = "Group", selected_nodes: List = None
+    graph_view, title: str = "Group", selected_nodes: list = None
 ) -> Optional["NodeFrame"]:
     """
     Create a frame around currently selected nodes.

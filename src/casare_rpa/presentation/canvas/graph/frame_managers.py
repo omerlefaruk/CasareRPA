@@ -10,8 +10,9 @@ from the frame UI component.
 """
 
 from typing import TYPE_CHECKING, Optional, Set
+
+from PySide6.QtCore import QObject, QTimer
 from PySide6.QtGui import QUndoCommand
-from PySide6.QtCore import QTimer, QObject
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.graph.node_frame import NodeFrame
@@ -107,10 +108,10 @@ class FrameBoundsManager(QObject):
             cls._instance._frames.clear()
         cls._instance = None
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         """Initialize the bounds manager."""
         super().__init__(parent)
-        self._frames: Set["NodeFrame"] = set()
+        self._frames: set[NodeFrame] = set()
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._batch_check)
         self._interval = 150  # ms

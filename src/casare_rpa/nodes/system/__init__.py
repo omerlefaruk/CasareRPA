@@ -11,71 +11,71 @@ This package provides nodes for system-level operations:
 """
 
 from casare_rpa.nodes.system.clipboard_nodes import (
+    ClipboardClearNode,
     ClipboardCopyNode,
     ClipboardPasteNode,
-    ClipboardClearNode,
-)
-from casare_rpa.nodes.system.dialog_nodes import (
-    MessageBoxNode,
-    InputDialogNode,
-    TooltipNode,
-    SystemNotificationNode,
-    ConfirmDialogNode,
-    ProgressDialogNode,
-    FilePickerDialogNode,
-    FolderPickerDialogNode,
-    ColorPickerDialogNode,
-    DateTimePickerDialogNode,
-    SnackbarNode,
-    BalloonTipNode,
-    # New dialog nodes
-    ListPickerDialogNode,
-    MultilineInputDialogNode,
-    CredentialDialogNode,
-    FormDialogNode,
-    ImagePreviewDialogNode,
-    TableDialogNode,
-    WizardDialogNode,
-    SplashScreenNode,
-    AudioAlertNode,
 )
 from casare_rpa.nodes.system.command_nodes import (
     RunCommandNode,
     RunPowerShellNode,
     SecurityError,
 )
-from casare_rpa.nodes.system.service_nodes import (
-    GetServiceStatusNode,
-    StartServiceNode,
-    StopServiceNode,
-    RestartServiceNode,
-    ListServicesNode,
-)
-from casare_rpa.nodes.system.system_nodes import (
-    ScreenRegionPickerNode,
-    VolumeControlNode,
-    ProcessListNode,
-    ProcessKillNode,
-    EnvironmentVariableNode,
-    SystemInfoNode,
-)
-from casare_rpa.nodes.system.quick_nodes import (
-    HotkeyWaitNode,
-    BeepNode,
-    ClipboardMonitorNode,
-)
-from casare_rpa.nodes.system.utility_system_nodes import (
-    FileWatcherNode,
-    QRCodeNode,
-    Base64Node,
-    UUIDGeneratorNode,
-    AssertSystemNode,
-    LogToFileNode,
+from casare_rpa.nodes.system.dialog_nodes import (
+    AudioAlertNode,
+    BalloonTipNode,
+    ColorPickerDialogNode,
+    ConfirmDialogNode,
+    CredentialDialogNode,
+    DateTimePickerDialogNode,
+    FilePickerDialogNode,
+    FolderPickerDialogNode,
+    FormDialogNode,
+    ImagePreviewDialogNode,
+    InputDialogNode,
+    # New dialog nodes
+    ListPickerDialogNode,
+    MessageBoxNode,
+    MultilineInputDialogNode,
+    ProgressDialogNode,
+    SnackbarNode,
+    SplashScreenNode,
+    SystemNotificationNode,
+    TableDialogNode,
+    TooltipNode,
+    WizardDialogNode,
 )
 from casare_rpa.nodes.system.media_nodes import (
-    TextToSpeechNode,
     PDFPreviewDialogNode,
+    TextToSpeechNode,
     WebcamCaptureNode,
+)
+from casare_rpa.nodes.system.quick_nodes import (
+    BeepNode,
+    ClipboardMonitorNode,
+    HotkeyWaitNode,
+)
+from casare_rpa.nodes.system.service_nodes import (
+    GetServiceStatusNode,
+    ListServicesNode,
+    RestartServiceNode,
+    StartServiceNode,
+    StopServiceNode,
+)
+from casare_rpa.nodes.system.system_nodes import (
+    EnvironmentVariableNode,
+    ProcessKillNode,
+    ProcessListNode,
+    ScreenRegionPickerNode,
+    SystemInfoNode,
+    VolumeControlNode,
+)
+from casare_rpa.nodes.system.utility_system_nodes import (
+    AssertSystemNode,
+    Base64Node,
+    FileWatcherNode,
+    LogToFileNode,
+    QRCodeNode,
+    UUIDGeneratorNode,
 )
 
 __all__ = [

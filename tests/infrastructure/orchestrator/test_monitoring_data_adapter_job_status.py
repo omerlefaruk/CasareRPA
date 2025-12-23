@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, cast
 
 import pytest
@@ -44,7 +44,7 @@ async def test_get_job_history_normalizes_claimed_to_running():
             "workflow_name": "Test Workflow",
             "robot_id": "robot-1",
             "status": "claimed",
-            "created_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
             "completed_at": None,
             "duration_ms": None,
         }

@@ -21,30 +21,17 @@ This module orchestrates the scheduling components:
 import asyncio
 import re
 import threading
-from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from loguru import logger
 
-# Import extracted modules
-from casare_rpa.infrastructure.orchestrator.scheduling.scheduling_strategies import (
-    CRON_ALIASES,
-    CronExpressionParser,
-)
-from casare_rpa.infrastructure.orchestrator.scheduling.schedule_optimizer import (
-    RateLimitConfig,
-    SlidingWindowRateLimiter,
-)
 from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
     DependencyConfig,
-    DependencyTracker,
     DependencyGraphValidator,
-)
-from casare_rpa.infrastructure.orchestrator.scheduling.sla_monitor import (
-    SLAConfig,
-    SLAMonitor,
-    SLAStatus,
+    DependencyTracker,
 )
 from casare_rpa.infrastructure.orchestrator.scheduling.schedule_models import (
     AdvancedSchedule,
@@ -55,14 +42,29 @@ from casare_rpa.infrastructure.orchestrator.scheduling.schedule_models import (
     ScheduleStatus,
     ScheduleType,
 )
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_optimizer import (
+    RateLimitConfig,
+    SlidingWindowRateLimiter,
+)
+
+# Import extracted modules
+from casare_rpa.infrastructure.orchestrator.scheduling.scheduling_strategies import (
+    CRON_ALIASES,
+    CronExpressionParser,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.sla_monitor import (
+    SLAConfig,
+    SLAMonitor,
+    SLAStatus,
+)
 
 try:
+    from apscheduler.executors.asyncio import AsyncIOExecutor
+    from apscheduler.jobstores.memory import MemoryJobStore
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from apscheduler.triggers.cron import CronTrigger
     from apscheduler.triggers.date import DateTrigger
     from apscheduler.triggers.interval import IntervalTrigger
-    from apscheduler.jobstores.memory import MemoryJobStore
-    from apscheduler.executors.asyncio import AsyncIOExecutor
 
     HAS_APSCHEDULER = True
 except ImportError:
@@ -70,7 +72,6 @@ except ImportError:
     logger.warning("APScheduler not installed. Advanced scheduling features disabled.")
 
 from casare_rpa.infrastructure.orchestrator.scheduling.calendar import BusinessCalendar
-
 
 # Re-export commonly used classes from extracted modules
 __all__ = [
@@ -123,7 +124,7 @@ class AdvancedScheduler:
 
     def __init__(
         self,
-        on_schedule_trigger: Optional[Callable[[AdvancedSchedule], Any]] = None,
+        on_schedule_trigger: Callable[[AdvancedSchedule], Any] | None = None,
         default_timezone: str = "UTC",
     ):
         """
@@ -141,13 +142,13 @@ class AdvancedScheduler:
 
         self._on_trigger = on_schedule_trigger
         self._default_tz = default_timezone
-        self._schedules: Dict[str, AdvancedSchedule] = {}
-        self._calendars: Dict[str, BusinessCalendar] = {}
-        self._scheduler: Optional[AsyncIOScheduler] = None
+        self._schedules: dict[str, AdvancedSchedule] = {}
+        self._calendars: dict[str, BusinessCalendar] = {}
+        self._scheduler: AsyncIOScheduler | None = None
         self._running = False
 
         # Use extracted components
-        self._rate_limiters: Dict[str, SlidingWindowRateLimiter] = {}
+        self._rate_limiters: dict[str, SlidingWindowRateLimiter] = {}
         self._dependency_tracker = DependencyTracker()
         self._sla_monitor = SLAMonitor()
         self._graph_validator = DependencyGraphValidator()
@@ -224,7 +225,7 @@ class AdvancedScheduler:
         self._calendars[calendar_id] = calendar
         logger.debug(f"Registered calendar: {calendar_id}")
 
-    def get_calendar(self, calendar_id: str) -> Optional[BusinessCalendar]:
+    def get_calendar(self, calendar_id: str) -> BusinessCalendar | None:
         """Get a registered calendar."""
         return self._calendars.get(calendar_id)
 
@@ -325,7 +326,7 @@ class AdvancedScheduler:
         Returns:
             True if updated successfully
         """
-        schedule.updated_at = datetime.now(timezone.utc)
+        schedule.updated_at = datetime.now(UTC)
         self.remove_schedule(schedule.id)
         return self.add_schedule(schedule)
 
@@ -359,15 +360,15 @@ class AdvancedScheduler:
         logger.info(f"Schedule {schedule_id} resumed")
         return True
 
-    def get_schedule(self, schedule_id: str) -> Optional[AdvancedSchedule]:
+    def get_schedule(self, schedule_id: str) -> AdvancedSchedule | None:
         """Get a schedule by ID."""
         return self._schedules.get(schedule_id)
 
-    def get_all_schedules(self) -> List[AdvancedSchedule]:
+    def get_all_schedules(self) -> list[AdvancedSchedule]:
         """Get all schedules."""
         return list(self._schedules.values())
 
-    def get_schedules_by_status(self, status: ScheduleStatus) -> List[AdvancedSchedule]:
+    def get_schedules_by_status(self, status: ScheduleStatus) -> list[AdvancedSchedule]:
         """Get schedules with a specific status."""
         return [s for s in self._schedules.values() if s.status == status]
 
@@ -375,8 +376,8 @@ class AdvancedScheduler:
         self,
         event_type: EventType,
         event_source: str,
-        event_data: Optional[Dict[str, Any]] = None,
-    ) -> List[str]:
+        event_data: dict[str, Any] | None = None,
+    ) -> list[str]:
         """
         Trigger event-driven schedules.
 
@@ -448,8 +449,8 @@ class AdvancedScheduler:
     def get_upcoming_runs(
         self,
         limit: int = 20,
-        workflow_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        workflow_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Get upcoming scheduled runs.
 
@@ -492,7 +493,7 @@ class AdvancedScheduler:
         upcoming.sort(key=lambda x: x["next_run"])
         return upcoming[:limit]
 
-    def check_missed_runs(self) -> List[AdvancedSchedule]:
+    def check_missed_runs(self) -> list[AdvancedSchedule]:
         """
         Check for schedules with missed runs that need catch-up.
 
@@ -500,7 +501,7 @@ class AdvancedScheduler:
             List of schedules needing catch-up
         """
         needs_catchup = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for schedule in self._schedules.values():
             if not schedule.catch_up or not schedule.catch_up.enabled:
@@ -593,7 +594,7 @@ class AdvancedScheduler:
     async def _execute_schedule(
         self,
         schedule_id: str,
-        event_data: Optional[Dict[str, Any]] = None,
+        event_data: dict[str, Any] | None = None,
         catch_up: bool = False,
     ) -> None:
         """
@@ -673,7 +674,7 @@ class AdvancedScheduler:
             f"(catch_up={catch_up}, type={schedule.schedule_type.value})"
         )
 
-        schedule.last_run = datetime.now(timezone.utc)
+        schedule.last_run = datetime.now(UTC)
         schedule.run_count += 1
 
         success = False
@@ -755,7 +756,7 @@ class AdvancedScheduler:
 
         return False
 
-    def _matches_filter(self, event_data: Dict[str, Any], filter_spec: Dict[str, Any]) -> bool:
+    def _matches_filter(self, event_data: dict[str, Any], filter_spec: dict[str, Any]) -> bool:
         """Check if event data matches filter specification."""
         for key, expected in filter_spec.items():
             if key not in event_data:
@@ -783,9 +784,9 @@ class AdvancedScheduler:
 
     def get_sla_report(
         self,
-        schedule_id: Optional[str] = None,
+        schedule_id: str | None = None,
         window_hours: int = 24,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate SLA compliance report.
 
@@ -803,7 +804,7 @@ class AdvancedScheduler:
         )
 
         report = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "window_hours": window_hours,
             "schedules": [],
         }
@@ -836,14 +837,14 @@ class AdvancedScheduler:
 
         return report
 
-    def get_dependency_graph(self) -> Dict[str, List[str]]:
+    def get_dependency_graph(self) -> dict[str, list[str]]:
         """
         Get dependency graph of all schedules.
 
         Returns:
             Dictionary mapping schedule ID to list of dependent schedule IDs
         """
-        graph: Dict[str, List[str]] = {}
+        graph: dict[str, list[str]] = {}
 
         for schedule in self._schedules.values():
             if schedule.dependency and schedule.dependency.depends_on:
@@ -854,7 +855,7 @@ class AdvancedScheduler:
 
         return graph
 
-    def validate_dependency_graph(self) -> Tuple[bool, List[str]]:
+    def validate_dependency_graph(self) -> tuple[bool, list[str]]:
         """
         Validate dependency graph for cycles.
 

@@ -13,23 +13,29 @@ Provides comprehensive multi-tenancy support for enterprise deployments:
 import asyncio
 import hashlib
 import secrets
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from uuid import UUID, uuid4
 
 from loguru import logger
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 
 from casare_rpa.infrastructure.security.merkle_audit import (
-    MerkleAuditService,
-    AuditEntry as MerkleAuditEntry,
     AuditAction as MerkleAuditAction,
+)
+from casare_rpa.infrastructure.security.merkle_audit import (
+    AuditEntry as MerkleAuditEntry,
+)
+from casare_rpa.infrastructure.security.merkle_audit import (
+    MerkleAuditService,
+)
+from casare_rpa.infrastructure.security.merkle_audit import (
     get_audit_service as get_merkle_audit_service,
 )
-
 
 # =============================================================================
 # ENUMS
@@ -131,7 +137,7 @@ class AuditAction(str, Enum):
 class TenancyError(Exception):
     """Base exception for tenancy operations."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
         self.details = details or {}
         super().__init__(message)
@@ -292,32 +298,32 @@ class SSOConfig(BaseModel):
     enabled: bool = True
 
     # SAML settings
-    saml_entity_id: Optional[str] = None
-    saml_sso_url: Optional[str] = None
-    saml_slo_url: Optional[str] = None
-    saml_certificate: Optional[str] = None
-    saml_attribute_mapping: Optional[Dict[str, str]] = None
+    saml_entity_id: str | None = None
+    saml_sso_url: str | None = None
+    saml_slo_url: str | None = None
+    saml_certificate: str | None = None
+    saml_attribute_mapping: dict[str, str] | None = None
 
     # OAuth2/OIDC settings
-    oauth_client_id: Optional[str] = None
-    oauth_client_secret: Optional[SecretStr] = None
-    oauth_authorize_url: Optional[str] = None
-    oauth_token_url: Optional[str] = None
-    oauth_userinfo_url: Optional[str] = None
-    oauth_scopes: List[str] = Field(default_factory=lambda: ["openid", "email", "profile"])
+    oauth_client_id: str | None = None
+    oauth_client_secret: SecretStr | None = None
+    oauth_authorize_url: str | None = None
+    oauth_token_url: str | None = None
+    oauth_userinfo_url: str | None = None
+    oauth_scopes: list[str] = Field(default_factory=lambda: ["openid", "email", "profile"])
 
     # OIDC-specific
-    oidc_issuer: Optional[str] = None
-    oidc_jwks_uri: Optional[str] = None
+    oidc_issuer: str | None = None
+    oidc_jwks_uri: str | None = None
 
     # Common settings
-    domain_restriction: Optional[str] = None
+    domain_restriction: str | None = None
     auto_provision_users: bool = True
-    default_role_id: Optional[UUID] = None
+    default_role_id: UUID | None = None
 
-    def validate_config(self) -> List[str]:
+    def validate_config(self) -> list[str]:
         """Validate SSO configuration and return any errors."""
-        errors: List[str] = []
+        errors: list[str] = []
 
         if self.provider == SSOProvider.SAML:
             if not self.saml_entity_id:
@@ -353,22 +359,22 @@ class Tenant(BaseModel):
     slug: str
     display_name: str
     admin_email: EmailStr
-    billing_email: Optional[EmailStr] = None
+    billing_email: EmailStr | None = None
 
     status: TenantStatus = TenantStatus.ACTIVE
     subscription_tier: SubscriptionTier = SubscriptionTier.FREE
-    subscription_expires_at: Optional[datetime] = None
+    subscription_expires_at: datetime | None = None
 
     sso_enabled: bool = False
-    sso_config: Optional[SSOConfig] = None
+    sso_config: SSOConfig | None = None
 
     quotas: ResourceQuotas = Field(default_factory=ResourceQuotas)
     usage: ResourceUsage = Field(default_factory=ResourceUsage)
-    settings: Dict[str, Any] = Field(default_factory=dict)
+    settings: dict[str, Any] = Field(default_factory=dict)
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    created_by: Optional[UUID] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_by: UUID | None = None
 
     @field_validator("slug")
     @classmethod
@@ -390,7 +396,7 @@ class Tenant(BaseModel):
         """Check if subscription is valid."""
         if self.subscription_expires_at is None:
             return True
-        return datetime.now(timezone.utc) < self.subscription_expires_at
+        return datetime.now(UTC) < self.subscription_expires_at
 
     def check_quota(self, resource_type: str) -> bool:
         """
@@ -445,12 +451,12 @@ class Workspace(BaseModel):
     tenant_id: UUID
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     is_default: bool = False
-    settings: Dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    created_by: Optional[UUID] = None
+    settings: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_by: UUID | None = None
 
 
 class APIKey(BaseModel):
@@ -458,35 +464,35 @@ class APIKey(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
     tenant_id: UUID
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
     key_prefix: str
     key_hash: str
 
-    role_id: Optional[UUID] = None
-    scopes: List[str] = Field(default_factory=list)
+    role_id: UUID | None = None
+    scopes: list[str] = Field(default_factory=list)
 
-    allowed_ips: Optional[List[str]] = None
-    allowed_origins: Optional[List[str]] = None
-    rate_limit_per_minute: Optional[int] = None
+    allowed_ips: list[str] | None = None
+    allowed_origins: list[str] | None = None
+    rate_limit_per_minute: int | None = None
 
     status: APIKeyStatus = APIKeyStatus.ACTIVE
-    expires_at: Optional[datetime] = None
-    last_used_at: Optional[datetime] = None
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
     use_count: int = 0
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    revoked_at: Optional[datetime] = None
-    revoked_by: Optional[UUID] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    revoked_at: datetime | None = None
+    revoked_by: UUID | None = None
 
     @property
     def is_valid(self) -> bool:
         """Check if API key is valid."""
         if self.status != APIKeyStatus.ACTIVE:
             return False
-        if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
+        if self.expires_at and datetime.now(UTC) > self.expires_at:
             return False
         return True
 
@@ -529,24 +535,24 @@ class AuditLogEntry(BaseModel):
 
     id: int = 0
     tenant_id: UUID
-    user_id: Optional[UUID] = None
-    api_key_id: Optional[UUID] = None
+    user_id: UUID | None = None
+    api_key_id: UUID | None = None
     actor_type: str = "user"
-    actor_ip: Optional[str] = None
-    user_agent: Optional[str] = None
+    actor_ip: str | None = None
+    user_agent: str | None = None
 
     action: AuditAction
     resource_type: str
-    resource_id: Optional[str] = None
+    resource_id: str | None = None
 
-    old_value: Optional[Dict[str, Any]] = None
-    new_value: Optional[Dict[str, Any]] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    old_value: dict[str, Any] | None = None
+    new_value: dict[str, Any] | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     success: bool = True
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 # =============================================================================
@@ -563,11 +569,11 @@ class TenantContext:
     """
 
     tenant_id: UUID
-    user_id: Optional[UUID] = None
-    workspace_id: Optional[UUID] = None
-    api_key_id: Optional[UUID] = None
-    role_ids: List[UUID] = None
-    permissions: Set[str] = None
+    user_id: UUID | None = None
+    workspace_id: UUID | None = None
+    api_key_id: UUID | None = None
+    role_ids: list[UUID] = None
+    permissions: set[str] = None
     is_system: bool = False
 
     def __post_init__(self) -> None:
@@ -585,12 +591,12 @@ class TenantContextManager:
     """
 
     def __init__(self) -> None:
-        self._current_context: Optional[TenantContext] = None
-        self._context_stack: List[TenantContext] = []
+        self._current_context: TenantContext | None = None
+        self._context_stack: list[TenantContext] = []
         self._lock = asyncio.Lock()
 
     @property
-    def current(self) -> Optional[TenantContext]:
+    def current(self) -> TenantContext | None:
         """Get current tenant context."""
         return self._current_context
 
@@ -639,7 +645,7 @@ class TenantContextManager:
     async def with_tenant(
         self,
         tenant_id: UUID,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> AsyncGenerator[TenantContext, None]:
         """
         Convenience method to set context by tenant ID.
@@ -652,7 +658,7 @@ class TenantContextManager:
         async with self.with_context(context) as ctx:
             yield ctx
 
-    def get_rls_parameters(self) -> Dict[str, str]:
+    def get_rls_parameters(self) -> dict[str, str]:
         """
         Get parameters for PostgreSQL RLS.
 
@@ -685,8 +691,8 @@ class TenantService:
 
     def __init__(self, context_manager: TenantContextManager) -> None:
         self._context_manager = context_manager
-        self._tenants: Dict[UUID, Tenant] = {}
-        self._tenants_by_slug: Dict[str, UUID] = {}
+        self._tenants: dict[UUID, Tenant] = {}
+        self._tenants_by_slug: dict[str, UUID] = {}
         self._lock = asyncio.Lock()
 
     async def create_tenant(
@@ -695,7 +701,7 @@ class TenantService:
         slug: str,
         admin_email: str,
         subscription_tier: SubscriptionTier = SubscriptionTier.FREE,
-        created_by: Optional[UUID] = None,
+        created_by: UUID | None = None,
         **kwargs: Any,
     ) -> Tenant:
         """
@@ -799,7 +805,7 @@ class TenantService:
                 if hasattr(tenant, key):
                     setattr(tenant, key, value)
 
-            tenant.updated_at = datetime.now(timezone.utc)
+            tenant.updated_at = datetime.now(UTC)
             logger.info(f"Updated tenant {tenant_id}: {list(updates.keys())}")
 
             return tenant
@@ -807,7 +813,7 @@ class TenantService:
     async def suspend_tenant(
         self,
         tenant_id: UUID,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> Tenant:
         """
         Suspend a tenant.
@@ -823,10 +829,10 @@ class TenantService:
 
         async with self._lock:
             tenant.status = TenantStatus.SUSPENDED
-            tenant.updated_at = datetime.now(timezone.utc)
+            tenant.updated_at = datetime.now(UTC)
             if reason:
                 tenant.settings["suspension_reason"] = reason
-                tenant.settings["suspended_at"] = datetime.now(timezone.utc).isoformat()
+                tenant.settings["suspended_at"] = datetime.now(UTC).isoformat()
 
             logger.warning(f"Suspended tenant {tenant_id}: {reason}")
             return tenant
@@ -845,7 +851,7 @@ class TenantService:
 
         async with self._lock:
             tenant.status = TenantStatus.ACTIVE
-            tenant.updated_at = datetime.now(timezone.utc)
+            tenant.updated_at = datetime.now(UTC)
             tenant.settings.pop("suspension_reason", None)
             tenant.settings.pop("suspended_at", None)
 
@@ -976,7 +982,7 @@ class TenantService:
         async with self._lock:
             tenant.sso_enabled = config.enabled
             tenant.sso_config = config
-            tenant.updated_at = datetime.now(timezone.utc)
+            tenant.updated_at = datetime.now(UTC)
 
             logger.info(f"Configured {config.provider.value} SSO for tenant {tenant_id}")
             return tenant
@@ -985,7 +991,7 @@ class TenantService:
         self,
         tenant_id: UUID,
         tier: SubscriptionTier,
-        expires_at: Optional[datetime] = None,
+        expires_at: datetime | None = None,
     ) -> Tenant:
         """
         Update tenant subscription.
@@ -1004,7 +1010,7 @@ class TenantService:
             tenant.subscription_tier = tier
             tenant.subscription_expires_at = expires_at
             tenant.quotas = ResourceQuotas.for_tier(tier)
-            tenant.updated_at = datetime.now(timezone.utc)
+            tenant.updated_at = datetime.now(UTC)
 
             logger.info(f"Updated subscription for tenant {tenant_id}: tier={tier.value}")
             return tenant
@@ -1020,18 +1026,18 @@ class APIKeyService:
 
     def __init__(self, tenant_service: TenantService) -> None:
         self._tenant_service = tenant_service
-        self._keys: Dict[UUID, APIKey] = {}
-        self._keys_by_prefix: Dict[str, UUID] = {}
+        self._keys: dict[UUID, APIKey] = {}
+        self._keys_by_prefix: dict[str, UUID] = {}
         self._lock = asyncio.Lock()
 
     async def create_key(
         self,
         tenant_id: UUID,
         name: str,
-        user_id: Optional[UUID] = None,
-        role_id: Optional[UUID] = None,
-        scopes: Optional[List[str]] = None,
-        expires_in_days: Optional[int] = None,
+        user_id: UUID | None = None,
+        role_id: UUID | None = None,
+        scopes: list[str] | None = None,
+        expires_in_days: int | None = None,
         **kwargs: Any,
     ) -> tuple[APIKey, str]:
         """
@@ -1056,7 +1062,7 @@ class APIKeyService:
 
         expires_at = None
         if expires_in_days:
-            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
+            expires_at = datetime.now(UTC) + timedelta(days=expires_in_days)
 
         api_key, raw_key = APIKey.generate(
             tenant_id=tenant_id,
@@ -1113,7 +1119,7 @@ class APIKeyService:
             raise InvalidAPIKeyError("API key is not active")
 
         async with self._lock:
-            api_key.last_used_at = datetime.now(timezone.utc)
+            api_key.last_used_at = datetime.now(UTC)
             api_key.use_count += 1
 
         return api_key
@@ -1121,7 +1127,7 @@ class APIKeyService:
     async def revoke_key(
         self,
         key_id: UUID,
-        revoked_by: Optional[UUID] = None,
+        revoked_by: UUID | None = None,
     ) -> APIKey:
         """
         Revoke an API key.
@@ -1139,7 +1145,7 @@ class APIKeyService:
 
         async with self._lock:
             api_key.status = APIKeyStatus.REVOKED
-            api_key.revoked_at = datetime.now(timezone.utc)
+            api_key.revoked_at = datetime.now(UTC)
             api_key.revoked_by = revoked_by
 
         await self._tenant_service.decrement_usage(api_key.tenant_id, "api_key")
@@ -1147,11 +1153,11 @@ class APIKeyService:
         logger.info(f"Revoked API key {key_id}")
         return api_key
 
-    async def list_keys(self, tenant_id: UUID) -> List[APIKey]:
+    async def list_keys(self, tenant_id: UUID) -> list[APIKey]:
         """List all API keys for a tenant."""
         return [k for k in self._keys.values() if k.tenant_id == tenant_id]
 
-    async def get_key(self, key_id: UUID) -> Optional[APIKey]:
+    async def get_key(self, key_id: UUID) -> APIKey | None:
         """Get API key by ID."""
         return self._keys.get(key_id)
 
@@ -1176,11 +1182,11 @@ class AuditService:
         merkle_enabled: bool = False,
     ) -> None:
         self._context_manager = context_manager
-        self._logs: List[AuditLogEntry] = []
+        self._logs: list[AuditLogEntry] = []
         self._max_buffer = 10000
         self._lock = asyncio.Lock()
         self._merkle_enabled = merkle_enabled
-        self._merkle_service: Optional[MerkleAuditService] = None
+        self._merkle_service: MerkleAuditService | None = None
 
         if merkle_enabled:
             self._merkle_service = get_merkle_audit_service()
@@ -1190,16 +1196,16 @@ class AuditService:
         tenant_id: UUID,
         action: AuditAction,
         resource_type: str,
-        resource_id: Optional[str] = None,
-        user_id: Optional[UUID] = None,
-        api_key_id: Optional[UUID] = None,
-        old_value: Optional[Dict[str, Any]] = None,
-        new_value: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        resource_id: str | None = None,
+        user_id: UUID | None = None,
+        api_key_id: UUID | None = None,
+        old_value: dict[str, Any] | None = None,
+        new_value: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
         success: bool = True,
-        error_message: Optional[str] = None,
-        actor_ip: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        error_message: str | None = None,
+        actor_ip: str | None = None,
+        user_agent: str | None = None,
     ) -> AuditLogEntry:
         """
         Create an audit log entry.
@@ -1327,14 +1333,14 @@ class AuditService:
     async def query(
         self,
         tenant_id: UUID,
-        action: Optional[AuditAction] = None,
-        resource_type: Optional[str] = None,
-        user_id: Optional[UUID] = None,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        action: AuditAction | None = None,
+        resource_type: str | None = None,
+        user_id: UUID | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[AuditLogEntry]:
+    ) -> list[AuditLogEntry]:
         """
         Query audit logs.
 
@@ -1351,7 +1357,7 @@ class AuditService:
         Returns:
             List of matching AuditLogEntry
         """
-        results: List[AuditLogEntry] = []
+        results: list[AuditLogEntry] = []
 
         for entry in reversed(self._logs):
             if entry.tenant_id != tenant_id:
@@ -1395,7 +1401,7 @@ def create_tenant_context_manager() -> TenantContextManager:
 
 
 def create_tenant_service(
-    context_manager: Optional[TenantContextManager] = None,
+    context_manager: TenantContextManager | None = None,
 ) -> TenantService:
     """
     Create a new tenant service.
@@ -1416,7 +1422,7 @@ def create_api_key_service(tenant_service: TenantService) -> APIKeyService:
 
 
 def create_audit_service(
-    context_manager: Optional[TenantContextManager] = None,
+    context_manager: TenantContextManager | None = None,
     merkle_enabled: bool = False,
 ) -> AuditService:
     """

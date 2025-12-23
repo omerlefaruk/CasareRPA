@@ -9,22 +9,21 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.value_objects.types import NodeStatus, DataType
-
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
     APPLICATION_PATH_PROP,
     ARGUMENTS_PROP,
-    WORKING_DIRECTORY_PROP,
-    TIMEOUT_LONG_PROP,
-    WINDOW_TITLE_HINT_PROP,
-    WINDOW_STATE_PROP,
-    KEEP_OPEN_PROP,
-    FORCE_CLOSE_PROP,
-    TIMEOUT_PROP,
-    MATCH_PARTIAL_PROP,
-    INCLUDE_INVISIBLE_PROP,
     FILTER_TITLE_PROP,
+    FORCE_CLOSE_PROP,
+    INCLUDE_INVISIBLE_PROP,
+    KEEP_OPEN_PROP,
+    MATCH_PARTIAL_PROP,
+    TIMEOUT_LONG_PROP,
+    TIMEOUT_PROP,
+    WINDOW_STATE_PROP,
+    WINDOW_TITLE_HINT_PROP,
+    WORKING_DIRECTORY_PROP,
 )
 
 
@@ -67,8 +66,8 @@ class LaunchApplicationNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Launch Application",
     ):
         super().__init__(node_id, config, name)
@@ -84,7 +83,7 @@ class LaunchApplicationNode(DesktopNodeBase):
         self.add_output_port("process_id", DataType.INTEGER)
         self.add_output_port("window_title", DataType.STRING)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - launch application."""
         app_path = self.get_parameter("application_path", context)
         arguments = self.get_parameter("arguments", context)
@@ -218,8 +217,8 @@ class CloseApplicationNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Close Application",
     ):
         super().__init__(node_id, config, name)
@@ -233,7 +232,7 @@ class CloseApplicationNode(DesktopNodeBase):
         self.add_input_port("window_title", DataType.STRING, required=False)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - close application."""
         window = self.get_input_value("window")
         process_id = self.get_input_value("process_id")
@@ -296,8 +295,8 @@ class ActivateWindowNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Activate Window",
     ):
         super().__init__(node_id, config, name)
@@ -311,7 +310,7 @@ class ActivateWindowNode(DesktopNodeBase):
         self.add_output_port("success", DataType.BOOLEAN)
         self.add_output_port("window", DataType.ANY)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - activate window."""
         window = self.get_input_value("window")
         window_title = self.get_input_value("window_title")
@@ -338,8 +337,8 @@ class ActivateWindowNode(DesktopNodeBase):
 
             # Try to bring to foreground
             try:
-                import win32gui
                 import win32con
+                import win32gui
 
                 hwnd = window._control.NativeWindowHandle
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
@@ -383,8 +382,8 @@ class GetWindowListNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Get Window List",
     ):
         super().__init__(node_id, config, name)
@@ -395,7 +394,7 @@ class GetWindowListNode(DesktopNodeBase):
         self.add_output_port("window_list", DataType.LIST)
         self.add_output_port("window_count", DataType.INTEGER)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - get window list."""
         include_invisible = self.get_parameter("include_invisible", context)
         filter_title = self.get_parameter("filter_title", context)

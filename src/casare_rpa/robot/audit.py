@@ -9,13 +9,15 @@ Provides structured, searchable audit logs for all robot events:
 - Security events
 """
 
-from datetime import datetime, timezone
+from contextlib import contextmanager
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-from contextlib import contextmanager
-from loguru import logger
+from typing import Any, Dict, List, Optional
+from collections.abc import Callable
+
 import orjson
+from loguru import logger
 
 
 class AuditEventType(Enum):
@@ -89,12 +91,12 @@ class AuditEntry:
         event_type: AuditEventType,
         severity: AuditSeverity,
         message: str,
-        robot_id: Optional[str] = None,
-        job_id: Optional[str] = None,
-        node_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        robot_id: str | None = None,
+        job_id: str | None = None,
+        node_id: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = datetime.now(UTC)
         self.event_type = event_type
         self.severity = severity
         self.message = message
@@ -103,7 +105,7 @@ class AuditEntry:
         self.node_id = node_id
         self.details = details or {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -134,10 +136,10 @@ class AuditLogger:
     def __init__(
         self,
         robot_id: str,
-        log_dir: Optional[Path] = None,
+        log_dir: Path | None = None,
         max_file_size_mb: int = 10,
         backup_count: int = 5,
-        external_handler: Optional[callable] = None,
+        external_handler: Callable[..., Any] | None = None,
     ):
         """
         Initialize audit logger.
@@ -159,23 +161,23 @@ class AuditLogger:
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # Current log file
-        self._current_file: Optional[Path] = None
+        self._current_file: Path | None = None
         self._current_size = 0
 
         # In-memory buffer for recent entries
-        self._buffer: List[AuditEntry] = []
+        self._buffer: list[AuditEntry] = []
         self._buffer_limit = 1000
 
         # Context for automatic field population
-        self._current_job_id: Optional[str] = None
-        self._current_node_id: Optional[str] = None
+        self._current_job_id: str | None = None
+        self._current_node_id: str | None = None
 
         self._init_log_file()
         logger.info(f"Audit logger initialized at {self.log_dir}")
 
     def _init_log_file(self):
         """Initialize or rotate log file."""
-        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date_str = datetime.now(UTC).strftime("%Y-%m-%d")
         base_name = f"audit_{date_str}.jsonl"
         self._current_file = self.log_dir / base_name
         self._current_size = self._current_file.stat().st_size if self._current_file.exists() else 0
@@ -184,7 +186,7 @@ class AuditLogger:
         """Rotate log file if size limit reached."""
         if self._current_size >= self.max_file_size:
             # Rename current file with timestamp
-            timestamp = datetime.now(timezone.utc).strftime("%H%M%S")
+            timestamp = datetime.now(UTC).strftime("%H%M%S")
             rotated = self._current_file.with_suffix(f".{timestamp}.jsonl")
             self._current_file.rename(rotated)
 
@@ -233,9 +235,9 @@ class AuditLogger:
         event_type: AuditEventType,
         message: str,
         severity: AuditSeverity = AuditSeverity.INFO,
-        job_id: Optional[str] = None,
-        node_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        job_id: str | None = None,
+        node_id: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         """
         Log an audit event.
@@ -300,7 +302,7 @@ class AuditLogger:
 
     # Convenience methods for common events
 
-    def robot_started(self, details: Optional[Dict] = None):
+    def robot_started(self, details: dict | None = None):
         """Log robot started event."""
         self.log(
             AuditEventType.ROBOT_STARTED,
@@ -308,7 +310,7 @@ class AuditLogger:
             details=details,
         )
 
-    def robot_stopped(self, reason: Optional[str] = None):
+    def robot_stopped(self, reason: str | None = None):
         """Log robot stopped event."""
         self.log(
             AuditEventType.ROBOT_STOPPED,
@@ -322,7 +324,7 @@ class AuditLogger:
             "Connected to backend",
         )
 
-    def connection_lost(self, reason: Optional[str] = None):
+    def connection_lost(self, reason: str | None = None):
         """Log connection lost."""
         self.log(
             AuditEventType.CONNECTION_LOST,
@@ -383,7 +385,7 @@ class AuditLogger:
             details={"error": error, "duration_ms": duration_ms},
         )
 
-    def job_cancelled(self, job_id: str, reason: Optional[str] = None):
+    def job_cancelled(self, job_id: str, reason: str | None = None):
         """Log job cancelled."""
         self.log(
             AuditEventType.JOB_CANCELLED,
@@ -432,7 +434,7 @@ class AuditLogger:
             details={"node_type": node_type, "attempt": attempt, "error": error},
         )
 
-    def error_logged(self, category: str, error: str, details: Optional[Dict] = None):
+    def error_logged(self, category: str, error: str, details: dict | None = None):
         """Log an error with classification."""
         event_type = {
             "transient": AuditEventType.ERROR_TRANSIENT,
@@ -485,18 +487,18 @@ class AuditLogger:
 
     # Query methods
 
-    def get_recent(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_recent(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent audit entries from buffer."""
         return [entry.to_dict() for entry in self._buffer[-limit:]]
 
     def query(
         self,
-        event_types: Optional[List[AuditEventType]] = None,
-        severity: Optional[AuditSeverity] = None,
-        job_id: Optional[str] = None,
-        since: Optional[datetime] = None,
+        event_types: list[AuditEventType] | None = None,
+        severity: AuditSeverity | None = None,
+        job_id: str | None = None,
+        since: datetime | None = None,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Query audit entries from buffer.
 
@@ -536,10 +538,10 @@ class AuditLogger:
 
 
 # Global audit logger instance
-_audit_logger: Optional[AuditLogger] = None
+_audit_logger: AuditLogger | None = None
 
 
-def get_audit_logger(robot_id: Optional[str] = None) -> AuditLogger:
+def get_audit_logger(robot_id: str | None = None) -> AuditLogger:
     """Get or create global audit logger."""
     global _audit_logger
     if _audit_logger is None:

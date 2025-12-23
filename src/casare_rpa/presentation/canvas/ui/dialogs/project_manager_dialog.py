@@ -5,29 +5,28 @@ Dialog for creating, opening, and managing CasareRPA projects.
 """
 
 from pathlib import Path
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QDialog,
+    QFileDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QTextEdit,
-    QPushButton,
-    QGroupBox,
-    QTabWidget,
-    QWidget,
-    QFileDialog,
     QMessageBox,
+    QPushButton,
     QSplitter,
+    QTabWidget,
+    QTextEdit,
     QTreeWidget,
     QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
-
-from loguru import logger
-from PySide6.QtWidgets import QDialog
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.project import ProjectIndexEntry
@@ -58,8 +57,8 @@ class ProjectManagerDialog(QDialog):
 
     def __init__(
         self,
-        recent_projects: Optional[List["ProjectIndexEntry"]] = None,
-        parent: Optional[QWidget] = None,
+        recent_projects: list["ProjectIndexEntry"] | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize project manager dialog.
@@ -71,8 +70,8 @@ class ProjectManagerDialog(QDialog):
         super().__init__(parent)
 
         self._recent_projects = recent_projects or []
-        self._selected_project: Optional["ProjectIndexEntry"] = None
-        self._selected_scenario: Optional[dict] = None
+        self._selected_project: ProjectIndexEntry | None = None
+        self._selected_scenario: dict | None = None
 
         self.setWindowTitle("Project Manager")
         self.setMinimumWidth(700)
@@ -428,7 +427,7 @@ class ProjectManagerDialog(QDialog):
             empty_item.setFlags(Qt.ItemFlag.NoItemFlags)
             self._project_tree.addTopLevelItem(empty_item)
 
-    def _get_scenarios_for_project(self, project_path: str) -> List[dict]:
+    def _get_scenarios_for_project(self, project_path: str) -> list[dict]:
         """
         Get list of scenarios for a project.
 
@@ -500,7 +499,7 @@ class ProjectManagerDialog(QDialog):
             self._selected_scenario = item_data
             self._update_details_for_scenario(item_data)
 
-    def _update_details_for_selection(self, data: Optional[dict]) -> None:
+    def _update_details_for_selection(self, data: dict | None) -> None:
         """Clear details panel."""
         self._detail_type.setText("Type: -")
         self._detail_name.setText("Name: -")
@@ -701,7 +700,7 @@ class ProjectManagerDialog(QDialog):
         self.project_created.emit(project_data)
         self.accept()
 
-    def update_recent_projects(self, projects: List["ProjectIndexEntry"]) -> None:
+    def update_recent_projects(self, projects: list["ProjectIndexEntry"]) -> None:
         """
         Update the recent projects list.
 

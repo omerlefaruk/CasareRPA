@@ -82,14 +82,14 @@ class StatusBarManager:
         self._main_window = main_window
 
         # Status bar widgets
-        self._zoom_widget: Optional[ZoomWidget] = None
-        self._zoom_label: Optional[QLabel] = None  # Kept for backward compat
-        self._node_count_label: Optional[QLabel] = None
-        self._exec_status_label: Optional[QLabel] = None
-        self._btn_variables: Optional[QPushButton] = None
-        self._btn_output: Optional[QPushButton] = None
-        self._btn_log: Optional[QPushButton] = None
-        self._btn_validation: Optional[QPushButton] = None
+        self._zoom_widget: ZoomWidget | None = None
+        self._zoom_label: QLabel | None = None  # Kept for backward compat
+        self._node_count_label: QLabel | None = None
+        self._exec_status_label: QLabel | None = None
+        self._btn_variables: QPushButton | None = None
+        self._btn_output: QPushButton | None = None
+        self._btn_log: QPushButton | None = None
+        self._btn_validation: QPushButton | None = None
 
     def create_status_bar(self) -> QStatusBar:
         """

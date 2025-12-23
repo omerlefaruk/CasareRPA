@@ -4,10 +4,11 @@ Schedule models for CasareRPA Orchestrator.
 Contains data classes and enums for schedule definitions.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
     DependencyConfig,
@@ -65,8 +66,8 @@ class ConditionalConfig:
         max_condition_retries: Maximum condition check retries
     """
 
-    condition_fn: Optional[Callable[[], bool]] = None
-    condition_expression: Optional[str] = None
+    condition_fn: Callable[[], bool] | None = None
+    condition_expression: str | None = None
     retry_on_condition_fail: bool = False
     retry_interval_seconds: int = 60
     max_condition_retries: int = 5
@@ -106,7 +107,7 @@ class EventTriggerConfig:
 
     event_type: EventType
     event_source: str
-    event_filter: Optional[Dict[str, Any]] = None
+    event_filter: dict[str, Any] | None = None
     debounce_seconds: int = 0
     batch_events: bool = False
     batch_window_seconds: int = 60
@@ -168,33 +169,33 @@ class AdvancedSchedule:
 
     cron_expression: str = ""
     interval_seconds: int = 0
-    run_at: Optional[datetime] = None
+    run_at: datetime | None = None
 
-    calendar_id: Optional[str] = None
+    calendar_id: str | None = None
     respect_business_hours: bool = False
-    sla: Optional[SLAConfig] = None
-    rate_limit: Optional[RateLimitConfig] = None
-    dependency: Optional[DependencyConfig] = None
-    conditional: Optional[ConditionalConfig] = None
-    catch_up: Optional[CatchUpConfig] = None
-    event_trigger: Optional[EventTriggerConfig] = None
+    sla: SLAConfig | None = None
+    rate_limit: RateLimitConfig | None = None
+    dependency: DependencyConfig | None = None
+    conditional: ConditionalConfig | None = None
+    catch_up: CatchUpConfig | None = None
+    event_trigger: EventTriggerConfig | None = None
 
     priority: int = 1
-    robot_id: Optional[str] = None
-    variables: Dict[str, Any] = field(default_factory=dict)
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    robot_id: str | None = None
+    variables: dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    last_run: Optional[datetime] = None
-    next_run: Optional[datetime] = None
+    last_run: datetime | None = None
+    next_run: datetime | None = None
     run_count: int = 0
     success_count: int = 0
     failure_count: int = 0
     consecutive_failures: int = 0
 
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
     created_by: str = ""
-    updated_at: Optional[datetime] = None
+    updated_at: datetime | None = None
 
     @property
     def success_rate(self) -> float:

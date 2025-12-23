@@ -8,9 +8,9 @@ comparison expressions.
 
 import ast
 from typing import Any, Dict, Optional
-from simpleeval import simple_eval, DEFAULT_OPERATORS, DEFAULT_FUNCTIONS
-from loguru import logger
 
+from loguru import logger
+from simpleeval import DEFAULT_FUNCTIONS, DEFAULT_OPERATORS, simple_eval
 
 # Safe built-in functions for expressions
 SAFE_FUNCTIONS = {
@@ -31,7 +31,7 @@ SAFE_FUNCTIONS = {
 }
 
 
-def safe_eval(expression: str, variables: Optional[Dict[str, Any]] = None) -> Any:
+def safe_eval(expression: str, variables: dict[str, Any] | None = None) -> Any:
     """
     Convenience function for safe expression evaluation.
 
@@ -101,7 +101,7 @@ class SafeExpressionEvaluator:
     - Variable references from context
     """
 
-    def __init__(self, variables: Optional[Dict[str, Any]] = None):
+    def __init__(self, variables: dict[str, Any] | None = None):
         """
         Initialize the evaluator.
 
@@ -125,7 +125,7 @@ class SafeExpressionEvaluator:
         """
         return safe_eval(expression, self.variables)
 
-    def update_variables(self, variables: Dict[str, Any]) -> None:
+    def update_variables(self, variables: dict[str, Any]) -> None:
         """Update available variables."""
         self.variables.update(variables)
 

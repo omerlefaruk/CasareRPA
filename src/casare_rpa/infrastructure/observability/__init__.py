@@ -60,96 +60,90 @@ Legacy Usage (direct components):
 # =============================================================================
 
 from casare_rpa.infrastructure.observability.facade import (
+    Environment,
     Observability,
     ObservabilityConfig,
-    Environment,
     configure_observability,
-)
-
-# =============================================================================
-# Telemetry (OpenTelemetry)
-# =============================================================================
-
-from casare_rpa.infrastructure.observability.telemetry import (
-    TelemetryProvider,
-    TelemetryConfig,
-    ExporterProtocol,
-    DBOSSpanContext,
-    get_tracer,
-    get_meter,
-    get_logger_provider,
-    trace_workflow,
-    trace_node,
-    trace_async,
-    record_job_duration,
-    record_queue_depth,
-    record_robot_utilization,
-    inject_context_to_headers,
-    extract_context_from_headers,
-    setup_loguru_otel_sink,
-    OTEL_AVAILABLE,
-)
-
-# =============================================================================
-# Metrics Collection
-# =============================================================================
-
-from casare_rpa.infrastructure.observability.metrics import (
-    # Core collector
-    RPAMetricsCollector,
-    get_metrics_collector,
-    # Data classes
-    JobMetrics,
-    RobotMetrics,
-    JobStatus,
-    RobotStatus,
-    # Multi-backend export
-    MetricsExporter,
-    MetricsSnapshot,
-    get_metrics_exporter,
-)
-
-# =============================================================================
-# System Metrics
-# =============================================================================
-
-from casare_rpa.infrastructure.observability.system_metrics import (
-    SystemMetricsCollector,
-    ProcessMetrics,
-    SystemMetrics,
-    get_system_metrics_collector,
-    get_cpu_percent,
-    get_memory_mb,
 )
 
 # =============================================================================
 # Logging
 # =============================================================================
-
 from casare_rpa.infrastructure.observability.logging import (
     OTelLoguruSink,
-    UILoguruSink,
     SpanLogger,
+    UILoguruSink,
     configure_logging,
+    create_trace_context_format,
     get_span_logger,
     log_with_trace,
-    trace_context_patcher,
-    create_trace_context_format,
-    set_ui_log_callback,
     remove_ui_log_callback,
+    set_ui_log_callback,
+    trace_context_patcher,
+)
+
+# =============================================================================
+# Metrics Collection
+# =============================================================================
+from casare_rpa.infrastructure.observability.metrics import (
+    # Data classes
+    JobMetrics,
+    JobStatus,
+    # Multi-backend export
+    MetricsExporter,
+    MetricsSnapshot,
+    RobotMetrics,
+    RobotStatus,
+    # Core collector
+    RPAMetricsCollector,
+    get_metrics_collector,
+    get_metrics_exporter,
 )
 
 # =============================================================================
 # Stdout Capture
 # =============================================================================
-
 from casare_rpa.infrastructure.observability.stdout_capture import (
     OutputCapture,
-    set_output_callbacks,
-    remove_output_callbacks,
     capture_output,
+    remove_output_callbacks,
+    set_output_callbacks,
 )
 
+# =============================================================================
+# System Metrics
+# =============================================================================
+from casare_rpa.infrastructure.observability.system_metrics import (
+    ProcessMetrics,
+    SystemMetrics,
+    SystemMetricsCollector,
+    get_cpu_percent,
+    get_memory_mb,
+    get_system_metrics_collector,
+)
+
+# =============================================================================
+# Telemetry (OpenTelemetry)
+# =============================================================================
+from casare_rpa.infrastructure.observability.telemetry import (
+    OTEL_AVAILABLE,
+    DBOSSpanContext,
+    ExporterProtocol,
+    TelemetryConfig,
+    TelemetryProvider,
+    extract_context_from_headers,
+    get_logger_provider,
+    get_meter,
+    get_tracer,
+    inject_context_to_headers,
+    record_job_duration,
+    record_queue_depth,
+    record_robot_utilization,
+    setup_loguru_otel_sink,
+    trace_async,
+    trace_node,
+    trace_workflow,
+)
 
 __all__ = [
     # =========================================================================

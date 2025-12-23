@@ -7,28 +7,27 @@ Visual cron expression builder with:
 - Preview of next N runs
 """
 
-from typing import Optional, List
 from datetime import datetime, timedelta
+from typing import List, Optional
 
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTabWidget,
-    QWidget,
-    QLabel,
-    QComboBox,
-    QSpinBox,
     QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QDialogButtonBox,
-    QGroupBox,
-    QGridLayout,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
-
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
@@ -48,7 +47,7 @@ class CronBuilderDialog(QDialog):
     def __init__(
         self,
         initial_expression: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._initial_expression = initial_expression
@@ -472,7 +471,7 @@ class CronBuilderDialog(QDialog):
             item = QListWidgetItem(text)
             self._preview_list.addItem(item)
 
-    def _calculate_next_runs(self, expr: str, count: int) -> List[datetime]:
+    def _calculate_next_runs(self, expr: str, count: int) -> list[datetime]:
         """Calculate the next N run times for a cron expression."""
         if not self._validate_expression(expr):
             return []

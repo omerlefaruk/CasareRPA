@@ -5,25 +5,25 @@ Allows users to assign/remove hotkeys for any node in the system.
 """
 
 from typing import TYPE_CHECKING, List, Tuple
+
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QAbstractItemView,
+    QComboBox,
+    QDialog,
+    QGroupBox,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QLineEdit,
-    QLabel,
-    QMessageBox,
-    QComboBox,
-    QGroupBox,
-    QSplitter,
+    QVBoxLayout,
     QWidget,
-    QAbstractItemView,
 )
-from PySide6.QtCore import Qt
-
-from PySide6.QtWidgets import QDialog
 
 if TYPE_CHECKING:
     from ...components.quick_node_manager import QuickNodeManager
@@ -43,7 +43,7 @@ class QuickNodeConfigDialog(QDialog):
     def __init__(self, quick_node_manager: "QuickNodeManager", parent=None):
         super().__init__(parent)
         self._manager = quick_node_manager
-        self._all_nodes: List[Tuple[str, str]] = []  # (node_type, display_name)
+        self._all_nodes: list[tuple[str, str]] = []  # (node_type, display_name)
 
         self.setWindowTitle("Quick Node Hotkey Configuration")
         self.setMinimumSize(900, 600)
@@ -201,7 +201,7 @@ class QuickNodeConfigDialog(QDialog):
         self._all_nodes = self._manager.get_all_node_types()
         self._populate_nodes_table(self._all_nodes)
 
-    def _populate_nodes_table(self, nodes: List[Tuple[str, str]]) -> None:
+    def _populate_nodes_table(self, nodes: list[tuple[str, str]]) -> None:
         """Populate the nodes table with given nodes."""
         bindings = self._manager.get_bindings()
 

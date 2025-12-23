@@ -22,7 +22,6 @@ from pydantic import (
     model_validator,
 )
 
-
 # Security constants aligned with workflow_loader.py
 MAX_NODES: int = 1000
 MAX_CONNECTIONS: int = 5000
@@ -31,7 +30,7 @@ MAX_CONFIG_DEPTH: int = 10
 MAX_STRING_LENGTH: int = 10000
 
 # Dangerous patterns that indicate potential code injection
-DANGEROUS_PATTERNS: List[str] = [
+DANGEROUS_PATTERNS: list[str] = [
     "__import__",
     "eval(",
     "exec(",
@@ -151,7 +150,7 @@ class WorkflowMetadataSchema(BaseModel):
         max_length=256,
         description="Workflow author",
     )
-    tags: List[str] = Field(
+    tags: list[str] = Field(
         default_factory=list,
         max_length=50,
         description="List of tags for categorization",
@@ -176,7 +175,7 @@ class WorkflowMetadataSchema(BaseModel):
 
     @field_validator("tags")
     @classmethod
-    def validate_tags(cls, v: List[str]) -> List[str]:
+    def validate_tags(cls, v: list[str]) -> list[str]:
         """Validate each tag."""
         for i, tag in enumerate(v):
             if len(tag) > 100:
@@ -184,7 +183,7 @@ class WorkflowMetadataSchema(BaseModel):
             _check_dangerous_patterns(tag, f"metadata.tags[{i}]")
         return v
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict compatible with workflow_loader."""
         return {
             "name": self.name,
@@ -213,7 +212,7 @@ class NodeConfigSchema(BaseModel):
             return _validate_config_recursive(values, "config", 0)
         return values
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return dict(self)
 
@@ -266,11 +265,11 @@ class NodeSchema(BaseModel):
         max_length=128,
         description="Node type name (e.g., ClickElementNode)",
     )
-    config: Dict[str, Any] = Field(
+    config: dict[str, Any] = Field(
         default_factory=dict,
         description="Node configuration parameters",
     )
-    position: Optional[PositionSchema] = Field(
+    position: PositionSchema | None = Field(
         default=None,
         description="Optional canvas position",
     )
@@ -300,11 +299,11 @@ class NodeSchema(BaseModel):
 
     @field_validator("config")
     @classmethod
-    def validate_config(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_config(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Validate config dict for security."""
         return _validate_config_recursive(v, "config", 0)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict compatible with workflow_loader."""
         result = {
             "node_id": self.node_id,
@@ -372,7 +371,7 @@ class ConnectionSchema(BaseModel):
             raise ValueError("port name must be snake_case")
         return v
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Serialize to dict compatible with workflow_loader."""
         return {
             "source_node": self.source_node,
@@ -397,7 +396,7 @@ class NodeModificationSchema(BaseModel):
         max_length=MAX_NODE_ID_LENGTH,
         description="ID of the existing node to modify",
     )
-    changes: Dict[str, Any] = Field(
+    changes: dict[str, Any] = Field(
         default_factory=dict,
         description="Property changes to apply to the node's config",
     )
@@ -415,11 +414,11 @@ class NodeModificationSchema(BaseModel):
 
     @field_validator("changes")
     @classmethod
-    def validate_changes(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_changes(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Validate changes dict for security."""
         return _validate_config_recursive(v, "changes", 0)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "node_id": self.node_id,
@@ -441,7 +440,7 @@ class EditWorkflowSchema(BaseModel):
         pattern=r"^edit$",
         description="Action type (must be 'edit')",
     )
-    modifications: List[NodeModificationSchema] = Field(
+    modifications: list[NodeModificationSchema] = Field(
         ...,
         min_length=1,
         description="List of node modifications to apply",
@@ -454,7 +453,7 @@ class EditWorkflowSchema(BaseModel):
             raise ValueError(f"Modifications exceed maximum of {MAX_NODES}")
         return self
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "action": self.action,
@@ -462,7 +461,7 @@ class EditWorkflowSchema(BaseModel):
         }
 
     @classmethod
-    def is_edit_response(cls, data: Dict[str, Any]) -> bool:
+    def is_edit_response(cls, data: dict[str, Any]) -> bool:
         """Check if data represents an edit response."""
         return data.get("action") == "edit" and "modifications" in data
 
@@ -493,7 +492,7 @@ class WorkflowSettingsSchema(BaseModel):
         description="Number of retries on failure (0-10)",
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "stop_on_error": self.stop_on_error,
@@ -514,7 +513,7 @@ class WorkflowAISchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # JSON schema hints for AI systems
-    _JSON_SCHEMA_HINTS: ClassVar[Dict[str, str]] = {
+    _JSON_SCHEMA_HINTS: ClassVar[dict[str, str]] = {
         "node_types": "Use PascalCase ending with 'Node' (e.g., ClickElementNode, NavigateNode)",
         "node_id_format": "Use descriptive IDs with underscores (e.g., click_login_button)",
         "port_names": "exec_in/exec_out for flow, snake_case for data (e.g., selector, timeout)",
@@ -526,15 +525,15 @@ class WorkflowAISchema(BaseModel):
         ...,
         description="Workflow metadata (name, description, version, etc.)",
     )
-    nodes: Dict[str, NodeSchema] = Field(
+    nodes: dict[str, NodeSchema] = Field(
         default_factory=dict,
         description="Map of node_id to NodeSchema",
     )
-    connections: List[ConnectionSchema] = Field(
+    connections: list[ConnectionSchema] = Field(
         default_factory=list,
         description="List of connections between nodes",
     )
-    variables: Dict[str, Any] = Field(
+    variables: dict[str, Any] = Field(
         default_factory=dict,
         description="Workflow-level variables",
     )
@@ -578,7 +577,7 @@ class WorkflowAISchema(BaseModel):
         """Validate workflow variables for security."""
         _validate_config_recursive(self.variables, "variables", 0)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dict compatible with workflow_loader.py.
 
@@ -594,7 +593,7 @@ class WorkflowAISchema(BaseModel):
         }
 
     @classmethod
-    def from_natural_language_hint(cls) -> Dict[str, Any]:
+    def from_natural_language_hint(cls) -> dict[str, Any]:
         """
         Provide JSON schema hints for AI workflow generation.
 
@@ -677,7 +676,7 @@ class WorkflowAISchema(BaseModel):
         }
 
     @classmethod
-    def validate_ai_output(cls, workflow_dict: Dict[str, Any]) -> Tuple[bool, str]:
+    def validate_ai_output(cls, workflow_dict: dict[str, Any]) -> tuple[bool, str]:
         """
         Validate AI-generated workflow JSON.
 

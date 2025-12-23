@@ -50,11 +50,11 @@ if TYPE_CHECKING:
 
 
 # Cache for loaded modules and classes
-_loaded_modules: Dict[str, Any] = {}
-_loaded_classes: Dict[str, Type] = {}
+_loaded_modules: dict[str, Any] = {}
+_loaded_classes: dict[str, type] = {}
 
 
-def _lazy_import(name: str) -> Type:
+def _lazy_import(name: str) -> type:
     """
     Lazily import a node class by name.
 
@@ -117,7 +117,7 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module 'casare_rpa.nodes' has no attribute '{name}'")
 
 
-def __dir__() -> List[str]:
+def __dir__() -> list[str]:
     """Return the list of available attributes for tab completion."""
     return list(NODE_REGISTRY.keys()) + [
         "__version__",
@@ -126,7 +126,7 @@ def __dir__() -> List[str]:
     ]
 
 
-def get_all_node_classes() -> Dict[str, Type]:
+def get_all_node_classes() -> dict[str, type]:
     """
     Get all node classes (this will trigger loading all modules).
 
@@ -139,7 +139,7 @@ def get_all_node_classes() -> Dict[str, Type]:
     return result
 
 
-def get_node_class(name: str) -> Type:
+def get_node_class(name: str) -> type:
     """
     Get a node class by class name via the lazy registry.
 
@@ -155,7 +155,7 @@ def get_node_class(name: str) -> Type:
     return _lazy_import(name)
 
 
-def preload_nodes(node_names: List[str] = None) -> None:
+def preload_nodes(node_names: list[str] = None) -> None:
     """
     Preload specific nodes or all nodes.
 

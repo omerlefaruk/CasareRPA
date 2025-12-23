@@ -26,26 +26,25 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import aiohttp
 from loguru import logger
-from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QLabel,
-    QStackedWidget,
-    QFrame,
-    QScrollArea,
     QButtonGroup,
-    QMenu,
-    QWidgetAction,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
+    QPushButton,
+    QScrollArea,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+    QWidgetAction,
 )
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
-
 
 # =============================================================================
 # Constants and API Configuration
@@ -76,7 +75,7 @@ class FolderInfo:
     id: str
     name: str
     path: str  # Full path like "My Drive/Projects/2024"
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
     depth: int = 0
     has_children: bool = False
 
@@ -91,8 +90,8 @@ class FolderNavigatorState:
     """State for the folder navigator widget."""
 
     current_folder_id: str = ROOT_FOLDER_ID
-    current_path: List[Tuple[str, str]] = field(default_factory=list)  # [(id, name), ...]
-    selected_folder_id: Optional[str] = None
+    current_path: list[tuple[str, str]] = field(default_factory=list)  # [(id, name), ...]
+    selected_folder_id: str | None = None
     selected_folder_name: str = ""
     search_query: str = ""
     view_mode: NavigatorMode = NavigatorMode.BROWSE
@@ -130,44 +129,44 @@ class FolderCache:
 
     def __init__(self, ttl_seconds: float = DEFAULT_TTL) -> None:
         self._ttl = ttl_seconds
-        self._children_cache: Dict[str, CacheEntry] = {}
-        self._path_cache: Dict[str, CacheEntry] = {}
-        self._search_cache: Dict[str, CacheEntry] = {}
+        self._children_cache: dict[str, CacheEntry] = {}
+        self._path_cache: dict[str, CacheEntry] = {}
+        self._search_cache: dict[str, CacheEntry] = {}
 
-    def get_children(self, folder_id: str) -> Optional[List[FolderInfo]]:
+    def get_children(self, folder_id: str) -> list[FolderInfo] | None:
         """Get cached children of a folder."""
         entry = self._children_cache.get(folder_id)
         if entry and not entry.is_expired(self._ttl):
             return entry.data
         return None
 
-    def set_children(self, folder_id: str, children: List[FolderInfo]) -> None:
+    def set_children(self, folder_id: str, children: list[FolderInfo]) -> None:
         """Cache folder children."""
         self._children_cache[folder_id] = CacheEntry(data=children)
 
-    def get_folder_path(self, folder_id: str) -> Optional[List[Tuple[str, str]]]:
+    def get_folder_path(self, folder_id: str) -> list[tuple[str, str]] | None:
         """Get cached path to folder."""
         entry = self._path_cache.get(folder_id)
         if entry and not entry.is_expired(self._ttl):
             return entry.data
         return None
 
-    def set_folder_path(self, folder_id: str, path: List[Tuple[str, str]]) -> None:
+    def set_folder_path(self, folder_id: str, path: list[tuple[str, str]]) -> None:
         """Cache folder path."""
         self._path_cache[folder_id] = CacheEntry(data=path)
 
-    def get_search_results(self, query: str) -> Optional[List[FolderInfo]]:
+    def get_search_results(self, query: str) -> list[FolderInfo] | None:
         """Get cached search results."""
         entry = self._search_cache.get(query.lower())
         if entry and not entry.is_expired(self._ttl):
             return entry.data
         return None
 
-    def set_search_results(self, query: str, results: List[FolderInfo]) -> None:
+    def set_search_results(self, query: str, results: list[FolderInfo]) -> None:
         """Cache search results."""
         self._search_cache[query.lower()] = CacheEntry(data=results)
 
-    def invalidate(self, folder_id: Optional[str] = None) -> None:
+    def invalidate(self, folder_id: str | None = None) -> None:
         """Invalidate cache for folder or entire cache."""
         if folder_id:
             self._children_cache.pop(folder_id, None)
@@ -196,7 +195,7 @@ async def fetch_folder_children(
     credential_id: str,
     folder_id: str = ROOT_FOLDER_ID,
     max_results: int = 100,
-) -> List[FolderInfo]:
+) -> list[FolderInfo]:
     """
     Fetch immediate children folders of a parent folder.
 
@@ -270,7 +269,7 @@ async def fetch_folders_recursive(
     max_total: int = 500,
     current_path: str = "My Drive",
     current_depth: int = 0,
-) -> List[FolderInfo]:
+) -> list[FolderInfo]:
     """
     Fetch folders recursively up to max_depth levels.
 
@@ -291,7 +290,7 @@ async def fetch_folders_recursive(
     if not credential_id or current_depth >= max_depth:
         return []
 
-    results: List[FolderInfo] = []
+    results: list[FolderInfo] = []
 
     try:
         children = await fetch_folder_children(credential_id, parent_folder_id)
@@ -328,7 +327,7 @@ async def search_folders(
     credential_id: str,
     query: str,
     max_results: int = 50,
-) -> List[FolderInfo]:
+) -> list[FolderInfo]:
     """
     Search folders by name across entire Drive.
 
@@ -395,7 +394,7 @@ async def search_folders(
 async def validate_folder_id(
     credential_id: str,
     folder_id: str,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """
     Validate that a folder ID exists and get its name.
 
@@ -450,7 +449,7 @@ async def validate_folder_id(
 async def get_folder_path(
     credential_id: str,
     folder_id: str,
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """
     Get the full path to a folder as list of (id, name) tuples.
 
@@ -467,7 +466,7 @@ async def get_folder_path(
     if folder_id == ROOT_FOLDER_ID:
         return [(ROOT_FOLDER_ID, "My Drive")]
 
-    path: List[Tuple[str, str]] = []
+    path: list[tuple[str, str]] = []
     current_id = folder_id
 
     try:
@@ -504,7 +503,7 @@ async def get_folder_path(
         return [(ROOT_FOLDER_ID, "My Drive")]
 
 
-def extract_folder_id_from_url(url_or_id: str) -> Optional[str]:
+def extract_folder_id_from_url(url_or_id: str) -> str | None:
     """
     Extract folder ID from a Google Drive URL or return as-is if already an ID.
 
@@ -773,10 +772,10 @@ class GraphicsSceneDropdownButton(QWidget):
     item_selected = Signal(int)
     currentIndexChanged = Signal(int)  # QComboBox compatibility
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self._items: List[tuple] = []  # [(display_text, user_data), ...]
+        self._items: list[tuple] = []  # [(display_text, user_data), ...]
         self._current_index: int = -1
         self._placeholder: str = "Select..."
 
@@ -1046,9 +1045,9 @@ class PathBreadcrumb(QWidget):
 
     path_clicked = Signal(str, int)  # folder_id, depth
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._path: List[Tuple[str, str]] = []
+        self._path: list[tuple[str, str]] = []
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -1073,7 +1072,7 @@ class PathBreadcrumb(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(scroll)
 
-    def set_path(self, path: List[Tuple[str, str]]) -> None:
+    def set_path(self, path: list[tuple[str, str]]) -> None:
         """
         Update displayed path.
 
@@ -1158,7 +1157,7 @@ class FolderSearchInput(QLineEdit):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         debounce_ms: int = 400,
     ) -> None:
         super().__init__(parent)
@@ -1215,7 +1214,7 @@ class FolderFetchWorker(QObject):
         self,
         fetch_func,
         args: tuple = (),
-        kwargs: Optional[dict] = None,
+        kwargs: dict | None = None,
     ) -> None:
         super().__init__()
         self.fetch_func = fetch_func
@@ -1246,7 +1245,7 @@ class FolderFetchThread(QThread):
         self,
         fetch_func,
         args: tuple = (),
-        kwargs: Optional[dict] = None,
+        kwargs: dict | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -1281,15 +1280,15 @@ class GoogleDriveFolderNavigator(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         show_mode_buttons: bool = True,
     ) -> None:
         super().__init__(parent)
 
-        self._credential_id: Optional[str] = None
+        self._credential_id: str | None = None
         self._state = FolderNavigatorState()
         self._cache = FolderCache()
-        self._fetch_thread: Optional[FolderFetchThread] = None
+        self._fetch_thread: FolderFetchThread | None = None
         self._show_mode_buttons = show_mode_buttons
 
         self._setup_ui()
@@ -1619,7 +1618,7 @@ class GoogleDriveFolderNavigator(QWidget):
         self._fetch_thread.finished.connect(self._on_browse_fetch_complete)
         self._fetch_thread.start()
 
-    def _on_browse_fetch_complete(self, folders: Optional[List[FolderInfo]], error: str) -> None:
+    def _on_browse_fetch_complete(self, folders: list[FolderInfo] | None, error: str) -> None:
         """Handle browse fetch completion."""
         self._set_loading(False)
         self._fetch_thread = None
@@ -1637,7 +1636,7 @@ class GoogleDriveFolderNavigator(QWidget):
 
         self._populate_browse_combo(folders)
 
-    def _populate_browse_combo(self, folders: List[FolderInfo]) -> None:
+    def _populate_browse_combo(self, folders: list[FolderInfo]) -> None:
         """Populate browse dropdown with folders."""
         self._folder_combo.blockSignals(True)
         self._folder_combo.clear()
@@ -1765,7 +1764,7 @@ class GoogleDriveFolderNavigator(QWidget):
     def _on_search_complete(
         self,
         query: str,
-        results: Optional[List[FolderInfo]],
+        results: list[FolderInfo] | None,
         error: str,
     ) -> None:
         """Handle search completion."""
@@ -1785,7 +1784,7 @@ class GoogleDriveFolderNavigator(QWidget):
 
         self._populate_search_results(results)
 
-    def _populate_search_results(self, results: List[FolderInfo]) -> None:
+    def _populate_search_results(self, results: list[FolderInfo]) -> None:
         """Populate search results dropdown."""
         self._search_results_combo.blockSignals(True)
         self._search_results_combo.clear()
@@ -1853,7 +1852,7 @@ class GoogleDriveFolderNavigator(QWidget):
     def _on_validation_complete(
         self,
         folder_id: str,
-        result: Optional[Tuple[bool, str]],
+        result: tuple[bool, str] | None,
         error: str,
     ) -> None:
         """Handle validation completion."""
@@ -1883,7 +1882,7 @@ class GoogleDriveFolderNavigator(QWidget):
     # Selection
     # =========================================================================
 
-    def _select_folder(self, folder_id: str, folder_name: Optional[str] = None) -> None:
+    def _select_folder(self, folder_id: str, folder_name: str | None = None) -> None:
         """Select a folder and emit signal."""
         self._state.selected_folder_id = folder_id
 
@@ -1966,11 +1965,11 @@ class GoogleDriveFolderNavigator(QWidget):
         else:
             self._show_no_credential()
 
-    def get_credential_id(self) -> Optional[str]:
+    def get_credential_id(self) -> str | None:
         """Get the current credential ID."""
         return self._credential_id
 
-    def get_folder_id(self) -> Optional[str]:
+    def get_folder_id(self) -> str | None:
         """Get the selected folder ID."""
         return self._state.selected_folder_id
 
@@ -2013,7 +2012,7 @@ class GoogleDriveFolderNavigator(QWidget):
     def _on_set_folder_complete(
         self,
         folder_id: str,
-        result: Optional[Tuple[bool, str]],
+        result: tuple[bool, str] | None,
         error: str,
     ) -> None:
         """Handle set_folder_id validation completion."""
@@ -2076,7 +2075,7 @@ class GoogleDriveFolderNavigator(QWidget):
     def _on_navigate_to_complete(
         self,
         folder_id: str,
-        path: Optional[List[Tuple[str, str]]],
+        path: list[tuple[str, str]] | None,
         error: str,
     ) -> None:
         """Handle navigate_to path fetch completion."""

@@ -6,10 +6,10 @@ Used across domain entities, nodes, and presentation layer.
 """
 
 from datetime import datetime
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 # Common datetime formats to try when auto-detecting
-DEFAULT_DATETIME_FORMATS: List[str] = [
+DEFAULT_DATETIME_FORMATS: list[str] = [
     "%Y-%m-%d %H:%M:%S",
     "%Y-%m-%dT%H:%M:%S",
     "%Y-%m-%dT%H:%M:%S.%f",
@@ -25,9 +25,9 @@ DEFAULT_DATETIME_FORMATS: List[str] = [
 
 
 def parse_datetime(
-    value: Union[str, datetime, int, float, None],
-    format_string: Optional[str] = None,
-) -> Optional[datetime]:
+    value: str | datetime | int | float | None,
+    format_string: str | None = None,
+) -> datetime | None:
     """Parse a datetime value from various input types.
 
     Handles:
@@ -114,9 +114,9 @@ def parse_datetime(
 
 
 def format_datetime(
-    value: Optional[datetime],
+    value: datetime | None,
     format_string: str = "%Y-%m-%d %H:%M:%S",
-) -> Optional[str]:
+) -> str | None:
     """Format a datetime object to string.
 
     Args:
@@ -131,7 +131,7 @@ def format_datetime(
     return value.strftime(format_string)
 
 
-def to_iso_format(value: Optional[datetime]) -> Optional[str]:
+def to_iso_format(value: datetime | None) -> str | None:
     """Convert datetime to ISO 8601 format string.
 
     Args:

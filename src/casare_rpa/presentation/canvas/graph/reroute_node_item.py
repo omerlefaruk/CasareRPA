@@ -15,22 +15,20 @@ All colors are sourced from the unified theme system (theme.py).
 
 from typing import Optional
 
-from PySide6.QtCore import Qt, QRectF, QPointF, QTimer
+from NodeGraphQt.qgraphics.node_base import NodeItem
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import (
-    QPainter,
-    QPen,
-    QColor,
     QBrush,
+    QColor,
+    QPainter,
     QPainterPath,
+    QPen,
     QRadialGradient,
 )
 from PySide6.QtWidgets import QGraphicsItem
-from NodeGraphQt.qgraphics.node_base import NodeItem
-
 
 # Import unified theme system for all colors
 from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
-
 
 # ============================================================================
 # REROUTE NODE VISUAL CONSTANTS - Delegated to unified theme
@@ -87,11 +85,11 @@ _NODE_CENTER_Y = _NODE_HEIGHT / 2.0
 # COLOR CACHES - Initialized lazily from theme
 # ============================================================================
 
-_REROUTE_FILL_COLOR: Optional[QColor] = None
-_REROUTE_BORDER_COLOR: Optional[QColor] = None
-_REROUTE_SELECTED_COLOR: Optional[QColor] = None
-_REROUTE_HOVER_COLOR: Optional[QColor] = None
-_DEFAULT_TYPE_COLOR: Optional[QColor] = None
+_REROUTE_FILL_COLOR: QColor | None = None
+_REROUTE_BORDER_COLOR: QColor | None = None
+_REROUTE_SELECTED_COLOR: QColor | None = None
+_REROUTE_HOVER_COLOR: QColor | None = None
+_DEFAULT_TYPE_COLOR: QColor | None = None
 
 
 def _get_reroute_fill_color() -> QColor:
@@ -142,7 +140,7 @@ class RerouteNodeItem(NodeItem):
     Connections attach to the visual center of the diamond.
     """
 
-    def __init__(self, name: str = "reroute", parent: Optional[QGraphicsItem] = None):
+    def __init__(self, name: str = "reroute", parent: QGraphicsItem | None = None):
         """
         Initialize reroute node item.
 
@@ -177,7 +175,7 @@ class RerouteNodeItem(NodeItem):
         # Accept hover events
         self.setAcceptHoverEvents(True)
 
-    def post_init(self, viewer: Optional[object] = None, selected: bool = False) -> None:
+    def post_init(self, viewer: object | None = None, selected: bool = False) -> None:
         """
         Post-initialization to center ports.
 
@@ -260,8 +258,8 @@ class RerouteNodeItem(NodeItem):
     def paint(
         self,
         painter: QPainter,
-        option: Optional[object],
-        widget: Optional[object],
+        option: object | None,
+        widget: object | None,
     ) -> None:
         """
         Paint the reroute diamond only.

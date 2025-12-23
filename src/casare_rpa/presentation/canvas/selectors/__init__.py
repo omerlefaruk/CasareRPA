@@ -64,28 +64,25 @@ History:
 import warnings
 
 # =============================================================================
-# Canonical Dialog (PRIMARY API)
+# Deprecated Dialogs (Backward Compatibility Only)
 # =============================================================================
-
-from casare_rpa.presentation.canvas.selectors.unified_selector_dialog import (
-    UnifiedSelectorDialog,
+from casare_rpa.presentation.canvas.selectors.element_selector_dialog import (
+    ElementSelectorDialog as _ElementSelectorDialog,
 )
 
 # =============================================================================
 # Advanced UI Explorer (Still Supported)
 # =============================================================================
-
 from casare_rpa.presentation.canvas.selectors.ui_explorer import (
     UIExplorerDialog,
     UIExplorerToolbar,
 )
 
 # =============================================================================
-# Deprecated Dialogs (Backward Compatibility Only)
+# Canonical Dialog (PRIMARY API)
 # =============================================================================
-
-from casare_rpa.presentation.canvas.selectors.element_selector_dialog import (
-    ElementSelectorDialog as _ElementSelectorDialog,
+from casare_rpa.presentation.canvas.selectors.unified_selector_dialog import (
+    UnifiedSelectorDialog,
 )
 
 
@@ -134,46 +131,44 @@ from casare_rpa.presentation.canvas.selectors.selector_history import (
     get_selector_history,
 )
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
-    ElementSelectorState,
-    StateManager,
     AttributeRow,
-    ValidationStatus,
+    ElementSelectorState,
     PickingMode,
-)
-
-# =============================================================================
-# Widgets
-# =============================================================================
-
-from casare_rpa.presentation.canvas.selectors.widgets.toolbar_widget import (
-    ToolbarWidget,
-    ModeButton,
-)
-from casare_rpa.presentation.canvas.selectors.widgets.element_preview_widget import (
-    ElementPreviewWidget,
-)
-from casare_rpa.presentation.canvas.selectors.widgets.selector_builder_widget import (
-    SelectorBuilderWidget,
-    AttributeRowWidget,
-)
-from casare_rpa.presentation.canvas.selectors.widgets.anchor_widget import (
-    AnchorWidget,
-)
-from casare_rpa.presentation.canvas.selectors.widgets.advanced_options_widget import (
-    AdvancedOptionsWidget,
-)
-from casare_rpa.presentation.canvas.selectors.widgets.picker_toolbar import (
-    PickerToolbar,
+    StateManager,
+    ValidationStatus,
 )
 
 # =============================================================================
 # Data Classes
 # =============================================================================
-
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
+    AnchorData,
     SelectorResult,
     SelectorStrategy,
-    AnchorData,
+)
+from casare_rpa.presentation.canvas.selectors.widgets.advanced_options_widget import (
+    AdvancedOptionsWidget,
+)
+from casare_rpa.presentation.canvas.selectors.widgets.anchor_widget import (
+    AnchorWidget,
+)
+from casare_rpa.presentation.canvas.selectors.widgets.element_preview_widget import (
+    ElementPreviewWidget,
+)
+from casare_rpa.presentation.canvas.selectors.widgets.picker_toolbar import (
+    PickerToolbar,
+)
+from casare_rpa.presentation.canvas.selectors.widgets.selector_builder_widget import (
+    AttributeRowWidget,
+    SelectorBuilderWidget,
+)
+
+# =============================================================================
+# Widgets
+# =============================================================================
+from casare_rpa.presentation.canvas.selectors.widgets.toolbar_widget import (
+    ModeButton,
+    ToolbarWidget,
 )
 
 __all__ = [

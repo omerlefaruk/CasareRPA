@@ -4,20 +4,20 @@ Recording Preview Dialog
 Shows recorded actions and allows editing before generating workflow.
 """
 
+from loguru import logger
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QAbstractItemView,
+    QDialog,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
-    QLabel,
-    QHeaderView,
-    QMessageBox,
-    QAbstractItemView,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog
-from loguru import logger
 
 
 class RecordingPreviewDialog(QDialog):

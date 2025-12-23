@@ -10,7 +10,7 @@ import os
 import socket
 import uuid
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -32,13 +32,13 @@ class RobotIdentity:
     fleet_robot_name: str
     fleet_linked: bool
     fleet_ever_registered: bool
-    fleet_unlinked_reason: Optional[str]
-    fleet_unlinked_at_utc: Optional[str]
+    fleet_unlinked_reason: str | None
+    fleet_unlinked_at_utc: str | None
     updated_at_utc: str
 
     @staticmethod
     def now_utc_iso() -> str:
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()
 
     def to_json_dict(self) -> dict[str, Any]:
         return {
@@ -54,7 +54,7 @@ class RobotIdentity:
         }
 
     @classmethod
-    def from_json_dict(cls, data: dict[str, Any]) -> "RobotIdentity":
+    def from_json_dict(cls, data: dict[str, Any]) -> RobotIdentity:
         return cls(
             worker_robot_id=str(data["worker_robot_id"]),
             worker_robot_name=str(data["worker_robot_name"]),
@@ -77,7 +77,7 @@ class RobotIdentity:
 
 
 class RobotIdentityStore:
-    def __init__(self, path: Optional[Path] = None) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         override = os.getenv("CASARE_ROBOT_IDENTITY_PATH")
         self._path = Path(override) if override else (path or _default_identity_path())
 
@@ -85,7 +85,7 @@ class RobotIdentityStore:
     def path(self) -> Path:
         return self._path
 
-    def load(self) -> Optional[RobotIdentity]:
+    def load(self) -> RobotIdentity | None:
         try:
             if not self._path.exists():
                 return None
@@ -111,9 +111,9 @@ class RobotIdentityStore:
     def resolve(
         self,
         *,
-        worker_robot_id: Optional[str] = None,
-        worker_robot_name: Optional[str] = None,
-        hostname: Optional[str] = None,
+        worker_robot_id: str | None = None,
+        worker_robot_name: str | None = None,
+        hostname: str | None = None,
     ) -> RobotIdentity:
         """
         Load the identity if present, otherwise create it and persist it.

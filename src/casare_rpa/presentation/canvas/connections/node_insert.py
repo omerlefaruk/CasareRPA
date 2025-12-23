@@ -6,15 +6,13 @@ Shows visual feedback (orange highlight) when node overlaps a connection.
 Automatically spaces nodes apart with 150px gaps when needed.
 """
 
-from typing import Optional, Tuple
 import math
-
-from PySide6.QtCore import QObject, Signal, QRectF, QTimer
-from PySide6.QtGui import QPainterPath, QPen, QColor
-from NodeGraphQt import NodeGraph, BaseNode
+from typing import Optional, Tuple
 
 from loguru import logger
-
+from NodeGraphQt import BaseNode, NodeGraph
+from PySide6.QtCore import QObject, QRectF, QTimer, Signal
+from PySide6.QtGui import QColor, QPainterPath, QPen
 
 # Spacing between nodes after insertion
 NODE_GAP = 100
@@ -42,17 +40,17 @@ class NodeInsertManager(QObject):
 
     node_inserted = Signal(object, object, object)  # inserted_node, source_node, target_node
 
-    def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None):
+    def __init__(self, graph: NodeGraph, parent: QObject | None = None):
         """Initialize the node insert manager."""
         super().__init__(parent)
 
         self._graph = graph
         self._active = True
-        self._dragging_node: Optional[BaseNode] = None
+        self._dragging_node: BaseNode | None = None
         self._highlighted_pipe = None
         self._was_dragging = False
         self._original_pen = None  # For restoring PipeItem pen after highlight
-        self._drag_start_pos: Optional[Tuple[float, float]] = None  # Track initial position
+        self._drag_start_pos: tuple[float, float] | None = None  # Track initial position
         self._drag_threshold = 10  # Minimum pixels to move before considering it a drag
 
         # Use a timer for polling during drag (more reliable than event filters)
@@ -106,8 +104,8 @@ class NodeInsertManager(QObject):
 
         try:
             # Check if left mouse button is pressed
-            from PySide6.QtWidgets import QApplication
             from PySide6.QtCore import Qt
+            from PySide6.QtWidgets import QApplication
 
             buttons = QApplication.mouseButtons()
             is_dragging = bool(buttons & Qt.MouseButton.LeftButton)
@@ -233,7 +231,7 @@ class NodeInsertManager(QObject):
                 pass
             self._highlighted_pipe = None
 
-    def _get_node_scene_rect(self, node: BaseNode) -> Optional[QRectF]:
+    def _get_node_scene_rect(self, node: BaseNode) -> QRectF | None:
         """Get the scene bounding rect of a node."""
         try:
             if hasattr(node, "view") and node.view:
@@ -244,7 +242,7 @@ class NodeInsertManager(QObject):
 
     def _find_closest_intersecting_exec_pipe(
         self, node_rect: QRectF
-    ) -> Tuple[Optional[object], float]:
+    ) -> tuple[object | None, float]:
         """
         Find the exec pipe closest to the node center that intersects with it.
 
@@ -563,7 +561,7 @@ class NodeInsertManager(QObject):
 
             logger.error(traceback.format_exc())
 
-    def _find_exec_ports(self, node: BaseNode) -> Tuple[Optional[object], Optional[object]]:
+    def _find_exec_ports(self, node: BaseNode) -> tuple[object | None, object | None]:
         """Find exec_in and exec_out ports on a node."""
         exec_in = None
         exec_out = None

@@ -8,7 +8,7 @@ with shared OAuth 2.0 authentication logic.
 import asyncio
 from abc import abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import aiohttp
@@ -33,7 +33,7 @@ class GoogleCredentials:
     access_token: str
     refresh_token: str
     token_type: str = "Bearer"
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
     scope: str = ""
 
     @property
@@ -42,9 +42,9 @@ class GoogleCredentials:
         if self.expires_at is None:
             return True
         buffer = timedelta(minutes=5)
-        return datetime.now(timezone.utc) >= (self.expires_at - buffer)
+        return datetime.now(UTC) >= (self.expires_at - buffer)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "access_token": self.access_token,
@@ -55,7 +55,7 @@ class GoogleCredentials:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GoogleCredentials":
+    def from_dict(cls, data: dict[str, Any]) -> "GoogleCredentials":
         """Create from dictionary."""
         expires_at = data.get("expires_at")
         if isinstance(expires_at, str):
@@ -96,7 +96,7 @@ class GoogleAPIClient:
         self._credentials = credentials
         self._client_id = client_id
         self._client_secret = client_secret
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
         self._lock = asyncio.Lock()
 
     @property
@@ -157,9 +157,7 @@ class GoogleAPIClient:
 
                     # Calculate expiration time
                     expires_in = token_data.get("expires_in", 3600)
-                    self._credentials.expires_at = datetime.now(timezone.utc) + timedelta(
-                        seconds=expires_in
-                    )
+                    self._credentials.expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
 
                     # Update refresh token if provided
                     if "refresh_token" in token_data:
@@ -189,9 +187,9 @@ class GoogleAPIClient:
     async def get(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """
         Make authenticated GET request.
 
@@ -241,9 +239,9 @@ class GoogleAPIClient:
     async def post(
         self,
         url: str,
-        json_data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+        json_data: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """
         Make authenticated POST request.
 
@@ -320,8 +318,8 @@ class GoogleTriggerBase(BaseTrigger):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._client: Optional[GoogleAPIClient] = None
-        self._poll_task: Optional[asyncio.Task] = None
+        self._client: GoogleAPIClient | None = None
+        self._poll_task: asyncio.Task | None = None
         self._running = False
 
     @abstractmethod
@@ -334,7 +332,7 @@ class GoogleTriggerBase(BaseTrigger):
         """
         pass
 
-    def _get_credential_config(self) -> Dict[str, Any]:
+    def _get_credential_config(self) -> dict[str, Any]:
         """
         Get credential configuration from secrets manager.
 
@@ -402,6 +400,7 @@ class GoogleTriggerBase(BaseTrigger):
         # Try vault credential provider first
         try:
             import asyncio
+
             from casare_rpa.infrastructure.security.credential_provider import (
                 VaultCredentialProvider,
             )
@@ -579,7 +578,7 @@ class GoogleTriggerBase(BaseTrigger):
         """
         pass
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate Google trigger configuration."""
         config = self.config.config
 
@@ -609,7 +608,7 @@ class GoogleTriggerBase(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get base JSON schema for Google trigger configuration."""
         return {
             "type": "object",

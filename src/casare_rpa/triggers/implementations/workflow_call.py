@@ -5,7 +5,7 @@ Trigger that allows a workflow to be called from another workflow.
 Enables sub-workflow and cross-workflow invocation patterns.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -74,8 +74,8 @@ class WorkflowCallTrigger(BaseTrigger):
         self,
         caller_scenario_id: str,
         caller_workflow_id: str,
-        input_params: Optional[Dict[str, Any]] = None,
-        call_id: Optional[str] = None,
+        input_params: dict[str, Any] | None = None,
+        call_id: str | None = None,
     ) -> bool:
         """
         Invoke this trigger from another workflow.
@@ -117,8 +117,8 @@ class WorkflowCallTrigger(BaseTrigger):
             "caller_scenario_id": caller_scenario_id,
             "caller_workflow_id": caller_workflow_id,
             "input_params": input_params or {},
-            "call_id": call_id or f"call_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "call_id": call_id or f"call_{datetime.now(UTC).strftime('%Y%m%d%H%M%S%f')}",
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Also add input params directly to payload for easy variable access
@@ -133,7 +133,7 @@ class WorkflowCallTrigger(BaseTrigger):
 
         return await self.emit(payload, metadata)
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate workflow call trigger configuration."""
         config = self.config.config
 
@@ -153,7 +153,7 @@ class WorkflowCallTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for workflow call configuration."""
         return {
             "type": "object",

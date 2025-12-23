@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
-from casare_rpa.domain.value_objects.types import NodeId
 from casare_rpa.domain.entities.node_connection import NodeConnection
+from casare_rpa.domain.value_objects.types import NodeId
 
 
 class SubgraphCalculator:
@@ -29,8 +29,8 @@ class SubgraphCalculator:
 
     def __init__(
         self,
-        nodes: Dict[NodeId, Any],
-        connections: List[NodeConnection],
+        nodes: dict[NodeId, Any],
+        connections: list[NodeConnection],
     ) -> None:
         """
         Initialize the subgraph calculator.
@@ -43,8 +43,8 @@ class SubgraphCalculator:
         self._connections = connections
 
         # Build adjacency lists for graph traversal
-        self._forward_edges: Dict[NodeId, Set[NodeId]] = {}
-        self._backward_edges: Dict[NodeId, Set[NodeId]] = {}
+        self._forward_edges: dict[NodeId, set[NodeId]] = {}
+        self._backward_edges: dict[NodeId, set[NodeId]] = {}
         self._build_adjacency_lists()
 
     def _build_adjacency_lists(self) -> None:
@@ -69,7 +69,7 @@ class SubgraphCalculator:
             f"{sum(len(edges) for edges in self._forward_edges.values())} edges"
         )
 
-    def get_predecessors(self, node_id: NodeId) -> Set[NodeId]:
+    def get_predecessors(self, node_id: NodeId) -> set[NodeId]:
         """
         Get all nodes that can reach the given node (backwards BFS).
 
@@ -86,7 +86,7 @@ class SubgraphCalculator:
             logger.warning(f"Node {node_id} not found in graph")
             return set()
 
-        visited: Set[NodeId] = set()
+        visited: set[NodeId] = set()
         queue = deque([node_id])
 
         while queue:
@@ -102,7 +102,7 @@ class SubgraphCalculator:
 
         return visited
 
-    def get_successors(self, node_id: NodeId) -> Set[NodeId]:
+    def get_successors(self, node_id: NodeId) -> set[NodeId]:
         """
         Get all nodes reachable from the given node (forward BFS).
 
@@ -119,7 +119,7 @@ class SubgraphCalculator:
             logger.warning(f"Node {node_id} not found in graph")
             return set()
 
-        visited: Set[NodeId] = set()
+        visited: set[NodeId] = set()
         queue = deque([node_id])
 
         while queue:
@@ -139,7 +139,7 @@ class SubgraphCalculator:
         self,
         start_node_id: NodeId,
         target_node_id: NodeId,
-    ) -> Set[NodeId]:
+    ) -> set[NodeId]:
         """
         Calculate the subgraph of nodes required to reach target from start.
 
@@ -206,7 +206,7 @@ class SubgraphCalculator:
         self,
         start_node_id: NodeId,
         target_node_id: NodeId,
-    ) -> Optional[List[NodeId]]:
+    ) -> list[NodeId] | None:
         """
         Get a valid topological execution order for the subgraph.
 
@@ -225,7 +225,7 @@ class SubgraphCalculator:
             return None
 
         # Kahn's algorithm for topological sort within subgraph
-        in_degree: Dict[NodeId, int] = {node: 0 for node in subgraph}
+        in_degree: dict[NodeId, int] = {node: 0 for node in subgraph}
 
         # Calculate in-degrees for subgraph nodes only
         for node_id in subgraph:
@@ -235,7 +235,7 @@ class SubgraphCalculator:
 
         # Start with nodes that have no dependencies in the subgraph
         queue = deque([node for node, degree in in_degree.items() if degree == 0])
-        result: List[NodeId] = []
+        result: list[NodeId] = []
 
         while queue:
             current = queue.popleft()

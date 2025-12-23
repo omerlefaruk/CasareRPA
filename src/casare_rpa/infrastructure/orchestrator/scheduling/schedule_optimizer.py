@@ -5,11 +5,11 @@ Contains rate limiting and execution optimization utilities.
 Implements sliding window rate limiting for schedule executions.
 """
 
+import threading
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Dict, List, Optional
-import threading
 
 from loguru import logger
 
@@ -48,7 +48,7 @@ class SlidingWindowRateLimiter:
         """
         self._max_executions = max_executions
         self._window = timedelta(seconds=window_seconds)
-        self._executions: Dict[str, List[datetime]] = defaultdict(list)
+        self._executions: dict[str, list[datetime]] = defaultdict(list)
         self._lock = threading.Lock()
 
     @property
@@ -83,7 +83,7 @@ class SlidingWindowRateLimiter:
             schedule_id: Schedule ID
         """
         with self._lock:
-            self._executions[schedule_id].append(datetime.now(timezone.utc))
+            self._executions[schedule_id].append(datetime.now(UTC))
 
     def get_wait_time(self, schedule_id: str) -> int:
         """
@@ -104,7 +104,7 @@ class SlidingWindowRateLimiter:
 
             oldest = min(executions)
             wait_until = oldest + self._window
-            wait_seconds = (wait_until - datetime.now(timezone.utc)).total_seconds()
+            wait_seconds = (wait_until - datetime.now(UTC)).total_seconds()
             return max(0, int(wait_seconds))
 
     def get_remaining_capacity(self, schedule_id: str) -> int:
@@ -135,7 +135,7 @@ class SlidingWindowRateLimiter:
             self._cleanup_old_entries(schedule_id)
             return len(self._executions[schedule_id])
 
-    def reset(self, schedule_id: Optional[str] = None) -> None:
+    def reset(self, schedule_id: str | None = None) -> None:
         """
         Reset rate limiter for a schedule or all schedules.
 
@@ -150,7 +150,7 @@ class SlidingWindowRateLimiter:
 
     def _cleanup_old_entries(self, schedule_id: str) -> None:
         """Remove expired entries from tracking."""
-        cutoff = datetime.now(timezone.utc) - self._window
+        cutoff = datetime.now(UTC) - self._window
         self._executions[schedule_id] = [ts for ts in self._executions[schedule_id] if ts > cutoff]
 
 
@@ -178,8 +178,8 @@ class ExecutionOptimizer:
         """
         self._coalesce_window = timedelta(milliseconds=coalesce_window_ms)
         self._max_concurrent = max_concurrent_executions
-        self._pending_executions: Dict[str, datetime] = {}
-        self._active_executions: Dict[str, datetime] = {}
+        self._pending_executions: dict[str, datetime] = {}
+        self._active_executions: dict[str, datetime] = {}
         self._lock = threading.Lock()
 
     @property
@@ -208,7 +208,7 @@ class ExecutionOptimizer:
                 return False
 
             pending_time = self._pending_executions[schedule_id]
-            elapsed = datetime.now(timezone.utc) - pending_time
+            elapsed = datetime.now(UTC) - pending_time
 
             if elapsed < self._coalesce_window:
                 logger.debug(
@@ -227,7 +227,7 @@ class ExecutionOptimizer:
             schedule_id: Schedule ID
         """
         with self._lock:
-            self._pending_executions[schedule_id] = datetime.now(timezone.utc)
+            self._pending_executions[schedule_id] = datetime.now(UTC)
 
     def mark_started(self, schedule_id: str) -> bool:
         """
@@ -243,7 +243,7 @@ class ExecutionOptimizer:
             if len(self._active_executions) >= self._max_concurrent:
                 return False
 
-            self._active_executions[schedule_id] = datetime.now(timezone.utc)
+            self._active_executions[schedule_id] = datetime.now(UTC)
             self._pending_executions.pop(schedule_id, None)
             return True
 
@@ -257,7 +257,7 @@ class ExecutionOptimizer:
         with self._lock:
             self._active_executions.pop(schedule_id, None)
 
-    def get_execution_duration(self, schedule_id: str) -> Optional[timedelta]:
+    def get_execution_duration(self, schedule_id: str) -> timedelta | None:
         """
         Get duration of current execution.
 
@@ -270,10 +270,10 @@ class ExecutionOptimizer:
         with self._lock:
             start_time = self._active_executions.get(schedule_id)
             if start_time:
-                return datetime.now(timezone.utc) - start_time
+                return datetime.now(UTC) - start_time
             return None
 
-    def get_active_executions(self) -> List[Dict[str, datetime]]:
+    def get_active_executions(self) -> list[dict[str, datetime]]:
         """Get list of active executions with start times."""
         with self._lock:
             return [
@@ -291,7 +291,7 @@ class PriorityQueue:
 
     def __init__(self):
         """Initialize priority queue."""
-        self._queues: Dict[int, List[str]] = defaultdict(list)
+        self._queues: dict[int, list[str]] = defaultdict(list)
         self._lock = threading.Lock()
 
     def enqueue(self, schedule_id: str, priority: int = 1) -> None:
@@ -306,7 +306,7 @@ class PriorityQueue:
             if schedule_id not in self._queues[priority]:
                 self._queues[priority].append(schedule_id)
 
-    def dequeue(self) -> Optional[str]:
+    def dequeue(self) -> str | None:
         """
         Get next schedule to execute by priority.
 
@@ -320,7 +320,7 @@ class PriorityQueue:
                     return self._queues[priority].pop(0)
             return None
 
-    def peek(self) -> Optional[str]:
+    def peek(self) -> str | None:
         """
         Peek at next schedule without removing.
 
@@ -355,7 +355,7 @@ class PriorityQueue:
         with self._lock:
             return sum(len(q) for q in self._queues.values())
 
-    def size_by_priority(self) -> Dict[int, int]:
+    def size_by_priority(self) -> dict[int, int]:
         """Get queue sizes by priority level."""
         with self._lock:
             return {p: len(q) for p, q in self._queues.items() if q}

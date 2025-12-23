@@ -8,14 +8,13 @@ Provides nodes for interacting with Google Sheets API:
 - Formatting and batch operations
 """
 
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
 from typing import Any, Dict
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -1722,7 +1721,7 @@ class SheetsFormatCellsNode(BaseNode):
 
             service = await _get_sheets_service(context, credential_name)
 
-            cell_format: Dict[str, Any] = {
+            cell_format: dict[str, Any] = {
                 "textFormat": {"bold": bold, "italic": italic, "fontSize": font_size}
             }
 

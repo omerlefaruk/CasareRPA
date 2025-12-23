@@ -7,24 +7,24 @@ Nodes for messaging platform integrations:
 """
 
 from casare_rpa.nodes.messaging.telegram import (
-    TelegramSendMessageNode,
-    TelegramSendPhotoNode,
+    TelegramAnswerCallbackNode,
+    TelegramDeleteMessageNode,
+    TelegramEditMessageNode,
+    TelegramGetUpdatesNode,
     TelegramSendDocumentNode,
     TelegramSendLocationNode,
-    TelegramEditMessageNode,
-    TelegramDeleteMessageNode,
     TelegramSendMediaGroupNode,
-    TelegramAnswerCallbackNode,
-    TelegramGetUpdatesNode,
+    TelegramSendMessageNode,
+    TelegramSendPhotoNode,
 )
 from casare_rpa.nodes.messaging.whatsapp import (
+    WhatsAppSendDocumentNode,
+    WhatsAppSendImageNode,
+    WhatsAppSendInteractiveNode,
+    WhatsAppSendLocationNode,
     WhatsAppSendMessageNode,
     WhatsAppSendTemplateNode,
-    WhatsAppSendImageNode,
-    WhatsAppSendDocumentNode,
     WhatsAppSendVideoNode,
-    WhatsAppSendLocationNode,
-    WhatsAppSendInteractiveNode,
 )
 
 __all__ = [

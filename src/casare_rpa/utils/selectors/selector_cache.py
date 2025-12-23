@@ -10,6 +10,7 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
+
 from loguru import logger
 
 
@@ -30,7 +31,7 @@ class CachedSelectorResult:
         """Check if cache entry has expired."""
         return (time.time() - self.cached_at) > ttl_seconds
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "count": self.count,
@@ -95,7 +96,7 @@ class SelectorCache:
 
     def get(
         self, selector_value: str, selector_type: str, page_url: str
-    ) -> Optional[CachedSelectorResult]:
+    ) -> CachedSelectorResult | None:
         """
         Get a cached selector validation result.
 
@@ -172,7 +173,7 @@ class SelectorCache:
 
         logger.debug(f"Cached selector: {selector_type}:{selector_value[:30]}...")
 
-    def invalidate(self, page_url: Optional[str] = None) -> int:
+    def invalidate(self, page_url: str | None = None) -> int:
         """
         Invalidate cache entries.
 
@@ -216,7 +217,7 @@ class SelectorCache:
 
         return len(keys_to_remove)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -258,7 +259,7 @@ class SelectorCache:
 
 
 # Global cache instance
-_global_cache: Optional[SelectorCache] = None
+_global_cache: SelectorCache | None = None
 
 
 def get_selector_cache() -> SelectorCache:

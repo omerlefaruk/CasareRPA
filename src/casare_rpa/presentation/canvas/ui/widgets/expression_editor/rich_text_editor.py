@@ -11,6 +11,7 @@ Provides a general-purpose text editor with:
 import re
 from typing import Any, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import (
     QColor,
@@ -21,12 +22,10 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
@@ -48,7 +47,7 @@ class ExpressionHighlighter(QSyntaxHighlighter):
 
     COLOR_VARIABLE = "#4EC9B0"  # Teal (VSCode Dark+ built-in color)
 
-    def __init__(self, document: Optional[QTextDocument] = None) -> None:
+    def __init__(self, document: QTextDocument | None = None) -> None:
         """
         Initialize the expression highlighter.
 
@@ -103,7 +102,7 @@ class RichTextEditor(BaseExpressionEditor):
     VALIDATION_WARNING = "warning"
     VALIDATION_ERROR = "error"
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the rich text editor.
 
@@ -113,10 +112,10 @@ class RichTextEditor(BaseExpressionEditor):
         super().__init__(parent)
         self._editor_type = EditorType.RICH_TEXT
 
-        self._current_node_id: Optional[str] = None
-        self._graph: Optional[Any] = None
+        self._current_node_id: str | None = None
+        self._graph: Any | None = None
         self._validation_status: str = self.VALIDATION_VALID
-        self._autocomplete: Optional[VariableAutocomplete] = None
+        self._autocomplete: VariableAutocomplete | None = None
         self._autocomplete_trigger_pos: int = -1
 
         self._setup_ui()
@@ -234,8 +233,8 @@ class RichTextEditor(BaseExpressionEditor):
 
     def set_node_context(
         self,
-        node_id: Optional[str],
-        graph: Optional[Any],
+        node_id: str | None,
+        graph: Any | None,
     ) -> None:
         """
         Set the current node context for upstream variable detection.

@@ -16,12 +16,12 @@ import time
 import uuid
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from loguru import logger
 import orjson
+from loguru import logger
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext
@@ -63,27 +63,27 @@ class ResourceLease:
     resource: Any
     job_id: str
     lease_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    leased_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    leased_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     max_lease_duration: timedelta = field(default_factory=lambda: timedelta(minutes=30))
-    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_expired(self) -> bool:
         """Check if lease has exceeded TTL."""
-        return datetime.now(timezone.utc) > self.leased_at + self.max_lease_duration
+        return datetime.now(UTC) > self.leased_at + self.max_lease_duration
 
     def time_remaining(self) -> timedelta:
         """Get remaining time on the lease."""
         expiry = self.leased_at + self.max_lease_duration
-        remaining = expiry - datetime.now(timezone.utc)
+        remaining = expiry - datetime.now(UTC)
         return remaining if remaining.total_seconds() > 0 else timedelta(0)
 
     def touch(self) -> None:
         """Update last activity timestamp."""
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
 
     def idle_time(self) -> timedelta:
         """Get time since last activity."""
-        return datetime.now(timezone.utc) - self.last_activity
+        return datetime.now(UTC) - self.last_activity
 
 
 @dataclass
@@ -100,12 +100,12 @@ class JobResources:
     """
 
     job_id: str
-    leases: List[ResourceLease] = field(default_factory=list)
-    browser_context: Optional["BrowserContext"] = None
-    db_connection: Optional[Any] = None
-    http_session: Optional[Any] = None
+    leases: list[ResourceLease] = field(default_factory=list)
+    browser_context: BrowserContext | None = None
+    db_connection: Any | None = None
+    http_session: Any | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging."""
         return {
             "job_id": self.job_id,
@@ -115,7 +115,7 @@ class JobResources:
             "has_http": self.http_session is not None,
         }
 
-    def get_lease(self, resource_type: ResourceType) -> Optional[ResourceLease]:
+    def get_lease(self, resource_type: ResourceType) -> ResourceLease | None:
         """Get first lease of a given type."""
         for lease in self.leases:
             if lease.resource_type == resource_type:
@@ -140,7 +140,7 @@ class PoolStatistics:
     evictions: int = 0
     degradations: int = 0
 
-    def to_dict(self) -> Dict[str, int]:
+    def to_dict(self) -> dict[str, int]:
         """Convert to dictionary."""
         return {
             "resources_created": self.resources_created,
@@ -185,7 +185,7 @@ class LRUResourceCache(Generic[T]):
         """Maximum cache size."""
         return self._max_size
 
-    async def get(self, key: str) -> Optional[T]:
+    async def get(self, key: str) -> T | None:
         """
         Get resource from cache, moving it to end (most recently used).
 
@@ -201,7 +201,7 @@ class LRUResourceCache(Generic[T]):
                 return self._cache[key]
             return None
 
-    async def put(self, key: str, resource: T) -> Optional[T]:
+    async def put(self, key: str, resource: T) -> T | None:
         """
         Add resource to cache, evicting LRU item if at capacity.
 
@@ -213,7 +213,7 @@ class LRUResourceCache(Generic[T]):
             Evicted resource if eviction occurred, None otherwise
         """
         async with self._lock:
-            evicted: Optional[T] = None
+            evicted: T | None = None
 
             if key in self._cache:
                 self._cache.move_to_end(key)
@@ -225,7 +225,7 @@ class LRUResourceCache(Generic[T]):
 
             return evicted
 
-    async def remove(self, key: str) -> Optional[T]:
+    async def remove(self, key: str) -> T | None:
         """
         Remove resource from cache.
 
@@ -238,7 +238,7 @@ class LRUResourceCache(Generic[T]):
         async with self._lock:
             return self._cache.pop(key, None)
 
-    async def peek_lru(self) -> Optional[tuple[str, T]]:
+    async def peek_lru(self) -> tuple[str, T] | None:
         """
         Peek at the least recently used item without removing it.
 
@@ -251,7 +251,7 @@ class LRUResourceCache(Generic[T]):
             key = next(iter(self._cache))
             return (key, self._cache[key])
 
-    async def evict_lru(self) -> Optional[tuple[str, T]]:
+    async def evict_lru(self) -> tuple[str, T] | None:
         """
         Evict and return the least recently used item.
 
@@ -263,7 +263,7 @@ class LRUResourceCache(Generic[T]):
                 return None
             return self._cache.popitem(last=False)
 
-    async def clear(self) -> List[T]:
+    async def clear(self) -> list[T]:
         """
         Clear all resources from cache.
 
@@ -275,7 +275,7 @@ class LRUResourceCache(Generic[T]):
             self._cache.clear()
             return resources
 
-    async def keys(self) -> List[str]:
+    async def keys(self) -> list[str]:
         """Get all cache keys."""
         async with self._lock:
             return list(self._cache.keys())
@@ -298,9 +298,9 @@ class BrowserPool:
         """
         self.max_size = max_size
         self._headless = headless
-        self._browser: Optional["Browser"] = None
-        self._available_contexts: LRUResourceCache["BrowserContext"] = LRUResourceCache(max_size)
-        self._in_use_contexts: Dict[str, "BrowserContext"] = {}  # job_id -> context
+        self._browser: Browser | None = None
+        self._available_contexts: LRUResourceCache[BrowserContext] = LRUResourceCache(max_size)
+        self._in_use_contexts: dict[str, BrowserContext] = {}  # job_id -> context
         self._lock = asyncio.Lock()
         self._started = False
         self._stats = PoolStatistics()
@@ -364,7 +364,7 @@ class BrowserPool:
             self._started = False
             logger.info("Browser pool stopped")
 
-    async def acquire(self, job_id: str, timeout: float = 30.0) -> Optional["BrowserContext"]:
+    async def acquire(self, job_id: str, timeout: float = 30.0) -> BrowserContext | None:
         """
         Acquire a browser context for a job.
 
@@ -468,7 +468,7 @@ class BrowserPool:
                     pass
                 return True
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         return {
             "started": self._started,
@@ -495,8 +495,8 @@ class DatabasePool:
             max_size: Maximum number of connections
         """
         self.max_size = max_size
-        self._pool: Optional[Any] = None
-        self._in_use: Dict[str, Any] = {}  # job_id -> connection
+        self._pool: Any | None = None
+        self._in_use: dict[str, Any] = {}  # job_id -> connection
         self._lock = asyncio.Lock()
         self._started = False
         self._stats = PoolStatistics()
@@ -555,7 +555,7 @@ class DatabasePool:
             self._started = False
             logger.info("Database pool stopped")
 
-    async def acquire(self, job_id: str, timeout: float = 30.0) -> Optional[Any]:
+    async def acquire(self, job_id: str, timeout: float = 30.0) -> Any | None:
         """
         Acquire a database connection for a job.
 
@@ -609,7 +609,7 @@ class DatabasePool:
                 logger.warning(f"Error releasing database connection: {e}")
                 return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         pool_stats = {}
         if self._pool:
@@ -647,7 +647,7 @@ class HTTPPool:
         )
 
         self.max_size = max_size
-        self._sessions: Dict[str, UnifiedHttpClient] = {}  # job_id -> client
+        self._sessions: dict[str, UnifiedHttpClient] = {}  # job_id -> client
         self._available_sessions: LRUResourceCache[UnifiedHttpClient] = LRUResourceCache(max_size)
         self._lock = asyncio.Lock()
         self._started = False
@@ -686,7 +686,7 @@ class HTTPPool:
             self._started = False
             logger.info("HTTP pool stopped")
 
-    async def acquire(self, job_id: str, timeout: float = 30.0) -> Optional[Any]:
+    async def acquire(self, job_id: str, timeout: float = 30.0) -> Any | None:
         """
         Acquire an HTTP client for a job.
 
@@ -780,7 +780,7 @@ class HTTPPool:
             logger.debug(f"Released HTTP client from job {job_id[:8]}")
             return True
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         return {
             "started": self._started,
@@ -823,8 +823,8 @@ class UnifiedResourceManager:
         max_db_connections_per_job: int = 3,
         max_http_sessions_per_job: int = 5,
         lease_ttl_minutes: int = 30,
-        postgres_url: Optional[str] = None,
-        quota: Optional[ResourceQuota] = None,
+        postgres_url: str | None = None,
+        quota: ResourceQuota | None = None,
         cleanup_interval_seconds: float = 60.0,
     ) -> None:
         """
@@ -864,19 +864,19 @@ class UnifiedResourceManager:
         self.cleanup_interval = cleanup_interval_seconds
 
         # Active leases (job_id -> List[ResourceLease])
-        self.active_leases: Dict[str, List[ResourceLease]] = {}
+        self.active_leases: dict[str, list[ResourceLease]] = {}
         self._leases_lock = asyncio.Lock()
 
         # Connection strings
         self._postgres_url = postgres_url
 
         # Cleanup task
-        self._cleanup_task: Optional[asyncio.Task[None]] = None
+        self._cleanup_task: asyncio.Task[None] | None = None
         self._running = False
         self._shutdown_event = asyncio.Event()
 
         # Workflow analysis cache
-        self._workflow_capabilities: Dict[str, Dict[str, bool]] = {}
+        self._workflow_capabilities: dict[str, dict[str, bool]] = {}
 
         # Global statistics
         self._stats = PoolStatistics()
@@ -951,7 +951,7 @@ class UnifiedResourceManager:
         limit = limits.get(resource_type, 0)
         return count < limit
 
-    def analyze_workflow_needs(self, workflow_json: Union[str, Dict]) -> Dict[str, bool]:
+    def analyze_workflow_needs(self, workflow_json: str | dict) -> dict[str, bool]:
         """
         Analyze workflow to determine required resources.
 
@@ -1021,8 +1021,8 @@ class UnifiedResourceManager:
     async def acquire_resources_for_job(
         self,
         job_id: str,
-        workflow_json: Union[str, Dict],
-        lease_duration: Optional[timedelta] = None,
+        workflow_json: str | dict,
+        lease_duration: timedelta | None = None,
     ) -> JobResources:
         """
         Acquire pooled resources for a job.
@@ -1041,7 +1041,7 @@ class UnifiedResourceManager:
         Raises:
             ValueError: If job exceeds quota for any resource type
         """
-        leases: List[ResourceLease] = []
+        leases: list[ResourceLease] = []
         resources = JobResources(job_id=job_id)
         duration = lease_duration or self.lease_ttl
 
@@ -1232,14 +1232,14 @@ class UnifiedResourceManager:
                     timeout=self.cleanup_interval,
                 )
                 break  # Shutdown requested
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass  # Continue cleanup loop
 
         logger.info("Lease cleanup background task stopped")
 
     async def _run_cleanup_cycle(self) -> None:
         """Run a single cleanup cycle for expired leases."""
-        expired_leases: List[ResourceLease] = []
+        expired_leases: list[ResourceLease] = []
 
         async with self._leases_lock:
             for job_id, leases in list(self.active_leases.items()):
@@ -1271,7 +1271,7 @@ class UnifiedResourceManager:
 
             logger.info(f"Cleanup cycle released {len(expired_leases)} expired leases")
 
-    def get_job_leases(self, job_id: str) -> List[ResourceLease]:
+    def get_job_leases(self, job_id: str) -> list[ResourceLease]:
         """
         Get all active leases for a job.
 
@@ -1283,7 +1283,7 @@ class UnifiedResourceManager:
         """
         return self.active_leases.get(job_id, []).copy()
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get comprehensive resource statistics."""
         total_leases = sum(len(leases) for leases in self.active_leases.values())
 
@@ -1302,7 +1302,7 @@ class UnifiedResourceManager:
             },
         }
 
-    async def __aenter__(self) -> "UnifiedResourceManager":
+    async def __aenter__(self) -> UnifiedResourceManager:
         """Async context manager entry."""
         await self.start()
         return self

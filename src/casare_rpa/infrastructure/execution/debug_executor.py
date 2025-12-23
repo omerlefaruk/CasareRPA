@@ -13,7 +13,8 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+
 from loguru import logger
 
 from casare_rpa.domain.value_objects.types import NodeId, NodeStatus
@@ -67,14 +68,14 @@ class NodeExecutionRecord:
     node_id: str
     node_type: str
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     duration_ms: float = 0.0
     status: NodeStatus = NodeStatus.IDLE
-    input_values: Dict[str, Any] = field(default_factory=dict)
-    output_values: Dict[str, Any] = field(default_factory=dict)
-    variables_before: Dict[str, Any] = field(default_factory=dict)
-    variables_after: Dict[str, Any] = field(default_factory=dict)
-    error_message: Optional[str] = None
+    input_values: dict[str, Any] = field(default_factory=dict)
+    output_values: dict[str, Any] = field(default_factory=dict)
+    variables_before: dict[str, Any] = field(default_factory=dict)
+    variables_after: dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
 
 
 @dataclass
@@ -96,9 +97,9 @@ class DebugSession:
     session_id: str
     workflow_name: str
     start_time: datetime = field(default_factory=datetime.now)
-    end_time: Optional[datetime] = None
-    execution_records: List[NodeExecutionRecord] = field(default_factory=list)
-    breakpoints_hit: Set[str] = field(default_factory=set)
+    end_time: datetime | None = None
+    execution_records: list[NodeExecutionRecord] = field(default_factory=list)
+    breakpoints_hit: set[str] = field(default_factory=set)
     step_count: int = 0
     state: DebugState = DebugState.IDLE
 
@@ -152,16 +153,16 @@ class DebugExecutor:
         self.node_timeout = node_timeout
         self.continue_on_error = continue_on_error
 
-        self._session: Optional[DebugSession] = None
+        self._session: DebugSession | None = None
         self._state = DebugState.IDLE
         self._stop_requested = False
         self._step_mode = StepMode.NONE
         self._step_depth = 0
         self._current_depth = 0
 
-        self._executed_nodes: Set[NodeId] = set()
-        self._current_node_id: Optional[NodeId] = None
-        self._current_record: Optional[NodeExecutionRecord] = None
+        self._executed_nodes: set[NodeId] = set()
+        self._current_node_id: NodeId | None = None
+        self._current_record: NodeExecutionRecord | None = None
 
         self._pause_event = asyncio.Event()
         self._pause_event.set()
@@ -174,7 +175,7 @@ class DebugExecutor:
         return self._state
 
     @property
-    def session(self) -> Optional[DebugSession]:
+    def session(self) -> DebugSession | None:
         """Get current debug session."""
         return self._session
 
@@ -228,7 +229,7 @@ class DebugExecutor:
             logger.exception(f"Debug execution failed: {e}")
             return False
 
-    def _find_start_node(self) -> Optional[NodeId]:
+    def _find_start_node(self) -> NodeId | None:
         """Find the StartNode in the workflow."""
         for node_id, node in self.workflow.nodes.items():
             if node.__class__.__name__ == "StartNode":
@@ -247,7 +248,7 @@ class DebugExecutor:
         )
 
         orchestrator = ExecutionOrchestrator(self.workflow)
-        nodes_to_execute: List[NodeId] = [start_node_id]
+        nodes_to_execute: list[NodeId] = [start_node_id]
 
         while nodes_to_execute and not self._stop_requested:
             current_node_id = nodes_to_execute.pop(0)
@@ -290,9 +291,7 @@ class DebugExecutor:
             next_node_ids = orchestrator.get_next_nodes(current_node_id, result)
             nodes_to_execute.extend(next_node_ids)
 
-    async def _execute_node(
-        self, node: Any, node_id: NodeId
-    ) -> tuple[bool, Optional[Dict[str, Any]]]:
+    async def _execute_node(self, node: Any, node_id: NodeId) -> tuple[bool, dict[str, Any] | None]:
         """
         Execute a single node with debug tracking.
 
@@ -372,7 +371,7 @@ class DebugExecutor:
                 self.debug_controller.pop_call_stack()
                 return False, result
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._current_record.status = NodeStatus.ERROR
             self._current_record.error_message = f"Timeout after {self.node_timeout}s"
             self._current_record.end_time = datetime.now()
@@ -444,7 +443,7 @@ class DebugExecutor:
         self._pause_event.set()
         logger.info("Debug execution stop requested")
 
-    def get_execution_records(self) -> List[NodeExecutionRecord]:
+    def get_execution_records(self) -> list[NodeExecutionRecord]:
         """
         Get all execution records from current session.
 
@@ -455,7 +454,7 @@ class DebugExecutor:
             return list(self._session.execution_records)
         return []
 
-    def get_current_record(self) -> Optional[NodeExecutionRecord]:
+    def get_current_record(self) -> NodeExecutionRecord | None:
         """
         Get the current node's execution record.
 
@@ -464,7 +463,7 @@ class DebugExecutor:
         """
         return self._current_record
 
-    def get_variable_history(self, variable_name: str) -> List[tuple[str, Any]]:
+    def get_variable_history(self, variable_name: str) -> list[tuple[str, Any]]:
         """
         Get history of a variable's values across execution.
 
@@ -484,7 +483,7 @@ class DebugExecutor:
 
         return history
 
-    def get_node_execution_info(self, node_id: str) -> Optional[NodeExecutionRecord]:
+    def get_node_execution_info(self, node_id: str) -> NodeExecutionRecord | None:
         """
         Get execution record for a specific node.
 
@@ -503,7 +502,7 @@ class DebugExecutor:
 
         return None
 
-    def get_execution_summary(self) -> Dict[str, Any]:
+    def get_execution_summary(self) -> dict[str, Any]:
         """
         Get summary of the debug session.
 

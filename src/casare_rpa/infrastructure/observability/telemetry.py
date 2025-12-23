@@ -20,19 +20,17 @@ import os
 import socket
 import threading
 import time
+from collections.abc import Awaitable, Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     Any,
-    Awaitable,
-    Callable,
     Dict,
-    Generator,
     List,
     Optional,
-    TypeVar,
     ParamSpec,
+    TypeVar,
     cast,
 )
 
@@ -40,7 +38,45 @@ from loguru import logger
 
 # OpenTelemetry imports - API
 try:
-    from opentelemetry import trace, metrics
+    from opentelemetry import metrics, trace
+    from opentelemetry.context import Context
+    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
+        OTLPLogExporter as OTLPLogExporterGRPC,
+    )
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
+        OTLPMetricExporter as OTLPMetricExporterGRPC,
+    )
+
+    # OTLP exporters
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+        OTLPSpanExporter as OTLPSpanExporterGRPC,
+    )
+    from opentelemetry.exporter.otlp.proto.http._log_exporter import (
+        OTLPLogExporter as OTLPLogExporterHTTP,
+    )
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
+        OTLPMetricExporter as OTLPMetricExporterHTTP,
+    )
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+        OTLPSpanExporter as OTLPSpanExporterHTTP,
+    )
+    from opentelemetry.sdk._logs import LoggerProvider
+    from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import (
+        ConsoleMetricExporter,
+        MetricReader,
+        PeriodicExportingMetricReader,
+    )
+    from opentelemetry.sdk.resources import Resource
+
+    # OpenTelemetry imports - SDK
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (
+        BatchSpanProcessor,
+        ConsoleSpanExporter,
+        SpanExporter,
+    )
     from opentelemetry.trace import (
         Span,
         SpanKind,
@@ -51,44 +87,6 @@ try:
     )
     from opentelemetry.trace.propagation.tracecontext import (
         TraceContextTextMapPropagator,
-    )
-    from opentelemetry.context import Context
-
-    # OpenTelemetry imports - SDK
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import (
-        BatchSpanProcessor,
-        ConsoleSpanExporter,
-        SpanExporter,
-    )
-    from opentelemetry.sdk.metrics import MeterProvider
-    from opentelemetry.sdk.metrics.export import (
-        PeriodicExportingMetricReader,
-        ConsoleMetricExporter,
-        MetricReader,
-    )
-    from opentelemetry.sdk.resources import Resource
-    from opentelemetry.sdk._logs import LoggerProvider
-    from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-
-    # OTLP exporters
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-        OTLPSpanExporter as OTLPSpanExporterGRPC,
-    )
-    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import (
-        OTLPMetricExporter as OTLPMetricExporterGRPC,
-    )
-    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
-        OTLPLogExporter as OTLPLogExporterGRPC,
-    )
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
-        OTLPSpanExporter as OTLPSpanExporterHTTP,
-    )
-    from opentelemetry.exporter.otlp.proto.http.metric_exporter import (
-        OTLPMetricExporter as OTLPMetricExporterHTTP,
-    )
-    from opentelemetry.exporter.otlp.proto.http._log_exporter import (
-        OTLPLogExporter as OTLPLogExporterHTTP,
     )
 
     OTEL_AVAILABLE = True
@@ -179,7 +177,7 @@ class TelemetryConfig:
     otlp_protocol: ExporterProtocol = field(
         default_factory=lambda: ExporterProtocol(os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc"))
     )
-    otlp_headers: Dict[str, str] = field(default_factory=dict)
+    otlp_headers: dict[str, str] = field(default_factory=dict)
     otlp_insecure: bool = field(
         default_factory=lambda: os.getenv("OTEL_EXPORTER_OTLP_INSECURE", "true").lower() == "true"
     )
@@ -211,7 +209,7 @@ class TelemetryConfig:
         default_factory=lambda: os.getenv("OTEL_CONSOLE_EXPORTER", "false").lower() == "true"
     )
 
-    def to_resource_attributes(self) -> Dict[str, str]:
+    def to_resource_attributes(self) -> dict[str, str]:
         """Convert config to OpenTelemetry resource attributes."""
         return {
             "service.name": self.service_name,
@@ -244,11 +242,11 @@ class TelemetryProvider:
         provider.shutdown()
     """
 
-    _instance: Optional["TelemetryProvider"] = None
+    _instance: TelemetryProvider | None = None
     _lock: threading.Lock = threading.Lock()
     _initialized: bool
 
-    def __new__(cls) -> "TelemetryProvider":
+    def __new__(cls) -> TelemetryProvider:
         """Thread-safe singleton pattern."""
         if cls._instance is None:
             with cls._lock:
@@ -258,7 +256,7 @@ class TelemetryProvider:
         return cls._instance
 
     @classmethod
-    def get_instance(cls) -> "TelemetryProvider":
+    def get_instance(cls) -> TelemetryProvider:
         """Get the singleton instance."""
         return cls()
 
@@ -267,22 +265,22 @@ class TelemetryProvider:
         if hasattr(self, "_initialized") and self._initialized:
             return
 
-        self._config: Optional[TelemetryConfig] = None
-        self._resource: Optional[Any] = None
-        self._tracer_provider: Optional[Any] = None
-        self._meter_provider: Optional[Any] = None
-        self._logger_provider: Optional[Any] = None
-        self._tracers: Dict[str, Any] = {}
-        self._meters: Dict[str, Any] = {}
+        self._config: TelemetryConfig | None = None
+        self._resource: Any | None = None
+        self._tracer_provider: Any | None = None
+        self._meter_provider: Any | None = None
+        self._logger_provider: Any | None = None
+        self._tracers: dict[str, Any] = {}
+        self._meters: dict[str, Any] = {}
         self._shutdown_registered: bool = False
 
         # Metrics instruments (cached)
-        self._job_duration_histogram: Optional[Any] = None
-        self._queue_depth_gauge: Optional[Any] = None
-        self._robot_utilization_gauge: Optional[Any] = None
-        self._node_execution_counter: Optional[Any] = None
-        self._workflow_counter: Optional[Any] = None
-        self._error_counter: Optional[Any] = None
+        self._job_duration_histogram: Any | None = None
+        self._queue_depth_gauge: Any | None = None
+        self._robot_utilization_gauge: Any | None = None
+        self._node_execution_counter: Any | None = None
+        self._workflow_counter: Any | None = None
+        self._error_counter: Any | None = None
 
         # Observable gauge callbacks data
         self._queue_depth_value: float = 0.0
@@ -293,7 +291,7 @@ class TelemetryProvider:
 
     def initialize(
         self,
-        config: Optional[TelemetryConfig] = None,
+        config: TelemetryConfig | None = None,
         force_reinit: bool = False,
     ) -> None:
         """
@@ -381,7 +379,7 @@ class TelemetryProvider:
             logger.debug("Metrics disabled")
             return
 
-        metric_readers: List[MetricReader] = []
+        metric_readers: list[MetricReader] = []
 
         # Add OTLP metric reader
         metric_exporter = self._create_metric_exporter()
@@ -424,7 +422,7 @@ class TelemetryProvider:
 
         logger.debug("LoggerProvider initialized")
 
-    def _create_span_exporter(self) -> Optional[SpanExporter]:
+    def _create_span_exporter(self) -> SpanExporter | None:
         """Create appropriate span exporter based on config."""
         if not self._config:
             return None
@@ -454,7 +452,7 @@ class TelemetryProvider:
 
         return None
 
-    def _create_metric_exporter(self) -> Optional[Any]:
+    def _create_metric_exporter(self) -> Any | None:
         """Create appropriate metric exporter based on config."""
         if not self._config:
             return None
@@ -484,7 +482,7 @@ class TelemetryProvider:
 
         return None
 
-    def _create_log_exporter(self) -> Optional[Any]:
+    def _create_log_exporter(self) -> Any | None:
         """Create appropriate log exporter based on config."""
         if not self._config:
             return None
@@ -577,7 +575,7 @@ class TelemetryProvider:
 
         logger.debug("Metrics instruments initialized")
 
-    def get_tracer(self, name: str, version: str = "1.0.0") -> Optional[Any]:
+    def get_tracer(self, name: str, version: str = "1.0.0") -> Any | None:
         """
         Get or create a tracer for the given component.
 
@@ -597,7 +595,7 @@ class TelemetryProvider:
 
         return self._tracers[cache_key]
 
-    def get_meter(self, name: str, version: str = "1.0.0") -> Optional[Any]:
+    def get_meter(self, name: str, version: str = "1.0.0") -> Any | None:
         """
         Get or create a meter for the given component.
 
@@ -617,7 +615,7 @@ class TelemetryProvider:
 
         return self._meters[cache_key]
 
-    def get_logger_provider(self) -> Optional[Any]:
+    def get_logger_provider(self) -> Any | None:
         """Get the logger provider for log correlation."""
         return self._logger_provider
 
@@ -627,7 +625,7 @@ class TelemetryProvider:
         workflow_name: str,
         job_id: str,
         success: bool,
-        robot_id: Optional[str] = None,
+        robot_id: str | None = None,
     ) -> None:
         """
         Record job execution duration.
@@ -759,10 +757,10 @@ class TelemetryProvider:
     def span(
         self,
         name: str,
-        kind: Optional[Any] = None,
-        attributes: Optional[Dict[str, Any]] = None,
+        kind: Any | None = None,
+        attributes: dict[str, Any] | None = None,
         component: str = "casare_rpa",
-    ) -> Generator[Optional[Span], None, None]:
+    ) -> Generator[Span | None, None, None]:
         """
         Context manager for creating spans.
 
@@ -828,17 +826,17 @@ class TelemetryProvider:
 # =============================================================================
 
 
-def get_tracer(name: str = "casare_rpa", version: str = "1.0.0") -> Optional[Any]:
+def get_tracer(name: str = "casare_rpa", version: str = "1.0.0") -> Any | None:
     """Get a tracer from the global TelemetryProvider."""
     return TelemetryProvider.get_instance().get_tracer(name, version)
 
 
-def get_meter(name: str = "casare_rpa", version: str = "1.0.0") -> Optional[Any]:
+def get_meter(name: str = "casare_rpa", version: str = "1.0.0") -> Any | None:
     """Get a meter from the global TelemetryProvider."""
     return TelemetryProvider.get_instance().get_meter(name, version)
 
 
-def get_logger_provider() -> Optional[Any]:
+def get_logger_provider() -> Any | None:
     """Get the logger provider from the global TelemetryProvider."""
     return TelemetryProvider.get_instance().get_logger_provider()
 
@@ -848,7 +846,7 @@ def record_job_duration(
     workflow_name: str,
     job_id: str,
     success: bool,
-    robot_id: Optional[str] = None,
+    robot_id: str | None = None,
 ) -> None:
     """Record job duration metric."""
     TelemetryProvider.get_instance().record_job_duration(
@@ -872,8 +870,8 @@ def record_robot_utilization(utilization_percent: float, active_robots: int) -> 
 
 
 def trace_workflow(
-    workflow_name: Optional[str] = None,
-    attributes: Optional[Dict[str, Any]] = None,
+    workflow_name: str | None = None,
+    attributes: dict[str, Any] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Decorator for tracing workflow execution.
@@ -901,7 +899,7 @@ def trace_workflow(
             if not tracer:
                 return func(*args, **kwargs)
 
-            span_attributes: Dict[str, Any] = {
+            span_attributes: dict[str, Any] = {
                 "workflow.name": name,
                 "workflow.function": func.__qualname__,
             }
@@ -955,7 +953,7 @@ def trace_workflow(
                 coro = cast(Callable[P, Awaitable[T]], func)
                 return await coro(*args, **kwargs)
 
-            span_attributes: Dict[str, Any] = {
+            span_attributes: dict[str, Any] = {
                 "workflow.name": name,
                 "workflow.function": func.__qualname__,
             }
@@ -1007,8 +1005,8 @@ def trace_workflow(
 
 
 def trace_node(
-    node_type: Optional[str] = None,
-    attributes: Optional[Dict[str, Any]] = None,
+    node_type: str | None = None,
+    attributes: dict[str, Any] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Decorator for tracing node execution.
@@ -1037,7 +1035,7 @@ def trace_node(
                 return func(*args, **kwargs)
 
             node_id = _extract_node_id(args, kwargs)
-            span_attributes: Dict[str, Any] = {
+            span_attributes: dict[str, Any] = {
                 "node.type": ntype,
                 "node.id": node_id or "unknown",
                 "node.function": func.__qualname__,
@@ -1088,7 +1086,7 @@ def trace_node(
                 return await coro(*args, **kwargs)
 
             node_id = _extract_node_id(args, kwargs)
-            span_attributes: Dict[str, Any] = {
+            span_attributes: dict[str, Any] = {
                 "node.type": ntype,
                 "node.id": node_id or "unknown",
                 "node.function": func.__qualname__,
@@ -1137,9 +1135,9 @@ def trace_node(
 
 
 def trace_async(
-    name: Optional[str] = None,
-    kind: Optional[Any] = None,
-    attributes: Optional[Dict[str, Any]] = None,
+    name: str | None = None,
+    kind: Any | None = None,
+    attributes: dict[str, Any] | None = None,
     component: str = "casare_rpa",
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
@@ -1169,7 +1167,7 @@ def trace_async(
 
             # Default to INTERNAL span kind when OTel is available
             span_kind = kind if kind is not None else SpanKind.INTERNAL
-            span_attributes: Dict[str, Any] = {"function": func.__qualname__}
+            span_attributes: dict[str, Any] = {"function": func.__qualname__}
             if attributes:
                 span_attributes.update(attributes)
 
@@ -1218,8 +1216,8 @@ class DBOSSpanContext:
         self,
         workflow_id: str,
         workflow_name: str,
-        job_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
+        job_id: str | None = None,
+        robot_id: str | None = None,
     ) -> None:
         """
         Initialize DBOS span context.
@@ -1234,19 +1232,19 @@ class DBOSSpanContext:
         self.workflow_name = workflow_name
         self.job_id = job_id
         self.robot_id = robot_id
-        self._span: Optional[Any] = None
-        self._tracer: Optional[Any] = None
+        self._span: Any | None = None
+        self._tracer: Any | None = None
         self._start_time: float = 0.0
-        self._result: Optional[Dict[str, Any]] = None
+        self._result: dict[str, Any] | None = None
 
-    async def __aenter__(self) -> "DBOSSpanContext":
+    async def __aenter__(self) -> DBOSSpanContext:
         """Enter context and start root span."""
         provider = TelemetryProvider.get_instance()
         self._tracer = provider.get_tracer("casare_rpa.dbos")
         self._start_time = time.perf_counter()
 
         if self._tracer and OTEL_AVAILABLE:
-            attributes: Dict[str, Any] = {
+            attributes: dict[str, Any] = {
                 "dbos.workflow_id": self.workflow_id,
                 "workflow.name": self.workflow_name,
             }
@@ -1269,9 +1267,9 @@ class DBOSSpanContext:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
+        exc_type: type | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
     ) -> bool:
         """Exit context and finalize span."""
         provider = TelemetryProvider.get_instance()
@@ -1312,11 +1310,11 @@ class DBOSSpanContext:
 
         return False  # Don't suppress exceptions
 
-    def set_result(self, result: Dict[str, Any]) -> None:
+    def set_result(self, result: dict[str, Any]) -> None:
         """Store workflow result for span attributes."""
         self._result = result
 
-    def create_step_span(self, step_name: str) -> Optional[Any]:
+    def create_step_span(self, step_name: str) -> Any | None:
         """
         Create a child span for a DBOS step.
 
@@ -1393,7 +1391,7 @@ def _extract_class_name(args: tuple[Any, ...]) -> str:
     return "Unknown"
 
 
-def _extract_node_id(args: tuple[Any, ...], kwargs: Dict[str, Any]) -> Optional[str]:
+def _extract_node_id(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str | None:
     """Extract node ID from method args or kwargs."""
     # Try to get from self.id
     if args and hasattr(args[0], "id"):
@@ -1408,7 +1406,7 @@ def _extract_node_id(args: tuple[Any, ...], kwargs: Dict[str, Any]) -> Optional[
 # =============================================================================
 
 
-def inject_context_to_headers(headers: Dict[str, str]) -> Dict[str, str]:
+def inject_context_to_headers(headers: dict[str, str]) -> dict[str, str]:
     """
     Inject current trace context into HTTP headers.
 
@@ -1428,7 +1426,7 @@ def inject_context_to_headers(headers: Dict[str, str]) -> Dict[str, str]:
     return headers
 
 
-def extract_context_from_headers(headers: Dict[str, str]) -> Optional[Context]:
+def extract_context_from_headers(headers: dict[str, str]) -> Context | None:
     """
     Extract trace context from HTTP headers.
 

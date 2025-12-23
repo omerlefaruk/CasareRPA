@@ -5,13 +5,14 @@ A reusable execution engine that handles the core workflow execution loop.
 Consolidates logic from ExecuteWorkflowUseCase and SubflowExecutor.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Set, Protocol
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Protocol, Set
 
 from loguru import logger
 
+from casare_rpa.domain.interfaces import IExecutionContext
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
 from casare_rpa.domain.value_objects.types import NodeId
-from casare_rpa.domain.interfaces import IExecutionContext
 
 
 class INodeExecutor(Protocol):
@@ -20,7 +21,7 @@ class INodeExecutor(Protocol):
 
 class IVariableResolver(Protocol):
     def transfer_inputs_to_node(self, node_id: NodeId) -> None: ...
-    def validate_output_ports(self, node: Any, result: Dict[str, Any]) -> None: ...
+    def validate_output_ports(self, node: Any, result: dict[str, Any]) -> None: ...
 
 
 class IExecutionStateManager(Protocol):
@@ -30,9 +31,9 @@ class IExecutionStateManager(Protocol):
     def should_execute_node(self, node_id: NodeId) -> bool: ...
     def mark_target_reached(self, node_id: NodeId) -> bool: ...
     async def pause_checkpoint(self) -> None: ...
-    def set_current_node(self, node_id: Optional[NodeId]) -> None: ...
+    def set_current_node(self, node_id: NodeId | None) -> None: ...
     @property
-    def executed_nodes(self) -> Set[NodeId]: ...
+    def executed_nodes(self) -> set[NodeId]: ...
 
 
 class BaseExecutionStateManager:
@@ -40,7 +41,7 @@ class BaseExecutionStateManager:
 
     def __init__(self, context: IExecutionContext):
         self.context = context
-        self._executed_nodes: Set[NodeId] = set()
+        self._executed_nodes: set[NodeId] = set()
 
     @property
     def is_stopped(self) -> bool:
@@ -61,11 +62,11 @@ class BaseExecutionStateManager:
         if hasattr(self.context, "pause_event") and self.context.pause_event:
             await self.context.pause_event.wait()
 
-    def set_current_node(self, node_id: Optional[NodeId]) -> None:
+    def set_current_node(self, node_id: NodeId | None) -> None:
         pass
 
     @property
-    def executed_nodes(self) -> Set[NodeId]:
+    def executed_nodes(self) -> set[NodeId]:
         return self._executed_nodes
 
 
@@ -85,8 +86,8 @@ class WorkflowExecutionEngine:
         state_manager: IExecutionStateManager,
         node_getter: Callable[[NodeId], Any],
         context: IExecutionContext,
-        result_handler: Optional[Any] = None,
-        parallel_strategy: Optional[Any] = None,
+        result_handler: Any | None = None,
+        parallel_strategy: Any | None = None,
     ) -> None:
         self.orchestrator = orchestrator
         self.node_executor = node_executor
@@ -99,7 +100,7 @@ class WorkflowExecutionEngine:
 
     async def run_from_node(self, start_id: NodeId) -> None:
         """Main Loop: Sequential execution from start node."""
-        queue: List[NodeId] = [start_id]
+        queue: list[NodeId] = [start_id]
 
         while queue and not self.state_manager.is_stopped:
             await self.state_manager.pause_checkpoint()

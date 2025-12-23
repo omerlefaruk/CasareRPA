@@ -25,7 +25,7 @@ BLOCKING_IO_PATTERN = re.compile(r"async def.*?\n.*?with open\(", re.DOTALL)
 LEGACY_PORT_PATTERN = re.compile(r"add_input_port\(.*PortType\.EXEC_")
 
 
-def audit_domain_purity() -> List[str]:
+def audit_domain_purity() -> list[str]:
     """Check for UI/Qt imports in the domain layer."""
     violations = []
     for path in DOMAIN_DIR.rglob("*.py"):
@@ -35,7 +35,7 @@ def audit_domain_purity() -> List[str]:
     return violations
 
 
-def audit_async_safety() -> List[str]:
+def audit_async_safety() -> list[str]:
     """Check for blocking I/O in async methods."""
     violations = []
     for path in SRC_DIR.rglob("*.py"):
@@ -90,21 +90,11 @@ def audit_async_safety() -> List[str]:
                         is_wrapped = False
                         for prev_idx in range(line_idx - 1, -1, -1):
                             prev_line = lines[prev_idx].strip()
-<<<<<<< HEAD
-                            if prev_line.startswith("def ") or prev_line.startswith(
-                                "async def "
-                            ):
-                                # If it's a local def (indented), we assume it's for run_in_executor
-                                if lines[prev_idx].startswith("    ") or lines[
-                                    prev_idx
-                                ].startswith("\t"):
-=======
                             if prev_line.startswith("def ") or prev_line.startswith("async def "):
                                 # If it's a local def (indented), we assume it's for run_in_executor
                                 if lines[prev_idx].startswith("    ") or lines[prev_idx].startswith(
                                     "\t"
                                 ):
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                                     is_wrapped = True
                                 break
 
@@ -117,7 +107,7 @@ def audit_async_safety() -> List[str]:
     return violations
 
 
-def audit_port_definitions() -> List[str]:
+def audit_port_definitions() -> list[str]:
     """Check for legacy port definitions."""
     violations = []
     for path in NODES_DIR.rglob("*.py"):

@@ -33,43 +33,44 @@ Usage:
 
 import asyncio
 import functools
-import traceback
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
 import logging
+import traceback
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar
 
+from casare_rpa.domain.schemas import NodeSchema, PropertyDef
 from casare_rpa.domain.value_objects.node_metadata import NodeMetadata
-from casare_rpa.domain.schemas import PropertyDef, NodeSchema
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
 def node(
-    name: Optional[str] = None,
+    name: str | None = None,
     category: str = "General",
     icon: str = "",
     description: str = "",
     # Execution port configuration (non-standard nodes)
     # - Normal nodes default to exec_in + exec_out
     # - Control-flow/trigger/super nodes can override to explicit branch outputs
-    exec_inputs: Optional[List[str]] = None,
-    exec_outputs: Optional[List[str]] = None,
+    exec_inputs: list[str] | None = None,
+    exec_outputs: list[str] | None = None,
     # Retry configuration
     retries: int = 0,
     retry_delay: float = 1.0,
     retry_backoff: float = 2.0,
     retry_jitter: float = 0.1,
-    retry_on: Optional[Tuple[Type[Exception], ...]] = None,
+    retry_on: tuple[type[Exception], ...] | None = None,
     # Lifecycle hooks
-    on_start: Optional[List[Callable]] = None,
-    on_success: Optional[List[Callable]] = None,
-    on_failure: Optional[List[Callable]] = None,
-    on_complete: Optional[List[Callable]] = None,
+    on_start: list[Callable] | None = None,
+    on_success: list[Callable] | None = None,
+    on_failure: list[Callable] | None = None,
+    on_complete: list[Callable] | None = None,
     # Timeout
-    timeout_seconds: Optional[float] = None,
+    timeout_seconds: float | None = None,
     # Tags
-    tags: Optional[List[str]] = None,
-) -> Callable[[Type[T]], Type[T]]:
+    tags: list[str] | None = None,
+) -> Callable[[type[T]], type[T]]:
     """
     Unified node decorator with rich metadata and automatic exec ports.
 
@@ -119,7 +120,7 @@ def node(
         Decorator function that attaches metadata and exec ports to class
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         # Derive name from class if not provided
         derived_name = name
         if derived_name is None:
@@ -192,7 +193,7 @@ def node(
     return decorator
 
 
-def properties(*property_defs: PropertyDef, strict: bool = False) -> Callable[[Type[T]], Type[T]]:
+def properties(*property_defs: PropertyDef, strict: bool = False) -> Callable[[type[T]], type[T]]:
     """
     Property schema decorator for nodes.
 
@@ -218,7 +219,7 @@ def properties(*property_defs: PropertyDef, strict: bool = False) -> Callable[[T
         Decorator function that attaches schema to class
     """
 
-    def decorator(cls: Type[T]) -> Type[T]:
+    def decorator(cls: type[T]) -> type[T]:
         # Sort by order field
         sorted_props = sorted(property_defs, key=lambda p: p.order)
         schema = NodeSchema(list(sorted_props))
@@ -285,7 +286,7 @@ def properties(*property_defs: PropertyDef, strict: bool = False) -> Callable[[T
 # =============================================================================
 
 
-def get_node_metadata(cls: Type) -> Optional[NodeMetadata]:
+def get_node_metadata(cls: type) -> NodeMetadata | None:
     """
     Get NodeMetadata from a decorated class.
 
@@ -298,7 +299,7 @@ def get_node_metadata(cls: Type) -> Optional[NodeMetadata]:
     return getattr(cls, "__node_meta__", None)
 
 
-def get_node_schema(cls: Type) -> Optional[NodeSchema]:
+def get_node_schema(cls: type) -> NodeSchema | None:
     """
     Get NodeSchema from a decorated class.
 
@@ -311,7 +312,7 @@ def get_node_schema(cls: Type) -> Optional[NodeSchema]:
     return getattr(cls, "__node_schema__", None)
 
 
-def has_exec_ports(cls: Type) -> bool:
+def has_exec_ports(cls: type) -> bool:
     """
     Check if a class is decorated with @node.
 
@@ -336,7 +337,7 @@ def handle_errors(
     retries: int = 0,
     retry_delay: float = 1.0,
     retry_backoff: float = 2.0,
-    retry_on: Optional[Tuple[Type[Exception], ...]] = None,
+    retry_on: tuple[type[Exception], ...] | None = None,
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator for standardized error handling in node execute methods.
@@ -366,11 +367,11 @@ def handle_errors(
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
-        async def wrapper(self, context, *args, **kwargs) -> Dict[str, Any]:
+        async def wrapper(self, context, *args, **kwargs) -> dict[str, Any]:
             node_id = getattr(self, "node_id", "unknown")
             node_type = getattr(self, "node_type", self.__class__.__name__)
 
-            last_error: Optional[Exception] = None
+            last_error: Exception | None = None
             attempt = 0
             current_delay = retry_delay
 
@@ -444,7 +445,7 @@ def validate_required(
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
-        async def wrapper(self, context, *args, **kwargs) -> Dict[str, Any]:
+        async def wrapper(self, context, *args, **kwargs) -> dict[str, Any]:
             missing = []
             for param in param_names:
                 value = self.get_parameter(param)
@@ -493,7 +494,7 @@ def with_timeout(
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
-        async def wrapper(self, context, *args, **kwargs) -> Dict[str, Any]:
+        async def wrapper(self, context, *args, **kwargs) -> dict[str, Any]:
             timeout_value = self.config.get(timeout_param, default_timeout)
 
             # If timeout > 1000, assume it's in milliseconds
@@ -505,7 +506,7 @@ def with_timeout(
             try:
                 async with asyncio.timeout(timeout_seconds):
                     return await func(self, context, *args, **kwargs)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.status = NodeStatus.ERROR
                 error_msg = f"Operation timed out after {timeout_seconds:.1f}s"
                 logger.error(f"[{self.node_type}:{self.node_id}] Timeout: {error_msg}")

@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 from fastapi import FastAPI
@@ -111,10 +111,10 @@ def test_claim_job_requires_robot_key(monkeypatch):
                 "priority": 5,
                 "environment": "prod",
                 "variables": {"x": 1},
-                "created_at": datetime(2025, 1, 1, tzinfo=timezone.utc),
+                "created_at": datetime(2025, 1, 1, tzinfo=UTC),
                 "retry_count": 0,
                 "max_retries": 3,
-                "started_at": datetime(2025, 1, 1, 0, 0, 1, tzinfo=timezone.utc),
+                "started_at": datetime(2025, 1, 1, 0, 0, 1, tzinfo=UTC),
             }
 
     conn = _Conn()

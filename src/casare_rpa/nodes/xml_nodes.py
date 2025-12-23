@@ -12,20 +12,20 @@ This module provides nodes for XML parsing and manipulation:
 - JsonToXMLNode: Convert JSON to XML
 """
 
-import defusedxml.ElementTree as DefusedET
-from defusedxml.minidom import parseString as safe_parseString
-import xml.etree.ElementTree as ET  # For XML creation (defusedxml only for parsing)
 import json
+import xml.etree.ElementTree as ET  # For XML creation (defusedxml only for parsing)
 from pathlib import Path
 
+import defusedxml.ElementTree as DefusedET
+from defusedxml.minidom import parseString as safe_parseString
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
@@ -181,7 +181,7 @@ class ReadXMLFileNode(BaseNode):
             if not path.exists():
                 raise FileNotFoundError(f"XML file not found: {file_path}")
 
-            with open(path, "r", encoding=encoding) as f:
+            with open(path, encoding=encoding) as f:
                 xml_string = f.read()
 
             tree = DefusedET.parse(path)

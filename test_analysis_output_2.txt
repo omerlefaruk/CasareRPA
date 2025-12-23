@@ -1,0 +1,279 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.5.0 -- C:\Users\Rau\miniconda3\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\Rau\Desktop\CasareRPA
+configfile: pyproject.toml
+plugins: anyio-4.11.0, asyncio-1.3.0, cov-7.0.0, qt-4.5.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=function
+collecting ... collected 70 items
+
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_create_skeleton_with_defaults FAILED [  1%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_create_skeleton_with_all_fields FAILED [  2%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_is_loaded_initially_false FAILED [  4%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_with_deferred_data FAILED [  5%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_equality_not_affected_by_internal_state FAILED [  7%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_create_loader FAILED [  8%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_metadata FAILED [ 10%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_counts FAILED [ 11%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_node_types FAILED [ 12%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_variable_names FAILED [ 14%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_stores_full_data FAILED [ 15%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_with_file_path FAILED [ 17%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_empty_workflow FAILED [ 18%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_missing_metadata FAILED [ 20%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_performance_is_fast FAILED [ 21%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_infer_categories_from_node_types FAILED [ 22%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_infer_categories_empty_set FAILED [ 24%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_get_workflow_info_returns_dict FAILED [ 25%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_get_workflow_info_missing_file FAILED [ 27%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_finds_workflows FAILED [ 28%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_empty_directory FAILED [ 30%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_nonexistent FAILED [ 31%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_from_skeleton FAILED [ 32%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_caches_result FAILED [ 34%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_without_deferred_data FAILED [ 35%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderSingleton::test_get_incremental_loader_returns_instance FAILED [ 37%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderSingleton::test_get_incremental_loader_returns_same_instance FAILED [ 38%]
+tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_load_workflow_skeleton FAILED [ 40%]
+tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_get_workflow_info_function FAILED [ 41%]
+tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_scan_workflows_function FAILED [ 42%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_create_pool_with_defaults PASSED [ 44%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_create_pool_with_custom_max PASSED [ 45%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_acquire_creates_new_instance PASSED [ 47%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_release_returns_instance_to_pool PASSED [ 48%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_acquire_reuses_pooled_instance PASSED [ 50%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_release_all_returns_multiple_nodes PASSED [ 51%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_pool_respects_max_per_type PASSED [ 52%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_get_stats_returns_hit_rate PASSED [ 54%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_clear_empties_all_pools PASSED [ 55%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_release_node_without_node_type_ignored PASSED [ 57%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePoolSingleton::test_get_node_instance_pool_returns_instance PASSED [ 58%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePoolSingleton::test_get_node_instance_pool_returns_same_instance PASSED [ 60%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_resolves_all_types PASSED [ 61%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_aliases FAILED [ 62%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_empty_nodes PASSED [ 64%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_missing_node_type PASSED [ 65%]
+tests/performance/test_workflow_loading.py::TestPreloadWorkflowNodeTypes::test_preload_triggers_lazy_loading PASSED [ 67%]
+tests/performance/test_workflow_loading.py::TestPreloadWorkflowNodeTypes::test_preload_empty_set PASSED [ 68%]
+tests/performance/test_workflow_loading.py::TestCreateSingleNode::test_create_node_success PASSED [ 70%]
+tests/performance/test_workflow_loading.py::TestCreateSingleNode::test_create_node_unknown_type_returns_none PASSED [ 71%]
+tests/performance/test_workflow_loading.py::TestCreateSingleNode::test_create_node_with_pooling PASSED [ 72%]
+tests/performance/test_workflow_loading.py::TestInstantiateNodesParallel::test_sequential_for_small_workflows PASSED [ 74%]
+tests/performance/test_workflow_loading.py::TestInstantiateNodesParallel::test_parallel_for_large_workflows PASSED [ 75%]
+tests/performance/test_workflow_loading.py::TestInstantiateNodesParallel::test_empty_nodes_returns_empty_dict PASSED [ 77%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_defaults PASSED [ 78%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_parallel_enabled PASSED [ 80%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_parallel_disabled PASSED [ 81%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_pooling_enabled PASSED [ 82%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_skip_validation PASSED [ 84%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_resolves_aliases PASSED [ 85%]
+tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_skeleton_then_full_load FAILED [ 87%]
+tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_parallel_vs_sequential_performance PASSED [ 88%]
+tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_pooling_improves_repeated_loads PASSED [ 90%]
+tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_skeleton_loading_under_10ms FAILED [ 91%]
+tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_full_load_reasonable_time PASSED [ 92%]
+tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_pool_hit_rate_improves_with_reuse PASSED [ 94%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_invalid_node_type FAILED [ 95%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_deeply_nested_config FAILED [ 97%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_unicode_names FAILED [ 98%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_concurrent_pool_access PASSED [100%]
+
+================================== FAILURES ===================================
+___________ TestWorkflowSkeleton.test_create_skeleton_with_defaults ___________
+tests\performance\test_workflow_loading.py:37: in test_create_skeleton_with_defaults
+    from casare_rpa.utils.workflow.incremental_loader import WorkflowSkeleton
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestWorkflowSkeleton.test_create_skeleton_with_all_fields __________
+tests\performance\test_workflow_loading.py:58: in test_create_skeleton_with_all_fields
+    from casare_rpa.utils.workflow.incremental_loader import WorkflowSkeleton
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+________ TestWorkflowSkeleton.test_skeleton_is_loaded_initially_false _________
+tests\performance\test_workflow_loading.py:91: in test_skeleton_is_loaded_initially_false
+    from casare_rpa.utils.workflow.incremental_loader import WorkflowSkeleton
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+____________ TestWorkflowSkeleton.test_skeleton_with_deferred_data ____________
+tests\performance\test_workflow_loading.py:100: in test_skeleton_with_deferred_data
+    from casare_rpa.utils.workflow.incremental_loader import WorkflowSkeleton
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_ TestWorkflowSkeleton.test_skeleton_equality_not_affected_by_internal_state __
+tests\performance\test_workflow_loading.py:114: in test_skeleton_equality_not_affected_by_internal_state
+    from casare_rpa.utils.workflow.incremental_loader import WorkflowSkeleton
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________________ TestIncrementalLoader.test_create_loader ___________________
+tests\performance\test_workflow_loading.py:135: in test_create_loader
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_________ TestIncrementalLoader.test_load_skeleton_extracts_metadata __________
+tests\performance\test_workflow_loading.py:144: in test_load_skeleton_extracts_metadata
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_load_skeleton_extracts_counts ___________
+tests\performance\test_workflow_loading.py:156: in test_load_skeleton_extracts_counts
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+________ TestIncrementalLoader.test_load_skeleton_extracts_node_types _________
+tests\performance\test_workflow_loading.py:168: in test_load_skeleton_extracts_node_types
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+______ TestIncrementalLoader.test_load_skeleton_extracts_variable_names _______
+tests\performance\test_workflow_loading.py:181: in test_load_skeleton_extracts_variable_names
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_load_skeleton_stores_full_data __________
+tests\performance\test_workflow_loading.py:191: in test_load_skeleton_stores_full_data
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+___________ TestIncrementalLoader.test_load_skeleton_with_file_path ___________
+tests\performance\test_workflow_loading.py:201: in test_load_skeleton_with_file_path
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+___________ TestIncrementalLoader.test_load_skeleton_empty_workflow ___________
+tests\performance\test_workflow_loading.py:210: in test_load_skeleton_empty_workflow
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_load_skeleton_missing_metadata __________
+tests\performance\test_workflow_loading.py:229: in test_load_skeleton_missing_metadata
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+________ TestIncrementalLoader.test_load_skeleton_performance_is_fast _________
+tests\performance\test_workflow_loading.py:242: in test_load_skeleton_performance_is_fast
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_________ TestIncrementalLoader.test_infer_categories_from_node_types _________
+tests\performance\test_workflow_loading.py:256: in test_infer_categories_from_node_types
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+____________ TestIncrementalLoader.test_infer_categories_empty_set ____________
+tests\performance\test_workflow_loading.py:274: in test_infer_categories_empty_set
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_get_workflow_info_returns_dict __________
+tests\performance\test_workflow_loading.py:283: in test_get_workflow_info_returns_dict
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_get_workflow_info_missing_file __________
+tests\performance\test_workflow_loading.py:297: in test_get_workflow_info_missing_file
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_scan_directory_finds_workflows __________
+tests\performance\test_workflow_loading.py:306: in test_scan_directory_finds_workflows
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestIncrementalLoader.test_scan_directory_empty_directory __________
+tests\performance\test_workflow_loading.py:315: in test_scan_directory_empty_directory
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+____________ TestIncrementalLoader.test_scan_directory_nonexistent ____________
+tests\performance\test_workflow_loading.py:327: in test_scan_directory_nonexistent
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_________ TestIncrementalLoaderLoadFull.test_load_full_from_skeleton __________
+tests\performance\test_workflow_loading.py:345: in test_load_full_from_skeleton
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_________ TestIncrementalLoaderLoadFull.test_load_full_caches_result __________
+tests\performance\test_workflow_loading.py:359: in test_load_full_caches_result
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_____ TestIncrementalLoaderLoadFull.test_load_full_without_deferred_data ______
+tests\performance\test_workflow_loading.py:372: in test_load_full_without_deferred_data
+    from casare_rpa.utils.workflow.incremental_loader import (
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_ TestIncrementalLoaderSingleton.test_get_incremental_loader_returns_instance _
+tests\performance\test_workflow_loading.py:395: in test_get_incremental_loader_returns_instance
+    from casare_rpa.utils.workflow.incremental_loader import (
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_ TestIncrementalLoaderSingleton.test_get_incremental_loader_returns_same_instance _
+tests\performance\test_workflow_loading.py:407: in test_get_incremental_loader_returns_same_instance
+    from casare_rpa.utils.workflow.incremental_loader import get_incremental_loader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+____________ TestConvenienceFunctions.test_load_workflow_skeleton _____________
+tests\performance\test_workflow_loading.py:425: in test_load_workflow_skeleton
+    from casare_rpa.utils.workflow.incremental_loader import load_workflow_skeleton
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+__________ TestConvenienceFunctions.test_get_workflow_info_function ___________
+tests\performance\test_workflow_loading.py:434: in test_get_workflow_info_function
+    from casare_rpa.utils.workflow.incremental_loader import get_workflow_info
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+____________ TestConvenienceFunctions.test_scan_workflows_function ____________
+tests\performance\test_workflow_loading.py:443: in test_scan_workflows_function
+    from casare_rpa.utils.workflow.incremental_loader import scan_workflows
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+____________ TestBatchResolveNodeTypes.test_batch_resolve_aliases _____________
+tests\performance\test_workflow_loading.py:717: in test_batch_resolve_aliases
+    assert "action" in config
+E   AssertionError: assert 'action' in {'file_path': 'test.txt'}
+_________ TestWorkflowLoadingIntegration.test_skeleton_then_full_load _________
+tests\performance\test_workflow_loading.py:950: in test_skeleton_then_full_load
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_________ TestPerformanceBenchmarks.test_skeleton_loading_under_10ms __________
+tests\performance\test_workflow_loading.py:1038: in test_skeleton_loading_under_10ms
+    from casare_rpa.utils.workflow.incremental_loader import IncrementalLoader
+E   ModuleNotFoundError: No module named 'casare_rpa.utils.workflow.incremental_loader'
+_________ TestEdgeCasesAndErrors.test_workflow_with_invalid_node_type _________
+tests\performance\test_workflow_loading.py:1127: in test_workflow_with_invalid_node_type
+    workflow = load_workflow_from_dict(workflow_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\casare_rpa\utils\workflow\workflow_loader.py:266: in load_workflow_from_dict
+    validate_workflow_json(workflow_data)
+src\casare_rpa\domain\validation\workflow_json.py:174: in validate_workflow_json
+    raise WorkflowValidationError("Workflow semantic validation failed", errors)
+E   casare_rpa.domain.validation.workflow_json.WorkflowValidationError: Workflow semantic validation failed
+_______ TestEdgeCasesAndErrors.test_workflow_with_deeply_nested_config ________
+tests\performance\test_workflow_loading.py:1151: in test_workflow_with_deeply_nested_config
+    workflow = load_workflow_from_dict(workflow_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\casare_rpa\utils\workflow\workflow_loader.py:266: in load_workflow_from_dict
+    validate_workflow_json(workflow_data)
+src\casare_rpa\domain\validation\workflow_json.py:174: in validate_workflow_json
+    raise WorkflowValidationError("Workflow semantic validation failed", errors)
+E   casare_rpa.domain.validation.workflow_json.WorkflowValidationError: Workflow semantic validation failed
+___________ TestEdgeCasesAndErrors.test_workflow_with_unicode_names ___________
+tests\performance\test_workflow_loading.py:1170: in test_workflow_with_unicode_names
+    workflow = load_workflow_from_dict(workflow_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\casare_rpa\utils\workflow\workflow_loader.py:266: in load_workflow_from_dict
+    validate_workflow_json(workflow_data)
+src\casare_rpa\domain\validation\workflow_json.py:174: in validate_workflow_json
+    raise WorkflowValidationError("Workflow semantic validation failed", errors)
+E   casare_rpa.domain.validation.workflow_json.WorkflowValidationError: Workflow semantic validation failed
+=========================== short test summary info ===========================
+FAILED tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_create_skeleton_with_defaults
+FAILED tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_create_skeleton_with_all_fields
+FAILED tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_is_loaded_initially_false
+FAILED tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_with_deferred_data
+FAILED tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_equality_not_affected_by_internal_state
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_create_loader
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_metadata
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_counts
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_node_types
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_variable_names
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_stores_full_data
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_with_file_path
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_empty_workflow
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_missing_metadata
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_performance_is_fast
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_infer_categories_from_node_types
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_infer_categories_empty_set
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_get_workflow_info_returns_dict
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_get_workflow_info_missing_file
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_finds_workflows
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_empty_directory
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_nonexistent
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_from_skeleton
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_caches_result
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_without_deferred_data
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoaderSingleton::test_get_incremental_loader_returns_instance
+FAILED tests/performance/test_workflow_loading.py::TestIncrementalLoaderSingleton::test_get_incremental_loader_returns_same_instance
+FAILED tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_load_workflow_skeleton
+FAILED tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_get_workflow_info_function
+FAILED tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_scan_workflows_function
+FAILED tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_aliases
+FAILED tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_skeleton_then_full_load
+FAILED tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_skeleton_loading_under_10ms
+FAILED tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_invalid_node_type
+FAILED tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_deeply_nested_config
+FAILED tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_unicode_names
+======================== 36 failed, 34 passed in 1.03s ========================

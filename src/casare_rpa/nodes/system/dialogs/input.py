@@ -6,13 +6,13 @@ Nodes for getting user input via dialogs.
 
 import asyncio
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -98,8 +98,8 @@ class InputDialogNode(BaseNode):
             confirmed = False
 
             try:
-                from PySide6.QtWidgets import QInputDialog, QApplication, QLineEdit
                 from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QApplication, QInputDialog, QLineEdit
 
                 app = QApplication.instance()
                 if app is None:
@@ -226,14 +226,14 @@ class MultilineInputDialogNode(BaseNode):
             max_chars = int(self.get_parameter("max_chars", 0) or 0)
 
             try:
-                from PySide6.QtWidgets import (
-                    QDialog,
-                    QVBoxLayout,
-                    QDialogButtonBox,
-                    QApplication,
-                    QLabel,
-                )
                 from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import (
+                    QApplication,
+                    QDialog,
+                    QDialogButtonBox,
+                    QLabel,
+                    QVBoxLayout,
+                )
 
                 app = QApplication.instance()
                 if app is None:
@@ -400,16 +400,16 @@ class CredentialDialogNode(BaseNode):
             mask_password = self.get_parameter("mask_password", True)
 
             try:
+                from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import (
+                    QApplication,
+                    QCheckBox,
                     QDialog,
-                    QVBoxLayout,
+                    QDialogButtonBox,
                     QFormLayout,
                     QLineEdit,
-                    QCheckBox,
-                    QDialogButtonBox,
-                    QApplication,
+                    QVBoxLayout,
                 )
-                from PySide6.QtCore import Qt
 
                 app = QApplication.instance()
                 if app is None:

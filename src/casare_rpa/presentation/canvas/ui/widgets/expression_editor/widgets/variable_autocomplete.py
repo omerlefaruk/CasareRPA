@@ -7,23 +7,22 @@ triggered by typing "{{" or via keyboard shortcut.
 
 from typing import Any, List, Optional
 
-from PySide6.QtCore import Qt, Signal, Slot, QPoint
+from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QKeyEvent
 from PySide6.QtWidgets import (
-    QWidget,
     QListWidget,
     QListWidgetItem,
+    QWidget,
 )
-
 
 from casare_rpa.presentation.canvas.ui.theme import (
-    Theme,
-    TYPE_COLORS,
     TYPE_BADGES,
+    TYPE_COLORS,
+    Theme,
 )
 from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
-    VariableProvider,
     VariableInfo,
+    VariableProvider,
     fuzzy_match,
 )
 
@@ -53,7 +52,7 @@ class VariableAutocomplete(QListWidget):
     variable_selected = Signal(str)
     cancelled = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the autocomplete widget.
 
@@ -69,10 +68,10 @@ class VariableAutocomplete(QListWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
 
-        self._all_variables: List[VariableInfo] = []
-        self._filtered_variables: List[VariableInfo] = []
-        self._current_node_id: Optional[str] = None
-        self._graph: Optional[Any] = None
+        self._all_variables: list[VariableInfo] = []
+        self._filtered_variables: list[VariableInfo] = []
+        self._current_node_id: str | None = None
+        self._graph: Any | None = None
         self._filter_text: str = ""
 
         self._setup_ui()
@@ -140,8 +139,8 @@ class VariableAutocomplete(QListWidget):
 
     def set_node_context(
         self,
-        node_id: Optional[str],
-        graph: Optional[Any],
+        node_id: str | None,
+        graph: Any | None,
     ) -> None:
         """
         Set the current node context for upstream variable detection.

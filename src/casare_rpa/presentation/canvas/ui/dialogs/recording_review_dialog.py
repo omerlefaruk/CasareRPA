@@ -5,26 +5,24 @@ Dialog for reviewing and editing recorded browser actions before adding to canva
 Allows reordering, editing parameters, setting wait times, and deleting actions.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt, Signal, QMimeData
-from PySide6.QtGui import QDrag, QPixmap, QPainter, QColor
+from loguru import logger
+from PySide6.QtCore import QMimeData, Qt, Signal
+from PySide6.QtGui import QColor, QDrag, QPainter, QPixmap
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QCheckBox,
+    QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QSpinBox,
-    QCheckBox,
-    QWidget,
-    QFrame,
     QScrollArea,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
 )
-
-from loguru import logger
-from PySide6.QtWidgets import QDialog
-
 
 # Node type display configuration
 NODE_DISPLAY_CONFIG = {
@@ -53,7 +51,7 @@ class ActionRowWidget(QFrame):
     delete_requested = Signal(object)  # Emits self when delete clicked
 
     def __init__(
-        self, action_data: Dict[str, Any], index: int, parent: Optional[QWidget] = None
+        self, action_data: dict[str, Any], index: int, parent: QWidget | None = None
     ) -> None:
         """
         Initialize action row widget.
@@ -244,7 +242,7 @@ class ActionRowWidget(QFrame):
         """Handle delete button click."""
         self.delete_requested.emit(self)
 
-    def get_action_data(self) -> Dict[str, Any]:
+    def get_action_data(self) -> dict[str, Any]:
         """Get the current action data."""
         return self.action_data
 
@@ -304,9 +302,7 @@ class RecordingReviewDialog(QDialog):
 
     accepted_with_data = Signal(list, bool)
 
-    def __init__(
-        self, recorded_nodes: List[Dict[str, Any]], parent: Optional[QWidget] = None
-    ) -> None:
+    def __init__(self, recorded_nodes: list[dict[str, Any]], parent: QWidget | None = None) -> None:
         """
         Initialize recording review dialog.
 
@@ -317,7 +313,7 @@ class RecordingReviewDialog(QDialog):
         super().__init__(parent)
 
         self._recorded_nodes = [node.copy() for node in recorded_nodes]
-        self._action_rows: List[ActionRowWidget] = []
+        self._action_rows: list[ActionRowWidget] = []
 
         self.setWindowTitle("Review Recorded Actions")
         self.setMinimumSize(700, 500)
@@ -652,7 +648,7 @@ class RecordingReviewDialog(QDialog):
         self.accepted_with_data.emit(nodes_data, include_waits)
         self.accept()
 
-    def get_nodes_data(self) -> List[Dict[str, Any]]:
+    def get_nodes_data(self) -> list[dict[str, Any]]:
         """
         Get the final list of node data.
 

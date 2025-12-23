@@ -18,9 +18,10 @@ Features:
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from PySide6.QtCore import Qt, Signal, QThread, QObject
+from loguru import logger
+from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -29,11 +30,10 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QSizePolicy,
-    QVBoxLayout,
     QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.ai_assistant.chat_area import ChatArea
@@ -69,10 +69,10 @@ class WorkflowGenerationWorker(QObject):
         self,
         prompt: str,
         model_id: str,
-        credential_id: Optional[str] = None,
-        provider: Optional[str] = None,
-        existing_workflow: Optional[Dict[str, Any]] = None,
-        canvas_state: Optional[Dict[str, Any]] = None,
+        credential_id: str | None = None,
+        provider: str | None = None,
+        existing_workflow: dict[str, Any] | None = None,
+        canvas_state: dict[str, Any] | None = None,
         is_edit: bool = False,
     ) -> None:
         super().__init__()
@@ -84,7 +84,7 @@ class WorkflowGenerationWorker(QObject):
         self._canvas_state = canvas_state
         self._is_edit = is_edit
 
-    def _get_api_key_from_credential(self) -> Optional[str]:
+    def _get_api_key_from_credential(self) -> str | None:
         """Retrieve API key from credential store."""
         if not self._credential_id:
             return None
@@ -129,9 +129,9 @@ class WorkflowGenerationWorker(QObject):
         try:
             from casare_rpa.infrastructure.ai.agent import SmartWorkflowAgent
             from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                LLMResourceManager,
                 LLMConfig,
                 LLMProvider,
+                LLMResourceManager,
             )
 
             # Configure LLM client with the credential
@@ -352,12 +352,12 @@ class WorkflowGenerationThread(QThread):
         self,
         prompt: str,
         model_id: str,
-        credential_id: Optional[str] = None,
-        provider: Optional[str] = None,
-        existing_workflow: Optional[Dict[str, Any]] = None,
-        canvas_state: Optional[Dict[str, Any]] = None,
+        credential_id: str | None = None,
+        provider: str | None = None,
+        existing_workflow: dict[str, Any] | None = None,
+        canvas_state: dict[str, Any] | None = None,
         is_edit: bool = False,
-        parent: Optional[QObject] = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._worker = WorkflowGenerationWorker(
@@ -402,7 +402,7 @@ class AIAssistantDock(QDockWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         embedded: bool = False,
     ) -> None:
         """
@@ -414,18 +414,18 @@ class AIAssistantDock(QDockWidget):
         """
         self._embedded = embedded
         self._credential_store = None
-        self._current_credential_id: Optional[str] = None
-        self._current_model_id: Optional[str] = None
-        self._current_provider: Optional[str] = None
-        self._current_workflow: Optional[Dict[str, Any]] = None
+        self._current_credential_id: str | None = None
+        self._current_model_id: str | None = None
+        self._current_provider: str | None = None
+        self._current_workflow: dict[str, Any] | None = None
         self._is_generating = False
-        self._generation_thread: Optional[WorkflowGenerationThread] = None
-        self._last_prompt: Optional[str] = None
+        self._generation_thread: WorkflowGenerationThread | None = None
+        self._last_prompt: str | None = None
         self._auto_append = True  # Auto-append workflows to canvas
 
         # Multi-turn conversation support
-        self._conversation_manager: Optional["ConversationManager"] = None
-        self._intent_classifier: Optional["IntentClassifier"] = None
+        self._conversation_manager: ConversationManager | None = None
+        self._intent_classifier: IntentClassifier | None = None
         self._init_conversation_support()
 
         if embedded:
@@ -491,7 +491,7 @@ class AIAssistantDock(QDockWidget):
             parent = parent.parent() if hasattr(parent, "parent") else None
         return None
 
-    def _get_canvas_state(self) -> Optional[Dict[str, Any]]:
+    def _get_canvas_state(self) -> dict[str, Any] | None:
         """
         Get current canvas state for context.
 
@@ -1197,7 +1197,7 @@ What would you like to create?"""
         if self._conversation_manager is not None:
             self._conversation_manager.add_assistant_message(help_text)
 
-    def _on_generation_complete(self, result: "WorkflowGenerationResult") -> None:
+    def _on_generation_complete(self, result: WorkflowGenerationResult) -> None:
         """
         Handle workflow generation result from background thread.
 
@@ -1397,7 +1397,7 @@ What would you like to create?"""
     # ==================== Public API ====================
 
     def set_workflow_result(
-        self, workflow: Optional[Dict[str, Any]], success: bool, message: str = ""
+        self, workflow: dict[str, Any] | None, success: bool, message: str = ""
     ) -> None:
         """
         Set the generated workflow result from external AI service.
@@ -1419,15 +1419,15 @@ What would you like to create?"""
             self._chat_area.add_ai_message(message or "Failed to generate workflow.")
             self._finish_generation(False)
 
-    def get_selected_credential_id(self) -> Optional[str]:
+    def get_selected_credential_id(self) -> str | None:
         """Get the currently selected credential ID."""
         return self._current_credential_id
 
-    def get_selected_model_id(self) -> Optional[str]:
+    def get_selected_model_id(self) -> str | None:
         """Get the currently selected model ID."""
         return self._current_model_id
 
-    def get_selected_provider(self) -> Optional[str]:
+    def get_selected_provider(self) -> str | None:
         """Get the currently selected provider (google, openai)."""
         return self._current_provider
 

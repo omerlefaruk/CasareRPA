@@ -4,11 +4,10 @@ API Keys Tab Widget for Fleet Dashboard.
 Manages robot API keys with tenant isolation support.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal
-
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from casare_rpa.presentation.canvas.ui.panels.api_key_panel import ApiKeyPanel
 
@@ -37,9 +36,9 @@ class ApiKeysTabWidget(QWidget):
 
     refresh_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._tenant_id: Optional[str] = None
+        self._tenant_id: str | None = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -60,7 +59,7 @@ class ApiKeysTabWidget(QWidget):
 
         layout.addWidget(self._panel)
 
-    def set_tenant(self, tenant_id: Optional[str]) -> None:
+    def set_tenant(self, tenant_id: str | None) -> None:
         """
         Set current tenant for filtering.
 
@@ -70,7 +69,7 @@ class ApiKeysTabWidget(QWidget):
         self._tenant_id = tenant_id
         self._panel.set_tenant(tenant_id)
 
-    def update_robots(self, robots: List[Dict[str, Any]]) -> None:
+    def update_robots(self, robots: list[dict[str, Any]]) -> None:
         """
         Update available robots list.
 
@@ -82,7 +81,7 @@ class ApiKeysTabWidget(QWidget):
             robots = [r for r in robots if r.get("tenant_id") == self._tenant_id]
         self._panel.update_robots(robots)
 
-    def update_api_keys(self, api_keys: List[Dict[str, Any]]) -> None:
+    def update_api_keys(self, api_keys: list[dict[str, Any]]) -> None:
         """
         Update API keys list.
 

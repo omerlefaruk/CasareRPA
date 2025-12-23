@@ -8,21 +8,21 @@ Handles automatic workflow saving functionality:
 - PERFORMANCE: Background thread for file I/O to avoid UI freezes
 """
 
-from typing import Optional, TYPE_CHECKING
-from concurrent.futures import ThreadPoolExecutor
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QTimer, Signal
 from loguru import logger
+from PySide6.QtCore import QTimer, Signal
 
 # PERFORMANCE: Background thread pool for autosave file I/O
 # Prevents UI freezes during save operations on large workflows
-_autosave_executor: Optional[ThreadPoolExecutor] = None
+_autosave_executor: ThreadPoolExecutor | None = None
 _autosave_lock = threading.Lock()
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
 if TYPE_CHECKING:
@@ -49,7 +49,7 @@ class AutosaveController(BaseController):
     def __init__(self, main_window: "MainWindow"):
         """Initialize autosave controller."""
         super().__init__(main_window)
-        self._autosave_timer: Optional[QTimer] = None
+        self._autosave_timer: QTimer | None = None
         self._event_bus = EventBus()
         self._save_in_progress = False
 
@@ -253,8 +253,9 @@ class AutosaveController(BaseController):
 
         PERFORMANCE: File I/O runs off main thread to prevent UI freezes.
         """
-        import orjson
         from pathlib import Path
+
+        import orjson
 
         path = Path(file_path)
         json_bytes = orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2)

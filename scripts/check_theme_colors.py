@@ -3,11 +3,11 @@
 Block hardcoded hex colors in presentation layer.
 Enforce use of Theme/THEME constants.
 """
+
 import os
 import re
 import sys
 from pathlib import Path
-
 
 # Pattern for hex colors
 HEX_COLOR_PATTERN = r"['\"]#[0-9a-fA-F]{3,8}['\"]"
@@ -16,29 +16,29 @@ HEX_COLOR_PATTERN = r"['\"]#[0-9a-fA-F]{3,8}['\"]"
 def check_file(filepath: str) -> list[str]:
     """Check for hardcoded colors"""
     errors = []
-    
+
     # Skip non-UI files
     if "test" in filepath or "__pycache__" in filepath:
         return errors
-    
-    with open(filepath, "r", encoding="utf-8") as f:
+
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
         for i, line in enumerate(lines, 1):
             # Skip comments
             if line.strip().startswith("#"):
                 continue
-            
+
             # Skip lines with THEME/Theme assignments or usage
             if "THEME" in line or "Theme" in line:
                 continue
-            
+
             matches = re.findall(HEX_COLOR_PATTERN, line)
             if matches:
                 for match in matches:
                     errors.append(
                         f"{filepath}:{i} - Hardcoded color {match}. Use THEME constant instead.\n  {line.strip()}"
                     )
-    
+
     return errors
 
 

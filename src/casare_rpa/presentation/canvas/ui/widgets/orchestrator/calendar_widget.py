@@ -5,25 +5,24 @@ Visual calendar for displaying and creating schedules.
 Shows scheduled runs with markers and supports day selection.
 """
 
-from typing import Optional, List, Dict, Set
 from datetime import date, timedelta
+from typing import Dict, List, Optional, Set
 
+from PySide6.QtCore import QDate, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QTextCharFormat
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
     QCalendarWidget,
+    QHBoxLayout,
     QLabel,
-    QPushButton,
     QListWidget,
     QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QDate
-from PySide6.QtGui import QTextCharFormat, QColor, QBrush
 
-
-from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.domain.orchestrator.entities import Schedule
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class ScheduleCalendarWidget(QWidget):
@@ -40,11 +39,11 @@ class ScheduleCalendarWidget(QWidget):
     schedule_clicked = Signal(str)
     create_schedule_requested = Signal(object)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._schedules: List[Schedule] = []
-        self._schedule_dates: Dict[date, List[Schedule]] = {}
-        self._blackout_dates: Set[date] = set()
+        self._schedules: list[Schedule] = []
+        self._schedule_dates: dict[date, list[Schedule]] = {}
+        self._blackout_dates: set[date] = set()
         self._setup_ui()
         self._apply_styles()
         self._connect_signals()
@@ -198,14 +197,14 @@ class ScheduleCalendarWidget(QWidget):
         if schedule_id:
             self.schedule_clicked.emit(schedule_id)
 
-    def set_schedules(self, schedules: List[Schedule]) -> None:
+    def set_schedules(self, schedules: list[Schedule]) -> None:
         """Set the schedules to display."""
         self._schedules = schedules
         self._build_schedule_dates()
         self._update_calendar_markers()
         self._on_date_selected()
 
-    def set_blackout_dates(self, dates: Set[date]) -> None:
+    def set_blackout_dates(self, dates: set[date]) -> None:
         """Set blackout dates (no execution)."""
         self._blackout_dates = dates
         self._update_calendar_markers()
@@ -225,7 +224,7 @@ class ScheduleCalendarWidget(QWidget):
             for next_date in self._calculate_next_runs(schedule, 30):
                 self._schedule_dates.setdefault(next_date, []).append(schedule)
 
-    def _calculate_next_runs(self, schedule: Schedule, days: int) -> List[date]:
+    def _calculate_next_runs(self, schedule: Schedule, days: int) -> list[date]:
         """Calculate next run dates for a schedule."""
         from casare_rpa.domain.orchestrator.entities import ScheduleFrequency
 

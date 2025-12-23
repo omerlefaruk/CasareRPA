@@ -31,7 +31,7 @@ class WorkflowStarted(DomainEvent):
     triggered_by: str = "manual"
     total_nodes: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -64,7 +64,7 @@ class WorkflowCompleted(DomainEvent):
     nodes_executed: int = 0
     nodes_skipped: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -94,12 +94,12 @@ class WorkflowFailed(DomainEvent):
 
     workflow_id: str = ""
     workflow_name: str = ""
-    failed_node_id: Optional[str] = None
-    error_code: Optional[ErrorCode] = None
+    failed_node_id: str | None = None
+    error_code: ErrorCode | None = None
     error_message: str = ""
     execution_time_ms: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -126,10 +126,10 @@ class WorkflowStopped(DomainEvent):
     """
 
     workflow_id: str = ""
-    stopped_at_node_id: Optional[str] = None
+    stopped_at_node_id: str | None = None
     reason: str = "user_request"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -156,7 +156,7 @@ class WorkflowPaused(DomainEvent):
     paused_at_node_id: str = ""
     reason: str = "breakpoint"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -181,7 +181,7 @@ class WorkflowResumed(DomainEvent):
     workflow_id: str = ""
     resume_from_node_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -213,7 +213,7 @@ class WorkflowProgress(DomainEvent):
     total_nodes: int = 0
     percentage: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -253,7 +253,7 @@ class NodeAdded(DomainEvent):
     position_x: float = 0.0
     position_y: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -281,7 +281,7 @@ class NodeRemoved(DomainEvent):
     workflow_id: str = ""
     node_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -313,7 +313,7 @@ class NodeConnected(DomainEvent):
     target_node: str = ""
     target_port: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -348,7 +348,7 @@ class NodeDisconnected(DomainEvent):
     target_node: str = ""
     target_port: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {

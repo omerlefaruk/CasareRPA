@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import asyncio
 from enum import Enum
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.credentials import CredentialAwareMixin, CREDENTIAL_NAME_PROP
+from casare_rpa.domain.credentials import CREDENTIAL_NAME_PROP, CredentialAwareMixin
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -28,10 +28,10 @@ if TYPE_CHECKING:
 
 # Import database utilities from sql_nodes
 from casare_rpa.nodes.database.sql_nodes import (
-    DatabaseConnection,
+    AIOMYSQL_AVAILABLE,
     AIOSQLITE_AVAILABLE,
     ASYNCPG_AVAILABLE,
-    AIOMYSQL_AVAILABLE,
+    DatabaseConnection,
     _check_sql_injection_risk,
     _parse_postgresql_result,
 )
@@ -279,7 +279,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
         self.add_output_port("success", DataType.BOOLEAN)
         self.add_output_port("error", DataType.STRING)
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute the selected database action."""
         self.status = NodeStatus.RUNNING
 
@@ -306,7 +306,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             logger.error(f"Database {action} error: {e}")
             return self._error_result(str(e))
 
-    async def _execute_connect(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_connect(self, context: ExecutionContext) -> ExecutionResult:
         """Connect to database."""
         import sqlite3
 
@@ -349,7 +349,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
         logger.info(f"Connecting to {db_type} database")
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         attempts = 0
         max_attempts = retry_count + 1
 
@@ -359,7 +359,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
                 if attempts > 1:
                     logger.info(f"Retry attempt {attempts - 1}/{retry_count}")
 
-                connection: Optional[DatabaseConnection] = None
+                connection: DatabaseConnection | None = None
 
                 if db_type == "sqlite":
                     if not database:
@@ -435,9 +435,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             raise last_error
         raise RuntimeError("Connection failed")
 
-    async def _execute_query(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_query(self, context: ExecutionContext) -> ExecutionResult:
         """Execute SELECT query."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
         query = self.get_parameter("query", "")
         parameters = self.get_parameter("parameters", [])
         retry_count = self.get_parameter("retry_count", 0)
@@ -454,15 +454,15 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
         logger.debug(f"Executing query: {query[:100]}...")
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         attempts = 0
         max_attempts = retry_count + 1
 
         while attempts < max_attempts:
             try:
                 attempts += 1
-                results: List[Dict[str, Any]] = []
-                columns: List[str] = []
+                results: list[dict[str, Any]] = []
+                columns: list[str] = []
 
                 if connection.db_type == "sqlite":
                     results, columns = await self._query_sqlite(connection, query, parameters)
@@ -496,9 +496,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             raise last_error
         raise RuntimeError("Query failed")
 
-    async def _execute_statement(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_statement(self, context: ExecutionContext) -> ExecutionResult:
         """Execute INSERT/UPDATE/DELETE statement."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
         query = self.get_parameter("query", "")
         parameters = self.get_parameter("parameters", [])
         retry_count = self.get_parameter("retry_count", 0)
@@ -515,7 +515,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
         logger.debug(f"Executing statement: {query[:100]}...")
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         attempts = 0
         max_attempts = retry_count + 1
 
@@ -523,7 +523,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             try:
                 attempts += 1
                 rows_affected = 0
-                last_insert_id: Optional[int] = None
+                last_insert_id: int | None = None
 
                 if connection.db_type == "sqlite":
                     rows_affected, last_insert_id = await self._execute_sqlite(
@@ -562,9 +562,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             raise last_error
         raise RuntimeError("Statement failed")
 
-    async def _execute_begin_transaction(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_begin_transaction(self, context: ExecutionContext) -> ExecutionResult:
         """Begin database transaction."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
 
         if not connection:
             return self._error_result("Database connection is required")
@@ -593,9 +593,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_commit(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_commit(self, context: ExecutionContext) -> ExecutionResult:
         """Commit database transaction."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
 
         if not connection:
             return self._error_result("Database connection is required")
@@ -630,9 +630,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_rollback(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_rollback(self, context: ExecutionContext) -> ExecutionResult:
         """Rollback database transaction."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
 
         if not connection:
             return self._error_result("Database connection is required")
@@ -667,9 +667,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_close(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_close(self, context: ExecutionContext) -> ExecutionResult:
         """Close database connection."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
 
         if not connection:
             return self._error_result("Database connection is required")
@@ -687,9 +687,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_batch(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_batch(self, context: ExecutionContext) -> ExecutionResult:
         """Execute batch of SQL statements."""
-        connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+        connection: DatabaseConnection | None = self.get_input_value("connection")
         statements = self.get_parameter("statements", [])
         stop_on_error = self.get_parameter("stop_on_error", True)
         retry_count = self.get_parameter("retry_count", 0)
@@ -702,9 +702,9 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
         logger.debug(f"Executing batch of {len(statements)} statements")
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         total_rows = 0
-        errors: List[str] = []
+        errors: list[str] = []
 
         pool_conn = None
         if connection.db_type in ("postgresql", "mysql"):
@@ -796,7 +796,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
     # Database-specific query helpers
     async def _query_sqlite(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
     ) -> tuple:
         """Query SQLite database."""
         conn = connection.connection
@@ -805,17 +805,17 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             cursor = await conn.execute(query, parameters or [])
             rows = await cursor.fetchall()
             columns = [desc[0] for desc in cursor.description] if cursor.description else []
-            results = [dict(zip(columns, row)) for row in rows]
+            results = [dict(zip(columns, row, strict=False)) for row in rows]
         else:
             cursor = conn.execute(query, parameters or [])
             rows = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description] if cursor.description else []
-            results = [dict(zip(columns, row)) for row in rows]
+            results = [dict(zip(columns, row, strict=False)) for row in rows]
 
         return results, columns
 
     async def _query_postgresql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
     ) -> tuple:
         """Query PostgreSQL database."""
         conn = await connection.acquire()
@@ -832,7 +832,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             await connection.release()
 
     async def _query_mysql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
     ) -> tuple:
         """Query MySQL database."""
         import aiomysql
@@ -849,7 +849,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
 
     # Database-specific execute helpers
     async def _execute_sqlite(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
     ) -> tuple:
         """Execute statement on SQLite."""
         conn = connection.connection
@@ -866,7 +866,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
             return cursor.rowcount, cursor.lastrowid
 
     async def _execute_postgresql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
     ) -> tuple:
         """Execute statement on PostgreSQL."""
         conn = await connection.acquire()
@@ -881,7 +881,7 @@ class DatabaseSuperNode(CredentialAwareMixin, BaseNode):
                 await connection.release()
 
     async def _execute_mysql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
     ) -> tuple:
         """Execute statement on MySQL."""
         conn = await connection.acquire()

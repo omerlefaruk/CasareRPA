@@ -9,10 +9,11 @@ Handles all workflow-related operations:
 """
 
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-from loguru import logger
 
 from casare_rpa.application.services import OrchestratorClient
 from casare_rpa.config import WORKFLOWS_DIR
@@ -23,8 +24,8 @@ from casare_rpa.domain.validation import (
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.domain.workflow.versioning import VersionHistory
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class WorkflowController(BaseController):
@@ -58,9 +59,9 @@ class WorkflowController(BaseController):
     def __init__(self, main_window: "MainWindow"):
         """Initialize workflow controller."""
         super().__init__(main_window)
-        self._current_file: Optional[Path] = None
+        self._current_file: Path | None = None
         self._is_modified = False
-        self._orchestrator_client: Optional[OrchestratorClient] = None
+        self._orchestrator_client: OrchestratorClient | None = None
 
     def initialize(self) -> None:
         """Initialize controller."""
@@ -415,7 +416,7 @@ class WorkflowController(BaseController):
         self.set_modified(False)
         return True
 
-    def set_current_file(self, file_path: Optional[Path]) -> None:
+    def set_current_file(self, file_path: Path | None) -> None:
         """
         Set the current workflow file path.
 
@@ -453,7 +454,7 @@ class WorkflowController(BaseController):
             self._update_save_action()
 
     @property
-    def current_file(self) -> Optional[Path]:
+    def current_file(self) -> Path | None:
         """Get the current workflow file path."""
         return self._current_file
 
@@ -641,8 +642,8 @@ class WorkflowController(BaseController):
         """
         logger.info("Pasting workflow from clipboard")
 
-        from PySide6.QtWidgets import QApplication
         import orjson
+        from PySide6.QtWidgets import QApplication
 
         clipboard = QApplication.clipboard()
         text = clipboard.text()
@@ -721,8 +722,9 @@ class WorkflowController(BaseController):
         def on_import_file(file_path: str, position: tuple) -> None:
             """Handle file drop on canvas."""
             try:
-                import orjson
                 from pathlib import Path
+
+                import orjson
 
                 logger.info(f"Importing dropped file: {file_path} at position {position}")
 
@@ -1156,7 +1158,7 @@ class WorkflowController(BaseController):
 
         return None
 
-    def _serialize_workflow(self) -> Optional[dict]:
+    def _serialize_workflow(self) -> dict | None:
         """Serialize current workflow to dict."""
         graph = self.main_window.get_graph()
         if not graph:

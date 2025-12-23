@@ -19,7 +19,6 @@ from casare_rpa.domain.events.workflow_events import (
 from casare_rpa.domain.value_objects.position import Position
 from casare_rpa.domain.value_objects.types import NodeConfig, PortId
 
-
 # =============================================================================
 # VALUE OBJECTS (Workflow-specific)
 # =============================================================================
@@ -102,7 +101,7 @@ class Connection:
     source: PortReference
     target: PortReference
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """Serialize connection to dictionary."""
         return {
             "source_node": self.source.node_id,
@@ -112,7 +111,7 @@ class Connection:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, str]) -> "Connection":
+    def from_dict(cls, data: dict[str, str]) -> "Connection":
         """Create Connection from dictionary."""
         return cls(
             source=PortReference(
@@ -156,7 +155,7 @@ class WorkflowNode:
         """Update a configuration value."""
         self.config[key] = value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize node to dictionary."""
         return {
             "node_id": str(self.id),
@@ -204,10 +203,10 @@ class Workflow:
         self._id = id
         self._name = name
         self._description = description
-        self._nodes: Dict[str, WorkflowNode] = {}
-        self._connections: List[Connection] = []
-        self._events: List[DomainEvent] = []
-        self._settings: Dict[str, Any] = {
+        self._nodes: dict[str, WorkflowNode] = {}
+        self._connections: list[Connection] = []
+        self._events: list[DomainEvent] = []
+        self._settings: dict[str, Any] = {
             "stop_on_error": True,
             "timeout": 30,
             "retry_count": 0,
@@ -255,7 +254,7 @@ class Workflow:
         return len(self._connections)
 
     @property
-    def settings(self) -> Dict[str, Any]:
+    def settings(self) -> dict[str, Any]:
         """Get workflow settings (copy to prevent mutation)."""
         return self._settings.copy()
 
@@ -267,8 +266,8 @@ class Workflow:
         self,
         node_type: str,
         position: Position,
-        config: Optional[NodeConfig] = None,
-        node_id: Optional[str] = None,
+        config: NodeConfig | None = None,
+        node_id: str | None = None,
     ) -> str:
         """
         Add a node to the workflow.
@@ -344,7 +343,7 @@ class Workflow:
             )
         )
 
-    def get_node(self, node_id: str) -> Optional[WorkflowNode]:
+    def get_node(self, node_id: str) -> WorkflowNode | None:
         """
         Get a node by ID.
 
@@ -360,7 +359,7 @@ class Workflow:
         """Check if node exists in workflow."""
         return node_id in self._nodes
 
-    def get_all_nodes(self) -> List[WorkflowNode]:
+    def get_all_nodes(self) -> list[WorkflowNode]:
         """Get all nodes in the workflow."""
         return list(self._nodes.values())
 
@@ -476,15 +475,15 @@ class Workflow:
                 )
             )
 
-    def get_connections_from(self, node_id: str) -> List[Connection]:
+    def get_connections_from(self, node_id: str) -> list[Connection]:
         """Get all connections originating from a node."""
         return [c for c in self._connections if c.source.node_id == node_id]
 
-    def get_connections_to(self, node_id: str) -> List[Connection]:
+    def get_connections_to(self, node_id: str) -> list[Connection]:
         """Get all connections targeting a node."""
         return [c for c in self._connections if c.target.node_id == node_id]
 
-    def get_all_connections(self) -> List[Connection]:
+    def get_all_connections(self) -> list[Connection]:
         """Get all connections in the workflow."""
         return self._connections.copy()
 
@@ -515,7 +514,7 @@ class Workflow:
     # Event Collection
     # -------------------------------------------------------------------------
 
-    def collect_events(self) -> List[DomainEvent]:
+    def collect_events(self) -> list[DomainEvent]:
         """
         Collect and clear pending domain events.
 
@@ -536,7 +535,7 @@ class Workflow:
     # Settings
     # -------------------------------------------------------------------------
 
-    def update_settings(self, settings: Dict[str, Any]) -> None:
+    def update_settings(self, settings: dict[str, Any]) -> None:
         """Update workflow settings."""
         self._settings.update(settings)
 
@@ -544,7 +543,7 @@ class Workflow:
     # Serialization
     # -------------------------------------------------------------------------
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize workflow to dictionary.
 
@@ -561,7 +560,7 @@ class Workflow:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Workflow":
+    def from_dict(cls, data: dict[str, Any]) -> "Workflow":
         """
         Create Workflow from dictionary.
 

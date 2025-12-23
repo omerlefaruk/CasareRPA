@@ -1,8 +1,9 @@
 import asyncio
-import orjson
 import os
 import sys
 from pathlib import Path
+
+import orjson
 
 # Add src to path
 sys.path.append(str(Path(__file__).parent.parent.parent.joinpath("src")))
@@ -45,8 +46,9 @@ class MockContext:
 
 
 # Import the node AFTER the sys.path hack
-from casare_rpa.nodes.workflow.execute_workflow_node import ExecuteWorkflowNode
 from loguru import logger
+
+from casare_rpa.nodes.workflow.execute_workflow_node import ExecuteWorkflowNode
 
 
 async def test_execute_workflow():

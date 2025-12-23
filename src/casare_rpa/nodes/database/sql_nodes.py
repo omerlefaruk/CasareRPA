@@ -24,16 +24,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from casare_rpa.domain.credentials import CredentialAwareMixin, CREDENTIAL_NAME_PROP
-from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.credentials import CREDENTIAL_NAME_PROP, CredentialAwareMixin
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
 )
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 # Try to import optional database drivers
 try:
@@ -169,14 +169,14 @@ class DatabaseConnection:
         self.connection = connection  # Single connection or acquired connection from pool
         self.connection_string = connection_string
         self.in_transaction = in_transaction
-        self.cursor: Optional[Any] = None
-        self.last_results: List[Dict[str, Any]] = []
+        self.cursor: Any | None = None
+        self.last_results: list[dict[str, Any]] = []
         self.last_rowcount: int = 0
-        self.last_lastrowid: Optional[int] = None
+        self.last_lastrowid: int | None = None
         self._is_pool = is_pool
         self._pool = pool  # Connection pool (asyncpg.Pool or aiomysql.Pool)
-        self._acquired_conn: Optional[Any] = None  # Currently acquired connection from pool
-        self._transaction: Optional[Any] = None  # Active transaction (for asyncpg)
+        self._acquired_conn: Any | None = None  # Currently acquired connection from pool
+        self._transaction: Any | None = None  # Active transaction (for asyncpg)
 
     async def acquire(self) -> Any:
         """
@@ -453,7 +453,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
 
             logger.info(f"Connecting to {db_type} database")
 
-            last_error: Optional[Exception] = None
+            last_error: Exception | None = None
             attempts = 0
             max_attempts = retry_count + 1
 
@@ -465,7 +465,7 @@ class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
                             f"Retry attempt {attempts - 1}/{retry_count} for database connection"
                         )
 
-                    connection: Optional[DatabaseConnection] = None
+                    connection: DatabaseConnection | None = None
 
                     if db_type == "sqlite":
                         connection = await self._connect_sqlite(database)
@@ -701,7 +701,7 @@ class ExecuteQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: DatabaseConnection | None = self.get_input_value("connection")
             query = self.get_parameter("query", "")
             parameters = self.get_parameter("parameters", [])
             retry_count = self.get_parameter("retry_count", 0)
@@ -720,7 +720,7 @@ class ExecuteQueryNode(BaseNode):
 
             logger.debug(f"Executing query: {query[:100]}...")
 
-            last_error: Optional[Exception] = None
+            last_error: Exception | None = None
             attempts = 0
             max_attempts = retry_count + 1
 
@@ -730,8 +730,8 @@ class ExecuteQueryNode(BaseNode):
                     if attempts > 1:
                         logger.info(f"Retry attempt {attempts - 1}/{retry_count} for query")
 
-                    results: List[Dict[str, Any]] = []
-                    columns: List[str] = []
+                    results: list[dict[str, Any]] = []
+                    columns: list[str] = []
 
                     if connection.db_type == "sqlite":
                         results, columns = await self._execute_sqlite(connection, query, parameters)
@@ -783,8 +783,8 @@ class ExecuteQueryNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
     async def _execute_sqlite(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Execute query on SQLite."""
         conn = connection.connection
 
@@ -792,18 +792,18 @@ class ExecuteQueryNode(BaseNode):
             cursor = await conn.execute(query, parameters or [])
             rows = await cursor.fetchall()
             columns = [desc[0] for desc in cursor.description] if cursor.description else []
-            results = [dict(zip(columns, row)) for row in rows]
+            results = [dict(zip(columns, row, strict=False)) for row in rows]
         else:
             cursor = conn.execute(query, parameters or [])
             rows = cursor.fetchall()
             columns = [desc[0] for desc in cursor.description] if cursor.description else []
-            results = [dict(zip(columns, row)) for row in rows]
+            results = [dict(zip(columns, row, strict=False)) for row in rows]
 
         return results, columns
 
     async def _execute_postgresql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Execute query on PostgreSQL using connection pool."""
         conn = await connection.acquire()
 
@@ -823,8 +823,8 @@ class ExecuteQueryNode(BaseNode):
             await connection.release()
 
     async def _execute_mysql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Execute query on MySQL using connection pool."""
         conn = await connection.acquire()
 
@@ -922,7 +922,7 @@ class ExecuteNonQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: DatabaseConnection | None = self.get_input_value("connection")
             query = self.get_parameter("query", "")
             parameters = self.get_parameter("parameters", [])
             retry_count = self.get_parameter("retry_count", 0)
@@ -941,7 +941,7 @@ class ExecuteNonQueryNode(BaseNode):
 
             logger.debug(f"Executing statement: {query[:100]}...")
 
-            last_error: Optional[Exception] = None
+            last_error: Exception | None = None
             attempts = 0
             max_attempts = retry_count + 1
 
@@ -952,7 +952,7 @@ class ExecuteNonQueryNode(BaseNode):
                         logger.info(f"Retry attempt {attempts - 1}/{retry_count} for statement")
 
                     rows_affected = 0
-                    last_insert_id: Optional[int] = None
+                    last_insert_id: int | None = None
 
                     if connection.db_type == "sqlite":
                         rows_affected, last_insert_id = await self._execute_sqlite(
@@ -1007,8 +1007,8 @@ class ExecuteNonQueryNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
     async def _execute_sqlite(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
-    ) -> Tuple[int, Optional[int]]:
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
+    ) -> tuple[int, int | None]:
         """Execute non-query on SQLite."""
         conn = connection.connection
 
@@ -1028,8 +1028,8 @@ class ExecuteNonQueryNode(BaseNode):
         return rows_affected, last_insert_id
 
     async def _execute_postgresql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
-    ) -> Tuple[int, Optional[int]]:
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
+    ) -> tuple[int, int | None]:
         """Execute non-query on PostgreSQL using connection pool."""
         conn = await connection.acquire()
 
@@ -1048,8 +1048,8 @@ class ExecuteNonQueryNode(BaseNode):
                 await connection.release()
 
     async def _execute_mysql(
-        self, connection: DatabaseConnection, query: str, parameters: List[Any]
-    ) -> Tuple[int, Optional[int]]:
+        self, connection: DatabaseConnection, query: str, parameters: list[Any]
+    ) -> tuple[int, int | None]:
         """Execute non-query on MySQL using connection pool."""
         conn = await connection.acquire()
 
@@ -1109,7 +1109,7 @@ class BeginTransactionNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
-        connection: Optional[DatabaseConnection] = None
+        connection: DatabaseConnection | None = None
 
         try:
             connection = self.get_input_value("connection")
@@ -1200,7 +1200,7 @@ class CommitTransactionNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
-        connection: Optional[DatabaseConnection] = None
+        connection: DatabaseConnection | None = None
 
         try:
             connection = self.get_input_value("connection")
@@ -1292,7 +1292,7 @@ class RollbackTransactionNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
-        connection: Optional[DatabaseConnection] = None
+        connection: DatabaseConnection | None = None
 
         try:
             connection = self.get_input_value("connection")
@@ -1384,7 +1384,7 @@ class CloseDatabaseNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: DatabaseConnection | None = self.get_input_value("connection")
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -1492,7 +1492,7 @@ class ExecuteBatchNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: DatabaseConnection | None = self.get_input_value("connection")
             statements = self.get_parameter("statements", [])
             stop_on_error = self.get_parameter("stop_on_error", True)
             retry_count = self.get_parameter("retry_count", 0)
@@ -1505,9 +1505,9 @@ class ExecuteBatchNode(BaseNode):
 
             logger.debug(f"Executing batch of {len(statements)} statements")
 
-            results: List[Dict[str, Any]] = []
+            results: list[dict[str, Any]] = []
             total_rows = 0
-            errors: List[str] = []
+            errors: list[str] = []
 
             # Acquire connection for batch (hold for entire batch)
             pool_conn = None

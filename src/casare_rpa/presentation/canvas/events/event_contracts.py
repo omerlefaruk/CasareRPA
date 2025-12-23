@@ -52,13 +52,13 @@ class NodeExecutionCompletedData(TypedDict, total=False):
     node_type: str
     """Type/class name of the node."""
 
-    result: Dict[str, Any]
+    result: dict[str, Any]
     """Execution result dictionary with 'success' and output data."""
 
     duration_ms: float
     """Execution duration in milliseconds."""
 
-    output_values: Dict[str, Any]
+    output_values: dict[str, Any]
     """Output port values after execution."""
 
 
@@ -77,7 +77,7 @@ class NodeExecutionFailedData(TypedDict, total=False):
     error_code: str
     """Standardized error code (e.g., 'ELEMENT_NOT_FOUND')."""
 
-    traceback: Optional[str]
+    traceback: str | None
     """Full traceback for debugging."""
 
     retryable: bool
@@ -126,7 +126,7 @@ class NodeSelectedData(TypedDict, total=False):
     node_id: str
     """Unique identifier of the selected node."""
 
-    node_ids: List[str]
+    node_ids: list[str]
     """List of all currently selected node IDs (for multi-select)."""
 
 
@@ -216,7 +216,7 @@ class WorkflowClosedData(TypedDict, total=False):
     workflow_id: str
     """Unique identifier of the closed workflow."""
 
-    file_path: Optional[str]
+    file_path: str | None
     """Path of the closed workflow file, if any."""
 
 
@@ -262,7 +262,7 @@ class ExecutionCompletedData(TypedDict, total=False):
     nodes_executed: int
     """Number of nodes that were executed."""
 
-    results: Dict[str, Any]
+    results: dict[str, Any]
     """Final execution results/outputs."""
 
 
@@ -281,7 +281,7 @@ class ExecutionFailedData(TypedDict, total=False):
     error_code: str
     """Standardized error code."""
 
-    failed_node_id: Optional[str]
+    failed_node_id: str | None
     """ID of the node that caused the failure."""
 
     duration_ms: float
@@ -297,7 +297,7 @@ class ExecutionPausedData(TypedDict, total=False):
     reason: str
     """Reason for pause: 'user', 'breakpoint', 'error'."""
 
-    current_node_id: Optional[str]
+    current_node_id: str | None
     """Node that was executing when paused."""
 
 
@@ -375,7 +375,7 @@ class VariableSetData(TypedDict, total=False):
     scope: str
     """Variable scope: 'workflow', 'project', 'global'."""
 
-    node_id: Optional[str]
+    node_id: str | None
     """Node that set the variable, if applicable."""
 
 
@@ -441,14 +441,14 @@ class BreakpointHitData(TypedDict, total=False):
     execution_id: str
     """Current execution ID."""
 
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     """Current variable values at breakpoint."""
 
 
 class DebugCallStackUpdatedData(TypedDict, total=False):
     """Data for DEBUG_CALL_STACK_UPDATED event."""
 
-    frames: List[Dict[str, Any]]
+    frames: list[dict[str, Any]]
     """Call stack frames."""
 
     current_frame: int
@@ -504,7 +504,7 @@ class ErrorOccurredData(TypedDict, total=False):
     source: str
     """Component that generated the error."""
 
-    traceback: Optional[str]
+    traceback: str | None
     """Full traceback for debugging."""
 
 
@@ -536,7 +536,7 @@ class PerformanceMetricData(TypedDict, total=False):
     unit: str
     """Unit of measurement (ms, bytes, count, etc.)."""
 
-    context: Dict[str, Any]
+    context: dict[str, Any]
     """Additional context."""
 
 
@@ -557,7 +557,7 @@ class TriggerFiredData(TypedDict, total=False):
     workflow_id: str
     """Workflow to be executed."""
 
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     """Trigger payload data."""
 
 
@@ -573,7 +573,7 @@ class TriggerCreatedData(TypedDict, total=False):
     workflow_id: str
     """Associated workflow."""
 
-    config: Dict[str, Any]
+    config: dict[str, Any]
     """Trigger configuration."""
 
 
@@ -585,7 +585,7 @@ class TriggerCreatedData(TypedDict, total=False):
 class BatchedEventsData(TypedDict, total=False):
     """Data for batched event delivery (from EventBatcher)."""
 
-    batched_events: List[Any]
+    batched_events: list[Any]
     """List of original events that were batched."""
 
     count: int

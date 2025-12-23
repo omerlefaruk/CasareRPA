@@ -4,19 +4,20 @@ Implements cron-based scheduling using APScheduler.
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, List, Callable, Any
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
 
 try:
+    from apscheduler.executors.asyncio import AsyncIOExecutor
+    from apscheduler.jobstores.memory import MemoryJobStore
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
     from apscheduler.triggers.cron import CronTrigger
     from apscheduler.triggers.date import DateTrigger
     from apscheduler.triggers.interval import IntervalTrigger
-    from apscheduler.jobstores.memory import MemoryJobStore
-    from apscheduler.executors.asyncio import AsyncIOExecutor
 
     HAS_APSCHEDULER = True
 except ImportError:
@@ -32,7 +33,7 @@ class ScheduleExecutionError(Exception):
     pass
 
 
-def parse_cron_expression(cron_expr: str) -> Dict[str, str]:
+def parse_cron_expression(cron_expr: str) -> dict[str, str]:
     """
     Parse cron expression into APScheduler trigger kwargs.
 
@@ -70,7 +71,7 @@ def parse_cron_expression(cron_expr: str) -> Dict[str, str]:
         raise ValueError(f"Invalid cron expression: {cron_expr}")
 
 
-def frequency_to_interval(frequency: ScheduleFrequency) -> Optional[timedelta]:
+def frequency_to_interval(frequency: ScheduleFrequency) -> timedelta | None:
     """Convert schedule frequency to timedelta."""
     intervals = {
         ScheduleFrequency.HOURLY: timedelta(hours=1),
@@ -96,7 +97,7 @@ class JobScheduler:
 
     def __init__(
         self,
-        on_schedule_trigger: Optional[Callable[[Schedule], Any]] = None,
+        on_schedule_trigger: Callable[[Schedule], Any] | None = None,
         timezone: str = "UTC",
     ):
         """
@@ -113,8 +114,8 @@ class JobScheduler:
 
         self._default_timezone = timezone
         self._on_schedule_trigger = on_schedule_trigger
-        self._schedules: Dict[str, Schedule] = {}
-        self._scheduler: Optional[AsyncIOScheduler] = None
+        self._schedules: dict[str, Schedule] = {}
+        self._scheduler: AsyncIOScheduler | None = None
         self._running = False
 
         logger.info("JobScheduler initialized")
@@ -268,7 +269,7 @@ class JobScheduler:
             self._scheduler.resume()
             logger.info("All schedules resumed")
 
-    def get_next_runs(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_next_runs(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get upcoming scheduled runs.
 
@@ -300,7 +301,7 @@ class JobScheduler:
         upcoming.sort(key=lambda x: x["next_run"])
         return upcoming[:limit]
 
-    def get_schedule_info(self, schedule_id: str) -> Optional[Dict[str, Any]]:
+    def get_schedule_info(self, schedule_id: str) -> dict[str, Any] | None:
         """Get info about a specific schedule."""
         if not self._scheduler:
             return None
@@ -373,7 +374,7 @@ class JobScheduler:
         logger.info(f"Schedule '{schedule.name}' triggered")
 
         # Update last run
-        schedule.last_run = datetime.now(timezone.utc)
+        schedule.last_run = datetime.now(UTC)
         schedule.run_count += 1
 
         # Call the trigger callback
@@ -409,7 +410,7 @@ class ScheduleManager:
         """
         self._job_creator = job_creator
         self._scheduler = JobScheduler(on_schedule_trigger=self._on_trigger, timezone=timezone)
-        self._schedules: Dict[str, Schedule] = {}
+        self._schedules: dict[str, Schedule] = {}
 
     async def start(self):
         """Start the schedule manager."""
@@ -446,15 +447,15 @@ class ScheduleManager:
             self._schedules[schedule_id].enabled = False
         return self._scheduler.disable_schedule(schedule_id)
 
-    def get_schedule(self, schedule_id: str) -> Optional[Schedule]:
+    def get_schedule(self, schedule_id: str) -> Schedule | None:
         """Get a schedule by ID."""
         return self._schedules.get(schedule_id)
 
-    def get_all_schedules(self) -> List[Schedule]:
+    def get_all_schedules(self) -> list[Schedule]:
         """Get all schedules."""
         return list(self._schedules.values())
 
-    def get_upcoming_runs(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_upcoming_runs(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get upcoming scheduled runs."""
         return self._scheduler.get_next_runs(limit)
 
@@ -474,8 +475,8 @@ def calculate_next_run(
     frequency: ScheduleFrequency,
     cron_expression: str = "",
     timezone: str = "UTC",
-    from_time: Optional[datetime] = None,
-) -> Optional[datetime]:
+    from_time: datetime | None = None,
+) -> datetime | None:
     """
     Calculate the next run time for a schedule.
 

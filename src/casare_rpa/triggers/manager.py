@@ -7,9 +7,10 @@ routes events to job creation, and handles HTTP server for webhooks.
 
 import asyncio
 import os
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional
 import uuid
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -20,7 +21,6 @@ from casare_rpa.triggers.base import (
     TriggerType,
 )
 from casare_rpa.triggers.registry import get_trigger_registry
-
 
 # Type alias for job creation callback
 JobCreatorCallback = Callable[[TriggerEvent], Any]
@@ -76,9 +76,9 @@ class TriggerManager:
 
     def __init__(
         self,
-        on_trigger_event: Optional[JobCreatorCallback] = None,
+        on_trigger_event: JobCreatorCallback | None = None,
         http_port: int = 8766,
-        http_host: Optional[str] = None,
+        http_host: str | None = None,
     ) -> None:
         """
         Initialize the trigger manager.
@@ -94,8 +94,8 @@ class TriggerManager:
         self._http_host = http_host or _get_default_webhook_host()
 
         # Trigger storage
-        self._triggers: Dict[str, BaseTrigger] = {}
-        self._trigger_configs: Dict[str, BaseTriggerConfig] = {}
+        self._triggers: dict[str, BaseTrigger] = {}
+        self._trigger_configs: dict[str, BaseTriggerConfig] = {}
 
         # State
         self._running = False
@@ -103,10 +103,10 @@ class TriggerManager:
         self._http_app = None
 
         # Webhook routes
-        self._webhook_routes: Dict[str, str] = {}  # path -> trigger_id
+        self._webhook_routes: dict[str, str] = {}  # path -> trigger_id
 
         # Callable workflows (for WorkflowCallTrigger)
-        self._callables: Dict[str, str] = {}  # alias -> trigger_id
+        self._callables: dict[str, str] = {}  # alias -> trigger_id
 
         # Registry reference
         self._registry = get_trigger_registry()
@@ -258,6 +258,7 @@ class TriggerManager:
     async def _process_webhook(self, request, trigger_id: str) -> Any:
         """Process a webhook request for a trigger."""
         from aiohttp import web
+
         from .webhook_auth import verify_webhook_auth
 
         trigger = self._triggers.get(trigger_id)
@@ -307,7 +308,7 @@ class TriggerManager:
                 {
                     "status": "accepted",
                     "trigger_id": trigger_id,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             )
         else:
@@ -378,7 +379,7 @@ class TriggerManager:
 
     # ==================== Public API ====================
 
-    async def register_trigger(self, config: BaseTriggerConfig) -> Optional[BaseTrigger]:
+    async def register_trigger(self, config: BaseTriggerConfig) -> BaseTrigger | None:
         """
         Register and start a new trigger.
 
@@ -472,7 +473,7 @@ class TriggerManager:
 
     async def update_trigger(
         self, trigger_id: str, config: BaseTriggerConfig
-    ) -> Optional[BaseTrigger]:
+    ) -> BaseTrigger | None:
         """
         Update an existing trigger.
 
@@ -523,8 +524,8 @@ class TriggerManager:
         return True
 
     async def fire_trigger(
-        self, trigger_id: str, payload: Optional[Dict[str, Any]] = None
-    ) -> Optional[str]:
+        self, trigger_id: str, payload: dict[str, Any] | None = None
+    ) -> str | None:
         """
         Manually fire a trigger.
 
@@ -546,7 +547,7 @@ class TriggerManager:
 
         metadata = {
             "source": "manual",
-            "fired_at": datetime.now(timezone.utc).isoformat(),
+            "fired_at": datetime.now(UTC).isoformat(),
         }
         success = await trigger.emit(payload or {}, metadata)
 
@@ -555,8 +556,8 @@ class TriggerManager:
         return None
 
     async def call_workflow(
-        self, alias: str, params: Optional[Dict[str, Any]] = None, wait: bool = True
-    ) -> Optional[Dict[str, Any]]:
+        self, alias: str, params: dict[str, Any] | None = None, wait: bool = True
+    ) -> dict[str, Any] | None:
         """
         Call a workflow by its callable alias.
 
@@ -580,31 +581,31 @@ class TriggerManager:
             return {"event_id": event_id, "status": "submitted"}
         return None
 
-    def get_trigger(self, trigger_id: str) -> Optional[BaseTrigger]:
+    def get_trigger(self, trigger_id: str) -> BaseTrigger | None:
         """Get a trigger by ID."""
         return self._triggers.get(trigger_id)
 
-    def get_trigger_config(self, trigger_id: str) -> Optional[BaseTriggerConfig]:
+    def get_trigger_config(self, trigger_id: str) -> BaseTriggerConfig | None:
         """Get trigger configuration by ID."""
         return self._trigger_configs.get(trigger_id)
 
-    def get_all_triggers(self) -> List[BaseTrigger]:
+    def get_all_triggers(self) -> list[BaseTrigger]:
         """Get all triggers."""
         return list(self._triggers.values())
 
-    def get_triggers_by_scenario(self, scenario_id: str) -> List[BaseTrigger]:
+    def get_triggers_by_scenario(self, scenario_id: str) -> list[BaseTrigger]:
         """Get all triggers for a scenario."""
         return [t for t in self._triggers.values() if t.config.scenario_id == scenario_id]
 
-    def get_triggers_by_type(self, trigger_type: TriggerType) -> List[BaseTrigger]:
+    def get_triggers_by_type(self, trigger_type: TriggerType) -> list[BaseTrigger]:
         """Get all triggers of a specific type."""
         return [t for t in self._triggers.values() if t.trigger_type == trigger_type]
 
-    def get_active_triggers(self) -> List[BaseTrigger]:
+    def get_active_triggers(self) -> list[BaseTrigger]:
         """Get all active (running) triggers."""
         return [t for t in self._triggers.values() if t.is_active]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get trigger manager statistics.
 

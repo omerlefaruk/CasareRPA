@@ -46,11 +46,11 @@ class RecoveryRecommendation:
     strategy: RecoveryStrategy
     confidence: float
     reasoning: str
-    suggested_fix: Optional[str] = None
-    retry_with_modifications: Optional[Dict[str, Any]] = None
-    alternative_strategies: List[RecoveryStrategy] = field(default_factory=list)
+    suggested_fix: str | None = None
+    retry_with_modifications: dict[str, Any] | None = None
+    alternative_strategies: list[RecoveryStrategy] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "strategy": self.strategy.value,
@@ -62,7 +62,7 @@ class RecoveryRecommendation:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> RecoveryRecommendation:
+    def from_dict(cls, data: dict[str, Any]) -> RecoveryRecommendation:
         """Create from dictionary."""
         return cls(
             strategy=RecoveryStrategy(data.get("strategy", "abort")),
@@ -97,11 +97,11 @@ class ErrorContext:
     error_type: str
     error_message: str
     node_type: str
-    node_inputs: Dict[str, Any]
-    node_config: Dict[str, Any]
-    screenshot_base64: Optional[str] = None
-    stack_trace: Optional[str] = None
-    execution_history: List[Dict[str, Any]] = field(default_factory=list)
+    node_inputs: dict[str, Any]
+    node_config: dict[str, Any]
+    screenshot_base64: str | None = None
+    stack_trace: str | None = None
+    execution_history: list[dict[str, Any]] = field(default_factory=list)
     workflow_name: str = ""
     attempt_count: int = 1
 
@@ -164,15 +164,15 @@ Consider:
         self._model = model
         self._temperature = temperature
         self._max_tokens = max_tokens
-        self._llm_manager: Optional[Any] = None
+        self._llm_manager: Any | None = None
 
     async def _get_llm_manager(self) -> Any:
         """Get or create LLM resource manager."""
         if self._llm_manager is None:
             from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                LLMResourceManager,
                 LLMConfig,
                 LLMProvider,
+                LLMResourceManager,
             )
 
             self._llm_manager = LLMResourceManager()
@@ -310,9 +310,9 @@ Consider:
     async def analyze_error(
         self,
         error: Exception,
-        node_context: Dict[str, Any],
-        screenshot: Optional[bytes] = None,
-        execution_history: Optional[List[Dict[str, Any]]] = None,
+        node_context: dict[str, Any],
+        screenshot: bytes | None = None,
+        execution_history: list[dict[str, Any]] | None = None,
     ) -> RecoveryRecommendation:
         """
         Analyze an error and recommend a recovery strategy.

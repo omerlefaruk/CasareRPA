@@ -7,17 +7,16 @@ Connects to remote orchestrator API for real robot fleet management.
 """
 
 import os
-from typing import Optional, List, Dict, TYPE_CHECKING
-
-from PySide6.QtCore import Signal, Slot
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import Signal, Slot
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.infrastructure.orchestrator.client import OrchestratorClient
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class RobotController(BaseController):
@@ -69,11 +68,11 @@ class RobotController(BaseController):
         """
         super().__init__(main_window)
 
-        self._orchestrator_client: Optional["OrchestratorClient"] = None
-        self._orchestrator_url: Optional[str] = None
+        self._orchestrator_client: OrchestratorClient | None = None
+        self._orchestrator_url: str | None = None
 
-        self._current_robots: List = []
-        self._selected_robot_id: Optional[str] = None
+        self._current_robots: list = []
+        self._selected_robot_id: str | None = None
         self._execution_mode: str = "local"
         self._connected: bool = False
 
@@ -173,7 +172,7 @@ class RobotController(BaseController):
         except Exception as e:
             logger.warning(f"Orchestrator client initialization failed: {e}")
 
-    def _get_orchestrator_url_from_config(self) -> Optional[str]:
+    def _get_orchestrator_url_from_config(self) -> str | None:
         """
         Get orchestrator URL from ClientConfigManager (config.yaml).
 
@@ -199,7 +198,7 @@ class RobotController(BaseController):
             logger.debug(f"Could not read config.yaml: {e}")
         return None
 
-    def _get_api_key_from_config(self) -> Optional[str]:
+    def _get_api_key_from_config(self) -> str | None:
         """
         Get API key from ClientConfigManager (config.yaml).
 
@@ -220,7 +219,7 @@ class RobotController(BaseController):
             logger.debug(f"Could not read API key from config.yaml: {e}")
         return None
 
-    def _get_orchestrator_url_list(self) -> List[str]:
+    def _get_orchestrator_url_list(self) -> list[str]:
         """
         Get list of orchestrator URLs to try (tunnel first, then localhost).
 
@@ -259,7 +258,7 @@ class RobotController(BaseController):
             base = base[: -len("/ws")]
         return base.rstrip("/")
 
-    async def connect_to_orchestrator(self, url: Optional[str] = None) -> bool:
+    async def connect_to_orchestrator(self, url: str | None = None) -> bool:
         """
         Connect to orchestrator API with automatic fallback.
 
@@ -516,7 +515,7 @@ class RobotController(BaseController):
             logger.error(f"Failed to submit workflow: {e}")
             self.submission_state_changed.emit("error", str(e))
 
-    def _get_workflow_data(self) -> Optional[dict]:
+    def _get_workflow_data(self) -> dict | None:
         """
         Get current workflow data from main window.
 
@@ -541,7 +540,7 @@ class RobotController(BaseController):
             logger.error(f"Error getting workflow data: {e}")
             return None
 
-    def _get_workflow_variables(self) -> Optional[dict]:
+    def _get_workflow_variables(self) -> dict | None:
         """
         Get current workflow variables from main window.
 
@@ -746,8 +745,8 @@ class RobotController(BaseController):
         """
         from casare_rpa.domain.orchestrator.entities.robot import (
             Robot,
-            RobotStatus,
             RobotCapability,
+            RobotStatus,
         )
 
         robots = []
@@ -846,9 +845,9 @@ class RobotController(BaseController):
     async def submit_job(
         self,
         workflow_data: dict,
-        variables: Optional[dict] = None,
-        robot_id: Optional[str] = None,
-    ) -> Optional[str]:
+        variables: dict | None = None,
+        robot_id: str | None = None,
+    ) -> str | None:
         """
         Submit job to selected robot via orchestrator API.
 
@@ -1028,7 +1027,7 @@ class RobotController(BaseController):
     # ==================== Properties ====================
 
     @property
-    def selected_robot_id(self) -> Optional[str]:
+    def selected_robot_id(self) -> str | None:
         """Get currently selected robot ID."""
         return self._selected_robot_id
 
@@ -1063,7 +1062,7 @@ class RobotController(BaseController):
         return self._connected
 
     @property
-    def orchestrator_url(self) -> Optional[str]:
+    def orchestrator_url(self) -> str | None:
         """Get configured orchestrator URL."""
         return self._orchestrator_url
 
@@ -1261,7 +1260,7 @@ class RobotController(BaseController):
 
     # ==================== Batch Operations ====================
 
-    async def stop_all_robots(self, force: bool = False) -> Dict[str, bool]:
+    async def stop_all_robots(self, force: bool = False) -> dict[str, bool]:
         """
         Send stop command to all online robots.
 
@@ -1277,7 +1276,7 @@ class RobotController(BaseController):
                 results[robot.id] = await self.stop_robot(robot.id, force)
         return results
 
-    async def restart_all_robots(self) -> Dict[str, bool]:
+    async def restart_all_robots(self) -> dict[str, bool]:
         """
         Send restart command to all robots.
 
@@ -1290,8 +1289,8 @@ class RobotController(BaseController):
         return results
 
     async def get_robot_logs(
-        self, robot_id: str, limit: int = 100, since: Optional[str] = None
-    ) -> List[dict]:
+        self, robot_id: str, limit: int = 100, since: str | None = None
+    ) -> list[dict]:
         """
         Get logs for a specific robot.
 

@@ -16,20 +16,19 @@ import time
 from collections import defaultdict
 from typing import Dict, Optional, Tuple
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from loguru import logger
 from pydantic import BaseModel, Field
 
 from casare_rpa.infrastructure.orchestrator.api.auth import (
+    JWT_DEV_MODE,
     AuthenticatedUser,
     create_access_token,
     create_refresh_token,
     decode_token,
     get_current_user,
-    JWT_DEV_MODE,
 )
-import jwt
-
 
 router = APIRouter()
 
@@ -45,7 +44,7 @@ LOGIN_RATE_LIMIT_LOCKOUT_SECONDS = 900  # 15 minute lockout after exceeding
 
 # IP-based rate limit tracking
 # Structure: {ip: (attempt_count, window_start_time, lockout_until)}
-_login_attempts: Dict[str, Tuple[int, float, Optional[float]]] = defaultdict(lambda: (0, 0.0, None))
+_login_attempts: dict[str, tuple[int, float, float | None]] = defaultdict(lambda: (0, 0.0, None))
 
 
 def _get_client_ip(request: Request) -> str:
@@ -65,7 +64,7 @@ def _get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _check_rate_limit(ip: str) -> Tuple[bool, Optional[int]]:
+def _check_rate_limit(ip: str) -> tuple[bool, int | None]:
     """
     Check if IP is rate limited.
 
@@ -139,7 +138,7 @@ class LoginRequest(BaseModel):
 
     username: str = Field(..., min_length=1, description="Username or email")
     password: str = Field(..., min_length=1, description="Password")
-    tenant_id: Optional[str] = Field(None, description="Optional tenant ID")
+    tenant_id: str | None = Field(None, description="Optional tenant ID")
 
 
 class TokenResponse(BaseModel):
@@ -162,7 +161,7 @@ class UserInfoResponse(BaseModel):
 
     user_id: str
     roles: list[str]
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
     dev_mode: bool = False
 
 

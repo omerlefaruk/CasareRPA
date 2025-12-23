@@ -8,12 +8,13 @@ Provides async pub/sub system for orchestrator-level events:
 """
 
 import asyncio
+from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
-from typing import Callable, Dict, List, Optional
 from threading import Lock
-from collections import deque
+from typing import Dict, List, Optional
 
 from loguru import logger
 
@@ -40,10 +41,10 @@ class MonitoringEvent:
 
     event_type: MonitoringEventType
     timestamp: datetime
-    payload: Dict
-    correlation_id: Optional[str] = None
+    payload: dict
+    correlation_id: str | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Serialize event to dictionary."""
         return {
             "event_type": self.event_type.name,
@@ -104,7 +105,7 @@ class MonitoringEventBus:
         if self._initialized:
             return
 
-        self._handlers: Dict[MonitoringEventType, List[EventHandler]] = {}
+        self._handlers: dict[MonitoringEventType, list[EventHandler]] = {}
         self._history: deque = deque(maxlen=max_history)
         self._initialized = True
 
@@ -150,8 +151,8 @@ class MonitoringEventBus:
     async def publish(
         self,
         event_type: MonitoringEventType,
-        payload: Dict,
-        correlation_id: Optional[str] = None,
+        payload: dict,
+        correlation_id: str | None = None,
     ) -> None:
         """
         Publish an event to all subscribed handlers.
@@ -216,7 +217,7 @@ class MonitoringEventBus:
                         exc_info=result,
                     )
 
-    def get_history(self, limit: int = 100) -> List[MonitoringEvent]:
+    def get_history(self, limit: int = 100) -> list[MonitoringEvent]:
         """
         Get recent event history.
 
@@ -228,7 +229,7 @@ class MonitoringEventBus:
         """
         return list(self._history)[-limit:][::-1]
 
-    def get_statistics(self) -> Dict:
+    def get_statistics(self) -> dict:
         """
         Get event bus statistics for diagnostics.
 

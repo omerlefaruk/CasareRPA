@@ -6,8 +6,8 @@ for consistent package organization.
 """
 
 from casare_rpa.nodes.dict_nodes import (
-    JsonParseNode,
     DictToJsonNode,
+    JsonParseNode,
 )
 
 __all__ = [

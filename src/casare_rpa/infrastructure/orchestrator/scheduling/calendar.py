@@ -5,13 +5,13 @@ Handles business hours, holidays, blackout periods, and timezone-aware schedulin
 Provides validation for enterprise scheduling constraints.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, date, time, timedelta
-from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Any
-from zoneinfo import ZoneInfo
-import threading
 import calendar
+import threading
+from dataclasses import dataclass, field
+from datetime import date, datetime, time, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set, Tuple
+from zoneinfo import ZoneInfo
 
 from loguru import logger
 
@@ -60,13 +60,13 @@ class Holiday:
     name: str
     holiday_type: HolidayType
     month: int
-    day: Optional[int] = None
-    weekday: Optional[DayOfWeek] = None
-    occurrence: Optional[int] = None
-    year: Optional[int] = None
+    day: int | None = None
+    weekday: DayOfWeek | None = None
+    occurrence: int | None = None
+    year: int | None = None
     observance: bool = False
 
-    def get_date(self, year: int) -> Optional[date]:
+    def get_date(self, year: int) -> date | None:
         """
         Calculate the actual date of this holiday for a given year.
 
@@ -105,7 +105,7 @@ class Holiday:
 
         return holiday_date
 
-    def _calculate_floating_date(self, year: int) -> Optional[date]:
+    def _calculate_floating_date(self, year: int) -> date | None:
         """Calculate date for floating holidays (Nth weekday of month)."""
         if self.weekday is None or self.occurrence is None:
             return None
@@ -192,9 +192,9 @@ class BlackoutPeriod:
     end: datetime
     reason: str = ""
     recurring: bool = False
-    affects_workflows: List[str] = field(default_factory=list)
+    affects_workflows: list[str] = field(default_factory=list)
 
-    def is_active(self, check_time: datetime, workflow_id: Optional[str] = None) -> bool:
+    def is_active(self, check_time: datetime, workflow_id: str | None = None) -> bool:
         """
         Check if blackout is active at given time.
 
@@ -239,9 +239,9 @@ class CalendarConfig:
     """
 
     timezone: str = "UTC"
-    working_hours: Dict[DayOfWeek, WorkingHours] = field(default_factory=dict)
-    holidays: List[Holiday] = field(default_factory=list)
-    blackouts: List[BlackoutPeriod] = field(default_factory=list)
+    working_hours: dict[DayOfWeek, WorkingHours] = field(default_factory=dict)
+    holidays: list[Holiday] = field(default_factory=list)
+    blackouts: list[BlackoutPeriod] = field(default_factory=list)
     allow_weekends: bool = False
     allow_outside_hours: bool = False
 
@@ -271,7 +271,7 @@ class BusinessCalendar:
     - Next working time calculation
     """
 
-    US_FEDERAL_HOLIDAYS: List[Holiday] = [
+    US_FEDERAL_HOLIDAYS: list[Holiday] = [
         Holiday("New Year's Day", HolidayType.FIXED, 1, 1, observance=True),
         Holiday(
             "Martin Luther King Jr. Day",
@@ -320,7 +320,7 @@ class BusinessCalendar:
         Holiday("Christmas Day", HolidayType.FIXED, 12, 25, observance=True),
     ]
 
-    UK_BANK_HOLIDAYS: List[Holiday] = [
+    UK_BANK_HOLIDAYS: list[Holiday] = [
         Holiday("New Year's Day", HolidayType.FIXED, 1, 1, observance=True),
         Holiday(
             "Early May Bank Holiday",
@@ -347,7 +347,7 @@ class BusinessCalendar:
         Holiday("Boxing Day", HolidayType.FIXED, 12, 26, observance=True),
     ]
 
-    def __init__(self, config: Optional[CalendarConfig] = None):
+    def __init__(self, config: CalendarConfig | None = None):
         """
         Initialize business calendar.
 
@@ -356,9 +356,9 @@ class BusinessCalendar:
         """
         self._config = config or CalendarConfig()
         self._tz = ZoneInfo(self._config.timezone)
-        self._holiday_cache: Dict[int, Set[date]] = {}
+        self._holiday_cache: dict[int, set[date]] = {}
         self._cache_lock = threading.Lock()
-        self._custom_dates: Set[date] = set()
+        self._custom_dates: set[date] = set()
 
         logger.info(f"BusinessCalendar initialized with timezone: {self._config.timezone}")
 
@@ -455,7 +455,7 @@ class BusinessCalendar:
             f"(enabled={hours.enabled})"
         )
 
-    def get_holidays_for_year(self, year: int) -> List[Tuple[date, str]]:
+    def get_holidays_for_year(self, year: int) -> list[tuple[date, str]]:
         """
         Get all holidays for a year.
 
@@ -473,7 +473,7 @@ class BusinessCalendar:
         holidays.sort(key=lambda x: x[0])
         return holidays
 
-    def _get_holiday_dates(self, year: int) -> Set[date]:
+    def _get_holiday_dates(self, year: int) -> set[date]:
         """Get cached set of holiday dates for a year."""
         with self._cache_lock:
             if year not in self._holiday_cache:
@@ -566,8 +566,8 @@ class BusinessCalendar:
         return hours.contains(dt.time())
 
     def is_in_blackout(
-        self, dt: datetime, workflow_id: Optional[str] = None
-    ) -> Tuple[bool, Optional[str]]:
+        self, dt: datetime, workflow_id: str | None = None
+    ) -> tuple[bool, str | None]:
         """
         Check if datetime is in a blackout period.
 
@@ -590,10 +590,10 @@ class BusinessCalendar:
     def can_execute(
         self,
         dt: datetime,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
         ignore_hours: bool = False,
         ignore_blackouts: bool = False,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if execution is allowed at given time.
 
@@ -631,10 +631,10 @@ class BusinessCalendar:
 
     def get_next_working_time(
         self,
-        from_time: Optional[datetime] = None,
-        workflow_id: Optional[str] = None,
+        from_time: datetime | None = None,
+        workflow_id: str | None = None,
         max_days_ahead: int = 30,
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """
         Get the next valid working time.
 
@@ -686,7 +686,7 @@ class BusinessCalendar:
     def adjust_to_working_time(
         self,
         dt: datetime,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
     ) -> datetime:
         """
         Adjust a datetime to the next valid working time if needed.
@@ -828,7 +828,7 @@ class BusinessCalendar:
     def create_24_7_calendar(
         cls,
         timezone: str = "UTC",
-        holidays: Optional[List[Holiday]] = None,
+        holidays: list[Holiday] | None = None,
     ) -> "BusinessCalendar":
         """
         Create a 24/7 calendar with no working hour restrictions.
@@ -853,7 +853,7 @@ class BusinessCalendar:
 
         return cls(config)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize calendar to dictionary.
 
@@ -900,7 +900,7 @@ class BusinessCalendar:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BusinessCalendar":
+    def from_dict(cls, data: dict[str, Any]) -> "BusinessCalendar":
         """
         Create calendar from dictionary.
 

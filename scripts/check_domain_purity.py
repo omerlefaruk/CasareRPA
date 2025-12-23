@@ -3,11 +3,11 @@
 Verify that domain layer has NO imports from infrastructure or application.
 Domain should only depend on itself.
 """
+
 import os
 import re
 import sys
 from pathlib import Path
-
 
 FORBIDDEN_IMPORTS = [
     "casare_rpa.infrastructure",
@@ -19,14 +19,14 @@ FORBIDDEN_IMPORTS = [
 def check_file(filepath: str) -> list[str]:
     """Check a Python file for forbidden imports"""
     errors = []
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         lines = f.readlines()
         for i, line in enumerate(lines, 1):
             # Skip comments
             if line.strip().startswith("#"):
                 continue
             # Check for actual imports, not just substring mentions
-            if ("from " in line or "import " in line):
+            if "from " in line or "import " in line:
                 for forbidden in FORBIDDEN_IMPORTS:
                     if forbidden in line:
                         errors.append(
@@ -52,7 +52,9 @@ def main():
                 all_errors.extend(errors)
 
     if all_errors:
-        print("[ERROR] Domain purity violations (domain/ should not import from infrastructure/application):")
+        print(
+            "[ERROR] Domain purity violations (domain/ should not import from infrastructure/application):"
+        )
         for error in all_errors:
             print(f"   {error}")
         return 1

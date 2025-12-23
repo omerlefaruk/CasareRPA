@@ -5,17 +5,16 @@ Provides the visual representation for subflow nodes on the canvas.
 A SubflowNode encapsulates a reusable workflow fragment.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QWidget, QLabel, QLineEdit
+from PySide6.QtWidgets import QLabel, QLineEdit, QWidget
 
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
-from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.presentation.canvas.graph.subflow_node_item import SubflowNodeItem
 from casare_rpa.presentation.canvas.theme import THEME
-
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
 # Promoted Parameter Widget with Variable Picker + Editable Label
@@ -64,11 +63,11 @@ class EditableLabel(QLabel):
 
     renamed = Signal(str, str)  # (old_name, new_name)
 
-    def __init__(self, text: str, param_name: str, parent: Optional[QWidget] = None):
+    def __init__(self, text: str, param_name: str, parent: QWidget | None = None):
         super().__init__(text, parent)
         self._param_name = param_name
         self._editing = False
-        self._line_edit: Optional[QLineEdit] = None
+        self._line_edit: QLineEdit | None = None
         self.setStyleSheet(_get_editable_label_style())
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("Double-click to rename")
@@ -368,7 +367,7 @@ class VisualSubflowNode(VisualNode):
 
         return DataType.ANY
 
-    def _parse_data_type(self, type_str: Optional[str]) -> DataType:
+    def _parse_data_type(self, type_str: str | None) -> DataType:
         """
         Parse data type string to DataType enum.
 
@@ -467,7 +466,7 @@ class VisualSubflowNode(VisualNode):
         except Exception as e:
             logger.debug(f"Could not hide internal property widgets: {e}")
 
-    def _add_promoted_parameter_widgets(self, parameters: List) -> None:
+    def _add_promoted_parameter_widgets(self, parameters: list) -> None:
         """
         Add input widgets for promoted parameters.
 
@@ -899,14 +898,14 @@ class VisualSubflowNode(VisualNode):
         else:
             logger.info("Dialog was cancelled (returned None)")
 
-    def _get_internal_node_schemas(self) -> Dict[str, Any]:
+    def _get_internal_node_schemas(self) -> dict[str, Any]:
         """
         Get schemas for internal nodes to enable better property discovery.
 
         Returns:
             Dict mapping node_type -> NodeSchema
         """
-        schemas: Dict[str, Any] = {}
+        schemas: dict[str, Any] = {}
 
         if not self._subflow_entity:
             return schemas

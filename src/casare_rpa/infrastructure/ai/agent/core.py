@@ -9,53 +9,52 @@ import json
 import re
 import time
 import traceback
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.domain.schemas.workflow_ai import (
-    WorkflowAISchema,
     EditWorkflowSchema,
+    WorkflowAISchema,
 )
 from casare_rpa.domain.validation import (
     ValidationResult,
 )
-from casare_rpa.infrastructure.ai.registry_dumper import (
-    dump_node_manifest,
-    manifest_to_markdown,
-    NodeManifest,
-)
-
 from casare_rpa.infrastructure.ai.agent.exceptions import (
-    LLMCallError,
     JSONParseError,
+    LLMCallError,
     ValidationError,
 )
+from casare_rpa.infrastructure.ai.agent.prompts import (
+    APPEND_SYSTEM_PROMPT,
+    EDIT_SYSTEM_PROMPT,
+    GENERATION_SYSTEM_PROMPT,
+    MULTI_TURN_SYSTEM_PROMPT,
+    PAGE_CONTEXT_TEMPLATE,
+    REFINE_SYSTEM_PROMPT,
+    REPAIR_PROMPT_TEMPLATE,
+)
+from casare_rpa.infrastructure.ai.agent.sandbox import HeadlessWorkflowSandbox
 from casare_rpa.infrastructure.ai.agent.types import (
     GenerationAttempt,
     WorkflowGenerationResult,
 )
-from casare_rpa.infrastructure.ai.agent.sandbox import HeadlessWorkflowSandbox
-from casare_rpa.infrastructure.ai.agent.prompts import (
-    GENERATION_SYSTEM_PROMPT,
-    REPAIR_PROMPT_TEMPLATE,
-    EDIT_SYSTEM_PROMPT,
-    APPEND_SYSTEM_PROMPT,
-    MULTI_TURN_SYSTEM_PROMPT,
-    REFINE_SYSTEM_PROMPT,
-    PAGE_CONTEXT_TEMPLATE,
+from casare_rpa.infrastructure.ai.registry_dumper import (
+    NodeManifest,
+    dump_node_manifest,
+    manifest_to_markdown,
 )
 
 if TYPE_CHECKING:
-    from casare_rpa.infrastructure.resources.llm_resource_manager import (
-        LLMResourceManager,
-    )
     from casare_rpa.domain.ai.config import AgentConfig
     from casare_rpa.infrastructure.ai.conversation_manager import (
         ConversationManager,
         UserIntent,
     )
     from casare_rpa.infrastructure.ai.page_analyzer import PageContext
+    from casare_rpa.infrastructure.resources.llm_resource_manager import (
+        LLMResourceManager,
+    )
 
 
 class SmartWorkflowAgent:
@@ -93,9 +92,9 @@ class SmartWorkflowAgent:
 
     def __init__(
         self,
-        llm_client: Optional[LLMResourceManager] = None,
-        max_retries: Optional[int] = None,
-        config: Optional[AgentConfig] = None,
+        llm_client: LLMResourceManager | None = None,
+        max_retries: int | None = None,
+        config: AgentConfig | None = None,
     ) -> None:
         """
         Initialize the smart workflow agent.
@@ -113,19 +112,19 @@ class SmartWorkflowAgent:
             else (config.retry.max_generation_retries if config else self.DEFAULT_MAX_RETRIES)
         )
         self.validator = HeadlessWorkflowSandbox()
-        self._system_prompt_cache: Optional[str] = None
-        self._manifest_cache: Optional[str] = None
+        self._system_prompt_cache: str | None = None
+        self._manifest_cache: str | None = None
 
         # RAG components (lazy initialized)
-        self._vector_store: Optional[Any] = None
-        self._embedding_manager: Optional[Any] = None
+        self._vector_store: Any | None = None
+        self._embedding_manager: Any | None = None
         self._rag_initialized: bool = False
         self._rag_available: bool = False
         self._nodes_indexed: bool = False
 
         # Page context (Playwright MCP integration)
-        self._page_context_cache: Dict[str, "PageContext"] = {}
-        self._mcp_available: Optional[bool] = None  # Lazy check
+        self._page_context_cache: dict[str, PageContext] = {}
+        self._mcp_available: bool | None = None  # Lazy check
 
         logger.info(
             f"SmartWorkflowAgent initialized: max_retries={self.max_retries}, "
@@ -133,7 +132,7 @@ class SmartWorkflowAgent:
         )
 
     @property
-    def config(self) -> Optional[AgentConfig]:
+    def config(self) -> AgentConfig | None:
         """Get current configuration."""
         return self._config
 
@@ -185,10 +184,10 @@ class SmartWorkflowAgent:
             return self._rag_available
 
         try:
-            from casare_rpa.infrastructure.ai.vector_store import get_vector_store
             from casare_rpa.infrastructure.ai.embedding_manager import (
                 get_embedding_manager,
             )
+            from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 
             self._vector_store = get_vector_store()
             self._embedding_manager = get_embedding_manager()
@@ -296,7 +295,7 @@ class SmartWorkflowAgent:
             logger.error(f"RAG retrieval failed: {e}. Falling back to full manifest.")
             return self._get_node_manifest()
 
-    def _detect_urls(self, prompt: str) -> List[str]:
+    def _detect_urls(self, prompt: str) -> list[str]:
         """
         Extract URLs from user prompt.
 
@@ -336,7 +335,7 @@ class SmartWorkflowAgent:
 
         return self._mcp_available
 
-    async def _fetch_page_context(self, url: str) -> Optional["PageContext"]:
+    async def _fetch_page_context(self, url: str) -> PageContext | None:
         """
         Fetch page context for a URL using Playwright MCP.
 
@@ -357,8 +356,8 @@ class SmartWorkflowAgent:
             return None
 
         try:
-            from casare_rpa.infrastructure.ai.playwright_mcp import PlaywrightMCPClient
             from casare_rpa.infrastructure.ai.page_analyzer import PageAnalyzer
+            from casare_rpa.infrastructure.ai.playwright_mcp import PlaywrightMCPClient
 
             logger.info(f"Fetching page context for: {url}")
 
@@ -404,7 +403,7 @@ class SmartWorkflowAgent:
             logger.debug(traceback.format_exc())
             return None
 
-    async def _fetch_page_contexts(self, urls: List[str]) -> List["PageContext"]:
+    async def _fetch_page_contexts(self, urls: list[str]) -> list[PageContext]:
         """
         Fetch page contexts for multiple URLs.
 
@@ -421,7 +420,7 @@ class SmartWorkflowAgent:
                 contexts.append(context)
         return contexts
 
-    def _format_page_contexts(self, contexts: List["PageContext"]) -> str:
+    def _format_page_contexts(self, contexts: list[PageContext]) -> str:
         """
         Format page contexts for injection into system prompt.
 
@@ -439,7 +438,7 @@ class SmartWorkflowAgent:
 
         return PAGE_CONTEXT_TEMPLATE.format(page_contexts=combined)
 
-    def _build_system_prompt(self, node_manifest: Optional[str] = None) -> str:
+    def _build_system_prompt(self, node_manifest: str | None = None) -> str:
         """Build system prompt with node manifest and config options."""
         # Only use cache if no custom manifest provided
         if node_manifest is None and self._system_prompt_cache is not None:
@@ -587,7 +586,7 @@ class SmartWorkflowAgent:
         logger.debug(f"Extracted JSON by scanning: {len(json_str)} chars")
         return json_str
 
-    def _parse_workflow_json(self, json_str: str) -> Dict[str, Any]:
+    def _parse_workflow_json(self, json_str: str) -> dict[str, Any]:
         """
         Parse JSON string and validate against schema.
 
@@ -643,7 +642,7 @@ class SmartWorkflowAgent:
                 [str(e)],
             ) from e
 
-    def _fill_default_workflow_fields(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _fill_default_workflow_fields(self, data: dict[str, Any]) -> dict[str, Any]:
         """
         Fill in default values for missing required workflow fields.
 
@@ -693,7 +692,7 @@ class SmartWorkflowAgent:
 
         return data
 
-    def _build_repair_prompt(self, workflow_json: str, errors: List[str]) -> str:
+    def _build_repair_prompt(self, workflow_json: str, errors: list[str]) -> str:
         """
         Build repair prompt from validation errors.
 
@@ -711,7 +710,7 @@ class SmartWorkflowAgent:
             workflow_json=workflow_json,
         )
 
-    def _ensure_start_and_end_nodes(self, workflow: Dict[str, Any]) -> Dict[str, Any]:
+    def _ensure_start_and_end_nodes(self, workflow: dict[str, Any]) -> dict[str, Any]:
         """
         Ensure workflow has StartNode and EndNode.
 
@@ -820,8 +819,8 @@ class SmartWorkflowAgent:
         }
 
     def _assign_node_positions(
-        self, workflow: Dict[str, Any], spacing_x: float = 400.0
-    ) -> Dict[str, Any]:
+        self, workflow: dict[str, Any], spacing_x: float = 400.0
+    ) -> dict[str, Any]:
         """
         Assign positions to nodes that don't have them.
 
@@ -850,7 +849,7 @@ class SmartWorkflowAgent:
         logger.debug(f"Assigned positions to {len(new_nodes)} nodes")
         return {**workflow, "nodes": new_nodes}
 
-    def _strip_start_end_nodes(self, workflow: Dict[str, Any]) -> Dict[str, Any]:
+    def _strip_start_end_nodes(self, workflow: dict[str, Any]) -> dict[str, Any]:
         """
         Remove StartNode and EndNode from workflow.
 
@@ -897,7 +896,7 @@ class SmartWorkflowAgent:
             "connections": new_connections,
         }
 
-    def _calculate_append_position(self, existing_workflow: Dict[str, Any]) -> tuple[str, float]:
+    def _calculate_append_position(self, existing_workflow: dict[str, Any]) -> tuple[str, float]:
         """
         Calculate append position for extending workflow.
 
@@ -993,11 +992,11 @@ class SmartWorkflowAgent:
     async def generate_workflow(
         self,
         user_prompt: str,
-        existing_workflow: Optional[Dict[str, Any]] = None,
-        canvas_state: Optional[Dict[str, Any]] = None,
+        existing_workflow: dict[str, Any] | None = None,
+        canvas_state: dict[str, Any] | None = None,
         is_edit: bool = False,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
+        model: str | None = None,
+        temperature: float | None = None,
     ) -> WorkflowGenerationResult:
         """
         Generate a workflow from natural language prompt.
@@ -1017,8 +1016,8 @@ class SmartWorkflowAgent:
             WorkflowGenerationResult with success/failure and workflow
         """
         generation_start = time.time()
-        attempt_history: List[GenerationAttempt] = []
-        validation_history: List[ValidationResult] = []
+        attempt_history: list[GenerationAttempt] = []
+        validation_history: list[ValidationResult] = []
 
         # Validate input
         if not user_prompt or not user_prompt.strip():
@@ -1302,9 +1301,9 @@ class SmartWorkflowAgent:
 
     def _merge_workflows(
         self,
-        existing: Dict[str, Any],
-        new: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        existing: dict[str, Any],
+        new: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Merge new workflow nodes into existing workflow.
 
@@ -1368,10 +1367,10 @@ class SmartWorkflowAgent:
     async def generate_with_conversation(
         self,
         user_prompt: str,
-        conversation_manager: "ConversationManager",
-        detected_intent: Optional["UserIntent"] = None,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
+        conversation_manager: ConversationManager,
+        detected_intent: UserIntent | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
     ) -> WorkflowGenerationResult:
         """
         Generate workflow with multi-turn conversation context.
@@ -1501,10 +1500,10 @@ class SmartWorkflowAgent:
 
     def _build_conversation_messages(
         self,
-        conversation_manager: "ConversationManager",
+        conversation_manager: ConversationManager,
         system_prompt: str,
         user_prompt: str,
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Build message list for LLM with conversation context.
 
@@ -1533,10 +1532,10 @@ class SmartWorkflowAgent:
 
 async def generate_smart_workflow(
     prompt: str,
-    existing_workflow: Optional[Dict[str, Any]] = None,
+    existing_workflow: dict[str, Any] | None = None,
     max_retries: int = 3,
     model: str = "gpt-4o-mini",
-    config: Optional[AgentConfig] = None,
+    config: AgentConfig | None = None,
 ) -> WorkflowGenerationResult:
     """
     Convenience function for generating workflows with smart agent.

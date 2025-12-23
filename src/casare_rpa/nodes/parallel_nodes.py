@@ -8,17 +8,18 @@ Provides nodes for concurrent/parallel execution:
 """
 
 from typing import Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
-    NodeStatus,
     ExecutionResult,
+    NodeStatus,
 )
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 @properties(
@@ -65,7 +66,7 @@ class ForkNode(BaseNode):
     # @requires: none
     # @ports: exec_in -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Fork node."""
         super().__init__(node_id, config)
         self.name = "Fork"
@@ -161,7 +162,7 @@ class JoinNode(BaseNode):
     # @requires: none
     # @ports: exec_in -> exec_out, results, branch_count
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Join node."""
         super().__init__(node_id, config)
         self.name = "Join"
@@ -310,7 +311,7 @@ class ParallelForEachNode(BaseNode):
     # @requires: none
     # @ports: exec_in, items -> body, completed, current_item, current_index, results
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize ParallelForEach node."""
         super().__init__(node_id, config)
         self.name = "Parallel ForEach"

@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from PySide6.QtCore import QRectF
 
 from casare_rpa.presentation.canvas.graph.viewport_culling import ViewportCullingManager

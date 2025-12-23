@@ -9,14 +9,15 @@ Shared utilities for list and dictionary operation nodes including:
 This module reduces duplication across list_nodes.py and dict_nodes.py.
 """
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import ExecutionResult
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 T = TypeVar("T")
 
@@ -40,10 +41,10 @@ def resolve_param(
     node_instance: BaseNode,
     context: ExecutionContext,
     port_name: str,
-    param_name: Optional[str] = None,
+    param_name: str | None = None,
     default: Any = None,
-    type_cast: Optional[Callable[[Any], T]] = None,
-) -> Union[Any, T]:
+    type_cast: Callable[[Any], T] | None = None,
+) -> Any | T:
     """Resolve a parameter from input port, parameter, or variable reference.
 
     Priority order:

@@ -15,38 +15,38 @@ Features:
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-
-from PySide6.QtCore import Qt, Signal, QEvent, QTimer, QPoint, QMimeData, QModelIndex
-from PySide6.QtGui import QBrush, QColor, QKeyEvent, QFont, QDrag
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QApplication,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QHeaderView,
-    QStyledItemDelegate,
-    QStyleOptionViewItem,
-    QFrame,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import QEvent, QMimeData, QModelIndex, QPoint, Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QDrag, QFont, QKeyEvent
+from PySide6.QtWidgets import (
+    QApplication,
+    QFrame,
+    QHeaderView,
+    QLineEdit,
+    QPushButton,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.theme import (
-    Theme,
-    TYPE_COLORS,
     TYPE_BADGES,
+    TYPE_COLORS,
+    Theme,
 )
 
 # Get colors from theme (modern API)
 _colors = Theme.get_colors()
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
     from NodeGraphQt import BaseNode
+
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 # =============================================================================
@@ -259,10 +259,10 @@ class VariableInfo:
     name: str
     var_type: str = "Any"
     source: str = "workflow"
-    value: Optional[Any] = None
-    children: List["VariableInfo"] = field(default_factory=list)
-    path: Optional[str] = None
-    insertion_path: Optional[str] = None  # Actual path for {{}} insertion (uses node_id)
+    value: Any | None = None
+    children: list["VariableInfo"] = field(default_factory=list)
+    path: str | None = None
+    insertion_path: str | None = None  # Actual path for {{}} insertion (uses node_id)
     is_expandable: bool = False
     indent_level: int = 0
 
@@ -332,8 +332,8 @@ class VariableProvider:
 
     def __init__(self) -> None:
         """Initialize provider."""
-        self._custom_variables: Dict[str, VariableInfo] = {}
-        self._main_window: Optional["MainWindow"] = None
+        self._custom_variables: dict[str, VariableInfo] = {}
+        self._main_window: MainWindow | None = None
         self._workflow_controller = None
 
     def set_main_window(self, main_window: "MainWindow") -> None:
@@ -369,9 +369,9 @@ class VariableProvider:
 
     def get_all_variables(
         self,
-        current_node_id: Optional[str] = None,
-        graph: Optional[Any] = None,
-    ) -> List[VariableInfo]:
+        current_node_id: str | None = None,
+        graph: Any | None = None,
+    ) -> list[VariableInfo]:
         """
         Get all available variables.
 
@@ -382,7 +382,7 @@ class VariableProvider:
         Returns:
             List of VariableInfo objects grouped by source
         """
-        variables: List[VariableInfo] = []
+        variables: list[VariableInfo] = []
 
         # 1. Add custom/workflow variables
         variables.extend(self._custom_variables.values())
@@ -412,7 +412,7 @@ class VariableProvider:
 
         return variables
 
-    def _get_panel_variables(self) -> List[VariableInfo]:
+    def _get_panel_variables(self) -> list[VariableInfo]:
         """Get variables from bottom panel VariablesTab."""
         if not self._main_window:
             return []
@@ -458,7 +458,7 @@ class VariableProvider:
             logger.debug(f"Error getting panel variables: {e}")
             return []
 
-    def _get_workflow_controller_variables(self) -> List[VariableInfo]:
+    def _get_workflow_controller_variables(self) -> list[VariableInfo]:
         """Get variables from workflow controller (legacy support)."""
         if not self._workflow_controller:
             return []
@@ -484,7 +484,7 @@ class VariableProvider:
         self,
         current_node_id: str,
         graph: Any,
-    ) -> List[VariableInfo]:
+    ) -> list[VariableInfo]:
         """
         Get output variables from upstream connected nodes.
 
@@ -502,7 +502,7 @@ class VariableProvider:
         if not graph:
             return []
 
-        variables: List[VariableInfo] = []
+        variables: list[VariableInfo] = []
 
         try:
             # Find the current node
@@ -571,7 +571,7 @@ class VariableProvider:
         self,
         node: "BaseNode",
         visited: set,
-    ) -> List["BaseNode"]:
+    ) -> list["BaseNode"]:
         """
         Recursively get all upstream nodes connected to this node.
 
@@ -664,7 +664,7 @@ class VariableProvider:
 
         return "Any"
 
-    def _expand_variable(self, var: VariableInfo) -> List[VariableInfo]:
+    def _expand_variable(self, var: VariableInfo) -> list[VariableInfo]:
         """
         Create child VariableInfo for Dict/List variables.
 
@@ -736,7 +736,7 @@ class VariableProvider:
 
         return children
 
-    def _get_system_variables(self) -> List[VariableInfo]:
+    def _get_system_variables(self) -> list[VariableInfo]:
         """Get system variables (date, time, etc.)."""
         from datetime import datetime
 
@@ -797,11 +797,11 @@ class HighlightDelegate(QStyledItemDelegate):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._selected_item: Optional[QTreeWidgetItem] = None
+        self._selected_item: QTreeWidgetItem | None = None
         self._highlight_color = QColor(_colors.selection)  # Selection blue
         self._hover_color = QColor(_colors.surface_hover)  # Subtle hover
 
-    def set_selected_item(self, item: Optional[QTreeWidgetItem]) -> None:
+    def set_selected_item(self, item: QTreeWidgetItem | None) -> None:
         """Set the currently selected item."""
         self._selected_item = item
 
@@ -843,9 +843,9 @@ class DraggableVariableTree(QTreeWidget):
 
     MIME_TYPE = "application/x-casare-variable"
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._drag_start_pos: Optional[QPoint] = None
+        self._drag_start_pos: QPoint | None = None
 
         # Enable drag
         self.setDragEnabled(True)
@@ -944,7 +944,7 @@ class VariablePickerPopup(QWidget):
     variable_selected = Signal(str)
     closed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the popup."""
         # Use Tool window - allows proper keyboard handling unlike Popup
         super().__init__(
@@ -959,13 +959,13 @@ class VariablePickerPopup(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
-        self._all_variables: List[VariableInfo] = []
-        self._filtered_variables: List[VariableInfo] = []
-        self._provider: Optional[VariableProvider] = None
-        self._current_node_id: Optional[str] = None
-        self._graph: Optional[Any] = None
-        self._selected_item: Optional[QTreeWidgetItem] = None  # Track selection ourselves
-        self._delegate: Optional[HighlightDelegate] = None
+        self._all_variables: list[VariableInfo] = []
+        self._filtered_variables: list[VariableInfo] = []
+        self._provider: VariableProvider | None = None
+        self._current_node_id: str | None = None
+        self._graph: Any | None = None
+        self._selected_item: QTreeWidgetItem | None = None  # Track selection ourselves
+        self._delegate: HighlightDelegate | None = None
         self._app_filter_installed: bool = False
 
         self._setup_ui()
@@ -1045,7 +1045,7 @@ class VariablePickerPopup(QWidget):
         """Set the variable provider."""
         self._provider = provider
 
-    def set_node_context(self, node_id: Optional[str], graph: Optional[Any]) -> None:
+    def set_node_context(self, node_id: str | None, graph: Any | None) -> None:
         """
         Set the current node context for upstream variable detection.
 
@@ -1089,9 +1089,9 @@ class VariablePickerPopup(QWidget):
 
     def _filter_variables_fuzzy(
         self,
-        variables: List[VariableInfo],
+        variables: list[VariableInfo],
         filter_text: str,
-    ) -> List[tuple[VariableInfo, int]]:
+    ) -> list[tuple[VariableInfo, int]]:
         """Filter variables using fuzzy matching, returns (var, score) tuples."""
         result = []
 
@@ -1145,7 +1145,7 @@ class VariablePickerPopup(QWidget):
         self._selected_item = None  # Reset selection when repopulating
 
         # Group by source
-        grouped: Dict[str, List[VariableInfo]] = {}
+        grouped: dict[str, list[VariableInfo]] = {}
         for var in self._filtered_variables:
             source = var.source
             if source.startswith("node:"):
@@ -1280,7 +1280,7 @@ class VariablePickerPopup(QWidget):
                     self._select_item(child)
                     return
 
-    def _is_selectable_item(self, item: Optional[QTreeWidgetItem]) -> bool:
+    def _is_selectable_item(self, item: QTreeWidgetItem | None) -> bool:
         """Check if item is a selectable variable (not header or placeholder)."""
         if not item:
             return False
@@ -1465,7 +1465,7 @@ class VariableButton(QPushButton):
 
     clicked_for_popup = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the button."""
         super().__init__("{x}", parent)
 
@@ -1512,7 +1512,7 @@ class VariableAwareLineEdit(QLineEdit):
     validation_changed = Signal(object)  # ValidationResult
     expand_clicked = Signal()  # Emitted when expand button is clicked
 
-    def __init__(self, parent: Optional[QWidget] = None, show_expand_button: bool = True) -> None:
+    def __init__(self, parent: QWidget | None = None, show_expand_button: bool = True) -> None:
         """Initialize the widget.
 
         Args:
@@ -1521,20 +1521,20 @@ class VariableAwareLineEdit(QLineEdit):
         """
         super().__init__(parent)
 
-        self._variable_button: Optional[VariableButton] = None
-        self._expand_button: Optional[QPushButton] = None
-        self._popup: Optional[VariablePickerPopup] = None
-        self._provider: Optional[VariableProvider] = None
+        self._variable_button: VariableButton | None = None
+        self._expand_button: QPushButton | None = None
+        self._popup: VariablePickerPopup | None = None
+        self._provider: VariableProvider | None = None
         self._always_show_button = True  # Button always visible, not just on hover
         self._autocomplete_trigger = "{{"
         self._show_expand_button = show_expand_button
 
         # Node context for upstream variable detection
-        self._current_node_id: Optional[str] = None
-        self._graph: Optional[Any] = None
+        self._current_node_id: str | None = None
+        self._graph: Any | None = None
 
         # Validation support
-        self._validators: List[Any] = []  # List of validator functions
+        self._validators: list[Any] = []  # List of validator functions
         self._validation_status = "valid"  # "valid", "invalid", "warning"
         self._validation_message = ""
         self._base_stylesheet = ""  # Store base stylesheet for validation overlay
@@ -1840,7 +1840,7 @@ class VariableAwareLineEdit(QLineEdit):
         """Set the variable provider."""
         self._provider = provider
 
-    def set_node_context(self, node_id: Optional[str], graph: Optional[Any]) -> None:
+    def set_node_context(self, node_id: str | None, graph: Any | None) -> None:
         """
         Set the current node context for upstream variable detection.
 
@@ -2014,7 +2014,7 @@ class VariableAwareLineEdit(QLineEdit):
 def _replace_widget_with_variable_aware(
     container: QWidget,
     line_edit: QLineEdit,
-    provider: Optional[VariableProvider] = None,
+    provider: VariableProvider | None = None,
 ) -> VariableAwareLineEdit:
     """
     Replace a QLineEdit with a VariableAwareLineEdit in place.
@@ -2068,7 +2068,7 @@ def create_variable_aware_line_edit(
     placeholder: str = "",
     min_height: int = 24,
     min_width: int = 100,
-    provider: Optional[VariableProvider] = None,
+    provider: VariableProvider | None = None,
 ) -> VariableAwareLineEdit:
     """
     Factory function to create a VariableAwareLineEdit for use in node widgets.

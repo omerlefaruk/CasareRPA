@@ -10,12 +10,11 @@ Key Format: crpa_<base64url_token> (44 chars total, easily identifiable)
 import hashlib
 import secrets
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
-
 
 # =============================================================================
 # CONSTANTS
@@ -33,7 +32,7 @@ API_KEY_TOKEN_BYTES = 32  # 256 bits of entropy
 class RobotApiKeyError(Exception):
     """Base exception for robot API key operations."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
         self.details = details or {}
         super().__init__(message)
@@ -95,24 +94,24 @@ class RobotApiKey:
     id: str
     robot_id: str
     api_key_hash: str
-    name: Optional[str] = None
-    description: Optional[str] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = None
-    last_used_at: Optional[datetime] = None
-    last_used_ip: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
+    last_used_ip: str | None = None
     is_revoked: bool = False
-    revoked_at: Optional[datetime] = None
-    revoked_by: Optional[str] = None
-    revoke_reason: Optional[str] = None
-    created_by: Optional[str] = None
+    revoked_at: datetime | None = None
+    revoked_by: str | None = None
+    revoke_reason: str | None = None
+    created_by: str | None = None
 
     @property
     def is_expired(self) -> bool:
         """Check if key has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
     @property
     def is_valid(self) -> bool:
@@ -128,7 +127,7 @@ class RobotApiKey:
             return ApiKeyValidationResult.EXPIRED
         return ApiKeyValidationResult.VALID
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "id": self.id,
@@ -243,10 +242,10 @@ class RobotApiKeyService:
     async def generate_api_key(
         self,
         robot_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
-        created_by: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        expires_at: datetime | None = None,
+        created_by: str | None = None,
     ) -> tuple[str, RobotApiKey]:
         """
         Generate a new API key for a robot.
@@ -308,8 +307,8 @@ class RobotApiKeyService:
         self,
         raw_key: str,
         update_last_used: bool = True,
-        client_ip: Optional[str] = None,
-    ) -> Optional[RobotApiKey]:
+        client_ip: str | None = None,
+    ) -> RobotApiKey | None:
         """
         Validate an API key and return the associated key record.
 
@@ -361,8 +360,8 @@ class RobotApiKeyService:
     async def revoke_api_key(
         self,
         key_id: str,
-        revoked_by: Optional[str] = None,
-        reason: Optional[str] = None,
+        revoked_by: str | None = None,
+        reason: str | None = None,
     ) -> bool:
         """
         Revoke an API key.
@@ -396,7 +395,7 @@ class RobotApiKeyService:
         self,
         robot_id: str,
         include_revoked: bool = False,
-    ) -> List[RobotApiKey]:
+    ) -> list[RobotApiKey]:
         """
         List all API keys for a robot.
 
@@ -419,7 +418,7 @@ class RobotApiKeyService:
                 {"robot_id": robot_id},
             ) from e
 
-    async def get_key_by_id(self, key_id: str) -> Optional[RobotApiKey]:
+    async def get_key_by_id(self, key_id: str) -> RobotApiKey | None:
         """
         Get an API key by its ID.
 
@@ -438,7 +437,7 @@ class RobotApiKeyService:
     async def rotate_key(
         self,
         key_id: str,
-        rotated_by: Optional[str] = None,
+        rotated_by: str | None = None,
     ) -> tuple[str, RobotApiKey]:
         """
         Rotate an API key (revoke old, create new).
@@ -506,11 +505,11 @@ class RobotApiKeyService:
         self,
         robot_id: str,
         api_key_hash: str,
-        name: Optional[str],
-        description: Optional[str],
-        expires_at: Optional[datetime],
-        created_by: Optional[str],
-    ) -> Dict[str, Any]:
+        name: str | None,
+        description: str | None,
+        expires_at: datetime | None,
+        created_by: str | None,
+    ) -> dict[str, Any]:
         """Insert a new API key into the database."""
         # Supabase client implementation
         if hasattr(self._client, "table"):
@@ -552,7 +551,7 @@ class RobotApiKeyService:
 
         raise RobotApiKeyError("Unsupported database client type")
 
-    async def _get_key_by_hash(self, api_key_hash: str) -> Optional[RobotApiKey]:
+    async def _get_key_by_hash(self, api_key_hash: str) -> RobotApiKey | None:
         """Get an API key by its hash."""
         # Supabase client implementation
         if hasattr(self._client, "table"):
@@ -579,7 +578,7 @@ class RobotApiKeyService:
 
         raise RobotApiKeyError("Unsupported database client type")
 
-    async def _get_key_by_id(self, key_id: str) -> Optional[RobotApiKey]:
+    async def _get_key_by_id(self, key_id: str) -> RobotApiKey | None:
         """Get an API key by its ID."""
         # Supabase client implementation
         if hasattr(self._client, "table"):
@@ -604,10 +603,10 @@ class RobotApiKeyService:
     async def _update_last_used(
         self,
         api_key_hash: str,
-        client_ip: Optional[str],
+        client_ip: str | None,
     ) -> None:
         """Update last_used_at timestamp for a key."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Supabase client implementation
         if hasattr(self._client, "table"):
@@ -640,11 +639,11 @@ class RobotApiKeyService:
     async def _revoke_key(
         self,
         key_id: str,
-        revoked_by: Optional[str],
-        reason: Optional[str],
+        revoked_by: str | None,
+        reason: str | None,
     ) -> bool:
         """Revoke an API key."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Supabase client implementation
         if hasattr(self._client, "table"):
@@ -685,7 +684,7 @@ class RobotApiKeyService:
         self,
         robot_id: str,
         include_revoked: bool,
-    ) -> List[RobotApiKey]:
+    ) -> list[RobotApiKey]:
         """List all API keys for a robot."""
         # Supabase client implementation
         if hasattr(self._client, "table"):
@@ -739,7 +738,7 @@ class RobotApiKeyService:
         # Would need to compute the cutoff date and use RPC
         return 0
 
-    def _row_to_key(self, row: Dict[str, Any]) -> RobotApiKey:
+    def _row_to_key(self, row: dict[str, Any]) -> RobotApiKey:
         """Convert a database row to a RobotApiKey."""
         return RobotApiKey(
             id=str(row["id"]),
@@ -758,7 +757,7 @@ class RobotApiKeyService:
             created_by=row.get("created_by"),
         )
 
-    def _parse_datetime(self, value: Any) -> Optional[datetime]:
+    def _parse_datetime(self, value: Any) -> datetime | None:
         """Parse datetime from various formats."""
         if value is None:
             return None

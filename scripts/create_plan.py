@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
-from pathlib import Path
 import sys
+from datetime import UTC, datetime, timezone
+from pathlib import Path
 
 
 def _repo_root() -> Path:
@@ -16,7 +16,7 @@ def _slugify(value: str) -> str:
 
 
 def _plan_template(title: str) -> str:
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     return (
         f"# Plan: {title}\n"
         f"**Created**: {today}\n"

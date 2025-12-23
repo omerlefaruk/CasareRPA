@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
-from pathlib import Path
 import sys
+from datetime import UTC, datetime, timezone
+from pathlib import Path
 
 
 def _repo_root() -> Path:
@@ -18,7 +18,7 @@ def _build_entry(
     next_step: str | None,
     notes: str | None,
 ) -> str:
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     lines = [f"## Status Update ({timestamp})"]
     if phase:
         lines.append(f"- Phase: {phase}")

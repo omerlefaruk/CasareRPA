@@ -14,7 +14,6 @@ from casare_rpa.presentation.canvas.visual_nodes.office_automation.nodes import 
     VisualExcelOpenNode,
 )
 
-
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 

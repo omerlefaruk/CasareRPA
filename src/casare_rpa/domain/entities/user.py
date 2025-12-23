@@ -6,7 +6,7 @@ Pure domain entity with no external dependencies.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import Optional
 from uuid import UUID
@@ -34,18 +34,18 @@ class User:
     email: str
     password_hash: str
     role: str  # SystemRole value from RBAC
-    display_name: Optional[str] = None
-    tenant_id: Optional[UUID] = None
+    display_name: str | None = None
+    tenant_id: UUID | None = None
     status: UserStatus = UserStatus.ACTIVE
     mfa_enabled: bool = False
-    mfa_secret: Optional[str] = None  # Encrypted TOTP secret
+    mfa_secret: str | None = None  # Encrypted TOTP secret
     email_verified: bool = False
     failed_login_attempts: int = 0
-    locked_until: Optional[datetime] = None
-    last_login: Optional[datetime] = None
-    last_password_change: Optional[datetime] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    locked_until: datetime | None = None
+    last_login: datetime | None = None
+    last_password_change: datetime | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def __post_init__(self) -> None:
         """Validate user entity on creation."""
@@ -66,7 +66,7 @@ class User:
         """Check if user account is locked."""
         if self.status == UserStatus.LOCKED:
             return True
-        if self.locked_until and datetime.now(timezone.utc) < self.locked_until:
+        if self.locked_until and datetime.now(UTC) < self.locked_until:
             return True
         return False
 
@@ -77,10 +77,10 @@ class User:
 
     def record_login(self) -> None:
         """Record successful login."""
-        self.last_login = datetime.now(timezone.utc)
+        self.last_login = datetime.now(UTC)
         self.failed_login_attempts = 0
         self.locked_until = None
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def record_failed_login(self, max_attempts: int = 5, lockout_minutes: int = 30) -> None:
         """
@@ -91,12 +91,12 @@ class User:
             lockout_minutes: Duration of lockout in minutes
         """
         self.failed_login_attempts += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
         if self.failed_login_attempts >= max_attempts:
             from datetime import timedelta
 
-            self.locked_until = datetime.now(timezone.utc) + timedelta(minutes=lockout_minutes)
+            self.locked_until = datetime.now(UTC) + timedelta(minutes=lockout_minutes)
             self.status = UserStatus.LOCKED
 
     def unlock(self) -> None:
@@ -104,7 +104,7 @@ class User:
         self.status = UserStatus.ACTIVE
         self.locked_until = None
         self.failed_login_attempts = 0
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def enable_mfa(self, encrypted_secret: str) -> None:
         """
@@ -117,13 +117,13 @@ class User:
             raise ValueError("MFA secret cannot be empty")
         self.mfa_enabled = True
         self.mfa_secret = encrypted_secret
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def disable_mfa(self) -> None:
         """Disable MFA for this user."""
         self.mfa_enabled = False
         self.mfa_secret = None
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def change_password(self, new_password_hash: str) -> None:
         """
@@ -135,8 +135,8 @@ class User:
         if not new_password_hash:
             raise ValueError("Password hash cannot be empty")
         self.password_hash = new_password_hash
-        self.last_password_change = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
+        self.last_password_change = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
 
     def to_dict(self, include_sensitive: bool = False) -> dict:
         """

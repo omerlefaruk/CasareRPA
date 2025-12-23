@@ -6,8 +6,9 @@ Supports sync and async hook functions with proper error isolation.
 """
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from loguru import logger
 
@@ -39,9 +40,9 @@ class HookContext:
     node_type: str
     attempt: int
     max_attempts: int
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
     result: Optional["NodeResult"] = None
-    error: Optional[Exception] = None
+    error: Exception | None = None
     execution_context: Optional["IExecutionContext"] = None
 
     def get_variable(self, name: str, default: Any = None) -> Any:
@@ -108,7 +109,7 @@ class HookRunner:
 
     async def run_hooks(
         self,
-        hooks: Tuple[Callable[..., Any], ...],
+        hooks: tuple[Callable[..., Any], ...],
         context: HookContext,
     ) -> None:
         """
@@ -261,7 +262,7 @@ class HookRunner:
 
 
 # Module-level singleton
-_hook_runner: Optional[HookRunner] = None
+_hook_runner: HookRunner | None = None
 
 
 def get_hook_runner() -> HookRunner:

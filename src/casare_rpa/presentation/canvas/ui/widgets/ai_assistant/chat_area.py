@@ -11,16 +11,16 @@ Premium messaging interface with:
 - Code block highlighting support
 """
 
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
 from PySide6.QtCore import (
-    QTimer,
-    Qt,
-    QPropertyAnimation,
-    QEasingCurve,
     QAbstractAnimation,
+    QEasingCurve,
+    QPropertyAnimation,
+    Qt,
+    QTimer,
 )
 from PySide6.QtWidgets import (
     QFrame,
@@ -84,7 +84,7 @@ class MessageBubble(QFrame):
         self,
         content: str,
         message_type: MessageType = MessageType.USER,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._content = content
@@ -296,10 +296,10 @@ class ChatArea(QScrollArea):
     Next-Gen Scrollable Chat Area.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._messages: List[MessageBubble] = []
-        self._thinking_indicator: Optional[ThinkingIndicator] = None
+        self._messages: list[MessageBubble] = []
+        self._thinking_indicator: ThinkingIndicator | None = None
         self._last_user_message: str = ""
 
         self._setup_ui()

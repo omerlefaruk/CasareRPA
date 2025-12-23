@@ -7,18 +7,18 @@ and explicit logging within workflows.
 
 import json
 import re
-from typing import Any, Optional
 from enum import Enum
+from typing import Any, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -737,7 +737,7 @@ class RerouteNode(BaseNode):
         self.add_input_port("in", DataType.ANY)
         self.add_output_port("out", DataType.ANY)
 
-    def set_data_type(self, data_type: Optional[DataType]) -> None:
+    def set_data_type(self, data_type: DataType | None) -> None:
         """
         Set the data type for this reroute node.
 

@@ -7,17 +7,17 @@ Provides buffering for temporary disconnections and efficient batch processing.
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
 from casare_rpa.domain.value_objects.log_entry import (
-    LogEntry,
-    LogBatch,
-    LogLevel,
     MAX_LOG_BATCH_SIZE,
     OFFLINE_BUFFER_SIZE,
+    LogBatch,
+    LogEntry,
+    LogLevel,
 )
 from casare_rpa.infrastructure.persistence.repositories.log_repository import (
     LogRepository,
@@ -50,7 +50,7 @@ class LogStreamingService:
 
     def __init__(
         self,
-        log_repository: Optional[LogRepository] = None,
+        log_repository: LogRepository | None = None,
         persist_logs: bool = True,
         buffer_size: int = OFFLINE_BUFFER_SIZE,
     ) -> None:
@@ -68,21 +68,21 @@ class LogStreamingService:
         self._running = False
 
         # Subscribers: websocket -> subscription config
-        self._subscribers: Dict[Any, Dict[str, Any]] = {}
+        self._subscribers: dict[Any, dict[str, Any]] = {}
 
         # Subscriber sets by robot (for efficient broadcast)
         # robot_id -> set of websockets
-        self._robot_subscribers: Dict[str, Set[Any]] = defaultdict(set)
+        self._robot_subscribers: dict[str, set[Any]] = defaultdict(set)
 
         # All-robots subscribers (admins watching all logs)
-        self._global_subscribers: Set[Any] = set()
+        self._global_subscribers: set[Any] = set()
 
         # Offline buffers: robot_id -> list of LogEntry
-        self._offline_buffers: Dict[str, List[LogEntry]] = defaultdict(list)
+        self._offline_buffers: dict[str, list[LogEntry]] = defaultdict(list)
 
         # Batch queue for persistence
         self._persist_queue: asyncio.Queue = asyncio.Queue()
-        self._persist_task: Optional[asyncio.Task] = None
+        self._persist_task: asyncio.Task | None = None
 
         # Metrics
         self._logs_received = 0
@@ -135,10 +135,10 @@ class LogStreamingService:
     async def subscribe(
         self,
         websocket: Any,
-        robot_ids: Optional[List[str]] = None,
-        tenant_id: Optional[str] = None,
+        robot_ids: list[str] | None = None,
+        tenant_id: str | None = None,
         min_level: LogLevel = LogLevel.DEBUG,
-        sources: Optional[List[str]] = None,
+        sources: list[str] | None = None,
     ) -> None:
         """
         Subscribe to log streams.
@@ -156,7 +156,7 @@ class LogStreamingService:
                 "tenant_id": tenant_id,
                 "min_level": min_level,
                 "sources": sources,
-                "subscribed_at": datetime.now(timezone.utc),
+                "subscribed_at": datetime.now(UTC),
             }
             self._subscribers[websocket] = config
 
@@ -192,7 +192,7 @@ class LogStreamingService:
     async def receive_log_batch(
         self,
         robot_id: str,
-        batch_data: Dict[str, Any],
+        batch_data: dict[str, Any],
         tenant_id: str,
     ) -> int:
         """
@@ -230,8 +230,8 @@ class LogStreamingService:
         timestamp: datetime,
         level: str,
         message: str,
-        source: Optional[str] = None,
-        extra: Optional[Dict[str, Any]] = None,
+        source: str | None = None,
+        extra: dict[str, Any] | None = None,
     ) -> None:
         """
         Receive a single log entry from a robot.
@@ -268,7 +268,7 @@ class LogStreamingService:
         self,
         robot_id: str,
         tenant_id: str,
-        entries: List[LogEntry],
+        entries: list[LogEntry],
     ) -> None:
         """
         Broadcast logs to relevant subscribers.
@@ -326,7 +326,7 @@ class LogStreamingService:
         self,
         websocket: Any,
         robot_id: str,
-        entries: List[LogEntry],
+        entries: list[LogEntry],
     ) -> None:
         """
         Send log entries to a subscriber.
@@ -351,8 +351,8 @@ class LogStreamingService:
 
     async def _persist_worker(self) -> None:
         """Background worker for persisting logs."""
-        batch: List[LogEntry] = []
-        last_persist = datetime.now(timezone.utc)
+        batch: list[LogEntry] = []
+        last_persist = datetime.now(UTC)
 
         while self._running:
             try:
@@ -363,11 +363,11 @@ class LogStreamingService:
                         timeout=1.0,
                     )
                     batch.extend(entries)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
                 # Persist when batch is large enough or after timeout
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 should_persist = len(batch) >= MAX_LOG_BATCH_SIZE or (
                     batch and (now - last_persist).total_seconds() > 5.0
                 )
@@ -387,7 +387,7 @@ class LogStreamingService:
         if batch:
             await self._persist_batch(batch)
 
-    async def _persist_batch(self, entries: List[LogEntry]) -> None:
+    async def _persist_batch(self, entries: list[LogEntry]) -> None:
         """
         Persist a batch of log entries.
 
@@ -438,7 +438,7 @@ class LogStreamingService:
 
         buffer.append(entry)
 
-    def get_buffered_logs(self, robot_id: str) -> List[LogEntry]:
+    def get_buffered_logs(self, robot_id: str) -> list[LogEntry]:
         """
         Get and clear buffered logs for a robot.
 
@@ -454,7 +454,7 @@ class LogStreamingService:
         """Get total subscriber count."""
         return len(self._subscribers)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get service metrics.
 
@@ -483,7 +483,7 @@ class LogStreamingService:
 import threading
 
 _log_streaming_lock = threading.Lock()
-_log_streaming_instance: Optional[LogStreamingService] = None
+_log_streaming_instance: LogStreamingService | None = None
 
 
 def _create_log_streaming_service() -> LogStreamingService:
@@ -517,7 +517,7 @@ def get_log_streaming_service() -> LogStreamingService:
 
 
 async def init_log_streaming_service(
-    log_repository: Optional[LogRepository] = None,
+    log_repository: LogRepository | None = None,
 ) -> LogStreamingService:
     """
     Initialize and start the log streaming service.

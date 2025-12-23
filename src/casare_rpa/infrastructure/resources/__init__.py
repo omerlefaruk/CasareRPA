@@ -6,11 +6,6 @@ Resource managers for external infrastructure (browser, desktop, LLM, etc.).
 from casare_rpa.infrastructure.resources.browser_resource_manager import (
     BrowserResourceManager,
 )
-from casare_rpa.infrastructure.resources.resource_registry import (
-    ResourceRegistry,
-    get_resource_registry,
-    reset_resource_registry,
-)
 from casare_rpa.infrastructure.resources.document_ai_manager import (
     DocumentAIManager,
     DocumentClassification,
@@ -30,6 +25,8 @@ from casare_rpa.infrastructure.resources.document_ai_manager import (
 # )
 from casare_rpa.infrastructure.resources.google_client import (
     SCOPES as GOOGLE_SCOPES,
+)
+from casare_rpa.infrastructure.resources.google_client import (
     GoogleAPIClient,
     GoogleAPIError,
     GoogleAuthError,
@@ -54,6 +51,11 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import (
     LLMResourceManager,
     LLMResponse,
     LLMUsageMetrics,
+)
+from casare_rpa.infrastructure.resources.resource_registry import (
+    ResourceRegistry,
+    get_resource_registry,
+    reset_resource_registry,
 )
 from casare_rpa.infrastructure.resources.telegram_client import (
     TelegramAPIError,

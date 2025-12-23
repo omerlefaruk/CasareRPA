@@ -1,0 +1,99 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.1, pluggy-1.5.0 -- C:\Users\Rau\miniconda3\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\Rau\Desktop\CasareRPA
+configfile: pyproject.toml
+plugins: anyio-4.11.0, asyncio-1.3.0, cov-7.0.0, qt-4.5.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=session, asyncio_default_test_loop_scope=function
+collecting ... collected 70 items
+
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_create_skeleton_with_defaults SKIPPED [  1%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_create_skeleton_with_all_fields SKIPPED [  2%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_is_loaded_initially_false SKIPPED [  4%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_with_deferred_data SKIPPED [  5%]
+tests/performance/test_workflow_loading.py::TestWorkflowSkeleton::test_skeleton_equality_not_affected_by_internal_state SKIPPED [  7%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_create_loader SKIPPED [  8%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_metadata SKIPPED [ 10%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_counts SKIPPED [ 11%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_node_types SKIPPED [ 12%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_extracts_variable_names SKIPPED [ 14%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_stores_full_data SKIPPED [ 15%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_with_file_path SKIPPED [ 17%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_empty_workflow SKIPPED [ 18%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_missing_metadata SKIPPED [ 20%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_load_skeleton_performance_is_fast SKIPPED [ 21%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_infer_categories_from_node_types SKIPPED [ 22%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_infer_categories_empty_set SKIPPED [ 24%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_get_workflow_info_returns_dict SKIPPED [ 25%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_get_workflow_info_missing_file SKIPPED [ 27%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_finds_workflows SKIPPED [ 28%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_empty_directory SKIPPED [ 30%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoader::test_scan_directory_nonexistent SKIPPED [ 31%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_from_skeleton SKIPPED [ 32%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_caches_result SKIPPED [ 34%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderLoadFull::test_load_full_without_deferred_data SKIPPED [ 35%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderSingleton::test_get_incremental_loader_returns_instance SKIPPED [ 37%]
+tests/performance/test_workflow_loading.py::TestIncrementalLoaderSingleton::test_get_incremental_loader_returns_same_instance SKIPPED [ 38%]
+tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_load_workflow_skeleton SKIPPED [ 40%]
+tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_get_workflow_info_function SKIPPED [ 41%]
+tests/performance/test_workflow_loading.py::TestConvenienceFunctions::test_scan_workflows_function SKIPPED [ 42%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_create_pool_with_defaults PASSED [ 44%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_create_pool_with_custom_max PASSED [ 45%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_acquire_creates_new_instance PASSED [ 47%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_release_returns_instance_to_pool PASSED [ 48%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_acquire_reuses_pooled_instance PASSED [ 50%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_release_all_returns_multiple_nodes PASSED [ 51%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_pool_respects_max_per_type PASSED [ 52%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_get_stats_returns_hit_rate PASSED [ 54%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_clear_empties_all_pools PASSED [ 55%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePool::test_release_node_without_node_type_ignored PASSED [ 57%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePoolSingleton::test_get_node_instance_pool_returns_instance PASSED [ 58%]
+tests/performance/test_workflow_loading.py::TestNodeInstancePoolSingleton::test_get_node_instance_pool_returns_same_instance PASSED [ 60%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_resolves_all_types PASSED [ 61%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_aliases FAILED [ 62%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_empty_nodes PASSED [ 64%]
+tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_missing_node_type PASSED [ 65%]
+tests/performance/test_workflow_loading.py::TestPreloadWorkflowNodeTypes::test_preload_triggers_lazy_loading PASSED [ 67%]
+tests/performance/test_workflow_loading.py::TestPreloadWorkflowNodeTypes::test_preload_empty_set PASSED [ 68%]
+tests/performance/test_workflow_loading.py::TestCreateSingleNode::test_create_node_success PASSED [ 70%]
+tests/performance/test_workflow_loading.py::TestCreateSingleNode::test_create_node_unknown_type_returns_none PASSED [ 71%]
+tests/performance/test_workflow_loading.py::TestCreateSingleNode::test_create_node_with_pooling PASSED [ 72%]
+tests/performance/test_workflow_loading.py::TestInstantiateNodesParallel::test_sequential_for_small_workflows PASSED [ 74%]
+tests/performance/test_workflow_loading.py::TestInstantiateNodesParallel::test_parallel_for_large_workflows PASSED [ 75%]
+tests/performance/test_workflow_loading.py::TestInstantiateNodesParallel::test_empty_nodes_returns_empty_dict PASSED [ 77%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_defaults PASSED [ 78%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_parallel_enabled PASSED [ 80%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_parallel_disabled PASSED [ 81%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_pooling_enabled PASSED [ 82%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_with_skip_validation PASSED [ 84%]
+tests/performance/test_workflow_loading.py::TestLoadWorkflowFromDict::test_load_resolves_aliases PASSED [ 85%]
+tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_skeleton_then_full_load SKIPPED [ 87%]
+tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_parallel_vs_sequential_performance PASSED [ 88%]
+tests/performance/test_workflow_loading.py::TestWorkflowLoadingIntegration::test_pooling_improves_repeated_loads PASSED [ 90%]
+tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_skeleton_loading_under_10ms SKIPPED [ 91%]
+tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_full_load_reasonable_time PASSED [ 92%]
+tests/performance/test_workflow_loading.py::TestPerformanceBenchmarks::test_pool_hit_rate_improves_with_reuse PASSED [ 94%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_invalid_node_type FAILED [ 95%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_deeply_nested_config PASSED [ 97%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_unicode_names PASSED [ 98%]
+tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_concurrent_pool_access PASSED [100%]
+
+================================== FAILURES ===================================
+____________ TestBatchResolveNodeTypes.test_batch_resolve_aliases _____________
+tests\performance\test_workflow_loading.py:736: in test_batch_resolve_aliases
+    assert "action" in config
+E   AssertionError: assert 'action' in {'file_path': 'test.txt'}
+_________ TestEdgeCasesAndErrors.test_workflow_with_invalid_node_type _________
+tests\performance\test_workflow_loading.py:1148: in test_workflow_with_invalid_node_type
+    workflow = load_workflow_from_dict(workflow_data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\casare_rpa\utils\workflow\workflow_loader.py:266: in load_workflow_from_dict
+    validate_workflow_json(workflow_data)
+src\casare_rpa\domain\validation\workflow_json.py:174: in validate_workflow_json
+    raise WorkflowValidationError("Workflow semantic validation failed", errors)
+E   casare_rpa.domain.validation.workflow_json.WorkflowValidationError: Workflow semantic validation failed
+=========================== short test summary info ===========================
+FAILED tests/performance/test_workflow_loading.py::TestBatchResolveNodeTypes::test_batch_resolve_aliases
+FAILED tests/performance/test_workflow_loading.py::TestEdgeCasesAndErrors::test_workflow_with_invalid_node_type
+================== 2 failed, 36 passed, 32 skipped in 0.64s ===================

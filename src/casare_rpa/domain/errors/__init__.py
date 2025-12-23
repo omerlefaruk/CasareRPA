@@ -35,64 +35,62 @@ Related:
 """
 
 # Result type system (Rust-style)
-from casare_rpa.domain.errors.result import (
-    Result,
-    Ok,
-    Err,
-    is_ok,
-    is_err,
-    unwrap_or_default,
-    collect_results,
+from casare_rpa.domain.errors.context import (
+    ErrorContext,
+    RecoveryDecision,
+)
+from casare_rpa.domain.errors.exceptions import (
+    APIError,
+    AuthenticationError,
+    AuthorizationError,
+    ConfigurationError,
+    DatabaseError,
+    DomainError,
+    FileSystemError,
+    NetworkError,
+    NodeExecutionError,
+    NodeTimeoutError,
+    NodeValidationError,
+    ResourceError,
+    SchemaError,
+    ValidationError,
+    WorkflowError,
+    WorkflowExecutionError,
+    WorkflowValidationError,
+    wrap_exception,
 )
 
 # Exception hierarchy
 from casare_rpa.domain.errors.exceptions import (
     ErrorContext as StructuredErrorContext,
-    DomainError,
-    NodeExecutionError,
-    NodeTimeoutError,
-    NodeValidationError,
-    ValidationError,
-    ConfigurationError,
-    SchemaError,
-    ResourceError,
-    FileSystemError,
-    NetworkError,
-    DatabaseError,
-    APIError,
-    AuthenticationError,
-    AuthorizationError,
-    WorkflowError,
-    WorkflowValidationError,
-    WorkflowExecutionError,
-    wrap_exception,
+)
+from casare_rpa.domain.errors.handlers import (
+    ErrorHandler,
+    NodeErrorHandler,
+)
+from casare_rpa.domain.errors.registry import (
+    CustomErrorHandlerFunc,
+    ErrorHandlerRegistry,
+    get_error_handler_registry,
+    reset_error_handler_registry,
+)
+from casare_rpa.domain.errors.result import (
+    Err,
+    Ok,
+    Result,
+    collect_results,
+    is_err,
+    is_ok,
+    unwrap_or_default,
 )
 
 # Import from existing modular structure
 from casare_rpa.domain.errors.types import (
     ErrorCategory,
-    ErrorSeverity,
     ErrorClassification,
+    ErrorSeverity,
     RecoveryAction,
 )
-
-from casare_rpa.domain.errors.context import (
-    ErrorContext,
-    RecoveryDecision,
-)
-
-from casare_rpa.domain.errors.handlers import (
-    ErrorHandler,
-    NodeErrorHandler,
-)
-
-from casare_rpa.domain.errors.registry import (
-    ErrorHandlerRegistry,
-    CustomErrorHandlerFunc,
-    get_error_handler_registry,
-    reset_error_handler_registry,
-)
-
 
 __all__ = [
     # Result types (NEW)

@@ -13,7 +13,8 @@ properties based on NodeSchema metadata. It reuses the existing
 CollapsibleSection widget for grouped/advanced properties.
 """
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
@@ -42,9 +43,9 @@ class PropertyRenderer:
     def __init__(
         self,
         schema: "NodeSchema",
-        current_config: Dict[str, Any],
-        widget_factory: Callable[["PropertyDef", Any], Optional[QWidget]],
-        on_config_change: Optional[Callable[[str, Any], None]] = None,
+        current_config: dict[str, Any],
+        widget_factory: Callable[["PropertyDef", Any], QWidget | None],
+        on_config_change: Callable[[str, Any], None] | None = None,
     ):
         """
         Initialize PropertyRenderer.
@@ -59,8 +60,8 @@ class PropertyRenderer:
         self._config = current_config
         self._widget_factory = widget_factory
         self._on_config_change = on_config_change
-        self._widgets: Dict[str, QWidget] = {}
-        self._sections: Dict[str, CollapsibleSection] = {}
+        self._widgets: dict[str, QWidget] = {}
+        self._sections: dict[str, CollapsibleSection] = {}
 
     def render_all(self, parent: QWidget) -> QWidget:
         """
@@ -124,7 +125,7 @@ class PropertyRenderer:
         layout.addStretch()
         return container
 
-    def _filter_visible_properties(self, props: List["PropertyDef"]) -> List["PropertyDef"]:
+    def _filter_visible_properties(self, props: list["PropertyDef"]) -> list["PropertyDef"]:
         """
         Filter out internal and advanced properties.
 
@@ -154,7 +155,7 @@ class PropertyRenderer:
         """
         return self._schema.should_display(prop.name, self._config)
 
-    def _render_property(self, prop: "PropertyDef", parent: QWidget) -> Optional[QWidget]:
+    def _render_property(self, prop: "PropertyDef", parent: QWidget) -> QWidget | None:
         """
         Render a single property widget.
 
@@ -209,7 +210,7 @@ class PropertyRenderer:
     def _render_group(
         self,
         name: str,
-        props: List["PropertyDef"],
+        props: list["PropertyDef"],
         parent: QWidget,
         collapsed: bool = False,
     ) -> QWidget:
@@ -259,7 +260,7 @@ class PropertyRenderer:
         # Trigger visibility update for dependent properties
         self.update_visibility()
 
-    def get_widget(self, prop_name: str) -> Optional[QWidget]:
+    def get_widget(self, prop_name: str) -> QWidget | None:
         """
         Get widget for a specific property.
 
@@ -271,7 +272,7 @@ class PropertyRenderer:
         """
         return self._widgets.get(prop_name)
 
-    def get_all_widgets(self) -> Dict[str, QWidget]:
+    def get_all_widgets(self) -> dict[str, QWidget]:
         """
         Get all property widgets.
 
@@ -293,7 +294,7 @@ class PropertyRenderer:
                 should_show = self._should_display(prop)
                 widget.setVisible(should_show)
 
-    def get_section(self, name: str) -> Optional[CollapsibleSection]:
+    def get_section(self, name: str) -> CollapsibleSection | None:
         """
         Get a collapsible section by name.
 
@@ -306,7 +307,7 @@ class PropertyRenderer:
         return self._sections.get(name)
 
 
-def create_property_section_label(text: str, parent: Optional[QWidget] = None) -> QLabel:
+def create_property_section_label(text: str, parent: QWidget | None = None) -> QLabel:
     """
     Create a styled section header label.
 
@@ -337,7 +338,7 @@ def create_property_row_widget(
     label_text: str,
     value_widget: QWidget,
     tooltip: str = "",
-    parent: Optional[QWidget] = None,
+    parent: QWidget | None = None,
 ) -> QWidget:
     """
     Create a horizontal label-widget row.

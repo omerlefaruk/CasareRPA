@@ -12,7 +12,7 @@ Handles automatic and scheduled secret rotation with:
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -52,14 +52,14 @@ class RotationPolicy:
 
     path: str
     frequency: RotationFrequency
-    custom_interval_hours: Optional[int] = None  # For CUSTOM frequency
+    custom_interval_hours: int | None = None  # For CUSTOM frequency
     enabled: bool = True
-    last_rotated: Optional[datetime] = None
-    next_rotation: Optional[datetime] = None
+    last_rotated: datetime | None = None
+    next_rotation: datetime | None = None
     notify_on_failure: bool = True
     max_retry_attempts: int = 3
-    pre_rotation_hook: Optional[str] = None  # Callback identifier
-    post_rotation_hook: Optional[str] = None  # Callback identifier
+    pre_rotation_hook: str | None = None  # Callback identifier
+    post_rotation_hook: str | None = None  # Callback identifier
 
     def get_interval(self) -> timedelta:
         """Get rotation interval as timedelta."""
@@ -80,7 +80,7 @@ class RotationPolicy:
 
     def calculate_next_rotation(self) -> datetime:
         """Calculate the next rotation time."""
-        base = self.last_rotated or datetime.now(timezone.utc)
+        base = self.last_rotated or datetime.now(UTC)
         return base + self.get_interval()
 
 
@@ -90,11 +90,11 @@ class RotationRecord:
 
     path: str
     started_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     status: RotationStatus = RotationStatus.PENDING
-    old_version: Optional[int] = None
-    new_version: Optional[int] = None
-    error_message: Optional[str] = None
+    old_version: int | None = None
+    new_version: int | None = None
+    error_message: str | None = None
     attempt_number: int = 1
 
 
@@ -105,8 +105,8 @@ class RotationHook(ABC):
     async def execute(
         self,
         path: str,
-        old_data: Optional[Dict[str, Any]],
-        new_data: Optional[Dict[str, Any]],
+        old_data: dict[str, Any] | None,
+        new_data: dict[str, Any] | None,
     ) -> bool:
         """
         Execute the hook.
@@ -128,8 +128,8 @@ class LoggingRotationHook(RotationHook):
     async def execute(
         self,
         path: str,
-        old_data: Optional[Dict[str, Any]],
-        new_data: Optional[Dict[str, Any]],
+        old_data: dict[str, Any] | None,
+        new_data: dict[str, Any] | None,
     ) -> bool:
         """Log the rotation event."""
         if old_data and new_data:
@@ -167,12 +167,12 @@ class SecretRotationManager:
         """
         self._client = vault_client
         self._check_interval = check_interval_seconds
-        self._policies: Dict[str, RotationPolicy] = {}
-        self._hooks: Dict[str, RotationHook] = {}
-        self._history: List[RotationRecord] = []
+        self._policies: dict[str, RotationPolicy] = {}
+        self._hooks: dict[str, RotationHook] = {}
+        self._history: list[RotationRecord] = []
         self._max_history = 1000
         self._running = False
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self._scheduler_task: asyncio.Task | None = None
 
         # Register default hooks
         self.register_hook("logging", LoggingRotationHook())
@@ -254,8 +254,8 @@ class SecretRotationManager:
 
     async def _check_and_rotate(self) -> None:
         """Check for due rotations and execute them."""
-        now = datetime.now(timezone.utc)
-        due_rotations: List[RotationPolicy] = []
+        now = datetime.now(UTC)
+        due_rotations: list[RotationPolicy] = []
 
         for policy in self._policies.values():
             if not policy.enabled:
@@ -287,7 +287,7 @@ class SecretRotationManager:
 
         record = RotationRecord(
             path=path,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             status=RotationStatus.IN_PROGRESS,
         )
 
@@ -322,11 +322,11 @@ class SecretRotationManager:
 
             # Update policy
             if policy:
-                policy.last_rotated = datetime.now(timezone.utc)
+                policy.last_rotated = datetime.now(UTC)
                 policy.next_rotation = policy.calculate_next_rotation()
 
             record.status = RotationStatus.COMPLETED
-            record.completed_at = datetime.now(timezone.utc)
+            record.completed_at = datetime.now(UTC)
 
             logger.info(
                 f"Rotated secret {path}: version {record.old_version} -> {record.new_version}"
@@ -334,7 +334,7 @@ class SecretRotationManager:
 
         except Exception as e:
             record.status = RotationStatus.FAILED
-            record.completed_at = datetime.now(timezone.utc)
+            record.completed_at = datetime.now(UTC)
             record.error_message = str(e)
 
             logger.error(f"Failed to rotate secret {path}: {e}")
@@ -365,9 +365,9 @@ class SecretRotationManager:
 
     def get_rotation_history(
         self,
-        path: Optional[str] = None,
+        path: str | None = None,
         limit: int = 100,
-    ) -> List[RotationRecord]:
+    ) -> list[RotationRecord]:
         """
         Get rotation history.
 
@@ -383,13 +383,13 @@ class SecretRotationManager:
             history = [r for r in history if r.path == path]
         return history[-limit:]
 
-    def get_policies(self) -> List[RotationPolicy]:
+    def get_policies(self) -> list[RotationPolicy]:
         """Get all registered rotation policies."""
         return list(self._policies.values())
 
-    def get_due_rotations(self) -> List[RotationPolicy]:
+    def get_due_rotations(self) -> list[RotationPolicy]:
         """Get policies with due rotations."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return [
             p
             for p in self._policies.values()
@@ -404,7 +404,7 @@ class SecretRotationManager:
 
 async def setup_rotation_for_credentials(
     rotation_manager: SecretRotationManager,
-    credential_bindings: Dict[str, str],
+    credential_bindings: dict[str, str],
     frequency: RotationFrequency = RotationFrequency.MONTHLY,
 ) -> int:
     """

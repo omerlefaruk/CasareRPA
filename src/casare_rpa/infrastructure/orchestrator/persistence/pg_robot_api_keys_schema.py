@@ -17,8 +17,7 @@ callers can:
 
 from __future__ import annotations
 
-from typing import Sequence
-
+from collections.abc import Sequence
 
 CREATE_ROBOT_API_KEYS_TABLE_SQL = """
 -- NOTE: Index creation is intentionally separated to keep startup resilient for older schemas.

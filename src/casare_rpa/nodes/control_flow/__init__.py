@@ -20,25 +20,25 @@ Usage:
 # Conditionals
 from casare_rpa.nodes.control_flow.conditionals import (
     IfNode,
-    SwitchNode,
     MergeNode,
-)
-
-# Loops
-from casare_rpa.nodes.control_flow.loops import (
-    ForLoopStartNode,
-    ForLoopEndNode,
-    WhileLoopStartNode,
-    WhileLoopEndNode,
-    BreakNode,
-    ContinueNode,
+    SwitchNode,
 )
 
 # Error Handling (Try/Catch/Finally)
 from casare_rpa.nodes.control_flow.error_handling import (
-    TryNode,
     CatchNode,
     FinallyNode,
+    TryNode,
+)
+
+# Loops
+from casare_rpa.nodes.control_flow.loops import (
+    BreakNode,
+    ContinueNode,
+    ForLoopEndNode,
+    ForLoopStartNode,
+    WhileLoopEndNode,
+    WhileLoopStartNode,
 )
 
 __all__ = [

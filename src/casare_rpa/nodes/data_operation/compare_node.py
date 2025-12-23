@@ -6,10 +6,11 @@ Supports key-based matching and column-level comparison.
 """
 
 from typing import Any, Dict, List, Set, Tuple
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -22,7 +23,7 @@ def _normalize_value(value: Any, case_sensitive: bool) -> Any:
     return value
 
 
-def _get_row_key(row: Dict[str, Any], key_columns: List[str], case_sensitive: bool) -> Tuple:
+def _get_row_key(row: dict[str, Any], key_columns: list[str], case_sensitive: bool) -> tuple:
     """Extract composite key from row based on key columns."""
     key_values = []
     for col in key_columns:
@@ -32,12 +33,12 @@ def _get_row_key(row: Dict[str, Any], key_columns: List[str], case_sensitive: bo
 
 
 def _rows_equal(
-    row_a: Dict[str, Any],
-    row_b: Dict[str, Any],
+    row_a: dict[str, Any],
+    row_b: dict[str, Any],
     compare_all_columns: bool,
-    key_columns: List[str],
+    key_columns: list[str],
     case_sensitive: bool,
-) -> Tuple[bool, List[str]]:
+) -> tuple[bool, list[str]]:
     """
     Compare two rows for equality.
 
@@ -120,7 +121,7 @@ class DataCompareNode(BaseNode):
 
     def _resolve_list_input(
         self, context: ExecutionContext, port_name: str, param_name: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Resolve list input from port or parameter."""
         value = self.get_input_value(port_name)
         if value is not None:
@@ -198,8 +199,8 @@ class DataCompareNode(BaseNode):
                 logger.warning("No key columns specified, using row index for matching")
 
             # Build index for dataset B
-            b_by_key: Dict[Tuple, List[Dict[str, Any]]] = {}
-            b_matched_indices: Set[int] = set()
+            b_by_key: dict[tuple, list[dict[str, Any]]] = {}
+            b_matched_indices: set[int] = set()
 
             for idx, row in enumerate(data_b):
                 if not isinstance(row, dict):
@@ -213,8 +214,8 @@ class DataCompareNode(BaseNode):
                 b_by_key[key].append((idx, row))
 
             # Compare datasets
-            only_in_a: List[Dict[str, Any]] = []
-            matched: List[Dict[str, Any]] = []
+            only_in_a: list[dict[str, Any]] = []
+            matched: list[dict[str, Any]] = []
             modified_count = 0
 
             for idx_a, row_a in enumerate(data_a):
@@ -253,7 +254,7 @@ class DataCompareNode(BaseNode):
                     only_in_a.append(row_a)
 
             # Collect unmatched rows from B
-            only_in_b: List[Dict[str, Any]] = []
+            only_in_b: list[dict[str, Any]] = []
             for idx, row in enumerate(data_b):
                 if not isinstance(row, dict):
                     continue

@@ -13,9 +13,9 @@ Test Philosophy:
 Run: pytest tests/presentation/test_super_node_mixin.py -v
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
+import pytest
 
 # =============================================================================
 # Fixtures
@@ -69,8 +69,8 @@ def mock_schema():
 def mock_port_schema():
     """Create a mock DynamicPortSchema."""
     from casare_rpa.domain.value_objects.dynamic_port_config import (
-        DynamicPortSchema,
         ActionPortConfig,
+        DynamicPortSchema,
         PortDef,
     )
     from casare_rpa.domain.value_objects.types import DataType

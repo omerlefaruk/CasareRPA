@@ -36,14 +36,14 @@ class AIHealingResult:
     healed_selector: str
     confidence: float
     strategy_used: str
-    match_details: Dict[str, float] = field(default_factory=dict)
-    alternatives: List[Tuple[str, float]] = field(default_factory=list)
+    match_details: dict[str, float] = field(default_factory=dict)
+    alternatives: list[tuple[str, float]] = field(default_factory=list)
     llm_used: bool = False
     healing_time_ms: float = 0.0
 
 
 # Common UI term synonyms for semantic matching
-UI_SYNONYMS: Dict[str, List[str]] = {
+UI_SYNONYMS: dict[str, list[str]] = {
     "sign_in": ["login", "log in", "sign in", "signin", "log-in", "sign-in"],
     "sign_out": ["logout", "log out", "sign out", "signout", "log-out", "sign-out"],
     "sign_up": [
@@ -78,7 +78,7 @@ UI_SYNONYMS: Dict[str, List[str]] = {
 }
 
 # Build reverse lookup for quick synonym checking
-_SYNONYM_LOOKUP: Dict[str, str] = {}
+_SYNONYM_LOOKUP: dict[str, str] = {}
 for canonical, synonyms in UI_SYNONYMS.items():
     for syn in synonyms:
         _SYNONYM_LOOKUP[syn.lower().replace(" ", "").replace("-", "")] = canonical
@@ -236,7 +236,7 @@ class SemanticMatcher:
         normalized = re.sub(r"\s+", " ", normalized).strip()
         return normalized
 
-    def get_canonical_form(self, text: str) -> Optional[str]:
+    def get_canonical_form(self, text: str) -> str | None:
         """Get canonical form if text is a known synonym."""
         normalized = text.lower().replace(" ", "").replace("-", "").replace("_", "")
         return _SYNONYM_LOOKUP.get(normalized)
@@ -281,7 +281,7 @@ class SemanticMatcher:
 
         return 0.0
 
-    async def llm_similarity(self, text1: str, text2: str) -> Optional[float]:
+    async def llm_similarity(self, text1: str, text2: str) -> float | None:
         """
         Use LLM to determine semantic similarity.
         Returns None if LLM is not available.
@@ -327,7 +327,7 @@ class RegexPatternMatcher:
     ]
 
     @classmethod
-    def extract_pattern(cls, value: str) -> Optional[str]:
+    def extract_pattern(cls, value: str) -> str | None:
         """Extract a regex pattern from a value with dynamic parts."""
         result = value
         found_dynamic = False
@@ -424,7 +424,7 @@ class AISelectorHealer:
         text1: str,
         text2: str,
         use_semantic: bool = True,
-    ) -> Tuple[float, str]:
+    ) -> tuple[float, str]:
         """
         Calculate fuzzy text similarity using multiple algorithms.
 
@@ -475,9 +475,9 @@ class AISelectorHealer:
 
     def fuzzy_attribute_match(
         self,
-        attrs1: Dict[str, Any],
-        attrs2: Dict[str, Any],
-    ) -> Tuple[float, Dict[str, float]]:
+        attrs1: dict[str, Any],
+        attrs2: dict[str, Any],
+    ) -> tuple[float, dict[str, float]]:
         """
         Calculate fuzzy similarity between attribute dictionaries.
 
@@ -488,7 +488,7 @@ class AISelectorHealer:
         Returns:
             Tuple of (overall_score, per_attribute_scores)
         """
-        per_attr_scores: Dict[str, float] = {}
+        per_attr_scores: dict[str, float] = {}
         total_weight = 0.0
         weighted_sum = 0.0
 
@@ -599,8 +599,8 @@ class AISelectorHealer:
     async def find_best_match(
         self,
         page: Any,
-        original_fingerprint: Dict[str, Any],
-        candidate_elements: List[Dict[str, Any]],
+        original_fingerprint: dict[str, Any],
+        candidate_elements: list[dict[str, Any]],
     ) -> AIHealingResult:
         """
         Find the best matching element from candidates.
@@ -619,9 +619,9 @@ class AISelectorHealer:
 
         best_match = None
         best_score = 0.0
-        best_details: Dict[str, float] = {}
+        best_details: dict[str, float] = {}
         best_strategy = "none"
-        alternatives: List[Tuple[str, float]] = []
+        alternatives: list[tuple[str, float]] = []
 
         for candidate in candidate_elements:
             # Calculate fuzzy attribute match
@@ -669,7 +669,7 @@ class AISelectorHealer:
                 healing_time_ms=elapsed_ms,
             )
 
-    def _determine_strategy(self, details: Dict[str, float]) -> str:
+    def _determine_strategy(self, details: dict[str, float]) -> str:
         """Determine which strategy contributed most to the match."""
         if not details:
             return "unknown"

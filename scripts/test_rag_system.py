@@ -36,8 +36,8 @@ async def test_embedding_manager():
     print("=" * 60)
 
     from casare_rpa.infrastructure.ai.embedding_manager import (
-        EmbeddingManager,
         EmbeddingConfig,
+        EmbeddingManager,
     )
 
     api_key = os.getenv("OPENAI_API_KEY")
@@ -109,8 +109,8 @@ async def test_vector_store():
     print("=" * 60)
 
     from casare_rpa.infrastructure.ai.vector_store import (
-        VectorStore,
         Document,
+        VectorStore,
     )
 
     # Use in-memory store for testing
@@ -211,13 +211,13 @@ async def test_full_rag_pipeline():
         print("[ERROR] OPENAI_API_KEY not found!")
         return False
 
-    from casare_rpa.infrastructure.ai.vector_store import (
-        VectorStore,
-        Document,
-    )
     from casare_rpa.infrastructure.ai.embedding_manager import (
-        EmbeddingManager,
         EmbeddingConfig,
+        EmbeddingManager,
+    )
+    from casare_rpa.infrastructure.ai.vector_store import (
+        Document,
+        VectorStore,
     )
 
     # Setup embedding manager
@@ -353,12 +353,12 @@ async def test_rag_nodes():
         print("[ERROR] OPENAI_API_KEY not found!")
         return False
 
+    from casare_rpa.infrastructure.execution import ExecutionContext
     from casare_rpa.nodes.llm.rag_nodes import (
         EmbeddingNode,
-        VectorStoreAddNode,
         VectorSearchNode,
+        VectorStoreAddNode,
     )
-    from casare_rpa.infrastructure.execution import ExecutionContext
 
     # Test EmbeddingNode
     print("\n[4.1] Testing EmbeddingNode...")
@@ -398,12 +398,13 @@ async def interactive_rag_demo():
         print("[ERROR] OPENAI_API_KEY required for interactive demo")
         return
 
-    from casare_rpa.infrastructure.ai.vector_store import VectorStore, Document
-    from casare_rpa.infrastructure.ai.embedding_manager import (
-        EmbeddingManager,
-        EmbeddingConfig,
-    )
     import litellm
+
+    from casare_rpa.infrastructure.ai.embedding_manager import (
+        EmbeddingConfig,
+        EmbeddingManager,
+    )
+    from casare_rpa.infrastructure.ai.vector_store import Document, VectorStore
 
     # Setup
     embed_manager = EmbeddingManager(

@@ -18,7 +18,7 @@ Design Pattern: Dependency Inversion
 - Enables testing with mock nodes
 """
 
-from typing import Any, Dict, Optional, Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional, Protocol
 
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -68,14 +68,14 @@ class INode(Protocol):
     category: str
     description: str
 
-    input_ports: Dict[str, "Port"]
-    output_ports: Dict[str, "Port"]
+    input_ports: dict[str, "Port"]
+    output_ports: dict[str, "Port"]
 
     # Debug support
     breakpoint_enabled: bool
     execution_count: int
-    last_execution_time: Optional[float]
-    last_output: Optional[Dict[str, Any]]
+    last_execution_time: float | None
+    last_output: dict[str, Any] | None
 
     # ========================================================================
     # Core Execution Methods
@@ -116,7 +116,7 @@ class INode(Protocol):
         """
         ...
 
-    def validate(self) -> tuple[bool, Optional[str]]:
+    def validate(self) -> tuple[bool, str | None]:
         """
         Validate node configuration and inputs before execution.
 
@@ -231,7 +231,7 @@ class INode(Protocol):
         self,
         name: str,
         data_type: DataType,
-        label: Optional[str] = None,
+        label: str | None = None,
         required: bool = True,
     ) -> None:
         """Add an input port definition."""
@@ -241,7 +241,7 @@ class INode(Protocol):
         self,
         name: str,
         data_type: DataType,
-        label: Optional[str] = None,
+        label: str | None = None,
         required: bool = False,
     ) -> None:
         """Add an output port definition."""
@@ -251,7 +251,7 @@ class INode(Protocol):
     # Status Management
     # ========================================================================
 
-    def set_status(self, status: NodeStatus, error_message: Optional[str] = None) -> None:
+    def set_status(self, status: NodeStatus, error_message: str | None = None) -> None:
         """Update node execution status."""
         ...
 
@@ -275,7 +275,7 @@ class INode(Protocol):
         """Check if this node has a breakpoint set."""
         ...
 
-    def get_debug_info(self) -> Dict[str, Any]:
+    def get_debug_info(self) -> dict[str, Any]:
         """Get debug information about this node."""
         ...
 
@@ -283,6 +283,6 @@ class INode(Protocol):
     # Serialization
     # ========================================================================
 
-    def serialize(self) -> Dict[str, Any]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize node to dictionary for persistence."""
         ...

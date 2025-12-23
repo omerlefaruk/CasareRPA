@@ -6,11 +6,12 @@ Includes stale element detection and automatic recovery.
 """
 
 import time
-from typing import Any, List, Optional, Dict, Callable, TypeVar
+from collections.abc import Callable
 from functools import wraps
-from loguru import logger
-import uiautomation as auto
+from typing import Any, Dict, List, Optional, TypeVar
 
+import uiautomation as auto
+from loguru import logger
 
 T = TypeVar("T")
 
@@ -50,7 +51,7 @@ class DesktopElement:
     def __init__(
         self,
         control: auto.Control,
-        locator_info: Optional[Dict[str, Any]] = None,
+        locator_info: dict[str, Any] | None = None,
         parent: Optional["DesktopElement"] = None,
     ):
         """
@@ -76,7 +77,7 @@ class DesktopElement:
             f"DesktopElement created: {self._control.ControlTypeName} - '{self._control.Name}'"
         )
 
-    def _capture_locator_info(self) -> Dict[str, Any]:
+    def _capture_locator_info(self) -> dict[str, Any]:
         """Capture identifying information for re-finding this element."""
         try:
             return {
@@ -373,7 +374,7 @@ class DesktopElement:
             return None
 
     def find_child(
-        self, selector: Dict[str, Any], timeout: float = 5.0
+        self, selector: dict[str, Any], timeout: float = 5.0
     ) -> Optional["DesktopElement"]:
         """
         Find a child element using selector.
@@ -389,7 +390,7 @@ class DesktopElement:
 
         return find_element(self._control, selector, timeout=timeout)
 
-    def find_children(self, selector: Dict[str, Any]) -> List["DesktopElement"]:
+    def find_children(self, selector: dict[str, Any]) -> list["DesktopElement"]:
         """
         Find all child elements matching selector.
 
@@ -429,7 +430,7 @@ class DesktopElement:
         except Exception:
             return False
 
-    def get_bounding_rect(self) -> Dict[str, int]:
+    def get_bounding_rect(self) -> dict[str, int]:
         """
         Get element's bounding rectangle.
 

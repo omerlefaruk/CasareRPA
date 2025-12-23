@@ -13,26 +13,25 @@ import orjson
 from loguru import logger
 
 from casare_rpa.domain.entities.project import (
+    CredentialBinding,
+    CredentialBindingsFile,
     Project,
     ProjectTemplate,
-    TemplateCategory,
-    VariablesFile,
-    VariableScope,
-    CredentialBindingsFile,
-    CredentialBinding,
     Scenario,
+    TemplateCategory,
+    VariableScope,
+    VariablesFile,
     generate_project_id,
     generate_scenario_id,
 )
 from casare_rpa.domain.entities.project.template import (
-    generate_template_id,
-    TemplateVariable,
     TemplateCredential,
+    TemplateVariable,
+    generate_template_id,
 )
 from casare_rpa.domain.entities.variable import Variable
-from casare_rpa.infrastructure.persistence.template_storage import TemplateStorage
 from casare_rpa.infrastructure.persistence.environment_storage import EnvironmentStorage
-
+from casare_rpa.infrastructure.persistence.template_storage import TemplateStorage
 
 # =============================================================================
 # Result Types
@@ -44,8 +43,8 @@ class TemplateResult:
     """Result of a template operation."""
 
     success: bool
-    template: Optional[ProjectTemplate] = None
-    error: Optional[str] = None
+    template: ProjectTemplate | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -53,8 +52,8 @@ class TemplateListResult:
     """Result of listing templates."""
 
     success: bool
-    templates: List[ProjectTemplate] = None
-    error: Optional[str] = None
+    templates: list[ProjectTemplate] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.templates is None:
@@ -66,9 +65,9 @@ class ProjectFromTemplateResult:
     """Result of creating project from template."""
 
     success: bool
-    project: Optional[Project] = None
-    template: Optional[ProjectTemplate] = None
-    error: Optional[str] = None
+    project: Project | None = None
+    template: ProjectTemplate | None = None
+    error: str | None = None
 
 
 # =============================================================================
@@ -81,8 +80,8 @@ class ListTemplatesUseCase:
 
     async def execute(
         self,
-        category: Optional[TemplateCategory] = None,
-        user_templates_dir: Optional[Path] = None,
+        category: TemplateCategory | None = None,
+        user_templates_dir: Path | None = None,
     ) -> TemplateListResult:
         """
         List templates.
@@ -380,7 +379,7 @@ class CreateTemplateFromProjectUseCase:
         template_name: str,
         category: TemplateCategory = TemplateCategory.CUSTOM,
         description: str = "",
-        workflow: Optional[Dict] = None,
+        workflow: dict | None = None,
     ) -> TemplateResult:
         """
         Create template from project.
@@ -514,8 +513,8 @@ class EnvImportResult:
     """Result of importing .env file."""
 
     success: bool
-    variables: Dict[str, str] = None
-    error: Optional[str] = None
+    variables: dict[str, str] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.variables is None:

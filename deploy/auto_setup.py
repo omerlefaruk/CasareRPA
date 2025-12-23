@@ -37,7 +37,7 @@ import socket
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -92,7 +92,7 @@ def print_header(title: str):
     print("=" * width)
 
 
-def print_step(step: str, status: str = "", success: Optional[bool] = None):
+def print_step(step: str, status: str = "", success: bool | None = None):
     """Print step with status."""
     icon = ""
     if success is True:
@@ -248,7 +248,7 @@ async def create_robot_and_key(database_url: str, robot_name: str) -> tuple[str,
         token = secrets.token_urlsafe(32)
         raw_key = f"crpa_{token}"
         key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
-        expires_at = datetime.now(timezone.utc) + timedelta(days=365)
+        expires_at = datetime.now(UTC) + timedelta(days=365)
 
         # Check for existing active key
         existing_key = await conn.fetchrow(

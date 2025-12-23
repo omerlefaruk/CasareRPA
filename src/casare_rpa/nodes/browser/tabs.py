@@ -9,13 +9,13 @@ from typing import Tuple
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -243,7 +243,7 @@ class NewTabNode(BaseNode):
             logger.error(f"Failed to create tab: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> Tuple[bool, str]:
+    def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         tab_name = self.get_parameter("tab_name", "")
         if not tab_name:

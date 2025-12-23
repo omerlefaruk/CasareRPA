@@ -7,21 +7,20 @@ mapped to the SubflowNode's ports.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.entities.subflow import Subflow
-from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from typing import List
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
-    NodeStatus,
     ExecutionResult,
+    NodeStatus,
 )
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 @properties(
@@ -63,7 +62,7 @@ class SubflowNode(BaseNode):
     def __init__(
         self,
         node_id: str,
-        config: Optional[Dict] = None,
+        config: dict | None = None,
         name: str = "Subflow",
         **kwargs,
     ) -> None:
@@ -79,7 +78,7 @@ class SubflowNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SubflowNode"
-        self._subflow: Optional[Subflow] = None
+        self._subflow: Subflow | None = None
         self._subflow_loaded = False
 
     def _define_ports(self) -> None:
@@ -132,7 +131,7 @@ class SubflowNode(BaseNode):
             self.add_output_port(port.name, data_type)
 
         # Generate PropertyDefs from promoted parameters
-        self._promoted_property_defs: List[PropertyDef] = []
+        self._promoted_property_defs: list[PropertyDef] = []
         if hasattr(subflow, "parameters") and subflow.parameters:
             for param in subflow.parameters:
                 prop_def = param.to_property_def()
@@ -142,7 +141,7 @@ class SubflowNode(BaseNode):
                 if param.name not in self.config:
                     self.config[param.name] = param.default_value
 
-    def get_promoted_properties(self) -> List[PropertyDef]:
+    def get_promoted_properties(self) -> list[PropertyDef]:
         """
         Get list of promoted property definitions for widget generation.
 
@@ -190,7 +189,7 @@ class SubflowNode(BaseNode):
 
         return DataType.ANY
 
-    def _parse_data_type(self, type_str: Optional[str]) -> DataType:
+    def _parse_data_type(self, type_str: str | None) -> DataType:
         """
         Parse data type string to DataType enum.
 
@@ -205,7 +204,7 @@ class SubflowNode(BaseNode):
         """
         return self._normalize_data_type(type_str)
 
-    def _legacy_parse_data_type(self, type_str: Optional[str]) -> DataType:
+    def _legacy_parse_data_type(self, type_str: str | None) -> DataType:
         """Legacy parser for old string-based data types."""
         if not type_str:
             return DataType.ANY
@@ -226,7 +225,7 @@ class SubflowNode(BaseNode):
 
         return type_map.get(type_str.upper(), DataType.ANY)
 
-    def _load_subflow(self) -> Optional[Subflow]:
+    def _load_subflow(self) -> Subflow | None:
         """
         Load subflow from file or cache.
 
@@ -357,7 +356,7 @@ class SubflowNode(BaseNode):
 
     async def _execute_subflow_nodes(
         self, subflow: Subflow, context: ExecutionContext
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute the internal nodes of a subflow.
 
@@ -372,8 +371,10 @@ class SubflowNode(BaseNode):
         """
         try:
             from casare_rpa.application.use_cases.subflow_executor import (
-                SubflowExecutor,
                 Subflow as SubflowData,
+            )
+            from casare_rpa.application.use_cases.subflow_executor import (
+                SubflowExecutor,
                 SubflowInputDefinition,
                 SubflowOutputDefinition,
             )
@@ -462,8 +463,8 @@ class SubflowNode(BaseNode):
             return {"success": False, "error": str(e)}
 
     def _transform_nodes_for_execution(
-        self, nodes: Dict[str, Any]
-    ) -> tuple[Dict[str, Any], Dict[str, str], Dict[str, tuple[str, str]]]:
+        self, nodes: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, str], dict[str, tuple[str, str]]]:
         """
         Transform node data to executable format.
 
@@ -480,9 +481,9 @@ class SubflowNode(BaseNode):
             - id_mapping: Maps visual_key -> actual_node_id
             - reroute_mapping: Maps reroute visual_key -> (input_key, output_key) for bypass
         """
-        executable_nodes: Dict[str, Any] = {}
-        id_mapping: Dict[str, str] = {}
-        reroute_mapping: Dict[str, tuple[str, str]] = {}
+        executable_nodes: dict[str, Any] = {}
+        id_mapping: dict[str, str] = {}
+        reroute_mapping: dict[str, tuple[str, str]] = {}
 
         for visual_key, node_data in nodes.items():
             # Handle both formats: "type_" (NodeGraphQt) and "type" (create_subflow)
@@ -557,8 +558,8 @@ class SubflowNode(BaseNode):
     def _transform_connections_for_execution(
         self,
         connections: list,
-        id_mapping: Dict[str, str],
-        reroute_mapping: Dict[str, tuple[str, str]],
+        id_mapping: dict[str, str],
+        reroute_mapping: dict[str, tuple[str, str]],
     ) -> list:
         """
         Transform connections, remapping IDs and resolving reroute passthrough.
@@ -597,8 +598,8 @@ class SubflowNode(BaseNode):
             return None
 
         # First, build reroute resolution map (source -> target through reroutes)
-        reroute_sources: Dict[str, tuple[str, str]] = {}
-        reroute_targets: Dict[str, list] = {}
+        reroute_sources: dict[str, tuple[str, str]] = {}
+        reroute_targets: dict[str, list] = {}
 
         for conn in connections:
             parsed = parse_connection(conn)
@@ -681,7 +682,7 @@ class SubflowNode(BaseNode):
         logger.debug(f"Transformed {len(connections)} connections to {len(result_connections)}")
         return result_connections
 
-    def get_subflow(self) -> Optional[Subflow]:
+    def get_subflow(self) -> Subflow | None:
         """
         Get the loaded subflow.
 

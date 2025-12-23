@@ -3,11 +3,11 @@
 Detect blocking I/O operations in async functions.
 Block: time.sleep(), open() (not async), blocking file operations.
 """
+
 import ast
 import os
 import sys
 from pathlib import Path
-
 
 BLOCKING_CALLS = {
     "sleep",
@@ -46,7 +46,7 @@ class BlockingIOChecker(ast.NodeVisitor):
 def check_file(filepath: str) -> list[str]:
     """Check for blocking I/O in async functions"""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             tree = ast.parse(f.read())
         checker = BlockingIOChecker(filepath)
         checker.visit(tree)
@@ -74,7 +74,9 @@ def main():
                 all_errors.extend(errors)
 
     if all_errors:
-        print("[ERROR] Blocking I/O in async context (use async alternatives like asyncio.sleep, aiofiles):")
+        print(
+            "[ERROR] Blocking I/O in async context (use async alternatives like asyncio.sleep, aiofiles):"
+        )
         for error in all_errors[:10]:
             print(f"   {error}")
         if len(all_errors) > 10:

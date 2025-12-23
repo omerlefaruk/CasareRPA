@@ -4,10 +4,11 @@ Automatically installs Playwright browsers on first run.
 Provides GUI dialogs when running in Canvas, silent install for Robot.
 """
 
+import os
 import subprocess
 import sys
-import os
 from pathlib import Path
+
 from loguru import logger
 
 
@@ -78,15 +79,15 @@ def install_playwright_browsers_gui(parent=None) -> bool:
         True if installation succeeded
     """
     try:
+        from PySide6.QtCore import Qt, QThread, QTimer, Signal
         from PySide6.QtWidgets import (
-            QMessageBox,
-            QDialog,
-            QVBoxLayout,
-            QLabel,
-            QProgressBar,
             QApplication,
+            QDialog,
+            QLabel,
+            QMessageBox,
+            QProgressBar,
+            QVBoxLayout,
         )
-        from PySide6.QtCore import Qt, QThread, Signal, QTimer
 
         class InstallWorker(QThread):
             """Worker thread for browser installation."""

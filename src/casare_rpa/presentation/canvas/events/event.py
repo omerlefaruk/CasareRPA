@@ -24,13 +24,13 @@ Usage:
     print(event.data)       # {"workflow_id": "123", "name": "My Workflow"}
 """
 
+import time
 from dataclasses import dataclass, field
-from typing import Any, Optional
 from datetime import datetime
 from enum import Enum
-import time
+from typing import Any, Optional
 
-from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
+from casare_rpa.presentation.canvas.events.event_types import EventCategory, EventType
 
 
 class EventPriority(Enum):
@@ -120,11 +120,11 @@ class Event:
 
     type: EventType
     source: str
-    data: Optional[dict[str, Any]] = None
+    data: dict[str, Any] | None = None
     timestamp: float = field(default_factory=time.time)
     priority: EventPriority = EventPriority.NORMAL
     event_id: str = field(default_factory=lambda: _generate_event_id())
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
 
     def __post_init__(self):
         """Validate event after initialization."""
@@ -279,11 +279,11 @@ class EventFilter:
         )
     """
 
-    types: Optional[list[EventType]] = None
-    categories: Optional[list[EventCategory]] = None
-    sources: Optional[list[str]] = None
-    min_priority: Optional[EventPriority] = None
-    max_priority: Optional[EventPriority] = None
+    types: list[EventType] | None = None
+    categories: list[EventCategory] | None = None
+    sources: list[str] | None = None
+    min_priority: EventPriority | None = None
+    max_priority: EventPriority | None = None
 
     def matches(self, event: Event) -> bool:
         """

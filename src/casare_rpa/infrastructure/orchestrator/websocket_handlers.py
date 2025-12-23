@@ -4,7 +4,7 @@ WebSocket Handlers for Cloud Orchestrator.
 Handles Robot, Admin, and Log streaming WebSocket connections.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Optional
 
 import orjson
@@ -12,16 +12,15 @@ from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from loguru import logger
 
 from casare_rpa.domain.value_objects.log_entry import LogLevel
+from casare_rpa.infrastructure.orchestrator.api.auth import (
+    get_robot_authenticator,
+    validate_admin_secret,
+)
 from casare_rpa.infrastructure.orchestrator.robot_manager import ConnectedRobot
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
     get_log_streaming_service,
     get_robot_manager,
 )
-from casare_rpa.infrastructure.orchestrator.api.auth import (
-    validate_admin_secret,
-    get_robot_authenticator,
-)
-
 
 router = APIRouter()
 
@@ -30,7 +29,7 @@ router = APIRouter()
 async def robot_websocket(
     websocket: WebSocket,
     robot_id: str,
-    api_key: Optional[str] = Query(None, alias="api_key"),
+    api_key: str | None = Query(None, alias="api_key"),
 ):
     """WebSocket endpoint for robot connections.
 
@@ -58,7 +57,7 @@ async def robot_websocket(
     logger.info(f"Robot WebSocket connected: {robot_id}")
 
     manager = get_robot_manager()
-    registered_robot: Optional[ConnectedRobot] = None
+    registered_robot: ConnectedRobot | None = None
 
     try:
         while True:
@@ -81,7 +80,7 @@ async def robot_websocket(
                         {
                             "type": "register_ack",
                             "robot_id": registered_robot.robot_id,
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         }
                     ).decode()
                 )
@@ -92,7 +91,7 @@ async def robot_websocket(
                     orjson.dumps(
                         {
                             "type": "heartbeat_ack",
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "timestamp": datetime.now(UTC).isoformat(),
                         }
                     ).decode()
                 )
@@ -151,7 +150,7 @@ async def robot_websocket(
 @router.websocket("/admin")
 async def admin_websocket(
     websocket: WebSocket,
-    api_secret: Optional[str] = Query(None, alias="api_secret"),
+    api_secret: str | None = Query(None, alias="api_secret"),
 ):
     """WebSocket endpoint for admin dashboard.
 
@@ -186,7 +185,7 @@ async def admin_websocket(
                         for r in robots
                     ],
                     "pending_jobs": len(manager.get_pending_jobs()),
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
             ).decode()
         )
@@ -209,7 +208,7 @@ async def admin_websocket(
 async def log_stream_websocket(
     websocket: WebSocket,
     robot_id: str,
-    api_secret: Optional[str] = Query(None, alias="api_secret"),
+    api_secret: str | None = Query(None, alias="api_secret"),
     min_level: str = Query("DEBUG", alias="min_level"),
 ):
     """WebSocket endpoint for streaming logs from a specific robot.
@@ -254,8 +253,8 @@ async def log_stream_websocket(
 @router.websocket("/logs")
 async def all_logs_stream_websocket(
     websocket: WebSocket,
-    api_secret: Optional[str] = Query(None, alias="api_secret"),
-    tenant_id: Optional[str] = Query(None, alias="tenant_id"),
+    api_secret: str | None = Query(None, alias="api_secret"),
+    tenant_id: str | None = Query(None, alias="tenant_id"),
     min_level: str = Query("DEBUG", alias="min_level"),
 ):
     """WebSocket endpoint for streaming all logs (admin view).

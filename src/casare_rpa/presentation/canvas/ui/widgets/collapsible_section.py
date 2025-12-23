@@ -30,12 +30,12 @@ class CollapsibleSection(QWidget):
         self,
         title: str = "",
         expanded: bool = True,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ):
         super().__init__(parent)
         self._expanded = expanded
-        self._content_widget: Optional[QWidget] = None
-        self._animation: Optional[QPropertyAnimation] = None
+        self._content_widget: QWidget | None = None
+        self._animation: QPropertyAnimation | None = None
         self._content_height = 0
 
         self._setup_ui(title)

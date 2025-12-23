@@ -5,20 +5,19 @@ Reusable widget for file and directory path selection with browse button.
 Provides Windows Explorer integration for easy file/folder selection.
 """
 
-from typing import Optional
 from enum import Enum
+from typing import Optional
 
+from loguru import logger
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
+    QFileDialog,
     QHBoxLayout,
     QLineEdit,
     QPushButton,
-    QFileDialog,
     QStyle,
+    QWidget,
 )
-from PySide6.QtCore import Signal
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -84,7 +83,7 @@ class FilePathWidget(QWidget):
         filter: str = "",
         placeholder: str = "",
         initial_path: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the file path widget.

@@ -153,14 +153,14 @@ class TestAIModuleExports:
     def test_import_from_ai_module(self):
         """Should import all Playwright MCP components from ai module."""
         from casare_rpa.infrastructure.ai import (
-            PlaywrightMCPClient,
+            FormField,
+            FormInfo,
             MCPToolResult,
-            fetch_page_context,
             PageAnalyzer,
             PageContext,
-            FormInfo,
-            FormField,
+            PlaywrightMCPClient,
             analyze_page,
+            fetch_page_context,
         )
 
         # All imports should succeed
@@ -246,8 +246,9 @@ class TestDataclassTypeHints:
 
     def test_mcp_tool_result_type_hints(self):
         """Should have accessible type hints."""
-        from casare_rpa.infrastructure.ai.playwright_mcp import MCPToolResult
         import dataclasses
+
+        from casare_rpa.infrastructure.ai.playwright_mcp import MCPToolResult
 
         assert dataclasses.is_dataclass(MCPToolResult)
 
@@ -258,8 +259,9 @@ class TestDataclassTypeHints:
 
     def test_page_context_type_hints(self):
         """Should have accessible type hints."""
-        from casare_rpa.infrastructure.ai.page_analyzer import PageContext
         import dataclasses
+
+        from casare_rpa.infrastructure.ai.page_analyzer import PageContext
 
         assert dataclasses.is_dataclass(PageContext)
 
@@ -272,8 +274,9 @@ class TestDataclassTypeHints:
 
     def test_form_info_type_hints(self):
         """Should have accessible type hints."""
-        from casare_rpa.infrastructure.ai.page_analyzer import FormInfo
         import dataclasses
+
+        from casare_rpa.infrastructure.ai.page_analyzer import FormInfo
 
         assert dataclasses.is_dataclass(FormInfo)
 
@@ -283,8 +286,9 @@ class TestDataclassTypeHints:
 
     def test_form_field_type_hints(self):
         """Should have accessible type hints."""
-        from casare_rpa.infrastructure.ai.page_analyzer import FormField
         import dataclasses
+
+        from casare_rpa.infrastructure.ai.page_analyzer import FormField
 
         assert dataclasses.is_dataclass(FormField)
 
@@ -323,6 +327,7 @@ class TestAsyncMethods:
         """Should have proper async methods."""
         import asyncio
         import inspect
+
         from casare_rpa.infrastructure.ai.playwright_mcp import PlaywrightMCPClient
 
         client = PlaywrightMCPClient()
@@ -339,6 +344,7 @@ class TestAsyncMethods:
     def test_fetch_page_context_is_async(self):
         """Should be a coroutine function."""
         import inspect
+
         from casare_rpa.infrastructure.ai.playwright_mcp import fetch_page_context
 
         assert inspect.iscoroutinefunction(fetch_page_context)

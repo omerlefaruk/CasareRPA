@@ -121,7 +121,7 @@ class CanvasThemeColors:
 
 
 # Wire color mapping by data type
-WIRE_COLOR_MAP: Dict[str, str] = {
+WIRE_COLOR_MAP: dict[str, str] = {
     "exec": "#ffffff",
     "any": "#6366f1",
     "bool": "#ef4444",
@@ -138,7 +138,7 @@ WIRE_COLOR_MAP: Dict[str, str] = {
 }
 
 # Node status color mapping
-NODE_STATUS_COLOR_MAP: Dict[str, str] = {
+NODE_STATUS_COLOR_MAP: dict[str, str] = {
     "idle": "#a1a1aa",
     "running": "#fbbf24",
     "success": "#34d399",
@@ -148,7 +148,7 @@ NODE_STATUS_COLOR_MAP: Dict[str, str] = {
 }
 
 # General status color mapping
-STATUS_COLOR_MAP: Dict[str, str] = {
+STATUS_COLOR_MAP: dict[str, str] = {
     "success": "#10b981",
     "completed": "#10b981",
     "warning": "#f59e0b",

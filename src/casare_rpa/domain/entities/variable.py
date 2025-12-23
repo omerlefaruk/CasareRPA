@@ -9,7 +9,6 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict
 
-
 # Valid Python identifier pattern (excluding reserved keywords)
 _IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
@@ -119,7 +118,7 @@ class Variable:
                 f"Invalid variable type '{var_type}'. Valid: {', '.join(sorted(valid_types))}"
             )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "name": self.name,
@@ -131,7 +130,7 @@ class Variable:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Variable":
+    def from_dict(cls, data: dict[str, Any]) -> "Variable":
         """Create from dictionary."""
         return cls(
             name=data.get("name", ""),

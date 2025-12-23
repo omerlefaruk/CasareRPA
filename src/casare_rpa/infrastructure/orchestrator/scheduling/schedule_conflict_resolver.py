@@ -9,7 +9,7 @@ import asyncio
 import threading
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
@@ -27,7 +27,7 @@ class DependencyConfig:
         trigger_on_success_only: Only trigger if dependencies succeeded
     """
 
-    depends_on: List[str] = field(default_factory=list)
+    depends_on: list[str] = field(default_factory=list)
     wait_for_all: bool = True
     timeout_seconds: int = 3600
     trigger_on_success_only: bool = True
@@ -59,8 +59,8 @@ class DependencyTracker:
             ttl_seconds: Time to keep completion records (default 24 hours)
         """
         self._ttl = timedelta(seconds=ttl_seconds)
-        self._completions: Dict[str, List[CompletionRecord]] = defaultdict(list)
-        self._waiters: Dict[str, List[asyncio.Event]] = defaultdict(list)
+        self._completions: dict[str, list[CompletionRecord]] = defaultdict(list)
+        self._waiters: dict[str, list[asyncio.Event]] = defaultdict(list)
         self._lock = threading.Lock()
 
     def record_completion(
@@ -79,7 +79,7 @@ class DependencyTracker:
         """
         record = CompletionRecord(
             schedule_id=schedule_id,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
             success=success,
             result=result,
         )
@@ -98,7 +98,7 @@ class DependencyTracker:
     def is_dependency_satisfied(
         self,
         dependency_id: str,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         require_success: bool = True,
     ) -> bool:
         """
@@ -127,11 +127,11 @@ class DependencyTracker:
 
     def are_dependencies_satisfied(
         self,
-        dependency_ids: List[str],
+        dependency_ids: list[str],
         wait_for_all: bool = True,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         require_success: bool = True,
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """
         Check if multiple dependencies are satisfied.
 
@@ -184,7 +184,7 @@ class DependencyTracker:
         try:
             await asyncio.wait_for(event.wait(), timeout=timeout_seconds)
             return True
-        except asyncio.TimeoutError:
+        except TimeoutError:
             with self._lock:
                 waiters = self._waiters.get(dependency_id, [])
                 if event in waiters:
@@ -193,10 +193,10 @@ class DependencyTracker:
 
     async def wait_for_dependencies(
         self,
-        dependency_ids: List[str],
+        dependency_ids: list[str],
         wait_for_all: bool = True,
         timeout_seconds: int = 3600,
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """
         Wait for multiple dependencies to complete.
 
@@ -218,7 +218,7 @@ class DependencyTracker:
         }
 
         timed_out = []
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         remaining_timeout = timeout_seconds
 
         if wait_for_all:
@@ -228,12 +228,12 @@ class DependencyTracker:
                     success = await asyncio.wait_for(task, timeout=remaining_timeout)
                     if not success:
                         timed_out.append(dep_id)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     timed_out.append(dep_id)
                     task.cancel()
 
                 # Update remaining timeout
-                elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+                elapsed = (datetime.now(UTC) - start_time).total_seconds()
                 remaining_timeout = max(0, timeout_seconds - elapsed)
 
             return len(timed_out) == 0, timed_out
@@ -256,7 +256,7 @@ class DependencyTracker:
 
             return False, list(dependency_ids)
 
-    def get_latest_completion(self, schedule_id: str) -> Optional[CompletionRecord]:
+    def get_latest_completion(self, schedule_id: str) -> CompletionRecord | None:
         """Get most recent completion record for a schedule."""
         with self._lock:
             completions = self._completions.get(schedule_id, [])
@@ -266,8 +266,8 @@ class DependencyTracker:
         self,
         schedule_id: str,
         limit: int = 10,
-        since: Optional[datetime] = None,
-    ) -> List[CompletionRecord]:
+        since: datetime | None = None,
+    ) -> list[CompletionRecord]:
         """
         Get completion history for a schedule.
 
@@ -288,7 +288,7 @@ class DependencyTracker:
 
             return list(reversed(completions[-limit:]))
 
-    def clear_history(self, schedule_id: Optional[str] = None) -> None:
+    def clear_history(self, schedule_id: str | None = None) -> None:
         """
         Clear completion history.
 
@@ -303,7 +303,7 @@ class DependencyTracker:
 
     def _cleanup_old(self, schedule_id: str) -> None:
         """Remove old completion records."""
-        cutoff = datetime.now(timezone.utc) - self._ttl
+        cutoff = datetime.now(UTC) - self._ttl
         self._completions[schedule_id] = [
             r for r in self._completions[schedule_id] if r.completed_at > cutoff
         ]
@@ -321,7 +321,7 @@ class ConflictResolver:
 
     def __init__(self):
         """Initialize conflict resolver."""
-        self._resource_locks: Dict[str, Set[str]] = defaultdict(set)
+        self._resource_locks: dict[str, set[str]] = defaultdict(set)
         self._lock = threading.Lock()
 
     def acquire_resource(
@@ -380,7 +380,7 @@ class ConflictResolver:
             for holders in self._resource_locks.values():
                 holders.discard(schedule_id)
 
-    def get_resource_holders(self, resource_id: str) -> Set[str]:
+    def get_resource_holders(self, resource_id: str) -> set[str]:
         """
         Get schedules currently holding a resource.
 
@@ -396,9 +396,9 @@ class ConflictResolver:
     def has_conflict(
         self,
         schedule_id: str,
-        required_resources: List[str],
+        required_resources: list[str],
         exclusive: bool = True,
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """
         Check if schedule would conflict with running schedules.
 
@@ -432,9 +432,9 @@ class DependencyGraphValidator:
 
     def __init__(self):
         """Initialize validator."""
-        self._graph: Dict[str, List[str]] = {}
+        self._graph: dict[str, list[str]] = {}
 
-    def set_graph(self, graph: Dict[str, List[str]]) -> None:
+    def set_graph(self, graph: dict[str, list[str]]) -> None:
         """
         Set the dependency graph.
 
@@ -443,7 +443,7 @@ class DependencyGraphValidator:
         """
         self._graph = graph
 
-    def build_graph_from_dependencies(self, dependencies: Dict[str, DependencyConfig]) -> None:
+    def build_graph_from_dependencies(self, dependencies: dict[str, DependencyConfig]) -> None:
         """
         Build graph from dependency configurations.
 
@@ -454,18 +454,18 @@ class DependencyGraphValidator:
         for schedule_id, config in dependencies.items():
             self._graph[schedule_id] = config.depends_on
 
-    def validate(self) -> Tuple[bool, List[str]]:
+    def validate(self) -> tuple[bool, list[str]]:
         """
         Validate the dependency graph for cycles.
 
         Returns:
             Tuple of (is_valid, cycle_path if invalid)
         """
-        visited: Set[str] = set()
-        rec_stack: Set[str] = set()
-        cycle_path: List[str] = []
+        visited: set[str] = set()
+        rec_stack: set[str] = set()
+        cycle_path: list[str] = []
 
-        def has_cycle(node: str, path: List[str]) -> bool:
+        def has_cycle(node: str, path: list[str]) -> bool:
             visited.add(node)
             rec_stack.add(node)
             path.append(node)
@@ -492,7 +492,7 @@ class DependencyGraphValidator:
 
         return True, []
 
-    def get_execution_order(self) -> List[str]:
+    def get_execution_order(self) -> list[str]:
         """
         Get topological execution order of schedules.
 
@@ -507,7 +507,7 @@ class DependencyGraphValidator:
             raise ValueError(f"Dependency graph has cycle: {' -> '.join(cycle_path)}")
 
         # Topological sort using Kahn's algorithm
-        in_degree: Dict[str, int] = defaultdict(int)
+        in_degree: dict[str, int] = defaultdict(int)
         for schedule_id in self._graph:
             if schedule_id not in in_degree:
                 in_degree[schedule_id] = 0
@@ -536,7 +536,7 @@ class DependencyGraphValidator:
 
         return result
 
-    def get_dependents(self, schedule_id: str) -> List[str]:
+    def get_dependents(self, schedule_id: str) -> list[str]:
         """
         Get all schedules that depend on the given schedule.
 
@@ -552,7 +552,7 @@ class DependencyGraphValidator:
                 dependents.append(sid)
         return dependents
 
-    def get_all_upstream(self, schedule_id: str) -> Set[str]:
+    def get_all_upstream(self, schedule_id: str) -> set[str]:
         """
         Get all upstream dependencies (transitive).
 
@@ -562,7 +562,7 @@ class DependencyGraphValidator:
         Returns:
             Set of all upstream schedule IDs
         """
-        upstream: Set[str] = set()
+        upstream: set[str] = set()
         to_visit = list(self._graph.get(schedule_id, []))
 
         while to_visit:
@@ -573,7 +573,7 @@ class DependencyGraphValidator:
 
         return upstream
 
-    def get_all_downstream(self, schedule_id: str) -> Set[str]:
+    def get_all_downstream(self, schedule_id: str) -> set[str]:
         """
         Get all downstream dependents (transitive).
 
@@ -583,7 +583,7 @@ class DependencyGraphValidator:
         Returns:
             Set of all downstream schedule IDs
         """
-        downstream: Set[str] = set()
+        downstream: set[str] = set()
         to_visit = self.get_dependents(schedule_id)
 
         while to_visit:

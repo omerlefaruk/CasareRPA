@@ -4,23 +4,23 @@ mTLS (Mutual TLS) Configuration and Certificate Management.
 Provides secure mutual authentication between on-prem robots and cloud control plane.
 """
 
-import ssl
 import os
+import ssl
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Optional, Dict
 from enum import Enum
+from pathlib import Path
+from typing import Dict, Optional
 
 from loguru import logger
 
 # Optional cryptography for certificate generation
 try:
     from cryptography import x509
-    from cryptography.x509.oid import NameOID
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa
+    from cryptography.x509.oid import NameOID
 
     HAS_CRYPTOGRAPHY = True
 except ImportError:
@@ -55,7 +55,7 @@ class MTLSConfig:
     client_key_path: Path
     verify_server: bool = True
     check_hostname: bool = True
-    ciphers: Optional[str] = None
+    ciphers: str | None = None
     minimum_version: ssl.TLSVersion = ssl.TLSVersion.TLSv1_2
 
     def create_ssl_context(self) -> ssl.SSLContext:
@@ -116,8 +116,8 @@ class MTLSConfig:
 class CertificateInfo:
     """Information about a certificate."""
 
-    subject: Dict[str, str]
-    issuer: Dict[str, str]
+    subject: dict[str, str]
+    issuer: dict[str, str]
     serial_number: int
     not_valid_before: datetime
     not_valid_after: datetime
@@ -147,8 +147,8 @@ class CertificateManager:
         self.certs_dir = Path(certs_dir)
         self.certs_dir.mkdir(parents=True, exist_ok=True)
 
-        self._ca_cert: Optional[Path] = None
-        self._ca_key: Optional[Path] = None
+        self._ca_cert: Path | None = None
+        self._ca_key: Path | None = None
 
     def generate_ca(
         self,
@@ -255,8 +255,8 @@ class CertificateManager:
         organization: str = "CasareRPA",
         validity_days: int = 365,
         key_size: int = 2048,
-        san_dns: Optional[list[str]] = None,
-        san_ips: Optional[list[str]] = None,
+        san_dns: list[str] | None = None,
+        san_ips: list[str] | None = None,
     ) -> tuple[Path, Path]:
         """
         Generate a signed certificate (server or client).
@@ -426,7 +426,7 @@ class CertificateManager:
         with open(cert_path, "rb") as f:
             cert = x509.load_pem_x509_certificate(f.read(), default_backend())
 
-        def name_to_dict(name: x509.Name) -> Dict[str, str]:
+        def name_to_dict(name: x509.Name) -> dict[str, str]:
             result = {}
             for attr in name:
                 result[attr.oid._name] = attr.value

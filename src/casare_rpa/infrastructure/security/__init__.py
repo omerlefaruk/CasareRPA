@@ -14,20 +14,11 @@ Provides enterprise security features:
 Integrates with workflow execution for transparent credential injection.
 """
 
-from casare_rpa.infrastructure.security.vault_client import (
-    VaultClient,
-    VaultConfig,
-    VaultBackend,
-    SecretMetadata,
-    SecretValue,
-    CredentialType,
-    VaultError,
-    SecretNotFoundError,
-    VaultConnectionError,
-    VaultAuthenticationError,
-    AuditEvent,
-    AuditEventType,
-    AuditLogger,
+from casare_rpa.infrastructure.security.credential_provider import (
+    ResolvedCredential,
+    VaultCredentialProvider,
+    create_credential_resolver,
+    resolve_credentials_for_node,
 )
 from casare_rpa.infrastructure.security.data_masker import (
     DataMasker,
@@ -36,67 +27,19 @@ from casare_rpa.infrastructure.security.data_masker import (
     get_masker,
     mask_sensitive_data,
 )
-from casare_rpa.infrastructure.security.providers import (
-    HashiCorpVaultProvider,
-    SupabaseVaultProvider,
-    EncryptedSQLiteProvider,
-    create_vault_provider,
-)
-from casare_rpa.infrastructure.security.credential_provider import (
-    VaultCredentialProvider,
-    ResolvedCredential,
-    create_credential_resolver,
-    resolve_credentials_for_node,
-)
-from casare_rpa.infrastructure.security.rotation import (
-    SecretRotationManager,
-    RotationPolicy,
-    RotationFrequency,
-    RotationStatus,
-    RotationRecord,
-    RotationHook,
-    setup_rotation_for_credentials,
-)
-from casare_rpa.infrastructure.security.rbac import (
-    # Enums
-    SystemRole,
-    ResourceType,
-    ActionType,
-    # Exceptions
-    RBACError,
-    PermissionDeniedError,
-    RoleNotFoundError,
-    InvalidRoleConfigError,
-    # Data models
-    Permission,
-    PermissionCondition,
-    RolePermission,
-    Role,
-    UserPermissions,
-    # Services
-    PermissionRegistry,
-    RoleManager,
-    AuthorizationService,
-    # Decorators
-    require_permission,
-    # Factory functions
-    create_permission_registry,
-    create_authorization_service,
-    get_default_permissions,
-)
 from casare_rpa.infrastructure.security.google_oauth import (
-    GoogleOAuthCredentialData,
-    GoogleOAuthManager,
-    GoogleOAuthError,
-    TokenRefreshError,
-    TokenExpiredError,
-    InvalidCredentialError,
+    GOOGLE_REVOKE_ENDPOINT,
     GOOGLE_TOKEN_ENDPOINT,
     GOOGLE_USERINFO_ENDPOINT,
-    GOOGLE_REVOKE_ENDPOINT,
     TOKEN_EXPIRY_BUFFER_SECONDS,
-    get_google_oauth_manager,
+    GoogleOAuthCredentialData,
+    GoogleOAuthError,
+    GoogleOAuthManager,
+    InvalidCredentialError,
+    TokenExpiredError,
+    TokenRefreshError,
     get_google_access_token,
+    get_google_oauth_manager,
     get_google_user_info,
 )
 from casare_rpa.infrastructure.security.oauth_server import (
@@ -104,40 +47,97 @@ from casare_rpa.infrastructure.security.oauth_server import (
     OAuthCallbackHandler,
     build_google_auth_url,
 )
-from casare_rpa.infrastructure.security.tenancy import (
+from casare_rpa.infrastructure.security.providers import (
+    EncryptedSQLiteProvider,
+    HashiCorpVaultProvider,
+    SupabaseVaultProvider,
+    create_vault_provider,
+)
+from casare_rpa.infrastructure.security.rbac import (
+    ActionType,
+    AuthorizationService,
+    InvalidRoleConfigError,
+    # Data models
+    Permission,
+    PermissionCondition,
+    PermissionDeniedError,
+    # Services
+    PermissionRegistry,
+    # Exceptions
+    RBACError,
+    ResourceType,
+    Role,
+    RoleManager,
+    RoleNotFoundError,
+    RolePermission,
     # Enums
-    TenantStatus,
-    SubscriptionTier,
-    SSOProvider,
+    SystemRole,
+    UserPermissions,
+    create_authorization_service,
+    # Factory functions
+    create_permission_registry,
+    get_default_permissions,
+    # Decorators
+    require_permission,
+)
+from casare_rpa.infrastructure.security.rotation import (
+    RotationFrequency,
+    RotationHook,
+    RotationPolicy,
+    RotationRecord,
+    RotationStatus,
+    SecretRotationManager,
+    setup_rotation_for_credentials,
+)
+from casare_rpa.infrastructure.security.tenancy import (
+    APIKey,
+    APIKeyService,
     APIKeyStatus,
     AuditAction,
-    # Exceptions
-    TenancyError,
-    TenantNotFoundError,
-    TenantSuspendedError,
+    AuditLogEntry,
+    AuditService,
+    InvalidAPIKeyError,
     QuotaExceededError,
     RateLimitExceededError,
-    InvalidAPIKeyError,
     # Data models
     ResourceQuotas,
     ResourceUsage,
     SSOConfig,
+    SSOProvider,
+    SubscriptionTier,
+    # Exceptions
+    TenancyError,
     Tenant,
-    Workspace,
-    APIKey,
-    AuditLogEntry,
     # Context
     TenantContext,
     TenantContextManager,
+    TenantNotFoundError,
     # Services
     TenantService,
-    APIKeyService,
-    AuditService,
+    # Enums
+    TenantStatus,
+    TenantSuspendedError,
+    Workspace,
+    create_api_key_service,
+    create_audit_service,
     # Factory functions
     create_tenant_context_manager,
     create_tenant_service,
-    create_api_key_service,
-    create_audit_service,
+)
+from casare_rpa.infrastructure.security.vault_client import (
+    AuditEvent,
+    AuditEventType,
+    AuditLogger,
+    CredentialType,
+    SecretMetadata,
+    SecretNotFoundError,
+    SecretValue,
+    VaultAuthenticationError,
+    VaultBackend,
+    VaultClient,
+    VaultConfig,
+    VaultConnectionError,
+    VaultError,
 )
 
 __all__ = [

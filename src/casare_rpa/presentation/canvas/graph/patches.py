@@ -5,9 +5,9 @@ This module houses global fixes for library-level bugs that cannot be
 easily solved via subclassing alone.
 """
 
+from loguru import logger
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QGraphicsTextItem
-from loguru import logger
 
 
 class CasareViewerFontFix:

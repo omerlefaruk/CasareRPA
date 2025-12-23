@@ -19,7 +19,8 @@ import hashlib
 import json
 import threading
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Set
+from typing import Any, Dict, List, Optional, Set
+
 from loguru import logger
 
 
@@ -38,7 +39,7 @@ class ValidationIssue:
     severity: str
     message: str
     code: str
-    node_id: Optional[str] = None
+    node_id: str | None = None
 
 
 @dataclass
@@ -53,16 +54,16 @@ class ValidationResult:
     """
 
     is_valid: bool
-    issues: List[ValidationIssue] = field(default_factory=list)
+    issues: list[ValidationIssue] = field(default_factory=list)
     from_cache: bool = False
 
     @property
-    def errors(self) -> List[ValidationIssue]:
+    def errors(self) -> list[ValidationIssue]:
         """Get only error-level issues."""
         return [i for i in self.issues if i.severity == "error"]
 
     @property
-    def warnings(self) -> List[ValidationIssue]:
+    def warnings(self) -> list[ValidationIssue]:
         """Get only warning-level issues."""
         return [i for i in self.issues if i.severity == "warning"]
 
@@ -93,7 +94,7 @@ class ValidateWorkflowUseCase:
     """
 
     # Class-level cache: workflow_hash -> ValidationResult
-    _cache: Dict[str, ValidationResult] = {}
+    _cache: dict[str, ValidationResult] = {}
     _lock = threading.Lock()
 
     # Cache statistics
@@ -206,7 +207,7 @@ class ValidateWorkflowUseCase:
         Returns:
             ValidationResult with all issues found
         """
-        issues: List[ValidationIssue] = []
+        issues: list[ValidationIssue] = []
 
         # Get nodes (dict-only)
         nodes = workflow.nodes if hasattr(workflow, "nodes") else {}
@@ -223,9 +224,9 @@ class ValidateWorkflowUseCase:
         connections = workflow.connections if hasattr(workflow, "connections") else []
 
         # Track node types
-        start_nodes: List[str] = []
-        end_nodes: List[str] = []
-        all_node_ids: Set[str] = set(nodes.keys())
+        start_nodes: list[str] = []
+        end_nodes: list[str] = []
+        all_node_ids: set[str] = set(nodes.keys())
 
         # Categorize nodes
         for node_id, node in nodes.items():
@@ -264,7 +265,7 @@ class ValidateWorkflowUseCase:
             )
 
         # Rule 3: All connections reference valid nodes
-        connected_nodes: Set[str] = set()
+        connected_nodes: set[str] = set()
         for conn in connections:
             source = getattr(conn, "source_node", None)
             target = getattr(conn, "target_node", None)
@@ -316,7 +317,7 @@ class ValidateWorkflowUseCase:
 
         return ValidationResult(is_valid=is_valid, issues=issues, from_cache=False)
 
-    def invalidate_cache(self, workflow: Optional[Any] = None) -> None:
+    def invalidate_cache(self, workflow: Any | None = None) -> None:
         """
         Invalidate the validation cache.
 
@@ -343,7 +344,7 @@ class ValidateWorkflowUseCase:
             logger.debug("ValidationWorkflowUseCase cache cleared")
 
     @classmethod
-    def get_cache_stats(cls) -> Dict[str, Any]:
+    def get_cache_stats(cls) -> dict[str, Any]:
         """
         Get cache statistics.
 

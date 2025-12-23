@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -29,8 +29,8 @@ class GoogleOAuthError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
-        error_details: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        error_details: dict[str, Any] | None = None,
     ):
         self.error_code = error_code
         self.error_details = error_details or {}
@@ -87,10 +87,10 @@ class GoogleOAuthCredentialData:
     client_secret: str
     access_token: str
     refresh_token: str
-    token_expiry: Optional[datetime] = None
-    scopes: List[str] = field(default_factory=list)
-    user_email: Optional[str] = None
-    project_id: Optional[str] = None
+    token_expiry: datetime | None = None
+    scopes: list[str] = field(default_factory=list)
+    user_email: str | None = None
+    project_id: str | None = None
 
     def is_expired(self, buffer_seconds: int = TOKEN_EXPIRY_BUFFER_SECONDS) -> bool:
         """
@@ -111,15 +111,15 @@ class GoogleOAuthCredentialData:
             return True
 
         # Ensure we're comparing timezone-aware datetimes
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expiry = self.token_expiry
         if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=timezone.utc)
+            expiry = expiry.replace(tzinfo=UTC)
 
         buffer = timedelta(seconds=buffer_seconds)
         return now >= (expiry - buffer)
 
-    def time_until_expiry(self) -> Optional[timedelta]:
+    def time_until_expiry(self) -> timedelta | None:
         """
         Get time remaining until token expiry.
 
@@ -130,14 +130,14 @@ class GoogleOAuthCredentialData:
         if self.token_expiry is None:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expiry = self.token_expiry
         if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=timezone.utc)
+            expiry = expiry.replace(tzinfo=UTC)
 
         return expiry - now
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert credential data to dictionary for storage.
 
@@ -156,7 +156,7 @@ class GoogleOAuthCredentialData:
             # Store as ISO format string
             expiry = self.token_expiry
             if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
+                expiry = expiry.replace(tzinfo=UTC)
             data["token_expiry"] = expiry.isoformat()
 
         if self.user_email is not None:
@@ -168,7 +168,7 @@ class GoogleOAuthCredentialData:
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "GoogleOAuthCredentialData":
+    def from_dict(cls, data: dict[str, Any]) -> GoogleOAuthCredentialData:
         """
         Create credential data from dictionary.
 
@@ -201,7 +201,7 @@ class GoogleOAuthCredentialData:
                 try:
                     token_expiry = datetime.fromisoformat(expiry_str)
                     if token_expiry.tzinfo is None:
-                        token_expiry = token_expiry.replace(tzinfo=timezone.utc)
+                        token_expiry = token_expiry.replace(tzinfo=UTC)
                 except ValueError as e:
                     logger.warning(f"Failed to parse token_expiry '{expiry_str}': {e}")
             elif isinstance(expiry_str, datetime):
@@ -230,7 +230,7 @@ class GoogleOAuthCredentialData:
         """
         return scope in self.scopes
 
-    def has_all_scopes(self, required_scopes: List[str]) -> bool:
+    def has_all_scopes(self, required_scopes: list[str]) -> bool:
         """
         Check if credential has all required scopes.
 
@@ -261,17 +261,17 @@ class GoogleOAuthManager:
         access_token = await manager.get_access_token("my_credential_id")
     """
 
-    _instance: Optional["GoogleOAuthManager"] = None
+    _instance: GoogleOAuthManager | None = None
     _lock: asyncio.Lock = asyncio.Lock()
 
     def __init__(self) -> None:
         """Initialize the manager (use get_instance() instead)."""
-        self._credential_cache: Dict[str, GoogleOAuthCredentialData] = {}
-        self._refresh_locks: Dict[str, asyncio.Lock] = {}
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._credential_cache: dict[str, GoogleOAuthCredentialData] = {}
+        self._refresh_locks: dict[str, asyncio.Lock] = {}
+        self._session: aiohttp.ClientSession | None = None
 
     @classmethod
-    async def get_instance(cls) -> "GoogleOAuthManager":
+    async def get_instance(cls) -> GoogleOAuthManager:
         """
         Get the singleton instance of GoogleOAuthManager.
 
@@ -443,9 +443,7 @@ class GoogleOAuthManager:
 
                 # Calculate new expiry
                 expires_in = result.get("expires_in", 3600)
-                credential_data.token_expiry = datetime.now(timezone.utc) + timedelta(
-                    seconds=expires_in
-                )
+                credential_data.token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
 
                 # Update cache
                 self._credential_cache[credential_id] = credential_data
@@ -483,8 +481,8 @@ class GoogleOAuthManager:
         """
         try:
             from casare_rpa.infrastructure.security.credential_store import (
-                get_credential_store,
                 CredentialType,
+                get_credential_store,
             )
 
             store = get_credential_store()
@@ -506,7 +504,7 @@ class GoogleOAuthManager:
             # Log but don't fail - the in-memory cache has the new token
             logger.warning(f"Failed to persist credential {credential_id}: {e}")
 
-    async def get_user_info(self, access_token: str) -> Dict[str, Any]:
+    async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """
         Fetch user information from Google's userinfo endpoint.
 
@@ -581,7 +579,7 @@ class GoogleOAuthManager:
             logger.error(f"Error revoking token: {e}")
             return False
 
-    def invalidate_cache(self, credential_id: Optional[str] = None) -> None:
+    def invalidate_cache(self, credential_id: str | None = None) -> None:
         """
         Invalidate cached credential data.
 
@@ -593,7 +591,7 @@ class GoogleOAuthManager:
         else:
             self._credential_cache.clear()
 
-    async def validate_credential(self, credential_id: str) -> tuple[bool, Optional[str]]:
+    async def validate_credential(self, credential_id: str) -> tuple[bool, str | None]:
         """
         Validate a credential by attempting to get a valid token.
 
@@ -636,7 +634,7 @@ async def get_google_access_token(credential_id: str) -> str:
     return await manager.get_access_token(credential_id)
 
 
-async def get_google_user_info(credential_id: str) -> Dict[str, Any]:
+async def get_google_user_info(credential_id: str) -> dict[str, Any]:
     """
     Get Google user info for the given credential.
 

@@ -16,22 +16,21 @@ from __future__ import annotations
 import asyncio
 import time
 from abc import abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, TypeVar
-
-from PySide6.QtCore import Qt, Signal, QThread, QObject
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QComboBox,
-    QPushButton,
-    QLabel,
-)
+from typing import Any, Dict, List, Optional, TypeVar
 
 from loguru import logger
+from PySide6.QtCore import QObject, Qt, QThread, Signal
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
-
 
 # Type variable for item data
 T = TypeVar("T")
@@ -64,7 +63,7 @@ class DropdownItem:
 
     id: str
     label: str
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.data is None:
@@ -75,7 +74,7 @@ class DropdownItem:
 class CacheEntry:
     """Cache entry with TTL tracking."""
 
-    items: List[DropdownItem]
+    items: list[DropdownItem]
     timestamp: float = field(default_factory=time.time)
 
     def is_expired(self, ttl_seconds: float) -> bool:
@@ -91,9 +90,9 @@ class FetchWorker(QObject):
 
     def __init__(
         self,
-        fetch_func: Callable[..., List[DropdownItem]],
+        fetch_func: Callable[..., list[DropdownItem]],
         args: tuple = (),
-        kwargs: Optional[dict] = None,
+        kwargs: dict | None = None,
     ) -> None:
         super().__init__()
         self.fetch_func = fetch_func
@@ -133,9 +132,9 @@ class FetchThread(QThread):
 
     def __init__(
         self,
-        fetch_func: Callable[..., List[DropdownItem]],
+        fetch_func: Callable[..., list[DropdownItem]],
         args: tuple = (),
-        kwargs: Optional[dict] = None,
+        kwargs: dict | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -269,7 +268,7 @@ class CascadingDropdownBase(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         cache_ttl: float = DEFAULT_CACHE_TTL,
         show_refresh_button: bool = True,
     ) -> None:
@@ -278,12 +277,12 @@ class CascadingDropdownBase(QWidget):
         self._cache_ttl = cache_ttl
         self._show_refresh_button = show_refresh_button
 
-        self._cache: Dict[str, CacheEntry] = {}
-        self._parent_value: Optional[str] = None
-        self._current_item_id: Optional[str] = None
-        self._items: List[DropdownItem] = []
+        self._cache: dict[str, CacheEntry] = {}
+        self._parent_value: str | None = None
+        self._current_item_id: str | None = None
+        self._items: list[DropdownItem] = []
         self._loading = False
-        self._fetch_thread: Optional[FetchThread] = None
+        self._fetch_thread: FetchThread | None = None
 
         self._setup_ui()
         self._apply_styles()
@@ -344,7 +343,7 @@ class CascadingDropdownBase(QWidget):
     # =========================================================================
 
     @abstractmethod
-    async def _fetch_items(self) -> List[DropdownItem]:
+    async def _fetch_items(self) -> list[DropdownItem]:
         """
         Fetch items for the dropdown.
 
@@ -425,7 +424,7 @@ class CascadingDropdownBase(QWidget):
         self._fetch_thread.progress.connect(self._on_fetch_progress)
         self._fetch_thread.start()
 
-    def _on_fetch_complete(self, items: Optional[List[DropdownItem]], error: str) -> None:
+    def _on_fetch_complete(self, items: list[DropdownItem] | None, error: str) -> None:
         """Handle fetch completion."""
         self._set_loading(False)
         self._fetch_thread = None
@@ -449,7 +448,7 @@ class CascadingDropdownBase(QWidget):
         """Handle fetch progress."""
         self._loading_label.setText(message)
 
-    def _populate_combo(self, items: List[DropdownItem]) -> None:
+    def _populate_combo(self, items: list[DropdownItem]) -> None:
         """Populate combo box with items."""
         self._items = items
 
@@ -506,7 +505,7 @@ class CascadingDropdownBase(QWidget):
     # Public API
     # =========================================================================
 
-    def set_parent_value(self, value: Optional[str]) -> None:
+    def set_parent_value(self, value: str | None) -> None:
         """
         Set the parent dropdown's value.
 
@@ -531,11 +530,11 @@ class CascadingDropdownBase(QWidget):
             self._combo.setToolTip("Select a Google account to load items")
             self._combo.blockSignals(False)
 
-    def get_parent_value(self) -> Optional[str]:
+    def get_parent_value(self) -> str | None:
         """Get the parent dropdown's value."""
         return self._parent_value
 
-    def get_selected_id(self) -> Optional[str]:
+    def get_selected_id(self) -> str | None:
         """Get the currently selected item ID."""
         return self._current_item_id
 
@@ -554,7 +553,7 @@ class CascadingDropdownBase(QWidget):
             # Item not found, store for later
             self._current_item_id = item_id
 
-    def get_selected_item(self) -> Optional[DropdownItem]:
+    def get_selected_item(self) -> DropdownItem | None:
         """Get the currently selected DropdownItem."""
         if not self._current_item_id:
             return None
@@ -604,7 +603,7 @@ class CascadingDropdownWithLabel(QWidget):
         self,
         label: str,
         dropdown_class: type,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         **dropdown_kwargs,
     ) -> None:
         super().__init__(parent)
@@ -626,11 +625,11 @@ class CascadingDropdownWithLabel(QWidget):
         """Get the underlying dropdown widget."""
         return self._dropdown
 
-    def set_parent_value(self, value: Optional[str]) -> None:
+    def set_parent_value(self, value: str | None) -> None:
         """Set the parent value."""
         self._dropdown.set_parent_value(value)
 
-    def get_selected_id(self) -> Optional[str]:
+    def get_selected_id(self) -> str | None:
         """Get the selected item ID."""
         return self._dropdown.get_selected_id()
 

@@ -40,13 +40,13 @@ class ResolvedCredentialData:
 
     alias: str
     vault_path: str
-    data: Dict[str, Any]
-    username: Optional[str] = None
-    password: Optional[str] = None
-    api_key: Optional[str] = None
-    connection_string: Optional[str] = None
+    data: dict[str, Any]
+    username: str | None = None
+    password: str | None = None
+    api_key: str | None = None
+    connection_string: str | None = None
     is_dynamic: bool = False
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
 
 @runtime_checkable
@@ -67,7 +67,7 @@ class CredentialProviderProtocol(Protocol):
         self,
         alias: str,
         required: bool = True,
-    ) -> Optional[ResolvedCredentialData]:
+    ) -> ResolvedCredentialData | None:
         """
         Get credential by alias.
 
@@ -86,7 +86,7 @@ class CredentialProviderProtocol(Protocol):
     async def get_credential_by_path(
         self,
         vault_path: str,
-        alias: Optional[str] = None,
+        alias: str | None = None,
     ) -> ResolvedCredentialData:
         """
         Get credential by direct vault path.
@@ -100,7 +100,7 @@ class CredentialProviderProtocol(Protocol):
         """
         ...
 
-    def register_bindings(self, bindings: Dict[str, str]) -> None:
+    def register_bindings(self, bindings: dict[str, str]) -> None:
         """
         Register multiple credential bindings.
 
@@ -122,7 +122,7 @@ class ExecutionContextProtocol(Protocol):
     """
 
     @property
-    def resources(self) -> Dict[str, Any]:
+    def resources(self) -> dict[str, Any]:
         """Get resources dictionary for storing/retrieving resources."""
         ...
 
@@ -132,7 +132,7 @@ class ExecutionContextProtocol(Protocol):
         ...
 
     @property
-    def project_context(self) -> Optional[Any]:
+    def project_context(self) -> Any | None:
         """Get the project context (if any)."""
         ...
 

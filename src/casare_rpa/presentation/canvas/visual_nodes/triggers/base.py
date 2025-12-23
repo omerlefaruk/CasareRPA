@@ -9,7 +9,6 @@ from PySide6.QtGui import QColor
 
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
-
 # Trigger-specific color (distinct from other nodes)
 TRIGGER_ACCENT_COLOR = QColor(156, 39, 176)  # Purple - Material Purple 500
 TRIGGER_LISTENING_COLOR = QColor(76, 175, 80)  # Green - Material Green 500

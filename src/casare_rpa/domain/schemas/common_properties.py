@@ -24,9 +24,9 @@ Usage:
 """
 
 from typing import List
+
 from casare_rpa.domain.schemas.property_schema import PropertyDef
 from casare_rpa.domain.schemas.property_types import PropertyType
-
 
 # =============================================================================
 # Core Timeout Properties
@@ -285,21 +285,21 @@ PROP_VALUE = PropertyDef(
 # =============================================================================
 
 
-def get_retry_properties() -> List[PropertyDef]:
+def get_retry_properties() -> list[PropertyDef]:
     """Get standard retry properties (retry_count, retry_interval)."""
     return [PROP_RETRY_COUNT, PROP_RETRY_INTERVAL]
 
 
-def get_file_properties() -> List[PropertyDef]:
+def get_file_properties() -> list[PropertyDef]:
     """Get standard file properties (file_path, encoding)."""
     return [PROP_FILE_PATH, PROP_ENCODING]
 
 
-def get_csv_properties() -> List[PropertyDef]:
+def get_csv_properties() -> list[PropertyDef]:
     """Get standard CSV properties (delimiter, has_header, encoding)."""
     return [PROP_DELIMITER, PROP_HAS_HEADER, PROP_ENCODING]
 
 
-def get_http_properties() -> List[PropertyDef]:
+def get_http_properties() -> list[PropertyDef]:
     """Get standard HTTP properties (url, method, headers, body, timeout)."""
     return [PROP_URL, PROP_METHOD, PROP_HEADERS, PROP_BODY, PROP_TIMEOUT]

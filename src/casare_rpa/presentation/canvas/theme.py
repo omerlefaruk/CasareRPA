@@ -22,12 +22,18 @@ from pathlib import Path
 
 # Re-export colors module
 from casare_rpa.presentation.canvas.theme_system.colors import (
-    CanvasThemeColors,
     NODE_STATUS_COLOR_MAP,
     STATUS_COLOR_MAP,
     WIRE_COLOR_MAP,
+    CanvasThemeColors,
+)
+from casare_rpa.presentation.canvas.theme_system.colors import (
     get_node_status_color as _get_node_status_color,
+)
+from casare_rpa.presentation.canvas.theme_system.colors import (
     get_status_color as _get_status_color,
+)
+from casare_rpa.presentation.canvas.theme_system.colors import (
     get_wire_color as _get_wire_color,
 )
 
@@ -55,7 +61,6 @@ from casare_rpa.presentation.canvas.theme_system.styles import (
     CHECKMARK_PATH,
     get_base_widget_styles,
     get_button_styles,
-    get_canvas_stylesheet as _get_canvas_stylesheet,
     get_checkbox_styles,
     get_combobox_styles,
     get_dock_widget_styles,
@@ -73,6 +78,9 @@ from casare_rpa.presentation.canvas.theme_system.styles import (
     get_textedit_styles,
     get_toolbar_styles,
     get_tooltip_styles,
+)
+from casare_rpa.presentation.canvas.theme_system.styles import (
+    get_canvas_stylesheet as _get_canvas_stylesheet,
 )
 
 # Re-export utils module
@@ -123,8 +131,8 @@ def get_canvas_stylesheet() -> str:
     # Level 2: Disk cache (C1 optimization)
     try:
         from casare_rpa.presentation.canvas.theme_system.stylesheet_cache import (
-            get_cached_stylesheet,
             cache_stylesheet,
+            get_cached_stylesheet,
         )
 
         cached = get_cached_stylesheet()

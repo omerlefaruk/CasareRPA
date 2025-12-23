@@ -5,6 +5,7 @@ Converts wildcard patterns to valid CSS selectors for use with Playwright.
 
 import re
 from typing import List
+
 from loguru import logger
 
 
@@ -172,7 +173,7 @@ class WildcardSelector:
         return result
 
     @classmethod
-    def expand(cls, pattern: str) -> List[str]:
+    def expand(cls, pattern: str) -> list[str]:
         """Generate multiple selector variants from pattern.
 
         Useful for fallback matching when the primary selector doesn't work.
@@ -193,7 +194,7 @@ class WildcardSelector:
         if not cls.has_wildcard(pattern):
             return [pattern]
 
-        variants: List[str] = []
+        variants: list[str] = []
 
         # Add parsed version first
         parsed = cls.parse(pattern)

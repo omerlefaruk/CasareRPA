@@ -10,9 +10,11 @@ States:
 """
 
 import asyncio
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
 from enum import Enum
-from typing import Optional, Callable, Any, TypeVar
+from typing import Any, Optional, TypeVar
+
 from loguru import logger
 
 
@@ -74,8 +76,8 @@ class CircuitBreaker:
     def __init__(
         self,
         name: str,
-        config: Optional[CircuitBreakerConfig] = None,
-        on_state_change: Optional[Callable[[CircuitState, CircuitState], None]] = None,
+        config: CircuitBreakerConfig | None = None,
+        on_state_change: Callable[[CircuitState, CircuitState], None] | None = None,
     ):
         """
         Initialize circuit breaker.
@@ -93,8 +95,8 @@ class CircuitBreaker:
         self._state = CircuitState.CLOSED
         self._failure_count = 0
         self._success_count = 0
-        self._last_failure_time: Optional[datetime] = None
-        self._opened_at: Optional[datetime] = None
+        self._last_failure_time: datetime | None = None
+        self._opened_at: datetime | None = None
         self._half_open_calls = 0
 
         # Lock for thread safety
@@ -129,7 +131,7 @@ class CircuitBreaker:
             )
 
             if new_state == CircuitState.OPEN:
-                self._opened_at = datetime.now(timezone.utc)
+                self._opened_at = datetime.now(UTC)
                 self.stats.increment_times_opened_sync()  # Safe: called from within lock
 
             elif new_state == CircuitState.HALF_OPEN:
@@ -149,7 +151,7 @@ class CircuitBreaker:
     async def _check_state_transition(self):
         """Check if state should transition based on timeout."""
         if self._state == CircuitState.OPEN and self._opened_at:
-            elapsed = (datetime.now(timezone.utc) - self._opened_at).total_seconds()
+            elapsed = (datetime.now(UTC) - self._opened_at).total_seconds()
             if elapsed >= self.config.timeout:
                 self._set_state(CircuitState.HALF_OPEN)
 
@@ -158,7 +160,7 @@ class CircuitBreaker:
         if self._state != CircuitState.OPEN or not self._opened_at:
             return 0
 
-        elapsed = (datetime.now(timezone.utc) - self._opened_at).total_seconds()
+        elapsed = (datetime.now(UTC) - self._opened_at).total_seconds()
         remaining = self.config.timeout - elapsed
         return max(0, remaining)
 
@@ -236,7 +238,7 @@ class CircuitBreaker:
         """Handle failed call."""
         await self.stats.increment_failed()
         async with self._lock:
-            self._last_failure_time = datetime.now(timezone.utc)
+            self._last_failure_time = datetime.now(UTC)
 
             if self._state == CircuitState.HALF_OPEN:
                 # Failure in half-open state -> back to open
@@ -368,14 +370,14 @@ class CircuitBreakerRegistry:
     def get_or_create(
         self,
         name: str,
-        config: Optional[CircuitBreakerConfig] = None,
+        config: CircuitBreakerConfig | None = None,
     ) -> CircuitBreaker:
         """Get existing circuit breaker or create new one."""
         if name not in self._breakers:
             self._breakers[name] = CircuitBreaker(name, config)
         return self._breakers[name]
 
-    def get(self, name: str) -> Optional[CircuitBreaker]:
+    def get(self, name: str) -> CircuitBreaker | None:
         """Get circuit breaker by name."""
         return self._breakers.get(name)
 
@@ -395,7 +397,7 @@ _circuit_breaker_registry = CircuitBreakerRegistry()
 
 def get_circuit_breaker(
     name: str,
-    config: Optional[CircuitBreakerConfig] = None,
+    config: CircuitBreakerConfig | None = None,
 ) -> CircuitBreaker:
     """Get or create a circuit breaker from global registry."""
     return _circuit_breaker_registry.get_or_create(name, config)

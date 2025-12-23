@@ -20,7 +20,7 @@ CONFIG_GET_PATTERN = re.compile(
 )
 
 
-def migrate_file(file_path: Path, dry_run: bool = False) -> Tuple[int, List[str]]:
+def migrate_file(file_path: Path, dry_run: bool = False) -> tuple[int, list[str]]:
     """
     Migrate a single file from self.config.get to self.get_parameter.
 

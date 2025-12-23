@@ -13,13 +13,14 @@ Connects to DebugController signals to update node visual states.
 
 from enum import Enum, auto
 from functools import partial
-from typing import Dict, Optional, TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import QObject, QTimer, Signal
 from loguru import logger
+from PySide6.QtCore import QObject, QTimer, Signal
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
+
     from ..debugger.debug_controller import DebugController
 
 
@@ -51,7 +52,7 @@ class ExecutionHighlighter(QObject):
         self,
         graph_widget: "NodeGraph",
         debug_controller: Optional["DebugController"] = None,
-        parent: Optional[QObject] = None,
+        parent: QObject | None = None,
     ) -> None:
         """
         Initialize execution highlighter.
@@ -64,12 +65,12 @@ class ExecutionHighlighter(QObject):
         super().__init__(parent)
         self._graph = graph_widget
         self._debug_controller = debug_controller
-        self._highlights: Dict[str, HighlightState] = {}
-        self._execution_path: List[str] = []
-        self._execution_order: Dict[str, int] = {}
+        self._highlights: dict[str, HighlightState] = {}
+        self._execution_path: list[str] = []
+        self._execution_order: dict[str, int] = {}
 
         # Timer for fade effects
-        self._fade_timers: Dict[str, QTimer] = {}
+        self._fade_timers: dict[str, QTimer] = {}
         self._success_fade_duration = 2000  # 2 seconds
 
         if debug_controller:
@@ -173,7 +174,7 @@ class ExecutionHighlighter(QObject):
         self._update_node_visual(node_id, HighlightState.SKIPPED)
         logger.debug(f"Node {node_id} highlighted as SKIPPED")
 
-    def highlight_path(self, node_ids: List[str]) -> None:
+    def highlight_path(self, node_ids: list[str]) -> None:
         """
         Highlight execution path (multiple nodes).
 
@@ -224,7 +225,7 @@ class ExecutionHighlighter(QObject):
         """
         return self._highlights.get(node_id, HighlightState.IDLE)
 
-    def get_execution_path(self) -> List[str]:
+    def get_execution_path(self) -> list[str]:
         """
         Get the current execution path.
 
@@ -233,7 +234,7 @@ class ExecutionHighlighter(QObject):
         """
         return list(self._execution_path)
 
-    def get_execution_order(self, node_id: str) -> Optional[int]:
+    def get_execution_order(self, node_id: str) -> int | None:
         """
         Get execution order number for a node.
 

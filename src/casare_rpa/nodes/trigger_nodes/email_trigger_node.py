@@ -143,7 +143,7 @@ class EmailTriggerNode(BaseTriggerNode):
     trigger_icon = "email"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Email Trigger"
         self.node_type = "EmailTriggerNode"
@@ -161,7 +161,7 @@ class EmailTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.EMAIL
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get email-specific configuration."""
         return {
             "provider": self.get_parameter("provider", "imap"),

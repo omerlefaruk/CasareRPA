@@ -12,18 +12,21 @@ Handles all execution-related operations:
 import asyncio
 from datetime import datetime
 from functools import partial
-from typing import Optional, TYPE_CHECKING
-from PySide6.QtCore import Signal, QObject, Qt, Slot
-from PySide6.QtWidgets import QMessageBox
-from loguru import logger
+from typing import TYPE_CHECKING, Optional
 
-from .base_controller import BaseController
+from loguru import logger
+from PySide6.QtCore import QObject, Qt, Signal, Slot
+from PySide6.QtWidgets import QMessageBox
+
 from casare_rpa.application.services import ExecutionLifecycleManager
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
+from .base_controller import BaseController
+
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
     from casare_rpa.presentation.canvas.workflow_runner import CanvasWorkflowRunner
+
+    from ..main_window import MainWindow
 
 
 class _ThreadSafeLogBridge(QObject):
@@ -36,7 +39,7 @@ class _ThreadSafeLogBridge(QObject):
 
     log_received = Signal(str, str, str, str)  # level, message, module, timestamp
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
     def emit_log(self, level: str, message: str, module: str, timestamp: str) -> None:
@@ -55,7 +58,7 @@ class _ThreadSafeTerminalBridge(QObject):
     stdout_received = Signal(str)
     stderr_received = Signal(str)
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
     def emit_stdout(self, text: str) -> None:
@@ -84,7 +87,7 @@ class _ThreadSafeEventBusBridge(QObject):
     workflow_stopped = Signal(object)
     browser_page_ready = Signal(object)
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
 
@@ -126,15 +129,15 @@ class ExecutionController(BaseController):
         self._is_paused = False
         self._is_listening = False
         self._use_case: Optional = None
-        self._workflow_task: Optional[asyncio.Task] = None
+        self._workflow_task: asyncio.Task | None = None
         self._event_bus = None
-        self._workflow_runner: Optional["CanvasWorkflowRunner"] = None
+        self._workflow_runner: CanvasWorkflowRunner | None = None
         self._node_index: dict[str, object] = {}  # O(1) node lookup by node_id
 
         # Thread-safe bridges for cross-thread Qt calls
-        self._log_bridge: Optional[_ThreadSafeLogBridge] = None
-        self._terminal_bridge: Optional[_ThreadSafeTerminalBridge] = None
-        self._event_bus_bridge: Optional[_ThreadSafeEventBusBridge] = None
+        self._log_bridge: _ThreadSafeLogBridge | None = None
+        self._terminal_bridge: _ThreadSafeTerminalBridge | None = None
+        self._event_bus_bridge: _ThreadSafeEventBusBridge | None = None
 
         # Execution lifecycle manager for state machine and cleanup
         self._lifecycle_manager = ExecutionLifecycleManager()
@@ -208,14 +211,14 @@ class ExecutionController(BaseController):
         """
         try:
             from ....domain.events import (
-                get_event_bus,
-                NodeStarted,
+                BrowserPageReady,
                 NodeCompleted,
                 NodeFailed,
+                NodeStarted,
                 WorkflowCompleted,
                 WorkflowFailed,
                 WorkflowStopped,
-                BrowserPageReady,
+                get_event_bus,
             )
 
             self._event_bus = get_event_bus()

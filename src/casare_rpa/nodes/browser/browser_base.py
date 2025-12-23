@@ -30,19 +30,20 @@ Usage:
 import asyncio
 import os
 from abc import ABC
+from collections.abc import Awaitable, Callable
 from datetime import datetime
-from typing import Any, Awaitable, Callable, Optional, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
 )
-from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.execution import ExecutionContext
@@ -102,8 +103,8 @@ async def get_browser_pool_from_context(
 async def acquire_browser_context_from_pool(
     context: "ExecutionContext",
     headless: bool = True,
-    user_agent: Optional[str] = None,
-    viewport: Optional[dict] = None,
+    user_agent: str | None = None,
+    viewport: dict | None = None,
     **options: Any,
 ) -> tuple[Any, str]:
     """
@@ -199,8 +200,8 @@ class PlaywrightError(Exception):
     def __init__(
         self,
         message: str,
-        selector: Optional[str] = None,
-        timeout: Optional[int] = None,
+        selector: str | None = None,
+        timeout: int | None = None,
         attempts: int = 1,
     ):
         super().__init__(message)
@@ -256,7 +257,7 @@ async def take_failure_screenshot(
     page: Any,
     screenshot_path: str = "",
     prefix: str = "failure",
-) -> Optional[str]:
+) -> str | None:
     """
     Take a screenshot on failure for debugging.
 
@@ -348,7 +349,7 @@ class BrowserBaseNode(BaseNode, ABC):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs: Any) -> None:
+    def __init__(self, node_id: str, config: dict | None = None, **kwargs: Any) -> None:
         """
         Initialize browser base node.
 
@@ -464,7 +465,7 @@ class BrowserBaseNode(BaseNode, ABC):
         self,
         context: "ExecutionContext",
         param_name: str = "selector",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Get optional selector parameter, resolve variables, and normalize.
 
@@ -489,7 +490,7 @@ class BrowserBaseNode(BaseNode, ABC):
         # Normalize using unified facade
         return get_selector_facade().normalize(str(selector).strip())
 
-    def get_healing_context(self, param_name: str = "selector") -> Optional[dict]:
+    def get_healing_context(self, param_name: str = "selector") -> dict | None:
         """
         Get healing context for a selector parameter.
 
@@ -526,7 +527,7 @@ class BrowserBaseNode(BaseNode, ABC):
         selector: str,
         anchor_config,
         timeout_ms: int = 5000,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Find element using anchor-based location.
 
@@ -879,6 +880,7 @@ class BrowserBaseNode(BaseNode, ABC):
                 cv_data = healing_context["cv_template"]
                 if isinstance(cv_data, dict) and "image_base64" in cv_data:
                     import base64
+
                     from casare_rpa.infrastructure.browser.healing.cv_healer import (
                         CVContext,
                     )
@@ -967,8 +969,8 @@ class BrowserBaseNode(BaseNode, ABC):
         self,
         operation: Callable[[], Awaitable[T]],
         operation_name: str = "operation",
-        retry_count: Optional[int] = None,
-        retry_interval: Optional[int] = None,
+        retry_count: int | None = None,
+        retry_interval: int | None = None,
     ) -> tuple[T, int]:
         """
         Execute an async operation with retry logic.
@@ -992,7 +994,7 @@ class BrowserBaseNode(BaseNode, ABC):
         if retry_interval is None:
             retry_interval = self.get_parameter("retry_interval", 1000)
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         attempts = 0
         max_attempts = retry_count + 1
 
@@ -1023,7 +1025,7 @@ class BrowserBaseNode(BaseNode, ABC):
         self,
         page: Any,
         prefix: str = "failure",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Take screenshot if screenshot_on_fail is enabled.
 
@@ -1050,7 +1052,7 @@ class BrowserBaseNode(BaseNode, ABC):
         self,
         page: Any,
         selector: str,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> None:
         """
         Highlight element if highlight_before_action is enabled.
@@ -1105,7 +1107,7 @@ class BrowserBaseNode(BaseNode, ABC):
     def success_result(
         self,
         data: dict[str, Any],
-        next_nodes: Optional[list[str]] = None,
+        next_nodes: list[str] | None = None,
     ) -> ExecutionResult:
         """
         Build standard success result.
@@ -1127,7 +1129,7 @@ class BrowserBaseNode(BaseNode, ABC):
     def error_result(
         self,
         error: str | Exception,
-        data: Optional[dict[str, Any]] = None,
+        data: dict[str, Any] | None = None,
     ) -> ExecutionResult:
         """
         Build standard error result.

@@ -75,7 +75,7 @@ class WorkflowCallTriggerNode(BaseTriggerNode):
     trigger_icon = "workflow"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Workflow Call Trigger"
         self.node_type = "WorkflowCallTriggerNode"
@@ -90,7 +90,7 @@ class WorkflowCallTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.WORKFLOW_CALL
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get workflow call-specific configuration."""
         return {
             "call_alias": self.get_parameter("call_alias", ""),

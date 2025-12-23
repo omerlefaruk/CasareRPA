@@ -5,8 +5,8 @@ Centralizes cryptographic parameters like PBKDF2 iteration counts
 to allow environment-based tuning without code changes.
 """
 
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

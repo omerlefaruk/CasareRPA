@@ -5,15 +5,16 @@ Provides health, liveness, and readiness probes with dependency checks.
 """
 
 import time
-from typing import Dict, Any
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends
 
+from casare_rpa.infrastructure.orchestrator.api.auth import AuthenticatedUser, optional_auth
 from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
-    get_state,
-    get_robot_manager,
     get_db_manager,
+    get_robot_manager,
+    get_state,
 )
-from casare_rpa.infrastructure.orchestrator.api.auth import optional_auth, AuthenticatedUser
 
 router = APIRouter()
 
@@ -43,7 +44,7 @@ async def readiness_check(user: AuthenticatedUser = Depends(optional_auth)):
 
     is_ready = db_ok and robot_manager is not None
 
-    response: Dict[str, Any] = {"ready": is_ready, "status": "up" if is_ready else "degraded"}
+    response: dict[str, Any] = {"ready": is_ready, "status": "up" if is_ready else "degraded"}
 
     # Detailed info for authenticated admins
     if user and user.is_admin:

@@ -34,7 +34,7 @@ def should_skip_file(filepath: Path) -> bool:
     return filepath.name in SKIP_FILES
 
 
-def remove_resolve_value_calls(content: str) -> Tuple[str, int]:
+def remove_resolve_value_calls(content: str) -> tuple[str, int]:
     """
     Remove redundant context.resolve_value() calls.
 

@@ -9,16 +9,14 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
+    BRING_TO_FRONT_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
-    BRING_TO_FRONT_PROP,
 )
-
 
 # Window-specific PropertyDef constants
 WIDTH_PROP = PropertyDef(
@@ -132,8 +130,8 @@ class ResizeWindowNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Resize Window",
     ):
         super().__init__(node_id, config, name)
@@ -146,7 +144,7 @@ class ResizeWindowNode(WindowNodeBase):
         self.add_input_port("height", DataType.INTEGER)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - resize window."""
         window = self.get_window_from_input()
         width = self.get_parameter("width", context)
@@ -215,8 +213,8 @@ class MoveWindowNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Move Window",
     ):
         super().__init__(node_id, config, name)
@@ -229,7 +227,7 @@ class MoveWindowNode(WindowNodeBase):
         self.add_input_port("y", DataType.INTEGER)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - move window."""
         window = self.get_window_from_input()
         x = self.get_parameter("x", context)
@@ -290,8 +288,8 @@ class MaximizeWindowNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Maximize Window",
     ):
         super().__init__(node_id, config, name)
@@ -302,7 +300,7 @@ class MaximizeWindowNode(WindowNodeBase):
         self.add_input_port("window", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - maximize window."""
         window = self.get_window_from_input()
         retry_count = self.get_parameter("retry_count")
@@ -362,8 +360,8 @@ class MinimizeWindowNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Minimize Window",
     ):
         super().__init__(node_id, config, name)
@@ -374,7 +372,7 @@ class MinimizeWindowNode(WindowNodeBase):
         self.add_input_port("window", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - minimize window."""
         window = self.get_window_from_input()
         retry_count = self.get_parameter("retry_count")
@@ -434,8 +432,8 @@ class RestoreWindowNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Restore Window",
     ):
         super().__init__(node_id, config, name)
@@ -446,7 +444,7 @@ class RestoreWindowNode(WindowNodeBase):
         self.add_input_port("window", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - restore window."""
         window = self.get_window_from_input()
         retry_count = self.get_parameter("retry_count")
@@ -509,8 +507,8 @@ class GetWindowPropertiesNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Get Window Properties",
     ):
         super().__init__(node_id, config, name)
@@ -529,7 +527,7 @@ class GetWindowPropertiesNode(WindowNodeBase):
         self.add_output_port("is_maximized", DataType.BOOLEAN)
         self.add_output_port("is_minimized", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - get window properties."""
         window = self.get_window_from_input()
 
@@ -609,8 +607,8 @@ class SetWindowStateNode(WindowNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Set Window State",
     ):
         super().__init__(node_id, config, name)
@@ -622,7 +620,7 @@ class SetWindowStateNode(WindowNodeBase):
         self.add_input_port("state", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - set window state."""
         window = self.get_window_from_input()
         state = self.get_parameter("state")

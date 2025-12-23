@@ -31,7 +31,7 @@ class CredentialBinding:
     description: str = ""
     required: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "alias": self.alias,
@@ -42,7 +42,7 @@ class CredentialBinding:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CredentialBinding":
+    def from_dict(cls, data: dict[str, Any]) -> "CredentialBinding":
         """Create from dictionary."""
         return cls(
             alias=data.get("alias", ""),
@@ -58,10 +58,10 @@ class CredentialBindingsFile:
     """Container for credential bindings in credentials.json files."""
 
     scope: str = "project"
-    bindings: Dict[str, CredentialBinding] = field(default_factory=dict)
+    bindings: dict[str, CredentialBinding] = field(default_factory=dict)
     schema_version: str = PROJECT_SCHEMA_VERSION
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
@@ -70,7 +70,7 @@ class CredentialBindingsFile:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CredentialBindingsFile":
+    def from_dict(cls, data: dict[str, Any]) -> "CredentialBindingsFile":
         """Create from dictionary."""
         bindings_data = data.get("bindings", {})
 
@@ -85,7 +85,7 @@ class CredentialBindingsFile:
             schema_version=data.get("$schema_version", PROJECT_SCHEMA_VERSION),
         )
 
-    def get_binding(self, alias: str) -> Optional[CredentialBinding]:
+    def get_binding(self, alias: str) -> CredentialBinding | None:
         """Get binding by alias."""
         return self.bindings.get(alias)
 
@@ -100,7 +100,7 @@ class CredentialBindingsFile:
             return True
         return False
 
-    def resolve_vault_path(self, alias: str) -> Optional[str]:
+    def resolve_vault_path(self, alias: str) -> str | None:
         """Get the Vault path for an alias."""
         binding = self.bindings.get(alias)
         return binding.vault_path if binding else None

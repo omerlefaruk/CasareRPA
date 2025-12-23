@@ -3,37 +3,36 @@ Visual Nodes - Utility
 """
 
 from casare_rpa.presentation.canvas.visual_nodes.utility.nodes import (
+    VisualDateTimeAddNode,
+    VisualDateTimeCompareNode,
+    VisualDateTimeDiffNode,
+    VisualFormatDateTimeNode,
+    # DateTime operations
+    VisualGetCurrentDateTimeNode,
+    VisualGetTimestampNode,
+    VisualParseDateTimeNode,
+    VisualRandomChoiceNode,
     # Random operations
     VisualRandomNumberNode,
-    VisualRandomChoiceNode,
     VisualRandomStringNode,
     VisualRandomUUIDNode,
     VisualShuffleListNode,
-    # DateTime operations
-    VisualGetCurrentDateTimeNode,
-    VisualFormatDateTimeNode,
-    VisualParseDateTimeNode,
-    VisualDateTimeAddNode,
-    VisualDateTimeDiffNode,
-    VisualDateTimeCompareNode,
-    VisualGetTimestampNode,
+    VisualTextCaseNode,
+    VisualTextContainsNode,
+    VisualTextCountNode,
+    VisualTextEndsWithNode,
+    VisualTextExtractNode,
+    VisualTextJoinNode,
+    VisualTextLinesNode,
+    VisualTextPadNode,
+    VisualTextReplaceNode,
+    VisualTextReverseNode,
     # Text operations
     VisualTextSplitNode,
-    VisualTextReplaceNode,
-    VisualTextTrimNode,
-    VisualTextCaseNode,
-    VisualTextPadNode,
-    VisualTextSubstringNode,
-    VisualTextContainsNode,
     VisualTextStartsWithNode,
-    VisualTextEndsWithNode,
-    VisualTextLinesNode,
-    VisualTextReverseNode,
-    VisualTextCountNode,
-    VisualTextJoinNode,
-    VisualTextExtractNode,
+    VisualTextSubstringNode,
+    VisualTextTrimNode,
 )
-
 from casare_rpa.presentation.canvas.visual_nodes.utility.reroute_node import (
     VisualRerouteNode,
 )

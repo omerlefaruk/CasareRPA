@@ -6,8 +6,8 @@ Nodes for editing, deleting, and managing Telegram messages.
 
 from __future__ import annotations
 
-from typing import Any
 import json
+from typing import Any
 
 from loguru import logger
 
@@ -24,10 +24,10 @@ from casare_rpa.nodes.messaging.telegram.telegram_base import TelegramBaseNode
 # Import reusable definitions from telegram_send
 from casare_rpa.nodes.messaging.telegram.telegram_send import (
     TELEGRAM_BOT_TOKEN,
-    TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,
-    TELEGRAM_PARSE_MODE,
+    TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_DISABLE_NOTIFICATION,
+    TELEGRAM_PARSE_MODE,
 )
 
 

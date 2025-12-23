@@ -11,14 +11,13 @@ References:
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
-
-from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.application.services.port_type_service import (
     PortTypeRegistry,
     get_port_type_registry,
 )
+from casare_rpa.domain.value_objects.types import DataType
 
 if TYPE_CHECKING:
     from ..visual_nodes.base_visual_node import VisualNode
@@ -57,15 +56,15 @@ class ConnectionValidation:
     result: ValidationResult
     is_valid: bool
     message: str
-    source_type: Optional[DataType] = None
-    target_type: Optional[DataType] = None
+    source_type: DataType | None = None
+    target_type: DataType | None = None
 
     @classmethod
     def valid(
         cls,
         message: str = "Connection valid",
-        source_type: Optional[DataType] = None,
-        target_type: Optional[DataType] = None,
+        source_type: DataType | None = None,
+        target_type: DataType | None = None,
     ) -> "ConnectionValidation":
         """Create a valid connection result."""
         return cls(
@@ -81,8 +80,8 @@ class ConnectionValidation:
         cls,
         result: ValidationResult,
         message: str,
-        source_type: Optional[DataType] = None,
-        target_type: Optional[DataType] = None,
+        source_type: DataType | None = None,
+        target_type: DataType | None = None,
     ) -> "ConnectionValidation":
         """Create an invalid connection result."""
         return cls(
@@ -196,7 +195,7 @@ class ConnectionValidator:
         source_node: "VisualNode",
         source_port_name: str,
         target_node: "VisualNode",
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get list of compatible input ports on target node.
 
@@ -245,7 +244,7 @@ class ConnectionValidator:
         source_node: "VisualNode",
         source_port_name: str,
         target_node: "VisualNode",
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get list of incompatible input ports on target node.
 
@@ -284,7 +283,7 @@ class ConnectionValidator:
 
         return incompatible
 
-    def _get_port_type(self, node: "VisualNode", port_name: str) -> Optional[DataType]:
+    def _get_port_type(self, node: "VisualNode", port_name: str) -> DataType | None:
         """
         Get the DataType for a port on a node.
 
@@ -314,7 +313,7 @@ class ConnectionValidator:
         # Type unknown
         return None
 
-    def _is_exec_port(self, port_name: str, data_type: Optional[DataType]) -> bool:
+    def _is_exec_port(self, port_name: str, data_type: DataType | None) -> bool:
         """
         Check if a port is an execution flow port.
 
@@ -365,7 +364,7 @@ class ConnectionValidator:
 # ============================================================================
 
 
-_validator_instance: Optional[ConnectionValidator] = None
+_validator_instance: ConnectionValidator | None = None
 
 
 def get_connection_validator() -> ConnectionValidator:

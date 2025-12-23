@@ -20,11 +20,12 @@ Additional Features:
 import asyncio
 import random
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from loguru import logger
 
@@ -61,7 +62,7 @@ class CircuitBreakerConfig:
     success_threshold: int = 2
     """Consecutive successes needed to close circuit."""
 
-    tracked_errors: Optional[Set[str]] = None
+    tracked_errors: set[str] | None = None
     """Error types to track (None = all)."""
 
 
@@ -72,7 +73,7 @@ class CircuitBreakerState:
     state: CircuitState = CircuitState.CLOSED
     failure_count: int = 0
     success_count: int = 0
-    last_failure_time: Optional[datetime] = None
+    last_failure_time: datetime | None = None
     last_state_change: datetime = field(default_factory=datetime.now)
 
 
@@ -86,7 +87,7 @@ class CircuitBreaker:
     - Testing recovery with half-open state
     """
 
-    def __init__(self, name: str, config: Optional[CircuitBreakerConfig] = None) -> None:
+    def __init__(self, name: str, config: CircuitBreakerConfig | None = None) -> None:
         """
         Initialize circuit breaker.
 
@@ -127,7 +128,7 @@ class CircuitBreaker:
             self._state.failure_count = 0
             self._state.success_count += 1
 
-    def record_failure(self, error_type: Optional[str] = None) -> None:
+    def record_failure(self, error_type: str | None = None) -> None:
         """
         Record a failed operation.
 
@@ -177,7 +178,7 @@ class CircuitBreaker:
         self._state = CircuitBreakerState()
         logger.debug(f"Circuit breaker '{self.name}' reset")
 
-    def get_state(self) -> Dict[str, Any]:
+    def get_state(self) -> dict[str, Any]:
         """Get current circuit breaker state."""
         return {
             "name": self.name,
@@ -262,8 +263,8 @@ class RetryStrategy(RecoveryStrategy):
 
     def __init__(
         self,
-        config: Optional[RetryConfig] = None,
-        circuit_breaker: Optional[CircuitBreaker] = None,
+        config: RetryConfig | None = None,
+        circuit_breaker: CircuitBreaker | None = None,
     ) -> None:
         """
         Initialize retry strategy.
@@ -404,13 +405,13 @@ class SkipStrategy(RecoveryStrategy):
 class FallbackConfig:
     """Configuration for fallback strategy."""
 
-    fallback_node_id: Optional[NodeId] = None
+    fallback_node_id: NodeId | None = None
     """Node ID to fall back to."""
 
     fallback_value: Any = None
     """Default value to use."""
 
-    fallback_variable: Optional[str] = None
+    fallback_variable: str | None = None
     """Variable to store fallback value in."""
 
 
@@ -424,7 +425,7 @@ class FallbackStrategy(RecoveryStrategy):
     - Set a variable for downstream nodes
     """
 
-    def __init__(self, config: Optional[FallbackConfig] = None) -> None:
+    def __init__(self, config: FallbackConfig | None = None) -> None:
         """
         Initialize fallback strategy.
 
@@ -485,10 +486,10 @@ class FallbackStrategy(RecoveryStrategy):
 class CompensateConfig:
     """Configuration for compensate strategy."""
 
-    compensation_nodes: List[NodeId] = field(default_factory=list)
+    compensation_nodes: list[NodeId] = field(default_factory=list)
     """Nodes to execute for compensation (in order)."""
 
-    rollback_variables: List[str] = field(default_factory=list)
+    rollback_variables: list[str] = field(default_factory=list)
     """Variables to rollback/delete."""
 
     compensation_timeout_seconds: float = 60.0
@@ -505,8 +506,8 @@ class CompensateStrategy(RecoveryStrategy):
 
     def __init__(
         self,
-        config: Optional[CompensateConfig] = None,
-        compensator_func: Optional[Callable[..., Any]] = None,
+        config: CompensateConfig | None = None,
+        compensator_func: Callable[..., Any] | None = None,
     ) -> None:
         """
         Initialize compensate strategy.
@@ -634,7 +635,7 @@ class AbortStrategy(RecoveryStrategy):
 class EscalateConfig:
     """Configuration for escalate strategy."""
 
-    notification_callback: Optional[Callable[[ErrorContext, str], None]] = None
+    notification_callback: Callable[[ErrorContext, str], None] | None = None
     """Callback to notify human operators."""
 
     wait_for_response: bool = False
@@ -655,7 +656,7 @@ class EscalateStrategy(RecoveryStrategy):
     Used when automated recovery cannot resolve the issue.
     """
 
-    def __init__(self, config: Optional[EscalateConfig] = None) -> None:
+    def __init__(self, config: EscalateConfig | None = None) -> None:
         """
         Initialize escalate strategy.
 
@@ -663,8 +664,8 @@ class EscalateStrategy(RecoveryStrategy):
             config: Escalation configuration.
         """
         self.config = config or EscalateConfig()
-        self._pending_escalations: Dict[str, asyncio.Event] = {}
-        self._escalation_responses: Dict[str, RecoveryAction] = {}
+        self._pending_escalations: dict[str, asyncio.Event] = {}
+        self._escalation_responses: dict[str, RecoveryAction] = {}
 
     @property
     def action(self) -> RecoveryAction:
@@ -744,7 +745,7 @@ class EscalateStrategy(RecoveryStrategy):
                     )
                     return True
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning(
                     f"Escalation {escalation_id} timed out after "
                     f"{self.config.timeout_seconds}s - using default action: "
@@ -790,7 +791,7 @@ class ScreenshotCapture:
 
     def __init__(
         self,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
         max_screenshots: int = 100,
     ) -> None:
         """
@@ -808,7 +809,7 @@ class ScreenshotCapture:
         self,
         context: ErrorContext,
         execution_context: "ExecutionContext",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Capture browser screenshot on error.
 
@@ -844,7 +845,7 @@ class ScreenshotCapture:
     def capture_desktop_screenshot(
         self,
         context: ErrorContext,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Capture desktop screenshot on error.
 
@@ -881,7 +882,7 @@ class ScreenshotCapture:
         self,
         context: ErrorContext,
         execution_context: "ExecutionContext",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Capture appropriate screenshot based on error category.
 
@@ -922,8 +923,8 @@ class RecoveryStrategyRegistry:
 
     def __init__(self) -> None:
         """Initialize recovery strategy registry."""
-        self._strategies: Dict[RecoveryAction, RecoveryStrategy] = {}
-        self._circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self._strategies: dict[RecoveryAction, RecoveryStrategy] = {}
+        self._circuit_breakers: dict[str, CircuitBreaker] = {}
         self._screenshot_capture = ScreenshotCapture()
 
         # Register default strategies
@@ -949,7 +950,7 @@ class RecoveryStrategyRegistry:
         self._strategies[action] = strategy
         logger.debug(f"Registered strategy for {action.name}")
 
-    def get_strategy(self, action: RecoveryAction) -> Optional[RecoveryStrategy]:
+    def get_strategy(self, action: RecoveryAction) -> RecoveryStrategy | None:
         """
         Get strategy for a recovery action.
 
@@ -964,7 +965,7 @@ class RecoveryStrategyRegistry:
     def get_or_create_circuit_breaker(
         self,
         name: str,
-        config: Optional[CircuitBreakerConfig] = None,
+        config: CircuitBreakerConfig | None = None,
     ) -> CircuitBreaker:
         """
         Get or create a circuit breaker by name.
@@ -980,7 +981,7 @@ class RecoveryStrategyRegistry:
             self._circuit_breakers[name] = CircuitBreaker(name, config)
         return self._circuit_breakers[name]
 
-    def get_circuit_breaker(self, name: str) -> Optional[CircuitBreaker]:
+    def get_circuit_breaker(self, name: str) -> CircuitBreaker | None:
         """
         Get existing circuit breaker by name.
 

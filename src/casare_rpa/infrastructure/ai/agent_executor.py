@@ -11,7 +11,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -44,12 +44,12 @@ class AgentStep:
     step_number: int
     step_type: StepType
     content: str
-    tool_name: Optional[str] = None
-    tool_input: Optional[Dict[str, Any]] = None
-    tool_output: Optional[Dict[str, Any]] = None
+    tool_name: str | None = None
+    tool_input: dict[str, Any] | None = None
+    tool_output: dict[str, Any] | None = None
     timestamp: float = field(default_factory=time.time)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "step_number": self.step_number,
@@ -68,12 +68,12 @@ class AgentResult:
 
     success: bool
     result: Any
-    steps: List[AgentStep] = field(default_factory=list)
+    steps: list[AgentStep] = field(default_factory=list)
     total_tokens: int = 0
     execution_time: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "success": self.success,
@@ -138,7 +138,7 @@ Or when finished:
 
     def __init__(
         self,
-        tool_registry: Optional[AgentToolRegistry] = None,
+        tool_registry: AgentToolRegistry | None = None,
         max_steps: int = 10,
         timeout_seconds: float = 300.0,
         model: str = "gpt-4o-mini",
@@ -162,8 +162,8 @@ Or when finished:
         goal: str,
         context: ExecutionContext,
         manager: LLMResourceManager,
-        available_tools: Optional[List[str]] = None,
-        initial_context: Optional[Dict[str, Any]] = None,
+        available_tools: list[str] | None = None,
+        initial_context: dict[str, Any] | None = None,
     ) -> AgentResult:
         """
         Execute agent to achieve the given goal.
@@ -179,7 +179,7 @@ Or when finished:
             AgentResult with execution details
         """
         start_time = time.time()
-        steps: List[AgentStep] = []
+        steps: list[AgentStep] = []
         total_tokens = 0
         step_number = 0
 
@@ -195,7 +195,7 @@ Or when finished:
 
         # Conversation history for multi-turn
         messages = [user_message]
-        observations: List[str] = []
+        observations: list[str] = []
 
         try:
             while step_number < self._max_steps:
@@ -372,8 +372,8 @@ Or when finished:
 
     def _build_prompt(
         self,
-        messages: List[str],
-        observations: List[str],
+        messages: list[str],
+        observations: list[str],
     ) -> str:
         """Build the prompt including history."""
         parts = [messages[0]]  # Initial goal
@@ -387,7 +387,7 @@ Or when finished:
 
         return "\n".join(parts)
 
-    def _parse_response(self, content: str) -> Optional[Dict[str, Any]]:
+    def _parse_response(self, content: str) -> dict[str, Any] | None:
         """Parse LLM response into structured format."""
         content = content.strip()
 

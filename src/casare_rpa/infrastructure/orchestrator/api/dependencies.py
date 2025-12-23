@@ -4,19 +4,20 @@ Dependency injection for FastAPI endpoints.
 Provides shared dependencies like database connections and metrics collectors.
 """
 
-import os
 import asyncio
-from typing import AsyncGenerator, Optional
+import os
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
+from typing import Optional
 
-from fastapi import Request, HTTPException
-from loguru import logger
 import asyncpg
+from fastapi import HTTPException, Request
+from loguru import logger
 
+from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
 from casare_rpa.infrastructure.observability.metrics import (
     get_metrics_collector as get_rpa_metrics,
 )
-from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
 from casare_rpa.infrastructure.orchestrator.api.adapters import MonitoringDataAdapter
 
 
@@ -82,16 +83,16 @@ class DatabasePoolManager:
     Implements retry logic for transient connection failures.
     """
 
-    def __init__(self, config: Optional[DatabaseConfig] = None):
+    def __init__(self, config: DatabaseConfig | None = None):
         self._config = config or DatabaseConfig.from_env()
-        self._pool: Optional[asyncpg.Pool] = None
+        self._pool: asyncpg.Pool | None = None
         self._is_healthy = False
         self._connection_attempts = 0
         self._max_retries = 3
         self._retry_delay_base = 1.0  # seconds
 
     @property
-    def pool(self) -> Optional[asyncpg.Pool]:
+    def pool(self) -> asyncpg.Pool | None:
         """Get the current connection pool."""
         return self._pool
 
@@ -115,7 +116,7 @@ class DatabasePoolManager:
         if not self._config.password:
             logger.warning("DB_PASSWORD not set - database connections will fail authentication")
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         for attempt in range(1, self._max_retries + 1):
             self._connection_attempts = attempt
@@ -232,7 +233,7 @@ class DatabasePoolManager:
                 "pool_max": self._pool.get_max_size(),
             }
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._is_healthy = False
             return {
                 "healthy": False,
@@ -257,7 +258,7 @@ class DatabasePoolManager:
             try:
                 await asyncio.wait_for(self._pool.close(), timeout=10.0)
                 logger.info("Database pool closed successfully")
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning("Database pool close timed out, terminating connections")
                 self._pool.terminate()
             except Exception as e:
@@ -269,7 +270,7 @@ class DatabasePoolManager:
 
 
 # Global pool manager instance
-_pool_manager: Optional[DatabasePoolManager] = None
+_pool_manager: DatabasePoolManager | None = None
 
 
 def get_pool_manager() -> DatabasePoolManager:
@@ -293,7 +294,7 @@ async def get_db_pool(request: Request) -> asyncpg.Pool:
     Raises:
         HTTPException: If database is unavailable (503)
     """
-    pool: Optional[asyncpg.Pool] = getattr(request.app.state, "db_pool", None)
+    pool: asyncpg.Pool | None = getattr(request.app.state, "db_pool", None)
 
     if pool is None:
         logger.error("Database pool not available - not initialized in app state")

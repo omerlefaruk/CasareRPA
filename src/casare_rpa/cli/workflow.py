@@ -59,7 +59,7 @@ def _get_model_from_settings() -> str:
 
     try:
         if settings_path.exists():
-            with open(settings_path, "r", encoding="utf-8") as f:
+            with open(settings_path, encoding="utf-8") as f:
                 settings = json.load(f)
                 model = settings.get("ai", {}).get("model", default_model)
                 return model
@@ -71,9 +71,9 @@ def _get_model_from_settings() -> str:
 
 async def _generate_workflow_async(
     prompt: str,
-    output_path: Optional[Path],
+    output_path: Path | None,
     validate_only: bool = False,
-) -> Optional[dict]:
+) -> dict | None:
     """
     Generate workflow using SmartWorkflowAgent.
 
@@ -85,11 +85,11 @@ async def _generate_workflow_async(
     Returns:
         Generated workflow dict or None on failure
     """
+    from casare_rpa.domain.ai import AgentConfig, PerformanceConfig, WaitStrategy
     from casare_rpa.infrastructure.ai import (
         SmartWorkflowAgent,
         WorkflowGenerationResult,
     )
-    from casare_rpa.domain.ai import AgentConfig, PerformanceConfig, WaitStrategy
     from casare_rpa.tools.workflow_builder import WorkflowBuilder
 
     # Resolve path references in prompt
@@ -201,7 +201,7 @@ def generate(
         ...,
         help="Natural language description of the workflow to generate",
     ),
-    output: Optional[str] = typer.Option(
+    output: str | None = typer.Option(
         None,
         "--output",
         "-o",
@@ -256,7 +256,7 @@ def show_schema():
 async def _edit_workflow_async(
     workflow_path: Path,
     instruction: str,
-) -> Optional[dict]:
+) -> dict | None:
     """
     Edit an existing workflow using AI.
 
@@ -267,15 +267,15 @@ async def _edit_workflow_async(
     Returns:
         Modified workflow dict or None on failure
     """
-    from casare_rpa.infrastructure.ai import SmartWorkflowAgent
     from casare_rpa.domain.ai import AgentConfig, PerformanceConfig, WaitStrategy
+    from casare_rpa.infrastructure.ai import SmartWorkflowAgent
 
     # Load existing workflow
     if not workflow_path.exists():
         typer.echo(f"❌ Workflow not found: {workflow_path}", err=True)
         return None
 
-    with open(workflow_path, "r", encoding="utf-8") as f:
+    with open(workflow_path, encoding="utf-8") as f:
         workflow = json.load(f)
 
     # Resolve path references in instruction

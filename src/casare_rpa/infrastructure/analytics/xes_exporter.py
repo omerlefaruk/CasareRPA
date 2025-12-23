@@ -29,7 +29,6 @@ from casare_rpa.infrastructure.analytics.process_mining import (
     ExecutionTrace,
 )
 
-
 # =============================================================================
 # XES Constants
 # =============================================================================
@@ -44,7 +43,7 @@ LIFECYCLE_EXTENSION = "http://www.xes-standard.org/lifecycle.xesext"
 ORGANIZATIONAL_EXTENSION = "http://www.xes-standard.org/org.xesext"
 
 # Lifecycle transition mapping
-LIFECYCLE_MAP: Dict[ActivityStatus, str] = {
+LIFECYCLE_MAP: dict[ActivityStatus, str] = {
     ActivityStatus.COMPLETED: "complete",
     ActivityStatus.FAILED: "ate_abort",  # abnormal termination
     ActivityStatus.SKIPPED: "pi_abort",  # process instance abort
@@ -76,7 +75,7 @@ class XESExporter:
 
     def export_to_xes(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         include_attributes: bool = True,
         include_lifecycle: bool = True,
         classifier_name: str = "Activity Classifier",
@@ -121,8 +120,8 @@ class XESExporter:
 
     def export_to_file(
         self,
-        traces: List[ExecutionTrace],
-        output_path: Union[str, Path],
+        traces: list[ExecutionTrace],
+        output_path: str | Path,
         include_attributes: bool = True,
         include_lifecycle: bool = True,
     ) -> str:
@@ -161,7 +160,7 @@ class XESExporter:
             logger.error(f"Failed to write XES file {output_path}: {e}")
             raise
 
-    def _build_xes_root(self, traces: List[ExecutionTrace], classifier_name: str) -> ET.Element:
+    def _build_xes_root(self, traces: list[ExecutionTrace], classifier_name: str) -> ET.Element:
         """Build XES root element with attributes."""
         root = ET.Element("log")
         root.set("xes.version", XES_VERSION)
@@ -349,7 +348,7 @@ class XESExporter:
         return event_elem
 
     def _add_data_attributes(
-        self, parent: ET.Element, key_prefix: str, data: Dict[str, Any]
+        self, parent: ET.Element, key_prefix: str, data: dict[str, Any]
     ) -> None:
         """Add dictionary data as XES attributes."""
         for key, value in data.items():
@@ -437,7 +436,7 @@ class XESImporter:
     for conformance checking or analysis.
     """
 
-    def import_from_file(self, file_path: Union[str, Path]) -> List[ExecutionTrace]:
+    def import_from_file(self, file_path: str | Path) -> list[ExecutionTrace]:
         """
         Import traces from XES file.
 
@@ -463,7 +462,7 @@ class XESImporter:
             logger.error(f"Failed to parse XES file {file_path}: {e}")
             raise ValueError(f"Invalid XES format: {e}") from e
 
-    def import_from_string(self, xes_content: str) -> List[ExecutionTrace]:
+    def import_from_string(self, xes_content: str) -> list[ExecutionTrace]:
         """
         Import traces from XES string content.
 
@@ -483,9 +482,9 @@ class XESImporter:
             logger.error(f"Failed to parse XES content: {e}")
             raise ValueError(f"Invalid XES format: {e}") from e
 
-    def _parse_xes_root(self, root: ET.Element) -> List[ExecutionTrace]:
+    def _parse_xes_root(self, root: ET.Element) -> list[ExecutionTrace]:
         """Parse XES root element to extract traces."""
-        traces: List[ExecutionTrace] = []
+        traces: list[ExecutionTrace] = []
 
         # Remove namespace prefix if present
         ns = {"": XES_NAMESPACE}
@@ -498,7 +497,7 @@ class XESImporter:
         logger.info(f"Imported {len(traces)} traces from XES")
         return traces
 
-    def _parse_trace_element(self, trace_elem: ET.Element) -> Optional[ExecutionTrace]:
+    def _parse_trace_element(self, trace_elem: ET.Element) -> ExecutionTrace | None:
         """Parse XES trace element to ExecutionTrace."""
         # Extract trace attributes
         case_id = self._get_string_attr(trace_elem, "concept:name", "unknown")
@@ -508,9 +507,9 @@ class XESImporter:
         robot_id = self._get_string_attr(trace_elem, "org:resource")
 
         # Parse events
-        activities: List[Activity] = []
-        start_time: Optional[datetime] = None
-        end_time: Optional[datetime] = None
+        activities: list[Activity] = []
+        start_time: datetime | None = None
+        end_time: datetime | None = None
 
         for event_elem in trace_elem.findall("event"):
             activity = self._parse_event_element(event_elem)
@@ -535,7 +534,7 @@ class XESImporter:
             robot_id=robot_id,
         )
 
-    def _parse_event_element(self, event_elem: ET.Element) -> Optional[Activity]:
+    def _parse_event_element(self, event_elem: ET.Element) -> Activity | None:
         """Parse XES event element to Activity."""
         node_type = self._get_string_attr(event_elem, "concept:name", "unknown")
         node_id = self._get_string_attr(event_elem, "casare:node_id", node_type)
@@ -571,8 +570,8 @@ class XESImporter:
         self,
         elem: ET.Element,
         key: str,
-        default: Optional[str] = None,
-    ) -> Optional[str]:
+        default: str | None = None,
+    ) -> str | None:
         """Get string attribute value from element."""
         for child in elem.findall("string"):
             if child.get("key") == key:
@@ -589,7 +588,7 @@ class XESImporter:
                     return default
         return default
 
-    def _get_date_attr(self, elem: ET.Element, key: str) -> Optional[str]:
+    def _get_date_attr(self, elem: ET.Element, key: str) -> str | None:
         """Get date attribute value from element."""
         for child in elem.findall("date"):
             if child.get("key") == key:

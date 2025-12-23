@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class EmbeddingResult:
     """Result of an embedding operation."""
 
-    embedding: List[float]
+    embedding: list[float]
     model: str
     tokens_used: int
     cached: bool = False
@@ -32,7 +32,7 @@ class EmbeddingResult:
 class BatchEmbeddingResult:
     """Result of a batch embedding operation."""
 
-    embeddings: List[List[float]]
+    embeddings: list[list[float]]
     model: str
     total_tokens: int
     count: int
@@ -47,7 +47,7 @@ class EmbeddingMetrics:
     total_texts: int = 0
     cache_hits: int = 0
     total_errors: int = 0
-    last_request_time: Optional[float] = None
+    last_request_time: float | None = None
 
     def add_request(self, tokens: int, texts: int, cached: bool = False) -> None:
         """Record an embedding request."""
@@ -69,9 +69,9 @@ class EmbeddingConfig:
     """Configuration for embedding operations."""
 
     model: str = "text-embedding-3-small"
-    api_key: Optional[str] = None
-    api_base: Optional[str] = None
-    dimensions: Optional[int] = None  # For models that support dimension reduction
+    api_key: str | None = None
+    api_base: str | None = None
+    dimensions: int | None = None  # For models that support dimension reduction
     batch_size: int = 100
     max_retries: int = 3
     retry_delay: float = 1.0
@@ -92,13 +92,13 @@ class EmbeddingManager:
     """
 
     # Model to dimension mapping (approximate)
-    _MODEL_DIMENSIONS: Dict[str, int] = {
+    _MODEL_DIMENSIONS: dict[str, int] = {
         "text-embedding-3-small": 1536,
         "text-embedding-3-large": 3072,
         "text-embedding-ada-002": 1536,
     }
 
-    def __init__(self, config: Optional[EmbeddingConfig] = None) -> None:
+    def __init__(self, config: EmbeddingConfig | None = None) -> None:
         """
         Initialize embedding manager.
 
@@ -107,8 +107,8 @@ class EmbeddingManager:
         """
         self._config = config or EmbeddingConfig()
         self._metrics = EmbeddingMetrics()
-        self._cache: Dict[str, Dict[str, Any]] = {}  # hash -> {embedding, timestamp}
-        self._litellm: Optional[Any] = None
+        self._cache: dict[str, dict[str, Any]] = {}  # hash -> {embedding, timestamp}
+        self._litellm: Any | None = None
         self._initialized = False
 
     def configure(self, config: EmbeddingConfig) -> None:
@@ -149,7 +149,7 @@ class EmbeddingManager:
         content = f"{model}:{text}"
         return hashlib.sha256(content.encode()).hexdigest()[:32]
 
-    def _check_cache(self, text: str, model: str) -> Optional[List[float]]:
+    def _check_cache(self, text: str, model: str) -> list[float] | None:
         """Check if embedding is cached and not expired."""
         if not self._config.enable_cache:
             return None
@@ -165,7 +165,7 @@ class EmbeddingManager:
 
         return entry["embedding"]
 
-    def _store_cache(self, text: str, model: str, embedding: List[float]) -> None:
+    def _store_cache(self, text: str, model: str, embedding: list[float]) -> None:
         """Store embedding in cache."""
         if not self._config.enable_cache:
             return
@@ -179,7 +179,7 @@ class EmbeddingManager:
     async def embed_text(
         self,
         text: str,
-        model: Optional[str] = None,
+        model: str | None = None,
     ) -> EmbeddingResult:
         """
         Generate embedding for a single text.
@@ -208,7 +208,7 @@ class EmbeddingManager:
 
         try:
             # Build request kwargs
-            kwargs: Dict[str, Any] = {
+            kwargs: dict[str, Any] = {
                 "model": model,
                 "input": [text],
             }
@@ -245,8 +245,8 @@ class EmbeddingManager:
 
     async def embed_batch(
         self,
-        texts: List[str],
-        model: Optional[str] = None,
+        texts: list[str],
+        model: str | None = None,
     ) -> BatchEmbeddingResult:
         """
         Generate embeddings for multiple texts efficiently.
@@ -271,7 +271,7 @@ class EmbeddingManager:
         model = model or self._config.model
         litellm = self._ensure_initialized()
 
-        all_embeddings: List[List[float]] = []
+        all_embeddings: list[list[float]] = []
         total_tokens = 0
 
         # Process in batches
@@ -281,7 +281,7 @@ class EmbeddingManager:
             # Check cache for each text
             batch_to_embed = []
             batch_indices = []
-            cached_results: Dict[int, List[float]] = {}
+            cached_results: dict[int, list[float]] = {}
 
             for j, text in enumerate(batch):
                 cached = self._check_cache(text, model)
@@ -294,7 +294,7 @@ class EmbeddingManager:
             # Embed non-cached texts
             if batch_to_embed:
                 try:
-                    kwargs: Dict[str, Any] = {
+                    kwargs: dict[str, Any] = {
                         "model": model,
                         "input": batch_to_embed,
                     }
@@ -337,7 +337,7 @@ class EmbeddingManager:
             count=len(texts),
         )
 
-    def get_model_dimensions(self, model: Optional[str] = None) -> int:
+    def get_model_dimensions(self, model: str | None = None) -> int:
         """Get the embedding dimensions for a model."""
         model = model or self._config.model
 
@@ -379,7 +379,7 @@ class EmbeddingManager:
 
 
 # Module-level singleton for convenience
-_default_manager: Optional[EmbeddingManager] = None
+_default_manager: EmbeddingManager | None = None
 
 
 def get_embedding_manager() -> EmbeddingManager:

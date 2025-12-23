@@ -16,48 +16,47 @@ Complements UnifiedSelectorDialog with advanced inspection capabilities.
 """
 
 import asyncio
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
-    QVBoxLayout,
+    QDialog,
     QHBoxLayout,
-    QSplitter,
     QLabel,
     QMenu,
     QMessageBox,
     QPushButton,
+    QSplitter,
+    QVBoxLayout,
     QWidget,
 )
-from PySide6.QtGui import QAction, QKeySequence, QShortcut
 
-from loguru import logger
-from PySide6.QtWidgets import QDialog
-
-from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
-    UIExplorerToolbar,
-)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.visual_tree_panel import (
-    VisualTreePanel,
-)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_editor_panel import (
-    SelectorEditorPanel,
-)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selected_attrs_panel import (
-    SelectedAttributesPanel,
-)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.property_explorer_panel import (
-    PropertyExplorerPanel,
-)
-from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_preview_panel import (
-    SelectorPreviewPanel,
-)
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
     UIExplorerElement,
 )
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
     SelectorModel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.property_explorer_panel import (
+    PropertyExplorerPanel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selected_attrs_panel import (
+    SelectedAttributesPanel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_editor_panel import (
+    SelectorEditorPanel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.selector_preview_panel import (
+    SelectorPreviewPanel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.panels.visual_tree_panel import (
+    VisualTreePanel,
+)
+from casare_rpa.presentation.canvas.selectors.ui_explorer.toolbar import (
+    UIExplorerToolbar,
 )
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.status_bar_widget import (
     UIExplorerStatusBar,
@@ -106,10 +105,10 @@ class UIExplorerDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         mode: str = "browser",
         browser_page: Optional["Page"] = None,
-        initial_element: Optional[Dict[str, Any]] = None,
+        initial_element: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize the UI Explorer dialog.
@@ -125,9 +124,9 @@ class UIExplorerDialog(QDialog):
         self._mode = mode
         self._browser_page = browser_page
         self._initial_element = initial_element
-        self._current_element: Optional[Dict[str, Any]] = None
+        self._current_element: dict[str, Any] | None = None
         self._current_selector: str = ""
-        self._anchor_data: Optional[Dict[str, Any]] = None
+        self._anchor_data: dict[str, Any] | None = None
         self._anchor_selector: str = ""
 
         # Create selector model for state management
@@ -150,7 +149,7 @@ class UIExplorerDialog(QDialog):
         self._desktop_picker = None  # ElementPickerOverlay instance for desktop mode
 
         # Snapshot state for visual diff
-        self._snapshot_data: Optional[Dict[str, Any]] = None
+        self._snapshot_data: dict[str, Any] | None = None
 
         # Track pending async tasks for cleanup
         self._pending_tasks: list = []
@@ -1190,8 +1189,8 @@ class UIExplorerDialog(QDialog):
             self._status_bar.set_status_message(f"Compare error: {e}", "error")
 
     def _calculate_element_diff(
-        self, before: Dict[str, Any], after: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, before: dict[str, Any], after: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Calculate differences between two element snapshots.
 
@@ -1225,12 +1224,12 @@ class UIExplorerDialog(QDialog):
 
     def _show_diff_dialog(
         self,
-        before: Dict[str, Any],
-        after: Dict[str, Any],
-        diff: Dict[str, Any],
+        before: dict[str, Any],
+        after: dict[str, Any],
+        diff: dict[str, Any],
     ) -> None:
         """Show diff results in a dialog."""
-        from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QDialogButtonBox
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QTextEdit, QVBoxLayout
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Element Diff")
@@ -1396,10 +1395,10 @@ class UIExplorerDialog(QDialog):
         """Show similar elements dialog."""
         from PySide6.QtWidgets import (
             QDialog,
-            QVBoxLayout,
+            QDialogButtonBox,
             QListWidget,
             QListWidgetItem,
-            QDialogButtonBox,
+            QVBoxLayout,
         )
 
         dialog = QDialog(self)
@@ -1511,7 +1510,7 @@ class UIExplorerDialog(QDialog):
             logger.error(f"UIExplorer: AI suggest failed: {e}")
             self._status_bar.set_status_message(f"Error: {e}", "error")
 
-    def _generate_selector_strategies(self, element_data: Dict[str, Any]) -> list:
+    def _generate_selector_strategies(self, element_data: dict[str, Any]) -> list:
         """
         Generate multiple selector strategies for an element.
 
@@ -1631,10 +1630,10 @@ class UIExplorerDialog(QDialog):
         """Show Smart Suggest dialog with ranked selector options."""
         from PySide6.QtWidgets import (
             QDialog,
-            QVBoxLayout,
+            QDialogButtonBox,
             QListWidget,
             QListWidgetItem,
-            QDialogButtonBox,
+            QVBoxLayout,
         )
 
         dialog = QDialog(self)
@@ -1773,7 +1772,7 @@ class UIExplorerDialog(QDialog):
             logger.error(f"UIExplorer: Escape handling failed: {e}")
             self.reject()
 
-    def _on_tree_element_selected(self, element_data: Dict[str, Any]) -> None:
+    def _on_tree_element_selected(self, element_data: dict[str, Any]) -> None:
         """
         Handle element selection from visual tree panel.
 
@@ -1816,7 +1815,7 @@ class UIExplorerDialog(QDialog):
             logger.error(f"UIExplorer: Tree element selection failed: {e}")
             self._status_bar.set_status_message(f"Error: {e}", "error")
 
-    def _load_property_explorer(self, element_data: Dict[str, Any]) -> None:
+    def _load_property_explorer(self, element_data: dict[str, Any]) -> None:
         """
         Load element data into the property explorer panel.
 
@@ -1845,7 +1844,7 @@ class UIExplorerDialog(QDialog):
         except Exception as e:
             logger.error(f"UIExplorer: Property copy notification failed: {e}")
 
-    def _on_tree_element_double_clicked(self, element_data: Dict[str, Any]) -> None:
+    def _on_tree_element_double_clicked(self, element_data: dict[str, Any]) -> None:
         """
         Handle double-click on tree element for quick selection.
 
@@ -2013,7 +2012,7 @@ class UIExplorerDialog(QDialog):
         self._visual_tree_panel.set_mode(mode)
         logger.debug(f"UIExplorer: Mode set to {mode}")
 
-    def set_element(self, element_data: Dict[str, Any]) -> None:
+    def set_element(self, element_data: dict[str, Any]) -> None:
         """
         Set the current element being explored.
 
@@ -2044,7 +2043,7 @@ class UIExplorerDialog(QDialog):
         """
         return self._current_selector
 
-    def load_tree(self, root_element: Dict[str, Any]) -> None:
+    def load_tree(self, root_element: dict[str, Any]) -> None:
         """
         Load the visual tree with element hierarchy.
 

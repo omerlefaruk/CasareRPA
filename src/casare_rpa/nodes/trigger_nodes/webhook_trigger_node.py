@@ -168,7 +168,7 @@ class WebhookTriggerNode(BaseTriggerNode):
     trigger_icon = "webhook"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Webhook Trigger"
         self.node_type = "WebhookTriggerNode"
@@ -185,7 +185,7 @@ class WebhookTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.WEBHOOK
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get webhook-specific configuration."""
         methods_str = self.get_parameter("methods", "POST")
         methods = [m.strip().upper() for m in methods_str.split(",") if m.strip()]

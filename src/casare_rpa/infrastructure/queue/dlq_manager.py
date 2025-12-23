@@ -40,7 +40,7 @@ from __future__ import annotations
 import random
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import (
     Any,
@@ -88,11 +88,11 @@ class DatabaseConnection(Protocol):
         """Execute a query."""
         ...
 
-    async def fetch(self, query: str, *args: Any) -> List[Any]:
+    async def fetch(self, query: str, *args: Any) -> list[Any]:
         """Fetch multiple rows."""
         ...
 
-    async def fetchrow(self, query: str, *args: Any) -> Optional[Any]:
+    async def fetchrow(self, query: str, *args: Any) -> Any | None:
         """Fetch a single row."""
         ...
 
@@ -116,7 +116,7 @@ class DatabasePool(Protocol):
 
 # Retry schedule: exponential backoff delays in seconds
 # Each value represents the delay before the next retry attempt
-RETRY_SCHEDULE: List[int] = [
+RETRY_SCHEDULE: list[int] = [
     10,  # Retry 1: 10 seconds after first failure
     60,  # Retry 2: 1 minute after second failure
     300,  # Retry 3: 5 minutes after third failure
@@ -148,14 +148,14 @@ class FailedJob:
     workflow_id: str
     workflow_name: str
     workflow_json: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     retry_count: int
     error_message: str
-    error_details: Optional[Dict[str, Any]] = None
-    first_failed_at: Optional[datetime] = None
-    last_failed_at: Optional[datetime] = None
+    error_details: dict[str, Any] | None = None
+    first_failed_at: datetime | None = None
+    last_failed_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "job_id": self.job_id,
@@ -184,17 +184,17 @@ class DLQEntry:
     workflow_id: str
     workflow_name: str
     workflow_json: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     error_message: str
-    error_details: Optional[Dict[str, Any]]
+    error_details: dict[str, Any] | None
     retry_count: int
     first_failed_at: datetime
     last_failed_at: datetime
     created_at: datetime
-    reprocessed_at: Optional[datetime] = None
-    reprocessed_by: Optional[str] = None
+    reprocessed_at: datetime | None = None
+    reprocessed_by: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "id": self.id,
@@ -221,9 +221,9 @@ class RetryResult:
     action: RetryAction
     job_id: str
     retry_count: int
-    next_retry_at: Optional[datetime] = None
-    delay_seconds: Optional[int] = None
-    dlq_entry_id: Optional[str] = None
+    next_retry_at: datetime | None = None
+    delay_seconds: int | None = None
+    dlq_entry_id: str | None = None
 
 
 @dataclass
@@ -233,7 +233,7 @@ class DLQManagerConfig:
     postgres_url: str
     job_queue_table: str = "job_queue"
     dlq_table: str = "job_queue_dlq"
-    retry_schedule: List[int] = field(default_factory=lambda: RETRY_SCHEDULE.copy())
+    retry_schedule: list[int] = field(default_factory=lambda: RETRY_SCHEDULE.copy())
     jitter_factor: float = JITTER_FACTOR
     pool_min_size: int = 1
     pool_max_size: int = 5
@@ -372,7 +372,7 @@ class DLQManager:
             )
 
         self._config = config
-        self._pool: Optional[DatabasePool] = None
+        self._pool: DatabasePool | None = None
         self._running = False
 
         # Pre-format SQL with table names
@@ -507,7 +507,7 @@ class DLQManager:
 
         logger.debug(f"DLQ table '{self._config.dlq_table}' ensured")
 
-    def calculate_backoff_delay(self, retry_count: int) -> Tuple[int, int]:
+    def calculate_backoff_delay(self, retry_count: int) -> tuple[int, int]:
         """
         Calculate the backoff delay with jitter for a retry attempt.
 
@@ -552,7 +552,7 @@ class DLQManager:
         """
         self._get_pool()  # Validate connection is available
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Set failure timestamps
         first_failed = job.first_failed_at or now
@@ -598,7 +598,7 @@ class DLQManager:
 
             if result:
                 next_retry_at = (
-                    last_failed_at.replace(tzinfo=timezone.utc)
+                    last_failed_at.replace(tzinfo=UTC)
                     if last_failed_at.tzinfo is None
                     else last_failed_at
                 )
@@ -699,11 +699,11 @@ class DLQManager:
 
     async def list_dlq_entries(
         self,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
         pending_only: bool = True,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[DLQEntry]:
+    ) -> list[DLQEntry]:
         """
         List entries in the Dead Letter Queue.
 
@@ -738,7 +738,7 @@ class DLQManager:
             logger.error(f"Failed to list DLQ entries: {e}")
             raise
 
-    async def get_dlq_entry(self, entry_id: str) -> Optional[DLQEntry]:
+    async def get_dlq_entry(self, entry_id: str) -> DLQEntry | None:
         """
         Get a specific DLQ entry by ID.
 
@@ -770,7 +770,7 @@ class DLQManager:
         self,
         entry_id: str,
         reprocessed_by: str = "manual",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Manually retry a job from the Dead Letter Queue.
 
@@ -811,8 +811,8 @@ class DLQManager:
 
     async def get_dlq_stats(
         self,
-        workflow_id: Optional[str] = None,
-    ) -> Dict[str, int]:
+        workflow_id: str | None = None,
+    ) -> dict[str, int]:
         """
         Get DLQ statistics.
 
@@ -902,7 +902,7 @@ class DLQManager:
             logger.error(f"Failed to delete DLQ entry {entry_id}: {e}")
             raise
 
-    async def __aenter__(self) -> "DLQManager":
+    async def __aenter__(self) -> DLQManager:
         """Async context manager entry."""
         await self.start()
         return self

@@ -8,10 +8,9 @@ Provides functions to align selected nodes to common edges
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from PySide6.QtCore import QObject, QPointF, QPropertyAnimation, QEasingCurve, Signal
-from PySide6.QtWidgets import QGraphicsItem
-
 from loguru import logger
+from PySide6.QtCore import QEasingCurve, QObject, QPointF, QPropertyAnimation, Signal
+from PySide6.QtWidgets import QGraphicsItem
 
 
 class AlignmentType(Enum):
@@ -62,7 +61,7 @@ class NodeAligner(QObject):
         graph: Any = None,
         animate: bool = True,
         animation_duration: int = 200,
-        parent: Optional[QObject] = None,
+        parent: QObject | None = None,
     ) -> None:
         """
         Initialize the node aligner.
@@ -77,7 +76,7 @@ class NodeAligner(QObject):
         self._graph = graph
         self._animate = animate
         self._animation_duration = animation_duration
-        self._animations: List[QPropertyAnimation] = []
+        self._animations: list[QPropertyAnimation] = []
         self._pending_animations = 0
 
     def set_graph(self, graph: Any) -> None:
@@ -106,7 +105,7 @@ class NodeAligner(QObject):
     # ALIGNMENT OPERATIONS
     # =========================================================================
 
-    def align_left(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_left(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Align nodes to the leftmost node's left edge.
 
@@ -127,7 +126,7 @@ class NodeAligner(QObject):
         min_x = min(pos.x() for pos in positions.values())
 
         # Calculate new positions
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             if node_id not in positions:
@@ -142,7 +141,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_right(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_right(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Align nodes to the rightmost node's right edge.
 
@@ -165,7 +164,7 @@ class NodeAligner(QObject):
         max_right = max(rect.right() for rect in rects.values())
 
         # Calculate new positions (align right edges)
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             if node_id not in positions or node_id not in rects:
@@ -182,7 +181,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_top(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_top(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Align nodes to the topmost node's top edge.
 
@@ -203,7 +202,7 @@ class NodeAligner(QObject):
         min_y = min(pos.y() for pos in positions.values())
 
         # Calculate new positions
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             if node_id not in positions:
@@ -218,7 +217,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_bottom(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_bottom(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Align nodes to the bottommost node's bottom edge.
 
@@ -241,7 +240,7 @@ class NodeAligner(QObject):
         max_bottom = max(rect.bottom() for rect in rects.values())
 
         # Calculate new positions (align bottom edges)
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             if node_id not in positions or node_id not in rects:
@@ -258,7 +257,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_center_horizontal(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_center_horizontal(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Align nodes to the horizontal center (same Y center).
 
@@ -282,7 +281,7 @@ class NodeAligner(QObject):
         avg_center_y = sum(centers) / len(centers)
 
         # Calculate new positions
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             if node_id not in positions or node_id not in rects:
@@ -299,7 +298,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def align_center_vertical(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def align_center_vertical(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Align nodes to the vertical center (same X center).
 
@@ -323,7 +322,7 @@ class NodeAligner(QObject):
         avg_center_x = sum(centers) / len(centers)
 
         # Calculate new positions
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             if node_id not in positions or node_id not in rects:
@@ -344,7 +343,7 @@ class NodeAligner(QObject):
     # DISTRIBUTION OPERATIONS
     # =========================================================================
 
-    def distribute_horizontal(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def distribute_horizontal(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Distribute nodes evenly horizontally.
 
@@ -396,7 +395,7 @@ class NodeAligner(QObject):
         gap_width = (available_space - middle_total_width) / num_gaps if num_gaps > 0 else 0
 
         # Calculate new positions
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         current_x = first_right + gap_width
 
         for node, node_id, _ in sorted_nodes[1:-1]:
@@ -411,7 +410,7 @@ class NodeAligner(QObject):
         self._apply_positions(nodes, changes)
         return changes
 
-    def distribute_vertical(self, nodes: List[Any]) -> Dict[str, Tuple[QPointF, QPointF]]:
+    def distribute_vertical(self, nodes: list[Any]) -> dict[str, tuple[QPointF, QPointF]]:
         """
         Distribute nodes evenly vertically.
 
@@ -463,7 +462,7 @@ class NodeAligner(QObject):
         gap_height = (available_space - middle_total_height) / num_gaps if num_gaps > 0 else 0
 
         # Calculate new positions
-        changes: Dict[str, Tuple[QPointF, QPointF]] = {}
+        changes: dict[str, tuple[QPointF, QPointF]] = {}
         current_y = first_bottom + gap_height
 
         for node, node_id, _ in sorted_nodes[1:-1]:
@@ -493,9 +492,9 @@ class NodeAligner(QObject):
                 pass
         return str(id(node))
 
-    def _get_node_positions(self, nodes: List[Any]) -> Dict[str, QPointF]:
+    def _get_node_positions(self, nodes: list[Any]) -> dict[str, QPointF]:
         """Get current positions of nodes."""
-        positions: Dict[str, QPointF] = {}
+        positions: dict[str, QPointF] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             try:
@@ -510,11 +509,11 @@ class NodeAligner(QObject):
                 logger.debug(f"Error getting position for {node_id}: {e}")
         return positions
 
-    def _get_node_rects(self, nodes: List[Any]) -> Dict[str, Any]:
+    def _get_node_rects(self, nodes: list[Any]) -> dict[str, Any]:
         """Get bounding rectangles of nodes."""
         from PySide6.QtCore import QRectF
 
-        rects: Dict[str, QRectF] = {}
+        rects: dict[str, QRectF] = {}
         for node in nodes:
             node_id = self._get_node_id(node)
             try:
@@ -544,7 +543,7 @@ class NodeAligner(QObject):
         return rects
 
     def _apply_positions(
-        self, nodes: List[Any], changes: Dict[str, Tuple[QPointF, QPointF]]
+        self, nodes: list[Any], changes: dict[str, tuple[QPointF, QPointF]]
     ) -> None:
         """Apply position changes to nodes."""
         if not changes:
@@ -566,7 +565,7 @@ class NodeAligner(QObject):
         self.alignment_completed.emit()
 
     def _set_positions_immediate(
-        self, node_lookup: Dict[str, Any], changes: Dict[str, Tuple[QPointF, QPointF]]
+        self, node_lookup: dict[str, Any], changes: dict[str, tuple[QPointF, QPointF]]
     ) -> None:
         """Set positions immediately without animation."""
         for node_id, (old_pos, new_pos) in changes.items():
@@ -583,7 +582,7 @@ class NodeAligner(QObject):
                 logger.debug(f"Error setting position for {node_id}: {e}")
 
     def _animate_positions(
-        self, node_lookup: Dict[str, Any], changes: Dict[str, Tuple[QPointF, QPointF]]
+        self, node_lookup: dict[str, Any], changes: dict[str, tuple[QPointF, QPointF]]
     ) -> None:
         """Animate nodes to their new positions."""
         self._pending_animations = len(changes)
@@ -639,7 +638,7 @@ class NodeAligner(QObject):
 
 
 # Module-level singleton
-_node_aligner: Optional[NodeAligner] = None
+_node_aligner: NodeAligner | None = None
 
 
 def get_node_aligner() -> NodeAligner:

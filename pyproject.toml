@@ -194,7 +194,15 @@ target-version = "py312"
 
 [tool.ruff.lint]
 # Enable common checks
-select = ["E", "F", "W"]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # Pyflakes
+    "W",      # pycodestyle warnings
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+    "ASYNC",  # flake8-async
+]
 # Ignore specific rules globally
 ignore = [
     "E402",  # Module level import not at top of file - intentional for conditional imports

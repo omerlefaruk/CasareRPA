@@ -36,13 +36,13 @@ class FunctionInfo:
     is_async: bool
     is_private: bool
     is_dunder: bool
-    class_name: Optional[str]
-    parameters: List[str]
-    return_type: Optional[str]
-    docstring: Optional[str]
-    decorators: List[str]
-    calls: Set[str] = field(default_factory=set)
-    called_by: Set[str] = field(default_factory=set)
+    class_name: str | None
+    parameters: list[str]
+    return_type: str | None
+    docstring: str | None
+    decorators: list[str]
+    calls: set[str] = field(default_factory=set)
+    called_by: set[str] = field(default_factory=set)
 
     @property
     def full_name(self) -> str:
@@ -69,10 +69,10 @@ class ClassInfo:
     module: str
     file_path: str
     line_number: int
-    bases: List[str]
-    docstring: Optional[str]
-    decorators: List[str]
-    methods: List[str] = field(default_factory=list)
+    bases: list[str]
+    docstring: str | None
+    decorators: list[str]
+    methods: list[str] = field(default_factory=list)
 
 
 class CodeAnalyzer(ast.NodeVisitor):
@@ -81,11 +81,11 @@ class CodeAnalyzer(ast.NodeVisitor):
     def __init__(self, module_name: str, file_path: str):
         self.module = module_name
         self.file_path = file_path
-        self.functions: List[FunctionInfo] = []
-        self.classes: List[ClassInfo] = []
-        self.current_class: Optional[str] = None
-        self.current_function: Optional[FunctionInfo] = None
-        self.imports: Dict[str, str] = {}  # alias -> full module
+        self.functions: list[FunctionInfo] = []
+        self.classes: list[ClassInfo] = []
+        self.current_class: str | None = None
+        self.current_function: FunctionInfo | None = None
+        self.imports: dict[str, str] = {}  # alias -> full module
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
@@ -194,7 +194,7 @@ class CodeAnalyzer(ast.NodeVisitor):
                 self.current_function.calls.add(call_name)
         self.generic_visit(node)
 
-    def _get_call_name(self, node: ast.Call) -> Optional[str]:
+    def _get_call_name(self, node: ast.Call) -> str | None:
         func = node.func
         if isinstance(func, ast.Name):
             return func.id
@@ -203,7 +203,7 @@ class CodeAnalyzer(ast.NodeVisitor):
         return None
 
 
-def analyze_file(file_path: Path, base_path: Path) -> Tuple[List[FunctionInfo], List[ClassInfo]]:
+def analyze_file(file_path: Path, base_path: Path) -> tuple[list[FunctionInfo], list[ClassInfo]]:
     """Analyze a single Python file."""
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -227,10 +227,10 @@ def analyze_file(file_path: Path, base_path: Path) -> Tuple[List[FunctionInfo], 
     return analyzer.functions, analyzer.classes
 
 
-def build_call_graph(functions: List[FunctionInfo]) -> None:
+def build_call_graph(functions: list[FunctionInfo]) -> None:
     """Build call relationships between functions."""
     # Create lookup by name
-    by_name: Dict[str, List[FunctionInfo]] = defaultdict(list)
+    by_name: dict[str, list[FunctionInfo]] = defaultdict(list)
     for func in functions:
         by_name[func.name].append(func)
 
@@ -243,8 +243,8 @@ def build_call_graph(functions: List[FunctionInfo]) -> None:
 
 
 def categorize_functions(
-    functions: List[FunctionInfo],
-) -> Dict[str, List[FunctionInfo]]:
+    functions: list[FunctionInfo],
+) -> dict[str, list[FunctionInfo]]:
     """Categorize functions by layer."""
     categories = {
         "domain": [],
@@ -273,7 +273,7 @@ def categorize_functions(
     return categories
 
 
-def generate_markdown_table(functions: List[FunctionInfo], include_calls: bool = False) -> str:
+def generate_markdown_table(functions: list[FunctionInfo], include_calls: bool = False) -> str:
     """Generate markdown table for functions."""
     if not functions:
         return "*No functions found*\n"
@@ -301,9 +301,9 @@ def generate_markdown_table(functions: List[FunctionInfo], include_calls: bool =
     return "\n".join(lines) + "\n"
 
 
-def generate_module_docs(functions: List[FunctionInfo], module_prefix: str) -> str:
+def generate_module_docs(functions: list[FunctionInfo], module_prefix: str) -> str:
     """Generate documentation grouped by module."""
-    by_module: Dict[str, List[FunctionInfo]] = defaultdict(list)
+    by_module: dict[str, list[FunctionInfo]] = defaultdict(list)
     for func in functions:
         by_module[func.module].append(func)
 
@@ -318,7 +318,7 @@ def generate_module_docs(functions: List[FunctionInfo], module_prefix: str) -> s
     return "\n".join(lines)
 
 
-def generate_unused_report(functions: List[FunctionInfo]) -> str:
+def generate_unused_report(functions: list[FunctionInfo]) -> str:
     """Generate report of potentially unused functions."""
     unused = [f for f in functions if f.status == "UNUSED" and not f.is_dunder]
 
@@ -332,7 +332,7 @@ def generate_unused_report(functions: List[FunctionInfo]) -> str:
     lines.append("")
 
     # Group by module
-    by_module: Dict[str, List[FunctionInfo]] = defaultdict(list)
+    by_module: dict[str, list[FunctionInfo]] = defaultdict(list)
     for func in unused:
         by_module[func.module].append(func)
 
@@ -349,7 +349,7 @@ def generate_unused_report(functions: List[FunctionInfo]) -> str:
     return "\n".join(lines)
 
 
-def generate_cross_references(functions: List[FunctionInfo]) -> str:
+def generate_cross_references(functions: list[FunctionInfo]) -> str:
     """Generate cross-reference documentation."""
     lines = []
     lines.append("# Cross References\n")
@@ -385,7 +385,7 @@ def generate_cross_references(functions: List[FunctionInfo]) -> str:
     return "\n".join(lines)
 
 
-def generate_index(functions: List[FunctionInfo], classes: List[ClassInfo]) -> str:
+def generate_index(functions: list[FunctionInfo], classes: list[ClassInfo]) -> str:
     """Generate index page with statistics."""
     categories = categorize_functions(functions)
 
@@ -448,8 +448,8 @@ def main():
     """Main entry point."""
     print("Scanning codebase...")
 
-    all_functions: List[FunctionInfo] = []
-    all_classes: List[ClassInfo] = []
+    all_functions: list[FunctionInfo] = []
+    all_classes: list[ClassInfo] = []
 
     # Find all Python files
     python_files = list(SRC_DIR.rglob("*.py"))

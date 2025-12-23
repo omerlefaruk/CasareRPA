@@ -6,12 +6,11 @@ for all reusable UI widgets in the CasareRPA Canvas application.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Dict, Any
-
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget
+from typing import Any, Dict, Optional
 
 from loguru import logger
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QWidget
 
 
 # Create combined metaclass for Qt + ABC to avoid metaclass conflict
@@ -39,7 +38,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
     value_changed = Signal(object)
     state_changed = Signal(str, object)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the base widget.
 
@@ -50,7 +49,7 @@ class BaseWidget(QWidget, metaclass=QABCMeta):
 
         # Component state
         self._is_initialized = False
-        self._state: Dict[str, Any] = {}
+        self._state: dict[str, Any] = {}
 
         # Initialize component
         try:
@@ -311,7 +310,7 @@ class BaseDockWidget(BaseWidget):
 
     visibility_changed = Signal(bool)
 
-    def __init__(self, title: str, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
         """
         Initialize the dock widget.
 
@@ -357,7 +356,7 @@ class BaseDialog(BaseWidget):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the dialog.
 
@@ -365,7 +364,7 @@ class BaseDialog(BaseWidget):
             parent: Optional parent widget
         """
         super().__init__(parent)
-        self._result: Optional[Any] = None
+        self._result: Any | None = None
 
     def validate(self) -> bool:
         """
@@ -378,7 +377,7 @@ class BaseDialog(BaseWidget):
         """
         return True
 
-    def get_result(self) -> Optional[Any]:
+    def get_result(self) -> Any | None:
         """
         Get dialog result.
 

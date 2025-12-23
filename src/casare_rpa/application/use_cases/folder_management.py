@@ -16,7 +16,6 @@ from casare_rpa.domain.entities.project import (
 )
 from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
 
-
 # =============================================================================
 # Result Types
 # =============================================================================
@@ -27,8 +26,8 @@ class FolderResult:
     """Result of a folder operation."""
 
     success: bool
-    folder: Optional[ProjectFolder] = None
-    error: Optional[str] = None
+    folder: ProjectFolder | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -36,8 +35,8 @@ class FolderListResult:
     """Result of listing folders."""
 
     success: bool
-    folders: List[ProjectFolder] = None
-    error: Optional[str] = None
+    folders: list[ProjectFolder] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.folders is None:
@@ -49,8 +48,8 @@ class FolderTreeResult:
     """Result of getting folder tree."""
 
     success: bool
-    tree: List[Dict] = None
-    error: Optional[str] = None
+    tree: list[dict] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.tree is None:
@@ -68,7 +67,7 @@ class CreateFolderUseCase:
     async def execute(
         self,
         name: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
         color: str = FolderColor.BLUE.value,
         description: str = "",
     ) -> FolderResult:
@@ -209,7 +208,7 @@ class MoveProjectToFolderUseCase:
     async def execute(
         self,
         project_id: str,
-        target_folder_id: Optional[str] = None,
+        target_folder_id: str | None = None,
     ) -> FolderResult:
         """
         Move a project to a folder.
@@ -299,7 +298,7 @@ class SetFolderColorUseCase:
 class ReorderFoldersUseCase:
     """Reorder folders (for drag-drop)."""
 
-    async def execute(self, folder_ids: List[str]) -> FolderListResult:
+    async def execute(self, folder_ids: list[str]) -> FolderListResult:
         """
         Reorder folders.
 

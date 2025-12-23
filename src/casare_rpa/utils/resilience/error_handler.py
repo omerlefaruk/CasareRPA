@@ -8,13 +8,14 @@ Provides:
 - Recovery strategies (restart, fallback, ignore)
 """
 
-from typing import Any, Dict, List, Optional, Callable, Awaitable
+import asyncio
+import traceback
+from collections import defaultdict, deque
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from collections import defaultdict, deque
-import asyncio
-import traceback
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -59,11 +60,11 @@ class ErrorRecord:
     error_message: str
     stack_trace: str
     severity: ErrorSeverity
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
     recovered: bool = False
-    recovery_strategy: Optional[RecoveryStrategy] = None
+    recovery_strategy: RecoveryStrategy | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -92,7 +93,7 @@ class ErrorPattern:
     affected_nodes: set = field(default_factory=set)
     affected_workflows: set = field(default_factory=set)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "error_type": self.error_type,
@@ -123,10 +124,10 @@ class ErrorAnalytics:
             max_history: Maximum number of error records to keep
         """
         self._history: deque[ErrorRecord] = deque(maxlen=max_history)
-        self._patterns: Dict[str, ErrorPattern] = {}
+        self._patterns: dict[str, ErrorPattern] = {}
         self._max_history = max_history
-        self._error_counts: Dict[str, int] = defaultdict(int)
-        self._hourly_counts: Dict[str, int] = defaultdict(int)
+        self._error_counts: dict[str, int] = defaultdict(int)
+        self._hourly_counts: dict[str, int] = defaultdict(int)
 
     def record_error(self, error: ErrorRecord) -> None:
         """
@@ -178,7 +179,7 @@ class ErrorAnalytics:
 
         logger.debug(f"Error recorded: {error_type} (total: {pattern.count})")
 
-    def get_top_errors(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_top_errors(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get the most common errors.
 
@@ -191,7 +192,7 @@ class ErrorAnalytics:
         sorted_patterns = sorted(self._patterns.values(), key=lambda p: p.count, reverse=True)
         return [p.to_dict() for p in sorted_patterns[:limit]]
 
-    def get_recent_errors(self, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_recent_errors(self, hours: int = 24) -> list[dict[str, Any]]:
         """
         Get errors from the last N hours.
 
@@ -219,7 +220,7 @@ class ErrorAnalytics:
         recent_count = sum(1 for e in self._history if e.timestamp >= cutoff)
         return recent_count / max(hours, 1)
 
-    def get_error_trend(self, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_error_trend(self, hours: int = 24) -> list[dict[str, Any]]:
         """
         Get hourly error counts for trend analysis.
 
@@ -242,7 +243,7 @@ class ErrorAnalytics:
             )
         return trend
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Get overall error analytics summary.
 
@@ -301,7 +302,7 @@ class GlobalErrorHandler:
     def __init__(
         self,
         default_strategy: RecoveryStrategy = RecoveryStrategy.STOP,
-        analytics: Optional[ErrorAnalytics] = None,
+        analytics: ErrorAnalytics | None = None,
     ):
         """
         Initialize global error handler.
@@ -312,9 +313,9 @@ class GlobalErrorHandler:
         """
         self._default_strategy = default_strategy
         self._analytics = analytics or ErrorAnalytics()
-        self._strategy_map: Dict[str, RecoveryStrategy] = {}
-        self._notification_handlers: List[Callable[[ErrorRecord], Awaitable[None]]] = []
-        self._fallback_workflows: Dict[str, str] = {}  # error_type -> fallback_workflow_id
+        self._strategy_map: dict[str, RecoveryStrategy] = {}
+        self._notification_handlers: list[Callable[[ErrorRecord], Awaitable[None]]] = []
+        self._fallback_workflows: dict[str, str] = {}  # error_type -> fallback_workflow_id
         self._enabled = True
 
     @property
@@ -389,7 +390,7 @@ class GlobalErrorHandler:
         """
         return self._strategy_map.get(error_type, self._default_strategy)
 
-    def get_fallback_workflow(self, error_type: str) -> Optional[str]:
+    def get_fallback_workflow(self, error_type: str) -> str | None:
         """
         Get the fallback workflow ID for an error type.
 
@@ -408,7 +409,7 @@ class GlobalErrorHandler:
         workflow_name: str,
         node_id: str,
         node_type: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> RecoveryStrategy:
         """
         Handle an error occurrence.
@@ -488,7 +489,7 @@ class GlobalErrorHandler:
             except Exception as e:
                 logger.error(f"Error notification handler failed: {e}")
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         """Get current error handler configuration."""
         return {
             "enabled": self._enabled,
@@ -500,7 +501,7 @@ class GlobalErrorHandler:
 
 
 # Global singleton instance
-_global_error_handler: Optional[GlobalErrorHandler] = None
+_global_error_handler: GlobalErrorHandler | None = None
 
 
 def get_global_error_handler() -> GlobalErrorHandler:

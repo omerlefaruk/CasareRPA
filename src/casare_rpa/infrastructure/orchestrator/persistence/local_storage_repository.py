@@ -5,7 +5,7 @@ Stores orchestrator data in JSON files for offline/development mode.
 
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -16,7 +16,7 @@ class LocalStorageRepository:
     Stores data in JSON files when cloud backend is not available.
     """
 
-    def __init__(self, storage_dir: Optional[Path] = None):
+    def __init__(self, storage_dir: Path | None = None):
         """Initialize local storage in user's home directory."""
         self.storage_dir = storage_dir or Path.home() / ".casare_rpa" / "orchestrator"
         self.storage_dir.mkdir(parents=True, exist_ok=True)
@@ -38,7 +38,7 @@ class LocalStorageRepository:
             if not file_path.exists():
                 file_path.write_text("[]")
 
-    def _load_json(self, file_path: Path) -> List[Dict[str, Any]]:
+    def _load_json(self, file_path: Path) -> list[dict[str, Any]]:
         """Load JSON data from file."""
         try:
             return json.loads(file_path.read_text())
@@ -46,7 +46,7 @@ class LocalStorageRepository:
             logger.error(f"Failed to load {file_path}: {e}")
             return []
 
-    def _save_json(self, file_path: Path, data: List[Dict[str, Any]]) -> bool:
+    def _save_json(self, file_path: Path, data: list[dict[str, Any]]) -> bool:
         """Save JSON data to file."""
         try:
             file_path.write_text(json.dumps(data, indent=2, default=str))
@@ -57,11 +57,11 @@ class LocalStorageRepository:
 
     # ==================== ROBOTS ====================
 
-    def get_robots(self) -> List[Dict[str, Any]]:
+    def get_robots(self) -> list[dict[str, Any]]:
         """Get all robots from local storage."""
         return self._load_json(self._robots_file)
 
-    def save_robot(self, robot: Dict[str, Any]) -> bool:
+    def save_robot(self, robot: dict[str, Any]) -> bool:
         """Save or update a robot."""
         robots = self.get_robots()
         # Update existing or add new
@@ -79,7 +79,7 @@ class LocalStorageRepository:
 
     # ==================== JOBS ====================
 
-    def get_jobs(self, limit: int = 100, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_jobs(self, limit: int = 100, status: str | None = None) -> list[dict[str, Any]]:
         """Get jobs with optional filtering."""
         jobs = self._load_json(self._jobs_file)
         if status:
@@ -88,7 +88,7 @@ class LocalStorageRepository:
         jobs.sort(key=lambda x: x.get("created_at", ""), reverse=True)
         return jobs[:limit]
 
-    def save_job(self, job: Dict[str, Any]) -> bool:
+    def save_job(self, job: dict[str, Any]) -> bool:
         """Save or update a job."""
         jobs = self._load_json(self._jobs_file)
         for i, j in enumerate(jobs):
@@ -105,11 +105,11 @@ class LocalStorageRepository:
 
     # ==================== WORKFLOWS ====================
 
-    def get_workflows(self) -> List[Dict[str, Any]]:
+    def get_workflows(self) -> list[dict[str, Any]]:
         """Get all workflows from local storage."""
         return self._load_json(self._workflows_file)
 
-    def save_workflow(self, workflow: Dict[str, Any]) -> bool:
+    def save_workflow(self, workflow: dict[str, Any]) -> bool:
         """Save or update a workflow."""
         workflows = self.get_workflows()
         for i, w in enumerate(workflows):
@@ -126,11 +126,11 @@ class LocalStorageRepository:
 
     # ==================== SCHEDULES ====================
 
-    def get_schedules(self) -> List[Dict[str, Any]]:
+    def get_schedules(self) -> list[dict[str, Any]]:
         """Get all schedules from local storage."""
         return self._load_json(self._schedules_file)
 
-    def save_schedule(self, schedule: Dict[str, Any]) -> bool:
+    def save_schedule(self, schedule: dict[str, Any]) -> bool:
         """Save or update a schedule."""
         schedules = self.get_schedules()
         for i, s in enumerate(schedules):
@@ -147,11 +147,11 @@ class LocalStorageRepository:
 
     # ==================== TRIGGERS ====================
 
-    def get_triggers(self) -> List[Dict[str, Any]]:
+    def get_triggers(self) -> list[dict[str, Any]]:
         """Get all triggers from local storage."""
         return self._load_json(self._triggers_file)
 
-    def save_trigger(self, trigger: Dict[str, Any]) -> bool:
+    def save_trigger(self, trigger: dict[str, Any]) -> bool:
         """Save or update a trigger."""
         triggers = self.get_triggers()
         for i, t in enumerate(triggers):

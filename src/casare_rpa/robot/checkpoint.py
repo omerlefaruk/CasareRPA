@@ -9,11 +9,12 @@ Provides per-node checkpointing for crash recovery:
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List, Set
-from dataclasses import dataclass, asdict
-from loguru import logger
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional, Set
+
 import orjson
+from loguru import logger
 
 from casare_rpa.robot.offline_queue import OfflineQueue
 
@@ -29,26 +30,26 @@ class CheckpointState:
 
     # Execution progress
     current_node_id: str
-    executed_nodes: List[str]
-    execution_path: List[str]
+    executed_nodes: list[str]
+    execution_path: list[str]
 
     # Variable state (serializable values only)
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
 
     # Error tracking
-    errors: List[Dict[str, str]]
+    errors: list[dict[str, str]]
 
     # Browser state hints (can't fully restore, but helps)
     has_browser: bool = False
-    active_page_name: Optional[str] = None
+    active_page_name: str | None = None
     page_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CheckpointState":
+    def from_dict(cls, data: dict[str, Any]) -> "CheckpointState":
         """Create from dictionary."""
         return cls(**data)
 
@@ -77,13 +78,13 @@ class CheckpointManager:
         self.auto_save = auto_save
 
         # Current state
-        self._current_job_id: Optional[str] = None
-        self._current_workflow_name: Optional[str] = None
-        self._executed_nodes: Set[str] = set()
-        self._execution_path: List[str] = []
-        self._variables: Dict[str, Any] = {}
-        self._errors: List[Dict[str, str]] = []
-        self._browser_state: Dict[str, Any] = {}
+        self._current_job_id: str | None = None
+        self._current_workflow_name: str | None = None
+        self._executed_nodes: set[str] = set()
+        self._execution_path: list[str] = []
+        self._variables: dict[str, Any] = {}
+        self._errors: list[dict[str, str]] = []
+        self._browser_state: dict[str, Any] = {}
 
         logger.info("Checkpoint manager initialized")
 
@@ -114,7 +115,7 @@ class CheckpointManager:
         self,
         node_id: str,
         context: Any,  # ExecutionContext
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Save checkpoint after node execution.
 
@@ -144,7 +145,7 @@ class CheckpointManager:
             checkpoint_id=checkpoint_id,
             job_id=self._current_job_id,
             workflow_name=self._current_workflow_name or "unknown",
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             current_node_id=node_id,
             executed_nodes=list(self._executed_nodes),
             execution_path=self._execution_path.copy(),
@@ -173,7 +174,7 @@ class CheckpointManager:
     def _extract_serializable_variables(
         self,
         context: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Extract only JSON-serializable variables from context."""
         result = {}
 
@@ -206,7 +207,7 @@ class CheckpointManager:
 
         return result
 
-    def _capture_browser_state(self, context: Any) -> Dict[str, Any]:
+    def _capture_browser_state(self, context: Any) -> dict[str, Any]:
         """Capture browser state hints from context."""
         state = {
             "has_browser": False,
@@ -228,7 +229,7 @@ class CheckpointManager:
     async def get_checkpoint(
         self,
         job_id: str,
-    ) -> Optional[CheckpointState]:
+    ) -> CheckpointState | None:
         """
         Get the latest checkpoint for a job.
 
@@ -292,11 +293,11 @@ class CheckpointManager:
             {
                 "node_id": node_id,
                 "error": error_message,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         )
 
-    def get_executed_nodes(self) -> Set[str]:
+    def get_executed_nodes(self) -> set[str]:
         """Get set of executed node IDs."""
         return self._executed_nodes.copy()
 
@@ -425,8 +426,8 @@ def create_checkpoint_state(
     job_id: str,
     workflow_name: str,
     node_id: str,
-    executed_nodes: List[str],
-    variables: Dict[str, Any],
+    executed_nodes: list[str],
+    variables: dict[str, Any],
 ) -> CheckpointState:
     """
     Factory function to create a checkpoint state.
@@ -445,7 +446,7 @@ def create_checkpoint_state(
         checkpoint_id=str(uuid.uuid4())[:8],
         job_id=job_id,
         workflow_name=workflow_name,
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         current_node_id=node_id,
         executed_nodes=executed_nodes,
         execution_path=executed_nodes.copy(),

@@ -6,8 +6,6 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
-
 
 from abc import abstractmethod
 from typing import Any, Optional
@@ -15,6 +13,7 @@ from typing import Any, Optional
 from loguru import logger
 
 from casare_rpa.domain.credentials import CredentialAwareMixin
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -23,9 +22,9 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.telegram_client import (
+    TelegramAPIError,
     TelegramClient,
     TelegramConfig,
-    TelegramAPIError,
 )
 
 
@@ -58,7 +57,7 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
-        self._client: Optional[TelegramClient] = None
+        self._client: TelegramClient | None = None
 
     def _define_common_input_ports(self) -> None:
         """Define standard Telegram input ports."""
@@ -103,7 +102,7 @@ class TelegramBaseNode(CredentialAwareMixin, BaseNode):
         self._client = client
         return client
 
-    async def _get_bot_token(self, context: ExecutionContext) -> Optional[str]:
+    async def _get_bot_token(self, context: ExecutionContext) -> str | None:
         """
         Get bot token using unified credential resolution.
 

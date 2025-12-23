@@ -31,17 +31,17 @@ from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor imp
     BaseExpressionEditor,
     EditorType,
 )
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.expression_editor_popup import (
-    ExpressionEditorPopup,
-)
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.editor_factory import (
-    EditorFactory,
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
+    CodeDetector,
 )
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_editor import (
     CodeExpressionEditor,
 )
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
-    CodeDetector,
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.editor_factory import (
+    EditorFactory,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.expression_editor_popup import (
+    ExpressionEditorPopup,
 )
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.markdown_editor import (
     MarkdownEditor,

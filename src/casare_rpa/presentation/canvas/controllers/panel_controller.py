@@ -9,8 +9,9 @@ Handles all panel-related operations:
 """
 
 from typing import TYPE_CHECKING
-from PySide6.QtCore import Signal
+
 from loguru import logger
+from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 

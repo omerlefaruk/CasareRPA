@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from casare_rpa.infrastructure.ai import SmartWorkflowAgent
 from casare_rpa.domain.ai.config import SIMPLE_FAST_CONFIG
+from casare_rpa.infrastructure.ai import SmartWorkflowAgent
 
 IDEAS = [
     "Create a list of 5 numbers [1, 2, 3, 4, 5], loop through them using ForLoopStartNode, and calculate the total sum in a variable 'total_sum'. Finally log the total.",
@@ -31,7 +31,7 @@ IDEAS = [
 async def generate_workflows():
     # Load model from settings.json
     settings_path = Path(__file__).parent.parent / "config" / "settings.json"
-    with open(settings_path, "r") as f:
+    with open(settings_path) as f:
         settings = json.load(f)
     model = settings.get("ai", {}).get("model", "openrouter/google/gemini-2.0-flash-exp")
     print(f"Using model: {model}")

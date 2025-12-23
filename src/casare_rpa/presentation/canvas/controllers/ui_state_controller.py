@@ -13,8 +13,8 @@ Manages persistence and restoration of UI state including:
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
-from PySide6.QtCore import QByteArray, QSettings, QTimer, Signal
 from loguru import logger
+from PySide6.QtCore import QByteArray, QSettings, QTimer, Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
@@ -73,8 +73,8 @@ class UIStateController(BaseController):
             main_window: Reference to main window
         """
         super().__init__(main_window)
-        self._settings: Optional[QSettings] = None
-        self._auto_save_timer: Optional[QTimer] = None
+        self._settings: QSettings | None = None
+        self._auto_save_timer: QTimer | None = None
         self._pending_save: bool = False
 
     def initialize(self) -> None:
@@ -336,7 +336,7 @@ class UIStateController(BaseController):
 
     # ==================== Directory Management ====================
 
-    def get_last_directory(self) -> Optional[Path]:
+    def get_last_directory(self) -> Path | None:
         """
         Get the last opened directory.
 
@@ -376,7 +376,7 @@ class UIStateController(BaseController):
 
     # ==================== Recent Files Management ====================
 
-    def get_recent_files(self) -> List[dict]:
+    def get_recent_files(self) -> list[dict]:
         """
         Get the recent files list.
 
@@ -499,7 +499,7 @@ class UIStateController(BaseController):
         """Check if controller is initialized."""
         return self._initialized and self._settings is not None
 
-    def get_settings(self) -> Optional[QSettings]:
+    def get_settings(self) -> QSettings | None:
         """
         Get the QSettings instance for advanced usage.
 

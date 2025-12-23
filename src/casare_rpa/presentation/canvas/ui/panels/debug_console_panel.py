@@ -11,22 +11,21 @@ Features:
 """
 
 from datetime import datetime
-from typing import Any, List, Optional, TYPE_CHECKING
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPlainTextEdit,
-    QLineEdit,
-    QPushButton,
-    QCompleter,
-    QLabel,
-)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QTextCharFormat, QColor, QKeyEvent
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QFont, QKeyEvent, QTextCharFormat
+from PySide6.QtWidgets import (
+    QCompleter,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -43,10 +42,10 @@ class HistoryLineEdit(QLineEdit):
     Handles Up/Down arrow keys to navigate through command history.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the history-enabled line edit."""
         super().__init__(parent)
-        self._history: List[str] = []
+        self._history: list[str] = []
         self._history_index: int = -1
         self._current_input: str = ""
 
@@ -132,7 +131,7 @@ class DebugConsolePanel(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         debug_controller: Optional["DebugController"] = None,
     ) -> None:
         """
@@ -144,7 +143,7 @@ class DebugConsolePanel(QWidget):
         """
         super().__init__(parent)
         self._debug_controller = debug_controller
-        self._completer: Optional[QCompleter] = None
+        self._completer: QCompleter | None = None
 
         self._setup_ui()
         self._apply_styles()

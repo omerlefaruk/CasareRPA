@@ -6,19 +6,20 @@ all keyboard shortcuts in the application.
 """
 
 from typing import Dict
+
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeySequence, QAction
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
-    QLineEdit,
-    QPushButton,
-    QLabel,
-    QHeaderView,
-    QMessageBox,
+    QVBoxLayout,
 )
 
 
@@ -133,7 +134,7 @@ class HotkeyEditor(QDialog):
 class HotkeyManagerDialog(QDialog):
     """Dialog for managing all application hotkeys."""
 
-    def __init__(self, actions: Dict[str, QAction], parent=None):
+    def __init__(self, actions: dict[str, QAction], parent=None):
         """
         Initialize hotkey manager dialog.
 

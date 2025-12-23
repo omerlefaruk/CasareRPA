@@ -1,10 +1,10 @@
 import pytest
+from NodeGraphQt.qgraphics.pipe import LayoutDirectionEnum, PipeEnum, PortTypeEnum
 from PySide6.QtCore import QPointF, QRectF
-from PySide6.QtGui import QPainter, QPainterPath, QPen, QColor, QTransform, QFont
-from PySide6.QtWidgets import QStyleOptionGraphicsItem, QWidget, QGraphicsTextItem
+from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QTransform
+from PySide6.QtWidgets import QGraphicsTextItem, QStyleOptionGraphicsItem, QWidget
 
 from casare_rpa.presentation.canvas.graph.custom_pipe import CasareLivePipe
-from NodeGraphQt.qgraphics.pipe import PortTypeEnum, LayoutDirectionEnum, PipeEnum
 
 
 class MockPort:

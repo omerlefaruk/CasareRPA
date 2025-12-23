@@ -10,19 +10,19 @@ Provides high-level update management:
 
 import asyncio
 import os
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.updater.tuf_updater import (
+    DownloadProgress,
     TUFUpdater,
     UpdateInfo,
-    DownloadProgress,
 )
-
 
 # =============================================================================
 # CONFIGURATION
@@ -81,12 +81,12 @@ class UpdateManager:
     def __init__(
         self,
         current_version: str,
-        repo_url: Optional[str] = None,
-        cache_dir: Optional[Path] = None,
+        repo_url: str | None = None,
+        cache_dir: Path | None = None,
         auto_check: bool = True,
-        on_update_available: Optional[Callable[[UpdateInfo], None]] = None,
-        on_progress: Optional[Callable[[DownloadProgress], None]] = None,
-        on_state_change: Optional[Callable[[UpdateState], None]] = None,
+        on_update_available: Callable[[UpdateInfo], None] | None = None,
+        on_progress: Callable[[DownloadProgress], None] | None = None,
+        on_state_change: Callable[[UpdateState], None] | None = None,
     ):
         """
         Initialize the update manager.
@@ -112,10 +112,10 @@ class UpdateManager:
 
         # State
         self._state = UpdateState.IDLE
-        self._update_info: Optional[UpdateInfo] = None
-        self._downloaded_path: Optional[Path] = None
-        self._last_check: Optional[datetime] = None
-        self._check_task: Optional[asyncio.Task] = None
+        self._update_info: UpdateInfo | None = None
+        self._downloaded_path: Path | None = None
+        self._last_check: datetime | None = None
+        self._check_task: asyncio.Task | None = None
 
         # TUF updater
         self._updater = TUFUpdater(
@@ -134,7 +134,7 @@ class UpdateManager:
         return self._state
 
     @property
-    def update_info(self) -> Optional[UpdateInfo]:
+    def update_info(self) -> UpdateInfo | None:
         """Get available update info."""
         return self._update_info
 
@@ -200,7 +200,7 @@ class UpdateManager:
                 logger.error(f"Background update check failed: {e}")
                 await asyncio.sleep(3600)  # Retry in 1 hour on error
 
-    async def check_for_updates(self) -> Optional[UpdateInfo]:
+    async def check_for_updates(self) -> UpdateInfo | None:
         """
         Check for available updates.
 
@@ -212,7 +212,7 @@ class UpdateManager:
             return None
 
         self._set_state(UpdateState.CHECKING)
-        self._last_check = datetime.now(timezone.utc)
+        self._last_check = datetime.now(UTC)
 
         try:
             update = await self._updater.check_for_updates()
@@ -242,7 +242,7 @@ class UpdateManager:
             self._set_state(UpdateState.ERROR)
             return None
 
-    async def download_update(self) -> Optional[Path]:
+    async def download_update(self) -> Path | None:
         """
         Download the available update.
 
@@ -369,13 +369,13 @@ class UpdateManager:
 # Module-level singleton with thread-safe lazy initialization
 import threading
 
-_update_manager_instance: Optional[UpdateManager] = None
+_update_manager_instance: UpdateManager | None = None
 _update_manager_lock = threading.Lock()
-_update_manager_version: Optional[str] = None
+_update_manager_version: str | None = None
 
 
 def get_update_manager(
-    current_version: Optional[str] = None,
+    current_version: str | None = None,
     **kwargs,
 ) -> UpdateManager:
     """

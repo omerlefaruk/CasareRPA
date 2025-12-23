@@ -11,14 +11,14 @@ Provides comprehensive RBAC implementation for enterprise deployments:
 
 import asyncio
 import secrets
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, TypeVar
+from typing import Any, Dict, List, Optional, Set, TypeVar
 from uuid import UUID
 
 from loguru import logger
 from pydantic import BaseModel, Field
-
 
 # =============================================================================
 # ENUMS
@@ -78,7 +78,7 @@ class ActionType(str, Enum):
 class RBACError(Exception):
     """Base exception for RBAC operations."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
         self.details = details or {}
         super().__init__(message)
@@ -92,7 +92,7 @@ class PermissionDeniedError(RBACError):
         user_id: UUID,
         resource: ResourceType,
         action: ActionType,
-        resource_id: Optional[str] = None,
+        resource_id: str | None = None,
     ) -> None:
         message = f"Permission denied: {action.value} on {resource.value}"
         if resource_id:
@@ -137,7 +137,7 @@ class Permission(BaseModel):
     id: UUID
     name: str
     display_name: str
-    description: Optional[str] = None
+    description: str | None = None
     resource: ResourceType
     action: ActionType
     category: str = "general"
@@ -163,7 +163,7 @@ class PermissionCondition(BaseModel):
     operator: str = Field(..., description="Comparison operator (eq, in, gt, lt, etc.)")
     value: Any = Field(..., description="Value to compare against")
 
-    def evaluate(self, context: Dict[str, Any]) -> bool:
+    def evaluate(self, context: dict[str, Any]) -> bool:
         """
         Evaluate condition against context.
 
@@ -208,9 +208,9 @@ class RolePermission(BaseModel):
     """Permission assigned to a role with optional conditions."""
 
     permission: Permission
-    conditions: Optional[List[PermissionCondition]] = None
+    conditions: list[PermissionCondition] | None = None
 
-    def is_granted(self, context: Optional[Dict[str, Any]] = None) -> bool:
+    def is_granted(self, context: dict[str, Any] | None = None) -> bool:
         """
         Check if permission is granted given context.
 
@@ -233,22 +233,22 @@ class Role(BaseModel):
     """Represents a role with assigned permissions."""
 
     id: UUID
-    tenant_id: Optional[UUID] = None
+    tenant_id: UUID | None = None
     name: str
     display_name: str
-    description: Optional[str] = None
+    description: str | None = None
     is_system: bool = False
     is_default: bool = False
     priority: int = 0
-    permissions: List[RolePermission] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    permissions: list[RolePermission] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def has_permission(
         self,
         resource: ResourceType,
         action: ActionType,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> bool:
         """
         Check if role has a specific permission.
@@ -267,7 +267,7 @@ class Role(BaseModel):
                     return True
         return False
 
-    def get_permission_keys(self) -> Set[str]:
+    def get_permission_keys(self) -> set[str]:
         """Get all permission keys for this role."""
         return {rp.permission.permission_key for rp in self.permissions}
 
@@ -280,19 +280,19 @@ class UserPermissions(BaseModel):
 
     user_id: UUID
     tenant_id: UUID
-    roles: List[Role] = Field(default_factory=list)
-    effective_permissions: Set[str] = Field(default_factory=set)
-    cached_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    roles: list[Role] = Field(default_factory=list)
+    effective_permissions: set[str] = Field(default_factory=set)
+    cached_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     cache_ttl_seconds: int = 300
 
     @property
     def is_cache_valid(self) -> bool:
         """Check if permission cache is still valid."""
-        age = (datetime.now(timezone.utc) - self.cached_at).total_seconds()
+        age = (datetime.now(UTC) - self.cached_at).total_seconds()
         return age < self.cache_ttl_seconds
 
     @property
-    def highest_priority_role(self) -> Optional[Role]:
+    def highest_priority_role(self) -> Role | None:
         """Get the role with highest priority."""
         if not self.roles:
             return None
@@ -302,7 +302,7 @@ class UserPermissions(BaseModel):
         self,
         resource: ResourceType,
         action: ActionType,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> bool:
         """
         Check if user has a specific permission.
@@ -322,8 +322,8 @@ class UserPermissions(BaseModel):
 
     def has_any_permission(
         self,
-        permissions: List[tuple[ResourceType, ActionType]],
-        context: Optional[Dict[str, Any]] = None,
+        permissions: list[tuple[ResourceType, ActionType]],
+        context: dict[str, Any] | None = None,
     ) -> bool:
         """Check if user has any of the specified permissions."""
         return any(
@@ -332,8 +332,8 @@ class UserPermissions(BaseModel):
 
     def has_all_permissions(
         self,
-        permissions: List[tuple[ResourceType, ActionType]],
-        context: Optional[Dict[str, Any]] = None,
+        permissions: list[tuple[ResourceType, ActionType]],
+        context: dict[str, Any] | None = None,
     ) -> bool:
         """Check if user has all specified permissions."""
         return all(
@@ -354,9 +354,9 @@ class PermissionRegistry:
     """
 
     def __init__(self) -> None:
-        self._permissions: Dict[str, Permission] = {}
-        self._by_resource: Dict[ResourceType, List[Permission]] = {}
-        self._by_category: Dict[str, List[Permission]] = {}
+        self._permissions: dict[str, Permission] = {}
+        self._by_resource: dict[ResourceType, list[Permission]] = {}
+        self._by_category: dict[str, list[Permission]] = {}
         self._lock = asyncio.Lock()
 
     async def register(self, permission: Permission) -> None:
@@ -373,29 +373,29 @@ class PermissionRegistry:
                 self._by_category[permission.category] = []
             self._by_category[permission.category].append(permission)
 
-    async def register_many(self, permissions: List[Permission]) -> None:
+    async def register_many(self, permissions: list[Permission]) -> None:
         """Register multiple permissions."""
         for perm in permissions:
             await self.register(perm)
 
-    def get(self, resource: ResourceType, action: ActionType) -> Optional[Permission]:
+    def get(self, resource: ResourceType, action: ActionType) -> Permission | None:
         """Get permission by resource and action."""
         key = f"{resource.value}.{action.value}"
         return self._permissions.get(key)
 
-    def get_by_key(self, key: str) -> Optional[Permission]:
+    def get_by_key(self, key: str) -> Permission | None:
         """Get permission by canonical key."""
         return self._permissions.get(key)
 
-    def get_by_resource(self, resource: ResourceType) -> List[Permission]:
+    def get_by_resource(self, resource: ResourceType) -> list[Permission]:
         """Get all permissions for a resource type."""
         return self._by_resource.get(resource, [])
 
-    def get_by_category(self, category: str) -> List[Permission]:
+    def get_by_category(self, category: str) -> list[Permission]:
         """Get all permissions in a category."""
         return self._by_category.get(category, [])
 
-    def get_all(self) -> List[Permission]:
+    def get_all(self) -> list[Permission]:
         """Get all registered permissions."""
         return list(self._permissions.values())
 
@@ -419,11 +419,11 @@ class RoleManager:
 
     def __init__(self, permission_registry: PermissionRegistry) -> None:
         self._permission_registry = permission_registry
-        self._system_roles: Dict[UUID, Role] = {}
-        self._custom_roles: Dict[UUID, Dict[UUID, Role]] = {}  # tenant_id -> role_id -> role
+        self._system_roles: dict[UUID, Role] = {}
+        self._custom_roles: dict[UUID, dict[UUID, Role]] = {}  # tenant_id -> role_id -> role
         self._lock = asyncio.Lock()
 
-    async def load_system_roles(self, roles: List[Role]) -> None:
+    async def load_system_roles(self, roles: list[Role]) -> None:
         """Load system roles into memory."""
         async with self._lock:
             for role in roles:
@@ -431,7 +431,7 @@ class RoleManager:
                     self._system_roles[role.id] = role
                     logger.debug(f"Loaded system role: {role.name}")
 
-    async def load_tenant_roles(self, tenant_id: UUID, roles: List[Role]) -> None:
+    async def load_tenant_roles(self, tenant_id: UUID, roles: list[Role]) -> None:
         """Load custom roles for a tenant."""
         async with self._lock:
             if tenant_id not in self._custom_roles:
@@ -440,23 +440,23 @@ class RoleManager:
                 self._custom_roles[tenant_id][role.id] = role
                 logger.debug(f"Loaded tenant role: {role.name} for tenant {tenant_id}")
 
-    def get_system_role(self, role_id: UUID) -> Optional[Role]:
+    def get_system_role(self, role_id: UUID) -> Role | None:
         """Get a system role by ID."""
         return self._system_roles.get(role_id)
 
-    def get_system_role_by_name(self, name: str) -> Optional[Role]:
+    def get_system_role_by_name(self, name: str) -> Role | None:
         """Get a system role by name."""
         for role in self._system_roles.values():
             if role.name == name:
                 return role
         return None
 
-    def get_tenant_role(self, tenant_id: UUID, role_id: UUID) -> Optional[Role]:
+    def get_tenant_role(self, tenant_id: UUID, role_id: UUID) -> Role | None:
         """Get a custom role for a tenant."""
         tenant_roles = self._custom_roles.get(tenant_id, {})
         return tenant_roles.get(role_id)
 
-    def get_role(self, role_id: UUID, tenant_id: Optional[UUID] = None) -> Optional[Role]:
+    def get_role(self, role_id: UUID, tenant_id: UUID | None = None) -> Role | None:
         """Get a role by ID, checking both system and tenant roles."""
         if role_id in self._system_roles:
             return self._system_roles[role_id]
@@ -470,15 +470,15 @@ class RoleManager:
 
         return None
 
-    def get_all_system_roles(self) -> List[Role]:
+    def get_all_system_roles(self) -> list[Role]:
         """Get all system roles."""
         return list(self._system_roles.values())
 
-    def get_tenant_roles(self, tenant_id: UUID) -> List[Role]:
+    def get_tenant_roles(self, tenant_id: UUID) -> list[Role]:
         """Get all custom roles for a tenant."""
         return list(self._custom_roles.get(tenant_id, {}).values())
 
-    def get_available_roles(self, tenant_id: UUID) -> List[Role]:
+    def get_available_roles(self, tenant_id: UUID) -> list[Role]:
         """Get all roles available to a tenant (system + custom)."""
         roles = list(self._system_roles.values())
         roles.extend(self.get_tenant_roles(tenant_id))
@@ -489,8 +489,8 @@ class RoleManager:
         tenant_id: UUID,
         name: str,
         display_name: str,
-        description: Optional[str] = None,
-        permission_keys: Optional[List[str]] = None,
+        description: str | None = None,
+        permission_keys: list[str] | None = None,
         priority: int = 0,
     ) -> Role:
         """
@@ -518,7 +518,7 @@ class RoleManager:
                     )
 
             role_id = UUID(int=int.from_bytes(secrets.token_bytes(16), "big"))
-            permissions: List[RolePermission] = []
+            permissions: list[RolePermission] = []
 
             if permission_keys:
                 for key in permission_keys:
@@ -549,7 +549,7 @@ class RoleManager:
         self,
         role_id: UUID,
         tenant_id: UUID,
-        permission_keys: List[str],
+        permission_keys: list[str],
     ) -> Role:
         """
         Update permissions for a custom role.
@@ -570,14 +570,14 @@ class RoleManager:
             if role.is_system:
                 raise InvalidRoleConfigError("Cannot modify system role permissions")
 
-            permissions: List[RolePermission] = []
+            permissions: list[RolePermission] = []
             for key in permission_keys:
                 perm = self._permission_registry.get_by_key(key)
                 if perm:
                     permissions.append(RolePermission(permission=perm))
 
             role.permissions = permissions
-            role.updated_at = datetime.now(timezone.utc)
+            role.updated_at = datetime.now(UTC)
 
             logger.info(f"Updated permissions for role {role.name}: {len(permissions)} permissions")
             return role
@@ -626,7 +626,7 @@ class AuthorizationService:
     ) -> None:
         self._role_manager = role_manager
         self._permission_registry = permission_registry
-        self._user_cache: Dict[tuple[UUID, UUID], UserPermissions] = {}
+        self._user_cache: dict[tuple[UUID, UUID], UserPermissions] = {}
         self._cache_ttl = 300
         self._lock = asyncio.Lock()
 
@@ -634,7 +634,7 @@ class AuthorizationService:
         self,
         user_id: UUID,
         tenant_id: UUID,
-        role_ids: List[UUID],
+        role_ids: list[UUID],
         force_refresh: bool = False,
     ) -> UserPermissions:
         """
@@ -656,8 +656,8 @@ class AuthorizationService:
             if cached and cached.is_cache_valid:
                 return cached
 
-        roles: List[Role] = []
-        effective_permissions: Set[str] = set()
+        roles: list[Role] = []
+        effective_permissions: set[str] = set()
 
         for role_id in role_ids:
             role = self._role_manager.get_role(role_id, tenant_id)
@@ -682,10 +682,10 @@ class AuthorizationService:
         self,
         user_id: UUID,
         tenant_id: UUID,
-        role_ids: List[UUID],
+        role_ids: list[UUID],
         resource: ResourceType,
         action: ActionType,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
         raise_on_deny: bool = True,
     ) -> bool:
         """
@@ -724,9 +724,9 @@ class AuthorizationService:
         self,
         user_id: UUID,
         tenant_id: UUID,
-        role_ids: List[UUID],
-        permissions: List[tuple[ResourceType, ActionType]],
-        context: Optional[Dict[str, Any]] = None,
+        role_ids: list[UUID],
+        permissions: list[tuple[ResourceType, ActionType]],
+        context: dict[str, Any] | None = None,
     ) -> bool:
         """Check if user has any of the specified permissions."""
         user_perms = await self.get_user_permissions(user_id, tenant_id, role_ids)
@@ -736,9 +736,9 @@ class AuthorizationService:
         self,
         user_id: UUID,
         tenant_id: UUID,
-        role_ids: List[UUID],
-        permissions: List[tuple[ResourceType, ActionType]],
-        context: Optional[Dict[str, Any]] = None,
+        role_ids: list[UUID],
+        permissions: list[tuple[ResourceType, ActionType]],
+        context: dict[str, Any] | None = None,
     ) -> bool:
         """Check if user has all specified permissions."""
         user_perms = await self.get_user_permissions(user_id, tenant_id, role_ids)
@@ -746,8 +746,8 @@ class AuthorizationService:
 
     async def invalidate_user_cache(
         self,
-        user_id: Optional[UUID] = None,
-        tenant_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
+        tenant_id: UUID | None = None,
     ) -> int:
         """
         Invalidate permission cache.
@@ -765,7 +765,7 @@ class AuthorizationService:
                 self._user_cache.clear()
                 return count
 
-            keys_to_remove: List[tuple[UUID, UUID]] = []
+            keys_to_remove: list[tuple[UUID, UUID]] = []
             for key in self._user_cache:
                 cache_user_id, cache_tenant_id = key
                 if user_id is not None and cache_user_id != user_id:
@@ -781,9 +781,9 @@ class AuthorizationService:
 
     def get_available_permissions(
         self,
-        resource: Optional[ResourceType] = None,
-        category: Optional[str] = None,
-    ) -> List[Permission]:
+        resource: ResourceType | None = None,
+        category: str | None = None,
+    ) -> list[Permission]:
         """
         Get available permissions with optional filtering.
 
@@ -811,7 +811,7 @@ T = TypeVar("T")
 def require_permission(
     resource: ResourceType,
     action: ActionType,
-    get_context: Optional[Callable[..., Dict[str, Any]]] = None,
+    get_context: Callable[..., dict[str, Any]] | None = None,
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator to require permission for a function.
@@ -839,7 +839,7 @@ def require_permission(
             if not auth_context:
                 raise RBACError("No authentication context provided")
 
-            permission_context: Optional[Dict[str, Any]] = None
+            permission_context: dict[str, Any] | None = None
             if get_context:
                 permission_context = get_context(*args, **kwargs)
 
@@ -869,7 +869,7 @@ def require_permission(
 
 
 # Operations that require MFA verification
-MFA_REQUIRED_OPERATIONS: List[tuple[ResourceType, ActionType]] = [
+MFA_REQUIRED_OPERATIONS: list[tuple[ResourceType, ActionType]] = [
     # Credential management
     (ResourceType.CREDENTIAL, ActionType.CREATE),
     (ResourceType.CREDENTIAL, ActionType.UPDATE),
@@ -929,7 +929,7 @@ def is_mfa_required(resource: ResourceType, action: ActionType) -> bool:
 def require_mfa(
     resource: ResourceType,
     action: ActionType,
-    get_context: Optional[Callable[..., Dict[str, Any]]] = None,
+    get_context: Callable[..., dict[str, Any]] | None = None,
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator to require both permission and MFA verification.
@@ -961,7 +961,7 @@ def require_mfa(
             if not getattr(auth_context, "mfa_verified", False):
                 raise MFARequiredError(resource, action)
 
-            permission_context: Optional[Dict[str, Any]] = None
+            permission_context: dict[str, Any] | None = None
             if get_context:
                 permission_context = get_context(*args, **kwargs)
 
@@ -997,7 +997,7 @@ def create_permission_registry() -> PermissionRegistry:
 
 
 async def create_authorization_service(
-    permission_registry: Optional[PermissionRegistry] = None,
+    permission_registry: PermissionRegistry | None = None,
 ) -> AuthorizationService:
     """
     Create authorization service with default configuration.
@@ -1013,7 +1013,7 @@ async def create_authorization_service(
     return AuthorizationService(role_manager, registry)
 
 
-def get_default_permissions() -> List[Permission]:
+def get_default_permissions() -> list[Permission]:
     """
     Get the default set of permissions matching the database schema.
 

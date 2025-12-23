@@ -7,7 +7,6 @@ Import these constants to maintain consistency across nodes.
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-
 # =============================================================================
 # Common Properties
 # =============================================================================

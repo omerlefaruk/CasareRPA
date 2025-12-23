@@ -358,13 +358,7 @@ class TestDynamicPortConfigEdgeCases:
         """Test that action names are case-sensitive."""
         schema = DynamicPortSchema()
         schema.register("Read", ActionPortConfig())
-<<<<<<< HEAD
-        schema.register(
-            "read", ActionPortConfig.create(inputs=[PortDef("x", DataType.STRING)])
-        )
-=======
         schema.register("read", ActionPortConfig.create(inputs=[PortDef("x", DataType.STRING)]))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Both should exist as separate entries
         assert schema.has_action("Read")

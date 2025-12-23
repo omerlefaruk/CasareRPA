@@ -9,10 +9,10 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
-    QWidget,
     QHBoxLayout,
-    QPushButton,
     QLabel,
+    QPushButton,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
@@ -40,7 +40,7 @@ class PickerToolbar(QWidget):
     cancel_requested = Signal()
     mode_changed = Signal(PickingMode)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._current_mode = PickingMode.AUTO
         self._setup_ui()

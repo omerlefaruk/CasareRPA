@@ -8,10 +8,10 @@ for thread-safe UI updates. Implements exponential backoff reconnection.
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal, QTimer
 from loguru import logger
+from PySide6.QtCore import QObject, QTimer, Signal
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.orchestrator.client import OrchestratorClient
@@ -25,8 +25,8 @@ class RobotStatusUpdate:
     status: str
     cpu_percent: float = 0.0
     memory_mb: float = 0.0
-    current_job: Optional[str] = None
-    timestamp: Optional[datetime] = None
+    current_job: str | None = None
+    timestamp: datetime | None = None
 
 
 @dataclass
@@ -38,7 +38,7 @@ class JobStatusUpdate:
     progress: int = 0
     current_node: str = ""
     error_message: str = ""
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
 
 
 @dataclass
@@ -49,7 +49,7 @@ class QueueMetricsUpdate:
     active_jobs: int = 0
     completed_today: int = 0
     failed_today: int = 0
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
 
 
 class WebSocketBridge(QObject):
@@ -80,19 +80,19 @@ class WebSocketBridge(QObject):
     robots_batch_updated = Signal(list)  # List[RobotStatusUpdate]
     jobs_batch_updated = Signal(list)  # List[JobStatusUpdate]
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         """Initialize WebSocket bridge."""
         super().__init__(parent)
 
-        self._client: Optional["OrchestratorClient"] = None
+        self._client: OrchestratorClient | None = None
         self._connected = False
         self._reconnect_attempt = 0
         self._max_reconnect_delay = 60  # seconds
         self._base_reconnect_delay = 1  # seconds
 
         # Batch updates for efficiency
-        self._robot_batch: List[RobotStatusUpdate] = []
-        self._job_batch: List[JobStatusUpdate] = []
+        self._robot_batch: list[RobotStatusUpdate] = []
+        self._job_batch: list[JobStatusUpdate] = []
 
         # Batch flush timer (emit batched updates every 500ms)
         self._batch_timer = QTimer(self)
@@ -172,7 +172,7 @@ class WebSocketBridge(QObject):
         self.connection_status_changed.emit(False)
         logger.info("WebSocketBridge disconnected")
 
-    def _on_robot_status(self, data: Dict[str, Any]) -> None:
+    def _on_robot_status(self, data: dict[str, Any]) -> None:
         """Handle robot status update from WebSocket."""
         update = RobotStatusUpdate(
             robot_id=data.get("robot_id", ""),
@@ -189,7 +189,7 @@ class WebSocketBridge(QObject):
         # Also emit individual signal for immediate handling
         self.robot_status_changed.emit(update)
 
-    def _on_job_update(self, data: Dict[str, Any]) -> None:
+    def _on_job_update(self, data: dict[str, Any]) -> None:
         """Handle job status update from WebSocket."""
         update = JobStatusUpdate(
             job_id=data.get("job_id", ""),
@@ -206,7 +206,7 @@ class WebSocketBridge(QObject):
         # Emit individual signal
         self.job_status_changed.emit(update)
 
-    def _on_queue_metrics(self, data: Dict[str, Any]) -> None:
+    def _on_queue_metrics(self, data: dict[str, Any]) -> None:
         """Handle queue metrics update from WebSocket."""
         update = QueueMetricsUpdate(
             depth=data.get("depth", 0),
@@ -218,7 +218,7 @@ class WebSocketBridge(QObject):
 
         self.queue_metrics_changed.emit(update)
 
-    def _on_connected(self, data: Dict[str, Any]) -> None:
+    def _on_connected(self, data: dict[str, Any]) -> None:
         """Handle WebSocket connected event."""
         self._connected = True
         self._reconnect_attempt = 0
@@ -226,7 +226,7 @@ class WebSocketBridge(QObject):
         self._batch_timer.start()
         logger.info("WebSocket connected")
 
-    def _on_disconnected(self, data: Dict[str, Any]) -> None:
+    def _on_disconnected(self, data: dict[str, Any]) -> None:
         """Handle WebSocket disconnected event."""
         self._connected = False
         self.connection_status_changed.emit(False)
@@ -234,7 +234,7 @@ class WebSocketBridge(QObject):
         self._schedule_reconnect()
         logger.warning("WebSocket disconnected, scheduling reconnect")
 
-    def _on_error(self, data: Dict[str, Any]) -> None:
+    def _on_error(self, data: dict[str, Any]) -> None:
         """Handle WebSocket error event."""
         error = data.get("error", "Unknown error")
         self.connection_error.emit(error)
@@ -307,7 +307,7 @@ class WebSocketBridge(QObject):
 
 
 # Singleton instance
-_bridge: Optional[WebSocketBridge] = None
+_bridge: WebSocketBridge | None = None
 
 
 def get_websocket_bridge() -> WebSocketBridge:

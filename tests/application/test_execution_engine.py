@@ -17,13 +17,7 @@ async def test_execution_engine_sequential():
 
     # Configure mocks for a 2-node sequence: Node1 -> Node2
     orchestrator.is_control_flow_node.return_value = False
-<<<<<<< HEAD
-    orchestrator.get_next_nodes.side_effect = (
-        lambda nid, res: ["Node2"] if nid == "Node1" else []
-    )
-=======
     orchestrator.get_next_nodes.side_effect = lambda nid, res: ["Node2"] if nid == "Node1" else []
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     state_manager.is_stopped = False
     state_manager.executed_nodes = set()

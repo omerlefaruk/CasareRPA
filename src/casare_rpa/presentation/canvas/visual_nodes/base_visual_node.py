@@ -5,7 +5,7 @@ This module provides the base VisualNode class to avoid circular imports.
 """
 
 from functools import partial
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.domain.schemas.property_schema import PropertyDef
@@ -15,12 +15,12 @@ from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor
 
 from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
-from casare_rpa.domain.value_objects.types import PortType, DataType
 from casare_rpa.domain.port_type_system import (
     PortTypeRegistry,
     get_port_type_registry,
 )
-from casare_rpa.domain.schemas import PropertyType, NodeSchema
+from casare_rpa.domain.schemas import NodeSchema, PropertyType
+from casare_rpa.domain.value_objects.types import DataType, PortType
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
 # VSCode Dark+ color scheme for nodes
@@ -56,14 +56,14 @@ class VisualNode(NodeGraphQtBaseNode):
             self.view._node = self
 
         # Reference to the underlying CasareRPA node
-        self._casare_node: Optional[CasareBaseNode] = None
+        self._casare_node: CasareBaseNode | None = None
 
         # Last execution output data (for output inspector popup)
         # Updated by ExecutionController after node execution completes
-        self._last_output: Optional[Dict[str, Any]] = None
+        self._last_output: dict[str, Any] | None = None
 
         # Port type registry for typed connections
-        self._port_types: Dict[str, Optional[DataType]] = {}
+        self._port_types: dict[str, DataType | None] = {}
         self._type_registry: PortTypeRegistry = get_port_type_registry()
 
         # Collapse state - collapsed by default for cleaner canvas
@@ -185,7 +185,7 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         pass
 
-    def add_custom_widget(self, widget: Any, tab: Optional[str] = None) -> None:
+    def add_custom_widget(self, widget: Any, tab: str | None = None) -> None:
         """
         Add a custom widget to the node.
 
@@ -346,7 +346,7 @@ class VisualNode(NodeGraphQtBaseNode):
         self.add_output(name)
         self._port_types[name] = None  # None marks exec ports
 
-    def get_port_type(self, port_name: str) -> Optional[DataType]:
+    def get_port_type(self, port_name: str) -> DataType | None:
         """
         Get the DataType for a port.
 
@@ -444,8 +444,8 @@ class VisualNode(NodeGraphQtBaseNode):
         label: str,
         text: str = "",
         placeholder_text: str = "",
-        tab: Optional[str] = None,
-        tooltip: Optional[str] = None,
+        tab: str | None = None,
+        tooltip: str | None = None,
         property_def: Optional["PropertyDef"] = None,
     ) -> Any:
         """
@@ -548,13 +548,14 @@ class VisualNode(NodeGraphQtBaseNode):
             property_name: Name of the property
             property_def: Property definition with type info
         """
+        from loguru import logger
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             ExpressionEditorPopup,
         )
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.editor_factory import (
             EditorFactory,
         )
-        from loguru import logger
 
         logger.debug(f"Opening expression editor for property: {property_name}")
 
@@ -648,7 +649,7 @@ class VisualNode(NodeGraphQtBaseNode):
         logger.debug(f"Expression editor accepted for {property_name}: {len(value)} chars")
         self.set_property(property_name, value)
 
-    def get_casare_node(self) -> Optional[CasareBaseNode]:
+    def get_casare_node(self) -> CasareBaseNode | None:
         """
         Get the underlying CasareRPA node instance.
 
@@ -725,8 +726,9 @@ class VisualNode(NodeGraphQtBaseNode):
 
         try:
             # Import here to avoid circular dependency
-            from ..graph.node_registry import get_node_factory, get_casare_node_mapping
             from loguru import logger
+
+            from ..graph.node_registry import get_casare_node_mapping, get_node_factory
 
             # Check if this visual node type has a casare_node mapping
             mapping = get_casare_node_mapping()
@@ -823,7 +825,7 @@ class VisualNode(NodeGraphQtBaseNode):
             return  # No casare node yet
 
         # Get schema from casare node class
-        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
+        schema: NodeSchema | None = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return  # No schema, use manual widget definitions
 
@@ -992,7 +994,7 @@ class VisualNode(NodeGraphQtBaseNode):
 
             # Other types (DATE, TIME, COLOR, etc.) can be added later with specialized widgets
 
-    def ensure_casare_node(self) -> Optional[CasareBaseNode]:
+    def ensure_casare_node(self) -> CasareBaseNode | None:
         """
         Ensure this visual node has a CasareRPA node, creating one if necessary.
         Use this before any operation that requires the CasareRPA node.
@@ -1058,7 +1060,7 @@ class VisualNode(NodeGraphQtBaseNode):
             if hasattr(self.view, "set_error"):
                 self.view.set_error(False)
 
-    def update_execution_time(self, time_seconds: Optional[float]) -> None:
+    def update_execution_time(self, time_seconds: float | None) -> None:
         """
         Update the displayed execution time.
 
@@ -1124,7 +1126,7 @@ class VisualNode(NodeGraphQtBaseNode):
             self.view.prepareGeometryChange()
 
         # Get schema from casare node class
-        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
+        schema: NodeSchema | None = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return
 
@@ -1170,7 +1172,7 @@ class VisualNode(NodeGraphQtBaseNode):
         if not self._casare_node:
             return []
 
-        schema: Optional[NodeSchema] = getattr(self._casare_node.__class__, "__node_schema__", None)
+        schema: NodeSchema | None = getattr(self._casare_node.__class__, "__node_schema__", None)
         if not schema:
             return []
 
@@ -1212,7 +1214,7 @@ class VisualNode(NodeGraphQtBaseNode):
     # OUTPUT INSPECTOR METHODS
     # =========================================================================
 
-    def get_last_output(self) -> Optional[Dict[str, Any]]:
+    def get_last_output(self) -> dict[str, Any] | None:
         """
         Get the last execution output data.
 
@@ -1224,7 +1226,7 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         return self._last_output
 
-    def set_last_output(self, output: Optional[Dict[str, Any]]) -> None:
+    def set_last_output(self, output: dict[str, Any] | None) -> None:
         """
         Set the last execution output data.
 

@@ -16,53 +16,13 @@ Module structure (after refactoring):
 - advanced_scheduler.py: Main scheduler orchestrator
 """
 
+# =========================
+# Global Scheduler Singleton
+# =========================
+import threading
 from typing import Optional
 
 from loguru import logger
-
-# Import from extracted modules for direct access
-from casare_rpa.infrastructure.orchestrator.scheduling.scheduling_strategies import (
-    CRON_ALIASES,
-    CronExpressionParser,
-    SchedulingStrategy,
-    CronSchedulingStrategy,
-    IntervalSchedulingStrategy,
-    OneTimeSchedulingStrategy,
-    EventDrivenStrategy,
-    DependencySchedulingStrategy,
-)
-from casare_rpa.infrastructure.orchestrator.scheduling.schedule_optimizer import (
-    RateLimitConfig,
-    SlidingWindowRateLimiter,
-    ExecutionOptimizer,
-    PriorityQueue,
-)
-from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
-    DependencyConfig,
-    DependencyTracker,
-    CompletionRecord,
-    ConflictResolver,
-    DependencyGraphValidator,
-)
-from casare_rpa.infrastructure.orchestrator.scheduling.sla_monitor import (
-    SLAConfig,
-    SLAStatus,
-    SLAMonitor,
-    SLAAggregator,
-    ExecutionMetrics,
-    SLAReport,
-)
-
-# Import from schedule models
-from casare_rpa.infrastructure.orchestrator.scheduling.schedule_models import (
-    AdvancedSchedule,
-    CatchUpConfig,
-    ConditionalConfig,
-    EventTriggerConfig,
-    EventType,
-    ScheduleStatus,
-    ScheduleType,
-)
 
 # Import from main scheduler (orchestrator)
 from casare_rpa.infrastructure.orchestrator.scheduling.advanced_scheduler import (
@@ -89,6 +49,50 @@ from casare_rpa.infrastructure.orchestrator.scheduling.job_assignment import (
     StateAffinityTracker,
     assign_job_to_robot,
 )
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
+    CompletionRecord,
+    ConflictResolver,
+    DependencyConfig,
+    DependencyGraphValidator,
+    DependencyTracker,
+)
+
+# Import from schedule models
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_models import (
+    AdvancedSchedule,
+    CatchUpConfig,
+    ConditionalConfig,
+    EventTriggerConfig,
+    EventType,
+    ScheduleStatus,
+    ScheduleType,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_optimizer import (
+    ExecutionOptimizer,
+    PriorityQueue,
+    RateLimitConfig,
+    SlidingWindowRateLimiter,
+)
+
+# Import from extracted modules for direct access
+from casare_rpa.infrastructure.orchestrator.scheduling.scheduling_strategies import (
+    CRON_ALIASES,
+    CronExpressionParser,
+    CronSchedulingStrategy,
+    DependencySchedulingStrategy,
+    EventDrivenStrategy,
+    IntervalSchedulingStrategy,
+    OneTimeSchedulingStrategy,
+    SchedulingStrategy,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.sla_monitor import (
+    ExecutionMetrics,
+    SLAAggregator,
+    SLAConfig,
+    SLAMonitor,
+    SLAReport,
+    SLAStatus,
+)
 from casare_rpa.infrastructure.orchestrator.scheduling.state_affinity import (
     RobotState,
     SessionAffinityError,
@@ -98,16 +102,9 @@ from casare_rpa.infrastructure.orchestrator.scheduling.state_affinity import (
     WorkflowSession,
 )
 
-
-# =========================
-# Global Scheduler Singleton
-# =========================
-
-import threading
-
 # Thread-safe state holder for scheduler
 _scheduler_lock = threading.Lock()
-_scheduler_instance: Optional[AdvancedScheduler] = None
+_scheduler_instance: AdvancedScheduler | None = None
 _scheduler_initialized: bool = False
 
 
@@ -174,7 +171,7 @@ async def shutdown_global_scheduler() -> None:
         logger.info("Global scheduler stopped")
 
 
-def get_global_scheduler() -> Optional[AdvancedScheduler]:
+def get_global_scheduler() -> AdvancedScheduler | None:
     """
     Get the global scheduler instance.
 
@@ -207,7 +204,7 @@ def reset_scheduler_state() -> None:
 def _get_scheduler_state_setter():
     """Get setter function for scheduler state (avoids global keyword)."""
 
-    def set_state(instance: Optional[AdvancedScheduler], initialized: bool) -> None:
+    def set_state(instance: AdvancedScheduler | None, initialized: bool) -> None:
         # Rebind module-level variables
         import casare_rpa.infrastructure.orchestrator.scheduling as mod
 

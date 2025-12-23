@@ -1,16 +1,16 @@
 """Visual nodes for WhatsApp messaging."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.nodes.messaging.whatsapp import (
+    WhatsAppSendDocumentNode,
+    WhatsAppSendImageNode,
+    WhatsAppSendInteractiveNode,
+    WhatsAppSendLocationNode,
     WhatsAppSendMessageNode,
     WhatsAppSendTemplateNode,
-    WhatsAppSendImageNode,
-    WhatsAppSendDocumentNode,
     WhatsAppSendVideoNode,
-    WhatsAppSendLocationNode,
-    WhatsAppSendInteractiveNode,
 )
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
 class VisualWhatsAppSendMessageNode(VisualNode):

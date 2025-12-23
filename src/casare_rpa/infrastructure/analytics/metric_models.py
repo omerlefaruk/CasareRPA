@@ -46,7 +46,7 @@ class ExecutionDistribution:
     p99_ms: float = 0.0
 
     @classmethod
-    def from_durations(cls, durations: List[float]) -> "ExecutionDistribution":
+    def from_durations(cls, durations: list[float]) -> ExecutionDistribution:
         """Create from a list of durations using StatisticalAggregationStrategy."""
         if not durations:
             return cls()
@@ -68,7 +68,7 @@ class ExecutionDistribution:
             p99_ms=result.p99,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_executions": self.total_executions,
@@ -97,10 +97,10 @@ class WorkflowMetrics:
     cancelled_executions: int = 0
     timeout_executions: int = 0
     duration_distribution: ExecutionDistribution = field(default_factory=ExecutionDistribution)
-    error_breakdown: Dict[str, int] = field(default_factory=dict)
-    last_execution: Optional[datetime] = None
-    first_execution: Optional[datetime] = None
-    hourly_trend: List[TimeSeriesDataPoint] = field(default_factory=list)
+    error_breakdown: dict[str, int] = field(default_factory=dict)
+    last_execution: datetime | None = None
+    first_execution: datetime | None = None
+    hourly_trend: list[TimeSeriesDataPoint] = field(default_factory=list)
 
     @property
     def success_rate(self) -> float:
@@ -120,9 +120,9 @@ class WorkflowMetrics:
     def from_cache(
         cls,
         data: WorkflowMetricsData,
-        durations: List[float],
-        hourly: List[TimeSeriesDataPoint],
-    ) -> "WorkflowMetrics":
+        durations: list[float],
+        hourly: list[TimeSeriesDataPoint],
+    ) -> WorkflowMetrics:
         """Create from cached data."""
         return cls(
             workflow_id=data.workflow_id,
@@ -139,7 +139,7 @@ class WorkflowMetrics:
             hourly_trend=hourly,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -174,7 +174,7 @@ class RobotPerformanceMetrics:
     avg_job_duration_ms: float = 0.0
     jobs_per_hour: float = 0.0
     current_status: str = "offline"
-    last_active: Optional[datetime] = None
+    last_active: datetime | None = None
 
     @property
     def utilization_percent(self) -> float:
@@ -201,7 +201,7 @@ class RobotPerformanceMetrics:
         return (online / total) * 100
 
     @classmethod
-    def from_cache(cls, data: RobotMetricsData) -> "RobotPerformanceMetrics":
+    def from_cache(cls, data: RobotMetricsData) -> RobotPerformanceMetrics:
         """Create from cached data."""
         return cls(
             robot_id=data.robot_id,
@@ -218,7 +218,7 @@ class RobotPerformanceMetrics:
             last_active=data.last_active,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "robot_id": self.robot_id,
@@ -254,19 +254,19 @@ class AnalyticsReport:
     period_start: datetime
     period_end: datetime
     period: AggregationPeriod
-    summary: Dict[str, Any] = field(default_factory=dict)
-    execution_metrics: Dict[str, Any] = field(default_factory=dict)
-    workflow_metrics: List[WorkflowMetrics] = field(default_factory=list)
-    robot_metrics: List[RobotPerformanceMetrics] = field(default_factory=list)
-    queue_metrics: Dict[str, Any] = field(default_factory=dict)
-    error_analysis: Dict[str, Any] = field(default_factory=dict)
-    healing_metrics: Dict[str, Any] = field(default_factory=dict)
-    cost_analysis: Optional[CostAnalysis] = None
-    sla_compliance: List[SLACompliance] = field(default_factory=list)
-    bottlenecks: List[BottleneckAnalysis] = field(default_factory=list)
-    efficiency_scores: List[EfficiencyScore] = field(default_factory=list)
+    summary: dict[str, Any] = field(default_factory=dict)
+    execution_metrics: dict[str, Any] = field(default_factory=dict)
+    workflow_metrics: list[WorkflowMetrics] = field(default_factory=list)
+    robot_metrics: list[RobotPerformanceMetrics] = field(default_factory=list)
+    queue_metrics: dict[str, Any] = field(default_factory=dict)
+    error_analysis: dict[str, Any] = field(default_factory=dict)
+    healing_metrics: dict[str, Any] = field(default_factory=dict)
+    cost_analysis: CostAnalysis | None = None
+    sla_compliance: list[SLACompliance] = field(default_factory=list)
+    bottlenecks: list[BottleneckAnalysis] = field(default_factory=list)
+    efficiency_scores: list[EfficiencyScore] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "generated_at": self.generated_at.isoformat(),

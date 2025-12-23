@@ -25,23 +25,24 @@ DictSuperNode (12 operations):
 """
 
 import json
+from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Awaitable
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
-    DataType,
-    ExecutionResult,
-)
 from casare_rpa.domain.value_objects.dynamic_port_config import (
-    PortDef,
     ActionPortConfig,
     DynamicPortSchema,
+    PortDef,
+)
+from casare_rpa.domain.value_objects.types import (
+    DataType,
+    ExecutionResult,
+    NodeStatus,
 )
 
 if TYPE_CHECKING:
@@ -431,7 +432,7 @@ class DictSuperNode(BaseNode):
         action = self.get_parameter("action", DictAction.GET.value)
 
         # Map actions to handlers
-        handlers: dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
+        handlers: dict[str, Callable[[IExecutionContext], Awaitable[ExecutionResult]]] = {
             DictAction.CREATE.value: self._execute_create,
             DictAction.GET.value: self._execute_get,
             DictAction.GET_PROPERTY.value: self._execute_get_property,

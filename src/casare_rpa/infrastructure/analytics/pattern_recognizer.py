@@ -14,8 +14,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from loguru import logger
 
 from casare_rpa.infrastructure.analytics.process_mining import (
-    ExecutionTrace,
     ActivityStatus,
+    ExecutionTrace,
 )
 
 
@@ -24,18 +24,18 @@ class RecognizedPattern:
     """A recognized pattern from execution traces."""
 
     pattern_id: str
-    activity_sequence: List[str]
+    activity_sequence: list[str]
     frequency: int
     avg_duration: float
     cluster_id: int
-    representative_traces: List[str]
+    representative_traces: list[str]
     automation_potential: float  # 0-1 score
-    node_types: List[str] = field(default_factory=list)
+    node_types: list[str] = field(default_factory=list)
     success_rate: float = 1.0
     variance_score: float = 0.0  # Low variance = more automatable
-    time_pattern: Optional[str] = None  # e.g., "morning", "weekday"
+    time_pattern: str | None = None  # e.g., "morning", "weekday"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "pattern_id": self.pattern_id,
@@ -57,9 +57,9 @@ class PatternFeatures:
     """Feature vector for a trace used in clustering."""
 
     trace_id: str
-    ngrams: Dict[str, int]  # n-gram -> count
-    duration_features: List[float]
-    time_features: List[float]  # hour, day_of_week
+    ngrams: dict[str, int]  # n-gram -> count
+    duration_features: list[float]
+    time_features: list[float]  # hour, day_of_week
     activity_count: int
     unique_activities: int
     success_rate: float
@@ -101,11 +101,11 @@ class PatternRecognizer:
 
     def extract_patterns(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         min_samples: int = 3,
         eps: float = 0.5,
-        ngram_sizes: Tuple[int, ...] = (2, 3),
-    ) -> List[RecognizedPattern]:
+        ngram_sizes: tuple[int, ...] = (2, 3),
+    ) -> list[RecognizedPattern]:
         """
         Extract patterns from execution traces using DBSCAN clustering.
 
@@ -146,8 +146,8 @@ class PatternRecognizer:
         cluster_labels = dbscan.fit_predict(scaled_features)
 
         # Group traces by cluster
-        clusters: Dict[int, List[Tuple[ExecutionTrace, PatternFeatures]]] = defaultdict(list)
-        for trace, features, label in zip(traces, features_list, cluster_labels):
+        clusters: dict[int, list[tuple[ExecutionTrace, PatternFeatures]]] = defaultdict(list)
+        for trace, features, label in zip(traces, features_list, cluster_labels, strict=False):
             if label != -1:  # Ignore noise points
                 clusters[label].append((trace, features))
 
@@ -165,14 +165,14 @@ class PatternRecognizer:
         return patterns
 
     def _extract_features(
-        self, trace: ExecutionTrace, ngram_sizes: Tuple[int, ...]
+        self, trace: ExecutionTrace, ngram_sizes: tuple[int, ...]
     ) -> PatternFeatures:
         """Extract feature vector from a single trace."""
         activities = trace.activities
         sequence = [a.node_id for a in activities]
 
         # Extract n-grams
-        ngrams: Dict[str, int] = {}
+        ngrams: dict[str, int] = {}
         for n in ngram_sizes:
             for i in range(len(sequence) - n + 1):
                 ngram = "->".join(sequence[i : i + n])
@@ -212,8 +212,8 @@ class PatternRecognizer:
         )
 
     def _build_feature_matrix(
-        self, features_list: List[PatternFeatures]
-    ) -> Tuple[Any, Dict[str, int]]:
+        self, features_list: list[PatternFeatures]
+    ) -> tuple[Any, dict[str, int]]:
         """Build feature matrix from pattern features."""
         np = self._numpy
 
@@ -252,9 +252,9 @@ class PatternRecognizer:
     def _build_pattern_from_cluster(
         self,
         cluster_id: int,
-        cluster_traces: List[Tuple[ExecutionTrace, PatternFeatures]],
-        ngram_vocab: Dict[str, int],
-    ) -> Optional[RecognizedPattern]:
+        cluster_traces: list[tuple[ExecutionTrace, PatternFeatures]],
+        ngram_vocab: dict[str, int],
+    ) -> RecognizedPattern | None:
         """Build a recognized pattern from a cluster of traces."""
         if not cluster_traces:
             return None
@@ -360,7 +360,7 @@ class PatternRecognizer:
 
         return min(1.0, max(0.0, potential))
 
-    def _detect_time_pattern(self, traces: List[ExecutionTrace]) -> Optional[str]:
+    def _detect_time_pattern(self, traces: list[ExecutionTrace]) -> str | None:
         """Detect time-based patterns in trace execution."""
         if not traces:
             return None
@@ -392,14 +392,14 @@ class PatternRecognizer:
 
         return None
 
-    def _fallback_pattern_extraction(self, traces: List[ExecutionTrace]) -> List[RecognizedPattern]:
+    def _fallback_pattern_extraction(self, traces: list[ExecutionTrace]) -> list[RecognizedPattern]:
         """
         Fallback pattern extraction without sklearn.
 
         Uses simple frequency-based grouping.
         """
         # Group by activity sequence
-        sequence_groups: Dict[tuple, List[ExecutionTrace]] = defaultdict(list)
+        sequence_groups: dict[tuple, list[ExecutionTrace]] = defaultdict(list)
         for trace in traces:
             seq = tuple(a.node_id for a in trace.activities)
             sequence_groups[seq].append(trace)
@@ -456,9 +456,9 @@ class PatternRecognizer:
     def find_similar_patterns(
         self,
         pattern: RecognizedPattern,
-        all_patterns: List[RecognizedPattern],
+        all_patterns: list[RecognizedPattern],
         similarity_threshold: float = 0.7,
-    ) -> List[RecognizedPattern]:
+    ) -> list[RecognizedPattern]:
         """
         Find patterns similar to a given pattern.
 

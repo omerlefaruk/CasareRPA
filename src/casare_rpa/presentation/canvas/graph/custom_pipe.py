@@ -16,26 +16,30 @@ All colors are sourced from the unified theme system (theme.py).
 """
 
 from typing import Optional
-from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
+
+from loguru import logger
+from NodeGraphQt.qgraphics.pipe import (
+    LayoutDirectionEnum,
+    LivePipeItem,
+    PipeEnum,
+    PipeItem,
+    PortTypeEnum,
+)
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import (
-    QPen,
+    QBrush,
+    QColor,
     QFont,
     QFontMetrics,
-    QColor,
     QPainter,
     QPainterPath,
-    QBrush,
+    QPen,
     QRadialGradient,
     QTransform,
 )
-from loguru import logger
-from NodeGraphQt.qgraphics.pipe import (
-    PipeItem,
-    LivePipeItem,
-    LayoutDirectionEnum,
-    PipeEnum,
-    PortTypeEnum,
-)
+
+# Import DataType for type-based coloring
+from casare_rpa.domain.value_objects.types import DataType
 
 # Import high performance mode flag from custom_node_item
 from casare_rpa.presentation.canvas.graph.custom_node_item import (
@@ -44,16 +48,12 @@ from casare_rpa.presentation.canvas.graph.custom_node_item import (
 
 # Import LOD manager for centralized zoom-based rendering decisions
 from casare_rpa.presentation.canvas.graph.lod_manager import (
-    get_lod_manager,
     LODLevel,
+    get_lod_manager,
 )
-
-# Import DataType for type-based coloring
-from casare_rpa.domain.value_objects.types import DataType
 
 # Import unified theme system
 from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
-
 
 # ============================================================================
 # SMART WIRE ROUTING
@@ -239,7 +239,7 @@ WIRE_THICKNESS = {
 }
 
 
-def get_type_wire_color(data_type: Optional[DataType]) -> QColor:
+def get_type_wire_color(data_type: DataType | None) -> QColor:
     """
     Get wire color for a data type from unified theme.
 
@@ -257,9 +257,7 @@ def get_type_wire_color(data_type: Optional[DataType]) -> QColor:
     return TYPE_WIRE_COLORS.get(data_type, _DEFAULT_WIRE_COLOR)
 
 
-def check_type_compatibility(
-    source_type: Optional[DataType], target_type: Optional[DataType]
-) -> bool:
+def check_type_compatibility(source_type: DataType | None, target_type: DataType | None) -> bool:
     """
     Check if two port types are compatible for connection.
 
@@ -316,7 +314,7 @@ class CasarePipe(PipeItem):
         self._insert_highlight = False  # Highlight when node dragged over
 
         # Type-colored wire caching (computed once per connection)
-        self._cached_wire_color: Optional[QColor] = None
+        self._cached_wire_color: QColor | None = None
         self._cached_wire_thickness: float = WIRE_THICKNESS["data_idle"]
         self._is_exec_connection: bool = False
 
@@ -333,7 +331,7 @@ class CasarePipe(PipeItem):
         # Brief glow effect after completion
         self._show_completion_glow: bool = False
         # Timer for animation updates (created lazily to avoid overhead)
-        self._animation_timer: Optional[QTimer] = None
+        self._animation_timer: QTimer | None = None
         # Per-instance step (kept for future extensions)
         self._animation_step: float = _ANIMATION_STEP
 
@@ -341,8 +339,8 @@ class CasarePipe(PipeItem):
         # SMART WIRE ROUTING STATE
         # ============================================================
         # Cached routed control points (invalidated on node move)
-        self._routed_ctrl1: Optional[QPointF] = None
-        self._routed_ctrl2: Optional[QPointF] = None
+        self._routed_ctrl1: QPointF | None = None
+        self._routed_ctrl2: QPointF | None = None
         # Hash of last positions to detect when to recalculate
         self._last_position_hash: int = 0
 
@@ -350,7 +348,7 @@ class CasarePipe(PipeItem):
         # PHANTOM VALUES STATE
         # ============================================================
         # Last known value that passed through this wire (persists after execution)
-        self._phantom_value: Optional[str] = None
+        self._phantom_value: str | None = None
         # Whether phantom value has been set (vs. never executed)
         self._has_phantom: bool = False
 
@@ -584,7 +582,7 @@ class CasarePipe(PipeItem):
         """Check if this wire has a phantom value."""
         return self._has_phantom
 
-    def _get_port_data_type(self) -> Optional[DataType]:
+    def _get_port_data_type(self) -> DataType | None:
         """
         Get the DataType from the output port.
 
@@ -936,7 +934,7 @@ class CasarePipe(PipeItem):
             source_type = self._get_port_data_type()
 
             # Get target port type
-            target_type: Optional[DataType] = None
+            target_type: DataType | None = None
             if hasattr(target_node, "_port_types"):
                 target_type = target_node._port_types.get(target_port.name())
 
@@ -1345,7 +1343,7 @@ class CasareLivePipe(LivePipeItem):
             return
 
         # Set text first so boundingRect is correct for positioning
-        self._idx_text.setPlainText("{}".format(start_port.name))
+        self._idx_text.setPlainText(f"{start_port.name}")
         text_rect = self._idx_text.boundingRect()
 
         transform = QTransform()

@@ -9,8 +9,8 @@ from casare_rpa.cloud.dbos_cloud import (
     DBOSCloudClient,
     DBOSConfig,
     DeploymentStatus,
-    ScalingConfig,
     EnvironmentVariable,
+    ScalingConfig,
 )
 
 __all__ = [

@@ -11,32 +11,32 @@ class TriggerRepository(ABC):
     """Repository interface for Trigger aggregate."""
 
     @abstractmethod
-    async def get_by_id(self, trigger_id: str) -> Optional[TriggerConfig]:
+    async def get_by_id(self, trigger_id: str) -> TriggerConfig | None:
         """Get trigger by ID."""
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[TriggerConfig]:
+    async def get_all(self) -> list[TriggerConfig]:
         """Get all triggers."""
         pass
 
     @abstractmethod
-    async def get_enabled(self) -> List[TriggerConfig]:
+    async def get_enabled(self) -> list[TriggerConfig]:
         """Get all enabled triggers."""
         pass
 
     @abstractmethod
-    async def get_by_scenario(self, scenario_id: str) -> List[TriggerConfig]:
+    async def get_by_scenario(self, scenario_id: str) -> list[TriggerConfig]:
         """Get all triggers for a scenario."""
         pass
 
     @abstractmethod
-    async def get_by_workflow(self, workflow_id: str) -> List[TriggerConfig]:
+    async def get_by_workflow(self, workflow_id: str) -> list[TriggerConfig]:
         """Get all triggers for a workflow."""
         pass
 
     @abstractmethod
-    async def get_by_type(self, trigger_type: TriggerType) -> List[TriggerConfig]:
+    async def get_by_type(self, trigger_type: TriggerType) -> list[TriggerConfig]:
         """Get all triggers of a specific type."""
         pass
 

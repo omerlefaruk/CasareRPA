@@ -6,7 +6,7 @@ Uses APScheduler for scheduling.
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -54,7 +54,7 @@ class ScheduledTrigger(BaseTrigger):
         super().__init__(config, event_callback)
         self._scheduler = None
         self._job = None
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
     def _to_int(self, value: Any, default: int) -> int:
         """Convert value to int, handling string inputs from UI widgets."""
@@ -185,7 +185,7 @@ class ScheduledTrigger(BaseTrigger):
             return
 
         payload = {
-            "scheduled_time": datetime.now(timezone.utc).isoformat(),
+            "scheduled_time": datetime.now(UTC).isoformat(),
             "trigger_name": self.config.name,
             "frequency": self.config.config.get("frequency", "daily"),
             "run_number": self.config.trigger_count + 1,
@@ -209,7 +209,7 @@ class ScheduledTrigger(BaseTrigger):
             logger.info(f"Trigger {self.config.name} completed {max_runs} runs, stopping")
             await self.stop()
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate scheduled trigger configuration."""
         config = self.config.config
 
@@ -266,14 +266,14 @@ class ScheduledTrigger(BaseTrigger):
 
         return True, None
 
-    def get_next_run(self) -> Optional[datetime]:
+    def get_next_run(self) -> datetime | None:
         """Get the next scheduled run time."""
         if self._job and self._job.next_run_time:
             return self._job.next_run_time
         return None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for scheduled trigger configuration."""
         return {
             "type": "object",

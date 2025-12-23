@@ -7,6 +7,7 @@ with automatic CPU fallback when GPU is not available.
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 from loguru import logger
 
@@ -16,13 +17,13 @@ class GPUCapabilities:
     """GPU capability detection results."""
 
     cuda_available: bool = False
-    cuda_version: Optional[str] = None
-    cuda_device_name: Optional[str] = None
+    cuda_version: str | None = None
+    cuda_device_name: str | None = None
     cuda_memory_mb: int = 0
 
     opencl_available: bool = False
     opengl_available: bool = False
-    opengl_version: Optional[str] = None
+    opengl_version: str | None = None
 
     onnx_gpu_available: bool = False
     opencv_cuda_available: bool = False
@@ -41,7 +42,7 @@ class GPUCapabilities:
 
 
 # Cached capabilities
-_cached_capabilities: Optional[GPUCapabilities] = None
+_cached_capabilities: GPUCapabilities | None = None
 
 
 def get_gpu_capabilities(force_refresh: bool = False) -> GPUCapabilities:
@@ -145,7 +146,7 @@ def is_gpu_available() -> bool:
     return caps.cuda_available or caps.opencv_cuda_available or caps.onnx_gpu_available
 
 
-def get_gpu_info() -> Dict[str, Any]:
+def get_gpu_info() -> dict[str, Any]:
     """Get GPU information as a dictionary for UI display."""
     caps = get_gpu_capabilities()
     return {
@@ -159,7 +160,7 @@ def get_gpu_info() -> Dict[str, Any]:
     }
 
 
-def configure_onnx_gpu() -> List[str]:
+def configure_onnx_gpu() -> list[str]:
     """
     Configure ONNX Runtime to use GPU if available.
 
@@ -191,7 +192,7 @@ def gpu_accelerated_template_match(
     image: np.ndarray,
     template: np.ndarray,
     method: int = None,
-) -> Tuple[np.ndarray, Optional[str]]:
+) -> tuple[np.ndarray, str | None]:
     """
     GPU-accelerated template matching with CPU fallback.
 
@@ -237,7 +238,7 @@ def gpu_accelerated_template_match(
 def gpu_accelerated_image_compare(
     img1: np.ndarray,
     img2: np.ndarray,
-) -> Tuple[float, Optional[str]]:
+) -> tuple[float, str | None]:
     """
     GPU-accelerated image similarity comparison with CPU fallback.
 

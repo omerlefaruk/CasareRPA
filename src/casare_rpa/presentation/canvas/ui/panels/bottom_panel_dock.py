@@ -12,29 +12,30 @@ Provides Power Automate/UiPath-style bottom panel functionality with improved UX
 Note: Triggers are now visual nodes on the canvas (not a separate tab).
 """
 
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QTabWidget,
     QSizePolicy,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QSize
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
-    from casare_rpa.domain.validation import ValidationResult
     from casare_rpa.domain.events import DomainEvent
-    from .variables_tab import VariablesTab
-    from .output_tab import OutputTab
-    from .log_tab import LogTab
-    from .validation_tab import ValidationTab
+    from casare_rpa.domain.validation import ValidationResult
+
     from .history_tab import HistoryTab
+    from .log_tab import LogTab
+    from .output_tab import OutputTab
     from .terminal_tab import TerminalTab
+    from .validation_tab import ValidationTab
+    from .variables_tab import VariablesTab
 
 
 class BottomPanelDock(QDockWidget):
@@ -75,7 +76,7 @@ class BottomPanelDock(QDockWidget):
     TAB_HISTORY = 4
     TAB_TERMINAL = 5
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the bottom panel dock.
 
@@ -149,12 +150,12 @@ class BottomPanelDock(QDockWidget):
 
     def _create_tabs(self) -> None:
         """Create all tab widgets."""
-        from .variables_tab import VariablesTab
-        from .output_tab import OutputTab
-        from .log_tab import LogTab
-        from .validation_tab import ValidationTab
         from .history_tab import HistoryTab
+        from .log_tab import LogTab
+        from .output_tab import OutputTab
         from .terminal_tab import TerminalTab
+        from .validation_tab import ValidationTab
+        from .variables_tab import VariablesTab
 
         # Variables tab
         self._variables_tab = VariablesTab()
@@ -312,7 +313,7 @@ class BottomPanelDock(QDockWidget):
             }}
         """)
 
-    def _on_variables_changed(self, variables: Dict[str, Any]) -> None:
+    def _on_variables_changed(self, variables: dict[str, Any]) -> None:
         """Handle variables changed from Variables tab."""
         self.variables_changed.emit(variables)
 
@@ -380,7 +381,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Variables API ====================
 
-    def set_variables(self, variables: Dict[str, Any]) -> None:
+    def set_variables(self, variables: dict[str, Any]) -> None:
         """
         Set workflow variables (design mode).
 
@@ -389,7 +390,7 @@ class BottomPanelDock(QDockWidget):
         """
         self._variables_tab.set_variables(variables)
 
-    def get_variables(self) -> Dict[str, Any]:
+    def get_variables(self) -> dict[str, Any]:
         """
         Get current workflow variables.
 
@@ -398,7 +399,7 @@ class BottomPanelDock(QDockWidget):
         """
         return self._variables_tab.get_variables()
 
-    def update_runtime_values(self, values: Dict[str, Any]) -> None:
+    def update_runtime_values(self, values: dict[str, Any]) -> None:
         """
         Update variable values during runtime.
 
@@ -419,7 +420,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Output API ====================
 
-    def add_output(self, name: str, value: Any, timestamp: Optional[str] = None) -> None:
+    def add_output(self, name: str, value: Any, timestamp: str | None = None) -> None:
         """
         Add an output to the Output tab.
 
@@ -458,7 +459,7 @@ class BottomPanelDock(QDockWidget):
         self._log_tab.log_event(event)
         self._update_tab_badges()
 
-    def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
+    def log_message(self, message: str, level: str = "info", node_id: str | None = None) -> None:
         """
         Log a custom message.
 
@@ -502,7 +503,7 @@ class BottomPanelDock(QDockWidget):
         """Check if there are validation errors."""
         return self._validation_tab.has_errors()
 
-    def get_validation_errors_blocking(self) -> List[Dict]:
+    def get_validation_errors_blocking(self) -> list[dict]:
         """Get current validation errors synchronously.
 
         Returns:
@@ -514,7 +515,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== History API ====================
 
-    def update_history(self, history: List[Dict[str, Any]]) -> None:
+    def update_history(self, history: list[dict[str, Any]]) -> None:
         """
         Update the execution history display.
 
@@ -524,7 +525,7 @@ class BottomPanelDock(QDockWidget):
         self._history_tab.update_history(history)
         self._update_tab_badges()
 
-    def append_history_entry(self, entry: Dict[str, Any]) -> None:
+    def append_history_entry(self, entry: dict[str, Any]) -> None:
         """
         Append a single entry to the execution history.
 

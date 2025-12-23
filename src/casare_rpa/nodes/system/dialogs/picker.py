@@ -6,13 +6,13 @@ Nodes for selecting files, folders, colors, dates, and items from lists.
 
 import asyncio
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -89,8 +89,8 @@ class FilePickerDialogNode(BaseNode):
             start_dir = self.get_parameter("start_directory", "")
 
             try:
-                from PySide6.QtWidgets import QFileDialog, QApplication
                 from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QApplication, QFileDialog
 
                 app = QApplication.instance()
                 if app is None:
@@ -202,8 +202,8 @@ class FolderPickerDialogNode(BaseNode):
             start_dir = self.get_parameter("start_directory", "")
 
             try:
-                from PySide6.QtWidgets import QFileDialog, QApplication
                 from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QApplication, QFileDialog
 
                 app = QApplication.instance()
                 if app is None:
@@ -319,9 +319,9 @@ class ColorPickerDialogNode(BaseNode):
             show_alpha = self.get_parameter("show_alpha", False)
 
             try:
-                from PySide6.QtWidgets import QColorDialog, QApplication
-                from PySide6.QtGui import QColor
                 from PySide6.QtCore import Qt
+                from PySide6.QtGui import QColor
+                from PySide6.QtWidgets import QApplication, QColorDialog
 
                 app = QApplication.instance()
                 if app is None:
@@ -467,16 +467,16 @@ class DateTimePickerDialogNode(BaseNode):
             max_date = self.get_parameter("max_date", "")
 
             try:
+                from PySide6.QtCore import QDate, QDateTime, Qt, QTime
                 from PySide6.QtWidgets import (
-                    QDialog,
-                    QVBoxLayout,
-                    QDialogButtonBox,
-                    QDateTimeEdit,
-                    QDateEdit,
-                    QTimeEdit,
                     QApplication,
+                    QDateEdit,
+                    QDateTimeEdit,
+                    QDialog,
+                    QDialogButtonBox,
+                    QTimeEdit,
+                    QVBoxLayout,
                 )
-                from PySide6.QtCore import Qt, QDateTime, QDate, QTime
 
                 app = QApplication.instance()
                 if app is None:
@@ -678,16 +678,16 @@ class ListPickerDialogNode(BaseNode):
                 }
 
             try:
+                from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import (
+                    QAbstractItemView,
+                    QApplication,
                     QDialog,
-                    QVBoxLayout,
+                    QDialogButtonBox,
                     QListWidget,
                     QListWidgetItem,
-                    QDialogButtonBox,
-                    QApplication,
-                    QAbstractItemView,
+                    QVBoxLayout,
                 )
-                from PySide6.QtCore import Qt
 
                 app = QApplication.instance()
                 if app is None:

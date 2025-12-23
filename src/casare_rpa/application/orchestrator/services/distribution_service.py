@@ -4,14 +4,15 @@ Handles intelligent job distribution to robots with load balancing and capabilit
 """
 
 import asyncio
-from typing import Optional, Dict, Any, List, Set, Callable
+import random
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-import random
+from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
-from casare_rpa.domain.orchestrator.entities import Robot, RobotStatus, Job
+from casare_rpa.domain.orchestrator.entities import Job, Robot, RobotStatus
 
 
 class DistributionStrategy(Enum):
@@ -30,10 +31,10 @@ class DistributionRule:
 
     name: str
     workflow_pattern: str = "*"  # Glob pattern for workflow names
-    required_tags: List[str] = field(default_factory=list)
-    preferred_robots: List[str] = field(default_factory=list)
-    excluded_robots: List[str] = field(default_factory=list)
-    environment: Optional[str] = None
+    required_tags: list[str] = field(default_factory=list)
+    preferred_robots: list[str] = field(default_factory=list)
+    excluded_robots: list[str] = field(default_factory=list)
+    environment: str | None = None
     strategy: DistributionStrategy = DistributionStrategy.LEAST_LOADED
     priority_boost: int = 0  # Add to job priority
 
@@ -44,10 +45,10 @@ class DistributionResult:
 
     success: bool
     job_id: str
-    robot_id: Optional[str] = None
+    robot_id: str | None = None
     message: str = ""
     retry_count: int = 0
-    attempted_robots: List[str] = field(default_factory=list)
+    attempted_robots: list[str] = field(default_factory=list)
 
 
 class RobotSelector:
@@ -56,18 +57,18 @@ class RobotSelector:
     """
 
     def __init__(self):
-        self._last_selected: Dict[str, int] = {}  # For round-robin
-        self._robot_affinity: Dict[str, str] = {}  # workflow_id -> robot_id
+        self._last_selected: dict[str, int] = {}  # For round-robin
+        self._robot_affinity: dict[str, str] = {}  # workflow_id -> robot_id
 
     def select(
         self,
         job: Job,
-        available_robots: List[Robot],
+        available_robots: list[Robot],
         strategy: DistributionStrategy = DistributionStrategy.LEAST_LOADED,
-        required_tags: Optional[List[str]] = None,
-        preferred_robots: Optional[List[str]] = None,
-        excluded_robots: Optional[List[str]] = None,
-    ) -> Optional[Robot]:
+        required_tags: list[str] | None = None,
+        preferred_robots: list[str] | None = None,
+        excluded_robots: list[str] | None = None,
+    ) -> Robot | None:
         """
         Select the best robot for a job.
 
@@ -124,7 +125,7 @@ class RobotSelector:
         else:
             return self._select_least_loaded(candidates)
 
-    def _select_round_robin(self, robots: List[Robot]) -> Robot:
+    def _select_round_robin(self, robots: list[Robot]) -> Robot:
         """Select using round-robin."""
         robot_ids = sorted([r.id for r in robots])
         robot_map = {r.id: r for r in robots}
@@ -141,7 +142,7 @@ class RobotSelector:
         self._last_selected[selected_id] = next_idx
         return robot_map[selected_id]
 
-    def _select_least_loaded(self, robots: List[Robot]) -> Robot:
+    def _select_least_loaded(self, robots: list[Robot]) -> Robot:
         """Select robot with fewest current jobs."""
         return min(
             robots,
@@ -151,11 +152,11 @@ class RobotSelector:
             ),
         )
 
-    def _select_random(self, robots: List[Robot]) -> Robot:
+    def _select_random(self, robots: list[Robot]) -> Robot:
         """Select random robot."""
         return random.choice(robots)
 
-    def _select_by_capability(self, job: Job, robots: List[Robot]) -> Robot:
+    def _select_by_capability(self, job: Job, robots: list[Robot]) -> Robot:
         """Select robot with best capability match."""
         # Score robots by tag match
         job_tags = set(getattr(job, "tags", []) or [])
@@ -168,7 +169,7 @@ class RobotSelector:
 
         return min(robots, key=score)
 
-    def _select_by_affinity(self, job: Job, robots: List[Robot]) -> Robot:
+    def _select_by_affinity(self, job: Job, robots: list[Robot]) -> Robot:
         """Select robot based on workflow affinity (sticky sessions)."""
         robot_map = {r.id: r for r in robots}
 
@@ -219,20 +220,20 @@ class WorkflowDistributor:
         self._distribution_timeout = distribution_timeout
 
         self._selector = RobotSelector()
-        self._rules: List[DistributionRule] = []
+        self._rules: list[DistributionRule] = []
         self._default_strategy = DistributionStrategy.LEAST_LOADED
 
         # Distribution tracking
-        self._pending_distributions: Dict[str, asyncio.Task] = {}
-        self._distribution_history: List[DistributionResult] = []
+        self._pending_distributions: dict[str, asyncio.Task] = {}
+        self._distribution_history: list[DistributionResult] = []
         self._max_history = 1000
 
         # Send function (to be set by engine)
-        self._send_job_fn: Optional[Callable] = None
+        self._send_job_fn: Callable | None = None
 
         # Callbacks
-        self._on_distribution_success: Optional[Callable] = None
-        self._on_distribution_failure: Optional[Callable] = None
+        self._on_distribution_success: Callable | None = None
+        self._on_distribution_failure: Callable | None = None
 
         logger.info("WorkflowDistributor initialized")
 
@@ -242,8 +243,8 @@ class WorkflowDistributor:
 
     def set_callbacks(
         self,
-        on_success: Optional[Callable] = None,
-        on_failure: Optional[Callable] = None,
+        on_success: Callable | None = None,
+        on_failure: Callable | None = None,
     ):
         """Set distribution callbacks."""
         self._on_distribution_success = on_success
@@ -266,7 +267,7 @@ class WorkflowDistributor:
         """Clear all distribution rules."""
         self._rules.clear()
 
-    def _find_matching_rule(self, job: Job) -> Optional[DistributionRule]:
+    def _find_matching_rule(self, job: Job) -> DistributionRule | None:
         """Find the first rule that matches a job."""
         import fnmatch
 
@@ -289,8 +290,8 @@ class WorkflowDistributor:
     async def distribute(
         self,
         job: Job,
-        available_robots: List[Robot],
-        strategy: Optional[DistributionStrategy] = None,
+        available_robots: list[Robot],
+        strategy: DistributionStrategy | None = None,
     ) -> DistributionResult:
         """
         Distribute a job to an available robot.
@@ -375,7 +376,7 @@ class WorkflowDistributor:
                     f"{result.get('reason', 'Unknown')}"
                 )
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 retry_count += 1
                 logger.warning(f"Timeout distributing job {job.id[:8]} to robot {robot.id}")
 
@@ -408,9 +409,9 @@ class WorkflowDistributor:
 
     async def distribute_batch(
         self,
-        jobs: List[Job],
-        available_robots: List[Robot],
-    ) -> List[DistributionResult]:
+        jobs: list[Job],
+        available_robots: list[Robot],
+    ) -> list[DistributionResult]:
         """
         Distribute multiple jobs to available robots.
 
@@ -450,7 +451,7 @@ class WorkflowDistributor:
         if len(self._distribution_history) > self._max_history:
             self._distribution_history = self._distribution_history[-self._max_history :]
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get distribution statistics."""
         total = len(self._distribution_history)
         successful = sum(1 for r in self._distribution_history if r.success)
@@ -467,7 +468,7 @@ class WorkflowDistributor:
             "rules_count": len(self._rules),
         }
 
-    def get_recent_results(self, limit: int = 10) -> List[DistributionResult]:
+    def get_recent_results(self, limit: int = 10) -> list[DistributionResult]:
         """Get recent distribution results."""
         return self._distribution_history[-limit:]
 
@@ -484,27 +485,27 @@ class JobRouter:
     """
 
     def __init__(self):
-        self._routes: Dict[str, List[str]] = {}  # environment -> robot_ids
-        self._tag_routes: Dict[str, List[str]] = {}  # tag -> robot_ids
-        self._fallback_robots: List[str] = []
+        self._routes: dict[str, list[str]] = {}  # environment -> robot_ids
+        self._tag_routes: dict[str, list[str]] = {}  # tag -> robot_ids
+        self._fallback_robots: list[str] = []
 
-    def add_route(self, environment: str, robot_ids: List[str]):
+    def add_route(self, environment: str, robot_ids: list[str]):
         """Add a route for an environment."""
         self._routes[environment] = robot_ids
 
-    def add_tag_route(self, tag: str, robot_ids: List[str]):
+    def add_tag_route(self, tag: str, robot_ids: list[str]):
         """Add a route for a tag."""
         self._tag_routes[tag] = robot_ids
 
-    def set_fallback_robots(self, robot_ids: List[str]):
+    def set_fallback_robots(self, robot_ids: list[str]):
         """Set fallback robots for unmatched jobs."""
         self._fallback_robots = robot_ids
 
     def get_eligible_robots(
         self,
         job: Job,
-        all_robots: List[Robot],
-    ) -> List[Robot]:
+        all_robots: list[Robot],
+    ) -> list[Robot]:
         """
         Get robots eligible to run a job.
 
@@ -516,7 +517,7 @@ class JobRouter:
             List of eligible robots
         """
         robot_map = {r.id: r for r in all_robots}
-        eligible_ids: Set[str] = set()
+        eligible_ids: set[str] = set()
 
         # Check environment routes
         job_env = getattr(job, "environment", None)

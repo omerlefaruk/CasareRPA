@@ -7,13 +7,12 @@ and port type checking.
 
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-
 # ============================================================================
 # UNIFIED CONNECTION PARSING
 # ============================================================================
 
 
-def parse_connection(conn: Dict[str, Any]) -> Optional[Dict[str, str]]:
+def parse_connection(conn: dict[str, Any]) -> dict[str, str] | None:
     """
     Parse a connection from any format into a normalized structure.
 
@@ -102,8 +101,8 @@ def is_exec_input_port(port_name: str) -> bool:
 
 
 def has_circular_dependency(
-    nodes: Dict[str, Any],
-    connections: List[Dict[str, Any]],
+    nodes: dict[str, Any],
+    connections: list[dict[str, Any]],
 ) -> bool:
     """Check for circular dependencies using iterative DFS on exec connections.
 
@@ -112,7 +111,7 @@ def has_circular_dependency(
     """
 
     # Build adjacency list (only exec connections for flow)
-    graph: Dict[str, List[str]] = {node_id: [] for node_id in nodes}
+    graph: dict[str, list[str]] = {node_id: [] for node_id in nodes}
 
     for conn in connections:
         parsed = parse_connection(conn)
@@ -129,7 +128,7 @@ def has_circular_dependency(
 
     # Iterative DFS with explicit stack for cycle detection
     # States: 0=unvisited, 1=in recursion stack, 2=finished
-    state: Dict[str, int] = {node_id: 0 for node_id in nodes}
+    state: dict[str, int] = {node_id: 0 for node_id in nodes}
 
     for start_node in nodes:
         if state[start_node] != 0:
@@ -171,9 +170,9 @@ def has_circular_dependency(
 
 
 def find_entry_points_and_reachable(
-    nodes: Dict[str, Any],
-    connections: List[Dict[str, Any]],
-) -> Tuple[List[str], Set[str]]:
+    nodes: dict[str, Any],
+    connections: list[dict[str, Any]],
+) -> tuple[list[str], set[str]]:
     """
     Find workflow entry points and all reachable nodes.
 
@@ -186,12 +185,12 @@ def find_entry_points_and_reachable(
     """
 
     # Build adjacency list for BFS traversal (ALL connections, not just exec)
-    graph: Dict[str, List[str]] = {node_id: [] for node_id in nodes}
+    graph: dict[str, list[str]] = {node_id: [] for node_id in nodes}
 
     # Track which nodes have incoming exec connections
-    nodes_with_exec_input: Set[str] = set()
+    nodes_with_exec_input: set[str] = set()
     # Track which nodes have outgoing connections (are part of a flow)
-    nodes_with_outgoing: Set[str] = set()
+    nodes_with_outgoing: set[str] = set()
 
     for conn in connections:
         parsed = parse_connection(conn)
@@ -215,7 +214,7 @@ def find_entry_points_and_reachable(
     # 1. Explicit StartNode types
     # 2. Nodes without incoming exec connections that ARE part of the flow
     #    (have outgoing connections)
-    entry_points: List[str] = []
+    entry_points: list[str] = []
 
     for node_id, node_data in nodes.items():
         # Skip hidden/auto nodes when determining entry points
@@ -243,7 +242,7 @@ def find_entry_points_and_reachable(
         entry_points = list(nodes.keys())
 
     # BFS from entry points to find all reachable nodes
-    reachable: Set[str] = set()
+    reachable: set[str] = set()
     queue = list(entry_points)
 
     while queue:

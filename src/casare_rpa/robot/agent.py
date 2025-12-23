@@ -44,30 +44,30 @@ import signal
 import socket
 import sys
 import uuid
-from dataclasses import dataclass, field, asdict, replace
-from datetime import datetime, timezone
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field, replace
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
 from urllib.parse import urlparse
-from typing import Any, Callable, Dict, List, Optional, Set
 
-from loguru import logger
 import orjson
+from loguru import logger
 
+from casare_rpa.robot.audit import (
+    AuditEventType,
+    AuditLogger,
+    init_audit_logger,
+)
 from casare_rpa.robot.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitBreakerOpenError,
     CircuitState,
 )
-from casare_rpa.robot.metrics import MetricsCollector, get_metrics_collector
-from casare_rpa.robot.audit import (
-    AuditLogger,
-    AuditEventType,
-    init_audit_logger,
-)
-
 from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
+from casare_rpa.robot.metrics import MetricsCollector, get_metrics_collector
 
 try:
     import psutil
@@ -164,8 +164,8 @@ class RobotConfig:
     """
 
     # Identity
-    robot_id: Optional[str] = None
-    robot_name: Optional[str] = None
+    robot_id: str | None = None
+    robot_name: str | None = None
     hostname: str = field(default_factory=socket.gethostname)
 
     # Database connection
@@ -175,7 +175,7 @@ class RobotConfig:
 
     # Environment
     environment: str = "default"
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     # Job execution
     batch_size: int = 1
@@ -232,7 +232,7 @@ class RobotConfig:
         pass
 
     @classmethod
-    def from_env(cls) -> "RobotConfig":
+    def from_env(cls) -> RobotConfig:
         """Create configuration from environment variables."""
         tags_str = os.getenv("CASARE_ROBOT_TAGS", "")
         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
@@ -266,7 +266,7 @@ class RobotConfig:
         )
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "RobotConfig":
+    def from_dict(cls, data: dict[str, Any]) -> RobotConfig:
         """Create configuration from dictionary."""
         cb_data = data.pop("circuit_breaker", {})
         cb_config = CircuitBreakerConfig(**cb_data) if cb_data else CircuitBreakerConfig()
@@ -275,7 +275,7 @@ class RobotConfig:
         config.circuit_breaker = cb_config
         return config
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (masks secrets)."""
         return {
             "robot_id": self.robot_id,
@@ -301,16 +301,16 @@ class RobotCapabilities:
     """Robot capability advertisement for job routing."""
 
     platform: str
-    browser_engines: List[str]
+    browser_engines: list[str]
     desktop_automation: bool
     max_concurrent_jobs: int
     cpu_cores: int
     memory_gb: float
-    tags: List[str]
+    tags: list[str]
     python_version: str = field(default_factory=lambda: sys.version.split()[0])
     hostname: str = field(default_factory=socket.gethostname)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
 
@@ -322,16 +322,16 @@ class AgentCheckpoint:
     checkpoint_id: str
     robot_id: str
     state: str  # AgentState value
-    current_jobs: List[str]
+    current_jobs: list[str]
     created_at: str
     last_heartbeat: str
-    stats: Dict[str, Any]
+    stats: dict[str, Any]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AgentCheckpoint":
+    def from_dict(cls, data: dict[str, Any]) -> AgentCheckpoint:
         return cls(**data)
 
 
@@ -357,8 +357,8 @@ class RobotAgent:
 
     def __init__(
         self,
-        config: Optional[RobotConfig] = None,
-        on_job_complete: Optional[Callable[[str, bool, Optional[str]], None]] = None,
+        config: RobotConfig | None = None,
+        on_job_complete: Callable[[str, bool, str | None], None] | None = None,
     ) -> None:
         """
         Initialize unified robot agent.
@@ -375,7 +375,7 @@ class RobotAgent:
             worker_robot_name=self.config.robot_name,
             hostname=self.config.hostname,
         )
-        self._identity_mtime_ns: Optional[int] = self._get_identity_mtime_ns()
+        self._identity_mtime_ns: int | None = self._get_identity_mtime_ns()
 
         self.robot_id = self._identity.worker_robot_id
         self.name = self._identity.worker_robot_name
@@ -389,7 +389,7 @@ class RobotAgent:
 
         # Orchestrator API (optional)
         self._orchestrator_client = None
-        self._last_reported_status: Optional[str] = None
+        self._last_reported_status: str | None = None
         # Gate to prevent presence/heartbeat calls until registration is confirmed
         self._api_registration_confirmed = False
 
@@ -401,9 +401,9 @@ class RobotAgent:
         self._pause_event.set()  # Not paused initially
 
         # Job tracking
-        self._current_jobs: Dict[str, Any] = {}
-        self._job_progress: Dict[str, Dict[str, Any]] = {}
-        self._cancelled_jobs: Set[str] = set()
+        self._current_jobs: dict[str, Any] = {}
+        self._job_progress: dict[str, dict[str, Any]] = {}
+        self._cancelled_jobs: set[str] = set()
         self._jobs_lock = asyncio.Lock()  # Protects _current_jobs, _job_progress, _cancelled_jobs
 
         # Callbacks
@@ -413,7 +413,7 @@ class RobotAgent:
         self._capabilities = self._build_capabilities()
 
         # Circuit breaker
-        self._circuit_breaker: Optional[CircuitBreaker] = None
+        self._circuit_breaker: CircuitBreaker | None = None
         if self.config.enable_circuit_breaker:
             self._circuit_breaker = CircuitBreaker(
                 name=f"robot-{self.robot_id}",
@@ -426,14 +426,14 @@ class RobotAgent:
         self._executor = None
         self._resource_manager = None
         self._realtime_manager = None
-        self._metrics: Optional[MetricsCollector] = None
-        self._audit: Optional[AuditLogger] = None
+        self._metrics: MetricsCollector | None = None
+        self._audit: AuditLogger | None = None
 
         # Background tasks
-        self._job_loop_task: Optional[asyncio.Task] = None
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._presence_task: Optional[asyncio.Task] = None
-        self._metrics_task: Optional[asyncio.Task] = None
+        self._job_loop_task: asyncio.Task | None = None
+        self._heartbeat_task: asyncio.Task | None = None
+        self._presence_task: asyncio.Task | None = None
+        self._metrics_task: asyncio.Task | None = None
 
         # Statistics
         self._stats = {
@@ -549,7 +549,7 @@ class RobotAgent:
         self._state = AgentState.STARTING
         self._running = True
         self._shutdown_event.clear()
-        self._stats["started_at"] = datetime.now(timezone.utc).isoformat()
+        self._stats["started_at"] = datetime.now(UTC).isoformat()
 
         logger.info(f"Starting Robot Agent: {self.name} ({self.robot_id})")
 
@@ -613,7 +613,7 @@ class RobotAgent:
                     self._wait_for_jobs_complete(),
                     timeout=self.config.graceful_shutdown_seconds,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 async with self._jobs_lock:
                     remaining = len(self._current_jobs)
                 logger.warning(
@@ -700,8 +700,8 @@ class RobotAgent:
 
         # Import here to avoid circular imports and allow lazy loading
         try:
-            from casare_rpa.infrastructure.queue import PgQueuerConsumer, ConsumerConfig
             from casare_rpa.infrastructure.agent.job_executor import JobExecutor
+            from casare_rpa.infrastructure.queue import ConsumerConfig, PgQueuerConsumer
             from casare_rpa.infrastructure.resources.unified_resource_manager import (
                 UnifiedResourceManager,
             )
@@ -809,7 +809,7 @@ class RobotAgent:
         except Exception as e:
             logger.debug(f"Error disconnecting orchestrator client: {e}")
 
-    def _get_identity_mtime_ns(self) -> Optional[int]:
+    def _get_identity_mtime_ns(self) -> int | None:
         try:
             return self._identity_store.path.stat().st_mtime_ns
         except FileNotFoundError:
@@ -979,7 +979,7 @@ class RobotAgent:
         )
         return bool(url)
 
-    def _get_orchestrator_base_url(self) -> Optional[str]:
+    def _get_orchestrator_base_url(self) -> str | None:
         url = (
             os.getenv("CASARE_ORCHESTRATOR_URL")
             or os.getenv("ORCHESTRATOR_URL")
@@ -1005,7 +1005,7 @@ class RobotAgent:
         scheme = "wss" if parsed.scheme == "https" else "ws"
         return f"{scheme}://{parsed.netloc}"
 
-    def _get_orchestrator_api_key(self) -> Optional[str]:
+    def _get_orchestrator_api_key(self) -> str | None:
         api_key = os.getenv("CASARE_ORCHESTRATOR_API_KEY") or os.getenv("ORCHESTRATOR_API_KEY")
         return api_key if api_key else None
 
@@ -1235,7 +1235,7 @@ class RobotAgent:
             self._job_progress[job_id] = {
                 "progress_percent": 0,
                 "current_node": None,
-                "started_at": datetime.now(timezone.utc).isoformat(),
+                "started_at": datetime.now(UTC).isoformat(),
             }
 
         logger.info(
@@ -1363,7 +1363,7 @@ class RobotAgent:
             self._job_progress[job_id] = {
                 "progress_percent": progress,
                 "current_node": node_id,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
             }
 
         try:
@@ -1432,7 +1432,7 @@ class RobotAgent:
                     "current_job_count": job_count,
                     "max_concurrent_jobs": self.config.max_concurrent_jobs,
                     "environment": self.config.environment,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
                 if PSUTIL_AVAILABLE:
@@ -1456,7 +1456,7 @@ class RobotAgent:
 
         logger.info("Presence loop stopped")
 
-    async def _update_presence_via_orchestrator_api(self, presence_data: Dict[str, Any]) -> None:
+    async def _update_presence_via_orchestrator_api(self, presence_data: dict[str, Any]) -> None:
         if not self._should_use_orchestrator_api():
             return
         # Wait for registration to complete before sending presence updates
@@ -1508,7 +1508,7 @@ class RobotAgent:
             except Exception:
                 pass
 
-    async def _update_presence_in_db(self, presence_data: Dict[str, Any]) -> None:
+    async def _update_presence_in_db(self, presence_data: dict[str, Any]) -> None:
         """Update presence in database."""
         try:
             if self._consumer and hasattr(self._consumer, "_pool") and self._consumer._pool:
@@ -1569,8 +1569,8 @@ class RobotAgent:
                 robot_id=self.robot_id,
                 state=self._state.value,
                 current_jobs=current_job_keys,
-                created_at=datetime.now(timezone.utc).isoformat(),
-                last_heartbeat=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
+                last_heartbeat=datetime.now(UTC).isoformat(),
                 stats=self._stats.copy(),
             )
 
@@ -1652,7 +1652,7 @@ class RobotAgent:
 
     # ==================== STATUS ====================
 
-    async def get_status(self) -> Dict[str, Any]:
+    async def get_status(self) -> dict[str, Any]:
         """Get comprehensive agent status."""
         async with self._jobs_lock:
             current_jobs_snapshot = [
@@ -1702,7 +1702,7 @@ class RobotAgent:
         return False
 
 
-async def run_agent(config: Optional[RobotConfig] = None) -> None:
+async def run_agent(config: RobotConfig | None = None) -> None:
     """
     Run the robot agent.
 

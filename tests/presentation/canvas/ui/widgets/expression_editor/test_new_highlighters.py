@@ -2,19 +2,20 @@
 Tests for New Syntax Highlighters (JSON, YAML) and Code Detector.
 """
 
+from unittest.mock import MagicMock, call, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, call
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import QPlainTextEdit
 
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
+    CodeDetector,
+)
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.json_highlighter import (
     JsonHighlighter,
 )
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.yaml_highlighter import (
     YamlHighlighter,
-)
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.code_detector import (
-    CodeDetector,
 )
 
 # =============================================================================
@@ -189,10 +190,4 @@ class TestCodeDetector:
             EditorType,
         )
 
-<<<<<<< HEAD
-        assert (
-            CodeDetector.detect_language("Hello world") == EditorType.RICH_TEXT
-        )  # Default
-=======
         assert CodeDetector.detect_language("Hello world") == EditorType.RICH_TEXT  # Default
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e

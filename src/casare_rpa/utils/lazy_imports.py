@@ -17,22 +17,21 @@ Usage:
         browser = await playwright.chromium.launch()
 """
 
-from typing import Any, Optional
 import sys
 from functools import lru_cache
+from typing import Any, Optional
 
 from loguru import logger
-
 
 # =============================================================================
 # Lazy Import Caches
 # =============================================================================
 
-_uiautomation: Optional[Any] = None
-_win32gui: Optional[Any] = None
-_win32con: Optional[Any] = None
-_win32api: Optional[Any] = None
-_pythoncom: Optional[Any] = None
+_uiautomation: Any | None = None
+_win32gui: Any | None = None
+_win32con: Any | None = None
+_win32api: Any | None = None
+_pythoncom: Any | None = None
 
 
 @lru_cache(maxsize=1)
@@ -147,7 +146,7 @@ class LazyModule:
             module_name: Name of the module to lazily import
         """
         self._module_name = module_name
-        self._module: Optional[Any] = None
+        self._module: Any | None = None
 
     def _load(self) -> Any:
         """Load the module if not already loaded."""

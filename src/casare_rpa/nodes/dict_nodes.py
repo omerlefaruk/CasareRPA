@@ -7,12 +7,13 @@ Provides nodes for dictionary/object manipulation including:
 - Dictionary merging and key/value operations
 """
 
-from typing import Any, Dict
 import json
+from typing import Any, Dict
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -506,7 +507,7 @@ class CreateDictNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            result: Dict[str, Any] = {}
+            result: dict[str, Any] = {}
 
             for i in range(1, 4):
                 key = self.get_parameter(f"key_{i}")

@@ -18,9 +18,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from casare_rpa.nodes.browser.evaluate_node import BrowserEvaluateNode
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-
+from casare_rpa.nodes.browser.evaluate_node import BrowserEvaluateNode
 
 # =============================================================================
 # BrowserEvaluateNode Instantiation Tests
@@ -157,13 +156,7 @@ class TestExecuteSimpleScript:
         """SUCCESS: Script returning boolean value."""
         mock_page.evaluate.return_value = True
 
-<<<<<<< HEAD
-        node = BrowserEvaluateNode(
-            "test_node", config={"script": "document.body !== null"}
-        )
-=======
         node = BrowserEvaluateNode("test_node", config={"script": "document.body !== null"})
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         result = await node.execute(mock_context)
 
@@ -180,25 +173,13 @@ class TestExecuteWithArg:
     """Tests for scripts that receive arguments."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_execute_with_arg(
-        self, mock_context: MagicMock, mock_page: AsyncMock
-    ) -> None:
-=======
     async def test_execute_with_arg(self, mock_context: MagicMock, mock_page: AsyncMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Pass argument to script."""
         mock_page.evaluate.return_value = "Header Text"
 
         node = BrowserEvaluateNode(
             "test_node",
-<<<<<<< HEAD
-            config={
-                "script": "(selector) => document.querySelector(selector)?.innerText"
-            },
-=======
             config={"script": "(selector) => document.querySelector(selector)?.innerText"},
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
         node.set_input_value("arg", "#header")
 
@@ -241,13 +222,7 @@ class TestExecuteWithArg:
         mock_page.evaluate.assert_called_once_with(script, arg)
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_execute_without_arg(
-        self, mock_context: MagicMock, mock_page: AsyncMock
-    ) -> None:
-=======
     async def test_execute_without_arg(self, mock_context: MagicMock, mock_page: AsyncMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Execute script without argument."""
         mock_page.evaluate.return_value = "No Arg Result"
 
@@ -433,13 +408,7 @@ class TestExecuteScriptError:
             "Evaluation failed: ReferenceError: undefinedVar is not defined"
         )
 
-<<<<<<< HEAD
-        node = BrowserEvaluateNode(
-            "test_node", config={"script": "undefinedVar.property"}
-        )
-=======
         node = BrowserEvaluateNode("test_node", config={"script": "undefinedVar.property"})
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         result = await node.execute(mock_context)
 
@@ -493,13 +462,7 @@ class TestExecuteScriptError:
         assert "Script is required" in result["error"]
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_execute_no_page_available(
-        self, mock_context_no_page: MagicMock
-    ) -> None:
-=======
     async def test_execute_no_page_available(self, mock_context_no_page: MagicMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: No page instance available."""
         node = BrowserEvaluateNode("test_node", config={"script": "document.title"})
 
@@ -624,13 +587,7 @@ class TestStoreVariable:
         result = await node.execute(mock_context)
 
         assert result["success"] is True
-<<<<<<< HEAD
-        mock_context.set_variable.assert_called_once_with(
-            "extracted_data", {"extracted": "data"}
-        )
-=======
         mock_context.set_variable.assert_called_once_with("extracted_data", {"extracted": "data"})
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         assert result["data"]["variable"] == "extracted_data"
 
     @pytest.mark.asyncio
@@ -827,13 +784,7 @@ class TestEdgeCases:
         assert len(node.get_output_value("result")) == 1000
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_node_status_success(
-        self, mock_context: MagicMock, mock_page: AsyncMock
-    ) -> None:
-=======
     async def test_node_status_success(self, mock_context: MagicMock, mock_page: AsyncMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Node status is set to SUCCESS on success."""
         mock_page.evaluate.return_value = "result"
 
@@ -844,13 +795,7 @@ class TestEdgeCases:
         assert node.status == NodeStatus.SUCCESS
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_node_status_error(
-        self, mock_context: MagicMock, mock_page: AsyncMock
-    ) -> None:
-=======
     async def test_node_status_error(self, mock_context: MagicMock, mock_page: AsyncMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: Node status is set to ERROR on failure."""
         mock_page.evaluate.side_effect = Exception("Script error")
 
@@ -875,26 +820,14 @@ class TestEdgeCases:
         result = await node.execute(mock_context)
 
         assert result["success"] is True
-<<<<<<< HEAD
-        mock_page.evaluate.assert_called_once_with(
-            "document.querySelector('#resolved')"
-        )
-=======
         mock_page.evaluate.assert_called_once_with("document.querySelector('#resolved')")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 class TestRetryBehavior:
     """Tests for retry functionality."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_retry_on_failure(
-        self, mock_context: MagicMock, mock_page: AsyncMock
-    ) -> None:
-=======
     async def test_retry_on_failure(self, mock_context: MagicMock, mock_page: AsyncMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Script succeeds after retry."""
         # First call fails, second succeeds
         mock_page.evaluate.side_effect = [
@@ -915,13 +848,7 @@ class TestRetryBehavior:
         assert result["data"]["attempts"] == 2
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_all_retries_fail(
-        self, mock_context: MagicMock, mock_page: AsyncMock
-    ) -> None:
-=======
     async def test_all_retries_fail(self, mock_context: MagicMock, mock_page: AsyncMock) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: All retry attempts fail."""
         mock_page.evaluate.side_effect = Exception("Persistent error")
 

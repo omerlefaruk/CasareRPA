@@ -9,7 +9,7 @@ import re
 from typing import Tuple
 
 
-def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
+def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     """
     Convert a hex color string to RGB tuple.
 

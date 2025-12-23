@@ -5,7 +5,7 @@ Provides CRUD operations for tenant management in multi-tenant deployments
 using asyncpg connection pooling.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import orjson
@@ -23,7 +23,7 @@ class TenantRepository:
     Maps between Tenant domain entity and PostgreSQL tenants table.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -51,7 +51,7 @@ class TenantRepository:
         pool = await self._get_pool()
         await pool.release(conn)
 
-    def _row_to_tenant(self, row: Dict[str, Any]) -> Tenant:
+    def _row_to_tenant(self, row: dict[str, Any]) -> Tenant:
         """
         Convert database row to Tenant domain entity.
 
@@ -91,7 +91,7 @@ class TenantRepository:
             updated_at=row.get("updated_at"),
         )
 
-    def _tenant_to_params(self, tenant: Tenant) -> Dict[str, Any]:
+    def _tenant_to_params(self, tenant: Tenant) -> dict[str, Any]:
         """
         Convert Tenant entity to database parameters.
 
@@ -101,7 +101,7 @@ class TenantRepository:
         Returns:
             Dictionary of database column values.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return {
             "tenant_id": str(tenant.id),
             "name": tenant.name,
@@ -164,7 +164,7 @@ class TenantRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_id(self, tenant_id: str) -> Optional[Tenant]:
+    async def get_by_id(self, tenant_id: str) -> Tenant | None:
         """
         Get tenant by ID.
 
@@ -189,7 +189,7 @@ class TenantRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_name(self, name: str) -> Optional[Tenant]:
+    async def get_by_name(self, name: str) -> Tenant | None:
         """
         Get tenant by name.
 
@@ -219,7 +219,7 @@ class TenantRepository:
         include_inactive: bool = False,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[Tenant]:
+    ) -> list[Tenant]:
         """
         Get all tenants.
 
@@ -261,7 +261,7 @@ class TenantRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_admin_email(self, email: str) -> List[Tenant]:
+    async def get_by_admin_email(self, email: str) -> list[Tenant]:
         """
         Get all tenants where user is an admin.
 
@@ -289,7 +289,7 @@ class TenantRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_robot_id(self, robot_id: str) -> Optional[Tenant]:
+    async def get_by_robot_id(self, robot_id: str) -> Tenant | None:
         """
         Get tenant that owns a specific robot.
 
@@ -450,7 +450,7 @@ class TenantRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_statistics(self) -> Dict[str, Any]:
+    async def get_statistics(self) -> dict[str, Any]:
         """
         Get tenant statistics.
 

@@ -10,15 +10,16 @@ Handles:
 - Chain selection (Shift+Click, Ctrl+Shift+Click)
 """
 
-from typing import TYPE_CHECKING, Optional, Callable
-
-from PySide6.QtCore import QEvent, Qt, QObject
-from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
+
     from casare_rpa.presentation.canvas.graph.node_selection_handler import (
         NodeSelectionHandler,
     )
@@ -35,7 +36,7 @@ class GraphEventHandler(QObject):
         self,
         graph: "NodeGraph",
         selection_handler: "NodeSelectionHandler",
-        parent: Optional[QObject] = None,
+        parent: QObject | None = None,
     ):
         """
         Initialize graph event handler.
@@ -55,13 +56,13 @@ class GraphEventHandler(QObject):
         self._alt_drag_offset_y = 0.0
 
         # Callbacks for actions
-        self._on_tab_pressed: Optional[Callable] = None
-        self._on_escape_pressed: Optional[Callable] = None
-        self._on_delete_frames: Optional[Callable] = None
-        self._on_toggle_port_legend: Optional[Callable] = None
-        self._on_subflow_dive_in: Optional[Callable] = None
-        self._on_subflow_go_back: Optional[Callable] = None
-        self._on_close_output_popup: Optional[Callable] = None
+        self._on_tab_pressed: Callable | None = None
+        self._on_escape_pressed: Callable | None = None
+        self._on_delete_frames: Callable | None = None
+        self._on_toggle_port_legend: Callable | None = None
+        self._on_subflow_dive_in: Callable | None = None
+        self._on_subflow_go_back: Callable | None = None
+        self._on_close_output_popup: Callable | None = None
 
     def set_callbacks(
         self,

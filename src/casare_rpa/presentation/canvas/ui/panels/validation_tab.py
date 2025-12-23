@@ -9,28 +9,28 @@ Provides workflow validation results display with improved UX:
 - Clear visual hierarchy with icons
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QApplication,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QStackedWidget,
     QTreeWidget,
     QTreeWidgetItem,
-    QLabel,
-    QHeaderView,
-    QStackedWidget,
-    QApplication,
-    QMenu,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QBrush
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
-    ToolbarButton,
     StatusBadge,
+    ToolbarButton,
     get_panel_toolbar_stylesheet,
 )
 
@@ -61,7 +61,7 @@ class ValidationTab(QWidget):
     issue_clicked = Signal(str)  # location string
     repair_requested = Signal()  # repair workflow issues
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the Validation tab.
 
@@ -70,7 +70,7 @@ class ValidationTab(QWidget):
         """
         super().__init__(parent)
 
-        self._last_result: Optional["ValidationResult"] = None
+        self._last_result: ValidationResult | None = None
 
         self._setup_ui()
         self._apply_styles()

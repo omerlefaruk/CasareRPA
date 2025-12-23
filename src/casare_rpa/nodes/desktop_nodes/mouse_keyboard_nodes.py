@@ -16,21 +16,19 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
-    DURATION_PROP,
-    MOUSE_BUTTON_PROP,
+    CLEAR_FIRST_PROP,
     CLICK_TYPE_PROP,
-    KEYS_PROP,
-    INTERVAL_PROP,
+    DURATION_PROP,
     HOTKEY_MODIFIER_PROP,
+    INTERVAL_PROP,
+    KEYS_PROP,
+    MOUSE_BUTTON_PROP,
+    WITH_ALT_PROP,
     WITH_CTRL_PROP,
     WITH_SHIFT_PROP,
-    WITH_ALT_PROP,
-    CLEAR_FIRST_PROP,
 )
-
 
 # =============================================================================
 # Mouse/Keyboard specific PropertyDef constants
@@ -153,8 +151,8 @@ class MoveMouseNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Move Mouse",
     ):
         super().__init__(node_id, config, name)
@@ -169,7 +167,7 @@ class MoveMouseNode(DesktopNodeBase):
         self.add_output_port("final_x", DataType.INTEGER)
         self.add_output_port("final_y", DataType.INTEGER)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute mouse movement."""
         x = self.get_input_value("x")
         y = self.get_input_value("y")
@@ -187,7 +185,7 @@ class MoveMouseNode(DesktopNodeBase):
         # Build kwargs for move_mouse
         import inspect
 
-        move_kwargs: Dict[str, Any] = {}
+        move_kwargs: dict[str, Any] = {}
         if hasattr(desktop_ctx, "move_mouse"):
             sig = inspect.signature(desktop_ctx.move_mouse)
             if "ease" in sig.parameters:
@@ -260,8 +258,8 @@ class MouseClickNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Mouse Click",
     ):
         super().__init__(node_id, config, name)
@@ -275,7 +273,7 @@ class MouseClickNode(DesktopNodeBase):
         self.add_output_port("click_x", DataType.INTEGER)
         self.add_output_port("click_y", DataType.INTEGER)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute mouse click."""
         x = self.get_input_value("x")
         y = self.get_input_value("y")
@@ -305,7 +303,7 @@ class MouseClickNode(DesktopNodeBase):
             modifiers.append("alt")
 
         # Build click kwargs
-        click_kwargs: Dict[str, Any] = {
+        click_kwargs: dict[str, Any] = {
             "x": int(x) if x is not None else None,
             "y": int(y) if y is not None else None,
             "button": button,
@@ -378,8 +376,8 @@ class SendKeysNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Send Keys",
     ):
         super().__init__(node_id, config, name)
@@ -392,7 +390,7 @@ class SendKeysNode(DesktopNodeBase):
         self.add_output_port("success", DataType.BOOLEAN)
         self.add_output_port("keys_sent", DataType.INTEGER)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute key sending."""
         keys = self.get_parameter("keys", context)
         interval = self.get_parameter("interval", context)
@@ -466,8 +464,8 @@ class SendHotKeyNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Send Hotkey",
     ):
         super().__init__(node_id, config, name)
@@ -479,7 +477,7 @@ class SendHotKeyNode(DesktopNodeBase):
         self.add_input_port("wait_time", DataType.FLOAT)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute hotkey combination."""
         keys_input = self.get_parameter("keys", context)
 
@@ -536,8 +534,8 @@ class GetMousePositionNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Get Mouse Position",
     ):
         super().__init__(node_id, config, name)
@@ -548,7 +546,7 @@ class GetMousePositionNode(DesktopNodeBase):
         self.add_output_port("x", DataType.INTEGER)
         self.add_output_port("y", DataType.INTEGER)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Get current mouse position."""
         desktop_ctx = self.get_desktop_context(context)
 
@@ -621,14 +619,14 @@ class DragMouseNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Drag Mouse",
     ):
         super().__init__(node_id, config, name)
         self.node_type = "DragMouseNode"
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Override default duration for drag."""
         return {"duration": 0.5}
 
@@ -641,7 +639,7 @@ class DragMouseNode(DesktopNodeBase):
         self.add_input_port("duration", DataType.FLOAT)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute mouse drag."""
         start_x = self.get_input_value("start_x")
         start_y = self.get_input_value("start_y")

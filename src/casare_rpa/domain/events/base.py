@@ -7,7 +7,7 @@ All domain events are immutable value objects (frozen dataclasses).
 
 from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict
 from uuid import UUID, uuid4
 
@@ -37,9 +37,9 @@ class DomainEvent(ABC):
     """
 
     event_id: UUID = field(default_factory=uuid4)
-    occurred_on: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    occurred_on: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize event to dictionary.
 
@@ -70,7 +70,7 @@ class AggregateEvent(DomainEvent):
 
     aggregate_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize including aggregate_id."""
         result = super().to_dict()
         result["aggregate_id"] = self.aggregate_id

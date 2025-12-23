@@ -1,26 +1,26 @@
 """Visual nodes for messaging category (Telegram, WhatsApp)."""
 
 from casare_rpa.presentation.canvas.visual_nodes.messaging.nodes import (
-    VisualTelegramSendMessageNode,
-    VisualTelegramSendPhotoNode,
     VisualTelegramSendDocumentNode,
     VisualTelegramSendLocationNode,
+    VisualTelegramSendMessageNode,
+    VisualTelegramSendPhotoNode,
 )
 from casare_rpa.presentation.canvas.visual_nodes.messaging.telegram_action_nodes import (
-    VisualTelegramEditMessageNode,
-    VisualTelegramDeleteMessageNode,
-    VisualTelegramSendMediaGroupNode,
     VisualTelegramAnswerCallbackNode,
+    VisualTelegramDeleteMessageNode,
+    VisualTelegramEditMessageNode,
     VisualTelegramGetUpdatesNode,
+    VisualTelegramSendMediaGroupNode,
 )
 from casare_rpa.presentation.canvas.visual_nodes.messaging.whatsapp_nodes import (
+    VisualWhatsAppSendDocumentNode,
+    VisualWhatsAppSendImageNode,
+    VisualWhatsAppSendInteractiveNode,
+    VisualWhatsAppSendLocationNode,
     VisualWhatsAppSendMessageNode,
     VisualWhatsAppSendTemplateNode,
-    VisualWhatsAppSendImageNode,
-    VisualWhatsAppSendDocumentNode,
     VisualWhatsAppSendVideoNode,
-    VisualWhatsAppSendLocationNode,
-    VisualWhatsAppSendInteractiveNode,
 )
 
 __all__ = [

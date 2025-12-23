@@ -7,10 +7,11 @@ Converts recorded actions into workflow node configurations.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -42,14 +43,14 @@ class BrowserRecordedAction:
     action_type: BrowserActionType
     timestamp: float = field(default_factory=time.time)
     selector: str = ""
-    element_info: Dict[str, Any] = field(default_factory=dict)
-    value: Optional[str] = None
-    coordinates: Optional[Tuple[int, int]] = None
-    url: Optional[str] = None
-    page_title: Optional[str] = None
-    keys: Optional[List[str]] = None
+    element_info: dict[str, Any] = field(default_factory=dict)
+    value: str | None = None
+    coordinates: tuple[int, int] | None = None
+    url: str | None = None
+    page_title: str | None = None
+    keys: list[str] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert action to dictionary."""
         return {
             "action_type": self.action_type.value,
@@ -533,24 +534,24 @@ class BrowserRecorder:
             page: Playwright Page instance to record from.
         """
         self._page = page
-        self._actions: List[BrowserRecordedAction] = []
+        self._actions: list[BrowserRecordedAction] = []
         self._recording = False
         self._start_time = 0.0
-        self._start_datetime: Optional[datetime] = None
+        self._start_datetime: datetime | None = None
         self._stop_requested = False
 
         # Callbacks for real-time notification
-        self._on_action_recorded: Optional[Callable[[BrowserRecordedAction], None]] = None
-        self._on_recording_started: Optional[Callable[[], None]] = None
-        self._on_recording_stopped: Optional[Callable[[], None]] = None
+        self._on_action_recorded: Callable[[BrowserRecordedAction], None] | None = None
+        self._on_recording_started: Callable[[], None] | None = None
+        self._on_recording_stopped: Callable[[], None] | None = None
 
         logger.info("BrowserRecorder initialized")
 
     def set_callbacks(
         self,
-        on_action_recorded: Optional[Callable[[BrowserRecordedAction], None]] = None,
-        on_recording_started: Optional[Callable[[], None]] = None,
-        on_recording_stopped: Optional[Callable[[], None]] = None,
+        on_action_recorded: Callable[[BrowserRecordedAction], None] | None = None,
+        on_recording_started: Callable[[], None] | None = None,
+        on_recording_stopped: Callable[[], None] | None = None,
     ) -> None:
         """
         Set callback functions for recording events.
@@ -575,7 +576,7 @@ class BrowserRecorder:
         return len(self._actions)
 
     @property
-    def start_time(self) -> Optional[datetime]:
+    def start_time(self) -> datetime | None:
         """Get the recording start time."""
         return self._start_datetime
 
@@ -634,7 +635,7 @@ class BrowserRecorder:
         if self._on_recording_started:
             self._on_recording_started()
 
-    async def stop_recording(self) -> List[BrowserRecordedAction]:
+    async def stop_recording(self) -> list[BrowserRecordedAction]:
         """
         Stop recording and return all recorded actions.
 
@@ -733,7 +734,7 @@ class BrowserRecorder:
         except Exception as e:
             logger.error(f"Failed to process action data: {e}")
 
-    def get_actions(self) -> List[BrowserRecordedAction]:
+    def get_actions(self) -> list[BrowserRecordedAction]:
         """
         Get all recorded actions.
 
@@ -747,7 +748,7 @@ class BrowserRecorder:
         self._actions.clear()
         logger.info("Recording cleared")
 
-    def to_workflow_nodes(self) -> List[Dict[str, Any]]:
+    def to_workflow_nodes(self) -> list[dict[str, Any]]:
         """
         Convert recorded actions to workflow node configurations.
 
@@ -762,9 +763,7 @@ class BrowserRecorder:
                 nodes.append(node)
         return nodes
 
-    def _action_to_node(
-        self, action: BrowserRecordedAction, node_id: str
-    ) -> Optional[Dict[str, Any]]:
+    def _action_to_node(self, action: BrowserRecordedAction, node_id: str) -> dict[str, Any] | None:
         """
         Convert a single action to a node configuration.
 
@@ -775,7 +774,7 @@ class BrowserRecorder:
             Node configuration dictionary or None if not convertible.
         """
         # Mapping of action types to node types and their configs
-        mapping: Dict[BrowserActionType, Tuple[str, Dict[str, Any]]] = {
+        mapping: dict[BrowserActionType, tuple[str, dict[str, Any]]] = {
             BrowserActionType.CLICK: (
                 "ClickElementNode",
                 {
@@ -854,9 +853,9 @@ class BrowserWorkflowGenerator:
 
     @staticmethod
     def generate_workflow_data(
-        actions: List[BrowserRecordedAction],
-        workflow_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        actions: list[BrowserRecordedAction],
+        workflow_name: str | None = None,
+    ) -> dict[str, Any]:
         """
         Generate workflow nodes from recorded actions (user actions only).
 
@@ -870,8 +869,8 @@ class BrowserWorkflowGenerator:
         Returns:
             Workflow data dictionary with only user action nodes.
         """
-        nodes: Dict[str, Dict[str, Any]] = {}
-        connections: List[Dict[str, Any]] = []
+        nodes: dict[str, dict[str, Any]] = {}
+        connections: list[dict[str, Any]] = []
 
         # Generate workflow name if not provided
         if not workflow_name:
@@ -921,7 +920,7 @@ class BrowserWorkflowGenerator:
         action: BrowserRecordedAction,
         node_id: str,
         y_pos: int,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Convert a recorded action to a workflow node."""
 
         if action.action_type == BrowserActionType.CLICK:

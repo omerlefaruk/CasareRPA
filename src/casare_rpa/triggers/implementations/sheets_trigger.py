@@ -14,14 +14,14 @@ Supports watch modes:
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.triggers.base import BaseTriggerConfig, TriggerType
-from casare_rpa.triggers.registry import register_trigger
 from casare_rpa.triggers.implementations.google_trigger_base import GoogleTriggerBase
+from casare_rpa.triggers.registry import register_trigger
 
 
 @register_trigger
@@ -66,12 +66,12 @@ class SheetsTrigger(GoogleTriggerBase):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._last_content_hash: Optional[str] = None
-        self._last_modified_time: Optional[str] = None
-        self._spreadsheet_title: Optional[str] = None
+        self._last_content_hash: str | None = None
+        self._last_modified_time: str | None = None
+        self._spreadsheet_title: str | None = None
         # State for new_rows mode
         self._last_row_count: int = 0
-        self._last_values: List[List[Any]] = []
+        self._last_values: list[list[Any]] = []
         self._initialized: bool = False
 
     def get_required_scopes(self) -> list[str]:
@@ -265,7 +265,7 @@ class SheetsTrigger(GoogleTriggerBase):
                     "values": row_values,
                     "row_count": current_row_count,
                     "column_count": len(row_values) if row_values else 0,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 }
 
                 metadata = {
@@ -318,7 +318,7 @@ class SheetsTrigger(GoogleTriggerBase):
                 "changes": changes,
                 "row_count": len(current_values),
                 "column_count": (max(len(row) for row in current_values) if current_values else 0),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             metadata = {
@@ -341,18 +341,18 @@ class SheetsTrigger(GoogleTriggerBase):
         self._last_values = current_values
         self._last_row_count = len(current_values)
 
-    def _compute_hash(self, values: List[List[Any]]) -> str:
+    def _compute_hash(self, values: list[list[Any]]) -> str:
         """Compute hash of sheet content."""
         content_str = json.dumps(values, sort_keys=True, default=str)
         return hashlib.sha256(content_str.encode()).hexdigest()
 
     def _find_changes(
         self,
-        old_values: List[List[Any]],
-        new_values: List[List[Any]],
-    ) -> Dict[str, Any]:
+        old_values: list[list[Any]],
+        new_values: list[list[Any]],
+    ) -> dict[str, Any]:
         """Find differences between old and new values."""
-        changes: Dict[str, Any] = {
+        changes: dict[str, Any] = {
             "changed_cells": 0,
             "changed_rows": [],
             "first_changed_row": 0,
@@ -381,7 +381,7 @@ class SheetsTrigger(GoogleTriggerBase):
         changes["changed_rows"] = sorted(changed_rows_set)
         return changes
 
-    async def _emit_change(self, client, change_types: List[str]) -> None:
+    async def _emit_change(self, client, change_types: list[str]) -> None:
         """Emit trigger event for detected changes."""
         config = self.config.config
         spreadsheet_id = config.get("spreadsheet_id", "")
@@ -394,7 +394,7 @@ class SheetsTrigger(GoogleTriggerBase):
             "sheet_name": config.get("sheet_name", ""),
             "change_type": ",".join(change_types),
             "range": range_spec,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Include values if configured
@@ -425,7 +425,7 @@ class SheetsTrigger(GoogleTriggerBase):
             f"(changes: {', '.join(change_types)})"
         )
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate Google Sheets trigger configuration."""
         valid, error = super().validate_config()
         if not valid:
@@ -447,7 +447,7 @@ class SheetsTrigger(GoogleTriggerBase):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for Google Sheets trigger configuration."""
         base_schema = super().get_config_schema()
         base_schema["properties"].update(

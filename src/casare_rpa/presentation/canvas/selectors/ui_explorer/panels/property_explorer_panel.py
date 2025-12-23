@@ -7,6 +7,7 @@ Supports filtering, sorting, copying values, and computed property display.
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
@@ -23,11 +24,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
-    UIExplorerElement,
     ElementSource,
+    UIExplorerElement,
 )
 
 
@@ -79,7 +78,7 @@ class PropertyExplorerPanel(QFrame):
         "BoundingRectangle",
     }
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the property explorer panel.
 
@@ -88,8 +87,8 @@ class PropertyExplorerPanel(QFrame):
         """
         super().__init__(parent)
 
-        self._current_element: Optional[UIExplorerElement] = None
-        self._all_properties: List[Dict[str, Any]] = []  # Stores all properties for filtering
+        self._current_element: UIExplorerElement | None = None
+        self._all_properties: list[dict[str, Any]] = []  # Stores all properties for filtering
         self._context_row: int = -1  # Context menu target row
 
         self._setup_ui()
@@ -647,11 +646,11 @@ class PropertyExplorerPanel(QFrame):
         """Get the total number of properties."""
         return len(self._all_properties)
 
-    def get_current_element(self) -> Optional[UIExplorerElement]:
+    def get_current_element(self) -> UIExplorerElement | None:
         """Get the current element being displayed."""
         return self._current_element
 
-    def load_from_dict(self, element_data: Dict[str, Any]) -> None:
+    def load_from_dict(self, element_data: dict[str, Any]) -> None:
         """
         Load properties from a raw element dictionary.
 

@@ -4,8 +4,9 @@ Database connection and query utilities for monitoring API.
 Provides async database queries for robot, job, and analytics data.
 """
 
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import asyncpg
 from loguru import logger
 
@@ -16,7 +17,7 @@ class MonitoringDatabase:
     def __init__(self, pool: asyncpg.Pool):
         self.pool = pool
 
-    async def get_fleet_summary(self) -> Dict[str, Any]:
+    async def get_fleet_summary(self) -> dict[str, Any]:
         """
         Get fleet-wide summary metrics.
 
@@ -63,7 +64,7 @@ class MonitoringDatabase:
                 "queue_depth": queue_depth or 0,
             }
 
-    async def get_robot_list(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_robot_list(self, status: str | None = None) -> list[dict[str, Any]]:
         """
         Get list of all robots with optional status filter.
 
@@ -101,7 +102,7 @@ class MonitoringDatabase:
             rows = await conn.fetch(query, *params)
             return [dict(row) for row in rows]
 
-    async def get_robot_details(self, robot_id: str) -> Optional[Dict[str, Any]]:
+    async def get_robot_details(self, robot_id: str) -> dict[str, Any] | None:
         """
         Get detailed metrics for a single robot.
 
@@ -160,10 +161,10 @@ class MonitoringDatabase:
     async def get_job_history(
         self,
         limit: int = 50,
-        status: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        status: str | None = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Get job execution history with filtering.
 
@@ -219,7 +220,7 @@ class MonitoringDatabase:
             rows = await conn.fetch(query, *params)
             return [dict(row) for row in rows]
 
-    async def get_job_details(self, job_id: str) -> Optional[Dict[str, Any]]:
+    async def get_job_details(self, job_id: str) -> dict[str, Any] | None:
         """
         Get detailed execution information for a single job.
 
@@ -302,7 +303,7 @@ class MonitoringDatabase:
 
             return result
 
-    async def get_analytics(self) -> Dict[str, Any]:
+    async def get_analytics(self) -> dict[str, Any]:
         """
         Get aggregated analytics and statistics.
 
@@ -411,7 +412,7 @@ class MonitoringDatabase:
                 "self_healing_stats": self_healing_stats,
             }
 
-    def _parse_node_execution_breakdown(self, workflow_output: Any) -> List[Dict[str, Any]]:
+    def _parse_node_execution_breakdown(self, workflow_output: Any) -> list[dict[str, Any]]:
         """
         Parse node execution timing breakdown from workflow output.
 
@@ -427,7 +428,7 @@ class MonitoringDatabase:
         Returns:
             List of node execution records with timing data
         """
-        node_executions: List[Dict[str, Any]] = []
+        node_executions: list[dict[str, Any]] = []
 
         try:
             # Handle both string and dict output formats
@@ -488,7 +489,7 @@ class MonitoringDatabase:
 
         return node_executions
 
-    def _normalize_node_timing(self, node_id: str, timing_data: Any) -> Dict[str, Any]:
+    def _normalize_node_timing(self, node_id: str, timing_data: Any) -> dict[str, Any]:
         """
         Normalize node timing data to a consistent format.
 
@@ -564,7 +565,7 @@ class MonitoringDatabase:
             "order": timing_data.get("order", timing_data.get("step", 0)),
         }
 
-    async def _get_self_healing_stats(self, conn: asyncpg.Connection) -> Dict[str, Any]:
+    async def _get_self_healing_stats(self, conn: asyncpg.Connection) -> dict[str, Any]:
         """
         Get self-healing selector statistics from telemetry data.
 

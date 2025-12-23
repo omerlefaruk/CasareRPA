@@ -5,28 +5,27 @@ Modal dialog for editing application-wide preferences and settings.
 Extracted from canvas/dialogs/preferences_dialog.py for reusability.
 """
 
-from typing import Optional, Dict, Any
-
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QFormLayout,
-    QLabel,
-    QSpinBox,
-    QCheckBox,
-    QGroupBox,
-    QDialogButtonBox,
-    QTabWidget,
-    QWidget,
-    QComboBox,
-)
-from PySide6.QtCore import Signal
+from typing import Any, Dict, Optional
 
 from loguru import logger
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QLabel,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
     DialogSize,
+    DialogStyles,
     apply_dialog_style,
 )
 from casare_rpa.presentation.canvas.ui.widgets.ai_settings_widget import (
@@ -52,8 +51,8 @@ class PreferencesDialog(QDialog):
 
     def __init__(
         self,
-        preferences: Optional[Dict[str, Any]] = None,
-        parent: Optional[QWidget] = None,
+        preferences: dict[str, Any] | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize preferences dialog.
@@ -437,7 +436,7 @@ class PreferencesDialog(QDialog):
         if "ai_settings" in self.preferences:
             self._ai_settings.set_settings(self.preferences["ai_settings"])
 
-    def _gather_preferences(self) -> Dict[str, Any]:
+    def _gather_preferences(self) -> dict[str, Any]:
         """
         Gather preferences from widgets.
 
@@ -494,7 +493,7 @@ class PreferencesDialog(QDialog):
         self.preferences_changed.emit(preferences)
         logger.debug("Preferences applied")
 
-    def get_preferences(self) -> Dict[str, Any]:
+    def get_preferences(self) -> dict[str, Any]:
         """
         Get the current preferences.
 

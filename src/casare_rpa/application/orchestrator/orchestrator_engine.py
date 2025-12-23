@@ -4,25 +4,26 @@ The main orchestration logic for CasareRPA.
 """
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Optional, Dict, List, Any, Callable
 import uuid
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.orchestrator.entities import (
-    Job,
-    JobStatus,
-    JobPriority,
-    Robot,
-    RobotStatus,
-    Schedule,
-    ScheduleFrequency,
-)
 from casare_rpa.application.orchestrator.services.job_queue_manager import JobQueue
 from casare_rpa.application.orchestrator.services.scheduling_coordinator import (
     JobScheduler,
     calculate_next_run,
+)
+from casare_rpa.domain.orchestrator.entities import (
+    Job,
+    JobPriority,
+    JobStatus,
+    Robot,
+    RobotStatus,
+    Schedule,
+    ScheduleFrequency,
 )
 
 try:
@@ -40,8 +41,8 @@ except ImportError:
     logger.warning("websockets not installed. Server features disabled.")
 
 try:
-    from casare_rpa.triggers.manager import TriggerManager
     from casare_rpa.triggers.base import TriggerEvent
+    from casare_rpa.triggers.manager import TriggerManager
 
     HAS_TRIGGERS = True
 except ImportError:
@@ -65,7 +66,7 @@ class OrchestratorEngine:
 
     def __init__(
         self,
-        service: Optional[Any] = None,
+        service: Any | None = None,
         load_balancing: str = "least_loaded",
         dispatch_interval: int = 5,
         timeout_check_interval: int = 30,
@@ -100,9 +101,9 @@ class OrchestratorEngine:
             on_state_change=self._on_job_state_change,
         )
 
-        self._scheduler: Optional[JobScheduler] = None
-        self._dispatcher: Optional[JobDispatcher] = None
-        self._trigger_manager: Optional["TriggerManager"] = None
+        self._scheduler: JobScheduler | None = None
+        self._dispatcher: JobDispatcher | None = None
+        self._trigger_manager: TriggerManager | None = None
 
         if HAS_DISPATCHER:
             strategy = LoadBalancingStrategy(load_balancing)
@@ -126,8 +127,8 @@ class OrchestratorEngine:
         self._trigger_webhook_port = trigger_webhook_port
 
         # Event callbacks
-        self._on_job_complete: Optional[Callable[[Job], None]] = None
-        self._on_job_failed: Optional[Callable[[Job], None]] = None
+        self._on_job_complete: Callable[[Job], None] | None = None
+        self._on_job_failed: Callable[[Job], None] | None = None
 
         # WebSocket server
         # SECURITY: Default to localhost only. Use configure_server() to enable network access.
@@ -137,7 +138,7 @@ class OrchestratorEngine:
 
         # Running state
         self._running = False
-        self._background_tasks: List[asyncio.Task] = []
+        self._background_tasks: list[asyncio.Task] = []
 
         logger.info("OrchestratorEngine initialized")
 
@@ -262,7 +263,7 @@ class OrchestratorEngine:
         """Handle job progress from robot."""
         await self.update_job_progress(job_id, progress, current_node)
 
-    async def _on_server_job_complete(self, job_id: str, result: Dict):
+    async def _on_server_job_complete(self, job_id: str, result: dict):
         """Handle job completion from robot."""
         await self.complete_job(job_id, result)
 
@@ -293,7 +294,7 @@ class OrchestratorEngine:
         if result.get("accepted"):
             job.status = JobStatus.RUNNING
             job.robot_id = robot_id
-            job.started_at = datetime.now(timezone.utc).isoformat()
+            job.started_at = datetime.now(UTC).isoformat()
             await self._persist_job(job)
             logger.info(f"Job {job.id[:8]} dispatched to robot {robot_id}")
             return True
@@ -308,7 +309,7 @@ class OrchestratorEngine:
         return self._server_port
 
     @property
-    def connected_robots(self) -> List[str]:
+    def connected_robots(self) -> list[str]:
         """Get list of connected robot IDs."""
         if self._server:
             # return [r.id for r in self._server.get_connected_robots()]
@@ -316,7 +317,7 @@ class OrchestratorEngine:
         return []
 
     @property
-    def available_robots(self) -> List[Robot]:
+    def available_robots(self) -> list[Robot]:
         """Get list of available robots."""
         if self._server:
             # return self._server.get_available_robots()
@@ -352,12 +353,12 @@ class OrchestratorEngine:
         workflow_id: str,
         workflow_name: str,
         workflow_json: str,
-        robot_id: Optional[str] = None,
+        robot_id: str | None = None,
         priority: JobPriority = JobPriority.NORMAL,
-        scheduled_time: Optional[datetime] = None,
-        params: Optional[Dict] = None,
+        scheduled_time: datetime | None = None,
+        params: dict | None = None,
         check_duplicate: bool = True,
-    ) -> Optional[Job]:
+    ) -> Job | None:
         """
         Submit a new job to the queue.
 
@@ -385,11 +386,11 @@ class OrchestratorEngine:
             status=JobStatus.PENDING,
             priority=priority,
             scheduled_time=scheduled_time,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
         # If scheduled for future, create a one-time schedule
-        if scheduled_time and scheduled_time > datetime.now(timezone.utc):
+        if scheduled_time and scheduled_time > datetime.now(UTC):
             return await self._schedule_future_job(job, scheduled_time)
 
         # Enqueue immediately
@@ -405,7 +406,7 @@ class OrchestratorEngine:
         logger.info(f"Job {job.id[:8]} submitted with priority {priority.name}")
         return job
 
-    async def _schedule_future_job(self, job: Job, run_time: datetime) -> Optional[Job]:
+    async def _schedule_future_job(self, job: Job, run_time: datetime) -> Job | None:
         """Schedule a job for future execution."""
         if not self._scheduler:
             logger.error("Scheduler not available for future jobs")
@@ -456,7 +457,7 @@ class OrchestratorEngine:
 
         return success
 
-    async def retry_job(self, job_id: str) -> Optional[Job]:
+    async def retry_job(self, job_id: str) -> Job | None:
         """
         Retry a failed job.
 
@@ -510,7 +511,7 @@ class OrchestratorEngine:
 
         return success
 
-    async def complete_job(self, job_id: str, result: Optional[Dict] = None) -> bool:
+    async def complete_job(self, job_id: str, result: dict | None = None) -> bool:
         """
         Mark a job as completed (called by robot).
 
@@ -568,7 +569,7 @@ class OrchestratorEngine:
         name: str,
         environment: str = "default",
         max_concurrent_jobs: int = 1,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> Robot:
         """
         Register a robot with the orchestrator.
@@ -590,8 +591,8 @@ class OrchestratorEngine:
             environment=environment,
             max_concurrent_jobs=max_concurrent_jobs,
             current_jobs=0,
-            last_seen=datetime.now(timezone.utc),
-            last_heartbeat=datetime.now(timezone.utc),
+            last_seen=datetime.now(UTC),
+            last_heartbeat=datetime.now(UTC),
             tags=tags or [],
         )
 
@@ -663,11 +664,11 @@ class OrchestratorEngine:
         workflow_name: str,
         frequency: ScheduleFrequency,
         cron_expression: str = "",
-        robot_id: Optional[str] = None,
+        robot_id: str | None = None,
         priority: JobPriority = JobPriority.NORMAL,
         timezone: str = "UTC",
         enabled: bool = True,
-    ) -> Optional[Schedule]:
+    ) -> Schedule | None:
         """
         Create a new schedule.
 
@@ -833,17 +834,17 @@ class OrchestratorEngine:
 
     # ==================== STATISTICS ====================
 
-    def get_queue_stats(self) -> Dict[str, Any]:
+    def get_queue_stats(self) -> dict[str, Any]:
         """Get queue statistics."""
         return self._job_queue.get_queue_stats()
 
-    def get_dispatcher_stats(self) -> Dict[str, Any]:
+    def get_dispatcher_stats(self) -> dict[str, Any]:
         """Get dispatcher statistics."""
         if self._dispatcher:
             return self._dispatcher.get_stats()
         return {}
 
-    def get_upcoming_schedules(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_upcoming_schedules(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get upcoming scheduled runs."""
         if self._scheduler:
             return self._scheduler.get_next_runs(limit)
@@ -852,7 +853,7 @@ class OrchestratorEngine:
     # ==================== TRIGGER MANAGEMENT ====================
 
     async def register_trigger(
-        self, trigger_config: Dict[str, Any], scenario_id: str, workflow_id: str
+        self, trigger_config: dict[str, Any], scenario_id: str, workflow_id: str
     ) -> bool:
         """
         Register a trigger with the trigger manager.
@@ -923,7 +924,7 @@ class OrchestratorEngine:
             return True
         return False
 
-    async def fire_trigger_manually(self, trigger_id: str, payload: Optional[Dict] = None) -> bool:
+    async def fire_trigger_manually(self, trigger_id: str, payload: dict | None = None) -> bool:
         """
         Manually fire a trigger.
 
@@ -942,7 +943,7 @@ class OrchestratorEngine:
         """Get the trigger manager instance."""
         return self._trigger_manager
 
-    def get_trigger_stats(self) -> Dict[str, Any]:
+    def get_trigger_stats(self) -> dict[str, Any]:
         """Get trigger statistics."""
         if not self._trigger_manager:
             return {"available": False}

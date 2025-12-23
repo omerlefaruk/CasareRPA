@@ -6,34 +6,32 @@ and viewing usage statistics.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from functools import partial
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from PySide6.QtCore import QDateTime, Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
+    QApplication,
+    QCheckBox,
     QComboBox,
-    QLineEdit,
-    QLabel,
-    QMenu,
-    QMessageBox,
+    QDateTimeEdit,
     QDialog,
     QFormLayout,
     QGroupBox,
-    QDateTimeEdit,
-    QCheckBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
     QTextEdit,
-    QApplication,
+    QVBoxLayout,
+    QWidget,
 )
-from functools import partial
-
-from PySide6.QtCore import Qt, Signal, QTimer, QDateTime, Slot
-from PySide6.QtGui import QColor, QBrush
-
 
 if TYPE_CHECKING:
     pass
@@ -52,12 +50,12 @@ class GenerateApiKeyDialog(QDialog):
 
     def __init__(
         self,
-        robots: List[Dict[str, Any]],
-        parent: Optional[QWidget] = None,
+        robots: list[dict[str, Any]],
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._robots = robots
-        self._generated_key: Optional[str] = None
+        self._generated_key: str | None = None
         self._setup_ui()
         self._apply_styles()
 
@@ -209,7 +207,7 @@ class GenerateApiKeyDialog(QDialog):
             clipboard.setText(self._generated_key)
             QMessageBox.information(self, "Copied", "API key copied to clipboard.")
 
-    def get_key_config(self) -> Dict[str, Any]:
+    def get_key_config(self) -> dict[str, Any]:
         """Get key configuration from form."""
         expires_at = None
         if self._expires_check.isChecked():
@@ -246,12 +244,12 @@ class ApiKeyPanel(QWidget):
     key_rotated = Signal(str)
     refresh_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._api_keys: List[Dict[str, Any]] = []
-        self._robots: List[Dict[str, Any]] = []
-        self._tenant_id: Optional[str] = None
-        self._context_key: Optional[Dict[str, Any]] = None  # Context menu target
+        self._api_keys: list[dict[str, Any]] = []
+        self._robots: list[dict[str, Any]] = []
+        self._tenant_id: str | None = None
+        self._context_key: dict[str, Any] | None = None  # Context menu target
         self._setup_ui()
         self._apply_styles()
 
@@ -399,7 +397,7 @@ class ApiKeyPanel(QWidget):
         """Set current tenant for filtering."""
         self._tenant_id = tenant_id
 
-    def update_robots(self, robots: List[Dict[str, Any]]) -> None:
+    def update_robots(self, robots: list[dict[str, Any]]) -> None:
         """Update available robots list."""
         self._robots = robots
         current = self._robot_filter.currentData()
@@ -418,7 +416,7 @@ class ApiKeyPanel(QWidget):
 
         self._robot_filter.blockSignals(False)
 
-    def update_api_keys(self, api_keys: List[Dict[str, Any]]) -> None:
+    def update_api_keys(self, api_keys: list[dict[str, Any]]) -> None:
         """Update table with API key list."""
         self._api_keys = api_keys
         self._populate_table()
@@ -554,7 +552,7 @@ class ApiKeyPanel(QWidget):
 
         self._update_status_label(visible_count)
 
-    def _update_status_label(self, visible: Optional[int] = None) -> None:
+    def _update_status_label(self, visible: int | None = None) -> None:
         """Update status label."""
         total = len(self._api_keys)
         active = sum(1 for k in self._api_keys if k.get("status") in ("valid", "active"))
@@ -644,7 +642,7 @@ class ApiKeyPanel(QWidget):
             config = dialog.get_key_config()
             self.key_generated.emit(config)
 
-    def _on_revoke_key(self, key: Dict[str, Any]) -> None:
+    def _on_revoke_key(self, key: dict[str, Any]) -> None:
         """Confirm and revoke API key."""
         reply = QMessageBox.question(
             self,
@@ -656,7 +654,7 @@ class ApiKeyPanel(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             self.key_revoked.emit(key.get("id"))
 
-    def _on_rotate_key(self, key: Dict[str, Any]) -> None:
+    def _on_rotate_key(self, key: dict[str, Any]) -> None:
         """Confirm and rotate API key."""
         reply = QMessageBox.question(
             self,
@@ -669,7 +667,7 @@ class ApiKeyPanel(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             self.key_rotated.emit(key.get("id"))
 
-    def _on_view_details(self, key: Dict[str, Any]) -> None:
+    def _on_view_details(self, key: dict[str, Any]) -> None:
         """Show key details in a dialog."""
         details = [
             f"Name: {key.get('name', 'Unnamed')}",

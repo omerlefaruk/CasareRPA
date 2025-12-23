@@ -26,7 +26,7 @@ class WorkflowListItemDTO:
     id: str
     name: str
     node_count: int
-    last_modified: Optional[datetime]
+    last_modified: datetime | None
     description: str = ""
 
 
@@ -34,9 +34,9 @@ class WorkflowListItemDTO:
 class WorkflowFilter:
     """Filter criteria for workflow queries."""
 
-    name_contains: Optional[str] = None
-    modified_after: Optional[datetime] = None
-    modified_before: Optional[datetime] = None
+    name_contains: str | None = None
+    modified_after: datetime | None = None
+    modified_before: datetime | None = None
     limit: int = 100
     offset: int = 0
 
@@ -65,8 +65,8 @@ class WorkflowQueryService:
 
     async def list_workflows(
         self,
-        filter: Optional[WorkflowFilter] = None,
-    ) -> List[WorkflowListItemDTO]:
+        filter: WorkflowFilter | None = None,
+    ) -> list[WorkflowListItemDTO]:
         """
         List workflows with optional filtering.
 
@@ -80,7 +80,7 @@ class WorkflowQueryService:
             List of workflow DTOs matching the filter
         """
         filter = filter or WorkflowFilter()
-        result: List[WorkflowListItemDTO] = []
+        result: list[WorkflowListItemDTO] = []
 
         try:
             if not self._storage_path.exists():
@@ -117,7 +117,7 @@ class WorkflowQueryService:
     async def get_workflow_summary(
         self,
         workflow_id: str,
-    ) -> Optional[WorkflowListItemDTO]:
+    ) -> WorkflowListItemDTO | None:
         """
         Get summary info for a single workflow.
 
@@ -142,7 +142,7 @@ class WorkflowQueryService:
     async def search_workflows(
         self,
         query: str,
-    ) -> List[WorkflowListItemDTO]:
+    ) -> list[WorkflowListItemDTO]:
         """
         Full-text search across workflow names and descriptions.
 
@@ -156,7 +156,7 @@ class WorkflowQueryService:
             return await self.list_workflows()
 
         query_lower = query.lower().strip()
-        result: List[WorkflowListItemDTO] = []
+        result: list[WorkflowListItemDTO] = []
 
         try:
             if not self._storage_path.exists():
@@ -190,7 +190,7 @@ class WorkflowQueryService:
     async def _read_workflow_summary(
         self,
         workflow_file: Path,
-    ) -> Optional[WorkflowListItemDTO]:
+    ) -> WorkflowListItemDTO | None:
         """
         Read workflow summary from file.
 
@@ -198,7 +198,7 @@ class WorkflowQueryService:
         without parsing the full workflow structure.
         """
         try:
-            with open(workflow_file, "r", encoding="utf-8") as f:
+            with open(workflow_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             metadata = data.get("metadata", {})
@@ -249,14 +249,14 @@ class WorkflowQueryService:
     async def _find_workflow_by_id(
         self,
         workflow_id: str,
-    ) -> Optional[WorkflowListItemDTO]:
+    ) -> WorkflowListItemDTO | None:
         """Find workflow by searching ID in file contents."""
         try:
             workflow_files = list(self._storage_path.glob("*.json"))
 
             for workflow_file in workflow_files:
                 try:
-                    with open(workflow_file, "r", encoding="utf-8") as f:
+                    with open(workflow_file, encoding="utf-8") as f:
                         data = json.load(f)
 
                     if data.get("id") == workflow_id:

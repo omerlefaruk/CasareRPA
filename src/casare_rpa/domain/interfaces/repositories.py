@@ -34,7 +34,7 @@ class IFolderStorage(Protocol):
         ...
 
     @staticmethod
-    def save_folders(folders_file: Any, file_path: Optional[Path] = None) -> None:
+    def save_folders(folders_file: Any, file_path: Path | None = None) -> None:
         """
         Save folders to file.
 
@@ -45,7 +45,7 @@ class IFolderStorage(Protocol):
         ...
 
     @staticmethod
-    def load_folders(file_path: Optional[Path] = None) -> Any:
+    def load_folders(file_path: Path | None = None) -> Any:
         """
         Load folders from file.
 
@@ -60,9 +60,9 @@ class IFolderStorage(Protocol):
     @staticmethod
     def create_folder(
         name: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
         color: str = "blue",
-        file_path: Optional[Path] = None,
+        file_path: Path | None = None,
     ) -> Any:
         """
         Create a new folder.
@@ -79,7 +79,7 @@ class IFolderStorage(Protocol):
         ...
 
     @staticmethod
-    def get_folder(folder_id: str, file_path: Optional[Path] = None) -> Optional[Any]:
+    def get_folder(folder_id: str, file_path: Path | None = None) -> Any | None:
         """
         Get a folder by ID.
 
@@ -93,7 +93,7 @@ class IFolderStorage(Protocol):
         ...
 
     @staticmethod
-    def delete_folder(folder_id: str, file_path: Optional[Path] = None) -> bool:
+    def delete_folder(folder_id: str, file_path: Path | None = None) -> bool:
         """
         Delete a folder.
 
@@ -120,12 +120,12 @@ class IEnvironmentStorage(Protocol):
         ...
 
     @staticmethod
-    def save_environments(environments_file: Any, file_path: Optional[Path] = None) -> None:
+    def save_environments(environments_file: Any, file_path: Path | None = None) -> None:
         """Save environments to file."""
         ...
 
     @staticmethod
-    def load_environments(file_path: Optional[Path] = None) -> Any:
+    def load_environments(file_path: Path | None = None) -> Any:
         """Load environments from file."""
         ...
 
@@ -133,19 +133,19 @@ class IEnvironmentStorage(Protocol):
     def create_environment(
         name: str,
         description: str = "",
-        variables: Optional[Dict[str, str]] = None,
-        file_path: Optional[Path] = None,
+        variables: dict[str, str] | None = None,
+        file_path: Path | None = None,
     ) -> Any:
         """Create a new environment."""
         ...
 
     @staticmethod
-    def get_environment(environment_id: str, file_path: Optional[Path] = None) -> Optional[Any]:
+    def get_environment(environment_id: str, file_path: Path | None = None) -> Any | None:
         """Get an environment by ID."""
         ...
 
     @staticmethod
-    def delete_environment(environment_id: str, file_path: Optional[Path] = None) -> bool:
+    def delete_environment(environment_id: str, file_path: Path | None = None) -> bool:
         """Delete an environment."""
         ...
 
@@ -163,12 +163,12 @@ class ITemplateStorage(Protocol):
         ...
 
     @staticmethod
-    def list_templates() -> List[Any]:
+    def list_templates() -> list[Any]:
         """List all available templates."""
         ...
 
     @staticmethod
-    def get_template(template_id: str) -> Optional[Any]:
+    def get_template(template_id: str) -> Any | None:
         """Get a template by ID."""
         ...
 
@@ -176,9 +176,9 @@ class ITemplateStorage(Protocol):
     def save_template(
         name: str,
         description: str,
-        workflow_data: Dict[str, Any],
+        workflow_data: dict[str, Any],
         category: str = "general",
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> Any:
         """Save a new template."""
         ...

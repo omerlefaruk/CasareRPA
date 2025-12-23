@@ -10,9 +10,10 @@ Collects and tracks:
 
 import asyncio
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
 from loguru import logger
 
 try:
@@ -32,9 +33,9 @@ class NodeMetrics:
     node_type: str
     duration_ms: float
     success: bool
-    error_type: Optional[str] = None
+    error_type: str | None = None
     retry_count: int = 0
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -44,7 +45,7 @@ class JobMetrics:
     job_id: str
     workflow_name: str
     started_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     duration_ms: float = 0
     success: bool = False
     total_nodes: int = 0
@@ -52,10 +53,10 @@ class JobMetrics:
     failed_nodes: int = 0
     skipped_nodes: int = 0
     retry_count: int = 0
-    error_message: Optional[str] = None
-    node_metrics: List[NodeMetrics] = field(default_factory=list)
+    error_message: str | None = None
+    node_metrics: list[NodeMetrics] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "job_id": self.job_id,
@@ -81,7 +82,7 @@ class ResourceSnapshot:
     cpu_percent: float
     memory_percent: float
     memory_mb: float
-    disk_percent: Optional[float] = None
+    disk_percent: float | None = None
     network_bytes_sent: int = 0
     network_bytes_recv: int = 0
 
@@ -111,7 +112,7 @@ class MetricsCollector:
 
         # Job metrics history (deque for O(1) append/pop)
         self._job_metrics: deque[JobMetrics] = deque(maxlen=history_limit)
-        self._current_job: Optional[JobMetrics] = None
+        self._current_job: JobMetrics | None = None
 
         # Aggregated statistics
         self._total_jobs = 0
@@ -120,7 +121,7 @@ class MetricsCollector:
         self._total_duration_ms = 0.0
 
         # Node statistics by type
-        self._node_stats: Dict[str, Dict[str, Any]] = defaultdict(
+        self._node_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {
                 "total_executions": 0,
                 "successful": 0,
@@ -133,11 +134,11 @@ class MetricsCollector:
         # Resource monitoring (deque for O(1) operations)
         max_resource_samples = int(3600 / resource_sample_interval)  # 1 hour of samples
         self._resource_history: deque[ResourceSnapshot] = deque(maxlen=max_resource_samples)
-        self._resource_task: Optional[asyncio.Task] = None
+        self._resource_task: asyncio.Task | None = None
         self._monitoring = False
 
         # Error tracking
-        self._error_counts: Dict[str, int] = defaultdict(int)
+        self._error_counts: dict[str, int] = defaultdict(int)
 
         logger.info("Metrics collector initialized")
 
@@ -163,7 +164,7 @@ class MetricsCollector:
         self._current_job = JobMetrics(
             job_id=job_id,
             workflow_name=workflow_name,
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             total_nodes=total_nodes,
         )
         logger.debug(f"Started tracking job {job_id}")
@@ -172,7 +173,7 @@ class MetricsCollector:
     def end_job(
         self,
         success: bool,
-        error_message: Optional[str] = None,
+        error_message: str | None = None,
     ):
         """
         End tracking current job.
@@ -185,7 +186,7 @@ class MetricsCollector:
             logger.warning("end_job called with no current job")
             return
 
-        self._current_job.completed_at = datetime.now(timezone.utc)
+        self._current_job.completed_at = datetime.now(UTC)
         self._current_job.duration_ms = (
             self._current_job.completed_at - self._current_job.started_at
         ).total_seconds() * 1000
@@ -221,7 +222,7 @@ class MetricsCollector:
         node_type: str,
         duration_ms: float,
         success: bool,
-        error_type: Optional[str] = None,
+        error_type: str | None = None,
         retry_count: int = 0,
     ):
         """
@@ -310,7 +311,7 @@ class MetricsCollector:
 
             await asyncio.sleep(self.resource_sample_interval)
 
-    def _sample_resources(self) -> Optional[ResourceSnapshot]:
+    def _sample_resources(self) -> ResourceSnapshot | None:
         """Sample current resource usage."""
         if not PSUTIL_AVAILABLE:
             return None
@@ -321,7 +322,7 @@ class MetricsCollector:
             net_io = psutil.net_io_counters()
 
             return ResourceSnapshot(
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 cpu_percent=process.cpu_percent(),
                 memory_percent=process.memory_percent(),
                 memory_mb=memory_info.rss / (1024 * 1024),
@@ -335,7 +336,7 @@ class MetricsCollector:
             logger.error(f"Failed to sample resources: {e}")
             return None
 
-    def get_current_resources(self) -> Optional[Dict[str, Any]]:
+    def get_current_resources(self) -> dict[str, Any] | None:
         """Get current resource usage."""
         snapshot = self._sample_resources()
         if snapshot:
@@ -349,7 +350,7 @@ class MetricsCollector:
 
     # Statistics and reporting
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get overall metrics summary."""
         avg_duration = self._total_duration_ms / self._total_jobs if self._total_jobs > 0 else 0
         success_rate = self._successful_jobs / self._total_jobs * 100 if self._total_jobs > 0 else 0
@@ -364,7 +365,7 @@ class MetricsCollector:
             "current_job": self._current_job.job_id if self._current_job else None,
         }
 
-    def get_node_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_node_stats(self) -> dict[str, dict[str, Any]]:
         """Get statistics by node type."""
         result = {}
         for node_type, stats in self._node_stats.items():
@@ -382,7 +383,7 @@ class MetricsCollector:
             }
         return result
 
-    def get_error_summary(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_error_summary(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get most common errors."""
         sorted_errors = sorted(
             self._error_counts.items(),
@@ -392,7 +393,7 @@ class MetricsCollector:
 
         return [{"error": error, "count": count} for error, count in sorted_errors]
 
-    def get_recent_jobs(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_jobs(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent job metrics."""
         recent = self._job_metrics[-limit:]
         return [job.to_dict() for job in reversed(recent)]
@@ -400,9 +401,9 @@ class MetricsCollector:
     def get_resource_history(
         self,
         minutes: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get resource usage history."""
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+        cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
         history = [
             {
                 "timestamp": s.timestamp.isoformat(),
@@ -415,7 +416,7 @@ class MetricsCollector:
         ]
         return history
 
-    def get_full_report(self) -> Dict[str, Any]:
+    def get_full_report(self) -> dict[str, Any]:
         """Get comprehensive metrics report."""
         return {
             "summary": self.get_summary(),
@@ -424,7 +425,7 @@ class MetricsCollector:
             "recent_jobs": self.get_recent_jobs(),
             "current_resources": self.get_current_resources(),
             "resource_history": self.get_resource_history(),
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         }
 
     def reset(self):
@@ -442,7 +443,7 @@ class MetricsCollector:
 
 
 # Global metrics instance
-_metrics_collector: Optional[MetricsCollector] = None
+_metrics_collector: MetricsCollector | None = None
 
 
 def get_metrics_collector() -> MetricsCollector:

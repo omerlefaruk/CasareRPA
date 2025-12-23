@@ -7,21 +7,19 @@ Used in the properties panel for selector/xpath inputs.
 Now supports both UIExplorerDialog (full) and ElementSelectorDialog (simplified).
 """
 
-from typing import Optional, Any
-
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QLineEdit,
-    QToolButton,
-    QMenu,
-)
+from typing import Any, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLineEdit,
+    QMenu,
+    QToolButton,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
-
 
 # Properties that should show the selector explorer button
 SELECTOR_PROPERTY_NAMES = {
@@ -83,7 +81,7 @@ class SelectorInputWidget(QWidget):
     def __init__(
         self,
         initial_value: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         use_new_dialog: bool = True,
     ) -> None:
         """

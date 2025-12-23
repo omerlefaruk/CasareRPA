@@ -6,18 +6,18 @@ Provides efficient storage and retrieval of robot log entries with
 and leverages PostgreSQL partitioning for efficient cleanup.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import orjson
 from loguru import logger
 
 from casare_rpa.domain.value_objects.log_entry import (
+    DEFAULT_LOG_RETENTION_DAYS,
     LogEntry,
     LogLevel,
     LogQuery,
     LogStats,
-    DEFAULT_LOG_RETENTION_DAYS,
 )
 from casare_rpa.utils.pooling.database_pool import DatabasePoolManager
 
@@ -30,7 +30,7 @@ class LogRepository:
     Leverages PostgreSQL partitioning for automatic retention management.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -85,7 +85,7 @@ class LogRepository:
                 entry.message,
                 entry.source,
                 orjson.dumps(entry.extra or {}).decode(),
-                datetime.now(timezone.utc),
+                datetime.now(UTC),
             )
             logger.debug(f"Saved log entry: {entry.id}")
             return entry
@@ -95,7 +95,7 @@ class LogRepository:
         finally:
             await self._release_connection(conn)
 
-    async def save_batch(self, entries: List[LogEntry]) -> int:
+    async def save_batch(self, entries: list[LogEntry]) -> int:
         """
         Save multiple log entries in a batch.
 
@@ -123,7 +123,7 @@ class LogRepository:
                     entry.message,
                     entry.source,
                     orjson.dumps(entry.extra or {}).decode(),
-                    datetime.now(timezone.utc),
+                    datetime.now(UTC),
                 )
                 for entry in entries
             ]
@@ -148,7 +148,7 @@ class LogRepository:
         finally:
             await self._release_connection(conn)
 
-    async def query(self, query: LogQuery) -> List[LogEntry]:
+    async def query(self, query: LogQuery) -> list[LogEntry]:
         """
         Query log entries with filtering.
 
@@ -192,7 +192,7 @@ class LogRepository:
         tenant_id: str,
         limit: int = 100,
         min_level: LogLevel = LogLevel.DEBUG,
-    ) -> List[LogEntry]:
+    ) -> list[LogEntry]:
         """
         Get recent logs for a specific robot.
 
@@ -213,7 +213,7 @@ class LogRepository:
         )
         return await self.query(query)
 
-    async def get_stats(self, tenant_id: str, robot_id: Optional[str] = None) -> LogStats:
+    async def get_stats(self, tenant_id: str, robot_id: str | None = None) -> LogStats:
         """
         Get log statistics.
 
@@ -267,7 +267,7 @@ class LogRepository:
 
     async def cleanup_old_logs(
         self, retention_days: int = DEFAULT_LOG_RETENTION_DAYS
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Remove logs older than retention period.
 
@@ -280,7 +280,7 @@ class LogRepository:
             Dictionary with cleanup results.
         """
         conn = await self._get_connection()
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         try:
             # Drop old partitions
             rows = await conn.fetch(
@@ -291,7 +291,7 @@ class LogRepository:
             dropped_partitions = [row["partition_name"] for row in rows]
 
             # Calculate duration
-            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
             # Record cleanup in history
             await conn.execute(
@@ -325,7 +325,7 @@ class LogRepository:
 
             return result
         except Exception as e:
-            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
             error_msg = str(e)
 
             # Record failed cleanup
@@ -348,7 +348,7 @@ class LogRepository:
         finally:
             await self._release_connection(conn)
 
-    async def ensure_partitions(self, months_ahead: int = 2) -> List[Dict[str, str]]:
+    async def ensure_partitions(self, months_ahead: int = 2) -> list[dict[str, str]]:
         """
         Ensure future partitions exist.
 
@@ -380,7 +380,7 @@ class LogRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_cleanup_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_cleanup_history(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get recent cleanup job history.
 
@@ -422,7 +422,7 @@ class LogRepository:
         finally:
             await self._release_connection(conn)
 
-    def _row_to_entry(self, row: Dict[str, Any]) -> LogEntry:
+    def _row_to_entry(self, row: dict[str, Any]) -> LogEntry:
         """
         Convert database row to LogEntry.
 

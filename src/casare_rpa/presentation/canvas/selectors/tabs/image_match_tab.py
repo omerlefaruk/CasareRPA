@@ -7,10 +7,11 @@ Uses CVHealer for template matching.
 
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QFileDialog,
     QGroupBox,
@@ -22,7 +23,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
@@ -45,12 +45,12 @@ class ImageMatchTab(BaseSelectorTab):
     - Return click coordinates for matched regions
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._browser_page: Optional["Page"] = None
+        self._browser_page: Page | None = None
         self._cv_healer = None
-        self._screenshot_bytes: Optional[bytes] = None
-        self._template_bytes: Optional[bytes] = None
+        self._screenshot_bytes: bytes | None = None
+        self._template_bytes: bytes | None = None
         self._matches = []
 
         self.setup_ui()
@@ -243,11 +243,11 @@ class ImageMatchTab(BaseSelectorTab):
         """Stop picking mode."""
         pass
 
-    def get_current_selector(self) -> Optional[SelectorResult]:
+    def get_current_selector(self) -> SelectorResult | None:
         """Get current selector result."""
         return self._current_result
 
-    def get_strategies(self) -> List[SelectorStrategy]:
+    def get_strategies(self) -> list[SelectorStrategy]:
         """Get generated strategies."""
         return self._strategies
 
@@ -271,8 +271,9 @@ class ImageMatchTab(BaseSelectorTab):
 
         # Fallback: desktop screenshot
         try:
-            from PIL import ImageGrab
             import io
+
+            from PIL import ImageGrab
 
             img = ImageGrab.grab()
             buffer = io.BytesIO()
@@ -482,7 +483,7 @@ class ImageMatchTab(BaseSelectorTab):
             self.results_info.setText(f"Error: {e}")
             self._emit_status(f"Matching error: {e}")
 
-    async def test_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
+    async def test_selector(self, selector: str, selector_type: str) -> dict[str, Any]:
         """Test selector - re-run template matching."""
         if not self._cv_healer or not self._screenshot_bytes or not self._template_bytes:
             return {"success": False, "error": "Not ready"}

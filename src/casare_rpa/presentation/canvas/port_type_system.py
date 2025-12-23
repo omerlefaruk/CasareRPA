@@ -12,10 +12,9 @@ References:
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, Set, Optional, Tuple, Protocol
+from typing import Dict, Optional, Protocol, Set, Tuple
 
 from casare_rpa.domain.value_objects.types import DataType
-
 
 # ============================================================================
 # PORT TYPE METADATA
@@ -37,7 +36,7 @@ class PortTypeInfo:
 
     data_type: DataType
     display_name: str
-    color: Tuple[int, int, int, int]  # RGBA
+    color: tuple[int, int, int, int]  # RGBA
     shape: str  # circle, diamond, square, hexagon, triangle, hollow_circle
     description: str = ""
 
@@ -68,7 +67,7 @@ class TypeCompatibilityRule(Protocol):
         """Check if source type can connect to target type."""
         ...
 
-    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> str | None:
         """Get human-readable reason why types are incompatible."""
         ...
 
@@ -87,7 +86,7 @@ class DefaultCompatibilityRule:
     """
 
     # Types that INTEGER can implicitly convert to
-    INTEGER_COMPATIBLE: Set[DataType] = {
+    INTEGER_COMPATIBLE: set[DataType] = {
         DataType.INTEGER,
         DataType.FLOAT,
         DataType.STRING,
@@ -95,27 +94,27 @@ class DefaultCompatibilityRule:
     }
 
     # Types that FLOAT can implicitly convert to
-    FLOAT_COMPATIBLE: Set[DataType] = {
+    FLOAT_COMPATIBLE: set[DataType] = {
         DataType.FLOAT,
         DataType.STRING,
         DataType.ANY,
     }
 
     # Types that BOOLEAN can implicitly convert to
-    BOOLEAN_COMPATIBLE: Set[DataType] = {
+    BOOLEAN_COMPATIBLE: set[DataType] = {
         DataType.BOOLEAN,
         DataType.STRING,
         DataType.ANY,
     }
 
     # Types that STRING can implicitly convert to
-    STRING_COMPATIBLE: Set[DataType] = {
+    STRING_COMPATIBLE: set[DataType] = {
         DataType.STRING,
         DataType.ANY,
     }
 
     # Strict types (require exact match or ANY)
-    STRICT_TYPES: Set[DataType] = {
+    STRICT_TYPES: set[DataType] = {
         DataType.PAGE,
         DataType.BROWSER,
         DataType.ELEMENT,
@@ -164,7 +163,7 @@ class DefaultCompatibilityRule:
         # Default: incompatible
         return False
 
-    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> str | None:
         """
         Get human-readable reason why types are incompatible.
 
@@ -217,7 +216,7 @@ class PortTypeRegistry:
 
     # Type colors - carefully chosen for visibility on dark background
     # and distinctiveness between types
-    TYPE_COLORS: Dict[DataType, Tuple[int, int, int, int]] = {
+    TYPE_COLORS: dict[DataType, tuple[int, int, int, int]] = {
         DataType.STRING: (255, 193, 7, 255),  # Amber - common type
         DataType.INTEGER: (76, 175, 80, 255),  # Green - numeric
         DataType.FLOAT: (139, 195, 74, 255),  # Light Green - numeric variant
@@ -231,10 +230,10 @@ class PortTypeRegistry:
     }
 
     # Execution port color (special case)
-    EXEC_COLOR: Tuple[int, int, int, int] = (255, 255, 255, 255)  # White
+    EXEC_COLOR: tuple[int, int, int, int] = (255, 255, 255, 255)  # White
 
     # Type shapes for accessibility (color-blind friendly)
-    TYPE_SHAPES: Dict[DataType, PortShape] = {
+    TYPE_SHAPES: dict[DataType, PortShape] = {
         DataType.STRING: PortShape.CIRCLE,
         DataType.INTEGER: PortShape.CIRCLE,
         DataType.FLOAT: PortShape.CIRCLE,
@@ -256,7 +255,7 @@ class PortTypeRegistry:
 
     def _initialize(self) -> None:
         """Initialize registry with type info and compatibility rules."""
-        self._type_info: Dict[DataType, PortTypeInfo] = {}
+        self._type_info: dict[DataType, PortTypeInfo] = {}
         self._compatibility_rule: TypeCompatibilityRule = DefaultCompatibilityRule()
         self._register_default_types()
 
@@ -299,7 +298,7 @@ class PortTypeRegistry:
             PortTypeInfo(data_type, "Unknown", (150, 150, 150, 255), "circle"),
         )
 
-    def get_type_color(self, data_type: DataType) -> Tuple[int, int, int, int]:
+    def get_type_color(self, data_type: DataType) -> tuple[int, int, int, int]:
         """
         Get the RGBA color for a data type.
 
@@ -311,7 +310,7 @@ class PortTypeRegistry:
         """
         return self.TYPE_COLORS.get(data_type, (150, 150, 150, 255))
 
-    def get_exec_color(self) -> Tuple[int, int, int, int]:
+    def get_exec_color(self) -> tuple[int, int, int, int]:
         """Get the color for execution ports."""
         return self.EXEC_COLOR
 
@@ -340,7 +339,7 @@ class PortTypeRegistry:
         """
         return self._compatibility_rule.is_compatible(source, target)
 
-    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> str | None:
         """
         Get human-readable reason why types are incompatible.
 
@@ -364,7 +363,7 @@ class PortTypeRegistry:
         """
         self._compatibility_rule = rule
 
-    def get_compatible_types(self, source: DataType) -> Set[DataType]:
+    def get_compatible_types(self, source: DataType) -> set[DataType]:
         """
         Get all types that are compatible with the source type.
 
@@ -407,7 +406,7 @@ def is_types_compatible(source: DataType, target: DataType) -> bool:
     return PortTypeRegistry().is_compatible(source, target)
 
 
-def get_type_color(data_type: DataType) -> Tuple[int, int, int, int]:
+def get_type_color(data_type: DataType) -> tuple[int, int, int, int]:
     """
     Get the RGBA color for a data type.
 

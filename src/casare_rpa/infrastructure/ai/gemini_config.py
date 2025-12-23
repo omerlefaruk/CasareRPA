@@ -1,7 +1,8 @@
-from typing import Dict, Any, List, Optional
-from pydantic import BaseModel, Field, field_validator
 import datetime
+from typing import Any, Dict, List, Optional
+
 from loguru import logger
+from pydantic import BaseModel, Field, field_validator
 
 
 class GeminiParams(BaseModel):
@@ -21,7 +22,7 @@ class AgentCapability(BaseModel):
 
     name: str
     description: str
-    skills: List[str]
+    skills: list[str]
 
 
 class SkillDefinition(BaseModel):
@@ -29,19 +30,19 @@ class SkillDefinition(BaseModel):
 
     name: str
     description: str
-    schema_def: Dict[str, Any]
+    schema_def: dict[str, Any]
 
 
 class SkillExecution(BaseModel):
     """Request to execute a skill."""
 
     skill_name: str
-    parameters: Dict[str, Any]
-    context: Optional[Dict[str, Any]] = None
+    parameters: dict[str, Any]
+    context: dict[str, Any] | None = None
 
     @field_validator("parameters")
     @classmethod
-    def validate_parameters(cls, v: Dict[str, Any], info: Any) -> Dict[str, Any]:
+    def validate_parameters(cls, v: dict[str, Any], info: Any) -> dict[str, Any]:
         # Logic to validate against skill schema will be handled in SkillManager
         return v
 
@@ -53,15 +54,15 @@ class AgentActivity(BaseModel):
     agent: str
     action: str
     status: str
-    details: Optional[str] = None
+    details: str | None = None
 
 
 class GeminiConfig(BaseModel):
     """Complete Gemini configuration."""
 
     params: GeminiParams
-    agents: List[AgentCapability]
-    skills: List[SkillDefinition]
+    agents: list[AgentCapability]
+    skills: list[SkillDefinition]
 
 
 class SkillManager:
@@ -84,7 +85,7 @@ class SkillManager:
             f"Validating skill {execution.skill_name} with params {execution.parameters}"
         )
 
-    def log_activity(self, agent: str, action: str, status: str, details: Optional[str] = None):
+    def log_activity(self, agent: str, action: str, status: str, details: str | None = None):
         """Log agent activity."""
         activity = AgentActivity(agent=agent, action=action, status=status, details=details)
         self.logger.info(f"Agent Activity: {activity.model_dump_json()}")

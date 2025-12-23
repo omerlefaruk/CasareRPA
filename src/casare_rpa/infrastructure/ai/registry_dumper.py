@@ -28,7 +28,6 @@ from loguru import logger
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import DataType, PortType
 
-
 # =============================================================================
 # DATA CLASSES
 # =============================================================================
@@ -51,7 +50,7 @@ class PortManifestEntry:
     required: bool
     label: str
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> dict[str, any]:
         """Convert to dictionary for serialization."""
         return {
             "name": self.name,
@@ -80,7 +79,7 @@ class NodeManifestEntry:
     inputs: tuple[PortManifestEntry, ...] = field(default_factory=tuple)
     outputs: tuple[PortManifestEntry, ...] = field(default_factory=tuple)
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> dict[str, any]:
         """Convert to dictionary for serialization."""
         return {
             "type": self.type,
@@ -108,7 +107,7 @@ class NodeManifest:
     total_count: int = 0
     generated_at: str = ""
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> dict[str, any]:
         """Convert to dictionary for serialization."""
         return {
             "nodes": [n.to_dict() for n in self.nodes],
@@ -122,10 +121,10 @@ class NodeManifest:
 # MODULE-LEVEL CACHE
 # =============================================================================
 
-_manifest_cache: Optional[NodeManifest] = None
+_manifest_cache: NodeManifest | None = None
 
 
-def get_cached_manifest() -> Optional[NodeManifest]:
+def get_cached_manifest() -> NodeManifest | None:
     """
     Get cached manifest if available.
 
@@ -146,7 +145,7 @@ def clear_manifest_cache() -> None:
 # =============================================================================
 
 
-def _extract_description(node_class: Type[BaseNode]) -> str:
+def _extract_description(node_class: type[BaseNode]) -> str:
     """
     Extract a concise description from node docstring.
 
@@ -184,7 +183,7 @@ def _extract_description(node_class: Type[BaseNode]) -> str:
     return text
 
 
-def _extract_category(node_class: Type[BaseNode], node_instance: BaseNode) -> str:
+def _extract_category(node_class: type[BaseNode], node_instance: BaseNode) -> str:
     """
     Extract category from node, falling back through multiple sources.
 
@@ -335,9 +334,9 @@ def dump_node_manifest() -> NodeManifest:
         )
 
     node_classes = get_all_node_classes()
-    entries: List[NodeManifestEntry] = []
+    entries: list[NodeManifestEntry] = []
     categories: set[str] = set()
-    errors: List[str] = []
+    errors: list[str] = []
 
     for node_type, node_class in node_classes.items():
         try:
@@ -353,12 +352,12 @@ def dump_node_manifest() -> NodeManifest:
             description = _extract_description(node_class)
 
             # Extract input ports
-            input_ports: List[PortManifestEntry] = []
+            input_ports: list[PortManifestEntry] = []
             for port in instance.input_ports.values():
                 input_ports.append(_create_port_entry(port))
 
             # Extract output ports
-            output_ports: List[PortManifestEntry] = []
+            output_ports: list[PortManifestEntry] = []
             for port in instance.output_ports.values():
                 output_ports.append(_create_port_entry(port))
 
@@ -398,7 +397,7 @@ def dump_node_manifest() -> NodeManifest:
     return manifest
 
 
-def get_nodes_by_category(category: str) -> List[NodeManifestEntry]:
+def get_nodes_by_category(category: str) -> list[NodeManifestEntry]:
     """
     Get all nodes in a specific category.
 
@@ -417,7 +416,7 @@ def get_nodes_by_category(category: str) -> List[NodeManifestEntry]:
 # =============================================================================
 
 
-def manifest_to_json(manifest: Optional[NodeManifest] = None, indent: int = 2) -> str:
+def manifest_to_json(manifest: NodeManifest | None = None, indent: int = 2) -> str:
     """
     Convert manifest to JSON format.
 
@@ -434,7 +433,7 @@ def manifest_to_json(manifest: Optional[NodeManifest] = None, indent: int = 2) -
     return json.dumps(manifest.to_dict(), indent=indent)
 
 
-def manifest_to_markdown(manifest: Optional[NodeManifest] = None) -> str:
+def manifest_to_markdown(manifest: NodeManifest | None = None) -> str:
     """
     Convert manifest to token-optimized markdown for LLM prompts.
 
@@ -452,13 +451,13 @@ def manifest_to_markdown(manifest: Optional[NodeManifest] = None) -> str:
     if manifest is None:
         manifest = dump_node_manifest()
 
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append("# CasareRPA Node Reference")
     lines.append(f"Total: {manifest.total_count} nodes | {len(manifest.categories)} categories")
     lines.append("")
 
     # Group by category
-    by_category: Dict[str, List[NodeManifestEntry]] = {}
+    by_category: dict[str, list[NodeManifestEntry]] = {}
     for node in manifest.nodes:
         if node.category not in by_category:
             by_category[node.category] = []
@@ -491,7 +490,7 @@ def manifest_to_markdown(manifest: Optional[NodeManifest] = None) -> str:
     return "\n".join(lines)
 
 
-def manifest_to_compact_markdown(manifest: Optional[NodeManifest] = None) -> str:
+def manifest_to_compact_markdown(manifest: NodeManifest | None = None) -> str:
     """
     Convert manifest to ultra-compact markdown for context-limited prompts.
 
@@ -509,12 +508,12 @@ def manifest_to_compact_markdown(manifest: Optional[NodeManifest] = None) -> str
     if manifest is None:
         manifest = dump_node_manifest()
 
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append(f"# Nodes ({manifest.total_count})")
     lines.append("")
 
     # Group by category
-    by_category: Dict[str, List[NodeManifestEntry]] = {}
+    by_category: dict[str, list[NodeManifestEntry]] = {}
     for node in manifest.nodes:
         if node.category not in by_category:
             by_category[node.category] = []

@@ -22,19 +22,19 @@ Usage:
     python scripts/audit_node_modernization.py --tier 1  # Filter by tier
 """
 
-import os
-import sys
-import re
-import json
+import argparse
 import ast
 import importlib
 import inspect
-import argparse
-from pathlib import Path
-from typing import Dict, List, Set, Tuple, Any, Optional
-from dataclasses import dataclass, field, asdict
-from enum import Enum
+import json
+import os
+import re
+import sys
 from collections import defaultdict
+from dataclasses import asdict, dataclass, field
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Ensure src is in python path
 sys.path.insert(0, os.path.abspath("src"))
@@ -82,16 +82,16 @@ class NodeAuditResult:
     uses_get_parameter: bool = False
     uses_config_get: bool = False  # Legacy pattern
     has_typed_ports: bool = True
-    has_any_type_ports: List[str] = field(default_factory=list)
+    has_any_type_ports: list[str] = field(default_factory=list)
 
     # Additional metrics
     property_count: int = 0
     optional_property_count: int = 0  # Properties that could use config fallback
     input_port_count: int = 0
     output_port_count: int = 0
-    required_ports_missing_schema: List[str] = field(default_factory=list)
+    required_ports_missing_schema: list[str] = field(default_factory=list)
 
-    issues: List[NodeIssue] = field(default_factory=list)
+    issues: list[NodeIssue] = field(default_factory=list)
 
     def is_modern(self) -> bool:
         """Check if node meets Modern Node Standard.
@@ -147,7 +147,7 @@ class CategorySummary:
 
 
 # Category to Tier mapping
-CATEGORY_TIERS: Dict[str, ModernizationTier] = {
+CATEGORY_TIERS: dict[str, ModernizationTier] = {
     # Tier 1: Core - Most used by AI
     "browser": ModernizationTier.TIER_1_CORE,
     "control_flow": ModernizationTier.TIER_1_CORE,
@@ -224,7 +224,7 @@ def get_tier_for_category(category: str) -> ModernizationTier:
     return CATEGORY_TIERS.get(category, ModernizationTier.TIER_3_SPECIALIZED)
 
 
-def analyze_source_file(file_path: str) -> Dict[str, Dict[str, Any]]:
+def analyze_source_file(file_path: str) -> dict[str, dict[str, Any]]:
     """
     Analyze a Python source file for node patterns using AST.
 
@@ -233,7 +233,7 @@ def analyze_source_file(file_path: str) -> Dict[str, Dict[str, Any]]:
     results = {}
 
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source)
@@ -296,13 +296,7 @@ def analyze_source_file(file_path: str) -> Dict[str, Dict[str, Any]]:
                                     analysis["uses_config_get"] = True
                                     # Try to get line number
                                     if hasattr(item, "lineno"):
-<<<<<<< HEAD
-                                        analysis["config_get_locations"].append(
-                                            item.lineno
-                                        )
-=======
                                         analysis["config_get_locations"].append(item.lineno)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             results[class_name] = analysis
 
@@ -310,8 +304,8 @@ def analyze_source_file(file_path: str) -> Dict[str, Dict[str, Any]]:
 
 
 def audit_node_class(
-    node_cls, source_analysis: Dict[str, Any], file_path: str
-) -> Optional[NodeAuditResult]:
+    node_cls, source_analysis: dict[str, Any], file_path: str
+) -> NodeAuditResult | None:
     """Audit a single node class."""
     class_name = node_cls.__name__
 
@@ -350,19 +344,13 @@ def audit_node_class(
         if schema:
             result.property_count = len(schema.properties)
             # Count optional properties (not required) - these should use get_parameter()
-<<<<<<< HEAD
-            result.optional_property_count = sum(
-                1 for p in schema.properties if not p.required
-            )
-=======
             result.optional_property_count = sum(1 for p in schema.properties if not p.required)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             schema_props = {p.name for p in schema.properties}
         else:
             schema_props = set()
 
         # Analyze ports
-        from casare_rpa.domain.value_objects.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import DataType, PortType
 
         for port_name, port in node.input_ports.items():
             # Skip exec ports
@@ -442,20 +430,20 @@ def audit_node_class(
 
 
 def run_audit(
-    tier_filter: Optional[int] = None,
-) -> Tuple[List[NodeAuditResult], Dict[str, CategorySummary]]:
+    tier_filter: int | None = None,
+) -> tuple[list[NodeAuditResult], dict[str, CategorySummary]]:
     """Run full audit of all nodes."""
     from casare_rpa.domain.entities.base_node import BaseNode
     from casare_rpa.nodes.registry_data import NODE_REGISTRY
 
-    results: List[NodeAuditResult] = []
-    category_summaries: Dict[str, CategorySummary] = {}
+    results: list[NodeAuditResult] = []
+    category_summaries: dict[str, CategorySummary] = {}
 
     nodes_dir = Path("src/casare_rpa/nodes").resolve()  # Use absolute path
 
     # First pass: collect source analysis for all Python files
-    source_analyses: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    file_path_cache: Dict[str, str] = {}  # module path -> file path
+    source_analyses: dict[str, dict[str, dict[str, Any]]] = {}
+    file_path_cache: dict[str, str] = {}  # module path -> file path
 
     for file_path in nodes_dir.rglob("*.py"):
         if file_path.name.startswith("__"):
@@ -528,13 +516,7 @@ def run_audit(
             # Update category summary
             cat = result.category
             if cat not in category_summaries:
-<<<<<<< HEAD
-                category_summaries[cat] = CategorySummary(
-                    category=cat, tier=result.tier
-                )
-=======
                 category_summaries[cat] = CategorySummary(category=cat, tier=result.tier)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             summary = category_summaries[cat]
             summary.total_nodes += 1
@@ -550,8 +532,8 @@ def run_audit(
 
 
 def print_report(
-    results: List[NodeAuditResult],
-    summaries: Dict[str, CategorySummary],
+    results: list[NodeAuditResult],
+    summaries: dict[str, CategorySummary],
     json_output: bool = False,
 ):
     """Print audit report."""
@@ -559,21 +541,9 @@ def print_report(
         output = {
             "summary": {
                 "total_nodes": len(results),
-<<<<<<< HEAD
-                "modern": sum(
-                    1 for r in results if r.status == ModernizationStatus.MODERN
-                ),
-                "partial": sum(
-                    1 for r in results if r.status == ModernizationStatus.PARTIAL
-                ),
-                "legacy": sum(
-                    1 for r in results if r.status == ModernizationStatus.LEGACY
-                ),
-=======
                 "modern": sum(1 for r in results if r.status == ModernizationStatus.MODERN),
                 "partial": sum(1 for r in results if r.status == ModernizationStatus.PARTIAL),
                 "legacy": sum(1 for r in results if r.status == ModernizationStatus.LEGACY),
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
             },
             "categories": {
                 cat: {
@@ -708,6 +678,14 @@ def main():
 
     print_report(results, summaries, json_output=args.json)
 
+    # Return error code if any nodes have error-severity issues
+    has_errors = any(
+        any(issue.severity == "error" for issue in result.issues) for result in results
+    )
+    if has_errors:
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

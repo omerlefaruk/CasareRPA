@@ -5,11 +5,12 @@ Handles job result collection, storage, and analytics.
 
 import asyncio
 import json
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, List, Callable
-from dataclasses import dataclass, field
-from collections import defaultdict
 import statistics
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -26,17 +27,17 @@ class JobResult:
     robot_id: str
     robot_name: str
     status: JobStatus
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     duration_ms: int = 0
     progress: int = 100
-    result_data: Dict[str, Any] = field(default_factory=dict)
+    result_data: dict[str, Any] = field(default_factory=dict)
     error_message: str = ""
     error_type: str = ""
     stack_trace: str = ""
     failed_node: str = ""
-    logs: List[Dict[str, Any]] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    logs: list[dict[str, Any]] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def is_success(self) -> bool:
@@ -48,7 +49,7 @@ class JobResult:
         """Get duration in seconds."""
         return self.duration_ms / 1000.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "job_id": self.job_id,
@@ -71,7 +72,7 @@ class JobResult:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "JobResult":
+    def from_dict(cls, data: dict[str, Any]) -> "JobResult":
         """Create from dictionary."""
         return cls(
             job_id=data.get("job_id", ""),
@@ -117,7 +118,7 @@ class ExecutionStatistics:
     executions_per_hour: float = 0.0
     throughput_per_minute: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_executions": self.total_executions,
@@ -162,25 +163,25 @@ class ResultCollector:
         self._max_logs_per_job = max_logs_per_job
 
         # Storage
-        self._results: Dict[str, JobResult] = {}
-        self._results_order: List[str] = []  # For LRU eviction
-        self._pending_logs: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self._results: dict[str, JobResult] = {}
+        self._results_order: list[str] = []  # For LRU eviction
+        self._pending_logs: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
         # Statistics cache
-        self._stats_cache: Optional[ExecutionStatistics] = None
-        self._stats_cache_time: Optional[datetime] = None
+        self._stats_cache: ExecutionStatistics | None = None
+        self._stats_cache_time: datetime | None = None
         self._stats_cache_ttl = timedelta(seconds=30)
 
         # Callbacks
-        self._on_result_received: Optional[Callable] = None
-        self._on_result_stored: Optional[Callable] = None
+        self._on_result_received: Callable | None = None
+        self._on_result_stored: Callable | None = None
 
         logger.info(f"ResultCollector initialized (max_results={max_results})")
 
     def set_callbacks(
         self,
-        on_result_received: Optional[Callable] = None,
-        on_result_stored: Optional[Callable] = None,
+        on_result_received: Callable | None = None,
+        on_result_stored: Callable | None = None,
     ):
         """Set callbacks for result events."""
         self._on_result_received = on_result_received
@@ -189,7 +190,7 @@ class ResultCollector:
     async def collect_result(
         self,
         job: Job,
-        result_data: Optional[Dict[str, Any]] = None,
+        result_data: dict[str, Any] | None = None,
         duration_ms: int = 0,
     ) -> JobResult:
         """
@@ -211,7 +212,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.COMPLETED,
             started_at=job.started_at,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
             duration_ms=duration_ms or job.duration_ms,
             progress=100,
             result_data=result_data or {},
@@ -250,7 +251,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.FAILED,
             started_at=job.started_at,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
             duration_ms=job.duration_ms,
             progress=job.progress,
             error_message=error_message,
@@ -282,7 +283,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.CANCELLED,
             started_at=job.started_at,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
             duration_ms=job.duration_ms,
             progress=job.progress,
             error_message=reason,
@@ -310,7 +311,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.TIMEOUT,
             started_at=job.started_at,
-            completed_at=datetime.now(timezone.utc),
+            completed_at=datetime.now(UTC),
             duration_ms=job.duration_ms,
             progress=job.progress,
             error_message="Job execution timed out",
@@ -327,7 +328,7 @@ class ResultCollector:
         level: str,
         message: str,
         node_id: str = "",
-        extra: Optional[Dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ):
         """
         Add a log entry for a job.
@@ -347,7 +348,7 @@ class ResultCollector:
 
         logs.append(
             {
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
                 "level": level,
                 "message": message,
                 "node_id": node_id,
@@ -355,7 +356,7 @@ class ResultCollector:
             }
         )
 
-    def add_log_batch(self, job_id: str, entries: List[Dict[str, Any]]):
+    def add_log_batch(self, job_id: str, entries: list[dict[str, Any]]):
         """
         Add multiple log entries for a job.
 
@@ -410,24 +411,24 @@ class ResultCollector:
 
         logger.debug(f"Stored result for job {result.job_id[:8]}")
 
-    def get_result(self, job_id: str) -> Optional[JobResult]:
+    def get_result(self, job_id: str) -> JobResult | None:
         """Get a job result by ID."""
         return self._results.get(job_id)
 
-    def get_results_by_workflow(self, workflow_id: str) -> List[JobResult]:
+    def get_results_by_workflow(self, workflow_id: str) -> list[JobResult]:
         """Get all results for a workflow."""
         return [r for r in self._results.values() if r.workflow_id == workflow_id]
 
-    def get_results_by_robot(self, robot_id: str) -> List[JobResult]:
+    def get_results_by_robot(self, robot_id: str) -> list[JobResult]:
         """Get all results for a robot."""
         return [r for r in self._results.values() if r.robot_id == robot_id]
 
-    def get_recent_results(self, limit: int = 100) -> List[JobResult]:
+    def get_recent_results(self, limit: int = 100) -> list[JobResult]:
         """Get most recent results."""
         recent_ids = self._results_order[-limit:]
         return [self._results[job_id] for job_id in reversed(recent_ids)]
 
-    def get_failed_results(self, limit: int = 100) -> List[JobResult]:
+    def get_failed_results(self, limit: int = 100) -> list[JobResult]:
         """Get recent failed results."""
         failed = [
             r for r in self._results.values() if r.status in (JobStatus.FAILED, JobStatus.TIMEOUT)
@@ -437,9 +438,9 @@ class ResultCollector:
 
     def get_statistics(
         self,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
-        since: Optional[datetime] = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
+        since: datetime | None = None,
     ) -> ExecutionStatistics:
         """
         Get execution statistics.
@@ -455,7 +456,7 @@ class ResultCollector:
         # Check cache (only for unfiltered stats)
         if not workflow_id and not robot_id and not since:
             if self._stats_cache and self._stats_cache_time:
-                if datetime.now(timezone.utc) - self._stats_cache_time < self._stats_cache_ttl:
+                if datetime.now(UTC) - self._stats_cache_time < self._stats_cache_ttl:
                     return self._stats_cache
 
         # Filter results
@@ -514,15 +515,15 @@ class ResultCollector:
         # Cache if unfiltered
         if not workflow_id and not robot_id and not since:
             self._stats_cache = stats
-            self._stats_cache_time = datetime.now(timezone.utc)
+            self._stats_cache_time = datetime.now(UTC)
 
         return stats
 
     def get_hourly_stats(
         self,
         hours: int = 24,
-        workflow_id: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        workflow_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Get hourly statistics.
 
@@ -533,7 +534,7 @@ class ResultCollector:
         Returns:
             List of hourly statistics
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         hourly_data = []
 
         for i in range(hours):
@@ -564,9 +565,9 @@ class ResultCollector:
 
         return list(reversed(hourly_data))
 
-    def get_workflow_stats(self) -> Dict[str, ExecutionStatistics]:
+    def get_workflow_stats(self) -> dict[str, ExecutionStatistics]:
         """Get statistics per workflow."""
-        workflows: Dict[str, List[JobResult]] = defaultdict(list)
+        workflows: dict[str, list[JobResult]] = defaultdict(list)
 
         for result in self._results.values():
             workflows[result.workflow_id].append(result)
@@ -577,9 +578,9 @@ class ResultCollector:
 
         return stats_map
 
-    def get_robot_stats(self) -> Dict[str, ExecutionStatistics]:
+    def get_robot_stats(self) -> dict[str, ExecutionStatistics]:
         """Get statistics per robot."""
-        robots: Dict[str, List[JobResult]] = defaultdict(list)
+        robots: dict[str, list[JobResult]] = defaultdict(list)
 
         for result in self._results.values():
             robots[result.robot_id].append(result)
@@ -615,7 +616,7 @@ class ResultExporter:
     """
 
     @staticmethod
-    def to_json(results: List[JobResult], pretty: bool = False) -> str:
+    def to_json(results: list[JobResult], pretty: bool = False) -> str:
         """Export results to JSON."""
         data = [r.to_dict() for r in results]
         if pretty:
@@ -623,7 +624,7 @@ class ResultExporter:
         return json.dumps(data, default=str)
 
     @staticmethod
-    def to_csv(results: List[JobResult]) -> str:
+    def to_csv(results: list[JobResult]) -> str:
         """Export results to CSV."""
         if not results:
             return ""
@@ -663,7 +664,7 @@ class ResultExporter:
         return "\n".join(lines)
 
     @staticmethod
-    def to_summary(results: List[JobResult]) -> Dict[str, Any]:
+    def to_summary(results: list[JobResult]) -> dict[str, Any]:
         """Generate a summary report."""
         if not results:
             return {"total": 0}

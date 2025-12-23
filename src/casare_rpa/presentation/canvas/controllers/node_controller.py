@@ -10,9 +10,10 @@ Handles all node-related operations:
 """
 
 from typing import TYPE_CHECKING
+
+from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QCursor
-from loguru import logger
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 

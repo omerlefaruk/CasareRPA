@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import os
 from abc import abstractmethod
-from typing import Any, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
@@ -26,28 +26,27 @@ from loguru import logger
 from casare_rpa.domain.credentials import CredentialAwareMixin
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.schemas.property_schema import PropertyDef
+from casare_rpa.domain.schemas.property_types import PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
 )
-from casare_rpa.domain.schemas.property_schema import PropertyDef
-from casare_rpa.domain.schemas.property_types import PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.infrastructure.resources.google_client import (
-    GoogleAPIClient,
-    GoogleConfig,
-    GoogleCredentials,
-    GoogleAPIError,
-    GoogleAuthError,
-    GoogleQuotaError,
-    SCOPES,
-)
 from casare_rpa.infrastructure.resources.gmail_client import (
     GmailClient,
     GmailConfig,
 )
-
+from casare_rpa.infrastructure.resources.google_client import (
+    SCOPES,
+    GoogleAPIClient,
+    GoogleAPIError,
+    GoogleAuthError,
+    GoogleConfig,
+    GoogleCredentials,
+    GoogleQuotaError,
+)
 
 # =============================================================================
 # Shared PropertyDef Constants for Google Nodes
@@ -172,13 +171,13 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
     # @ports: none -> none
 
     # Subclasses must define required OAuth2 scopes
-    REQUIRED_SCOPES: List[str] = []
+    REQUIRED_SCOPES: list[str] = []
 
     def __init__(self, node_id: str, name: str = "Google Node", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
-        self._client: Optional[GoogleAPIClient] = None
+        self._client: GoogleAPIClient | None = None
 
     def _define_common_input_ports(self) -> None:
         """Define standard Google input ports.
@@ -307,14 +306,14 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         # This is the recommended path for stored credentials
         if cred_id:
             try:
-                from casare_rpa.infrastructure.security.google_oauth import (
-                    get_google_access_token,
-                    GoogleOAuthManager,
-                    TokenRefreshError,
-                    InvalidCredentialError,
-                )
                 from casare_rpa.infrastructure.security.credential_store import (
                     get_credential_store,
+                )
+                from casare_rpa.infrastructure.security.google_oauth import (
+                    GoogleOAuthManager,
+                    InvalidCredentialError,
+                    TokenRefreshError,
+                    get_google_access_token,
                 )
 
                 # Get valid access token (auto-refreshes if expired)
@@ -506,7 +505,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         if sa_file and os.path.exists(sa_file):
             import json
 
-            with open(sa_file, "r") as f:
+            with open(sa_file) as f:
                 sa_info = json.load(f)
             logger.debug(f"Using service account file: {sa_file}")
             return GoogleCredentials.from_service_account(sa_info)
@@ -624,29 +623,29 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
 
 
 # Scope helper functions for subclasses
-def get_gmail_scopes(readonly: bool = False) -> List[str]:
+def get_gmail_scopes(readonly: bool = False) -> list[str]:
     """Get Gmail OAuth2 scopes."""
     return SCOPES["gmail_readonly"] if readonly else SCOPES["gmail"]
 
 
-def get_sheets_scopes(readonly: bool = False) -> List[str]:
+def get_sheets_scopes(readonly: bool = False) -> list[str]:
     """Get Sheets OAuth2 scopes."""
     return SCOPES["sheets_readonly"] if readonly else SCOPES["sheets"]
 
 
-def get_docs_scopes(readonly: bool = False) -> List[str]:
+def get_docs_scopes(readonly: bool = False) -> list[str]:
     """Get Docs OAuth2 scopes."""
     return SCOPES["docs_readonly"] if readonly else SCOPES["docs"]
 
 
-def get_drive_scopes(readonly: bool = False, file_only: bool = False) -> List[str]:
+def get_drive_scopes(readonly: bool = False, file_only: bool = False) -> list[str]:
     """Get Drive OAuth2 scopes."""
     if file_only:
         return SCOPES["drive_file"]
     return SCOPES["drive_readonly"] if readonly else SCOPES["drive"]
 
 
-def get_calendar_scopes(readonly: bool = False) -> List[str]:
+def get_calendar_scopes(readonly: bool = False) -> list[str]:
     """Get Calendar OAuth2 scopes."""
     return SCOPES.get("calendar_readonly", []) if readonly else SCOPES.get("calendar", [])
 
@@ -676,7 +675,7 @@ class GmailBaseNode(GoogleBaseNode):
     # @ports: none -> none
 
     # Gmail requires modify scope for most operations
-    REQUIRED_SCOPES: List[str] = SCOPES.get("gmail", [])
+    REQUIRED_SCOPES: list[str] = SCOPES.get("gmail", [])
     SERVICE_NAME = "gmail"
     SERVICE_VERSION = "v1"
 
@@ -747,7 +746,7 @@ class DocsBaseNode(GoogleBaseNode):
     # @requires: none
     # @ports: none -> none
 
-    REQUIRED_SCOPES: List[str] = SCOPES.get("docs", [])
+    REQUIRED_SCOPES: list[str] = SCOPES.get("docs", [])
     SERVICE_NAME = "docs"
     SERVICE_VERSION = "v1"
 
@@ -813,7 +812,7 @@ class SheetsBaseNode(GoogleBaseNode):
     # @requires: none
     # @ports: none -> none
 
-    REQUIRED_SCOPES: List[str] = SCOPES.get("sheets", [])
+    REQUIRED_SCOPES: list[str] = SCOPES.get("sheets", [])
     SERVICE_NAME = "sheets"
     SERVICE_VERSION = "v4"
 
@@ -884,13 +883,13 @@ class SheetsBaseNode(GoogleBaseNode):
     @classmethod
     def build_a1_range(
         cls,
-        sheet_name: Optional[str] = None,
-        start_cell: Optional[str] = None,
-        end_cell: Optional[str] = None,
-        start_row: Optional[int] = None,
-        start_col: Optional[int] = None,
-        end_row: Optional[int] = None,
-        end_col: Optional[int] = None,
+        sheet_name: str | None = None,
+        start_cell: str | None = None,
+        end_cell: str | None = None,
+        start_row: int | None = None,
+        start_col: int | None = None,
+        end_row: int | None = None,
+        end_col: int | None = None,
     ) -> str:
         """Build A1 notation range string from cells or indices."""
         if start_cell:
@@ -962,7 +961,7 @@ class DriveBaseNode(GoogleBaseNode):
     # @requires: none
     # @ports: none -> none
 
-    REQUIRED_SCOPES: List[str] = SCOPES.get("drive", [])
+    REQUIRED_SCOPES: list[str] = SCOPES.get("drive", [])
     SERVICE_NAME = "drive"
     SERVICE_VERSION = "v3"
 
@@ -983,8 +982,8 @@ class DriveBaseNode(GoogleBaseNode):
     @staticmethod
     def get_mime_type_from_extension(file_path: str) -> str:
         """Get MIME type from file extension."""
-        from pathlib import Path
         import mimetypes
+        from pathlib import Path
 
         Path(file_path).suffix.lower()
         mime_type, _ = mimetypes.guess_type(file_path)
@@ -1002,8 +1001,8 @@ class DriveBaseNode(GoogleBaseNode):
     ) -> ExecutionResult:
         """Delegate to Drive-specific execution using GoogleDriveClient."""
         from casare_rpa.infrastructure.resources.google_drive_client import (
-            GoogleDriveClient,
             DriveConfig,
+            GoogleDriveClient,
         )
 
         # Ensure token is fresh (will refresh if expired)
@@ -1025,7 +1024,7 @@ class DriveBaseNode(GoogleBaseNode):
     async def _execute_drive(
         self,
         context: ExecutionContext,
-        client: "GoogleDriveClient",
+        client: GoogleDriveClient,
     ) -> ExecutionResult:
         """
         Execute the Google Drive operation.
@@ -1058,7 +1057,7 @@ class CalendarBaseNode(GoogleBaseNode):
     # @requires: none
     # @ports: none -> none
 
-    REQUIRED_SCOPES: List[str] = SCOPES.get("calendar", [])
+    REQUIRED_SCOPES: list[str] = SCOPES.get("calendar", [])
     SERVICE_NAME = "calendar"
     SERVICE_VERSION = "v3"
 

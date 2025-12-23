@@ -12,36 +12,24 @@ from pathlib import Path
 from typing import List, Tuple
 
 
-def find_old_exec_patterns(content: str) -> List[Tuple[str, int]]:
+def find_old_exec_patterns(content: str) -> list[tuple[str, int]]:
     """Find all occurrences of old exec port patterns."""
     patterns = []
 
     # Pattern 1: add_input_port with DataType.EXEC
-<<<<<<< HEAD
-    input_pattern = (
-        r'self\.add_input_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
-    )
-=======
     input_pattern = r'self\.add_input_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     for match in re.finditer(input_pattern, content):
         patterns.append(("input", match.group(1), match.start(), match.end()))
 
     # Pattern 2: add_output_port with DataType.EXEC
-<<<<<<< HEAD
-    output_pattern = (
-        r'self\.add_output_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
-    )
-=======
     output_pattern = r'self\.add_output_port\s*\(\s*["\']([^"\']+)["\']\s*,\s*DataType\.EXEC\s*\)'
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     for match in re.finditer(output_pattern, content):
         patterns.append(("output", match.group(1), match.start(), match.end()))
 
     return patterns
 
 
-def migrate_content(content: str) -> Tuple[str, int]:
+def migrate_content(content: str) -> tuple[str, int]:
     """Migrate content from old to new exec port pattern."""
     changes = 0
 
@@ -101,7 +89,7 @@ def migrate_file(filepath: Path, dry_run: bool = True) -> dict:
     }
 
 
-def scan_category(category_path: Path) -> List[dict]:
+def scan_category(category_path: Path) -> list[dict]:
     """Scan all Python files in a category."""
     results = []
     for py_file in category_path.rglob("*.py"):
@@ -110,7 +98,7 @@ def scan_category(category_path: Path) -> List[dict]:
     return results
 
 
-def migrate_category(category_path: Path, dry_run: bool = True) -> List[dict]:
+def migrate_category(category_path: Path, dry_run: bool = True) -> list[dict]:
     """Migrate all Python files in a category."""
     results = []
     for py_file in category_path.rglob("*.py"):
@@ -162,13 +150,7 @@ if __name__ == "__main__":
                     total_files += len(needs_migration)
                     total_migrations += sum(r["total_old"] for r in needs_migration)
 
-<<<<<<< HEAD
-        print(
-            f"\n\nTotal: {total_files} files need migration ({total_migrations} patterns)"
-        )
-=======
         print(f"\n\nTotal: {total_files} files need migration ({total_migrations} patterns)")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     elif mode == "migrate":
         print("=== Exec Port Migration (DRY RUN) ===\n")

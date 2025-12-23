@@ -10,12 +10,12 @@ Provides support for loading configuration from multiple file formats:
 Supports configuration merging, validation, and environment-specific overrides.
 """
 
-import os
 import json
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, TypeVar, Type
-from dataclasses import dataclass, field
+import os
 from copy import deepcopy
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 from loguru import logger
 
@@ -67,7 +67,7 @@ class ConfigSource:
     required: bool = False
     """Whether this config source is required to exist."""
 
-    environment: Optional[str] = None
+    environment: str | None = None
     """Environment name (e.g., 'development', 'production')."""
 
 
@@ -75,19 +75,19 @@ class ConfigSource:
 class ConfigSchema:
     """Schema for configuration validation."""
 
-    required_keys: List[str] = field(default_factory=list)
+    required_keys: list[str] = field(default_factory=list)
     """Keys that must be present in configuration."""
 
-    optional_keys: List[str] = field(default_factory=list)
+    optional_keys: list[str] = field(default_factory=list)
     """Keys that may be present but are not required."""
 
-    type_hints: Dict[str, Type] = field(default_factory=dict)
+    type_hints: dict[str, type] = field(default_factory=dict)
     """Expected types for configuration keys."""
 
-    defaults: Dict[str, Any] = field(default_factory=dict)
+    defaults: dict[str, Any] = field(default_factory=dict)
     """Default values for optional keys."""
 
-    validators: Dict[str, callable] = field(default_factory=dict)
+    validators: dict[str, callable] = field(default_factory=dict)
     """Custom validation functions for keys."""
 
 
@@ -107,7 +107,7 @@ class ConfigLoader:
 
     def __init__(
         self,
-        base_path: Optional[Path] = None,
+        base_path: Path | None = None,
         env_prefix: str = "CASARE_",
         load_env: bool = True,
     ):
@@ -122,8 +122,8 @@ class ConfigLoader:
         self.base_path = base_path or Path.cwd()
         self.env_prefix = env_prefix
         self.load_env = load_env
-        self._sources: List[ConfigSource] = []
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._sources: list[ConfigSource] = []
+        self._cache: dict[str, dict[str, Any]] = {}
 
     def add_source(self, source: ConfigSource) -> None:
         """Add a configuration source."""
@@ -137,10 +137,10 @@ class ConfigLoader:
 
     def load(
         self,
-        path: Union[str, Path],
-        format: Optional[str] = None,
+        path: str | Path,
+        format: str | None = None,
         required: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Load configuration from a single file.
 
@@ -193,7 +193,7 @@ class ConfigLoader:
         except Exception as e:
             raise ConfigurationError(f"Failed to load {path}: {e}")
 
-    def load_all(self, environment: Optional[str] = None) -> Dict[str, Any]:
+    def load_all(self, environment: str | None = None) -> dict[str, Any]:
         """
         Load and merge configuration from all sources.
 
@@ -224,7 +224,7 @@ class ConfigLoader:
 
         return config
 
-    def validate(self, config: Dict[str, Any], schema: ConfigSchema) -> Dict[str, Any]:
+    def validate(self, config: dict[str, Any], schema: ConfigSchema) -> dict[str, Any]:
         """
         Validate configuration against a schema.
 
@@ -293,17 +293,17 @@ class ConfigLoader:
                 f"Supported extensions: .yaml, .yml, .toml, .json"
             )
 
-    def _load_yaml(self, path: Path) -> Dict[str, Any]:
+    def _load_yaml(self, path: Path) -> dict[str, Any]:
         """Load YAML configuration."""
         if not YAML_AVAILABLE:
             raise ConfigurationError(
                 "YAML support not available. Install PyYAML: pip install pyyaml"
             )
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
 
-    def _load_toml(self, path: Path) -> Dict[str, Any]:
+    def _load_toml(self, path: Path) -> dict[str, Any]:
         """Load TOML configuration."""
         if not TOML_AVAILABLE:
             raise ConfigurationError("TOML support not available. Install tomli: pip install tomli")
@@ -311,12 +311,12 @@ class ConfigLoader:
         with open(path, "rb") as f:
             return tomllib.load(f)
 
-    def _load_json(self, path: Path) -> Dict[str, Any]:
+    def _load_json(self, path: Path) -> dict[str, Any]:
         """Load JSON configuration."""
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
 
-    def _load_from_env(self) -> Dict[str, Any]:
+    def _load_from_env(self) -> dict[str, Any]:
         """Load configuration from environment variables."""
         config = {}
         prefix_len = len(self.env_prefix)
@@ -345,7 +345,7 @@ class ConfigLoader:
 
         return config
 
-    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    def _deep_merge(self, base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
         """
         Deep merge two dictionaries.
 
@@ -366,7 +366,7 @@ class ConfigLoader:
 # Convenience functions for simple use cases
 
 
-def load_config(path: Union[str, Path], required: bool = True) -> Dict[str, Any]:
+def load_config(path: str | Path, required: bool = True) -> dict[str, Any]:
     """
     Load configuration from a file.
 
@@ -382,8 +382,8 @@ def load_config(path: Union[str, Path], required: bool = True) -> Dict[str, Any]
 
 
 def load_config_with_env(
-    path: Union[str, Path], env_prefix: str = "CASARE_", required: bool = True
-) -> Dict[str, Any]:
+    path: str | Path, env_prefix: str = "CASARE_", required: bool = True
+) -> dict[str, Any]:
     """
     Load configuration from file with environment variable overrides.
 

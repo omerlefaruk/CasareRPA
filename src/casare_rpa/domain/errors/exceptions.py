@@ -64,9 +64,9 @@ class ErrorContext:
 
     component: str
     operation: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize context to dictionary."""
         return {
             "component": self.component,
@@ -107,8 +107,8 @@ class DomainError(Exception):
     """
 
     message: str
-    context: Optional[ErrorContext] = None
-    original_error: Optional[Exception] = None
+    context: ErrorContext | None = None
+    original_error: Exception | None = None
 
     def __post_init__(self) -> None:
         """Initialize Exception base class with message."""
@@ -123,7 +123,7 @@ class DomainError(Exception):
             parts.append(f"(caused by: {type(self.original_error).__name__})")
         return " ".join(parts)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize error to dictionary for logging/API responses."""
         return {
             "error_type": type(self).__name__,
@@ -172,7 +172,7 @@ class NodeExecutionError(DomainError):
             return f"[{self.node_type}:{self.node_id}] {base}"
         return base
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Include node info in serialization."""
         result = super().to_dict()
         result.update(
@@ -196,7 +196,7 @@ class NodeTimeoutError(NodeExecutionError):
 
     timeout_ms: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result["timeout_ms"] = self.timeout_ms
         return result
@@ -213,7 +213,7 @@ class NodeValidationError(NodeExecutionError):
 
     invalid_ports: list = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result["invalid_ports"] = self.invalid_ports
         return result
@@ -247,7 +247,7 @@ class ValidationError(DomainError):
             return f"Validation failed for '{self.field}': {base}"
         return base
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -302,7 +302,7 @@ class ResourceError(DomainError):
             return f"[{self.resource_type}] {base}"
         return base
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -422,7 +422,7 @@ class WorkflowExecutionError(WorkflowError):
 def wrap_exception(
     error: Exception,
     error_class: type[DomainError] = DomainError,
-    context: Optional[ErrorContext] = None,
+    context: ErrorContext | None = None,
     **kwargs: Any,
 ) -> DomainError:
     """

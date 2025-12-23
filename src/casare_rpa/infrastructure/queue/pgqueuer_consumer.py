@@ -48,10 +48,11 @@ from __future__ import annotations
 import asyncio
 import random
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -102,13 +103,13 @@ class ClaimedJob:
     workflow_json: str
     priority: int
     environment: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     created_at: datetime
     claimed_at: datetime
     retry_count: int
     max_retries: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "job_id": self.job_id,
@@ -142,7 +143,7 @@ class ConsumerConfig:
     pool_max_size: int = 10
     claim_poll_interval_seconds: float = 1.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert config to dictionary with credential masking.
 
@@ -329,13 +330,13 @@ class PgQueuerConsumer:
         validate_robot_id(config.robot_id)
 
         self._config: ConsumerConfig = config
-        self._pool: Optional[Pool] = None
+        self._pool: Pool | None = None
         self._state: ConnectionState = ConnectionState.DISCONNECTED
         self._running: bool = False
         self._reconnect_attempts: int = 0
-        self._active_jobs: Dict[JobId, ClaimedJob] = {}
-        self._heartbeat_task: Optional[asyncio.Task[None]] = None
-        self._state_callbacks: List[StateChangeCallback] = []
+        self._active_jobs: dict[JobId, ClaimedJob] = {}
+        self._heartbeat_task: asyncio.Task[None] | None = None
+        self._state_callbacks: list[StateChangeCallback] = []
         self._lock: asyncio.Lock = asyncio.Lock()
 
         logger.info(
@@ -566,7 +567,7 @@ class PgQueuerConsumer:
             PostgresError: If query fails after all retries
             ConnectionError: If connection cannot be established
         """
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         for attempt in range(max_retries):
             if not await self._ensure_connection():
@@ -591,7 +592,7 @@ class PgQueuerConsumer:
 
         raise last_error or ConnectionError("Query failed after retries")
 
-    async def claim_job(self) -> Optional[ClaimedJob]:
+    async def claim_job(self) -> ClaimedJob | None:
         """
         Claim a single job from the queue.
 
@@ -606,7 +607,7 @@ class PgQueuerConsumer:
         jobs = await self.claim_batch(limit=1)
         return jobs[0] if jobs else None
 
-    async def claim_batch(self, limit: Optional[int] = None) -> List[ClaimedJob]:
+    async def claim_batch(self, limit: int | None = None) -> list[ClaimedJob]:
         """
         Claim multiple jobs from the queue.
 
@@ -633,8 +634,8 @@ class PgQueuerConsumer:
             logger.error(f"Failed to claim jobs: {e}")
             raise
 
-        claimed_jobs: List[ClaimedJob] = []
-        now = datetime.now(timezone.utc)
+        claimed_jobs: list[ClaimedJob] = []
+        now = datetime.now(UTC)
 
         for row in rows:
             # Parse variables - handle both dict (JSONB auto-converted) and string
@@ -680,7 +681,7 @@ class PgQueuerConsumer:
     async def extend_lease(
         self,
         job_id: JobId,
-        extension_seconds: Optional[int] = None,
+        extension_seconds: int | None = None,
     ) -> bool:
         """
         Extend the visibility timeout (lease) for a job.
@@ -724,7 +725,7 @@ class PgQueuerConsumer:
     async def complete_job(
         self,
         job_id: JobId,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
     ) -> bool:
         """
         Mark a job as completed.
@@ -912,7 +913,7 @@ class PgQueuerConsumer:
             logger.error(f"Failed to requeue timed-out jobs: {e}")
             raise
 
-    async def get_job_status(self, job_id: JobId) -> Optional[JobStatusInfo]:
+    async def get_job_status(self, job_id: JobId) -> JobStatusInfo | None:
         """
         Get current status of a job.
 
@@ -1000,16 +1001,16 @@ class PgQueuerConsumer:
         }
         return stats
 
-    async def __aenter__(self) -> "PgQueuerConsumer":
+    async def __aenter__(self) -> PgQueuerConsumer:
         """Async context manager entry."""
         await self.start()
         return self
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
     ) -> bool:
         """Async context manager exit."""
         await self.stop()

@@ -15,7 +15,7 @@ class DatabaseConfig(BaseModel):
     """Database connection configuration."""
 
     enabled: bool = Field(default=True, description="Enable database (false = in-memory fallback)")
-    url: Optional[str] = Field(default=None, description="Full connection URL")
+    url: str | None = Field(default=None, description="Full connection URL")
 
     # Individual components (used if url not provided)
     host: str = Field(default="localhost")
@@ -39,7 +39,7 @@ class DatabaseConfig(BaseModel):
 
     @field_validator("url", mode="before")
     @classmethod
-    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_url(cls, v: str | None) -> str | None:
         """Validate database URL format."""
         if v and not v.startswith(("postgresql://", "postgres://")):
             raise ValueError("Database URL must start with postgresql:// or postgres://")
@@ -49,9 +49,9 @@ class DatabaseConfig(BaseModel):
 class SupabaseConfig(BaseModel):
     """Supabase cloud configuration."""
 
-    url: Optional[str] = Field(default=None, description="Supabase project URL")
-    key: Optional[str] = Field(default=None, description="Supabase anon key")
-    service_key: Optional[str] = Field(default=None, description="Supabase service role key")
+    url: str | None = Field(default=None, description="Supabase project URL")
+    key: str | None = Field(default=None, description="Supabase anon key")
+    service_key: str | None = Field(default=None, description="Supabase service role key")
 
     @property
     def is_configured(self) -> bool:
@@ -60,7 +60,7 @@ class SupabaseConfig(BaseModel):
 
     @field_validator("url", mode="before")
     @classmethod
-    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_url(cls, v: str | None) -> str | None:
         """Validate Supabase URL format."""
         if v and not v.startswith("https://"):
             raise ValueError("Supabase URL must start with https://")
@@ -70,15 +70,15 @@ class SupabaseConfig(BaseModel):
 class SecurityConfig(BaseModel):
     """Security and authentication configuration."""
 
-    api_secret: Optional[str] = Field(default=None, description="JWT signing secret")
+    api_secret: str | None = Field(default=None, description="JWT signing secret")
     jwt_expiration_seconds: int = Field(default=3600, ge=60)
     robot_auth_enabled: bool = Field(default=False, description="Require robot API keys")
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
 
     # mTLS settings
-    ca_cert_path: Optional[Path] = Field(default=None)
-    client_cert_path: Optional[Path] = Field(default=None)
-    client_key_path: Optional[Path] = Field(default=None)
+    ca_cert_path: Path | None = Field(default=None)
+    client_cert_path: Path | None = Field(default=None)
+    client_key_path: Path | None = Field(default=None)
 
     @property
     def uses_mtls(self) -> bool:
@@ -103,13 +103,13 @@ class OrchestratorConfig(BaseModel):
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8000, ge=1, le=65535)
     workers: int = Field(default=1, ge=1)
-    cors_origins: List[str] = Field(
+    cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:5173", "http://localhost:8000"]
     )
 
     # SSL
-    ssl_keyfile: Optional[Path] = Field(default=None)
-    ssl_certfile: Optional[Path] = Field(default=None)
+    ssl_keyfile: Path | None = Field(default=None)
+    ssl_certfile: Path | None = Field(default=None)
 
     @property
     def uses_ssl(self) -> bool:
@@ -120,13 +120,13 @@ class OrchestratorConfig(BaseModel):
 class RobotConfig(BaseModel):
     """Robot agent configuration."""
 
-    id: Optional[str] = Field(default=None, description="Robot ID (auto-generated if not set)")
-    name: Optional[str] = Field(default=None, description="Robot display name")
+    id: str | None = Field(default=None, description="Robot ID (auto-generated if not set)")
+    name: str | None = Field(default=None, description="Robot display name")
     environment: str = Field(default="production")
     max_concurrent_jobs: int = Field(default=1, ge=1)
     heartbeat_interval: int = Field(default=30, ge=1)
-    capabilities: List[str] = Field(default_factory=list)
-    tags: List[str] = Field(default_factory=list)
+    capabilities: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
     # Connection settings
     reconnect_delay: float = Field(default=1.0, ge=0.1)
@@ -138,7 +138,7 @@ class LoggingConfig(BaseModel):
     """Logging configuration."""
 
     level: str = Field(default="INFO")
-    file: Optional[Path] = Field(default=None)
+    file: Path | None = Field(default=None)
     rotation_size_mb: int = Field(default=10, ge=1)
     retention_days: int = Field(default=7, ge=1)
 
@@ -156,7 +156,7 @@ class LoggingConfig(BaseModel):
 class QueueConfig(BaseModel):
     """Job queue configuration."""
 
-    url: Optional[str] = Field(default=None, description="PgQueuer database URL")
+    url: str | None = Field(default=None, description="PgQueuer database URL")
     use_memory_queue: bool = Field(default=False, description="Use in-memory queue (dev only)")
     poll_interval: float = Field(default=1.0, ge=0.1)
     job_timeout_default: int = Field(default=3600, ge=1)
@@ -190,10 +190,10 @@ class MetricsConfig(BaseModel):
 class VaultConfig(BaseModel):
     """HashiCorp Vault configuration."""
 
-    addr: Optional[str] = Field(default=None, description="Vault server address")
-    token: Optional[str] = Field(default=None, description="Vault token")
-    role_id: Optional[str] = Field(default=None, description="AppRole role ID")
-    secret_id: Optional[str] = Field(default=None, description="AppRole secret ID")
+    addr: str | None = Field(default=None, description="Vault server address")
+    token: str | None = Field(default=None, description="Vault token")
+    role_id: str | None = Field(default=None, description="AppRole role ID")
+    secret_id: str | None = Field(default=None, description="AppRole secret ID")
 
     @property
     def is_configured(self) -> bool:
@@ -201,7 +201,7 @@ class VaultConfig(BaseModel):
         return bool(self.addr and (self.token or (self.role_id and self.secret_id)))
 
     @property
-    def auth_method(self) -> Optional[str]:
+    def auth_method(self) -> str | None:
         """Get configured authentication method."""
         if not self.addr:
             return None
@@ -222,9 +222,9 @@ class StorageConfig(BaseModel):
 class CloudflareConfig(BaseModel):
     """Cloudflare Tunnel configuration."""
 
-    api_url: Optional[str] = Field(default=None)
-    webhook_url: Optional[str] = Field(default=None)
-    robot_ws_url: Optional[str] = Field(default=None)
+    api_url: str | None = Field(default=None)
+    webhook_url: str | None = Field(default=None)
+    robot_ws_url: str | None = Field(default=None)
 
 
 class Config(BaseModel):
@@ -261,7 +261,7 @@ class Config(BaseModel):
     reload: bool = Field(default=False)
 
     # Multi-tenant
-    tenant_id: Optional[str] = Field(default=None)
+    tenant_id: str | None = Field(default=None)
 
     class Config:
         """Pydantic config."""

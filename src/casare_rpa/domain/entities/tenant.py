@@ -6,8 +6,8 @@ Tenants have isolated robot fleets, workflows, and API keys.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Set
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 
@@ -36,11 +36,11 @@ class TenantSettings:
 
     max_robots: int = 10
     max_concurrent_jobs: int = 20
-    allowed_capabilities: List[str] = field(default_factory=list)
+    allowed_capabilities: list[str] = field(default_factory=list)
     max_api_keys_per_robot: int = 5
     job_retention_days: int = 30
     enable_audit_logging: bool = True
-    custom_settings: Dict[str, Any] = field(default_factory=dict)
+    custom_settings: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.max_robots < 0:
@@ -54,7 +54,7 @@ class TenantSettings:
         if self.job_retention_days < 1:
             raise ValueError(f"job_retention_days must be >= 1, got {self.job_retention_days}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "max_robots": self.max_robots,
@@ -67,7 +67,7 @@ class TenantSettings:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TenantSettings":
+    def from_dict(cls, data: dict[str, Any]) -> "TenantSettings":
         """Create from dictionary."""
         return cls(
             max_robots=data.get("max_robots", 10),
@@ -92,14 +92,14 @@ class Tenant:
     id: TenantId
     name: str
     settings: TenantSettings = field(default_factory=TenantSettings)
-    admin_emails: List[str] = field(default_factory=list)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    admin_emails: list[str] = field(default_factory=list)
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     is_active: bool = True
     description: str = ""
-    contact_email: Optional[str] = None
+    contact_email: str | None = None
     # Robot IDs belonging to this tenant
-    robot_ids: Set[str] = field(default_factory=set)
+    robot_ids: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         """Validate domain invariants."""
@@ -108,7 +108,7 @@ class Tenant:
         if not self.name or not self.name.strip():
             raise ValueError("Tenant name cannot be empty")
         if self.created_at is None:
-            object.__setattr__(self, "created_at", datetime.now(timezone.utc))
+            object.__setattr__(self, "created_at", datetime.now(UTC))
 
     @property
     def robot_count(self) -> int:
@@ -135,7 +135,7 @@ class Tenant:
                 f"Tenant {self.name} has reached max robots ({self.settings.max_robots})"
             )
         self.robot_ids.add(robot_id)
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def remove_robot(self, robot_id: str) -> None:
         """
@@ -145,7 +145,7 @@ class Tenant:
             robot_id: ID of robot to remove.
         """
         self.robot_ids.discard(robot_id)
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def has_robot(self, robot_id: str) -> bool:
         """Check if robot belongs to this tenant."""
@@ -156,14 +156,14 @@ class Tenant:
         email = email.lower().strip()
         if email and email not in self.admin_emails:
             self.admin_emails.append(email)
-            self.updated_at = datetime.now(timezone.utc)
+            self.updated_at = datetime.now(UTC)
 
     def remove_admin(self, email: str) -> None:
         """Remove an admin email from the tenant."""
         email = email.lower().strip()
         if email in self.admin_emails:
             self.admin_emails.remove(email)
-            self.updated_at = datetime.now(timezone.utc)
+            self.updated_at = datetime.now(UTC)
 
     def is_admin(self, email: str) -> bool:
         """Check if email is an admin of this tenant."""
@@ -172,19 +172,19 @@ class Tenant:
     def deactivate(self) -> None:
         """Deactivate the tenant (soft delete)."""
         self.is_active = False
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def activate(self) -> None:
         """Activate the tenant."""
         self.is_active = True
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def update_settings(self, settings: TenantSettings) -> None:
         """Update tenant settings."""
         self.settings = settings
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": str(self.id),
@@ -201,7 +201,7 @@ class Tenant:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Tenant":
+    def from_dict(cls, data: dict[str, Any]) -> "Tenant":
         """Create Tenant from dictionary."""
         from casare_rpa.utils.datetime_helpers import parse_datetime
 

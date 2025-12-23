@@ -10,6 +10,7 @@ Handles preview rendering and strategy display:
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QImage, QPixmap
 from PySide6.QtWidgets import (
@@ -21,7 +22,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import SelectorStrategy
 
@@ -44,9 +44,9 @@ class SelectorPreview(QWidget):
     strategy_selected = Signal(object)
     image_preview_clicked = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._strategies: List[SelectorStrategy] = []
+        self._strategies: list[SelectorStrategy] = []
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -138,7 +138,7 @@ class SelectorPreview(QWidget):
 
         layout.addWidget(self._image_preview_section)
 
-    def set_strategies(self, strategies: List[SelectorStrategy]) -> None:
+    def set_strategies(self, strategies: list[SelectorStrategy]) -> None:
         """
         Update the strategies list display.
 
@@ -189,7 +189,7 @@ class SelectorPreview(QWidget):
         if self._strategies_list.count() > 0:
             self._strategies_list.setCurrentRow(0)
 
-    def get_selected_strategy(self) -> Optional[SelectorStrategy]:
+    def get_selected_strategy(self) -> SelectorStrategy | None:
         """Get the currently selected strategy."""
         current = self._strategies_list.currentItem()
         if current:
@@ -268,8 +268,8 @@ class SelectorPreview(QWidget):
 
     def _on_strategy_changed(
         self,
-        current: Optional[QListWidgetItem],
-        _previous: Optional[QListWidgetItem],
+        current: QListWidgetItem | None,
+        _previous: QListWidgetItem | None,
     ) -> None:
         """Handle strategy selection change."""
         if current:
@@ -291,9 +291,9 @@ class AnchorPreview(QWidget):
     anchor_cleared = Signal()
     position_changed = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._anchor_data: Optional[Dict[str, Any]] = None
+        self._anchor_data: dict[str, Any] | None = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -367,7 +367,7 @@ class AnchorPreview(QWidget):
         self._selector_display.hide()
         layout.addWidget(self._selector_display)
 
-    def set_anchor(self, anchor_data: Dict[str, Any]) -> None:
+    def set_anchor(self, anchor_data: dict[str, Any]) -> None:
         """
         Set and display anchor data.
 
@@ -402,7 +402,7 @@ class AnchorPreview(QWidget):
         self._selector_display.clear()
         self.anchor_cleared.emit()
 
-    def get_anchor_data(self) -> Optional[Dict[str, Any]]:
+    def get_anchor_data(self) -> dict[str, Any] | None:
         """Get the current anchor data."""
         return self._anchor_data
 

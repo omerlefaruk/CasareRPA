@@ -10,10 +10,10 @@ Provides centralized service discovery and health monitoring for:
 
 import asyncio
 import os
+import socket
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, Optional
-import socket
 
 try:
     import aiohttp
@@ -48,10 +48,10 @@ class ServiceStatus:
 
     name: str
     state: ServiceState
-    url: Optional[str] = None
-    latency_ms: Optional[float] = None
-    error: Optional[str] = None
-    last_checked: Optional[str] = None
+    url: str | None = None
+    latency_ms: float | None = None
+    error: str | None = None
+    last_checked: str | None = None
     required: bool = True
 
 
@@ -84,10 +84,10 @@ class ServiceRegistry:
     }
 
     def __init__(self):
-        self._status_cache: Dict[str, ServiceStatus] = {}
+        self._status_cache: dict[str, ServiceStatus] = {}
         self._check_lock = asyncio.Lock()
 
-    async def check_all_services(self) -> Dict[str, ServiceStatus]:
+    async def check_all_services(self) -> dict[str, ServiceStatus]:
         """Check health of all registered services."""
         async with self._check_lock:
             tasks = []
@@ -180,7 +180,7 @@ class ServiceRegistry:
                         else:
                             # Try next URL
                             continue
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except Exception as e:
                 logger.debug(f"Health check failed for {name} at {base_url}: {e}")
@@ -233,7 +233,7 @@ class ServiceRegistry:
                 latency_ms=round(latency_ms, 1),
                 required=True,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return ServiceStatus(
                 name="database",
                 state=ServiceState.OFFLINE,
@@ -281,7 +281,7 @@ class ServiceRegistry:
 
             await asyncio.sleep(interval)
 
-    def get_service_url(self, name: str, prefer_local: bool = True) -> Optional[str]:
+    def get_service_url(self, name: str, prefer_local: bool = True) -> str | None:
         """Get the URL for a service."""
         if name not in self.SERVICES:
             return None
@@ -323,7 +323,7 @@ class ServiceRegistry:
 
 
 # Global singleton instance
-_registry: Optional[ServiceRegistry] = None
+_registry: ServiceRegistry | None = None
 
 
 def get_service_registry() -> ServiceRegistry:

@@ -12,13 +12,13 @@ Handles:
 
 from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
 from PySide6.QtCore import QRectF, QTimer
 from PySide6.QtWidgets import QGraphicsView
 
-from loguru import logger
-
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
+
     from casare_rpa.presentation.canvas.graph.viewport_culling import (
         ViewportCullingManager,
     )
@@ -41,7 +41,7 @@ class GraphSetup:
         """
         self._graph = graph
         self._culler = culler
-        self._viewport_update_timer: Optional[QTimer] = None
+        self._viewport_update_timer: QTimer | None = None
         self._last_viewport_rect: QRectF = QRectF()
         self._last_transform_m11: float = 0.01
         self._last_transform_dx: float = 0.0
@@ -64,8 +64,8 @@ class GraphSetup:
     def _configure_viewer(self) -> None:
         """Configure viewer colors and optimization settings."""
         from casare_rpa.presentation.canvas.graph.custom_pipe import (
-            CasarePipe,
             CasareLivePipe,
+            CasarePipe,
         )
 
         viewer = self._graph.viewer()
@@ -135,8 +135,8 @@ class GraphSetup:
     def _setup_opengl_viewport(self, viewer: QGraphicsView) -> None:
         """Setup GPU-accelerated OpenGL viewport."""
         try:
-            from PySide6.QtOpenGLWidgets import QOpenGLWidget
             from PySide6.QtGui import QSurfaceFormat
+            from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
             gl_format = QSurfaceFormat()
             gl_format.setVersion(3, 3)
@@ -221,12 +221,12 @@ class GraphSetup:
 
     def update_viewport_culling(self) -> None:
         """Update culling and LOD based on current viewport."""
-        from casare_rpa.presentation.canvas.graph.lod_manager import (
-            get_lod_manager,
-            LODLevel,
-        )
         from casare_rpa.presentation.canvas.graph.custom_node_item import (
             get_high_performance_mode,
+        )
+        from casare_rpa.presentation.canvas.graph.lod_manager import (
+            LODLevel,
+            get_lod_manager,
         )
 
         try:
@@ -285,6 +285,6 @@ class GraphSetup:
             self._viewport_update_timer = None
 
     @property
-    def viewport_update_timer(self) -> Optional[QTimer]:
+    def viewport_update_timer(self) -> QTimer | None:
         """Get the viewport update timer."""
         return self._viewport_update_timer

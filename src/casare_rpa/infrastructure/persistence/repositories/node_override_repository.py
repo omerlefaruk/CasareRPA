@@ -26,7 +26,7 @@ class NodeOverrideRepository:
     Maps between NodeRobotOverride value object and node_robot_overrides table.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -54,7 +54,7 @@ class NodeOverrideRepository:
         pool = await self._get_pool()
         await pool.release(conn)
 
-    def _row_to_override(self, row: Dict[str, Any]) -> NodeRobotOverride:
+    def _row_to_override(self, row: dict[str, Any]) -> NodeRobotOverride:
         """
         Convert database row to NodeRobotOverride value object.
 
@@ -68,7 +68,7 @@ class NodeOverrideRepository:
         raw_capabilities = row.get("required_capabilities", [])
         if isinstance(raw_capabilities, str):
             raw_capabilities = orjson.loads(raw_capabilities) if raw_capabilities else []
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         for cap in raw_capabilities:
             try:
                 capabilities.add(RobotCapability(cap))
@@ -94,7 +94,7 @@ class NodeOverrideRepository:
             is_active=row.get("is_active", True),
         )
 
-    def _override_to_params(self, override: NodeRobotOverride) -> Dict[str, Any]:
+    def _override_to_params(self, override: NodeRobotOverride) -> dict[str, Any]:
         """
         Convert NodeRobotOverride to database parameters.
 
@@ -168,7 +168,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_workflow(self, workflow_id: str) -> List[NodeRobotOverride]:
+    async def get_by_workflow(self, workflow_id: str) -> list[NodeRobotOverride]:
         """
         Get all overrides for a workflow.
 
@@ -195,7 +195,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_node(self, workflow_id: str, node_id: str) -> Optional[NodeRobotOverride]:
+    async def get_by_node(self, workflow_id: str, node_id: str) -> NodeRobotOverride | None:
         """
         Get override for a specific node.
 
@@ -225,7 +225,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_active_for_workflow(self, workflow_id: str) -> List[NodeRobotOverride]:
+    async def get_active_for_workflow(self, workflow_id: str) -> list[NodeRobotOverride]:
         """
         Get active overrides for a workflow.
 
@@ -252,7 +252,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_robot(self, robot_id: str) -> List[NodeRobotOverride]:
+    async def get_by_robot(self, robot_id: str) -> list[NodeRobotOverride]:
         """
         Get all overrides targeting a specific robot.
 
@@ -279,7 +279,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_capability(self, capability: RobotCapability) -> List[NodeRobotOverride]:
+    async def get_by_capability(self, capability: RobotCapability) -> list[NodeRobotOverride]:
         """
         Get all overrides requiring a specific capability.
 
@@ -463,7 +463,7 @@ class NodeOverrideRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_override_map(self, workflow_id: str) -> Dict[str, NodeRobotOverride]:
+    async def get_override_map(self, workflow_id: str) -> dict[str, NodeRobotOverride]:
         """
         Get a map of node_id to override for a workflow.
 

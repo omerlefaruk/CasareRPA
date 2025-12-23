@@ -10,15 +10,14 @@ References:
 """
 
 import math
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPolygonF
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
 
-from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.domain.port_type_system import PortShape
 from casare_rpa.application.services.port_type_service import get_port_type_registry
-
+from casare_rpa.domain.port_type_system import PortShape
+from casare_rpa.domain.value_objects.types import DataType
 
 # ============================================================================
 # SHAPE DRAWING FUNCTIONS
@@ -314,9 +313,9 @@ def draw_port_shape(
     painter: QPainter,
     center: QPointF,
     size: float,
-    data_type: Optional[DataType],
-    fill_color: Tuple[int, int, int, int],
-    border_color: Optional[Tuple[int, int, int, int]] = None,
+    data_type: DataType | None,
+    fill_color: tuple[int, int, int, int],
+    border_color: tuple[int, int, int, int] | None = None,
     is_exec: bool = False,
     is_output: bool = False,
 ) -> None:
@@ -386,7 +385,7 @@ def draw_port_shape(
 # ============================================================================
 
 
-def get_shape_for_type(data_type: Optional[DataType]) -> str:
+def get_shape_for_type(data_type: DataType | None) -> str:
     """
     Get the shape name for a data type.
 
@@ -404,7 +403,7 @@ def get_shape_for_type(data_type: Optional[DataType]) -> str:
     return shape.name.lower()
 
 
-def get_shape_description(data_type: Optional[DataType]) -> str:
+def get_shape_description(data_type: DataType | None) -> str:
     """
     Get a human-readable description of the shape for a type.
 

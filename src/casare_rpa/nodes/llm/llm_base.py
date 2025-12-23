@@ -6,8 +6,6 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
-
 
 import os
 from abc import abstractmethod
@@ -16,6 +14,7 @@ from typing import Any, Optional
 from loguru import logger
 
 from casare_rpa.domain.credentials import CredentialAwareMixin
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -24,9 +23,9 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import (
-    LLMResourceManager,
     LLMConfig,
     LLMProvider,
+    LLMResourceManager,
 )
 
 
@@ -121,7 +120,7 @@ class LLMBaseNode(CredentialAwareMixin, BaseNode):
 
         return manager
 
-    async def _get_api_key(self, context: ExecutionContext) -> Optional[str]:
+    async def _get_api_key(self, context: ExecutionContext) -> str | None:
         """
         Get API key using unified credential resolution.
 

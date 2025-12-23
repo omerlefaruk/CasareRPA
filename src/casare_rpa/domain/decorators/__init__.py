@@ -39,14 +39,14 @@ from casare_rpa.domain.decorators.error_handler import error_handler
 # Import core decorators - we'll create a _core module with the original content
 try:
     from casare_rpa.domain._decorators_core import (
-        node,
-        properties,
-        handle_errors,
-        validate_required,
-        with_timeout,
         get_node_metadata,
         get_node_schema,
+        handle_errors,
         has_exec_ports,
+        node,
+        properties,
+        validate_required,
+        with_timeout,
     )
 except ImportError:
     # Fallback: decorators.py hasn't been renamed yet

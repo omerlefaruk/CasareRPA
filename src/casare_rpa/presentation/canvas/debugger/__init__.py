@@ -10,12 +10,12 @@ Note: DebugExecutor is in casare_rpa.infrastructure.execution.debug_executor
 """
 
 from casare_rpa.presentation.canvas.debugger.debug_controller import (
-    DebugController,
     Breakpoint,
     BreakpointType,
-    WatchExpression,
     CallStackFrame,
+    DebugController,
     ExecutionSnapshot,
+    WatchExpression,
 )
 
 __all__ = [

@@ -9,8 +9,9 @@ visual rendering of frames.
 """
 
 from typing import TYPE_CHECKING
-from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QPainter, QPen, QBrush, QFont
+
+from PySide6.QtCore import QRectF, Qt
+from PySide6.QtGui import QBrush, QFont, QPainter, QPen
 
 from casare_rpa.presentation.canvas.graph.style_manager import (
     FrameStyleManager,

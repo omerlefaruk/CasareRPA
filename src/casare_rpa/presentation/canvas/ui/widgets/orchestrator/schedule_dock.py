@@ -5,31 +5,30 @@ Visual schedule builder dock widget with calendar view.
 Provides schedule management, creation, and monitoring.
 """
 
-from typing import Optional, List, Dict, Any
-
-from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QSplitter,
-    QSizePolicy,
-    QLabel,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QComboBox,
-    QLineEdit,
-    QCheckBox,
-    QGroupBox,
-    QFormLayout,
-    QSpinBox,
-    QTimeEdit,
-)
-from PySide6.QtCore import Qt, Signal, QSize, QTime
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import QSize, Qt, QTime, Signal
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDockWidget,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSizePolicy,
+    QSpinBox,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QTimeEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.calendar_widget import (
@@ -61,7 +60,7 @@ class ScheduleBuilderDock(QDockWidget):
     schedule_enabled_changed = Signal(str, bool)
     schedule_run_now = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the schedule builder dock.
 
@@ -71,9 +70,9 @@ class ScheduleBuilderDock(QDockWidget):
         super().__init__("Schedule Builder", parent)
         self.setObjectName("ScheduleBuilderDock")
 
-        self._schedules: List[Dict[str, Any]] = []
-        self._workflows: List[Dict[str, Any]] = []
-        self._selected_schedule_id: Optional[str] = None
+        self._schedules: list[dict[str, Any]] = []
+        self._workflows: list[dict[str, Any]] = []
+        self._selected_schedule_id: str | None = None
 
         self._setup_dock()
         self._setup_ui()
@@ -516,7 +515,7 @@ class ScheduleBuilderDock(QDockWidget):
 
             self._schedule_table.setRowHidden(row, not show)
 
-    def _get_schedule_by_id(self, schedule_id: str) -> Optional[Dict[str, Any]]:
+    def _get_schedule_by_id(self, schedule_id: str) -> dict[str, Any] | None:
         """Get schedule data by ID."""
         for schedule in self._schedules:
             if schedule.get("id") == schedule_id:
@@ -527,7 +526,7 @@ class ScheduleBuilderDock(QDockWidget):
     # Public API
     # =========================================================================
 
-    def update_schedules(self, schedules: List[Dict[str, Any]]) -> None:
+    def update_schedules(self, schedules: list[dict[str, Any]]) -> None:
         """
         Update the schedules list.
 
@@ -553,7 +552,7 @@ class ScheduleBuilderDock(QDockWidget):
         except Exception as e:
             logger.debug(f"Could not update calendar: {e}")
 
-    def update_workflows(self, workflows: List[Dict[str, Any]]) -> None:
+    def update_workflows(self, workflows: list[dict[str, Any]]) -> None:
         """
         Update available workflows for schedule creation.
 
@@ -613,7 +612,7 @@ class ScheduleBuilderDock(QDockWidget):
         self._schedule_table.blockSignals(False)
         self._apply_filter()
 
-    def get_selected_schedule_id(self) -> Optional[str]:
+    def get_selected_schedule_id(self) -> str | None:
         """Get currently selected schedule ID."""
         return self._selected_schedule_id
 

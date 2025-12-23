@@ -44,10 +44,11 @@ from __future__ import annotations
 import asyncio
 import random
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -102,7 +103,7 @@ class EnqueuedJob:
     created_at: datetime
     visible_after: datetime
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "job_id": self.job_id,
@@ -128,7 +129,7 @@ class JobSubmission:
     workflow_json: str
     priority: int = 10
     environment: str = "default"
-    variables: Optional[Dict[str, Any]] = None
+    variables: dict[str, Any] | None = None
     max_retries: int = 3
     delay_seconds: int = 0  # Delay before job becomes visible
 
@@ -162,7 +163,7 @@ class ProducerConfig:
     pool_min_size: int = 2
     pool_max_size: int = 10
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert config to dictionary with credential masking.
 
@@ -299,11 +300,11 @@ class PgQueuerProducer:
             )
 
         self._config: ProducerConfig = config
-        self._pool: Optional[Pool] = None
+        self._pool: Pool | None = None
         self._state: ProducerConnectionState = ProducerConnectionState.DISCONNECTED
         self._running: bool = False
         self._reconnect_attempts: int = 0
-        self._state_callbacks: List[StateChangeCallback] = []
+        self._state_callbacks: list[StateChangeCallback] = []
         self._lock: asyncio.Lock = asyncio.Lock()
 
         # Statistics
@@ -524,7 +525,7 @@ class PgQueuerProducer:
             PostgresError: If query fails after all retries
             ConnectionError: If connection cannot be established
         """
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         for attempt in range(max_retries):
             if not await self._ensure_connection():
@@ -554,10 +555,10 @@ class PgQueuerProducer:
         workflow_id: WorkflowId,
         workflow_name: str,
         workflow_json: str,
-        priority: Optional[int] = None,
-        environment: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        max_retries: Optional[int] = None,
+        priority: int | None = None,
+        environment: str | None = None,
+        variables: dict[str, Any] | None = None,
+        max_retries: int | None = None,
         delay_seconds: int = 0,
     ) -> EnqueuedJob:
         """
@@ -646,7 +647,7 @@ class PgQueuerProducer:
             logger.error(f"Failed to enqueue job: {e}")
             raise
 
-    async def enqueue_batch(self, submissions: List[JobSubmission]) -> List[EnqueuedJob]:
+    async def enqueue_batch(self, submissions: list[JobSubmission]) -> list[EnqueuedJob]:
         """
         Enqueue multiple jobs in a single transaction.
 
@@ -676,7 +677,7 @@ class PgQueuerProducer:
         if not await self._ensure_connection():
             raise ConnectionError("Unable to establish database connection")
 
-        enqueued_jobs: List[EnqueuedJob] = []
+        enqueued_jobs: list[EnqueuedJob] = []
 
         try:
             assert self._pool is not None  # Guaranteed by _ensure_connection()
@@ -768,7 +769,7 @@ class PgQueuerProducer:
             logger.error(f"Failed to cancel job {job_id[:8]}...: {e}")
             raise
 
-    async def get_job_status(self, job_id: JobId) -> Optional[JobDetailedStatus]:
+    async def get_job_status(self, job_id: JobId) -> JobDetailedStatus | None:
         """
         Get detailed status of a job.
 
@@ -846,7 +847,7 @@ class PgQueuerProducer:
             logger.error(f"Failed to get queue stats: {e}")
             return empty_stats
 
-    async def get_queue_depth_by_priority(self) -> Dict[int, int]:
+    async def get_queue_depth_by_priority(self) -> dict[int, int]:
         """
         Get queue depth grouped by priority.
 
@@ -913,16 +914,16 @@ class PgQueuerProducer:
         }
         return stats
 
-    async def __aenter__(self) -> "PgQueuerProducer":
+    async def __aenter__(self) -> PgQueuerProducer:
         """Async context manager entry."""
         await self.start()
         return self
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any | None,
     ) -> bool:
         """Async context manager exit."""
         await self.stop()

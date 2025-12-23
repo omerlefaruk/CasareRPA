@@ -17,17 +17,17 @@ Run: pytest tests/nodes/file/test_file_system_super_node.py -v
 
 import os
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from casare_rpa.nodes.file.super_node import (
-    FileSystemSuperNode,
-    FileSystemAction,
-    FILE_SYSTEM_PORT_SCHEMA,
-)
-from casare_rpa.nodes.file.file_security import PathSecurityError
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.nodes.file.file_security import PathSecurityError
+from casare_rpa.nodes.file.super_node import (
+    FILE_SYSTEM_PORT_SCHEMA,
+    FileSystemAction,
+    FileSystemSuperNode,
+)
 
 
 def setup_action_ports(node: FileSystemSuperNode, action: str) -> None:
@@ -69,13 +69,7 @@ class TestFileSystemSuperNodeInstantiation:
 
     def test_create_node_with_action_config(self) -> None:
         """Test creating node with specific action."""
-<<<<<<< HEAD
-        node = FileSystemSuperNode(
-            "test_node", config={"action": FileSystemAction.WRITE.value}
-        )
-=======
         node = FileSystemSuperNode("test_node", config={"action": FileSystemAction.WRITE.value})
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         assert node.get_parameter("action") == "Write File"
 
     def test_node_has_exec_ports(self) -> None:
@@ -102,13 +96,7 @@ class TestReadFileAction:
     """Tests for Read File action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_file_success(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_read_file_success(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Read existing text file."""
         node = FileSystemSuperNode(
             "test_read",
@@ -162,13 +150,7 @@ class TestReadFileAction:
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_read_file_max_size_exceeded(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_read_file_max_size_exceeded(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """EDGE CASE: File exceeds max size limit."""
         # Create file larger than limit
         large_file = tmp_path / "large.txt"
@@ -243,13 +225,7 @@ class TestWriteFileAction:
         assert node.get_output_value("bytes_written") == 12
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_write_file_creates_directories(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_write_file_creates_directories(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Creates parent directories when create_dirs=True."""
         nested_file = tmp_path / "new" / "nested" / "dir" / "file.txt"
 
@@ -305,13 +281,7 @@ class TestAppendFileAction:
     """Tests for Append File action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_append_file_success(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_append_file_success(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Append content to existing file."""
         node = FileSystemSuperNode(
             "test_append",
@@ -330,13 +300,7 @@ class TestAppendFileAction:
         assert temp_test_file.read_text() == "Hello, World! - Appended!"
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_append_creates_file_if_missing(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_append_creates_file_if_missing(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Creates file if it doesn't exist and create_if_missing=True."""
         new_file = tmp_path / "new_append.txt"
 
@@ -392,13 +356,7 @@ class TestDeleteFileAction:
     """Tests for Delete File action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_delete_file_success(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_delete_file_success(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Delete existing file."""
         assert temp_test_file.exists()
 
@@ -418,13 +376,7 @@ class TestDeleteFileAction:
         assert not temp_test_file.exists()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_delete_file_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_delete_file_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: File does not exist and ignore_missing=False."""
         non_existent = tmp_path / "does_not_exist.txt"
 
@@ -445,13 +397,7 @@ class TestDeleteFileAction:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_delete_file_ignore_missing(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_delete_file_ignore_missing(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Ignore missing file when ignore_missing=True."""
         non_existent = tmp_path / "does_not_exist.txt"
 
@@ -530,13 +476,7 @@ class TestCopyFileAction:
         assert "exists" in result["error"].lower()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_copy_file_source_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_copy_file_source_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: Source file does not exist."""
         non_existent = tmp_path / "missing.txt"
         dest = tmp_path / "dest.txt"
@@ -593,13 +533,7 @@ class TestMoveFileAction:
         assert not temp_test_file.exists()  # Source should be removed
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_move_file_rename(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_move_file_rename(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Rename file in same directory."""
         dest_file = temp_test_file.parent / "renamed.txt"
 
@@ -630,13 +564,7 @@ class TestFileExistsAction:
     """Tests for File Exists action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_file_exists_true(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_file_exists_true(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: File exists."""
         node = FileSystemSuperNode(
             "test_exists",
@@ -676,13 +604,7 @@ class TestFileExistsAction:
         assert node.get_output_value("exists") is False
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_directory_exists(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_directory_exists(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Directory exists."""
         node = FileSystemSuperNode(
             "test_exists",
@@ -702,13 +624,7 @@ class TestFileExistsAction:
         assert node.get_output_value("is_dir") is True
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_exists_check_type_file(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_exists_check_type_file(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Check type 'file' returns False for directory."""
         node = FileSystemSuperNode(
             "test_exists",
@@ -736,13 +652,7 @@ class TestGetFileSizeAction:
     """Tests for Get File Size action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_get_file_size_success(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_get_file_size_success(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Get file size."""
         node = FileSystemSuperNode(
             "test_size",
@@ -760,13 +670,7 @@ class TestGetFileSizeAction:
         assert node.get_output_value("size") == 13  # "Hello, World!" is 13 bytes
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_get_file_size_not_found(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_get_file_size_not_found(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: File not found."""
         non_existent = tmp_path / "missing.txt"
 
@@ -795,13 +699,7 @@ class TestGetFileInfoAction:
     """Tests for Get File Info action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_get_file_info_success(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_get_file_info_success(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Get detailed file information."""
         node = FileSystemSuperNode(
             "test_info",
@@ -832,13 +730,7 @@ class TestCreateDirectoryAction:
     """Tests for Create Directory action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_create_directory_success(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_create_directory_success(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Create new directory."""
         new_dir = tmp_path / "new_directory"
 
@@ -859,13 +751,7 @@ class TestCreateDirectoryAction:
         assert new_dir.is_dir()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_create_nested_directories(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_create_nested_directories(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: Create nested directories with parents=True."""
         nested_dir = tmp_path / "a" / "b" / "c"
 
@@ -886,13 +772,7 @@ class TestCreateDirectoryAction:
         assert nested_dir.exists()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_create_directory_exist_ok(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_create_directory_exist_ok(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: No error when directory exists and exist_ok=True."""
         node = FileSystemSuperNode(
             "test_mkdir",
@@ -919,13 +799,7 @@ class TestListFilesAction:
     """Tests for List Files action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_files_success(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_list_files_success(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: List files in directory."""
         node = FileSystemSuperNode(
             "test_list",
@@ -946,13 +820,7 @@ class TestListFilesAction:
         assert node.get_output_value("count") >= 3
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_files_with_pattern(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_list_files_with_pattern(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: List files matching pattern."""
         node = FileSystemSuperNode(
             "test_list",
@@ -972,13 +840,7 @@ class TestListFilesAction:
         assert all(f.endswith(".txt") for f in files)
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_files_recursive(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_list_files_recursive(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: List files recursively."""
         node = FileSystemSuperNode(
             "test_list",
@@ -1000,13 +862,7 @@ class TestListFilesAction:
         assert any("nested.txt" in f for f in files)
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_files_not_directory(
-        self, execution_context, temp_test_file: Path
-    ) -> None:
-=======
     async def test_list_files_not_directory(self, execution_context, temp_test_file: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SAD PATH: Path is a file, not directory."""
         node = FileSystemSuperNode(
             "test_list",
@@ -1033,13 +889,7 @@ class TestListDirectoryAction:
     """Tests for List Directory action."""
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_directory_success(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_list_directory_success(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: List all items in directory."""
         node = FileSystemSuperNode(
             "test_listdir",
@@ -1058,13 +908,7 @@ class TestListDirectoryAction:
         assert len(items) >= 4  # 3 files + 1 subdir
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_directory_files_only(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_list_directory_files_only(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: List only files."""
         node = FileSystemSuperNode(
             "test_listdir",
@@ -1085,13 +929,7 @@ class TestListDirectoryAction:
         assert all(Path(item).is_file() for item in items)
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_list_directory_dirs_only(
-        self, execution_context, temp_directory: Path
-    ) -> None:
-=======
     async def test_list_directory_dirs_only(self, execution_context, temp_directory: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         """SUCCESS: List only directories."""
         node = FileSystemSuperNode(
             "test_listdir",
@@ -1152,14 +990,7 @@ class TestFileSystemSecurity:
         result = await node.execute(execution_context)
 
         assert result["success"] is False
-<<<<<<< HEAD
-        assert (
-            "null byte" in result["error"].lower()
-            or "security" in result["error"].lower()
-        )
-=======
         assert "null byte" in result["error"].lower() or "security" in result["error"].lower()
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
 
 # =============================================================================

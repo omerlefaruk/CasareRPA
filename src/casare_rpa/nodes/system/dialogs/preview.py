@@ -6,13 +6,13 @@ Nodes for previewing images and displaying tabular data.
 
 import asyncio
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -109,16 +109,16 @@ class ImagePreviewDialogNode(BaseNode):
                 }
 
             try:
-                from PySide6.QtWidgets import (
-                    QDialog,
-                    QVBoxLayout,
-                    QLabel,
-                    QScrollArea,
-                    QDialogButtonBox,
-                    QApplication,
-                )
                 from PySide6.QtCore import Qt
                 from PySide6.QtGui import QPixmap
+                from PySide6.QtWidgets import (
+                    QApplication,
+                    QDialog,
+                    QDialogButtonBox,
+                    QLabel,
+                    QScrollArea,
+                    QVBoxLayout,
+                )
 
                 app = QApplication.instance()
                 if app is None:
@@ -320,16 +320,16 @@ class TableDialogNode(BaseNode):
                 columns = [f"Column {i+1}" for i in range(len(data[0]))]
 
             try:
+                from PySide6.QtCore import Qt
                 from PySide6.QtWidgets import (
+                    QAbstractItemView,
+                    QApplication,
                     QDialog,
-                    QVBoxLayout,
+                    QDialogButtonBox,
                     QTableWidget,
                     QTableWidgetItem,
-                    QDialogButtonBox,
-                    QApplication,
-                    QAbstractItemView,
+                    QVBoxLayout,
                 )
-                from PySide6.QtCore import Qt
 
                 app = QApplication.instance()
                 if app is None:

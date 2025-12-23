@@ -18,6 +18,8 @@ REFACTORED: Logic extracted into delegate classes:
 import os
 from typing import Optional
 
+from loguru import logger
+from NodeGraphQt import NodeGraph
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
@@ -27,10 +29,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from loguru import logger
-from NodeGraphQt import NodeGraph
-from casare_rpa.presentation.canvas.graph.custom_graph import CasareNodeGraph
 
 from casare_rpa.presentation.canvas.connections.auto_connect import AutoConnectManager
 from casare_rpa.presentation.canvas.connections.connection_cutter import (
@@ -55,42 +53,43 @@ from casare_rpa.presentation.canvas.connections.wire_bundler import (
 from casare_rpa.presentation.canvas.graph.composite_node_creator import (
     CompositeNodeCreator,
 )
+from casare_rpa.presentation.canvas.graph.connection_handler import ConnectionHandler
+from casare_rpa.presentation.canvas.graph.custom_graph import CasareNodeGraph
 from casare_rpa.presentation.canvas.graph.custom_node_item import (
+    get_high_perf_node_threshold,
     get_high_performance_mode,
     set_high_performance_mode,
-    get_high_perf_node_threshold,
 )
 from casare_rpa.presentation.canvas.graph.event_filters import (
     ConnectionDropFilter,
     OutputPortMMBFilter,
     TooltipBlocker,
 )
+from casare_rpa.presentation.canvas.graph.focus_ring import FocusRingManager
+from casare_rpa.presentation.canvas.graph.graph_event_handler import GraphEventHandler
+
+# Extracted delegate classes
+from casare_rpa.presentation.canvas.graph.graph_setup import GraphSetup
+
+# Keyboard navigation
+from casare_rpa.presentation.canvas.graph.keyboard_navigator import KeyboardNavigator
 from casare_rpa.presentation.canvas.graph.node_creation_helper import (
     NodeCreationHelper,
 )
 from casare_rpa.presentation.canvas.graph.node_quick_actions import NodeQuickActions
+from casare_rpa.presentation.canvas.graph.node_selection_handler import (
+    NodeSelectionHandler,
+)
 from casare_rpa.presentation.canvas.graph.node_widgets import (
     apply_all_node_widget_fixes,
 )
 from casare_rpa.presentation.canvas.graph.selection_manager import SelectionManager
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 from casare_rpa.presentation.canvas.ui.panels.port_legend_panel import PortLegendPanel
 from casare_rpa.presentation.canvas.ui.widgets.breadcrumb_nav import (
     BreadcrumbNavWidget,
     SubflowNavigationController,
 )
-from casare_rpa.presentation.canvas.telemetry import log_canvas_event
-
-# Extracted delegate classes
-from casare_rpa.presentation.canvas.graph.graph_setup import GraphSetup
-from casare_rpa.presentation.canvas.graph.connection_handler import ConnectionHandler
-from casare_rpa.presentation.canvas.graph.node_selection_handler import (
-    NodeSelectionHandler,
-)
-from casare_rpa.presentation.canvas.graph.graph_event_handler import GraphEventHandler
-
-# Keyboard navigation
-from casare_rpa.presentation.canvas.graph.keyboard_navigator import KeyboardNavigator
-from casare_rpa.presentation.canvas.graph.focus_ring import FocusRingManager
 
 # Import connection validator for strict type checking
 try:
@@ -128,7 +127,7 @@ class NodeGraphWidget(QWidget):
     # Signal emitted when an invalid connection is blocked
     connection_blocked = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the node graph widget.
 
@@ -234,7 +233,7 @@ class NodeGraphWidget(QWidget):
 
         # Create keyboard navigator for arrow key navigation
         self._keyboard_navigator = KeyboardNavigator(self._graph)
-        self._focus_ring_manager: Optional[FocusRingManager] = None
+        self._focus_ring_manager: FocusRingManager | None = None
 
         # Track mouse press for popup close
         self._popup_close_press_pos = None
@@ -1195,8 +1194,8 @@ class NodeGraphWidget(QWidget):
 
         try:
             from casare_rpa.presentation.canvas.graph.node_registry import (
-                get_node_factory,
                 get_casare_node_mapping,
+                get_node_factory,
             )
 
             mapping = get_casare_node_mapping()
@@ -1428,7 +1427,8 @@ class NodeGraphWidget(QWidget):
     def _handle_variable_drop(self, event, mime_data, viewer, scene_pos) -> None:
         """Handle variable drops from Output Inspector."""
         import json as json_module
-        from PySide6.QtWidgets import QLineEdit, QTextEdit, QGraphicsProxyWidget
+
+        from PySide6.QtWidgets import QGraphicsProxyWidget, QLineEdit, QTextEdit
 
         variable_text = None
         try:
@@ -1523,10 +1523,11 @@ class NodeGraphWidget(QWidget):
         node_item=None,
     ) -> None:
         """Show the Node Output Inspector popup for a node."""
+        from PySide6.QtCore import QPoint
+
         from casare_rpa.presentation.canvas.ui.widgets.node_output_popup import (
             NodeOutputPopup,
         )
-        from PySide6.QtCore import QPoint
 
         if not hasattr(self, "_output_popup") or self._output_popup is None:
             self._output_popup = NodeOutputPopup(self)

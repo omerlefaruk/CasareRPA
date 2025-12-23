@@ -9,92 +9,89 @@ Provides visual node representations for:
 
 # Calendar nodes removed - see Calendar/Docs cleanup 2025
 
-from casare_rpa.presentation.canvas.visual_nodes.google.gmail_nodes import (
-    # Send operations
-    VisualGmailSendEmailNode,
-    VisualGmailSendWithAttachmentNode,
-    VisualGmailReplyToEmailNode,
-    VisualGmailForwardEmailNode,
-    VisualGmailCreateDraftNode,
-    VisualGmailSendDraftNode,
-    # Read operations
-    VisualGmailGetEmailNode,
-    VisualGmailListEmailsNode,
-    VisualGmailSearchEmailsNode,
-    VisualGmailGetThreadNode,
-    VisualGmailGetAttachmentNode,
-    # Management operations
-    VisualGmailModifyLabelsNode,
-    VisualGmailMoveToTrashNode,
-    VisualGmailMarkAsReadNode,
-    VisualGmailMarkAsUnreadNode,
-    VisualGmailStarEmailNode,
-    VisualGmailArchiveEmailNode,
-    VisualGmailDeleteEmailNode,
-    # Batch operations
-    VisualGmailBatchSendNode,
-    VisualGmailBatchModifyNode,
-    VisualGmailBatchDeleteNode,
-)
-
-from casare_rpa.presentation.canvas.visual_nodes.google.sheets_nodes import (
-    # Cell operations
-    VisualSheetsGetCellNode,
-    VisualSheetsSetCellNode,
-    VisualSheetsGetRangeNode,
-    VisualSheetsWriteRangeNode,
-    VisualSheetsClearRangeNode,
-    # Sheet operations
-    VisualSheetsCreateSpreadsheetNode,
-    VisualSheetsGetSpreadsheetNode,
-    VisualSheetsAddSheetNode,
-    VisualSheetsDeleteSheetNode,
-    VisualSheetsDuplicateSheetNode,
-    VisualSheetsRenameSheetNode,
-    # Row/Column operations
-    VisualSheetsAppendRowNode,
-    VisualSheetsInsertRowNode,
-    VisualSheetsDeleteRowNode,
-    VisualSheetsInsertColumnNode,
-    VisualSheetsDeleteColumnNode,
-    # Format operations
-    VisualSheetsFormatCellsNode,
-    VisualSheetsAutoResizeNode,
-    # Batch operations
-    VisualSheetsBatchUpdateNode,
-    VisualSheetsBatchGetNode,
-    VisualSheetsBatchClearNode,
-)
-
 # Docs nodes removed - see Calendar/Docs cleanup 2025
-
 from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
-    # File operations - Single file
-    VisualDriveUploadFileNode,
-    VisualDriveDownloadFileNode,
-    VisualDriveDeleteFileNode,
-    VisualDriveCopyFileNode,
-    VisualDriveMoveFileNode,
-    VisualDriveRenameFileNode,
-    VisualDriveGetFileNode,
-    # File operations - Bulk download
-    VisualDriveDownloadFolderNode,
+    VisualDriveBatchCopyNode,
+    # Batch operations
+    VisualDriveBatchDeleteNode,
     VisualDriveBatchDownloadNode,
+    VisualDriveBatchMoveNode,
+    VisualDriveCopyFileNode,
     # Folder operations
     VisualDriveCreateFolderNode,
+    VisualDriveCreateShareLinkNode,
+    VisualDriveDeleteFileNode,
+    VisualDriveDownloadFileNode,
+    # File operations - Bulk download
+    VisualDriveDownloadFolderNode,
+    # Export
+    VisualDriveExportFileNode,
+    VisualDriveGetFileNode,
+    VisualDriveGetPermissionsNode,
     VisualDriveListFilesNode,
+    VisualDriveMoveFileNode,
+    VisualDriveRemoveShareNode,
+    VisualDriveRenameFileNode,
     VisualDriveSearchFilesNode,
     # Permissions
     VisualDriveShareFileNode,
-    VisualDriveRemoveShareNode,
-    VisualDriveGetPermissionsNode,
-    VisualDriveCreateShareLinkNode,
-    # Export
-    VisualDriveExportFileNode,
+    # File operations - Single file
+    VisualDriveUploadFileNode,
+)
+from casare_rpa.presentation.canvas.visual_nodes.google.gmail_nodes import (
+    VisualGmailArchiveEmailNode,
+    VisualGmailBatchDeleteNode,
+    VisualGmailBatchModifyNode,
     # Batch operations
-    VisualDriveBatchDeleteNode,
-    VisualDriveBatchMoveNode,
-    VisualDriveBatchCopyNode,
+    VisualGmailBatchSendNode,
+    VisualGmailCreateDraftNode,
+    VisualGmailDeleteEmailNode,
+    VisualGmailForwardEmailNode,
+    VisualGmailGetAttachmentNode,
+    # Read operations
+    VisualGmailGetEmailNode,
+    VisualGmailGetThreadNode,
+    VisualGmailListEmailsNode,
+    VisualGmailMarkAsReadNode,
+    VisualGmailMarkAsUnreadNode,
+    # Management operations
+    VisualGmailModifyLabelsNode,
+    VisualGmailMoveToTrashNode,
+    VisualGmailReplyToEmailNode,
+    VisualGmailSearchEmailsNode,
+    VisualGmailSendDraftNode,
+    # Send operations
+    VisualGmailSendEmailNode,
+    VisualGmailSendWithAttachmentNode,
+    VisualGmailStarEmailNode,
+)
+from casare_rpa.presentation.canvas.visual_nodes.google.sheets_nodes import (
+    VisualSheetsAddSheetNode,
+    # Row/Column operations
+    VisualSheetsAppendRowNode,
+    VisualSheetsAutoResizeNode,
+    VisualSheetsBatchClearNode,
+    VisualSheetsBatchGetNode,
+    # Batch operations
+    VisualSheetsBatchUpdateNode,
+    VisualSheetsClearRangeNode,
+    # Sheet operations
+    VisualSheetsCreateSpreadsheetNode,
+    VisualSheetsDeleteColumnNode,
+    VisualSheetsDeleteRowNode,
+    VisualSheetsDeleteSheetNode,
+    VisualSheetsDuplicateSheetNode,
+    # Format operations
+    VisualSheetsFormatCellsNode,
+    # Cell operations
+    VisualSheetsGetCellNode,
+    VisualSheetsGetRangeNode,
+    VisualSheetsGetSpreadsheetNode,
+    VisualSheetsInsertColumnNode,
+    VisualSheetsInsertRowNode,
+    VisualSheetsRenameSheetNode,
+    VisualSheetsSetCellNode,
+    VisualSheetsWriteRangeNode,
 )
 
 __all__ = [

@@ -18,7 +18,7 @@ from typing import List, Optional
 from loguru import logger
 
 # Node names to preload (commonly used individual nodes)
-PRELOAD_NODES: List[str] = [
+PRELOAD_NODES: list[str] = [
     # Basic
     "StartNode",
     "EndNode",
@@ -42,7 +42,7 @@ PRELOAD_NODES: List[str] = [
     "WriteFileNode",
 ]
 
-_preload_thread: Optional[threading.Thread] = None
+_preload_thread: threading.Thread | None = None
 _preload_started: bool = False
 _preload_complete: bool = False
 

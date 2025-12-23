@@ -7,6 +7,7 @@ Syncs with SelectorModel for state management.
 
 from typing import Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
@@ -18,11 +19,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.selector_model import (
-    SelectorModel,
     SelectorAttribute,
+    SelectorModel,
 )
 from casare_rpa.presentation.canvas.selectors.ui_explorer.widgets.attribute_row import (
     AttributeRow,
@@ -47,8 +46,8 @@ class SelectorEditorPanel(QFrame):
 
     def __init__(
         self,
-        model: Optional[SelectorModel] = None,
-        parent: Optional[QWidget] = None,
+        model: SelectorModel | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the selector editor panel.
@@ -60,7 +59,7 @@ class SelectorEditorPanel(QFrame):
         super().__init__(parent)
 
         self._model = model
-        self._attribute_rows: Dict[str, AttributeRow] = {}
+        self._attribute_rows: dict[str, AttributeRow] = {}
 
         self._setup_ui()
         self._apply_styles()
@@ -242,7 +241,7 @@ class SelectorEditorPanel(QFrame):
             # Initial load
             self._refresh_from_model()
 
-    def get_model(self) -> Optional[SelectorModel]:
+    def get_model(self) -> SelectorModel | None:
         """Get the current model."""
         return self._model
 
@@ -257,7 +256,7 @@ class SelectorEditorPanel(QFrame):
         self._attribute_rows.clear()
         self._update_counts()
 
-    def get_checked_attributes(self) -> List[str]:
+    def get_checked_attributes(self) -> list[str]:
         """
         Get list of checked attribute names.
 

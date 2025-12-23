@@ -135,7 +135,7 @@ class MouseController:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    async def get_position(self) -> Tuple[int, int]:
+    async def get_position(self) -> tuple[int, int]:
         """
         Get current mouse cursor position.
 
@@ -152,7 +152,7 @@ class MouseController:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def _get_position_sync(self) -> Tuple[int, int]:
+    def _get_position_sync(self) -> tuple[int, int]:
         """Synchronous helper to get mouse position."""
 
         class POINT(ctypes.Structure):

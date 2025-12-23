@@ -5,14 +5,17 @@ Converts NodeGraphQt visual graph to workflow JSON dict matching
 the format expected by load_workflow_from_dict().
 """
 
-from typing import Dict, List, Any, Optional, TYPE_CHECKING
 import time
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 from loguru import logger
+
 from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
+
     from casare_rpa.presentation.main_window import MainWindow
 
 
@@ -93,7 +96,7 @@ class WorkflowSerializer:
                 "settings": {},
             }
 
-    def _get_metadata(self) -> Dict[str, str]:
+    def _get_metadata(self) -> dict[str, str]:
         """Get workflow metadata."""
         # Get current file info from WorkflowController if available
         current_file = getattr(self._main_window, "_current_file", None)
@@ -113,7 +116,7 @@ class WorkflowSerializer:
             "modified_at": datetime.now().isoformat(),
         }
 
-    def _serialize_nodes(self) -> Dict[str, dict]:
+    def _serialize_nodes(self) -> dict[str, dict]:
         """
         Serialize all nodes from the graph.
 
@@ -133,7 +136,7 @@ class WorkflowSerializer:
 
         return nodes_dict
 
-    def _serialize_node(self, visual_node) -> Optional[dict]:
+    def _serialize_node(self, visual_node) -> dict | None:
         """
         Serialize a single visual node.
 
@@ -273,7 +276,7 @@ class WorkflowSerializer:
 
         return node_dict
 
-    def _serialize_connections(self) -> List[dict]:
+    def _serialize_connections(self) -> list[dict]:
         """
         Serialize all connections between nodes.
 
@@ -344,7 +347,7 @@ class WorkflowSerializer:
 
         return connections
 
-    def _get_variables(self) -> Dict[str, dict]:
+    def _get_variables(self) -> dict[str, dict]:
         """
         Get variables from the bottom panel variables tab.
 
@@ -364,7 +367,7 @@ class WorkflowSerializer:
 
         return {}
 
-    def _serialize_frames(self) -> List[dict]:
+    def _serialize_frames(self) -> list[dict]:
         """
         Serialize frames (node grouping boxes).
 
@@ -428,7 +431,7 @@ class WorkflowSerializer:
 
         return frames
 
-    def _get_settings(self) -> Dict[str, Any]:
+    def _get_settings(self) -> dict[str, Any]:
         """
         Get workflow execution settings.
 

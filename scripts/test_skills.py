@@ -6,8 +6,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(".").absolute() / "src"))
 
-from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 from fastembed import TextEmbedding
+
+from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 
 
 async def test_semantic_search_skill():
@@ -47,13 +48,7 @@ async def test_node_creator_skill():
     )
 
     if results:
-<<<<<<< HEAD
-        print(
-            f"  Found: {results[0].metadata.get('path')} | {results[0].metadata.get('name')}"
-        )
-=======
         print(f"  Found: {results[0].metadata.get('path')} | {results[0].metadata.get('name')}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         print("\n✅ node-creator.md skill working!\n")
     else:
         print("  ❌ No results found")

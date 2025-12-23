@@ -5,11 +5,12 @@ Auto-generates multiple selector strategies for desktop UI elements
 with confidence scoring and validation.
 """
 
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
-from loguru import logger
+from typing import Any, Dict, List, Optional
+
 import uiautomation as auto
+from loguru import logger
 
 from casare_rpa.desktop.element import DesktopElement
 
@@ -30,13 +31,13 @@ class SelectorStrategy:
 
     strategy: str  # "automation_id", "name", "control_type", etc.
     value: str
-    properties: Dict[str, Any]  # Additional properties for filtering
+    properties: dict[str, Any]  # Additional properties for filtering
     confidence: ConfidenceLevel
     score: float  # 0-100
     is_unique: bool = False
     description: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to selector dictionary format"""
         selector = {"strategy": self.strategy, "value": self.value}
         if self.properties:
@@ -45,8 +46,8 @@ class SelectorStrategy:
 
 
 def generate_selectors(
-    element: DesktopElement, parent_control: Optional[auto.Control] = None
-) -> List[SelectorStrategy]:
+    element: DesktopElement, parent_control: auto.Control | None = None
+) -> list[SelectorStrategy]:
     """
     Generate multiple selector strategies for a desktop element.
 
@@ -347,8 +348,8 @@ def validate_selector_uniqueness(
 
 
 def filter_best_selectors(
-    strategies: List[SelectorStrategy], max_count: int = 5
-) -> List[SelectorStrategy]:
+    strategies: list[SelectorStrategy], max_count: int = 5
+) -> list[SelectorStrategy]:
     """
     Filter to keep only the best selector strategies.
 

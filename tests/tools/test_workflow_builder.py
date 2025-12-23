@@ -1,8 +1,10 @@
 """Tests for WorkflowBuilder tool."""
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
+
 from casare_rpa.tools.workflow_builder import WorkflowBuilder
 
 
@@ -13,13 +15,7 @@ class TestWorkflowBuilder:
 
     def test_add_node(self, builder):
         """Test adding a node."""
-<<<<<<< HEAD
-        node_id = builder.add_node(
-            "ClickElementNode", {"selector": "#test"}, (100, 100)
-        )
-=======
         node_id = builder.add_node("ClickElementNode", {"selector": "#test"}, (100, 100))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         assert node_id in builder.workflow_data["nodes"]
         node = builder.workflow_data["nodes"][node_id]

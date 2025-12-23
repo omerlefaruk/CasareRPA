@@ -4,17 +4,17 @@ Message dialog nodes.
 Nodes for displaying information or confirmation dialogs.
 """
 
-import sys
 import asyncio
+import sys
 from typing import Tuple
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -220,10 +220,10 @@ class MessageBoxNode(BaseNode):
         always_on_top: bool,
         detailed_text: str,
         auto_close_timeout: int,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         """Show dialog using PySide6."""
-        from PySide6.QtWidgets import QMessageBox, QApplication
         from PySide6.QtCore import Qt, QTimer
+        from PySide6.QtWidgets import QApplication, QMessageBox
 
         app = QApplication.instance()
         if app is None:
@@ -316,7 +316,7 @@ class MessageBoxNode(BaseNode):
         always_on_top: bool,
         play_sound: bool,
         auto_close_timeout: int,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         """Show dialog using Windows MessageBox API."""
         import ctypes
 
@@ -513,8 +513,8 @@ class ConfirmDialogNode(BaseNode):
             button_no_text = self.get_parameter("button_no_text", "No")
 
             try:
-                from PySide6.QtWidgets import QMessageBox, QApplication
                 from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QApplication, QMessageBox
 
                 app = QApplication.instance()
                 if app is None:

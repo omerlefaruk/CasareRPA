@@ -8,19 +8,19 @@ These are secondary options, hidden by default for progressive disclosure.
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
     QCheckBox,
     QComboBox,
-    QLineEdit,
-    QSlider,
-    QPushButton,
-    QTabWidget,
     QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSlider,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 
@@ -29,7 +29,7 @@ class FuzzyOptionsTab(QWidget):
 
     options_changed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._setup_ui()
 
@@ -165,7 +165,7 @@ class CVOptionsTab(QWidget):
 
     options_changed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._setup_ui()
 
@@ -303,9 +303,9 @@ class ImageOptionsTab(QWidget):
     capture_requested = Signal()
     load_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._template_bytes: Optional[bytes] = None
+        self._template_bytes: bytes | None = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -478,7 +478,7 @@ class ImageOptionsTab(QWidget):
     def is_enabled(self) -> bool:
         return self._enable_check.isChecked()
 
-    def get_template(self) -> Optional[bytes]:
+    def get_template(self) -> bytes | None:
         return self._template_bytes
 
     def get_accuracy(self) -> float:
@@ -490,7 +490,7 @@ class HealingOptionsTab(QWidget):
 
     options_changed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._setup_ui()
 
@@ -566,7 +566,7 @@ class AdvancedOptionsWidget(QWidget):
 
     options_changed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._expanded = False
         self._setup_ui()

@@ -12,19 +12,19 @@ All navigation nodes extend BrowserBaseNode for:
 
 import asyncio
 
-from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
+from loguru import logger
+
+from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
-from loguru import logger
-
 from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.utils import safe_int
-from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
 
 
 @properties(
@@ -230,8 +230,8 @@ class GoToURLNode(BrowserBaseNode):
                     # This is needed when browser was already open and user runs Navigate
                     try:
                         from casare_rpa.domain.events import (
-                            get_event_bus,
                             BrowserPageReady,
+                            get_event_bus,
                         )
 
                         event_bus = get_event_bus()

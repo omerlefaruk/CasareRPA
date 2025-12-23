@@ -25,7 +25,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
 from casare_rpa.nodes.google.google_base import DriveBaseNode
 
-
 MAX_BATCH_SIZE = 100
 
 
@@ -164,7 +163,7 @@ class DriveBatchDeleteNode(DriveBaseNode):
 
         logger.debug(f"Batch deleting {len(file_ids)} files")
 
-        all_results: List[Dict[str, Any]] = []
+        all_results: list[dict[str, Any]] = []
         deleted_count = 0
         failed_count = 0
 
@@ -332,7 +331,7 @@ class DriveBatchMoveNode(DriveBaseNode):
 
         logger.debug(f"Batch moving {len(file_ids)} files to folder {folder_id}")
 
-        all_results: List[Dict[str, Any]] = []
+        all_results: list[dict[str, Any]] = []
         moved_count = 0
         failed_count = 0
 
@@ -511,8 +510,8 @@ class DriveBatchCopyNode(DriveBaseNode):
 
         logger.debug(f"Batch copying {len(file_ids)} files to folder {folder_id}")
 
-        all_results: List[Dict[str, Any]] = []
-        new_file_ids: List[str] = []
+        all_results: list[dict[str, Any]] = []
+        new_file_ids: list[str] = []
         copied_count = 0
         failed_count = 0
 

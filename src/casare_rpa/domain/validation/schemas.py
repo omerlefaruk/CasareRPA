@@ -4,18 +4,17 @@ CasareRPA - Validation Schemas Module
 Contains schema definitions, constants, and type mappings for validation.
 """
 
-from typing import Dict, Optional, Set
-
 import logging
+from typing import Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
 
 # Required fields for node data
-NODE_REQUIRED_FIELDS: Set[str] = {"node_id", "node_type"}
+NODE_REQUIRED_FIELDS: set[str] = {"node_id", "node_type"}
 
 # Required fields for connection data
-CONNECTION_REQUIRED_FIELDS: Set[str] = {
+CONNECTION_REQUIRED_FIELDS: set[str] = {
     "source_node",
     "source_port",
     "target_node",
@@ -23,7 +22,7 @@ CONNECTION_REQUIRED_FIELDS: Set[str] = {
 }
 
 # Data type compatibility matrix (source -> compatible targets)
-DATA_TYPE_COMPATIBILITY: Dict[str, Set[str]] = {
+DATA_TYPE_COMPATIBILITY: dict[str, set[str]] = {
     "ANY": {
         "STRING",
         "INTEGER",
@@ -48,7 +47,7 @@ DATA_TYPE_COMPATIBILITY: Dict[str, Set[str]] = {
 }
 
 
-def _get_valid_node_types() -> Set[str]:
+def _get_valid_node_types() -> set[str]:
     """
     Dynamically get valid node types from the central node registry.
 
@@ -77,10 +76,10 @@ def _get_valid_node_types() -> Set[str]:
 
 
 # Lazily evaluated to avoid circular imports
-_valid_node_types_cache: Optional[Set[str]] = None
+_valid_node_types_cache: set[str] | None = None
 
 
-def get_valid_node_types() -> Set[str]:
+def get_valid_node_types() -> set[str]:
     """Get the set of valid node types."""
     global _valid_node_types_cache
     if _valid_node_types_cache is None:
@@ -89,7 +88,7 @@ def get_valid_node_types() -> Set[str]:
 
 
 # Legacy alias for backwards compatibility (will be evaluated lazily when accessed)
-VALID_NODE_TYPES: Set[str] = set()  # Placeholder, use get_valid_node_types() instead
+VALID_NODE_TYPES: set[str] = set()  # Placeholder, use get_valid_node_types() instead
 
 
 __all__ = [

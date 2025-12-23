@@ -125,7 +125,7 @@ class DetectedElement:
         """Area of bounding box in pixels."""
         return self.width * self.height
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "element_type": self.element_type.value,
@@ -152,7 +152,7 @@ class DetectionResult:
     success: bool
     """Whether detection completed successfully."""
 
-    elements: List[DetectedElement] = field(default_factory=list)
+    elements: list[DetectedElement] = field(default_factory=list)
     """List of detected elements."""
 
     inference_time_ms: float = 0.0
@@ -167,23 +167,23 @@ class DetectionResult:
     model_name: str = ""
     """Name of model used."""
 
-    image_size: Tuple[int, int] = (0, 0)
+    image_size: tuple[int, int] = (0, 0)
     """Size of input image (width, height)."""
 
-    error_message: Optional[str] = None
+    error_message: str | None = None
     """Error message if detection failed."""
 
     def filter_by_type(
         self,
-        element_types: List[UIElementType],
-    ) -> List[DetectedElement]:
+        element_types: list[UIElementType],
+    ) -> list[DetectedElement]:
         """Filter elements by type."""
         return [e for e in self.elements if e.element_type in element_types]
 
     def filter_by_confidence(
         self,
         min_confidence: float,
-    ) -> List[DetectedElement]:
+    ) -> list[DetectedElement]:
         """Filter elements by minimum confidence."""
         return [e for e in self.elements if e.confidence >= min_confidence]
 
@@ -192,7 +192,7 @@ class DetectionResult:
         x: int,
         y: int,
         tolerance: int = 10,
-    ) -> Optional[DetectedElement]:
+    ) -> DetectedElement | None:
         """Get element at or near a specific position."""
         for element in self.elements:
             if (
@@ -202,7 +202,7 @@ class DetectionResult:
                 return element
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "success": self.success,
@@ -236,9 +236,9 @@ def _ensure_yolo_imports() -> bool:
         return True
 
     try:
-        from ultralytics import YOLO
         import cv2
         import numpy as np
+        from ultralytics import YOLO
 
         _ultralytics = YOLO
         _cv2 = cv2
@@ -285,10 +285,10 @@ class YOLOElementDetector:
 
     def __init__(
         self,
-        model_path: Optional[str] = None,
+        model_path: str | None = None,
         confidence_threshold: float = 0.5,
         iou_threshold: float = 0.45,
-        device: Optional[str] = None,
+        device: str | None = None,
         use_gpu: bool = True,
     ) -> None:
         """
@@ -378,8 +378,8 @@ class YOLOElementDetector:
     async def detect_elements(
         self,
         screenshot: bytes,
-        element_types: Optional[List[str]] = None,
-        region: Optional[Tuple[int, int, int, int]] = None,
+        element_types: list[str] | None = None,
+        region: tuple[int, int, int, int] | None = None,
     ) -> DetectionResult:
         """
         Detect UI elements in a screenshot.
@@ -491,8 +491,8 @@ class YOLOElementDetector:
         results: Any,
         offset_x: int,
         offset_y: int,
-        element_types: Optional[List[str]],
-    ) -> List[DetectedElement]:
+        element_types: list[str] | None,
+    ) -> list[DetectedElement]:
         """
         Process YOLO results into DetectedElement objects.
 
@@ -505,10 +505,10 @@ class YOLOElementDetector:
         Returns:
             List of DetectedElement objects.
         """
-        elements: List[DetectedElement] = []
+        elements: list[DetectedElement] = []
 
         # Type filter set for efficiency
-        type_filter: Optional[set] = None
+        type_filter: set | None = None
         if element_types:
             type_filter = set(t.lower() for t in element_types)
 
@@ -563,7 +563,7 @@ class YOLOElementDetector:
         screenshot: bytes,
         element_type: str,
         index: int = 0,
-    ) -> Optional[DetectedElement]:
+    ) -> DetectedElement | None:
         """
         Find a specific element by type.
 
@@ -593,7 +593,7 @@ class YOLOElementDetector:
         screenshot: bytes,
         x: int,
         y: int,
-    ) -> Optional[DetectedElement]:
+    ) -> DetectedElement | None:
         """
         Find element at a specific screen position.
 
@@ -616,7 +616,7 @@ class YOLOElementDetector:
         self,
         screenshot: bytes,
         min_confidence: float = 0.7,
-    ) -> List[DetectedElement]:
+    ) -> list[DetectedElement]:
         """
         Get all clickable elements (buttons, links, icons).
 

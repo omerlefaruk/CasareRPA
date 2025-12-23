@@ -95,7 +95,7 @@ class ChatTriggerNode(BaseTriggerNode):
     trigger_icon = "chat"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Chat Trigger"
         self.node_type = "ChatTriggerNode"
@@ -113,7 +113,7 @@ class ChatTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.CHAT
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get chat-specific configuration."""
         return {
             "welcome_message": self.get_parameter("welcome_message", "Hello! How can I help you?"),

@@ -6,9 +6,10 @@ Connects Fleet Dashboard to remote orchestrator for real robot management.
 
 import asyncio
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 import aiohttp
@@ -21,7 +22,7 @@ class OrchestratorConfig:
 
     base_url: str = "http://localhost:8000"
     ws_url: str = "ws://localhost:8000"
-    api_key: Optional[str] = None
+    api_key: str | None = None
     timeout: float = 30.0
     retry_attempts: int = 3
     retry_delay: float = 1.0
@@ -38,15 +39,15 @@ class RobotData:
     environment: str = "default"
     cpu_percent: float = 0.0
     memory_mb: float = 0.0
-    current_job: Optional[str] = None
+    current_job: str | None = None
     current_jobs: int = 0
     max_concurrent_jobs: int = 1
-    last_seen: Optional[datetime] = None
-    capabilities: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    last_seen: datetime | None = None
+    capabilities: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     @classmethod
-    def from_api(cls, data: Dict[str, Any]) -> "RobotData":
+    def from_api(cls, data: dict[str, Any]) -> "RobotData":
         """Create from API response."""
         last_seen = data.get("last_seen") or data.get("lastSeen")
         if isinstance(last_seen, str):
@@ -81,19 +82,19 @@ class JobData:
     id: str
     workflow_id: str
     workflow_name: str
-    robot_id: Optional[str]
+    robot_id: str | None
     robot_name: str
     status: str
     progress: int = 0
     current_node: str = ""
-    created_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     duration_ms: int = 0
     error_message: str = ""
 
     @classmethod
-    def from_api(cls, data: Dict[str, Any]) -> "JobData":
+    def from_api(cls, data: dict[str, Any]) -> "JobData":
         """Create from API response."""
 
         def parse_dt(val):
@@ -131,13 +132,13 @@ class RobotApiKeyData:
     name: str = ""
     description: str = ""
     status: str = "active"
-    created_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    last_used_at: Optional[datetime] = None
-    last_used_ip: Optional[str] = None
+    created_at: datetime | None = None
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
+    last_used_ip: str | None = None
 
     @classmethod
-    def from_api(cls, data: Dict[str, Any]) -> "RobotApiKeyData":
+    def from_api(cls, data: dict[str, Any]) -> "RobotApiKeyData":
         def parse_dt(val):
             if isinstance(val, str):
                 try:
@@ -170,15 +171,15 @@ class OrchestratorClient:
     - Automatic reconnection and retry logic
     """
 
-    def __init__(self, config: Optional[OrchestratorConfig] = None):
+    def __init__(self, config: OrchestratorConfig | None = None):
         """Initialize client with configuration."""
         self.config = config or OrchestratorConfig()
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._ws: Optional[aiohttp.ClientWebSocketResponse] = None
-        self._ws_task: Optional[asyncio.Task] = None
+        self._session: aiohttp.ClientSession | None = None
+        self._ws: aiohttp.ClientWebSocketResponse | None = None
+        self._ws_task: asyncio.Task | None = None
         self._connected = False
-        self._last_http_status: Optional[int] = None
-        self._callbacks: Dict[str, List[Callable]] = {
+        self._last_http_status: int | None = None
+        self._callbacks: dict[str, list[Callable]] = {
             "robot_status": [],
             "job_update": [],
             "queue_metrics": [],
@@ -193,7 +194,7 @@ class OrchestratorClient:
         return self._connected and self._session is not None
 
     @property
-    def last_http_status(self) -> Optional[int]:
+    def last_http_status(self) -> int | None:
         """
         Last HTTP status code returned by the orchestrator API.
 
@@ -277,9 +278,9 @@ class OrchestratorClient:
         self,
         method: str,
         endpoint: str,
-        params: Optional[Dict] = None,
-        json_data: Optional[Dict] = None,
-    ) -> Optional[Dict[str, Any]]:
+        params: dict | None = None,
+        json_data: dict | None = None,
+    ) -> dict[str, Any] | None:
         """Make HTTP request with retry logic."""
         if not self._session:
             await self.connect()
@@ -359,7 +360,7 @@ class OrchestratorClient:
 
     # ==================== ROBOT ENDPOINTS ====================
 
-    async def get_robots(self, status: Optional[str] = None) -> List[RobotData]:
+    async def get_robots(self, status: str | None = None) -> list[RobotData]:
         """
         Get all robots from orchestrator.
 
@@ -379,7 +380,7 @@ class OrchestratorClient:
 
         return [RobotData.from_api(r) for r in data]
 
-    async def get_robot(self, robot_id: str) -> Optional[RobotData]:
+    async def get_robot(self, robot_id: str) -> RobotData | None:
         """Get single robot details."""
         data = await self._request("GET", f"/api/v1/metrics/robots/{robot_id}")
         if not data:
@@ -391,10 +392,10 @@ class OrchestratorClient:
         robot_id: str,
         name: str,
         hostname: str,
-        capabilities: List[str],
+        capabilities: list[str],
         environment: str = "default",
         max_concurrent_jobs: int = 1,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> bool:
         """
         Register a new robot with the orchestrator.
@@ -434,7 +435,7 @@ class OrchestratorClient:
         )
         return data is not None
 
-    async def update_robot(self, robot_id: str, robot_data: Dict[str, Any]) -> bool:
+    async def update_robot(self, robot_id: str, robot_data: dict[str, Any]) -> bool:
         """Update robot metadata (name/environment/capabilities/etc)."""
         data = await self._request(
             "PUT",
@@ -446,7 +447,7 @@ class OrchestratorClient:
     async def send_robot_heartbeat(
         self,
         robot_id: str,
-        metrics: Optional[Dict[str, Any]] = None,
+        metrics: dict[str, Any] | None = None,
     ) -> bool:
         """Send robot heartbeat with optional metrics payload."""
         data = await self._request(
@@ -485,12 +486,12 @@ class OrchestratorClient:
 
     async def list_robot_api_keys(
         self,
-        robot_id: Optional[str] = None,
-        status: Optional[str] = None,
+        robot_id: str | None = None,
+        status: str | None = None,
         limit: int = 200,
         offset: int = 0,
-    ) -> List[RobotApiKeyData]:
-        params: Dict[str, Any] = {"limit": limit, "offset": offset}
+    ) -> list[RobotApiKeyData]:
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
         if robot_id:
             params["robot_id"] = robot_id
         if status:
@@ -510,9 +511,9 @@ class OrchestratorClient:
         robot_id: str,
         name: str,
         description: str = "",
-        expires_at: Optional[datetime] = None,
-    ) -> Optional[Dict[str, Any]]:
-        payload: Dict[str, Any] = {
+        expires_at: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        payload: dict[str, Any] = {
             "robot_id": robot_id,
             "name": name,
             "description": description or None,
@@ -530,7 +531,7 @@ class OrchestratorClient:
         )
         return data is not None
 
-    async def rotate_robot_api_key(self, key_id: str) -> Optional[Dict[str, Any]]:
+    async def rotate_robot_api_key(self, key_id: str) -> dict[str, Any] | None:
         data = await self._request(
             "POST",
             f"/api/v1/robot-api-keys/{key_id}/rotate",
@@ -542,10 +543,10 @@ class OrchestratorClient:
     async def get_jobs(
         self,
         limit: int = 50,
-        status: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
-    ) -> List[JobData]:
+        status: str | None = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
+    ) -> list[JobData]:
         """
         Get job history from orchestrator.
 
@@ -572,7 +573,7 @@ class OrchestratorClient:
 
         return [JobData.from_api(j) for j in data]
 
-    async def get_job(self, job_id: str) -> Optional[JobData]:
+    async def get_job(self, job_id: str) -> JobData | None:
         """Get single job details."""
         data = await self._request("GET", f"/api/v1/metrics/jobs/{job_id}")
         if not data:
@@ -584,7 +585,7 @@ class OrchestratorClient:
         data = await self._request("POST", f"/api/v1/jobs/{job_id}/cancel")
         return data is not None
 
-    async def retry_job(self, job_id: str) -> Optional[str]:
+    async def retry_job(self, job_id: str) -> str | None:
         """Retry a failed job. Returns new job ID."""
         data = await self._request("POST", f"/api/v1/jobs/{job_id}/retry")
         if data:
@@ -593,12 +594,12 @@ class OrchestratorClient:
 
     # ==================== FLEET METRICS ====================
 
-    async def get_fleet_metrics(self) -> Dict[str, Any]:
+    async def get_fleet_metrics(self) -> dict[str, Any]:
         """Get fleet-wide metrics summary."""
         data = await self._request("GET", "/api/v1/metrics/fleet")
         return data or {}
 
-    async def get_analytics(self, days: int = 7) -> Dict[str, Any]:
+    async def get_analytics(self, days: int = 7) -> dict[str, Any]:
         """Get aggregated analytics."""
         data = await self._request("GET", "/api/v1/metrics/analytics", params={"days": days})
         return data or {}
@@ -606,9 +607,9 @@ class OrchestratorClient:
     async def get_activity(
         self,
         limit: int = 50,
-        since: Optional[datetime] = None,
-        event_type: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        since: datetime | None = None,
+        event_type: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Get activity feed."""
         params = {"limit": limit}
         if since:
@@ -623,7 +624,7 @@ class OrchestratorClient:
 
     # ==================== SCHEDULES ====================
 
-    async def get_schedules(self) -> List[Dict[str, Any]]:
+    async def get_schedules(self) -> list[dict[str, Any]]:
         """Get all schedules."""
         data = await self._request("GET", "/api/v1/schedules")
         return data or []
@@ -655,7 +656,7 @@ class OrchestratorClient:
         if event in self._callbacks and callback in self._callbacks[event]:
             self._callbacks[event].remove(callback)
 
-    async def _notify(self, event: str, data: Dict[str, Any]) -> None:
+    async def _notify(self, event: str, data: dict[str, Any]) -> None:
         """Notify all callbacks for an event."""
         for callback in self._callbacks.get(event, []):
             try:
@@ -739,7 +740,7 @@ class OrchestratorClient:
 
 
 # Singleton instance
-_client: Optional[OrchestratorClient] = None
+_client: OrchestratorClient | None = None
 
 
 def get_orchestrator_client() -> OrchestratorClient:
@@ -752,8 +753,8 @@ def get_orchestrator_client() -> OrchestratorClient:
 
 async def configure_orchestrator(
     base_url: str,
-    ws_url: Optional[str] = None,
-    api_key: Optional[str] = None,
+    ws_url: str | None = None,
+    api_key: str | None = None,
 ) -> OrchestratorClient:
     """
     Configure and connect to orchestrator.

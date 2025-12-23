@@ -10,9 +10,10 @@ collapse-related UI elements.
 """
 
 from typing import TYPE_CHECKING
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsEllipseItem
-from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QColor, QPen, QBrush, QPainter
+
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QGraphicsRectItem
 
 from casare_rpa.presentation.canvas.graph.style_manager import (
     CollapseButtonStyle,

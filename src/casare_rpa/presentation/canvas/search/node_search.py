@@ -4,23 +4,23 @@ Node Search Dialog for CasareRPA.
 Provides Ctrl+F search functionality to find and navigate to nodes in the canvas.
 """
 
-from typing import Optional, List, TYPE_CHECKING
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
-    QVBoxLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QLabel,
+    QVBoxLayout,
     QWidget,
-    QCheckBox,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeyEvent
-from loguru import logger
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -52,7 +52,7 @@ class NodeSearchDialog(QDialog):
 
     node_selected = Signal(str)
 
-    def __init__(self, graph: "NodeGraph", parent: Optional[QWidget] = None) -> None:
+    def __init__(self, graph: "NodeGraph", parent: QWidget | None = None) -> None:
         """
         Initialize the node search dialog.
 
@@ -62,8 +62,8 @@ class NodeSearchDialog(QDialog):
         """
         super().__init__(parent)
         self._graph = graph
-        self._all_nodes: List[NodeSearchResult] = []
-        self._filtered_nodes: List[NodeSearchResult] = []
+        self._all_nodes: list[NodeSearchResult] = []
+        self._filtered_nodes: list[NodeSearchResult] = []
 
         self._setup_ui()
         self._apply_styles()

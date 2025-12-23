@@ -49,7 +49,7 @@ class Position:
         """
         return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
-    def to_dict(self) -> List[float]:
+    def to_dict(self) -> list[float]:
         """
         Serialize to a [x, y] list for workflow persistence.
 

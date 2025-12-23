@@ -10,6 +10,7 @@ Full-featured dialog for managing environments (dev, staging, production, custom
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -35,7 +36,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
 from casare_rpa.domain.entities.project import (
     Environment,
@@ -70,8 +70,8 @@ class EnvironmentEditorDialog(QDialog):
 
     def __init__(
         self,
-        project: Optional[Any] = None,
-        parent: Optional[QWidget] = None,
+        project: Any | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize environment editor dialog.
@@ -83,9 +83,9 @@ class EnvironmentEditorDialog(QDialog):
         super().__init__(parent)
 
         self._project = project
-        self._environments: List[Environment] = []
-        self._current_env: Optional[Environment] = None
-        self._resolved_variables: Dict[str, Any] = {}
+        self._environments: list[Environment] = []
+        self._current_env: Environment | None = None
+        self._resolved_variables: dict[str, Any] = {}
         self._inherited_keys: set = set()
 
         self.setWindowTitle("Environment Editor")
@@ -431,7 +431,7 @@ class EnvironmentEditorDialog(QDialog):
             return
 
         # Get inheritance chain
-        chain: List[Environment] = []
+        chain: list[Environment] = []
         current_type = self._current_env.env_type
 
         # Build chain from base to current
@@ -1020,9 +1020,9 @@ class EnvironmentEditorDialog(QDialog):
 
 
 def show_environment_editor(
-    project: Optional[Any] = None,
-    parent: Optional[QWidget] = None,
-) -> Optional[str]:
+    project: Any | None = None,
+    parent: QWidget | None = None,
+) -> str | None:
     """
     Show environment editor dialog.
 

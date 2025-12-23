@@ -30,8 +30,9 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -48,7 +49,7 @@ class SelectorTestResult:
     match_count: int
     execution_time_ms: float
     is_unique: bool
-    error: Optional[str] = None
+    error: str | None = None
 
     @property
     def success(self) -> bool:
@@ -65,7 +66,7 @@ class HealingResult:
     confidence: float
     strategy_used: str
     tier_used: str = "original"
-    alternatives: List[Tuple[str, float]] = field(default_factory=list)
+    alternatives: list[tuple[str, float]] = field(default_factory=list)
     healing_time_ms: float = 0.0
 
 
@@ -84,7 +85,7 @@ class SelectorFacade:
     consistent state across the application.
     """
 
-    _instance: Optional["SelectorFacade"] = None
+    _instance: SelectorFacade | None = None
     _lock = asyncio.Lock()
 
     def __init__(self):
@@ -98,7 +99,7 @@ class SelectorFacade:
         self._healing_chain = None
 
     @classmethod
-    def get_instance(cls) -> "SelectorFacade":
+    def get_instance(cls) -> SelectorFacade:
         """Get the singleton instance of SelectorFacade."""
         if cls._instance is None:
             cls._instance = cls()
@@ -224,7 +225,7 @@ class SelectorFacade:
     # Validation
     # =========================================================================
 
-    def validate(self, selector: str) -> Tuple[bool, str]:
+    def validate(self, selector: str) -> tuple[bool, str]:
         """
         Validate selector format.
 
@@ -242,7 +243,7 @@ class SelectorFacade:
 
     async def test(
         self,
-        page: "Page",
+        page: Page,
         selector: str,
         selector_type: str = "auto",
         timeout_ms: int = 2000,
@@ -296,10 +297,10 @@ class SelectorFacade:
 
     async def heal(
         self,
-        page: "Page",
+        page: Page,
         selector: str,
-        fingerprint: Optional[Any] = None,
-        healing_context: Optional[Dict[str, Any]] = None,
+        fingerprint: Any | None = None,
+        healing_context: dict[str, Any] | None = None,
         timeout_ms: int = 5000,
     ) -> HealingResult:
         """
@@ -431,7 +432,7 @@ class SelectorFacade:
     # Generation
     # =========================================================================
 
-    def generate_browser_fingerprint(self, element_data: Dict[str, Any]) -> Any:
+    def generate_browser_fingerprint(self, element_data: dict[str, Any]) -> Any:
         """
         Generate multiple selector strategies from browser element data.
 
@@ -443,7 +444,7 @@ class SelectorFacade:
         """
         return self.service.generate_browser_fingerprint(element_data)
 
-    def generate_desktop_fingerprint(self, element_data: Dict[str, Any]) -> Any:
+    def generate_desktop_fingerprint(self, element_data: dict[str, Any]) -> Any:
         """
         Generate multiple selector strategies from desktop element data (UIA).
 
@@ -459,7 +460,7 @@ class SelectorFacade:
     # Picker Integration
     # =========================================================================
 
-    async def inject_picker(self, page: "Page") -> None:
+    async def inject_picker(self, page: Page) -> None:
         """
         Inject selector picker script into a page.
 
@@ -471,8 +472,8 @@ class SelectorFacade:
     async def activate_picker(
         self,
         recording: bool = False,
-        on_element_selected: Optional[Callable] = None,
-        on_recording_complete: Optional[Callable] = None,
+        on_element_selected: Callable | None = None,
+        on_recording_complete: Callable | None = None,
     ) -> None:
         """
         Activate selector picker mode on the current page.
@@ -496,11 +497,11 @@ class SelectorFacade:
     # Cache Management
     # =========================================================================
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get selector cache statistics."""
         return self.cache.get_stats()
 
-    def clear_cache(self, page_url: Optional[str] = None) -> int:
+    def clear_cache(self, page_url: str | None = None) -> int:
         """
         Clear selector cache.
 
@@ -532,13 +533,13 @@ def normalize_selector(selector: str) -> str:
     return get_selector_facade().normalize(selector)
 
 
-def validate_selector(selector: str) -> Tuple[bool, str]:
+def validate_selector(selector: str) -> tuple[bool, str]:
     """Validate selector format."""
     return get_selector_facade().validate(selector)
 
 
 async def test_selector(
-    page: "Page",
+    page: Page,
     selector: str,
     timeout_ms: int = 2000,
 ) -> SelectorTestResult:
@@ -547,9 +548,9 @@ async def test_selector(
 
 
 async def heal_selector(
-    page: "Page",
+    page: Page,
     selector: str,
-    fingerprint: Optional[Any] = None,
+    fingerprint: Any | None = None,
     timeout_ms: int = 5000,
 ) -> HealingResult:
     """Attempt to heal a broken selector."""

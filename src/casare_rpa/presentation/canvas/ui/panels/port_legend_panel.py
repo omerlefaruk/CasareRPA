@@ -13,26 +13,24 @@ Features:
 - First-time users: auto-show for 10s with "Pin to keep visible" hint
 """
 
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
+from loguru import logger
+from PySide6.QtCore import QPoint, QSettings, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QMouseEvent, QPainter
 from PySide6.QtWidgets import (
     QFrame,
-    QVBoxLayout,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QVBoxLayout,
     QWidget,
-    QGraphicsDropShadowEffect,
 )
-from PySide6.QtCore import Qt, QTimer, QPoint, QSettings, Signal
-from PySide6.QtGui import QColor, QMouseEvent, QPainter
 
-from loguru import logger
-
-from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.domain.ports.port_type_interfaces import PortShape
 from casare_rpa.application.services.port_type_service import get_port_type_registry
-
+from casare_rpa.domain.ports.port_type_interfaces import PortShape
+from casare_rpa.domain.value_objects.types import DataType
 
 # ============================================================================
 # LEGEND DATA
@@ -40,7 +38,7 @@ from casare_rpa.application.services.port_type_service import get_port_type_regi
 
 # Legend entries: (shape_char, label, color_hex, description)
 # Based on port_shapes.py and port_type_service.py
-LEGEND_ENTRIES: List[Tuple[str, str, str, str]] = [
+LEGEND_ENTRIES: list[tuple[str, str, str, str]] = [
     ("", "Execution", "#FFFFFF", "Control flow between nodes"),
     ("", "String", "#FFC107", "Text data"),
     ("", "Integer", "#4CAF50", "Whole numbers"),
@@ -67,7 +65,7 @@ class PortShapeIcon(QWidget):
         shape: PortShape,
         color: QColor,
         size: int = 16,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize port shape icon.
@@ -100,8 +98,8 @@ class PortShapeIcon(QWidget):
 
         if self._shape == PortShape.TRIANGLE:
             # Right-pointing triangle for exec ports
-            from PySide6.QtGui import QPolygonF
             from PySide6.QtCore import QPointF
+            from PySide6.QtGui import QPolygonF
 
             points = [
                 QPointF(cx - half * 0.6, cy - half),
@@ -114,8 +112,8 @@ class PortShapeIcon(QWidget):
             painter.drawEllipse(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
 
         elif self._shape == PortShape.DIAMOND:
-            from PySide6.QtGui import QPolygonF
             from PySide6.QtCore import QPointF
+            from PySide6.QtGui import QPolygonF
 
             points = [
                 QPointF(cx, cy - half),
@@ -129,9 +127,10 @@ class PortShapeIcon(QWidget):
             painter.drawRect(int(cx - half), int(cy - half), int(half * 2), int(half * 2))
 
         elif self._shape == PortShape.HEXAGON:
-            from PySide6.QtGui import QPolygonF
-            from PySide6.QtCore import QPointF
             import math
+
+            from PySide6.QtCore import QPointF
+            from PySide6.QtGui import QPolygonF
 
             points = []
             for i in range(6):
@@ -156,9 +155,10 @@ class PortShapeIcon(QWidget):
             painter.drawRoundedRect(rect, 3, 3)
 
         elif self._shape == PortShape.PENTAGON:
-            from PySide6.QtGui import QPolygonF
-            from PySide6.QtCore import QPointF
             import math
+
+            from PySide6.QtCore import QPointF
+            from PySide6.QtGui import QPolygonF
 
             points = []
             for i in range(5):
@@ -197,9 +197,9 @@ class LegendRow(QWidget):
 
     def __init__(
         self,
-        data_type: Optional[DataType],
+        data_type: DataType | None,
         is_exec: bool = False,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize legend row.
@@ -291,7 +291,7 @@ class PortLegendPanel(QFrame):
     AUTO_HIDE_MS = 5000  # 5 seconds
     FIRST_TIME_SHOW_MS = 10000  # 10 seconds for first-time users
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize port legend panel.
 

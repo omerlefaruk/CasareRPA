@@ -27,7 +27,7 @@ class ClaimedJob:
     workflow_json: str
     priority: int
     environment: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     created_at: datetime
     claimed_at: datetime
     retry_count: int
@@ -39,7 +39,7 @@ class OrchestratorJobConsumer:
 
     def __init__(self, config: OrchestratorJobConsumerConfig) -> None:
         self._config = config
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
         self._lock = asyncio.Lock()
 
     async def start(self) -> None:
@@ -62,7 +62,7 @@ class OrchestratorJobConsumer:
             except Exception as e:
                 logger.debug(f"Error closing orchestrator consumer session: {e}")
 
-    async def claim_job(self) -> Optional[ClaimedJob]:
+    async def claim_job(self) -> ClaimedJob | None:
         session = self._session
         if session is None:
             await self.start()
@@ -114,7 +114,7 @@ class OrchestratorJobConsumer:
             logger.exception(f"Orchestrator claim_job unexpected error: {e}")
             return None
 
-    async def complete_job(self, job_id: str, result: Dict[str, Any]) -> bool:
+    async def complete_job(self, job_id: str, result: dict[str, Any]) -> bool:
         session = self._session
         if session is None:
             await self.start()

@@ -4,11 +4,12 @@ CasareRPA Unified Database Setup.
 Handles setup for both local Postgres and Supabase.
 """
 
-import os
-import typer
-import asyncpg
 import asyncio
+import os
 from pathlib import Path
+
+import asyncpg
+import typer
 
 app = typer.Typer()
 

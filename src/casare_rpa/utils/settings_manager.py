@@ -3,8 +3,9 @@ CasareRPA - Settings Manager
 Handles application settings persistence.
 """
 
-import orjson
 from typing import Any
+
+import orjson
 from loguru import logger
 
 from casare_rpa.config import CONFIG_DIR

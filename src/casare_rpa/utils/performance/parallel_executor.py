@@ -7,8 +7,10 @@ for independent workflow branches.
 
 import asyncio
 from collections import defaultdict
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
+
 from loguru import logger
 
 from casare_rpa.domain.value_objects.types import NodeId
@@ -19,8 +21,8 @@ class NodeDependencyInfo:
     """Dependency information for a node."""
 
     node_id: NodeId
-    dependencies: Set[NodeId] = field(default_factory=set)  # Nodes this depends on
-    dependents: Set[NodeId] = field(default_factory=set)  # Nodes that depend on this
+    dependencies: set[NodeId] = field(default_factory=set)  # Nodes this depends on
+    dependents: set[NodeId] = field(default_factory=set)  # Nodes that depend on this
     in_degree: int = 0  # Number of unresolved dependencies
 
 
@@ -32,8 +34,8 @@ class DependencyGraph:
 
     def __init__(self) -> None:
         """Initialize dependency graph."""
-        self._nodes: Dict[NodeId, NodeDependencyInfo] = {}
-        self._adjacency: Dict[NodeId, Set[NodeId]] = defaultdict(set)
+        self._nodes: dict[NodeId, NodeDependencyInfo] = {}
+        self._adjacency: dict[NodeId, set[NodeId]] = defaultdict(set)
 
     def add_node(self, node_id: NodeId) -> None:
         """Add a node to the graph."""
@@ -53,7 +55,7 @@ class DependencyGraph:
         self._nodes[source].dependents.add(target)
         self._nodes[target].in_degree += 1
 
-    def get_ready_nodes(self, completed: Set[NodeId]) -> List[NodeId]:
+    def get_ready_nodes(self, completed: set[NodeId]) -> list[NodeId]:
         """
         Get nodes that are ready to execute (all dependencies satisfied).
 
@@ -72,7 +74,7 @@ class DependencyGraph:
                 ready.append(node_id)
         return ready
 
-    def get_independent_groups(self, starting_nodes: List[NodeId]) -> List[List[NodeId]]:
+    def get_independent_groups(self, starting_nodes: list[NodeId]) -> list[list[NodeId]]:
         """
         Find groups of independent nodes that can execute in parallel.
 
@@ -86,8 +88,8 @@ class DependencyGraph:
             List of groups, where each group contains independent nodes
         """
         # Build in-degree map for nodes reachable from starting_nodes
-        in_degree: Dict[NodeId, int] = {}
-        reachable: Set[NodeId] = set()
+        in_degree: dict[NodeId, int] = {}
+        reachable: set[NodeId] = set()
 
         # BFS to find all reachable nodes
         queue = list(starting_nodes)
@@ -108,7 +110,7 @@ class DependencyGraph:
                     in_degree[neighbor] = in_degree.get(neighbor, 0) + 1
 
         # Kahn's algorithm with level tracking
-        groups: List[List[NodeId]] = []
+        groups: list[list[NodeId]] = []
         current_level = [n for n in starting_nodes if n in reachable and in_degree.get(n, 0) == 0]
 
         while current_level:
@@ -128,8 +130,8 @@ class DependencyGraph:
         return groups
 
     def get_parallel_batches(
-        self, completed: Set[NodeId], max_parallel: int = 4
-    ) -> List[List[NodeId]]:
+        self, completed: set[NodeId], max_parallel: int = 4
+    ) -> list[list[NodeId]]:
         """
         Get batches of nodes that can be executed in parallel.
 
@@ -174,12 +176,12 @@ class ParallelExecutor:
         """
         self._max_concurrency = max_concurrency
         self._stop_on_error = stop_on_error
-        self._semaphore: Optional[asyncio.Semaphore] = None
+        self._semaphore: asyncio.Semaphore | None = None
 
     async def execute_parallel(
         self,
-        tasks: List[Tuple[str, Callable[[], Coroutine[Any, Any, Any]]]],
-    ) -> Dict[str, Tuple[bool, Any]]:
+        tasks: list[tuple[str, Callable[[], Coroutine[Any, Any, Any]]]],
+    ) -> dict[str, tuple[bool, Any]]:
         """
         Execute multiple tasks in parallel.
 
@@ -193,8 +195,8 @@ class ParallelExecutor:
             return {}
 
         self._semaphore = asyncio.Semaphore(self._max_concurrency)
-        results: Dict[str, Tuple[bool, Any]] = {}
-        errors: List[str] = []
+        results: dict[str, tuple[bool, Any]] = {}
+        errors: list[str] = []
 
         async def run_task(task_id: str, coro_func: Callable) -> None:
             """Run a single task with semaphore control."""
@@ -223,8 +225,8 @@ class ParallelExecutor:
 
     async def execute_batches(
         self,
-        batches: List[List[Tuple[str, Callable[[], Coroutine[Any, Any, Any]]]]],
-    ) -> List[Dict[str, Tuple[bool, Any]]]:
+        batches: list[list[tuple[str, Callable[[], Coroutine[Any, Any, Any]]]]],
+    ) -> list[dict[str, tuple[bool, Any]]]:
         """
         Execute batches of tasks sequentially, with tasks within each batch running in parallel.
 
@@ -251,8 +253,8 @@ class ParallelExecutor:
 
 
 def analyze_workflow_dependencies(
-    nodes: Dict[NodeId, Any],
-    connections: List[Any],
+    nodes: dict[NodeId, Any],
+    connections: list[Any],
 ) -> DependencyGraph:
     """
     Analyze a workflow to build its dependency graph.
@@ -281,8 +283,8 @@ def analyze_workflow_dependencies(
 def identify_parallel_branches(
     graph: DependencyGraph,
     from_node: NodeId,
-    connections: List[Any],
-) -> List[List[NodeId]]:
+    connections: list[Any],
+) -> list[list[NodeId]]:
     """
     Identify branches from a node that can execute in parallel.
 
@@ -306,7 +308,7 @@ def identify_parallel_branches(
         return [successors] if successors else []
 
     # Check if successors are truly independent (no shared dependencies)
-    branches: List[List[NodeId]] = []
+    branches: list[list[NodeId]] = []
 
     for successor in successors:
         branches.append([successor])

@@ -8,9 +8,9 @@ Following Single Responsibility Principle - this module handles ONLY visual styl
 """
 
 from typing import Dict
-from PySide6.QtGui import QColor, QPen, QBrush
-from PySide6.QtCore import Qt
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QPen
 
 # ============================================================================
 # FRAME COLOR PALETTES
@@ -18,7 +18,7 @@ from PySide6.QtCore import Qt
 
 # Predefined colors for frame grouping (semi-transparent for background)
 # Higher alpha (80-100) for better visibility
-FRAME_COLOR_PALETTE: Dict[str, QColor] = {
+FRAME_COLOR_PALETTE: dict[str, QColor] = {
     "Gray": QColor(100, 100, 100, 80),
     "Blue": QColor(60, 120, 180, 100),
     "Green": QColor(60, 160, 80, 100),
@@ -31,7 +31,7 @@ FRAME_COLOR_PALETTE: Dict[str, QColor] = {
 }
 
 # Lower alpha (60) themes for lighter appearance
-FRAME_COLORS: Dict[str, QColor] = {
+FRAME_COLORS: dict[str, QColor] = {
     "blue": QColor(100, 181, 246, 60),
     "purple": QColor(156, 39, 176, 60),
     "green": QColor(102, 187, 106, 60),

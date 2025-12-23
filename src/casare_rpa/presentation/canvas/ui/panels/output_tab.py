@@ -9,33 +9,33 @@ Displays workflow outputs and return values with improved UX:
 - Better visual hierarchy
 """
 
-from typing import Optional, Any
-from datetime import datetime
 import json
+from datetime import datetime
+from typing import Any, Optional
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QLabel,
-    QHeaderView,
     QAbstractItemView,
-    QTextEdit,
+    QApplication,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMenu,
     QSplitter,
     QStackedWidget,
-    QApplication,
-    QMenu,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QBrush
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
-    ToolbarButton,
     StatusBadge,
+    ToolbarButton,
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
@@ -61,7 +61,7 @@ class OutputTab(QWidget):
     COL_TYPE = 2
     COL_VALUE = 3
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the Output tab.
 
@@ -422,7 +422,7 @@ class OutputTab(QWidget):
 
     # ==================== Public API ====================
 
-    def add_output(self, name: str, value: Any, timestamp: Optional[str] = None) -> None:
+    def add_output(self, name: str, value: Any, timestamp: str | None = None) -> None:
         """
         Add an output to the table.
 

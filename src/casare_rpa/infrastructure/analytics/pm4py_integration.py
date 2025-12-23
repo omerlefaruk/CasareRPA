@@ -27,7 +27,6 @@ from casare_rpa.infrastructure.analytics.process_mining import (
     ExecutionTrace,
 )
 
-
 # =============================================================================
 # Discovery Algorithm Enum
 # =============================================================================
@@ -63,13 +62,13 @@ class PetriNetResult:
     net: Any  # pm4py PetriNet object
     initial_marking: Any  # pm4py Marking object
     final_marking: Any  # pm4py Marking object
-    places: List[str] = field(default_factory=list)
-    transitions: List[str] = field(default_factory=list)
-    arcs: List[Tuple[str, str]] = field(default_factory=list)
+    places: list[str] = field(default_factory=list)
+    transitions: list[str] = field(default_factory=list)
+    arcs: list[tuple[str, str]] = field(default_factory=list)
     algorithm: str = ""
     discovery_time_ms: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (excluding pm4py objects)."""
         return {
             "places": self.places,
@@ -85,13 +84,13 @@ class BPMNResult:
     """Result of BPMN model discovery."""
 
     model: Any  # pm4py BPMN object
-    nodes: List[Dict[str, str]] = field(default_factory=list)
-    flows: List[Dict[str, str]] = field(default_factory=list)
-    gateways: List[str] = field(default_factory=list)
+    nodes: list[dict[str, str]] = field(default_factory=list)
+    flows: list[dict[str, str]] = field(default_factory=list)
+    gateways: list[str] = field(default_factory=list)
     algorithm: str = ""
     discovery_time_ms: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (excluding pm4py objects)."""
         return {
             "nodes": self.nodes,
@@ -108,12 +107,12 @@ class AlignmentResult:
 
     trace_id: str
     fitness: float  # 0.0 - 1.0
-    aligned_traces: List[Dict[str, Any]] = field(default_factory=list)
-    deviations: List[Dict[str, str]] = field(default_factory=list)
+    aligned_traces: list[dict[str, Any]] = field(default_factory=list)
+    deviations: list[dict[str, str]] = field(default_factory=list)
     cost: float = 0.0
     is_conformant: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "trace_id": self.trace_id,
@@ -137,7 +136,7 @@ class TokenReplayResult:
     remaining_tokens: int = 0
     is_conformant: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "trace_id": self.trace_id,
@@ -161,9 +160,7 @@ class ConformanceSummary:
     generalization: float = 0.0
     simplicity: float = 0.0
     method: str = ""
-    individual_results: List[Union[AlignmentResult, TokenReplayResult]] = field(
-        default_factory=list
-    )
+    individual_results: list[AlignmentResult | TokenReplayResult] = field(default_factory=list)
 
     @property
     def conformance_rate(self) -> float:
@@ -172,7 +169,7 @@ class ConformanceSummary:
             return 0.0
         return self.conformant_traces / self.total_traces
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_traces": self.total_traces,
@@ -206,9 +203,9 @@ class PM4PyIntegration:
 
     def __init__(self) -> None:
         """Initialize PM4Py integration with lazy loading."""
-        self._pm4py: Optional[Any] = None
-        self._pandas: Optional[Any] = None
-        self._available: Optional[bool] = None
+        self._pm4py: Any | None = None
+        self._pandas: Any | None = None
+        self._available: bool | None = None
 
     @property
     def is_available(self) -> bool:
@@ -243,7 +240,7 @@ class PM4PyIntegration:
     # Conversion Methods
     # =========================================================================
 
-    def traces_to_dataframe(self, traces: List[ExecutionTrace]) -> Any:
+    def traces_to_dataframe(self, traces: list[ExecutionTrace]) -> Any:
         """
         Convert CasareRPA traces to PM4Py-compatible DataFrame.
 
@@ -279,7 +276,7 @@ class PM4PyIntegration:
 
         return df
 
-    def traces_to_event_log(self, traces: List[ExecutionTrace]) -> Any:
+    def traces_to_event_log(self, traces: list[ExecutionTrace]) -> Any:
         """
         Convert CasareRPA traces to PM4Py EventLog object.
 
@@ -299,7 +296,7 @@ class PM4PyIntegration:
 
     def discover_petri_net(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         algorithm: DiscoveryAlgorithm = DiscoveryAlgorithm.INDUCTIVE,
         noise_threshold: float = 0.0,
     ) -> PetriNetResult:
@@ -376,7 +373,7 @@ class PM4PyIntegration:
 
     def discover_bpmn(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         algorithm: DiscoveryAlgorithm = DiscoveryAlgorithm.INDUCTIVE,
     ) -> BPMNResult:
         """
@@ -456,7 +453,7 @@ class PM4PyIntegration:
             logger.error(f"BPMN discovery failed: {e}")
             raise
 
-    def discover_dfg(self, traces: List[ExecutionTrace]) -> Dict[str, Any]:
+    def discover_dfg(self, traces: list[ExecutionTrace]) -> dict[str, Any]:
         """
         Discover Direct-Follows Graph from traces.
 
@@ -493,7 +490,7 @@ class PM4PyIntegration:
 
     def check_conformance_token_replay(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         petri_net_result: PetriNetResult,
     ) -> ConformanceSummary:
         """
@@ -561,7 +558,7 @@ class PM4PyIntegration:
 
     def check_conformance_alignments(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         petri_net_result: PetriNetResult,
     ) -> ConformanceSummary:
         """
@@ -732,7 +729,7 @@ class PM4PyIntegration:
 
     def visualize_dfg(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         output_path: str,
         format: str = "png",
     ) -> str:
@@ -770,7 +767,7 @@ class PM4PyIntegration:
 # Singleton Instance
 # =============================================================================
 
-_pm4py_integration: Optional[PM4PyIntegration] = None
+_pm4py_integration: PM4PyIntegration | None = None
 
 
 def get_pm4py_integration() -> PM4PyIntegration:

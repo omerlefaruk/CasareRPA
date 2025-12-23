@@ -7,11 +7,10 @@ action count, and duration display.
 
 from typing import Optional
 
-from PySide6.QtCore import QTimer, Qt, Property
+from loguru import logger
+from PySide6.QtCore import Property, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPaintEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -23,7 +22,7 @@ class RecordingIndicator(QWidget):
     Pulses between visible and semi-transparent when recording.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the recording indicator."""
         super().__init__(parent)
         self.setFixedSize(12, 12)
@@ -113,13 +112,13 @@ class RecordingStatusWidget(QWidget):
         status_widget.set_recording_state(True, "browser")
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the recording status widget."""
         super().__init__(parent)
 
         self._is_recording = False
         self._is_paused = False
-        self._recording_type: Optional[str] = None
+        self._recording_type: str | None = None
         self._action_count = 0
         self._duration_seconds = 0
 
@@ -207,7 +206,7 @@ class RecordingStatusWidget(QWidget):
     def set_recording_state(
         self,
         is_recording: bool,
-        recording_type: Optional[str] = None,
+        recording_type: str | None = None,
         is_paused: bool = False,
     ) -> None:
         """

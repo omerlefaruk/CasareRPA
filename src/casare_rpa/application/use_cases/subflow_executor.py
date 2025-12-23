@@ -20,27 +20,27 @@ from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
+from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
+from casare_rpa.application.use_cases.execution_handlers import ExecutionResultHandler
+from casare_rpa.application.use_cases.execution_state_manager import (
+    ExecutionSettings,
+    ExecutionStateManager,
+)
+from casare_rpa.application.use_cases.execution_strategies_parallel import (
+    ParallelExecutionStrategy,
+)
+from casare_rpa.application.use_cases.node_executor import NodeExecutor
+from casare_rpa.application.use_cases.variable_resolver import (
+    TryCatchErrorHandler,
+    VariableResolver,
+)
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.events import (
     EventBus,
 )
 from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
-from casare_rpa.domain.value_objects.types import NodeId, ExecutionMode
+from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.application.use_cases.node_executor import NodeExecutor
-from casare_rpa.application.use_cases.variable_resolver import (
-    VariableResolver,
-    TryCatchErrorHandler,
-)
-from casare_rpa.application.use_cases.execution_state_manager import (
-    ExecutionSettings,
-    ExecutionStateManager,
-)
-from casare_rpa.application.use_cases.execution_handlers import ExecutionResultHandler
-from casare_rpa.application.use_cases.execution_strategies_parallel import (
-    ParallelExecutionStrategy,
-)
-from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
 from casare_rpa.nodes import get_node_class
 
 
@@ -61,8 +61,8 @@ class SubflowOutputDefinition:
 
     name: str
     data_type: str = "any"
-    source_node_id: Optional[NodeId] = None
-    source_port: Optional[str] = None
+    source_node_id: NodeId | None = None
+    source_port: str | None = None
     description: str = ""
 
 
@@ -76,20 +76,20 @@ class Subflow:
     """
 
     workflow: WorkflowSchema
-    inputs: List[SubflowInputDefinition] = field(default_factory=list)
-    outputs: List[SubflowOutputDefinition] = field(default_factory=list)
+    inputs: list[SubflowInputDefinition] = field(default_factory=list)
+    outputs: list[SubflowOutputDefinition] = field(default_factory=list)
     name: str = "Subflow"
     description: str = ""
 
-    def get_input_names(self) -> List[str]:
+    def get_input_names(self) -> list[str]:
         """Get list of input names."""
         return [inp.name for inp in self.inputs]
 
-    def get_output_names(self) -> List[str]:
+    def get_output_names(self) -> list[str]:
         """Get list of output names."""
         return [out.name for out in self.outputs]
 
-    def get_required_inputs(self) -> List[str]:
+    def get_required_inputs(self) -> list[str]:
         """Get list of required input names."""
         return [inp.name for inp in self.inputs if inp.required]
 
@@ -107,16 +107,16 @@ class SubflowExecutionResult:
     """Result of subflow execution."""
 
     success: bool
-    outputs: Dict[str, Any] = field(default_factory=dict)
+    outputs: dict[str, Any] = field(default_factory=dict)
     execution_time: float = 0.0
     nodes_executed: int = 0
-    error: Optional[str] = None
-    error_node_id: Optional[NodeId] = None
+    error: str | None = None
+    error_node_id: NodeId | None = None
 
     @classmethod
     def success_result(
         cls,
-        outputs: Dict[str, Any],
+        outputs: dict[str, Any],
         execution_time: float,
         nodes_executed: int,
     ) -> "SubflowExecutionResult":
@@ -134,7 +134,7 @@ class SubflowExecutionResult:
         error: str,
         execution_time: float,
         nodes_executed: int = 0,
-        error_node_id: Optional[NodeId] = None,
+        error_node_id: NodeId | None = None,
     ) -> "SubflowExecutionResult":
         """Create an error result."""
         return cls(
@@ -194,7 +194,7 @@ class SubflowExecutor:
 
     def __init__(
         self,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
         node_timeout: float = 120.0,
     ) -> None:
         """
@@ -213,15 +213,15 @@ class SubflowExecutor:
         self.node_timeout = node_timeout
 
         # Execution state (reset per execute call)
-        self._node_instances: Dict[str, Any] = {}
-        self._executed_nodes: Set[NodeId] = set()
-        self._current_subflow: Optional[Subflow] = None
+        self._node_instances: dict[str, Any] = {}
+        self._executed_nodes: set[NodeId] = set()
+        self._current_subflow: Subflow | None = None
 
     def _publish_workflow_started(
         self,
         subflow_name: str,
         total_nodes: int,
-        inputs: List[str],
+        inputs: list[str],
     ) -> None:
         """Publish workflow started event for subflow."""
         if self.event_bus:
@@ -241,7 +241,7 @@ class SubflowExecutor:
         subflow_name: str,
         nodes_executed: int,
         duration: float,
-        outputs: List[str],
+        outputs: list[str],
     ) -> None:
         """Publish workflow completed event for subflow."""
         if self.event_bus:
@@ -261,7 +261,7 @@ class SubflowExecutor:
         subflow_name: str,
         error: str,
         nodes_executed: int,
-        error_node_id: Optional[str] = None,
+        error_node_id: str | None = None,
     ) -> None:
         """Publish workflow failed event for subflow."""
         if self.event_bus:
@@ -279,9 +279,9 @@ class SubflowExecutor:
     async def execute(
         self,
         subflow: Subflow,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         context: ExecutionContext,
-        param_values: Optional[Dict[str, Any]] = None,
+        param_values: dict[str, Any] | None = None,
     ) -> SubflowExecutionResult:
         """
         Execute subflow with given inputs.
@@ -458,8 +458,8 @@ class SubflowExecutor:
     def _validate_inputs(
         self,
         subflow: Subflow,
-        inputs: Dict[str, Any],
-    ) -> Optional[str]:
+        inputs: dict[str, Any],
+    ) -> str | None:
         """
         Validate that provided inputs match subflow input definitions.
 
@@ -490,7 +490,7 @@ class SubflowExecutor:
     def _create_internal_context(
         self,
         subflow: Subflow,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         parent_context: ExecutionContext,
     ) -> ExecutionContext:
         """
@@ -533,7 +533,7 @@ class SubflowExecutor:
     def _inject_promoted_parameters(
         self,
         subflow: Subflow,
-        param_values: Dict[str, Any],
+        param_values: dict[str, Any],
         context: ExecutionContext,
     ) -> None:
         """
@@ -613,7 +613,7 @@ class SubflowExecutor:
         self,
         subflow: Subflow,
         orchestrator: ExecutionOrchestrator,
-    ) -> Optional[NodeId]:
+    ) -> NodeId | None:
         """
         Find entry node when no explicit StartNode exists.
 
@@ -627,7 +627,7 @@ class SubflowExecutor:
             Node ID of entry node or None
         """
         # Get all nodes that have incoming exec connections
-        nodes_with_incoming_exec: Set[NodeId] = set()
+        nodes_with_incoming_exec: set[NodeId] = set()
         for conn in subflow.workflow.connections:
             if "exec" in conn.target_port.lower():
                 nodes_with_incoming_exec.add(conn.target_node)
@@ -682,7 +682,7 @@ class SubflowExecutor:
         self,
         subflow: Subflow,
         context: ExecutionContext,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Collect output values from designated output ports.
 
@@ -693,7 +693,7 @@ class SubflowExecutor:
         Returns:
             Dictionary of output name -> value
         """
-        outputs: Dict[str, Any] = {}
+        outputs: dict[str, Any] = {}
 
         for output_def in subflow.outputs:
             value = None

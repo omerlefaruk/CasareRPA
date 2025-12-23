@@ -23,65 +23,64 @@ Usage:
 """
 
 # String Operations (from string_nodes.py)
-from casare_rpa.nodes.string_nodes import (
-    ConcatenateNode,
-    FormatStringNode,
-    RegexMatchNode,
-    RegexReplaceNode,
+# Collection Utilities (shared helpers for list/dict nodes)
+from casare_rpa.nodes.data.collection_utils import (
+    error_result,
+    get_nested_value,
+    node_execute_wrapper,
+    resolve_dict,
+    resolve_list,
+    resolve_param,
+    strip_var_wrapper,
+    success_result,
+    validate_dict,
+    validate_list,
 )
 
-# Math Operations (from math_nodes.py)
-from casare_rpa.nodes.math_nodes import (
-    MathOperationNode,
-    ComparisonNode,
+# Dictionary Operations (from dict_nodes.py)
+from casare_rpa.nodes.dict_nodes import (
+    CreateDictNode,
+    DictGetNode,
+    DictHasKeyNode,
+    DictItemsNode,
+    DictKeysNode,
+    DictMergeNode,
+    DictRemoveNode,
+    DictSetNode,
+    DictToJsonNode,
+    DictValuesNode,
+    GetPropertyNode,
+    JsonParseNode,
 )
 
 # List Operations (from list_nodes.py)
 from casare_rpa.nodes.list_nodes import (
     CreateListNode,
-    ListGetItemNode,
-    ListLengthNode,
     ListAppendNode,
     ListContainsNode,
-    ListSliceNode,
-    ListJoinNode,
-    ListSortNode,
-    ListReverseNode,
-    ListUniqueNode,
     ListFilterNode,
+    ListFlattenNode,
+    ListGetItemNode,
+    ListJoinNode,
+    ListLengthNode,
     ListMapNode,
     ListReduceNode,
-    ListFlattenNode,
+    ListReverseNode,
+    ListSliceNode,
+    ListSortNode,
+    ListUniqueNode,
 )
 
-# Dictionary Operations (from dict_nodes.py)
-from casare_rpa.nodes.dict_nodes import (
-    JsonParseNode,
-    GetPropertyNode,
-    DictGetNode,
-    DictSetNode,
-    DictRemoveNode,
-    DictMergeNode,
-    DictKeysNode,
-    DictValuesNode,
-    DictHasKeyNode,
-    CreateDictNode,
-    DictToJsonNode,
-    DictItemsNode,
+# Math Operations (from math_nodes.py)
+from casare_rpa.nodes.math_nodes import (
+    ComparisonNode,
+    MathOperationNode,
 )
-
-# Collection Utilities (shared helpers for list/dict nodes)
-from casare_rpa.nodes.data.collection_utils import (
-    strip_var_wrapper,
-    resolve_param,
-    resolve_list,
-    resolve_dict,
-    validate_list,
-    validate_dict,
-    get_nested_value,
-    node_execute_wrapper,
-    success_result,
-    error_result,
+from casare_rpa.nodes.string_nodes import (
+    ConcatenateNode,
+    FormatStringNode,
+    RegexMatchNode,
+    RegexReplaceNode,
 )
 
 __all__ = [

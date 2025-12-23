@@ -22,7 +22,6 @@ from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
     DropdownItem,
 )
 
-
 # Google API endpoints
 DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
 SHEETS_API_BASE = "https://sheets.googleapis.com/v4"
@@ -61,7 +60,7 @@ class GoogleSpreadsheetPicker(CascadingDropdownBase):
         super().__init__(parent=parent, cache_ttl=cache_ttl)
         self._max_results = max_results
 
-    async def _fetch_items(self) -> List[DropdownItem]:
+    async def _fetch_items(self) -> list[DropdownItem]:
         """Fetch spreadsheets from Google Drive API."""
         credential_id = self._parent_value
 
@@ -130,7 +129,7 @@ class GoogleSpreadsheetPicker(CascadingDropdownBase):
             logger.error(f"Failed to fetch spreadsheets: {e}")
             raise
 
-    def get_spreadsheet_id(self) -> Optional[str]:
+    def get_spreadsheet_id(self) -> str | None:
         """Convenience alias for get_selected_id()."""
         return self.get_selected_id()
 
@@ -156,7 +155,7 @@ class GoogleSheetPicker(CascadingDropdownBase):
         cache_ttl: float = 300.0,
     ) -> None:
         super().__init__(parent=parent, cache_ttl=cache_ttl)
-        self._credential_id: Optional[str] = None
+        self._credential_id: str | None = None
 
     def set_credential_id(self, credential_id: str) -> None:
         """
@@ -173,7 +172,7 @@ class GoogleSheetPicker(CascadingDropdownBase):
         """Include credential ID in cache key."""
         return f"{self._credential_id}:{self._parent_value}"
 
-    async def _fetch_items(self) -> List[DropdownItem]:
+    async def _fetch_items(self) -> list[DropdownItem]:
         """Fetch sheets from Google Sheets API."""
         spreadsheet_id = self._parent_value
         credential_id = self._credential_id
@@ -251,7 +250,7 @@ class GoogleSheetPicker(CascadingDropdownBase):
             logger.error(f"Failed to fetch sheets: {e}")
             raise
 
-    def get_sheet_id(self) -> Optional[int]:
+    def get_sheet_id(self) -> int | None:
         """Get the selected sheet ID as integer."""
         sheet_id = self.get_selected_id()
         if sheet_id:
@@ -297,8 +296,8 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
         self,
         parent=None,
         cache_ttl: float = 300.0,
-        mime_type: Optional[str] = None,
-        folder_id: Optional[str] = None,
+        mime_type: str | None = None,
+        folder_id: str | None = None,
         max_results: int = 100,
         include_shared: bool = True,
     ) -> None:
@@ -319,7 +318,7 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
         self._max_results = max_results
         self._include_shared = include_shared
 
-    def set_mime_type(self, mime_type: Optional[str]) -> None:
+    def set_mime_type(self, mime_type: str | None) -> None:
         """Set the MIME type filter."""
         if mime_type != self._mime_type:
             self._mime_type = mime_type
@@ -327,7 +326,7 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
             if self._parent_value:
                 self.refresh()
 
-    def set_folder_id(self, folder_id: Optional[str]) -> None:
+    def set_folder_id(self, folder_id: str | None) -> None:
         """Set the folder ID filter."""
         if folder_id != self._folder_id:
             self._folder_id = folder_id
@@ -339,7 +338,7 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
         """Include filters in cache key."""
         return f"{self._parent_value}:{self._mime_type}:{self._folder_id}"
 
-    async def _fetch_items(self) -> List[DropdownItem]:
+    async def _fetch_items(self) -> list[DropdownItem]:
         """Fetch files from Google Drive API."""
         credential_id = self._parent_value
 
@@ -467,7 +466,7 @@ class GoogleDriveFilePicker(CascadingDropdownBase):
         else:
             return ""
 
-    def get_file_id(self) -> Optional[str]:
+    def get_file_id(self) -> str | None:
         """Convenience alias for get_selected_id()."""
         return self.get_selected_id()
 
@@ -495,7 +494,7 @@ class GoogleDriveFolderPicker(GoogleDriveFilePicker):
         self,
         parent=None,
         cache_ttl: float = 300.0,
-        parent_folder_id: Optional[str] = None,
+        parent_folder_id: str | None = None,
         max_results: int = 100,
     ) -> None:
         super().__init__(
@@ -507,7 +506,7 @@ class GoogleDriveFolderPicker(GoogleDriveFilePicker):
             include_shared=False,  # Only show user's own folders
         )
 
-    async def _fetch_items(self) -> List[DropdownItem]:
+    async def _fetch_items(self) -> list[DropdownItem]:
         """Fetch folders with 'Root (My Drive)' as first option."""
         # Start with root folder option
         items = [
@@ -528,7 +527,7 @@ class GoogleDriveFolderPicker(GoogleDriveFilePicker):
 
         return items
 
-    def get_folder_id(self) -> Optional[str]:
+    def get_folder_id(self) -> str | None:
         """Convenience alias for get_selected_id()."""
         return self.get_selected_id()
 

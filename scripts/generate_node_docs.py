@@ -49,10 +49,10 @@ class PropertyInfo:
     label: str
     tooltip: str
     required: bool
-    choices: Optional[List[str]]
+    choices: list[str] | None
     tab: str
-    min_value: Optional[float]
-    max_value: Optional[float]
+    min_value: float | None
+    max_value: float | None
 
 
 @dataclass
@@ -63,22 +63,22 @@ class NodeInfo:
     module_path: str
     file_path: str
     line_number: int
-    docstring: Optional[str]
+    docstring: str | None
     category: str
     is_async: bool
     is_trigger: bool
-    decorators: List[str]
-    input_ports: List[PortInfo] = field(default_factory=list)
-    output_ports: List[PortInfo] = field(default_factory=list)
-    properties: List[PropertyInfo] = field(default_factory=list)
-    base_classes: List[str] = field(default_factory=list)
+    decorators: list[str]
+    input_ports: list[PortInfo] = field(default_factory=list)
+    output_ports: list[PortInfo] = field(default_factory=list)
+    properties: list[PropertyInfo] = field(default_factory=list)
+    base_classes: list[str] = field(default_factory=list)
 
 
 class NodeSchemaExtractor(ast.NodeVisitor):
     """Extract @properties PropertyDef arguments from AST."""
 
     def __init__(self):
-        self.properties: List[PropertyInfo] = []
+        self.properties: list[PropertyInfo] = []
         self.in_node_schema = False
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -94,7 +94,7 @@ class NodeSchemaExtractor(ast.NodeVisitor):
             self.in_node_schema = False
         self.generic_visit(node)
 
-    def _extract_property_def(self, call: ast.Call) -> Optional[PropertyInfo]:
+    def _extract_property_def(self, call: ast.Call) -> PropertyInfo | None:
         """Extract PropertyDef arguments."""
         kwargs = {}
         args = []
@@ -144,7 +144,10 @@ class NodeSchemaExtractor(ast.NodeVisitor):
         elif isinstance(node, ast.List):
             return [self._get_value(el) for el in node.elts]
         elif isinstance(node, ast.Dict):
-            return {self._get_value(k): self._get_value(v) for k, v in zip(node.keys, node.values)}
+            return {
+                self._get_value(k): self._get_value(v)
+                for k, v in zip(node.keys, node.values, strict=False)
+            }
         elif isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
             return -self._get_value(node.operand)
         else:
@@ -155,8 +158,8 @@ class PortExtractor(ast.NodeVisitor):
     """Extract port definitions from _define_ports method."""
 
     def __init__(self):
-        self.input_ports: List[PortInfo] = []
-        self.output_ports: List[PortInfo] = []
+        self.input_ports: list[PortInfo] = []
+        self.output_ports: list[PortInfo] = []
 
     def visit_Call(self, node: ast.Call) -> None:
         if isinstance(node.func, ast.Attribute):
@@ -201,7 +204,7 @@ class PortExtractor(ast.NodeVisitor):
                 )
         self.generic_visit(node)
 
-    def _extract_port(self, call: ast.Call, direction: str) -> Optional[PortInfo]:
+    def _extract_port(self, call: ast.Call, direction: str) -> PortInfo | None:
         """Extract port info from add_*_port call."""
         args = []
         for arg in call.args:
@@ -294,8 +297,8 @@ def extract_node_info(file_path: Path, class_node: ast.ClassDef, module_name: st
                 port_extractor.visit(node)
 
     # Add/override exec ports from @node(...) configuration (runtime adds these).
-    desired_exec_inputs: Optional[List[str]] = None
-    desired_exec_outputs: Optional[List[str]] = None
+    desired_exec_inputs: list[str] | None = None
+    desired_exec_outputs: list[str] | None = None
     for decorator in class_node.decorator_list:
         if (
             isinstance(decorator, ast.Call)
@@ -366,7 +369,7 @@ def extract_node_info(file_path: Path, class_node: ast.ClassDef, module_name: st
     )
 
 
-def find_node_classes(file_path: Path) -> List[Tuple[ast.ClassDef, str]]:
+def find_node_classes(file_path: Path) -> list[tuple[ast.ClassDef, str]]:
     """Find all node classes in a file."""
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -475,7 +478,7 @@ def generate_node_markdown(node: NodeInfo) -> str:
         lines.append("## Configuration Properties\n")
 
         # Group by tab
-        by_tab: Dict[str, List[PropertyInfo]] = defaultdict(list)
+        by_tab: dict[str, list[PropertyInfo]] = defaultdict(list)
         for prop in node.properties:
             by_tab[prop.tab].append(prop)
 
@@ -525,7 +528,7 @@ def generate_node_markdown(node: NodeInfo) -> str:
     return "\n".join(lines)
 
 
-def generate_category_index(category: str, nodes: List[NodeInfo]) -> str:
+def generate_category_index(category: str, nodes: list[NodeInfo]) -> str:
     """Generate index page for a node category."""
     lines = []
 
@@ -558,7 +561,7 @@ def generate_category_index(category: str, nodes: List[NodeInfo]) -> str:
     return "\n".join(lines)
 
 
-def generate_main_index(all_nodes: Dict[str, List[NodeInfo]]) -> str:
+def generate_main_index(all_nodes: dict[str, list[NodeInfo]]) -> str:
     """Generate main nodes index page."""
     lines = []
     lines.append("# Node Reference\n")
@@ -611,7 +614,7 @@ def main():
     """Main entry point."""
     print("Scanning node files...")
 
-    all_nodes: Dict[str, List[NodeInfo]] = defaultdict(list)
+    all_nodes: dict[str, list[NodeInfo]] = defaultdict(list)
 
     # Find all Python files in nodes directory
     python_files = list(NODES_DIR.rglob("*.py"))

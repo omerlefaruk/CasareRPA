@@ -10,22 +10,22 @@ class RobotRepository(ABC):
     """Repository interface for Robot aggregate."""
 
     @abstractmethod
-    async def get_by_id(self, robot_id: str) -> Optional[Robot]:
+    async def get_by_id(self, robot_id: str) -> Robot | None:
         """Get robot by ID."""
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[Robot]:
+    async def get_all(self) -> list[Robot]:
         """Get all robots."""
         pass
 
     @abstractmethod
-    async def get_all_online(self) -> List[Robot]:
+    async def get_all_online(self) -> list[Robot]:
         """Get all online robots."""
         pass
 
     @abstractmethod
-    async def get_by_environment(self, environment: str) -> List[Robot]:
+    async def get_by_environment(self, environment: str) -> list[Robot]:
         """Get robots in specific environment."""
         pass
 

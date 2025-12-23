@@ -9,13 +9,13 @@ import asyncio
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -78,15 +78,15 @@ class ScreenRegionPickerNode(BaseNode):
             show_coordinates = self.get_parameter("show_coordinates", True)
 
             try:
-                from PySide6.QtWidgets import QApplication, QWidget, QLabel, QRubberBand
-                from PySide6.QtCore import Qt, QPoint, QRect
+                from PySide6.QtCore import QPoint, QRect, Qt
                 from PySide6.QtGui import (
-                    QScreen,
+                    QColor,
                     QGuiApplication,
                     QPainter,
-                    QColor,
                     QPen,
+                    QScreen,
                 )
+                from PySide6.QtWidgets import QApplication, QLabel, QRubberBand, QWidget
 
                 app = QApplication.instance()
                 if app is None:
@@ -295,7 +295,8 @@ class VolumeControlNode(BaseNode):
             success = False
 
             try:
-                from ctypes import cast, POINTER
+                from ctypes import POINTER, cast
+
                 from comtypes import CLSCTX_ALL
                 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 

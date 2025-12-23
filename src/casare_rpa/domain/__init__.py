@@ -30,16 +30,16 @@ CRITICAL: This layer must have ZERO dependencies on infrastructure or presentati
 All domain logic should be framework-agnostic and testable in isolation.
 """
 
-from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.credentials import (
-    CredentialAwareMixin,
-    CREDENTIAL_NAME_PROP,
     API_KEY_PROP,
-    USERNAME_PROP,
-    PASSWORD_PROP,
     BOT_TOKEN_PROP,
+    CREDENTIAL_NAME_PROP,
+    PASSWORD_PROP,
+    USERNAME_PROP,
+    CredentialAwareMixin,
     resolve_node_credential,
 )
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.protocols import (
     CredentialProviderProtocol,
     ExecutionContextProtocol,

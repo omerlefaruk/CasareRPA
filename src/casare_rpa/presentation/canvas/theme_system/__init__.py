@@ -25,10 +25,10 @@ Usage:
 """
 
 from .colors import (
-    CanvasThemeColors,
     NODE_STATUS_COLOR_MAP,
     STATUS_COLOR_MAP,
     WIRE_COLOR_MAP,
+    CanvasThemeColors,
     get_node_status_color,
     get_status_color,
     get_wire_color,

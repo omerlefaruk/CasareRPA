@@ -93,7 +93,7 @@ class SaveAttachmentNode(BaseNode):
     # @requires: email
     # @ports: imap_server, username, password, email_uid, save_path, folder -> saved_files, count
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize SaveAttachment node."""
         super().__init__(node_id, config)
         self.name = "Save Attachment"
@@ -275,7 +275,7 @@ class MarkEmailNode(BaseNode):
     # @requires: email
     # @ports: imap_server, username, password, email_uid, folder, mark_as -> success
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize MarkEmail node."""
         super().__init__(node_id, config)
         self.name = "Mark Email"
@@ -420,7 +420,7 @@ class DeleteEmailNode(BaseNode):
     # @requires: email
     # @ports: imap_server, username, password, email_uid, folder -> success
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize DeleteEmail node."""
         super().__init__(node_id, config)
         self.name = "Delete Email"
@@ -556,7 +556,7 @@ class MoveEmailNode(BaseNode):
     # @requires: email
     # @ports: imap_server, username, password, email_uid, source_folder, target_folder -> success
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize MoveEmail node."""
         super().__init__(node_id, config)
         self.name = "Move Email"

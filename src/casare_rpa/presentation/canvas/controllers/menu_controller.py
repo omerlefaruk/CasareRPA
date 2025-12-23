@@ -11,12 +11,13 @@ Handles all menu-related operations:
 - Desktop selector builder
 """
 
-from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING, Dict, List
+
+from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
-from loguru import logger
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 from casare_rpa.presentation.canvas.theme import THEME
@@ -53,7 +54,7 @@ class MenuController(BaseController):
     def __init__(self, main_window: "MainWindow"):
         """Initialize menu controller."""
         super().__init__(main_window)
-        self._actions: Dict[str, QAction] = {}
+        self._actions: dict[str, QAction] = {}
 
     def initialize(self) -> None:
         """Initialize controller."""
@@ -166,9 +167,10 @@ class MenuController(BaseController):
         """Open the preferences dialog."""
         logger.info("Opening preferences dialog")
 
-        from ..ui.dialogs.preferences_dialog import PreferencesDialog
-        from ....utils.settings_manager import get_settings_manager
         from PySide6.QtWidgets import QDialog
+
+        from ....utils.settings_manager import get_settings_manager
+        from ..ui.dialogs.preferences_dialog import PreferencesDialog
 
         # Get current settings
         settings_manager = get_settings_manager()
@@ -462,7 +464,7 @@ class MenuController(BaseController):
         except Exception as e:
             logger.error(f"Failed to add recent file: {e}")
 
-    def get_recent_files(self) -> List[dict]:
+    def get_recent_files(self) -> list[dict]:
         """
         Get the list of recent files.
 

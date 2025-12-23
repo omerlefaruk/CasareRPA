@@ -16,8 +16,9 @@ import logging
 from typing import Any, Dict
 
 import pytest
-from casare_rpa.domain.entities.base_node import BaseNode
+
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef
 from casare_rpa.domain.value_objects.types import DataType, NodeResult, PortType
 from casare_rpa.nodes import get_all_node_classes

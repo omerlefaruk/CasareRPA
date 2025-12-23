@@ -5,7 +5,8 @@ Type-safe data models matching React dashboard TypeScript interfaces.
 """
 
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -34,7 +35,7 @@ class RobotSummary(BaseModel):
     status: str = Field(..., description="idle | busy | offline | failed")
     cpu_percent: float
     memory_mb: float
-    current_job_id: Optional[str] = None
+    current_job_id: str | None = None
     last_heartbeat: datetime
 
 
@@ -47,7 +48,7 @@ class RobotMetrics(BaseModel):
     cpu_percent: float
     memory_mb: float
     memory_percent: float
-    current_job_id: Optional[str] = None
+    current_job_id: str | None = None
     last_heartbeat: datetime
     jobs_completed_today: int
     jobs_failed_today: int
@@ -60,12 +61,12 @@ class JobSummary(BaseModel):
 
     job_id: str
     workflow_id: str
-    workflow_name: Optional[str] = None
-    robot_id: Optional[str] = None
+    workflow_name: str | None = None
+    robot_id: str | None = None
     status: str = Field(..., description="pending | claimed | completed | failed")
     created_at: datetime
-    completed_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
+    completed_at: datetime | None = None
+    duration_ms: int | None = None
 
 
 class JobDetails(BaseModel):
@@ -73,17 +74,17 @@ class JobDetails(BaseModel):
 
     job_id: str
     workflow_id: str
-    workflow_name: Optional[str] = None
-    robot_id: Optional[str] = None
+    workflow_name: str | None = None
+    robot_id: str | None = None
     status: str
     created_at: datetime
-    claimed_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    duration_ms: Optional[int] = None
-    error_message: Optional[str] = None
-    error_type: Optional[str] = None
+    claimed_at: datetime | None = None
+    completed_at: datetime | None = None
+    duration_ms: int | None = None
+    error_message: str | None = None
+    error_type: str | None = None
     retry_count: int = 0
-    node_executions: List[dict] = Field(
+    node_executions: list[dict] = Field(
         default_factory=list, description="Per-node execution breakdown"
     )
 
@@ -114,15 +115,13 @@ class AnalyticsSummary(BaseModel):
     p50_duration_ms: float = Field(..., description="Median job duration")
     p90_duration_ms: float = Field(..., description="90th percentile")
     p99_duration_ms: float = Field(..., description="99th percentile")
-    slowest_workflows: List[WorkflowStats] = Field(
+    slowest_workflows: list[WorkflowStats] = Field(
         default_factory=list, description="Top 5 slowest workflows"
     )
-    error_distribution: List[ErrorStats] = Field(
+    error_distribution: list[ErrorStats] = Field(
         default_factory=list, description="Error types and counts"
     )
-    self_healing_success_rate: Optional[float] = Field(
-        None, description="Self-healing recovery rate"
-    )
+    self_healing_success_rate: float | None = Field(None, description="Self-healing recovery rate")
 
 
 # WebSocket Message Models
@@ -162,13 +161,13 @@ class ActivityEvent(BaseModel):
     )
     timestamp: datetime = Field(..., description="When the event occurred")
     title: str = Field(..., description="Human-readable event title")
-    details: Optional[str] = Field(None, description="Additional event details")
-    robot_id: Optional[str] = Field(None, description="Associated robot ID")
-    job_id: Optional[str] = Field(None, description="Associated job ID")
+    details: str | None = Field(None, description="Additional event details")
+    robot_id: str | None = Field(None, description="Associated robot ID")
+    job_id: str | None = Field(None, description="Associated job ID")
 
 
 class ActivityResponse(BaseModel):
     """Response for activity feed endpoint."""
 
-    events: List[ActivityEvent] = Field(default_factory=list, description="List of activity events")
+    events: list[ActivityEvent] = Field(default_factory=list, description="List of activity events")
     total: int = Field(..., description="Total number of events matching filters")

@@ -8,7 +8,7 @@ When a selector fails, finds the target relative to nearby stable elements (labe
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -98,7 +98,7 @@ class AnchorHealer:
         """
         self._near_threshold = near_threshold
         self._min_confidence = min_confidence
-        self._contexts: Dict[str, SpatialContext] = {}
+        self._contexts: dict[str, SpatialContext] = {}
 
     def store_context(self, selector: str, context: SpatialContext) -> None:
         """
@@ -111,7 +111,7 @@ class AnchorHealer:
         self._contexts[selector] = context
         logger.debug(f"Stored spatial context for: {selector}")
 
-    def get_context(self, selector: str) -> Optional[SpatialContext]:
+    def get_context(self, selector: str) -> SpatialContext | None:
         """Get stored spatial context for a selector."""
         return self._contexts.get(selector)
 
@@ -119,7 +119,7 @@ class AnchorHealer:
         self,
         page: Page,
         selector: str,
-    ) -> Optional[SpatialContext]:
+    ) -> SpatialContext | None:
         """
         Capture the spatial context of an element for future healing.
 
@@ -270,7 +270,7 @@ class AnchorHealer:
                 return None
 
             target_rect = BoundingRect.from_dict(context_data["targetRect"])
-            anchor_relations: List[Tuple[AnchorElement, SpatialRelation, float]] = []
+            anchor_relations: list[tuple[AnchorElement, SpatialRelation, float]] = []
 
             for anchor_data in context_data.get("anchors", []):
                 anchor_rect = BoundingRect.from_dict(anchor_data["rect"])
@@ -317,8 +317,8 @@ class AnchorHealer:
         self,
         page: Page,
         selector: str,
-        context: Optional[SpatialContext] = None,
-        target_tag: Optional[str] = None,
+        context: SpatialContext | None = None,
+        target_tag: str | None = None,
     ) -> AnchorHealingResult:
         """
         Attempt to heal a broken selector using anchor-based relationships.
@@ -347,7 +347,7 @@ class AnchorHealer:
 
         logger.info(f"Attempting anchor healing for: {selector}")
 
-        candidates: List[Tuple[str, float, AnchorElement, SpatialRelation]] = []
+        candidates: list[tuple[str, float, AnchorElement, SpatialRelation]] = []
 
         for anchor, relation, distance in ctx.anchor_relations:
             if not anchor.is_stable:
@@ -472,7 +472,7 @@ class AnchorHealer:
                 return SpatialRelation.BELOW
             return SpatialRelation.ABOVE
 
-    def _calculate_anchor_stability(self, anchor_data: Dict[str, Any]) -> float:
+    def _calculate_anchor_stability(self, anchor_data: dict[str, Any]) -> float:
         """
         Calculate stability score for an anchor element.
 
@@ -514,7 +514,7 @@ class AnchorHealer:
 
         return min(1.0, score)
 
-    def _build_anchor_selector(self, anchor_data: Dict[str, Any]) -> Optional[str]:
+    def _build_anchor_selector(self, anchor_data: dict[str, Any]) -> str | None:
         """
         Build a Playwright-compatible selector for an anchor element.
 
@@ -553,8 +553,8 @@ class AnchorHealer:
         self,
         anchor: AnchorElement,
         relation: SpatialRelation,
-        target_tag: Optional[str] = None,
-    ) -> List[Tuple[str, float]]:
+        target_tag: str | None = None,
+    ) -> list[tuple[str, float]]:
         """
         Generate relative selectors based on anchor and spatial relationship.
 
@@ -566,7 +566,7 @@ class AnchorHealer:
         Returns:
             List of (selector, confidence) tuples.
         """
-        selectors: List[Tuple[str, float]] = []
+        selectors: list[tuple[str, float]] = []
         anchor_sel = anchor.selector
 
         # For labels, check associated form control
@@ -614,8 +614,8 @@ class AnchorHealer:
         page: Page,
         anchor_selector: str,
         max_distance: float = 200,
-        target_tags: Optional[List[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        target_tags: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Find elements near an anchor element.
 

@@ -9,25 +9,25 @@ lazy loading from the central node registry. This eliminates duplicate
 registration and improves startup performance.
 """
 
-from typing import Any, Dict, Type, Optional, Tuple
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Dict, Optional, Tuple, Type
+
 from loguru import logger
 
+# Import the nodes module for lazy loading node classes
+import casare_rpa.nodes as nodes_module
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.entities.node_connection import NodeConnection
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
-from casare_rpa.domain.entities.node_connection import NodeConnection
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.validation import (
     validate_workflow_json,
 )
 from casare_rpa.infrastructure.caching.workflow_cache import get_workflow_cache
 
-# Import the nodes module for lazy loading node classes
-import casare_rpa.nodes as nodes_module
 
-
-def get_node_class(node_type: str) -> Optional[Type[BaseNode]]:
+def get_node_class(node_type: str) -> type[BaseNode] | None:
     """
     Get a node class by type name using lazy loading from nodes module.
 
@@ -66,8 +66,8 @@ PARALLEL_MAX_WORKERS = 4
 
 
 def _batch_resolve_node_types(
-    nodes_data: Dict[str, Dict],
-) -> Dict[str, Tuple[str, Dict[str, Any]]]:
+    nodes_data: dict[str, dict],
+) -> dict[str, tuple[str, dict[str, Any]]]:
     """
     Batch extract node types/configs for performance.
 
@@ -106,9 +106,9 @@ def _preload_workflow_node_types(node_types: set) -> None:
 def _create_single_node(
     node_id: str,
     node_type: str,
-    config: Dict[str, Any],
+    config: dict[str, Any],
     use_pooling: bool = False,
-) -> Tuple[str, Optional[Any]]:
+) -> tuple[str, Any | None]:
     """
     Create a single node instance.
 
@@ -154,11 +154,11 @@ def _create_single_node(
 
 
 def _instantiate_nodes_parallel(
-    nodes_data: Dict[str, Dict],
-    resolved_types: Dict[str, Tuple[str, Dict[str, Any]]],
+    nodes_data: dict[str, dict],
+    resolved_types: dict[str, tuple[str, dict[str, Any]]],
     max_workers: int = PARALLEL_MAX_WORKERS,
     use_pooling: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Instantiate nodes in parallel for large workflows.
 
@@ -219,7 +219,7 @@ def _instantiate_nodes_parallel(
 
 
 def load_workflow_from_dict(
-    workflow_data: Dict,
+    workflow_data: dict,
     skip_validation: bool = False,
     use_parallel: bool = True,
     use_pooling: bool = False,
@@ -291,7 +291,7 @@ def load_workflow_from_dict(
         )
     else:
         # Sequential instantiation
-        nodes_dict: Dict[str, BaseNode] = {}
+        nodes_dict: dict[str, BaseNode] = {}
         for node_id in nodes_data:
             if node_id not in resolved_types:
                 continue

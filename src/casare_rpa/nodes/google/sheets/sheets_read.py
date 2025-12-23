@@ -20,7 +20,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import GoogleSheetsClient
 from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
-
 # ============================================================================
 # Reusable Property Definitions for Sheets Read Nodes
 # ============================================================================
@@ -413,7 +412,7 @@ class SheetsGetRowNode(SheetsBaseNode):
             value_render_option=value_render,
         )
 
-        row_values: List[Any] = values[0] if values else []
+        row_values: list[Any] = values[0] if values else []
         cell_count = len(row_values)
 
         self._set_success_outputs(row_values)
@@ -545,7 +544,7 @@ class SheetsGetColumnNode(SheetsBaseNode):
             value_render_option=value_render,
         )
 
-        column_values: List[Any] = [row[0] if row else None for row in values_2d]
+        column_values: list[Any] = [row[0] if row else None for row in values_2d]
         while column_values and column_values[-1] is None:
             column_values.pop()
 
@@ -687,7 +686,7 @@ class SheetsSearchNode(SheetsBaseNode):
                 if s.get("properties", {}).get("title") == sheet_name
             ]
 
-        results: List[dict] = []
+        results: list[dict] = []
         search_lower = search_value.lower() if not match_case else search_value
 
         for sheet in sheets_to_search:

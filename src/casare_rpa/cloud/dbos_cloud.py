@@ -113,18 +113,18 @@ class DeploymentStatus:
     instances_desired: int
     cpu_utilization: float
     memory_utilization: float
-    last_deployed: Optional[datetime]
+    last_deployed: datetime | None
     health_status: str
-    url: Optional[str]
-    postgres_url: Optional[str]
-    error_message: Optional[str] = None
+    url: str | None
+    postgres_url: str | None
+    error_message: str | None = None
     raw_response: dict[str, Any] = field(default_factory=dict)
 
 
 class DBOSCloudError(Exception):
     """DBOS Cloud operation error."""
 
-    def __init__(self, message: str, exit_code: Optional[int] = None, stderr: str = ""):
+    def __init__(self, message: str, exit_code: int | None = None, stderr: str = ""):
         super().__init__(message)
         self.exit_code = exit_code
         self.stderr = stderr
@@ -157,8 +157,8 @@ class DBOSCloudClient:
 
     def __init__(
         self,
-        config_path: Optional[Path] = None,
-        working_dir: Optional[Path] = None,
+        config_path: Path | None = None,
+        working_dir: Path | None = None,
     ):
         """
         Initialize DBOS Cloud client.
@@ -169,7 +169,7 @@ class DBOSCloudClient:
         """
         self.config_path = config_path or Path.cwd() / "dbos-config.yaml"
         self.working_dir = working_dir or Path.cwd()
-        self._cli_available: Optional[bool] = None
+        self._cli_available: bool | None = None
 
     async def ensure_cli_installed(self) -> bool:
         """
@@ -209,7 +209,7 @@ class DBOSCloudClient:
             self._cli_available = False
             return False
 
-    async def login(self, token: Optional[str] = None) -> bool:
+    async def login(self, token: str | None = None) -> bool:
         """
         Authenticate with DBOS Cloud.
 
@@ -330,7 +330,7 @@ class DBOSCloudClient:
 
             return await self.get_status(config.app_name, config.environment)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise DBOSCloudError(
                 f"Deployment timed out after {config.deploy_timeout_seconds} seconds"
             )
@@ -488,7 +488,7 @@ class DBOSCloudClient:
         self,
         app_name: str,
         environment: str = "production",
-        version: Optional[str] = None,
+        version: str | None = None,
     ) -> DeploymentStatus:
         """
         Rollback to previous deployment version.
@@ -822,7 +822,7 @@ class DBOSCloudClient:
         self,
         cmd: list[str],
         capture_output: bool = True,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
         check: bool = True,
     ) -> subprocess.CompletedProcess[str]:
         """
@@ -860,7 +860,7 @@ class DBOSCloudClient:
                 stdout=stdout,
                 stderr=stderr,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             proc.kill()
             raise
 
@@ -922,7 +922,7 @@ def load_config_from_yaml(config_path: Path) -> DBOSConfig:
     if not config_path.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     if not data:
@@ -963,8 +963,8 @@ def load_config_from_yaml(config_path: Path) -> DBOSConfig:
 
 
 async def deploy_from_config(
-    config_path: Optional[Path] = None,
-    environment: Optional[str] = None,
+    config_path: Path | None = None,
+    environment: str | None = None,
     dry_run: bool = False,
 ) -> DeploymentStatus:
     """

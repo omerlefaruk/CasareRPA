@@ -13,10 +13,10 @@ typed domain events from casare_rpa.domain.events (e.g., NodeStarted, NodeComple
 All types here are framework-agnostic and represent pure domain concepts.
 """
 
+import sys
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
-import sys
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from casare_rpa.domain.value_objects.execution_metadata import ExecutionMetadata
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 # - Port names (compared on every connection)
 # - Event type names (compared on every publish)
 
-_interned_strings: Dict[str, str] = {}
+_interned_strings: dict[str, str] = {}
 
 
 def intern_string(s: str) -> str:
@@ -432,25 +432,25 @@ NodeId = str
 Connection = tuple[PortId, PortId]
 
 # Node configuration dictionary
-NodeConfig = Dict[str, Any]
+NodeConfig = dict[str, Any]
 
 # Port definition
-PortDefinition = Dict[str, Union[str, PortType, DataType]]
+PortDefinition = dict[str, str | PortType | DataType]
 
 # Serialized node data
-SerializedNode = Dict[str, Any]
+SerializedNode = dict[str, Any]
 
 # Serialized frame data (for node grouping)
-SerializedFrame = Dict[str, Any]
+SerializedFrame = dict[str, Any]
 
 # Serialized workflow data
-SerializedWorkflow = Dict[str, Any]
+SerializedWorkflow = dict[str, Any]
 
 # Execution result from a node
-ExecutionResult = Optional[Dict[str, Any]]
+ExecutionResult = Optional[dict[str, Any]]
 
 # Event data
-EventData = Dict[str, Any]
+EventData = dict[str, Any]
 
 
 # ============================================================================
@@ -498,15 +498,15 @@ class NodeResult:
     """
 
     success: bool
-    data: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
-    error_code: Optional[str] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+    error_code: str | None = None
     metadata: Optional["ExecutionMetadata"] = None
 
     # Flow control signals
-    route_to: Optional[str] = None
-    loop_back_to: Optional[str] = None
-    parallel_branches: Optional[List[str]] = None
+    route_to: str | None = None
+    loop_back_to: str | None = None
+    parallel_branches: list[str] | None = None
 
     # Retry signals
     should_retry: bool = False

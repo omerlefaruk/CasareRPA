@@ -8,22 +8,21 @@ Provides debug controls including:
 - Current execution state display
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QToolBar,
-    QWidget,
+    QCheckBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QSlider,
-    QCheckBox,
     QSpinBox,
-    QFrame,
+    QToolBar,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -67,7 +66,7 @@ class DebugToolbar(QToolBar):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         debug_controller: Optional["DebugController"] = None,
     ) -> None:
         """

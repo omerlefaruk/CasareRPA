@@ -8,10 +8,11 @@ IMPORTANT: OpenTelemetry packages are lazily loaded to avoid startup overhead
 when tracing is disabled.
 """
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Iterator, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from loguru import logger
 
@@ -44,7 +45,7 @@ class TracingConfig:
     export_timeout_ms: int = 30000
 
     # Additional attributes to include in all spans
-    extra_attributes: Dict[str, str] = field(default_factory=dict)
+    extra_attributes: dict[str, str] = field(default_factory=dict)
 
 
 class NoOpSpan:
@@ -56,23 +57,23 @@ class NoOpSpan:
     def set_attribute(self, key: str, value: Any) -> None:
         pass
 
-    def set_attributes(self, attributes: Dict[str, Any]) -> None:
+    def set_attributes(self, attributes: dict[str, Any]) -> None:
         pass
 
-    def add_event(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> None:
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         pass
 
-    def set_status(self, status: Any, description: Optional[str] = None) -> None:
+    def set_status(self, status: Any, description: str | None = None) -> None:
         pass
 
     def record_exception(
         self,
         exception: BaseException,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         pass
 
-    def end(self, end_time: Optional[int] = None) -> None:
+    def end(self, end_time: int | None = None) -> None:
         pass
 
     def is_recording(self) -> bool:
@@ -105,7 +106,7 @@ class TracingManager:
                 pass
     """
 
-    def __init__(self, config: Optional[TracingConfig] = None) -> None:
+    def __init__(self, config: TracingConfig | None = None) -> None:
         """
         Initialize the tracing manager.
 
@@ -113,12 +114,12 @@ class TracingManager:
             config: Tracing configuration (disabled by default)
         """
         self._config = config or TracingConfig()
-        self._tracer: Optional["Tracer"] = None
+        self._tracer: Tracer | None = None
         self._initialized = False
         self._provider = None
 
         # Current workflow span for nested node spans
-        self._current_workflow_span: Optional[Any] = None
+        self._current_workflow_span: Any | None = None
 
     def _initialize(self) -> None:
         """
@@ -131,8 +132,8 @@ class TracingManager:
 
         try:
             from opentelemetry import trace
+            from opentelemetry.sdk.resources import SERVICE_NAME, Resource
             from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.resources import Resource, SERVICE_NAME
             from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
 
             # Create resource with service name and extra attributes
@@ -267,8 +268,8 @@ class TracingManager:
     def workflow_span(
         self,
         workflow_id: str,
-        workflow_name: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
+        workflow_name: str | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> Iterator[Any]:
         """
         Create a span for workflow execution.
@@ -317,8 +318,8 @@ class TracingManager:
         self,
         node_id: str,
         node_type: str,
-        node_name: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
+        node_name: str | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> Iterator[Any]:
         """
         Create a span for node execution.
@@ -365,7 +366,7 @@ class TracingManager:
     def custom_span(
         self,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
     ) -> Iterator[Any]:
         """
         Create a custom span for any operation.
@@ -398,8 +399,8 @@ class TracingManager:
         self,
         span: Any,
         success: bool,
-        result: Optional[Dict[str, Any]] = None,
-        error: Optional[str] = None,
+        result: dict[str, Any] | None = None,
+        error: str | None = None,
     ) -> None:
         """
         Record node execution result on a span.
@@ -427,7 +428,7 @@ class TracingManager:
     def add_workflow_event(
         self,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """
         Add an event to the current workflow span.
@@ -464,7 +465,7 @@ class TracingManager:
 
 
 # Global tracing manager instance (lazy-initialized)
-_tracing_manager: Optional[TracingManager] = None
+_tracing_manager: TracingManager | None = None
 
 
 def get_tracing_manager() -> TracingManager:

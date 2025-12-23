@@ -19,12 +19,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -98,7 +98,7 @@ class SetHttpHeadersNode(BaseNode):
 
         self.add_output_port("headers", DataType.DICT)
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -226,7 +226,7 @@ class ParseJsonResponseNode(BaseNode):
 
         return current
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -397,7 +397,7 @@ class HttpDownloadFileNode(BaseNode):
         self.add_output_port("success", DataType.BOOLEAN)
         self.add_output_port("error", DataType.STRING)
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Download file using UnifiedHttpClient.
 
@@ -607,7 +607,7 @@ class HttpUploadFileNode(BaseNode):
         self.add_output_port("success", DataType.BOOLEAN)
         self.add_output_port("error", DataType.STRING)
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Upload file using UnifiedHttpClient.
 
@@ -780,7 +780,7 @@ class BuildUrlNode(BaseNode):
 
         self.add_output_port("url", DataType.STRING)
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:

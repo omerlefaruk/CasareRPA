@@ -5,8 +5,9 @@ Contains retry configuration, lifecycle hooks, and node identity.
 Follows Prefect/Airflow patterns for robust execution behavior.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 
 
 @dataclass(frozen=True)
@@ -48,19 +49,19 @@ class NodeMetadata:
     retry_delay: float = 1.0  # seconds
     retry_backoff: float = 2.0  # multiplier
     retry_jitter: float = 0.1  # random jitter factor
-    retry_on: Tuple[Type[Exception], ...] = field(default_factory=tuple)
+    retry_on: tuple[type[Exception], ...] = field(default_factory=tuple)
 
     # Lifecycle hooks (Airflow pattern)
-    on_start: Tuple[Callable, ...] = field(default_factory=tuple)
-    on_success: Tuple[Callable, ...] = field(default_factory=tuple)
-    on_failure: Tuple[Callable, ...] = field(default_factory=tuple)
-    on_complete: Tuple[Callable, ...] = field(default_factory=tuple)
+    on_start: tuple[Callable, ...] = field(default_factory=tuple)
+    on_success: tuple[Callable, ...] = field(default_factory=tuple)
+    on_failure: tuple[Callable, ...] = field(default_factory=tuple)
+    on_complete: tuple[Callable, ...] = field(default_factory=tuple)
 
     # Timeout
-    timeout_seconds: Optional[float] = None
+    timeout_seconds: float | None = None
 
     # Tags for filtering/grouping
-    tags: Tuple[str, ...] = field(default_factory=tuple)
+    tags: tuple[str, ...] = field(default_factory=tuple)
 
     def get_retry_delay(self, attempt: int) -> float:
         """

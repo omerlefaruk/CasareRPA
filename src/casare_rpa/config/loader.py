@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import threading
 from pathlib import Path
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from loguru import logger
 
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 class ConfigurationError(Exception):
     """Raised when configuration is invalid or missing required values."""
 
-    def __init__(self, message: str, missing_fields: Optional[List[str]] = None):
+    def __init__(self, message: str, missing_fields: list[str] | None = None):
         super().__init__(message)
         self.missing_fields = missing_fields or []
 
@@ -57,7 +57,7 @@ class ConfigManager:
 
     def __init__(self) -> None:
         """Initialize the configuration manager."""
-        self._config: Optional[Config] = None
+        self._config: Config | None = None
         self._lock = threading.Lock()
 
     def get(self) -> Config:
@@ -68,7 +68,7 @@ class ConfigManager:
                     self._config = _build_config_internal()
         return self._config
 
-    def load(self, env_file: Optional[Path] = None, reload: bool = False) -> Config:
+    def load(self, env_file: Path | None = None, reload: bool = False) -> Config:
         """Load configuration with optional .env file."""
         with self._lock:
             if self._config is not None and not reload:
@@ -96,7 +96,7 @@ class ConfigManager:
 
 
 # Module-level manager instance (thread-safe lazy initialization)
-_manager: Optional[ConfigManager] = None
+_manager: ConfigManager | None = None
 _manager_lock = threading.Lock()
 
 
@@ -115,14 +115,14 @@ def _get_manager() -> ConfigManager:
     return _local_manager
 
 
-def _parse_bool(value: Optional[str], default: bool = False) -> bool:
+def _parse_bool(value: str | None, default: bool = False) -> bool:
     """Parse boolean from environment variable string."""
     if value is None:
         return default
     return value.lower() in ("true", "1", "yes", "on")
 
 
-def _parse_int(value: Optional[str], default: int) -> int:
+def _parse_int(value: str | None, default: int) -> int:
     """Parse integer from environment variable string."""
     if value is None:
         return default
@@ -132,7 +132,7 @@ def _parse_int(value: Optional[str], default: int) -> int:
         return default
 
 
-def _parse_float(value: Optional[str], default: float) -> float:
+def _parse_float(value: str | None, default: float) -> float:
     """Parse float from environment variable string."""
     if value is None:
         return default
@@ -142,14 +142,14 @@ def _parse_float(value: Optional[str], default: float) -> float:
         return default
 
 
-def _parse_list(value: Optional[str], default: Optional[List[str]] = None) -> List[str]:
+def _parse_list(value: str | None, default: list[str] | None = None) -> list[str]:
     """Parse comma-separated list from environment variable string."""
     if not value:
         return default or []
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def _parse_path(value: Optional[str]) -> Optional[Path]:
+def _parse_path(value: str | None) -> Path | None:
     """Parse path from environment variable string."""
     if not value:
         return None
@@ -177,7 +177,7 @@ def _load_env_file(env_path: Path) -> bool:
     return False
 
 
-def _find_env_files() -> List[Path]:
+def _find_env_files() -> list[Path]:
     """
     Find .env files in standard locations.
 
@@ -212,7 +212,7 @@ def _find_env_files() -> List[Path]:
     return found_files
 
 
-def _find_project_root() -> Optional[Path]:
+def _find_project_root() -> Path | None:
     """Find project root by looking for marker files."""
     current = Path.cwd()
     markers = ["pyproject.toml", "CLAUDE.md", ".git"]
@@ -425,7 +425,7 @@ def _build_config_internal() -> Config:
         raise ConfigurationError(f"Invalid configuration: {e}") from e
 
 
-def load_config(env_file: Optional[Path] = None, reload: bool = False) -> Config:
+def load_config(env_file: Path | None = None, reload: bool = False) -> Config:
     """
     Load configuration from environment variables and .env files.
 

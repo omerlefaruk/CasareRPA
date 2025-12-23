@@ -6,7 +6,7 @@ Used by FormFillerNode and DetectFormsNode for intelligent form handling.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -27,25 +27,25 @@ class FormField:
     name: str
     """Field name attribute."""
 
-    label: Optional[str] = None
+    label: str | None = None
     """Associated label text (from <label> element)."""
 
-    placeholder: Optional[str] = None
+    placeholder: str | None = None
     """Placeholder text attribute."""
 
     required: bool = False
     """Whether the field is required."""
 
-    value: Optional[str] = None
+    value: str | None = None
     """Current field value."""
 
-    options: List[str] = field(default_factory=list)
+    options: list[str] = field(default_factory=list)
     """Available options for select/radio/checkbox fields."""
 
-    id: Optional[str] = None
+    id: str | None = None
     """Field id attribute."""
 
-    autocomplete: Optional[str] = None
+    autocomplete: str | None = None
     """Autocomplete attribute hint."""
 
 
@@ -56,22 +56,22 @@ class DetectedForm:
     selector: str
     """CSS/ID selector for the form."""
 
-    action: Optional[str]
+    action: str | None
     """Form action URL."""
 
     method: str
     """Form method (GET/POST)."""
 
-    fields: List[FormField]
+    fields: list[FormField]
     """List of detected fields within the form."""
 
-    submit_selector: Optional[str] = None
+    submit_selector: str | None = None
     """Selector for the submit button."""
 
-    name: Optional[str] = None
+    name: str | None = None
     """Form name attribute."""
 
-    id: Optional[str] = None
+    id: str | None = None
     """Form id attribute."""
 
 
@@ -256,7 +256,7 @@ class FormDetector:
                 print(f"  - {field.name}: {field.field_type} ({field.label})")
     """
 
-    async def detect_forms(self, page: "Page") -> List[DetectedForm]:
+    async def detect_forms(self, page: "Page") -> list[DetectedForm]:
         """
         Find all forms on the page.
 
@@ -275,7 +275,7 @@ class FormDetector:
             logger.error(f"Failed to detect forms: {e}")
             return []
 
-    async def detect_fields(self, page: "Page", container: str = "body") -> List[FormField]:
+    async def detect_fields(self, page: "Page", container: str = "body") -> list[FormField]:
         """
         Detect input fields within a container.
 
@@ -299,7 +299,7 @@ class FormDetector:
             logger.error(f"Failed to detect fields in {container}: {e}")
             return []
 
-    async def get_form_by_selector(self, page: "Page", selector: str) -> Optional[DetectedForm]:
+    async def get_form_by_selector(self, page: "Page", selector: str) -> DetectedForm | None:
         """
         Get a specific form by its selector.
 
@@ -318,7 +318,7 @@ class FormDetector:
 
     async def find_field_by_label(
         self, page: "Page", label_text: str, container: str = "body"
-    ) -> Optional[FormField]:
+    ) -> FormField | None:
         """
         Find a field by its label text.
 
@@ -339,7 +339,7 @@ class FormDetector:
 
     async def find_field_by_name(
         self, page: "Page", field_name: str, container: str = "body"
-    ) -> Optional[FormField]:
+    ) -> FormField | None:
         """
         Find a field by its name attribute.
 
@@ -357,7 +357,7 @@ class FormDetector:
                 return form_field
         return None
 
-    def _parse_form(self, data: Dict[str, Any]) -> DetectedForm:
+    def _parse_form(self, data: dict[str, Any]) -> DetectedForm:
         """
         Parse form data from JavaScript evaluation.
 
@@ -377,7 +377,7 @@ class FormDetector:
             id=data.get("id"),
         )
 
-    def _parse_field(self, data: Dict[str, Any]) -> FormField:
+    def _parse_field(self, data: dict[str, Any]) -> FormField:
         """
         Parse field data from JavaScript evaluation.
 

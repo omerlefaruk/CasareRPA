@@ -4,9 +4,10 @@ Provides progress bars, status indicators, and priority visualization.
 """
 
 from typing import Optional
-from PySide6.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QStyle
-from PySide6.QtCore import Qt, QRect, QSize, QModelIndex
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QLinearGradient
+
+from PySide6.QtCore import QModelIndex, QRect, QSize, Qt
+from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
+from PySide6.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
 
 from casare_rpa.infrastructure.orchestrator.communication.theme import (
     THEME,
@@ -372,7 +373,7 @@ class IconTextDelegate(QStyledItemDelegate):
     Used for workflow names, robot names with type icons.
     """
 
-    def __init__(self, icon_map: Optional[dict] = None, parent=None):
+    def __init__(self, icon_map: dict | None = None, parent=None):
         super().__init__(parent)
         self._icon_map = icon_map or {}
 

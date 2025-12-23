@@ -130,7 +130,7 @@ class TelegramTriggerNode(BaseTriggerNode):
     trigger_icon = "telegram"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Telegram Trigger"
         self.node_type = "TelegramTriggerNode"
@@ -152,7 +152,7 @@ class TelegramTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.TELEGRAM
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get Telegram-specific configuration."""
         # Parse comma-separated lists
         filter_chat_ids_str = self.get_parameter("filter_chat_ids", "")

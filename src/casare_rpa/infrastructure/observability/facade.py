@@ -24,38 +24,41 @@ from __future__ import annotations
 import os
 import threading
 import warnings
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, Optional, TypeVar
+from typing import Any, Dict, Optional, TypeVar
 
 from loguru import logger
 
-# Import underlying components
-from casare_rpa.infrastructure.observability.telemetry import (
-    TelemetryProvider,
-    TelemetryConfig,
-    ExporterProtocol,
-    OTEL_AVAILABLE,
+from casare_rpa.infrastructure.observability.logging import (
+    SpanLogger,
+)
+from casare_rpa.infrastructure.observability.logging import (
+    configure_logging as _configure_logging,
 )
 from casare_rpa.infrastructure.observability.metrics import (
     RPAMetricsCollector,
     get_metrics_collector,
 )
+from casare_rpa.infrastructure.observability.stdout_capture import (
+    capture_output,
+    remove_output_callbacks,
+    set_output_callbacks,
+)
 from casare_rpa.infrastructure.observability.system_metrics import (
     SystemMetricsCollector,
     get_system_metrics_collector,
 )
-from casare_rpa.infrastructure.observability.logging import (
-    configure_logging as _configure_logging,
-    SpanLogger,
-)
-from casare_rpa.infrastructure.observability.stdout_capture import (
-    set_output_callbacks,
-    remove_output_callbacks,
-    capture_output,
-)
 
+# Import underlying components
+from casare_rpa.infrastructure.observability.telemetry import (
+    OTEL_AVAILABLE,
+    ExporterProtocol,
+    TelemetryConfig,
+    TelemetryProvider,
+)
 
 T = TypeVar("T")
 
@@ -105,8 +108,8 @@ class ObservabilityConfig:
     enable_system_metrics: bool = True
 
     # Standard labels for all metrics
-    robot_id: Optional[str] = field(default_factory=lambda: os.getenv("ROBOT_ID"))
-    tenant_id: Optional[str] = field(default_factory=lambda: os.getenv("TENANT_ID"))
+    robot_id: str | None = field(default_factory=lambda: os.getenv("ROBOT_ID"))
+    tenant_id: str | None = field(default_factory=lambda: os.getenv("TENANT_ID"))
 
     def to_telemetry_config(self) -> TelemetryConfig:
         """Convert to TelemetryConfig for OpenTelemetry initialization."""
@@ -169,21 +172,21 @@ class Observability:
         Observability.shutdown()
     """
 
-    _instance: Optional["Observability"] = None
+    _instance: Observability | None = None
     _lock: threading.Lock = threading.Lock()
-    _config: Optional[ObservabilityConfig] = None
+    _config: ObservabilityConfig | None = None
     _initialized: bool = False
 
     # Component references
-    _telemetry: Optional[TelemetryProvider] = None
-    _metrics_collector: Optional[RPAMetricsCollector] = None
-    _system_metrics: Optional[SystemMetricsCollector] = None
-    _span_logger: Optional[SpanLogger] = None
+    _telemetry: TelemetryProvider | None = None
+    _metrics_collector: RPAMetricsCollector | None = None
+    _system_metrics: SystemMetricsCollector | None = None
+    _span_logger: SpanLogger | None = None
 
     @classmethod
     def configure(
         cls,
-        config: Optional[ObservabilityConfig] = None,
+        config: ObservabilityConfig | None = None,
         force_reinit: bool = False,
     ) -> None:
         """
@@ -248,7 +251,7 @@ class Observability:
         return cls._initialized
 
     @classmethod
-    def get_config(cls) -> Optional[ObservabilityConfig]:
+    def get_config(cls) -> ObservabilityConfig | None:
         """Get current configuration."""
         return cls._config
 
@@ -323,7 +326,7 @@ class Observability:
         cls,
         name: str,
         value: float,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """
         Record a metric value (histogram/gauge style).
@@ -370,7 +373,7 @@ class Observability:
     def increment(
         cls,
         name: str,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
         value: int = 1,
     ) -> None:
         """
@@ -421,7 +424,7 @@ class Observability:
                 counter.add(value, all_labels)
 
     @classmethod
-    def gauge(cls, name: str, value: float, labels: Optional[Dict[str, str]] = None) -> None:
+    def gauge(cls, name: str, value: float, labels: dict[str, str] | None = None) -> None:
         """
         Set a gauge metric value.
 
@@ -434,9 +437,9 @@ class Observability:
         cls.metric(name, value, labels)
 
     @classmethod
-    def _get_standard_labels(cls) -> Dict[str, str]:
+    def _get_standard_labels(cls) -> dict[str, str]:
         """Get standard labels from config."""
-        labels: Dict[str, str] = {}
+        labels: dict[str, str] = {}
         if cls._config:
             labels["environment"] = cls._config.environment.value
             if cls._config.robot_id:
@@ -454,9 +457,9 @@ class Observability:
     def trace(
         cls,
         name: str,
-        attributes: Optional[Dict[str, Any]] = None,
+        attributes: dict[str, Any] | None = None,
         component: str = "casare_rpa",
-    ) -> Generator[Optional[Any], None, None]:
+    ) -> Generator[Any | None, None, None]:
         """
         Create a trace span context manager.
 
@@ -486,7 +489,7 @@ class Observability:
             yield span
 
     @classmethod
-    def get_tracer(cls, name: str = "casare_rpa") -> Optional[Any]:
+    def get_tracer(cls, name: str = "casare_rpa") -> Any | None:
         """
         Get OpenTelemetry tracer for advanced tracing.
 
@@ -501,7 +504,7 @@ class Observability:
         return cls._telemetry.get_tracer(name)
 
     @classmethod
-    def get_meter(cls, name: str = "casare_rpa") -> Optional[Any]:
+    def get_meter(cls, name: str = "casare_rpa") -> Any | None:
         """
         Get OpenTelemetry meter for advanced metrics.
 
@@ -522,8 +525,8 @@ class Observability:
     @classmethod
     def capture_stdout(
         cls,
-        stdout_callback: Optional[Callable[[str], None]] = None,
-        stderr_callback: Optional[Callable[[str], None]] = None,
+        stdout_callback: Callable[[str], None] | None = None,
+        stderr_callback: Callable[[str], None] | None = None,
     ) -> None:
         """
         Start capturing stdout/stderr to callbacks.
@@ -545,8 +548,8 @@ class Observability:
     @contextmanager
     def captured_output(
         cls,
-        stdout_callback: Optional[Callable[[str], None]] = None,
-        stderr_callback: Optional[Callable[[str], None]] = None,
+        stdout_callback: Callable[[str], None] | None = None,
+        stderr_callback: Callable[[str], None] | None = None,
     ) -> Generator[None, None, None]:
         """
         Context manager for stdout/stderr capture.
@@ -563,7 +566,7 @@ class Observability:
     # =========================================================================
 
     @classmethod
-    def get_system_metrics(cls) -> Dict[str, Any]:
+    def get_system_metrics(cls) -> dict[str, Any]:
         """
         Get current system metrics (CPU, memory, etc).
 
@@ -598,7 +601,7 @@ class Observability:
     # =========================================================================
 
     @classmethod
-    def get_metrics_collector(cls) -> Optional[RPAMetricsCollector]:
+    def get_metrics_collector(cls) -> RPAMetricsCollector | None:
         """
         Get the underlying RPA metrics collector for advanced usage.
 
@@ -641,9 +644,9 @@ class Observability:
 
 
 def configure_observability(
-    environment: Optional[str] = None,
-    robot_id: Optional[str] = None,
-    tenant_id: Optional[str] = None,
+    environment: str | None = None,
+    robot_id: str | None = None,
+    tenant_id: str | None = None,
     **kwargs: Any,
 ) -> None:
     """
@@ -655,7 +658,7 @@ def configure_observability(
         tenant_id: Tenant identifier for multi-tenancy
         **kwargs: Additional ObservabilityConfig parameters
     """
-    config_kwargs: Dict[str, Any] = {}
+    config_kwargs: dict[str, Any] = {}
 
     if environment:
         config_kwargs["environment"] = Environment(environment.lower())

@@ -3,20 +3,19 @@ Metrics service.
 Calculates dashboard KPIs and job history for visualization.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Optional
-
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Dict, List, Optional
 
 from casare_rpa.domain.orchestrator.entities import (
-    Robot,
-    Job,
-    Workflow,
-    Schedule,
-    RobotStatus,
-    JobStatus,
-    WorkflowStatus,
     DashboardMetrics,
+    Job,
     JobHistoryEntry,
+    JobStatus,
+    Robot,
+    RobotStatus,
+    Schedule,
+    Workflow,
+    WorkflowStatus,
 )
 
 
@@ -25,10 +24,10 @@ class MetricsService:
 
     async def calculate_dashboard_metrics(
         self,
-        robots: List[Robot],
-        jobs: List[Job],
-        workflows: List[Workflow],
-        schedules: List[Schedule],
+        robots: list[Robot],
+        jobs: list[Job],
+        workflows: list[Workflow],
+        schedules: list[Schedule],
     ) -> DashboardMetrics:
         """Calculate dashboard KPI metrics."""
         metrics = DashboardMetrics()
@@ -43,7 +42,7 @@ class MetricsService:
             metrics.robot_utilization = total_utilization / metrics.robots_total
 
         # Job metrics - time-based filtering
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=7)
         month_start = today_start - timedelta(days=30)
@@ -111,11 +110,11 @@ class MetricsService:
 
         return metrics
 
-    async def calculate_job_history(self, jobs: List[Job], days: int = 7) -> List[JobHistoryEntry]:
+    async def calculate_job_history(self, jobs: list[Job], days: int = 7) -> list[JobHistoryEntry]:
         """Get job execution history for charting."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
-        history: Dict[str, JobHistoryEntry] = {}
+        history: dict[str, JobHistoryEntry] = {}
 
         for i in range(days):
             date = (now - timedelta(days=i)).strftime("%Y-%m-%d")
@@ -135,7 +134,7 @@ class MetricsService:
         # Return sorted by date ascending
         return sorted(history.values(), key=lambda x: x.date)
 
-    def _parse_date(self, date_str) -> Optional[datetime]:
+    def _parse_date(self, date_str) -> datetime | None:
         """Parse date string to datetime."""
         if not date_str:
             return None

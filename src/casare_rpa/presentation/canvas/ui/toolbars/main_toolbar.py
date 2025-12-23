@@ -6,11 +6,10 @@ Provides primary workflow actions (new, open, save, run, etc.).
 
 from typing import Optional
 
+from loguru import logger
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QToolBar, QWidget
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
@@ -52,7 +51,7 @@ class MainToolbar(QToolBar):
     undo_requested = Signal()
     redo_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the main toolbar.
 

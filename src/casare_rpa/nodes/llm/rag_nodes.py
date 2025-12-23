@@ -80,8 +80,8 @@ class EmbeddingNode(LLMBaseNode):
     ) -> ExecutionResult:
         """Execute embedding generation."""
         from casare_rpa.infrastructure.ai.embedding_manager import (
-            EmbeddingManager,
             EmbeddingConfig,
+            EmbeddingManager,
         )
 
         text = self.get_parameter("text")
@@ -209,7 +209,7 @@ class VectorStoreAddNode(LLMBaseNode):
                 documents = [{"id": "doc1", "content": documents}]
 
         # Normalize document format
-        docs_to_add: List[Document] = []
+        docs_to_add: list[Document] = []
         for i, doc in enumerate(documents):
             if isinstance(doc, str):
                 doc = {"id": f"doc_{i}", "content": doc}

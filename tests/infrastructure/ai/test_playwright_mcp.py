@@ -17,13 +17,14 @@ Test Coverage:
 
 import asyncio
 import json
+from typing import Any, Dict, Optional
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
 import pytest
-from typing import Dict, Any, Optional
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
 
 from casare_rpa.infrastructure.ai.playwright_mcp import (
-    PlaywrightMCPClient,
     MCPToolResult,
+    PlaywrightMCPClient,
     fetch_page_context,
 )
 

@@ -14,35 +14,34 @@ Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
 """
 
-from typing import Optional, Any, Dict, List, TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QAction, QBrush, QColor, QFont
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
-    QComboBox,
-    QLabel,
-    QHeaderView,
-    QAbstractItemView,
     QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
-    QLineEdit,
-    QMenu,
-    QInputDialog,
-    QMessageBox,
-    QPlainTextEdit,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QBrush, QFont, QAction
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -52,17 +51,17 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
-        DebugController,
-        WatchExpression,
         CallStackFrame,
+        DebugController,
         ExecutionSnapshot,
+        WatchExpression,
     )
 
 try:
     from casare_rpa.presentation.canvas.events import (
-        LazySubscriptionGroup,
-        EventType,
         Event,
+        EventType,
+        LazySubscriptionGroup,
     )
 
     HAS_EVENT_BUS = True
@@ -120,7 +119,7 @@ class DebugPanel(QDockWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         debug_controller: Optional["DebugController"] = None,
         embedded: bool = False,
     ) -> None:
@@ -144,7 +143,7 @@ class DebugPanel(QDockWidget):
         self._auto_scroll = True
         self._current_filter = "All"
         self._max_log_entries = 1000
-        self._repl_history: List[str] = []
+        self._repl_history: list[str] = []
         self._repl_history_index = -1
 
         if not embedded:
@@ -687,8 +686,8 @@ class DebugPanel(QDockWidget):
         self,
         level: str,
         message: str,
-        node_id: Optional[str] = None,
-        node_name: Optional[str] = None,
+        node_id: str | None = None,
+        node_name: str | None = None,
     ) -> None:
         """
         Add a log entry.
@@ -733,7 +732,7 @@ class DebugPanel(QDockWidget):
         if self._auto_scroll:
             self._log_table.scrollToBottom()
 
-    def update_variables(self, variables: Dict[str, Any]) -> None:
+    def update_variables(self, variables: dict[str, Any]) -> None:
         """
         Update the variable inspector with new values.
 
@@ -782,7 +781,7 @@ class DebugPanel(QDockWidget):
             item.setText(1, value_str)
             item.setText(2, type_name)
 
-    def update_call_stack(self, frames: List["CallStackFrame"]) -> None:
+    def update_call_stack(self, frames: list["CallStackFrame"]) -> None:
         """
         Update the call stack display.
 
@@ -808,7 +807,7 @@ class DebugPanel(QDockWidget):
             time_item = QTableWidgetItem(frame.entry_time.strftime("%H:%M:%S"))
             self._call_stack_table.setItem(row, 3, time_item)
 
-    def update_watches(self, watches: List["WatchExpression"]) -> None:
+    def update_watches(self, watches: list["WatchExpression"]) -> None:
         """
         Update the watch expressions display.
 

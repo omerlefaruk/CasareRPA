@@ -20,11 +20,12 @@ Test Coverage:
 """
 
 import pytest
+
 from casare_rpa.infrastructure.ai.page_analyzer import (
+    FormField,
+    FormInfo,
     PageAnalyzer,
     PageContext,
-    FormInfo,
-    FormField,
     analyze_page,
 )
 

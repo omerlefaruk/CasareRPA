@@ -3,11 +3,11 @@ Visual Nodes - Scripts
 """
 
 from casare_rpa.presentation.canvas.visual_nodes.scripts.nodes import (
-    VisualRunPythonScriptNode,
-    VisualRunPythonFileNode,
     VisualEvalExpressionNode,
     VisualRunBatchScriptNode,
     VisualRunJavaScriptNode,
+    VisualRunPythonFileNode,
+    VisualRunPythonScriptNode,
 )
 
 __all__ = [

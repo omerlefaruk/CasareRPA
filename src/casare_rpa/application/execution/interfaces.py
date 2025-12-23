@@ -8,7 +8,8 @@ Architecture:
     Presentation → implements → Application (Protocol) ← uses ← TriggerRunner
 """
 
-from typing import Callable, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Optional, Protocol, runtime_checkable
 
 from loguru import logger
 
@@ -95,9 +96,9 @@ class CallbackTriggerEventHandler:
 
     def __init__(
         self,
-        on_workflow_run: Optional[Callable[[], None]] = None,
-        on_stats_update: Optional[Callable[[str, int, str], None]] = None,
-        on_get_count: Optional[Callable[[str], int]] = None,
+        on_workflow_run: Callable[[], None] | None = None,
+        on_stats_update: Callable[[str, int, str], None] | None = None,
+        on_get_count: Callable[[str], int] | None = None,
     ) -> None:
         """
         Initialize with optional callbacks.

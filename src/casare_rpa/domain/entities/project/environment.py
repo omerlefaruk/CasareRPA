@@ -4,11 +4,11 @@ CasareRPA - Environment Entity
 Environment configuration for dev/staging/prod with variable inheritance.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-import uuid
 
 
 class EnvironmentType(Enum):
@@ -40,13 +40,13 @@ class EnvironmentSettings:
     Overrides project-level settings when environment is active.
     """
 
-    api_base_urls: Dict[str, str] = field(default_factory=dict)
-    timeout_override: Optional[int] = None
-    retry_count_override: Optional[int] = None
-    feature_flags: Dict[str, bool] = field(default_factory=dict)
-    headless_browser: Optional[bool] = None
+    api_base_urls: dict[str, str] = field(default_factory=dict)
+    timeout_override: int | None = None
+    retry_count_override: int | None = None
+    feature_flags: dict[str, bool] = field(default_factory=dict)
+    headless_browser: bool | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "api_base_urls": self.api_base_urls,
@@ -57,7 +57,7 @@ class EnvironmentSettings:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "EnvironmentSettings":
+    def from_dict(cls, data: dict[str, Any]) -> "EnvironmentSettings":
         """Create from dictionary."""
         return cls(
             api_base_urls=data.get("api_base_urls", {}),
@@ -95,14 +95,14 @@ class Environment:
     name: str
     env_type: EnvironmentType = EnvironmentType.DEVELOPMENT
     description: str = ""
-    variables: Dict[str, Any] = field(default_factory=dict)
-    credential_overrides: Dict[str, str] = field(default_factory=dict)
+    variables: dict[str, Any] = field(default_factory=dict)
+    credential_overrides: dict[str, str] = field(default_factory=dict)
     settings: EnvironmentSettings = field(default_factory=EnvironmentSettings)
     is_default: bool = False
     color: str = "#4CAF50"  # Green for dev
     icon: str = "environment"
-    created_at: Optional[datetime] = None
-    modified_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    modified_at: datetime | None = None
 
     def __post_init__(self) -> None:
         """Initialize timestamps and set default color by type."""
@@ -125,13 +125,11 @@ class Environment:
         }
         return colors.get(self.env_type, "#607D8B")
 
-    def get_parent_type(self) -> Optional[EnvironmentType]:
+    def get_parent_type(self) -> EnvironmentType | None:
         """Get parent environment type for inheritance."""
         return ENVIRONMENT_INHERITANCE.get(self.env_type)
 
-    def resolve_variables(
-        self, parent_variables: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def resolve_variables(self, parent_variables: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Resolve variables with inheritance from parent environment.
 
@@ -149,7 +147,7 @@ class Environment:
         resolved.update(self.variables)
         return resolved
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -167,7 +165,7 @@ class Environment:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Environment":
+    def from_dict(cls, data: dict[str, Any]) -> "Environment":
         """Create from dictionary."""
         created_at = None
         if data.get("created_at"):
@@ -199,7 +197,7 @@ class Environment:
         )
 
     @classmethod
-    def create_default_environments(cls) -> List["Environment"]:
+    def create_default_environments(cls) -> list["Environment"]:
         """
         Factory method to create default dev/staging/prod environments.
 

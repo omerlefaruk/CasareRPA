@@ -1,66 +1,65 @@
 """Visual nodes for system category."""
 
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.domain.value_objects.types import DataType
 
 # Import logic layer nodes
 from casare_rpa.nodes.system import (
-    ClipboardCopyNode,
-    ClipboardPasteNode,
-    ClipboardClearNode,
-    MessageBoxNode,
-    InputDialogNode,
-    TooltipNode,
-    SystemNotificationNode,
-    ConfirmDialogNode,
-    ProgressDialogNode,
-    FilePickerDialogNode,
-    FolderPickerDialogNode,
-    ColorPickerDialogNode,
-    DateTimePickerDialogNode,
-    SnackbarNode,
-    BalloonTipNode,
-    RunCommandNode,
-    RunPowerShellNode,
-    GetServiceStatusNode,
-    StartServiceNode,
-    StopServiceNode,
-    RestartServiceNode,
-    ListServicesNode,
-    # New dialog nodes
-    ListPickerDialogNode,
-    MultilineInputDialogNode,
-    CredentialDialogNode,
-    FormDialogNode,
-    ImagePreviewDialogNode,
-    TableDialogNode,
-    WizardDialogNode,
-    SplashScreenNode,
+    AssertSystemNode,
     AudioAlertNode,
-    # System utilities
-    ScreenRegionPickerNode,
-    VolumeControlNode,
-    ProcessListNode,
-    ProcessKillNode,
-    EnvironmentVariableNode,
-    SystemInfoNode,
-    # Quick nodes
-    HotkeyWaitNode,
+    BalloonTipNode,
+    Base64Node,
     BeepNode,
+    ClipboardClearNode,
+    ClipboardCopyNode,
     ClipboardMonitorNode,
+    ClipboardPasteNode,
+    ColorPickerDialogNode,
+    ConfirmDialogNode,
+    CredentialDialogNode,
+    DateTimePickerDialogNode,
+    EnvironmentVariableNode,
+    FilePickerDialogNode,
     # Utility system nodes
     FileWatcherNode,
-    QRCodeNode,
-    Base64Node,
-    UUIDGeneratorNode,
-    AssertSystemNode,
+    FolderPickerDialogNode,
+    FormDialogNode,
+    GetServiceStatusNode,
+    # Quick nodes
+    HotkeyWaitNode,
+    ImagePreviewDialogNode,
+    InputDialogNode,
+    # New dialog nodes
+    ListPickerDialogNode,
+    ListServicesNode,
     LogToFileNode,
+    MessageBoxNode,
+    MultilineInputDialogNode,
+    PDFPreviewDialogNode,
+    ProcessKillNode,
+    ProcessListNode,
+    ProgressDialogNode,
+    QRCodeNode,
+    RestartServiceNode,
+    RunCommandNode,
+    RunPowerShellNode,
+    # System utilities
+    ScreenRegionPickerNode,
+    SnackbarNode,
+    SplashScreenNode,
+    StartServiceNode,
+    StopServiceNode,
+    SystemInfoNode,
+    SystemNotificationNode,
+    TableDialogNode,
     # Media nodes
     TextToSpeechNode,
-    PDFPreviewDialogNode,
+    TooltipNode,
+    UUIDGeneratorNode,
+    VolumeControlNode,
     WebcamCaptureNode,
+    WizardDialogNode,
 )
-
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
 # System Nodes - Clipboard

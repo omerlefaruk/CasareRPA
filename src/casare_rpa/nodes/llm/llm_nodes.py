@@ -21,11 +21,11 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
 from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 from casare_rpa.nodes.llm.property_constants import (
-    LLM_MODEL,
-    LLM_TEMPERATURE,
     LLM_MAX_TOKENS,
-    LLM_SYSTEM_PROMPT,
+    LLM_MODEL,
     LLM_PROMPT,
+    LLM_SYSTEM_PROMPT,
+    LLM_TEMPERATURE,
 )
 
 

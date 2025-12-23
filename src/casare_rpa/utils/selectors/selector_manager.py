@@ -4,23 +4,24 @@ Manages injector lifecycle and bidirectional communication
 """
 
 import asyncio
+from collections.abc import Callable
 from pathlib import Path
-from typing import Optional, Callable, Dict, Any, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
 from loguru import logger
 
-from casare_rpa.utils.selectors.selector_generator import (
-    SmartSelectorGenerator,
-    ElementFingerprint,
-)
 from casare_rpa.utils.selectors.selector_cache import SelectorCache, get_selector_cache
-
+from casare_rpa.utils.selectors.selector_generator import (
+    ElementFingerprint,
+    SmartSelectorGenerator,
+)
 
 # Global callback registry - maps page id to callbacks
 # This is needed because Playwright's expose_function persists across SelectorManager instances
-_page_callbacks: Dict[int, Dict[str, Callable]] = {}
+_page_callbacks: dict[int, dict[str, Callable]] = {}
 
 
-def parse_xml_selector(xml_selector: str) -> Tuple[str, str]:
+def parse_xml_selector(xml_selector: str) -> tuple[str, str]:
     """
     Parse UiPath-style XML selector and convert to XPath. (Backward Compatibility)
     """
@@ -29,7 +30,7 @@ def parse_xml_selector(xml_selector: str) -> Tuple[str, str]:
     return SelectorService.parse_xml_selector(xml_selector)
 
 
-def _get_page_callbacks(page) -> Dict[str, Callable]:
+def _get_page_callbacks(page) -> dict[str, Callable]:
     """Get callback registry for a page."""
     page_id = id(page)
     if page_id not in _page_callbacks:
@@ -43,11 +44,11 @@ class SelectorManager:
     Integrates with Playwright for seamless element picking
     """
 
-    def __init__(self, cache: Optional[SelectorCache] = None):
-        self._injector_script: Optional[str] = None
+    def __init__(self, cache: SelectorCache | None = None):
+        self._injector_script: str | None = None
         self._active_page = None
-        self._callback_element_selected: Optional[Callable] = None
-        self._callback_recording_complete: Optional[Callable] = None
+        self._callback_element_selected: Callable | None = None
+        self._callback_recording_complete: Callable | None = None
         self._is_active = False
         self._is_recording = False
         self._cache = cache or get_selector_cache()
@@ -58,7 +59,7 @@ class SelectorManager:
             return self._injector_script
 
         script_path = Path(__file__).parent / "selector_injector.js"
-        with open(script_path, "r", encoding="utf-8") as f:
+        with open(script_path, encoding="utf-8") as f:
             self._injector_script = f.read()
 
         return self._injector_script
@@ -112,8 +113,8 @@ class SelectorManager:
     async def activate_selector_mode(
         self,
         recording: bool = False,
-        on_element_selected: Optional[Callable] = None,
-        on_recording_complete: Optional[Callable] = None,
+        on_element_selected: Callable | None = None,
+        on_recording_complete: Callable | None = None,
     ):
         """
         Activate selector mode on the current page
@@ -187,7 +188,7 @@ class SelectorManager:
         self._is_recording = False
         logger.info("Selector mode deactivated")
 
-    async def _handle_element_selected(self, element_data: Dict[str, Any]):
+    async def _handle_element_selected(self, element_data: dict[str, Any]):
         """
         Handle element selection from browser
         Generates smart selectors and invokes callback
@@ -239,7 +240,7 @@ class SelectorManager:
         else:
             logger.warning("No callback registered for element selection")
 
-    async def _handle_action_recorded(self, action: Dict[str, Any]):
+    async def _handle_action_recorded(self, action: dict[str, Any]):
         """
         Handle individual action being recorded (real-time feedback).
 
@@ -249,7 +250,7 @@ class SelectorManager:
         logger.debug(f"Action recorded: {action.get('action')} at {action.get('timestamp')}")
         # Could emit events here for real-time UI updates if needed
 
-    async def _handle_recording_complete(self, actions: List[Dict[str, Any]]):
+    async def _handle_recording_complete(self, actions: list[dict[str, Any]]):
         """
         Handle recording completion from browser
         Processes recorded actions and invokes callback
@@ -387,7 +388,7 @@ class SelectorManager:
 
     async def test_selector(
         self, selector_value: str, selector_type: str = "xpath", use_cache: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Test a selector against the current page.
         Returns match count and execution time.
@@ -564,11 +565,11 @@ class SelectorManager:
         return self._is_recording
 
     # Cache management methods
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get selector cache statistics."""
         return self._cache.get_stats()
 
-    def clear_cache(self, page_url: Optional[str] = None) -> int:
+    def clear_cache(self, page_url: str | None = None) -> int:
         """
         Clear selector cache.
 

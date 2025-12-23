@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -53,20 +53,20 @@ class OpenAIOAuthCredentialData:
     token_url: str
     access_token: str
     refresh_token: str
-    token_expiry: Optional[datetime] = None
-    scopes: List[str] = field(default_factory=list)
-    tenant_id: Optional[str] = None  # For Azure
+    token_expiry: datetime | None = None
+    scopes: list[str] = field(default_factory=list)
+    tenant_id: str | None = None  # For Azure
 
     def is_expired(self, buffer_seconds: int = TOKEN_EXPIRY_BUFFER_SECONDS) -> bool:
         if self.token_expiry is None:
             return True
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expiry = self.token_expiry
         if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=timezone.utc)
+            expiry = expiry.replace(tzinfo=UTC)
         return now >= (expiry - timedelta(seconds=buffer_seconds))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
@@ -79,14 +79,14 @@ class OpenAIOAuthCredentialData:
         if self.token_expiry:
             expiry = self.token_expiry
             if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
+                expiry = expiry.replace(tzinfo=UTC)
             data["token_expiry"] = expiry.isoformat()
         if self.tenant_id:
             data["tenant_id"] = self.tenant_id
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "OpenAIOAuthCredentialData":
+    def from_dict(cls, data: dict[str, Any]) -> OpenAIOAuthCredentialData:
         required = ["client_id", "client_secret", "token_url", "access_token"]
         if not all(k in data for k in required):
             raise InvalidCredentialError(f"Missing fields: {required}")
@@ -96,7 +96,7 @@ class OpenAIOAuthCredentialData:
             try:
                 token_expiry = datetime.fromisoformat(data["token_expiry"])
                 if token_expiry.tzinfo is None:
-                    token_expiry = token_expiry.replace(tzinfo=timezone.utc)
+                    token_expiry = token_expiry.replace(tzinfo=UTC)
             except ValueError:
                 pass
 
@@ -118,16 +118,16 @@ class OpenAIOAuthManager:
     Singleton manager for OpenAI/Azure OAuth credentials.
     """
 
-    _instance: Optional["OpenAIOAuthManager"] = None
+    _instance: OpenAIOAuthManager | None = None
     _lock: asyncio.Lock = asyncio.Lock()
 
     def __init__(self) -> None:
-        self._credential_cache: Dict[str, OpenAIOAuthCredentialData] = {}
-        self._refresh_locks: Dict[str, asyncio.Lock] = {}
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._credential_cache: dict[str, OpenAIOAuthCredentialData] = {}
+        self._refresh_locks: dict[str, asyncio.Lock] = {}
+        self._session: aiohttp.ClientSession | None = None
 
     @classmethod
-    async def get_instance(cls) -> "OpenAIOAuthManager":
+    async def get_instance(cls) -> OpenAIOAuthManager:
         if cls._instance is None:
             async with cls._lock:
                 if cls._instance is None:
@@ -205,7 +205,7 @@ class OpenAIOAuthManager:
                     cred.refresh_token = result["refresh_token"]
 
                 expires_in = result.get("expires_in", 3600)
-                cred.token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+                cred.token_expiry = datetime.now(UTC) + timedelta(seconds=expires_in)
 
                 self._credential_cache[credential_id] = cred
                 await self._persist_credential(credential_id, cred)
@@ -219,8 +219,8 @@ class OpenAIOAuthManager:
         self, credential_id: str, cred: OpenAIOAuthCredentialData
     ) -> None:
         from casare_rpa.infrastructure.security.credential_store import (
-            get_credential_store,
             CredentialType,
+            get_credential_store,
         )
 
         store = get_credential_store()

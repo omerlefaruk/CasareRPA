@@ -17,7 +17,7 @@ distributed coordination.
 import asyncio
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -47,23 +47,23 @@ class MemoryJob:
 
     job_id: str
     workflow_id: str
-    workflow_json: Dict[str, Any]
+    workflow_json: dict[str, Any]
     priority: int = 10
     status: JobStatus = JobStatus.PENDING
-    robot_id: Optional[str] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    claimed_at: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    robot_id: str | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    claimed_at: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
     retry_count: int = 0
     max_retries: int = 3
     visibility_timeout: int = 30  # seconds
     execution_mode: str = "lan"  # lan or internet
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert job to dictionary."""
         return {
             "job_id": self.job_id,
@@ -108,13 +108,13 @@ class MemoryQueue:
         Args:
             visibility_timeout: Seconds before claimed job returns to queue
         """
-        self._jobs: Dict[str, MemoryJob] = {}  # job_id -> Job
+        self._jobs: dict[str, MemoryJob] = {}  # job_id -> Job
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
-        self._claimed_jobs: Dict[str, MemoryJob] = {}  # job_id -> Job
+        self._claimed_jobs: dict[str, MemoryJob] = {}  # job_id -> Job
         self._lock = asyncio.Lock()
         self._visibility_timeout = visibility_timeout
         self._running = False
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._cleanup_task: asyncio.Task | None = None
 
         logger.info("MemoryQueue initialized (in-memory fallback active)")
 
@@ -145,10 +145,10 @@ class MemoryQueue:
     async def enqueue(
         self,
         workflow_id: str,
-        workflow_json: Dict[str, Any],
+        workflow_json: dict[str, Any],
         priority: int = 10,
         execution_mode: str = "lan",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """
         Add job to queue.
@@ -177,7 +177,7 @@ class MemoryQueue:
 
             self._jobs[job_id] = job
             # PriorityQueue: (priority, insertion_order, job_id)
-            await self._queue.put((priority, datetime.now(timezone.utc), job_id))
+            await self._queue.put((priority, datetime.now(UTC), job_id))
 
             logger.info(
                 "Job enqueued: {} (workflow={}, priority={}, mode={})",
@@ -189,9 +189,7 @@ class MemoryQueue:
 
             return job_id
 
-    async def claim(
-        self, robot_id: str, execution_mode: Optional[str] = None
-    ) -> Optional[MemoryJob]:
+    async def claim(self, robot_id: str, execution_mode: str | None = None) -> MemoryJob | None:
         """
         Claim next available job from queue.
 
@@ -223,7 +221,7 @@ class MemoryQueue:
                     # Found matching job - claim it
                     job.status = JobStatus.CLAIMED
                     job.robot_id = robot_id
-                    job.claimed_at = datetime.now(timezone.utc)
+                    job.claimed_at = datetime.now(UTC)
 
                     self._claimed_jobs[job_id] = job
                     claimed_job = job
@@ -248,8 +246,8 @@ class MemoryQueue:
         self,
         job_id: str,
         status: JobStatus,
-        result: Optional[Dict[str, Any]] = None,
-        error: Optional[str] = None,
+        result: dict[str, Any] | None = None,
+        error: str | None = None,
     ) -> bool:
         """
         Update job status.
@@ -273,7 +271,7 @@ class MemoryQueue:
             job.status = status
 
             if status == JobStatus.RUNNING and not job.started_at:
-                job.started_at = datetime.now(timezone.utc)
+                job.started_at = datetime.now(UTC)
 
             if status in (
                 JobStatus.COMPLETED,
@@ -281,7 +279,7 @@ class MemoryQueue:
                 JobStatus.CANCELLED,
                 JobStatus.TIMEOUT,
             ):
-                job.completed_at = datetime.now(timezone.utc)
+                job.completed_at = datetime.now(UTC)
                 # Remove from claimed jobs
                 self._claimed_jobs.pop(job_id, None)
 
@@ -316,11 +314,11 @@ class MemoryQueue:
             if not job:
                 return False
 
-            job.claimed_at = datetime.now(timezone.utc)
+            job.claimed_at = datetime.now(UTC)
             logger.debug("Job claim extended: {}", job_id)
             return True
 
-    async def get_job(self, job_id: str) -> Optional[MemoryJob]:
+    async def get_job(self, job_id: str) -> MemoryJob | None:
         """
         Get job by ID.
 
@@ -333,7 +331,7 @@ class MemoryQueue:
         async with self._lock:
             return self._jobs.get(job_id)
 
-    async def get_jobs_by_status(self, status: JobStatus, limit: int = 100) -> List[MemoryJob]:
+    async def get_jobs_by_status(self, status: JobStatus, limit: int = 100) -> list[MemoryJob]:
         """
         Get jobs by status.
 
@@ -349,7 +347,7 @@ class MemoryQueue:
             jobs.sort(key=lambda j: j.created_at, reverse=True)
             return jobs[:limit]
 
-    async def get_jobs_by_robot(self, robot_id: str, limit: int = 100) -> List[MemoryJob]:
+    async def get_jobs_by_robot(self, robot_id: str, limit: int = 100) -> list[MemoryJob]:
         """
         Get jobs assigned to robot.
 
@@ -365,7 +363,7 @@ class MemoryQueue:
             jobs.sort(key=lambda j: j.created_at, reverse=True)
             return jobs[:limit]
 
-    async def get_queue_depth(self, execution_mode: Optional[str] = None) -> int:
+    async def get_queue_depth(self, execution_mode: str | None = None) -> int:
         """
         Get number of queued jobs.
 
@@ -392,7 +390,7 @@ class MemoryQueue:
                 await asyncio.sleep(5)  # Check every 5 seconds
 
                 async with self._lock:
-                    now = datetime.now(timezone.utc)
+                    now = datetime.now(UTC)
                     expired_jobs = []
 
                     for job_id, job in list(self._claimed_jobs.items()):
@@ -410,9 +408,7 @@ class MemoryQueue:
                         job.claimed_at = None
                         self._claimed_jobs.pop(job.job_id, None)
 
-                        await self._queue.put(
-                            (job.priority, datetime.now(timezone.utc), job.job_id)
-                        )
+                        await self._queue.put((job.priority, datetime.now(UTC), job.job_id))
 
                         logger.warning(
                             "Job claim expired, returned to queue: {} (workflow={})",
@@ -427,7 +423,7 @@ class MemoryQueue:
 
 
 # Global singleton instance
-_memory_queue: Optional[MemoryQueue] = None
+_memory_queue: MemoryQueue | None = None
 
 
 def get_memory_queue(visibility_timeout: int = 30) -> MemoryQueue:

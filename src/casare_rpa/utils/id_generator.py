@@ -10,7 +10,7 @@ import uuid
 from typing import Set
 
 # Track generated IDs in current session for debugging
-_generated_ids: Set[str] = set()
+_generated_ids: set[str] = set()
 
 
 def generate_node_id(node_type: str, short: bool = True) -> str:
@@ -106,6 +106,6 @@ def clear_session_ids() -> None:
     _generated_ids.clear()
 
 
-def get_session_ids() -> Set[str]:
+def get_session_ids() -> set[str]:
     """Get all IDs generated in this session (for debugging)."""
     return _generated_ids.copy()

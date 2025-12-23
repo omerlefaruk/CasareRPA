@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from loguru import logger
-from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QTimer, Qt
-from PySide6.QtWidgets import QFrame, QLabel, QHBoxLayout, QWidget
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt, QTimer
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -32,7 +32,7 @@ _TOAST_STYLES = {
 class ToastNotification(QWidget):
     """A small, non-modal toast message anchored to a parent widget."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.setWindowFlags(
@@ -60,7 +60,7 @@ class ToastNotification(QWidget):
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(self._fade_out)
 
-        self._animation: Optional[QPropertyAnimation] = None
+        self._animation: QPropertyAnimation | None = None
 
         self._apply_style(level="info")
         self.hide()

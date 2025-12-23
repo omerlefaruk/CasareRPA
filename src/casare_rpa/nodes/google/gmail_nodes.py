@@ -18,8 +18,8 @@ from typing import Any, Dict, List
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
@@ -43,7 +43,7 @@ def _create_message(
     bcc: str = "",
     body_type: str = "text",
     reply_to: str = "",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Create a message for an email."""
     if body_type == "html":
         msg = MIMEText(body, "html")
@@ -68,11 +68,11 @@ def _create_message_with_attachment(
     to: str,
     subject: str,
     body: str,
-    attachment_paths: List[str],
+    attachment_paths: list[str],
     cc: str = "",
     bcc: str = "",
     body_type: str = "text",
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Create a message with attachments."""
     msg = MIMEMultipart()
     msg["to"] = to

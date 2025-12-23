@@ -44,7 +44,7 @@ LARGE_FILE_THRESHOLD = 1024 * 1024
 
 
 def save_workflow(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     path: Path,
     compression_level: int = 6,
     pretty: bool = True,
@@ -103,7 +103,7 @@ def save_workflow(
     logger.debug(f"Saved workflow ({len(json_bytes)/1024:.1f}KB)")
 
 
-def load_workflow(path: Path, use_streaming: Optional[bool] = None) -> Optional[Dict[str, Any]]:
+def load_workflow(path: Path, use_streaming: bool | None = None) -> dict[str, Any] | None:
     """
     Load workflow data from file with automatic decompression.
 
@@ -156,7 +156,7 @@ def load_workflow(path: Path, use_streaming: Optional[bool] = None) -> Optional[
         return None
 
 
-def get_compression_stats(data: Dict[str, Any]) -> Dict[str, Any]:
+def get_compression_stats(data: dict[str, Any]) -> dict[str, Any]:
     """
     Get compression statistics for workflow data.
 
@@ -191,7 +191,7 @@ def get_compression_stats(data: Dict[str, Any]) -> Dict[str, Any]:
     return stats
 
 
-def load_workflow_streaming(path: Path) -> Optional[Dict[str, Any]]:
+def load_workflow_streaming(path: Path) -> dict[str, Any] | None:
     """
     Load workflow data using streaming decompression.
 
@@ -235,7 +235,7 @@ def load_workflow_streaming(path: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
-def _load_zstd_streaming(path: Path) -> Optional[Dict[str, Any]]:
+def _load_zstd_streaming(path: Path) -> dict[str, Any] | None:
     """
     Load zstd-compressed workflow using streaming decompression.
 
@@ -263,7 +263,7 @@ def _load_zstd_streaming(path: Path) -> Optional[Dict[str, Any]]:
     return orjson.loads(json_bytes)
 
 
-def _load_gzip_streaming(path: Path) -> Optional[Dict[str, Any]]:
+def _load_gzip_streaming(path: Path) -> dict[str, Any] | None:
     """
     Load gzip-compressed workflow using streaming decompression.
 
@@ -287,7 +287,7 @@ def _load_gzip_streaming(path: Path) -> Optional[Dict[str, Any]]:
     return orjson.loads(json_bytes)
 
 
-def _load_json_mmap(path: Path) -> Optional[Dict[str, Any]]:
+def _load_json_mmap(path: Path) -> dict[str, Any] | None:
     """
     Load large uncompressed JSON using memory mapping.
 

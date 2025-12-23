@@ -16,7 +16,7 @@ import hashlib
 import json
 import os
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,13 +24,13 @@ from loguru import logger
 
 from casare_rpa.config.security_config import get_crypto_security_config
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultProvider,
-    VaultConfig,
-    SecretValue,
-    SecretMetadata,
     CredentialType,
+    SecretMetadata,
     SecretNotFoundError,
+    SecretValue,
+    VaultConfig,
     VaultConnectionError,
+    VaultProvider,
 )
 
 # Optional aiosqlite import
@@ -85,8 +85,8 @@ class EncryptedSQLiteProvider(VaultProvider):
 
         self._config = config
         self._db_path = Path(config.sqlite_path)
-        self._conn: Optional["aiosqlite.Connection"] = None
-        self._fernet: Optional["Fernet"] = None
+        self._conn: aiosqlite.Connection | None = None
+        self._fernet: Fernet | None = None
 
     async def connect(self) -> None:
         """Initialize SQLite database and encryption."""
@@ -212,13 +212,13 @@ class EncryptedSQLiteProvider(VaultProvider):
             raise VaultConnectionError("Not connected to SQLite vault")
         return self._conn, self._fernet
 
-    def _encrypt(self, data: Dict[str, Any]) -> bytes:
+    def _encrypt(self, data: dict[str, Any]) -> bytes:
         """Encrypt secret data."""
         _, fernet = self._ensure_connected()
         json_data = json.dumps(data, default=str)
         return fernet.encrypt(json_data.encode())
 
-    def _decrypt(self, encrypted: bytes) -> Dict[str, Any]:
+    def _decrypt(self, encrypted: bytes) -> dict[str, Any]:
         """Decrypt secret data."""
         _, fernet = self._ensure_connected()
         try:
@@ -227,7 +227,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         except InvalidToken as e:
             raise VaultConnectionError("Failed to decrypt secret. Invalid encryption key.") from e
 
-    async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
+    async def get_secret(self, path: str, version: int | None = None) -> SecretValue:
         """Get secret from SQLite vault."""
         conn, _ = self._ensure_connected()
 
@@ -290,14 +290,14 @@ class EncryptedSQLiteProvider(VaultProvider):
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in SQLite vault."""
         conn, _ = self._ensure_connected()
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         encrypted = self._encrypt(data)
 
         # Check if secret exists
@@ -379,7 +379,7 @@ class EncryptedSQLiteProvider(VaultProvider):
             logger.debug(f"Deleted secret: {path}")
         return deleted
 
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """List secrets under a path prefix."""
         conn, _ = self._ensure_connected()
 
@@ -420,8 +420,8 @@ class EncryptedSQLiteProvider(VaultProvider):
         )
 
     def _generate_rotated_values(
-        self, current_data: Dict[str, Any], cred_type: CredentialType
-    ) -> Dict[str, Any]:
+        self, current_data: dict[str, Any], cred_type: CredentialType
+    ) -> dict[str, Any]:
         """Generate new secret values based on type."""
         new_data = current_data.copy()
 
@@ -466,7 +466,7 @@ class EncryptedSQLiteProvider(VaultProvider):
 # Convenience function for quick local development setup
 async def create_development_vault(
     path: str = ".casare/vault.db",
-    encryption_key: Optional[str] = None,
+    encryption_key: str | None = None,
 ) -> EncryptedSQLiteProvider:
     """
     Create a development vault with sensible defaults.

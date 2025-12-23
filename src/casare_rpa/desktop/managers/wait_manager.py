@@ -32,12 +32,12 @@ class WaitManager:
 
     async def wait_for_element(
         self,
-        selector: Dict[str, Any],
+        selector: dict[str, Any],
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
         parent: auto.Control = None,
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """
         Wait for an element to reach a specific state.
 
@@ -114,7 +114,7 @@ class WaitManager:
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
-    ) -> Optional[auto.Control]:
+    ) -> auto.Control | None:
         """
         Wait for a window to reach a specific state.
 
@@ -145,7 +145,7 @@ class WaitManager:
 
         start_time = time.time()
 
-        def _search_windows() -> Optional[auto.Control]:
+        def _search_windows() -> auto.Control | None:
             """Search for window - runs in thread."""
             windows = auto.GetRootControl().GetChildren()
 
@@ -185,7 +185,7 @@ class WaitManager:
 
     async def element_exists(
         self,
-        selector: Dict[str, Any],
+        selector: dict[str, Any],
         timeout: float = 0.0,
         parent: auto.Control = None,
     ) -> bool:

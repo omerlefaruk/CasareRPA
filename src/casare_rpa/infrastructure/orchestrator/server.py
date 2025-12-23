@@ -1,25 +1,23 @@
 import uuid
+
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from starlette.middleware.base import BaseHTTPMiddleware
 from loguru import logger
-
-from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
-    get_config,
-    lifespan,
-)
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # Core Routers
 from casare_rpa.infrastructure.orchestrator import websocket_handlers
+from casare_rpa.infrastructure.orchestrator.api.rate_limit import setup_rate_limiting
+from casare_rpa.infrastructure.orchestrator.api.responses import ErrorCode, error_response
 
 # Monitoring Routers
 from casare_rpa.infrastructure.orchestrator.api.routers import (
-    health,
     analytics,
     auth,
     dlq,
+    health,
     jobs,
     metrics,
     robot_api_keys,
@@ -28,8 +26,10 @@ from casare_rpa.infrastructure.orchestrator.api.routers import (
     websockets,
     workflows,
 )
-from casare_rpa.infrastructure.orchestrator.api.rate_limit import setup_rate_limiting
-from casare_rpa.infrastructure.orchestrator.api.responses import error_response, ErrorCode
+from casare_rpa.infrastructure.orchestrator.server_lifecycle import (
+    get_config,
+    lifespan,
+)
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):

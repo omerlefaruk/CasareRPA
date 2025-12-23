@@ -36,6 +36,16 @@ from casare_rpa.domain.events.node_events import (
     NodeStatusChanged,
 )
 
+# System events
+from casare_rpa.domain.events.system_events import (
+    BrowserPageReady,
+    DebugBreakpointHit,
+    LogMessage,
+    ResourceAcquired,
+    ResourceReleased,
+    VariableSet,
+)
+
 # Workflow events
 from casare_rpa.domain.events.workflow_events import (
     NodeAdded,
@@ -49,16 +59,6 @@ from casare_rpa.domain.events.workflow_events import (
     WorkflowResumed,
     WorkflowStarted,
     WorkflowStopped,
-)
-
-# System events
-from casare_rpa.domain.events.system_events import (
-    BrowserPageReady,
-    DebugBreakpointHit,
-    LogMessage,
-    ResourceAcquired,
-    ResourceReleased,
-    VariableSet,
 )
 
 __all__ = [

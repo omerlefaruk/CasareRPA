@@ -21,7 +21,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.gmail_client import GmailClient
 from casare_rpa.nodes.google.google_base import GmailBaseNode
 
-
 # ============================================================================
 # Reusable Property Definitions for Gmail Nodes
 # ============================================================================
@@ -379,7 +378,7 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         attachment_list = self.get_parameter("attachment_list") or []
 
         # Parse attachment paths
-        attachment_paths: list[Union[str, Path]] = []
+        attachment_paths: list[str | Path] = []
         if attachments_str:
             # Handle both string (comma-separated) and list inputs
             if isinstance(attachments_str, str):

@@ -7,9 +7,10 @@ Provides fluent API for testing workflows with mock services.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
 
@@ -22,9 +23,9 @@ class NodeCallAssertion:
 
     node_name: str
     expected_calls: int = 1
-    with_inputs: Optional[Dict[str, Any]] = None
+    with_inputs: dict[str, Any] | None = None
 
-    def verify(self, result: "TestResult") -> bool:
+    def verify(self, result: TestResult) -> bool:
         """Verify the assertion against test result."""
         actual_calls = result.node_call_counts.get(self.node_name, 0)
         return actual_calls == self.expected_calls
@@ -41,9 +42,9 @@ class OutputAssertion:
 
     output_name: str
     expected_value: Any
-    comparator: Optional[Callable[[Any, Any], bool]] = None
+    comparator: Callable[[Any, Any], bool] | None = None
 
-    def verify(self, result: "TestResult") -> bool:
+    def verify(self, result: TestResult) -> bool:
         """Verify the assertion against test result."""
         if result.outputs is None:
             return False
@@ -68,7 +69,7 @@ class VariableAssertion:
     variable_name: str
     expected_value: Any
 
-    def verify(self, result: "TestResult") -> bool:
+    def verify(self, result: TestResult) -> bool:
         """Verify the assertion."""
         actual = result.context.get_variable(self.variable_name)
         return actual == self.expected_value
@@ -86,22 +87,22 @@ class TestResult:
     success: bool
     """Whether all assertions passed."""
 
-    failures: List[str] = field(default_factory=list)
+    failures: list[str] = field(default_factory=list)
     """List of failed assertion messages."""
 
     execution_success: bool = False
     """Whether workflow execution succeeded."""
 
-    execution_error: Optional[str] = None
+    execution_error: str | None = None
     """Error message if execution failed."""
 
-    outputs: Optional[Dict[str, Any]] = None
+    outputs: dict[str, Any] | None = None
     """Workflow outputs after execution."""
 
-    context: Optional[MockExecutionContext] = None
+    context: MockExecutionContext | None = None
     """Execution context after test."""
 
-    node_call_counts: Dict[str, int] = field(default_factory=dict)
+    node_call_counts: dict[str, int] = field(default_factory=dict)
     """Number of times each node was executed."""
 
     execution_time_ms: float = 0.0
@@ -136,8 +137,8 @@ class WorkflowTester:
 
     def __init__(
         self,
-        workflow_path: Optional[Union[str, Path]] = None,
-        workflow_dict: Optional[Dict[str, Any]] = None,
+        workflow_path: str | Path | None = None,
+        workflow_dict: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize workflow tester.
@@ -148,15 +149,15 @@ class WorkflowTester:
         """
         self._workflow_path = Path(workflow_path) if workflow_path else None
         self._workflow_dict = workflow_dict
-        self._workflow: Optional[Dict[str, Any]] = None
+        self._workflow: dict[str, Any] | None = None
 
-        self._mock_services: Dict[str, Any] = {}
-        self._variables: Dict[str, Any] = {}
-        self._assertions: List[Union[NodeCallAssertion, OutputAssertion, VariableAssertion]] = []
-        self._setup_hooks: List[Callable[[MockExecutionContext], None]] = []
-        self._teardown_hooks: List[Callable[[MockExecutionContext], None]] = []
+        self._mock_services: dict[str, Any] = {}
+        self._variables: dict[str, Any] = {}
+        self._assertions: list[NodeCallAssertion | OutputAssertion | VariableAssertion] = []
+        self._setup_hooks: list[Callable[[MockExecutionContext], None]] = []
+        self._teardown_hooks: list[Callable[[MockExecutionContext], None]] = []
 
-    def _load_workflow(self) -> Dict[str, Any]:
+    def _load_workflow(self) -> dict[str, Any]:
         """Load workflow from path or dict."""
         if self._workflow is not None:
             return self._workflow
@@ -172,7 +173,7 @@ class WorkflowTester:
 
         return self._workflow
 
-    def mock_service(self, name: str, mock_impl: Any) -> "WorkflowTester":
+    def mock_service(self, name: str, mock_impl: Any) -> WorkflowTester:
         """
         Mock a service used by the workflow.
 
@@ -186,7 +187,7 @@ class WorkflowTester:
         self._mock_services[name] = mock_impl
         return self
 
-    def with_variable(self, name: str, value: Any) -> "WorkflowTester":
+    def with_variable(self, name: str, value: Any) -> WorkflowTester:
         """
         Set a single input variable.
 
@@ -200,7 +201,7 @@ class WorkflowTester:
         self._variables[name] = value
         return self
 
-    def with_variables(self, variables: Dict[str, Any]) -> "WorkflowTester":
+    def with_variables(self, variables: dict[str, Any]) -> WorkflowTester:
         """
         Set multiple input variables.
 
@@ -217,8 +218,8 @@ class WorkflowTester:
         self,
         node_name: str,
         times: int = 1,
-        with_inputs: Optional[Dict[str, Any]] = None,
-    ) -> "WorkflowTester":
+        with_inputs: dict[str, Any] | None = None,
+    ) -> WorkflowTester:
         """
         Assert that a node is called a specific number of times.
 
@@ -243,8 +244,8 @@ class WorkflowTester:
         self,
         output_name: str,
         value: Any,
-        comparator: Optional[Callable[[Any, Any], bool]] = None,
-    ) -> "WorkflowTester":
+        comparator: Callable[[Any, Any], bool] | None = None,
+    ) -> WorkflowTester:
         """
         Assert that a workflow output has a specific value.
 
@@ -265,7 +266,7 @@ class WorkflowTester:
         )
         return self
 
-    def expect_variable(self, name: str, value: Any) -> "WorkflowTester":
+    def expect_variable(self, name: str, value: Any) -> WorkflowTester:
         """
         Assert that a variable has a specific value after execution.
 
@@ -279,7 +280,7 @@ class WorkflowTester:
         self._assertions.append(VariableAssertion(variable_name=name, expected_value=value))
         return self
 
-    def on_setup(self, hook: Callable[[MockExecutionContext], None]) -> "WorkflowTester":
+    def on_setup(self, hook: Callable[[MockExecutionContext], None]) -> WorkflowTester:
         """
         Add setup hook called before execution.
 
@@ -292,7 +293,7 @@ class WorkflowTester:
         self._setup_hooks.append(hook)
         return self
 
-    def on_teardown(self, hook: Callable[[MockExecutionContext], None]) -> "WorkflowTester":
+    def on_teardown(self, hook: Callable[[MockExecutionContext], None]) -> WorkflowTester:
         """
         Add teardown hook called after execution.
 
@@ -350,9 +351,9 @@ class WorkflowTester:
 
         # Execute workflow
         execution_success = False
-        execution_error: Optional[str] = None
-        outputs: Optional[Dict[str, Any]] = None
-        node_call_counts: Dict[str, int] = {}
+        execution_error: str | None = None
+        outputs: dict[str, Any] | None = None
+        node_call_counts: dict[str, int] = {}
 
         try:
             # Import executor lazily to avoid circular imports
@@ -380,7 +381,7 @@ class WorkflowTester:
                     node_type = call[1][0] if call[1] else "unknown"
                     node_call_counts[node_type] = node_call_counts.get(node_type, 0) + 1
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             execution_success = False
             execution_error = f"Workflow execution timed out after {timeout}s"
         except ImportError as e:
@@ -414,7 +415,7 @@ class WorkflowTester:
         )
 
         # Verify assertions
-        failures: List[str] = []
+        failures: list[str] = []
 
         # Check execution success
         if not execution_success:

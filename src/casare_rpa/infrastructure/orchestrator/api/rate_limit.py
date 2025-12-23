@@ -13,7 +13,8 @@ Rate Limit Categories:
 """
 
 import os
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from fastapi import Request
 from loguru import logger
@@ -26,7 +27,6 @@ from casare_rpa.infrastructure.orchestrator.api.responses import (
     ErrorCode,
     error_response,
 )
-
 
 # =============================================================================
 # CONFIGURATION
@@ -190,7 +190,7 @@ def limit_progress(func: Callable) -> Callable:
     return limiter.limit(RATE_LIMIT_PROGRESS)(func)
 
 
-def limit_custom(limit: str, key_func: Optional[Callable] = None) -> Callable:
+def limit_custom(limit: str, key_func: Callable | None = None) -> Callable:
     """
     Apply custom rate limit.
 

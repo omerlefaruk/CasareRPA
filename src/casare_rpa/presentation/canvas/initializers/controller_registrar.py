@@ -24,13 +24,13 @@ from loguru import logger
 from PySide6.QtCore import Slot
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
     from ..controllers import (
-        WorkflowController,
         ExecutionController,
         NodeController,
         SelectorController,
+        WorkflowController,
     )
+    from ..main_window import MainWindow
 
 
 class ControllerRegistrar:
@@ -82,14 +82,14 @@ class ControllerRegistrar:
         # Import controllers here to avoid circular imports
         from ..controllers import (
             ConnectionController,
-            PanelController,
-            MenuController,
             EventBusController,
-            ViewportController,
-            UIStateController,
+            MenuController,
+            PanelController,
+            ProjectAutosaveController,
             ProjectController,
             RobotController,
-            ProjectAutosaveController,
+            UIStateController,
+            ViewportController,
         )
 
         # Instantiate MainWindow-specific controllers
@@ -311,7 +311,7 @@ class ControllerRegistrar:
         self._main_window.workflow_export_selected.emit(path)
 
     @Slot(object)
-    def _on_current_file_changed(self, file: Optional[Path]) -> None:
+    def _on_current_file_changed(self, file: Path | None) -> None:
         """Handle current file change."""
         pass  # Reserved for future window title updates
 

@@ -14,9 +14,9 @@ from typing import Any, Dict, Optional, TypeVar
 
 from loguru import logger
 
+from casare_rpa.desktop import DesktopContext
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import NodeStatus
-from casare_rpa.desktop import DesktopContext
 
 # Type variable for result types
 T = TypeVar("T")
@@ -46,8 +46,8 @@ class DesktopNodeBase(BaseNode):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Desktop Node",
     ):
         """
@@ -66,7 +66,7 @@ class DesktopNodeBase(BaseNode):
         super().__init__(resolved_node_id, merged_config)
         self.name = name
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """
         Override in subclasses to provide default configuration.
 
@@ -104,7 +104,7 @@ class DesktopNodeBase(BaseNode):
         Raises:
             ValueError: If desktop context cannot be created
         """
-        desktop_ctx: Optional[DesktopContext] = getattr(context, "desktop_context", None)
+        desktop_ctx: DesktopContext | None = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
         return desktop_ctx
@@ -128,10 +128,10 @@ class DesktopNodeBase(BaseNode):
         self,
         operation: Any,
         context: Any,
-        retry_count: Optional[int] = None,
-        retry_interval: Optional[float] = None,
+        retry_count: int | None = None,
+        retry_interval: float | None = None,
         operation_name: str = "operation",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Execute an operation with retry logic.
 
@@ -153,7 +153,7 @@ class DesktopNodeBase(BaseNode):
             )
 
         max_attempts = retry_count + 1
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         attempts = 0
 
         while attempts < max_attempts:
@@ -162,7 +162,7 @@ class DesktopNodeBase(BaseNode):
                 if attempts > 1:
                     logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-                result: Dict[str, Any] = await operation()
+                result: dict[str, Any] = await operation()
 
                 logger.info(f"[{self.name}] {operation_name} succeeded (attempt {attempts})")
                 self.status = NodeStatus.SUCCESS
@@ -196,7 +196,7 @@ class DesktopNodeBase(BaseNode):
         self.status = NodeStatus.ERROR
         raise RuntimeError(error_msg) from error
 
-    def success_result(self, **data: Any) -> Dict[str, Any]:
+    def success_result(self, **data: Any) -> dict[str, Any]:
         """
         Create a standard success result dictionary.
 
@@ -211,7 +211,7 @@ class DesktopNodeBase(BaseNode):
         result.update(data)
         return result
 
-    def error_result(self, error: str, **data: Any) -> Dict[str, Any]:
+    def error_result(self, error: str, **data: Any) -> dict[str, Any]:
         """
         Create a standard error result dictionary.
 
@@ -239,7 +239,7 @@ class ElementInteractionMixin:
         self,
         context: Any,
         desktop_ctx: DesktopContext,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> Any:
         """
         Find element from inputs (element port or window+selector).

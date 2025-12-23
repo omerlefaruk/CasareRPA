@@ -9,22 +9,23 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
+
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-from casare_rpa.infrastructure.services import get_service_registry, ServiceState
+from casare_rpa.infrastructure.services import ServiceState, get_service_registry
 
 
 class PlatformLauncher:
     """Smart launcher for CasareRPA platform."""
 
-    def __init__(self, project_root: Optional[Path] = None):
+    def __init__(self, project_root: Path | None = None):
         self.project_root = project_root or Path.cwd()
         self.registry = get_service_registry()
-        self._processes: List[subprocess.Popen] = []
+        self._processes: list[subprocess.Popen] = []
 
     async def launch(
         self,

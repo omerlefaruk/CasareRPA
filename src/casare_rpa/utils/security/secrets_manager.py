@@ -11,6 +11,7 @@ but the .env file should NEVER be committed to version control.
 import os
 from pathlib import Path
 from typing import Dict, Optional
+
 from loguru import logger
 
 
@@ -44,7 +45,7 @@ class SecretsManager:
         if SecretsManager._initialized:
             return
 
-        self._secrets: Dict[str, str] = {}
+        self._secrets: dict[str, str] = {}
         self._load_secrets()
         SecretsManager._initialized = True
 
@@ -80,7 +81,7 @@ class SecretsManager:
         logger.debug(f"Loading secrets from {env_path}")
 
         try:
-            with open(env_path, "r", encoding="utf-8") as f:
+            with open(env_path, encoding="utf-8") as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
 
@@ -125,7 +126,7 @@ class SecretsManager:
 
         logger.info(f"Secrets manager initialized with {len(self._secrets)} secrets from files")
 
-    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get(self, key: str, default: str | None = None) -> str | None:
         """
         Get a secret value.
 
@@ -202,10 +203,10 @@ class SecretsManager:
 
 
 # Convenience functions for quick access
-_default_manager: Optional[SecretsManager] = None
+_default_manager: SecretsManager | None = None
 
 
-def get_secret(key: str, default: Optional[str] = None) -> Optional[str]:
+def get_secret(key: str, default: str | None = None) -> str | None:
     """
     Get a secret value using the default manager.
 

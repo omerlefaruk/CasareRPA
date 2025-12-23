@@ -14,22 +14,23 @@ WindowManagementSuperNode (7 operations):
     - Set State: Set window state (normal/maximized/minimized)
 """
 
+from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Callable, Awaitable, Any
+from typing import TYPE_CHECKING, Any, Dict
 
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
-    DataType,
-    ExecutionResult,
-)
 from casare_rpa.domain.value_objects.dynamic_port_config import (
-    PortDef,
     ActionPortConfig,
     DynamicPortSchema,
+    PortDef,
+)
+from casare_rpa.domain.value_objects.types import (
+    DataType,
+    ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 
@@ -313,7 +314,7 @@ class WindowManagementSuperNode(DesktopNodeBase):
         action = self.get_parameter("action", WindowAction.RESIZE.value)
 
         # Map actions to handlers
-        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
+        handlers: dict[str, Callable[[IExecutionContext], Awaitable[ExecutionResult]]] = {
             WindowAction.RESIZE.value: self._execute_resize,
             WindowAction.MOVE.value: self._execute_move,
             WindowAction.MAXIMIZE.value: self._execute_maximize,

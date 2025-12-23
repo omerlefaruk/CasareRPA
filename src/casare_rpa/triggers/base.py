@@ -8,19 +8,20 @@ NOTE: TriggerType, TriggerStatus, TriggerPriority are defined in
 domain.value_objects.trigger_types (source of truth) and re-exported here.
 """
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional
 import asyncio
 import uuid
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
 # Import from domain layer (source of truth)
 from casare_rpa.domain.value_objects.trigger_types import (
-    TriggerType,
     TriggerStatus,
+    TriggerType,
 )
 
 
@@ -47,12 +48,12 @@ class TriggerEvent:
     trigger_type: TriggerType
     workflow_id: str
     scenario_id: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    payload: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    payload: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     priority: int = 1  # 0=LOW, 1=NORMAL, 2=HIGH, 3=CRITICAL
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "trigger_id": self.trigger_id,
@@ -66,13 +67,13 @@ class TriggerEvent:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TriggerEvent":
+    def from_dict(cls, data: dict[str, Any]) -> "TriggerEvent":
         """Create from dictionary."""
         timestamp = data.get("timestamp")
         if isinstance(timestamp, str):
             timestamp = datetime.fromisoformat(timestamp)
         elif timestamp is None:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         return cls(
             trigger_id=data.get("trigger_id", ""),
@@ -116,22 +117,22 @@ class BaseTriggerConfig:
     priority: int = 1  # TriggerPriority.NORMAL
     cooldown_seconds: int = 0
     description: str = ""
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
 
     # Tracking
-    created_at: Optional[datetime] = None
-    last_triggered: Optional[datetime] = None
+    created_at: datetime | None = None
+    last_triggered: datetime | None = None
     trigger_count: int = 0
     success_count: int = 0
     error_count: int = 0
 
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
         if not self.id:
             self.id = f"trig_{uuid.uuid4().hex[:8]}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -152,7 +153,7 @@ class BaseTriggerConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BaseTriggerConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "BaseTriggerConfig":
         """Create from dictionary."""
         created_at = data.get("created_at")
         if isinstance(created_at, str):
@@ -218,7 +219,7 @@ class BaseTrigger(ABC):
     def __init__(
         self,
         config: BaseTriggerConfig,
-        event_callback: Optional[TriggerEventCallback] = None,
+        event_callback: TriggerEventCallback | None = None,
     ) -> None:
         """
         Initialize the trigger.
@@ -230,8 +231,8 @@ class BaseTrigger(ABC):
         self.config = config
         self._event_callback = event_callback
         self._status = TriggerStatus.INACTIVE
-        self._error_message: Optional[str] = None
-        self._task: Optional[asyncio.Task] = None
+        self._error_message: str | None = None
+        self._task: asyncio.Task | None = None
 
         logger.debug(f"Trigger initialized: {self.config.name} ({self.trigger_type.value})")
 
@@ -278,7 +279,7 @@ class BaseTrigger(ABC):
         return True
 
     @abstractmethod
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """
         Validate trigger configuration.
 
@@ -287,9 +288,7 @@ class BaseTrigger(ABC):
         """
         pass
 
-    async def emit(
-        self, payload: Dict[str, Any], metadata: Optional[Dict[str, Any]] = None
-    ) -> bool:
+    async def emit(self, payload: dict[str, Any], metadata: dict[str, Any] | None = None) -> bool:
         """
         Emit a trigger event.
 
@@ -304,7 +303,7 @@ class BaseTrigger(ABC):
         """
         # Check cooldown
         if self.config.cooldown_seconds > 0 and self.config.last_triggered:
-            elapsed = (datetime.now(timezone.utc) - self.config.last_triggered).total_seconds()
+            elapsed = (datetime.now(UTC) - self.config.last_triggered).total_seconds()
             if elapsed < self.config.cooldown_seconds:
                 logger.debug(
                     f"Trigger {self.config.name} in cooldown "
@@ -324,7 +323,7 @@ class BaseTrigger(ABC):
         )
 
         # Update tracking
-        self.config.last_triggered = datetime.now(timezone.utc)
+        self.config.last_triggered = datetime.now(UTC)
         self.config.trigger_count += 1
 
         logger.info(f"Trigger fired: {self.config.name} ({self.trigger_type.value})")
@@ -356,11 +355,11 @@ class BaseTrigger(ABC):
         return self._status == TriggerStatus.ACTIVE
 
     @property
-    def error_message(self) -> Optional[str]:
+    def error_message(self) -> str | None:
         """Get last error message if any."""
         return self._error_message
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """
         Get trigger information for UI/API.
 
@@ -392,7 +391,7 @@ class BaseTrigger(ABC):
         }
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """
         Get JSON schema for trigger configuration.
 
@@ -419,7 +418,7 @@ class BaseTrigger(ABC):
         }
 
     @classmethod
-    def get_display_info(cls) -> Dict[str, Any]:
+    def get_display_info(cls) -> dict[str, Any]:
         """
         Get display information for UI trigger type selector.
 

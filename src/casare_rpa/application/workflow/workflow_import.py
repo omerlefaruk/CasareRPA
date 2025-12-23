@@ -8,9 +8,10 @@ Supports:
 - Drag-and-drop JSON files
 """
 
-from typing import Any, Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
 import copy
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Tuple
+
 from loguru import logger
 
 
@@ -19,10 +20,10 @@ class ImportResult:
     """Result of an import operation."""
 
     success: bool
-    imported_nodes: List[str] = field(default_factory=list)
-    imported_frames: List[Any] = field(default_factory=list)
-    error_message: Optional[str] = None
-    warnings: List[str] = field(default_factory=list)
+    imported_nodes: list[str] = field(default_factory=list)
+    imported_frames: list[Any] = field(default_factory=list)
+    error_message: str | None = None
+    warnings: list[str] = field(default_factory=list)
 
 
 class WorkflowImporter:
@@ -47,7 +48,7 @@ class WorkflowImporter:
         self._graph = graph
         self._node_factory = node_factory
 
-    def get_existing_node_ids(self) -> Set[str]:
+    def get_existing_node_ids(self) -> set[str]:
         """Get set of all existing node IDs in the graph."""
         existing_ids = set()
         for visual_node in self._graph.all_nodes():
@@ -56,7 +57,7 @@ class WorkflowImporter:
                 existing_ids.add(node_id)
         return existing_ids
 
-    def remap_node_ids(self, workflow_data: dict) -> Tuple[dict, Dict[str, str]]:
+    def remap_node_ids(self, workflow_data: dict) -> tuple[dict, dict[str, str]]:
         """
         Remap node IDs to avoid conflicts with existing nodes.
 
@@ -70,7 +71,7 @@ class WorkflowImporter:
 
         data = copy.deepcopy(workflow_data)
         existing_ids = self.get_existing_node_ids()
-        id_mapping: Dict[str, str] = {}  # old_id -> new_id
+        id_mapping: dict[str, str] = {}  # old_id -> new_id
 
         # Generate new IDs for all nodes that conflict
         for old_id, node_data in list(data.get("nodes", {}).items()):
@@ -127,8 +128,8 @@ class WorkflowImporter:
         return data, id_mapping
 
     def calculate_import_position(
-        self, workflow_data: dict, drop_position: Optional[Tuple[float, float]] = None
-    ) -> Tuple[float, float]:
+        self, workflow_data: dict, drop_position: tuple[float, float] | None = None
+    ) -> tuple[float, float]:
         """
         Calculate position offset for imported nodes.
 
@@ -178,7 +179,7 @@ class WorkflowImporter:
 
         return (offset_x, offset_y)
 
-    def apply_position_offset(self, workflow_data: dict, offset: Tuple[float, float]) -> dict:
+    def apply_position_offset(self, workflow_data: dict, offset: tuple[float, float]) -> dict:
         """
         Apply position offset to all nodes and frames in workflow data.
 
@@ -218,8 +219,8 @@ def import_workflow_data(
     graph,
     node_factory,
     workflow_data: dict,
-    drop_position: Optional[Tuple[float, float]] = None,
-) -> Tuple[dict, Dict[str, str]]:
+    drop_position: tuple[float, float] | None = None,
+) -> tuple[dict, dict[str, str]]:
     """
     Prepare workflow data for import.
 

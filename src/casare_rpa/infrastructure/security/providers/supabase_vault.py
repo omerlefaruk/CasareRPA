@@ -8,20 +8,20 @@ accessed via Postgres functions.
 Reference: https://supabase.com/docs/guides/database/vault
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultProvider,
-    VaultConfig,
-    SecretValue,
-    SecretMetadata,
     CredentialType,
+    SecretMetadata,
     SecretNotFoundError,
-    VaultConnectionError,
+    SecretValue,
     VaultAuthenticationError,
+    VaultConfig,
+    VaultConnectionError,
+    VaultProvider,
 )
 
 # Optional asyncpg import
@@ -61,7 +61,7 @@ class SupabaseVaultProvider(VaultProvider):
             )
 
         self._config = config
-        self._pool: Optional["asyncpg.Pool"] = None
+        self._pool: asyncpg.Pool | None = None
 
     async def connect(self) -> None:
         """Connect to Supabase database."""
@@ -171,7 +171,7 @@ class SupabaseVaultProvider(VaultProvider):
         """)
         logger.info("Created fallback vault tables")
 
-    async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
+    async def get_secret(self, path: str, version: int | None = None) -> SecretValue:
         """Get secret from Supabase Vault."""
         pool = self._ensure_pool()
 
@@ -206,8 +206,8 @@ class SupabaseVaultProvider(VaultProvider):
                     metadata = SecretMetadata(
                         path=path,
                         version=1,
-                        created_at=row["created_at"] or datetime.now(timezone.utc),
-                        updated_at=row["updated_at"] or datetime.now(timezone.utc),
+                        created_at=row["created_at"] or datetime.now(UTC),
+                        updated_at=row["updated_at"] or datetime.now(UTC),
                         credential_type=self._infer_credential_type(data),
                     )
 
@@ -262,9 +262,9 @@ class SupabaseVaultProvider(VaultProvider):
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in Supabase Vault."""
         pool = self._ensure_pool()
@@ -376,7 +376,7 @@ class SupabaseVaultProvider(VaultProvider):
                 logger.info(f"Deleted secret: {path}")
             return deleted
 
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """List secrets under a path prefix."""
         pool = self._ensure_pool()
 
@@ -436,8 +436,8 @@ class SupabaseVaultProvider(VaultProvider):
         )
 
     def _generate_rotated_values(
-        self, current_data: Dict[str, Any], cred_type: CredentialType
-    ) -> Dict[str, Any]:
+        self, current_data: dict[str, Any], cred_type: CredentialType
+    ) -> dict[str, Any]:
         """Generate new secret values based on type."""
         import secrets as secrets_module
 
@@ -478,7 +478,7 @@ class SupabaseVaultProvider(VaultProvider):
         alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return "".join(secrets_module.choice(alphabet) for _ in range(length))
 
-    def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:
+    def _infer_credential_type(self, data: dict[str, Any]) -> CredentialType:
         """Infer credential type from data keys."""
         keys = set(data.keys())
 

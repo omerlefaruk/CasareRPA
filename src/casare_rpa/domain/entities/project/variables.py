@@ -44,10 +44,10 @@ class VariablesFile:
     """
 
     scope: VariableScope = VariableScope.PROJECT
-    variables: Dict[str, Variable] = field(default_factory=dict)
+    variables: dict[str, Variable] = field(default_factory=dict)
     schema_version: str = PROJECT_SCHEMA_VERSION
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
@@ -56,7 +56,7 @@ class VariablesFile:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VariablesFile":
+    def from_dict(cls, data: dict[str, Any]) -> "VariablesFile":
         """Create from dictionary."""
         scope_str = data.get("scope", "project")
         variables_data = data.get("variables", {})
@@ -71,7 +71,7 @@ class VariablesFile:
             schema_version=data.get("$schema_version", PROJECT_SCHEMA_VERSION),
         )
 
-    def get_variable(self, name: str) -> Optional[Variable]:
+    def get_variable(self, name: str) -> Variable | None:
         """Get variable by name."""
         return self.variables.get(name)
 
@@ -86,6 +86,6 @@ class VariablesFile:
             return True
         return False
 
-    def get_default_values(self) -> Dict[str, Any]:
+    def get_default_values(self) -> dict[str, Any]:
         """Get dictionary of variable names to their default values."""
         return {name: var.default_value for name, var in self.variables.items()}

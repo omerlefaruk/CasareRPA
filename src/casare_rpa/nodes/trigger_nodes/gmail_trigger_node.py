@@ -125,7 +125,7 @@ class GmailTriggerNode(BaseTriggerNode):
     trigger_icon = "gmail"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Gmail Trigger"
         self.node_type = "GmailTriggerNode"
@@ -150,7 +150,7 @@ class GmailTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.GMAIL
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get Gmail-specific configuration."""
         # Parse comma-separated label IDs
         label_ids_str = self.get_parameter("label_ids", "INBOX")

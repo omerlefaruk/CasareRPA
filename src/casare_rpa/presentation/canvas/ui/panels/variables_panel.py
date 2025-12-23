@@ -15,53 +15,51 @@ Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
 """
 
-from typing import Optional, Dict, Any
-
-from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QHeaderView,
-    QAbstractItemView,
-    QComboBox,
-    QLabel,
-    QStackedWidget,
-    QApplication,
-    QMenu,
-    QDialog,
-    QFormLayout,
-    QLineEdit,
-    QCheckBox,
-    QTextEdit,
-    QSpinBox,
-    QDoubleSpinBox,
-    QDialogButtonBox,
-    QMessageBox,
-)
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QBrush, QFont
+from typing import Any, Dict, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QBrush, QColor, QFont
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QDockWidget,
+    QDoubleSpinBox,
+    QFormLayout,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QSpinBox,
+    QStackedWidget,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
+from casare_rpa.domain.entities.variable import Variable
+from casare_rpa.infrastructure.security.data_masker import get_masker
 from casare_rpa.presentation.canvas.events import (
-    LazySubscriptionGroup,
-    EventType,
     Event,
+    EventType,
+    LazySubscriptionGroup,
 )
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
-    ToolbarButton,
     StatusBadge,
+    ToolbarButton,
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
-from casare_rpa.domain.entities.variable import Variable
-from casare_rpa.infrastructure.security.data_masker import get_masker
-
 
 # Variable type definitions
 VARIABLE_TYPES = [
@@ -75,7 +73,7 @@ VARIABLE_TYPES = [
 ]
 
 # Default values for each type
-TYPE_DEFAULTS: Dict[str, Any] = {
+TYPE_DEFAULTS: dict[str, Any] = {
     "String": "",
     "Integer": 0,
     "Float": 0.0,
@@ -126,8 +124,8 @@ class VariableEditDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
-        variable: Optional[Variable] = None,
+        parent: QWidget | None = None,
+        variable: Variable | None = None,
         scope: str = "Workflow",
     ) -> None:
         """
@@ -522,7 +520,7 @@ class VariablesPanel(QDockWidget):
     # Scope display order
     SCOPE_ORDER = ["Global", "Project", "Scenario"]
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the variables panel.
 
@@ -533,7 +531,7 @@ class VariablesPanel(QDockWidget):
         self.setObjectName("VariablesDock")
 
         # Variables organized by scope: {scope: {name: Variable}}
-        self._variables: Dict[str, Dict[str, Variable]] = {
+        self._variables: dict[str, dict[str, Variable]] = {
             "Global": {},
             "Project": {},
             "Scenario": {},
@@ -542,7 +540,7 @@ class VariablesPanel(QDockWidget):
         self._current_scope_filter = "All"
 
         # Tree item tracking
-        self._scope_items: Dict[str, QTreeWidgetItem] = {}
+        self._scope_items: dict[str, QTreeWidgetItem] = {}
 
         self._setup_dock()
         self._setup_ui()
@@ -951,7 +949,7 @@ class VariablesPanel(QDockWidget):
         scope_item.addChild(var_item)
         return var_item
 
-    def _find_variable_item(self, name: str, scope: str) -> Optional[QTreeWidgetItem]:
+    def _find_variable_item(self, name: str, scope: str) -> QTreeWidgetItem | None:
         """
         Find a variable item in the tree.
 
@@ -1173,7 +1171,7 @@ class VariablesPanel(QDockWidget):
         logger.debug(f"Variable added: {name} ({var_type}) in {scope} scope")
         return True
 
-    def remove_variable(self, name: str, scope: Optional[str] = None) -> bool:
+    def remove_variable(self, name: str, scope: str | None = None) -> bool:
         """
         Remove a variable from the panel.
 
@@ -1213,7 +1211,7 @@ class VariablesPanel(QDockWidget):
 
         return False
 
-    def update_variable_value(self, name: str, value: Any, scope: Optional[str] = None) -> None:
+    def update_variable_value(self, name: str, value: Any, scope: str | None = None) -> None:
         """
         Update variable value (runtime mode).
 
@@ -1297,7 +1295,7 @@ class VariablesPanel(QDockWidget):
 
             logger.debug(f"Variable edited: {name}")
 
-    def get_variables(self) -> Dict[str, Dict[str, Any]]:
+    def get_variables(self) -> dict[str, dict[str, Any]]:
         """
         Get all variables in flat format for variable picker.
 
@@ -1314,7 +1312,7 @@ class VariablesPanel(QDockWidget):
                 }
         return result
 
-    def get_all_variables_flat(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_variables_flat(self) -> dict[str, dict[str, Any]]:
         """
         Get all variables in flat format.
 
@@ -1333,7 +1331,7 @@ class VariablesPanel(QDockWidget):
                 }
         return result
 
-    def get_variables_by_scope(self, scope: str) -> Dict[str, Variable]:
+    def get_variables_by_scope(self, scope: str) -> dict[str, Variable]:
         """
         Get variables for a specific scope.
 
@@ -1345,7 +1343,7 @@ class VariablesPanel(QDockWidget):
         """
         return self._variables.get(scope, {}).copy()
 
-    def clear_variables(self, scope: Optional[str] = None) -> None:
+    def clear_variables(self, scope: str | None = None) -> None:
         """
         Clear variables.
 

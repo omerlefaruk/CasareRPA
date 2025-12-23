@@ -9,21 +9,20 @@ Provides console-style output display for workflow execution with improved UX:
 - Copy and clear functionality
 """
 
-from typing import Optional
 from datetime import datetime
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTextEdit,
-    QLabel,
-    QCheckBox,
-    QStackedWidget,
-)
-from PySide6.QtGui import QTextCursor
+from typing import Optional
 
 from loguru import logger
+from PySide6.QtGui import QTextCursor
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QStackedWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
@@ -48,7 +47,7 @@ class OutputConsoleWidget(BaseWidget):
     - Maximum line limit
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize output console widget.
 

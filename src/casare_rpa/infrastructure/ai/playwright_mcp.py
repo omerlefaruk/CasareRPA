@@ -22,8 +22,8 @@ class MCPToolResult:
     """Result from an MCP tool call."""
 
     success: bool
-    content: List[Dict[str, Any]] = field(default_factory=list)
-    error: Optional[str] = None
+    content: list[dict[str, Any]] = field(default_factory=list)
+    error: str | None = None
 
     def get_text(self) -> str:
         """Extract text content from result."""
@@ -57,7 +57,7 @@ class PlaywrightMCPClient:
         self,
         headless: bool = True,
         browser: str = "chrome",
-        npx_path: Optional[str] = None,
+        npx_path: str | None = None,
     ) -> None:
         """
         Initialize Playwright MCP client.
@@ -70,11 +70,11 @@ class PlaywrightMCPClient:
         self._headless = headless
         self._browser = browser
         self._npx_path = npx_path or self._find_npx()
-        self._process: Optional[asyncio.subprocess.Process] = None
+        self._process: asyncio.subprocess.Process | None = None
         self._request_id = 0
         self._initialized = False
-        self._pending_requests: Dict[int, asyncio.Future] = {}
-        self._reader_task: Optional[asyncio.Task] = None
+        self._pending_requests: dict[int, asyncio.Future] = {}
+        self._reader_task: asyncio.Task | None = None
 
     def _find_npx(self) -> str:
         """Find npx executable path."""
@@ -94,7 +94,7 @@ class PlaywrightMCPClient:
             return "npx.cmd"  # Fallback, rely on PATH
         return "npx"
 
-    async def __aenter__(self) -> "PlaywrightMCPClient":
+    async def __aenter__(self) -> PlaywrightMCPClient:
         """Async context manager entry."""
         await self.start()
         return self
@@ -165,7 +165,7 @@ class PlaywrightMCPClient:
             try:
                 self._process.terminate()
                 await asyncio.wait_for(self._process.wait(), timeout=5.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self._process.kill()
             except Exception as e:
                 logger.warning(f"Error stopping MCP server: {e}")
@@ -214,7 +214,7 @@ class PlaywrightMCPClient:
                 logger.error(f"Error reading MCP responses: {e}")
                 break
 
-    async def _handle_message(self, message: Dict[str, Any]) -> None:
+    async def _handle_message(self, message: dict[str, Any]) -> None:
         """Handle incoming MCP message."""
         msg_id = message.get("id")
         if msg_id is not None and msg_id in self._pending_requests:
@@ -230,7 +230,7 @@ class PlaywrightMCPClient:
     async def _send_request(
         self,
         method: str,
-        params: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
         timeout: float = 30.0,
     ) -> Any:
         """
@@ -275,7 +275,7 @@ class PlaywrightMCPClient:
         try:
             result = await asyncio.wait_for(future, timeout=timeout)
             return result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._pending_requests.pop(request_id, None)
             raise TimeoutError(f"MCP request {method} timed out after {timeout}s")
 
@@ -313,7 +313,7 @@ class PlaywrightMCPClient:
     async def call_tool(
         self,
         tool_name: str,
-        arguments: Optional[Dict[str, Any]] = None,
+        arguments: dict[str, Any] | None = None,
         timeout: float = DEFAULT_ACTION_TIMEOUT,
     ) -> MCPToolResult:
         """
@@ -353,7 +353,7 @@ class PlaywrightMCPClient:
             logger.error(f"Tool call {tool_name} failed: {e}")
             return MCPToolResult(success=False, error=str(e))
 
-    async def list_tools(self) -> List[Dict[str, Any]]:
+    async def list_tools(self) -> list[dict[str, Any]]:
         """List available MCP tools."""
         if not self._initialized:
             return []
@@ -445,7 +445,7 @@ class PlaywrightMCPClient:
         """Close the browser."""
         return await self.call_tool("browser_close")
 
-    async def take_screenshot(self, filename: Optional[str] = None) -> MCPToolResult:
+    async def take_screenshot(self, filename: str | None = None) -> MCPToolResult:
         """
         Take a screenshot of the current page.
 
@@ -455,16 +455,16 @@ class PlaywrightMCPClient:
         Returns:
             MCPToolResult with screenshot info
         """
-        args: Dict[str, Any] = {}
+        args: dict[str, Any] = {}
         if filename:
             args["filename"] = filename
         return await self.call_tool("browser_take_screenshot", args)
 
     async def wait_for(
         self,
-        text: Optional[str] = None,
-        text_gone: Optional[str] = None,
-        time_seconds: Optional[float] = None,
+        text: str | None = None,
+        text_gone: str | None = None,
+        time_seconds: float | None = None,
     ) -> MCPToolResult:
         """
         Wait for a condition.
@@ -477,7 +477,7 @@ class PlaywrightMCPClient:
         Returns:
             MCPToolResult with wait status
         """
-        args: Dict[str, Any] = {}
+        args: dict[str, Any] = {}
         if text:
             args["text"] = text
         if text_gone:
@@ -486,7 +486,7 @@ class PlaywrightMCPClient:
             args["time"] = time_seconds
         return await self.call_tool("browser_wait_for", args)
 
-    async def evaluate(self, js_function: str, ref: Optional[str] = None) -> MCPToolResult:
+    async def evaluate(self, js_function: str, ref: str | None = None) -> MCPToolResult:
         """
         Evaluate JavaScript on the page.
 
@@ -497,7 +497,7 @@ class PlaywrightMCPClient:
         Returns:
             MCPToolResult with evaluation result
         """
-        args: Dict[str, Any] = {"function": js_function}
+        args: dict[str, Any] = {"function": js_function}
         if ref:
             args["ref"] = ref
             args["element"] = "target element"
@@ -508,7 +508,7 @@ async def fetch_page_context(
     url: str,
     headless: bool = True,
     timeout: float = 30.0,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Convenience function to fetch page context from a URL.
 

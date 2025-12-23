@@ -8,12 +8,16 @@ Hierarchical tree view displaying DOM/UI element structure with:
 - Mode switching (browser/desktop)
 """
 
-from typing import Callable, Dict, List, Optional, Any
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QTreeWidget,
@@ -21,20 +25,15 @@ from PySide6.QtWidgets import (
     QTreeWidgetItemIterator,
     QVBoxLayout,
     QWidget,
-    QLabel,
 )
-from PySide6.QtGui import QColor, QBrush
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.ui_explorer.models.element_model import (
-    UIExplorerElement,
     ElementSource,
+    UIExplorerElement,
 )
 
-
 # Icon mapping for element types
-BROWSER_ELEMENT_ICONS: Dict[str, str] = {
+BROWSER_ELEMENT_ICONS: dict[str, str] = {
     # Structural
     "html": "📄",
     "head": "🗂️",
@@ -89,7 +88,7 @@ BROWSER_ELEMENT_ICONS: Dict[str, str] = {
     "pre": "📜",
 }
 
-DESKTOP_ELEMENT_ICONS: Dict[str, str] = {
+DESKTOP_ELEMENT_ICONS: dict[str, str] = {
     "Button": "🔘",
     "Edit": "✏️",
     "Text": "📝",
@@ -141,10 +140,9 @@ class VisualTreeItem(QTreeWidgetItem):
     def __init__(
         self,
         element: UIExplorerElement,
-        parent: Optional[QTreeWidgetItem] = None,
-        load_children_callback: Optional[
-            Callable[[UIExplorerElement], List[UIExplorerElement]]
-        ] = None,
+        parent: QTreeWidgetItem | None = None,
+        load_children_callback: Callable[[UIExplorerElement], list[UIExplorerElement]]
+        | None = None,
     ) -> None:
         """
         Initialize tree item.
@@ -269,14 +267,14 @@ class VisualTreePanel(QFrame):
     element_selected = Signal(dict)
     element_double_clicked = Signal(dict)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the visual tree panel."""
         super().__init__(parent)
 
         self._mode: str = "browser"
-        self._root_element: Optional[UIExplorerElement] = None
-        self._load_children_callback: Optional[Callable] = None
-        self._all_items: List[VisualTreeItem] = []
+        self._root_element: UIExplorerElement | None = None
+        self._load_children_callback: Callable | None = None
+        self._all_items: list[VisualTreeItem] = []
 
         self._setup_ui()
         self._apply_styles()
@@ -502,7 +500,7 @@ class VisualTreePanel(QFrame):
 
         logger.debug(f"VisualTreePanel mode set to: {mode}")
 
-    def load_tree(self, root_element: Dict[str, Any]) -> None:
+    def load_tree(self, root_element: dict[str, Any]) -> None:
         """
         Populate tree from element data dictionary.
 
@@ -589,7 +587,7 @@ class VisualTreePanel(QFrame):
 
     def set_load_children_callback(
         self,
-        callback: Callable[[UIExplorerElement], List[UIExplorerElement]],
+        callback: Callable[[UIExplorerElement], list[UIExplorerElement]],
     ) -> None:
         """
         Set callback for lazy loading children.
@@ -636,7 +634,7 @@ class VisualTreePanel(QFrame):
         """
         self._on_search_changed(query)
 
-    def get_selected_element(self) -> Optional[UIExplorerElement]:
+    def get_selected_element(self) -> UIExplorerElement | None:
         """Get currently selected element."""
         items = self._tree.selectedItems()
         if items and isinstance(items[0], VisualTreeItem):
@@ -650,7 +648,7 @@ class VisualTreePanel(QFrame):
     def _load_children_from_dict(
         self,
         parent: UIExplorerElement,
-        children_data: List[Dict[str, Any]],
+        children_data: list[dict[str, Any]],
     ) -> None:
         """Recursively load children from dict data."""
         for child_data in children_data:

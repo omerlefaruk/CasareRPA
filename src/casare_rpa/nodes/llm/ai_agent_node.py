@@ -149,7 +149,7 @@ class AIAgentNode(LLMBaseNode):
                 available_tools = [t.strip() for t in available_tools.split(",") if t.strip()]
 
         # Convert context to dict if needed
-        initial_context: Optional[Dict[str, Any]] = None
+        initial_context: dict[str, Any] | None = None
         if agent_context is not None:
             if isinstance(agent_context, dict):
                 initial_context = agent_context

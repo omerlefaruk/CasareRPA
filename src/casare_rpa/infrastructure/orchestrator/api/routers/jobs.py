@@ -17,7 +17,6 @@ from slowapi.util import get_remote_address
 
 from casare_rpa.infrastructure.orchestrator.api.auth import verify_robot_token
 
-
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
@@ -61,8 +60,8 @@ class JobProgressUpdate(BaseModel):
     """Request model for progress update."""
 
     progress: int = Field(..., ge=0, le=100)
-    current_node: Optional[str] = None
-    message: Optional[str] = None
+    current_node: str | None = None
+    message: str | None = None
 
 
 class JobClaimRequest(BaseModel):
@@ -82,7 +81,7 @@ class JobClaimResponse(BaseModel):
     workflow_json: str
     priority: int
     environment: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     created_at: datetime
     claimed_at: datetime
     retry_count: int
@@ -92,7 +91,7 @@ class JobClaimResponse(BaseModel):
 class JobCompleteRequest(BaseModel):
     """Request body for completing a job."""
 
-    result: Dict[str, Any] = Field(default_factory=dict)
+    result: dict[str, Any] = Field(default_factory=dict)
 
 
 class JobFailRequest(BaseModel):

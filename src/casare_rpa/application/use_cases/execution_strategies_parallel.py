@@ -4,12 +4,14 @@ Handles concurrent execution patterns (Fork/Join, Run-All, Parallel ForEach).
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Set, Tuple, Callable
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Set, Tuple
+
 from loguru import logger
 
-from casare_rpa.domain.value_objects.types import NodeId
-from casare_rpa.domain.interfaces import IExecutionContext
 from casare_rpa.domain.events import EventBus, WorkflowProgress
+from casare_rpa.domain.interfaces import IExecutionContext
+from casare_rpa.domain.value_objects.types import NodeId
 
 # Type aliases
 NodeInstanceGetter = Callable[[str], Any]
@@ -21,7 +23,7 @@ class ParallelExecutionStrategy:
     def __init__(
         self,
         context: IExecutionContext,
-        event_bus: Optional[EventBus],
+        event_bus: EventBus | None,
         node_getter: NodeInstanceGetter,
         state_manager: Any,
         variable_resolver: Any,
@@ -36,7 +38,7 @@ class ParallelExecutionStrategy:
         self.create_executor = node_executor_factory
         self.orchestrator = orchestrator
 
-    async def execute_parallel_workflows(self, start_nodes: List[NodeId]) -> None:
+    async def execute_parallel_workflows(self, start_nodes: list[NodeId]) -> None:
         """Executes multiple workflows concurrently (Shift+F3 mode)."""
         logger.info(f"Starting {len(start_nodes)} parallel workflows")
 
@@ -50,7 +52,7 @@ class ParallelExecutionStrategy:
             )
         )
 
-        async def _run_single(start_id: NodeId, idx: int) -> Tuple[str, bool]:
+        async def _run_single(start_id: NodeId, idx: int) -> tuple[str, bool]:
             name = f"workflow_{idx}"
             try:
                 # Clone context for isolation (Browser isolation, Shared vars)
@@ -87,7 +89,7 @@ class ParallelExecutionStrategy:
     ) -> None:
         """Runs a workflow flow in an isolated context."""
         queue = [start_node_id]
-        executed: Set[NodeId] = set()
+        executed: set[NodeId] = set()
         executor = self.create_executor(context)
 
         while queue and not self.state_manager.is_stopped:
@@ -121,7 +123,7 @@ class ParallelExecutionStrategy:
             next_ids = self.orchestrator.get_next_nodes(curr_id, result.result)
             queue.extend(next_ids)
 
-    async def execute_parallel_branches(self, fork_result: Dict[str, Any]) -> None:
+    async def execute_parallel_branches(self, fork_result: dict[str, Any]) -> None:
         """Executes ForkNode branches concurrently."""
         branches = fork_result.get("parallel_branches", [])
         fork_id = fork_result.get("fork_id")
@@ -130,7 +132,7 @@ class ParallelExecutionStrategy:
         if not branches:
             return
 
-        async def _run_branch(port: str) -> Tuple[str, Dict, bool]:
+        async def _run_branch(port: str) -> tuple[str, dict, bool]:
             try:
                 # Find target
                 target = self.orchestrator.find_target_node(fork_id, port)
@@ -161,7 +163,7 @@ class ParallelExecutionStrategy:
         self.context.set_variable(f"{fork_id}_branch_results", branch_results)
 
     async def execute_parallel_foreach_batch(
-        self, result_data: Dict[str, Any], node_id: str
+        self, result_data: dict[str, Any], node_id: str
     ) -> None:
         """Executes a batch of items for ParallelForEachNode."""
         items = result_data.get("parallel_foreach_batch", [])
@@ -199,7 +201,7 @@ class ParallelExecutionStrategy:
         # Results handling? Usually aggregated or just side effects.
 
     async def _run_until_join(
-        self, start_id: str, ctx: IExecutionContext, join_id: Optional[str]
+        self, start_id: str, ctx: IExecutionContext, join_id: str | None
     ) -> None:
         """Runs chain until JoinNode."""
         queue = [start_id]

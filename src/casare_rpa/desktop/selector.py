@@ -6,13 +6,14 @@ Provides selector parsing and element finding strategies for desktop automation.
 
 import time
 from typing import Any, Dict, List, Optional
-from loguru import logger
+
 import uiautomation as auto
+from loguru import logger
 
 from casare_rpa.desktop.element import DesktopElement
 
 
-def parse_selector(selector: Dict[str, Any]) -> Dict[str, Any]:
+def parse_selector(selector: dict[str, Any]) -> dict[str, Any]:
     """
     Parse and validate a desktop selector.
 
@@ -64,8 +65,8 @@ def parse_selector(selector: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def find_element(
-    parent_control: auto.Control, selector: Dict[str, Any], timeout: float = 5.0
-) -> Optional[DesktopElement]:
+    parent_control: auto.Control, selector: dict[str, Any], timeout: float = 5.0
+) -> DesktopElement | None:
     """
     Find an element using selector.
 
@@ -178,8 +179,8 @@ def find_element(
 
 
 def find_elements(
-    parent_control: auto.Control, selector: Dict[str, Any], max_depth: int = 10
-) -> List[DesktopElement]:
+    parent_control: auto.Control, selector: dict[str, Any], max_depth: int = 10
+) -> list[DesktopElement]:
     """
     Find all elements matching selector.
 
@@ -240,7 +241,7 @@ def find_elements(
     return elements
 
 
-def _matches_properties(control: auto.Control, properties: Dict[str, Any]) -> bool:
+def _matches_properties(control: auto.Control, properties: dict[str, Any]) -> bool:
     """
     Check if control matches all specified properties.
 

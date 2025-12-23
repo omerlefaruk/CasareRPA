@@ -172,7 +172,7 @@ class KeyboardController:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    async def press_key(self, key: str, modifiers: Tuple[str, ...] = ()) -> bool:
+    async def press_key(self, key: str, modifiers: tuple[str, ...] = ()) -> bool:
         """
         Press a single key with optional modifiers.
 

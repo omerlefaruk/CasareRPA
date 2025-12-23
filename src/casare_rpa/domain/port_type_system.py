@@ -36,8 +36,8 @@ try:
     from casare_rpa.application.services.port_type_service import (
         PortTypeRegistry,
         get_port_type_registry,
-        is_types_compatible,
         get_type_color,
+        is_types_compatible,
     )
 
     # Expose compatibility names for older imports

@@ -6,28 +6,29 @@ with element picking, tree view, and multiple selector strategies.
 """
 
 import json
-from typing import Optional, Dict, Any, List
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QTextEdit,
-    QSplitter,
-    QGroupBox,
-    QListWidget,
-    QListWidgetItem,
-    QWidget,
-    QTableWidget,
-    QTableWidgetItem,
-    QApplication,
-)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
-from loguru import logger
+from typing import Any, Dict, List, Optional
 
 import uiautomation as auto
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from casare_rpa.desktop.element import DesktopElement
 from casare_rpa.presentation.canvas.selectors.element_picker import (
     activate_element_picker,
@@ -36,9 +37,9 @@ from casare_rpa.presentation.canvas.selectors.element_tree_widget import (
     ElementTreeWidget,
 )
 from casare_rpa.presentation.canvas.selectors.selector_strategy import (
-    generate_selectors,
     SelectorStrategy,
     filter_best_selectors,
+    generate_selectors,
     validate_selector_uniqueness,
 )
 from casare_rpa.presentation.canvas.selectors.selector_validator import (
@@ -67,12 +68,12 @@ class DesktopSelectorBuilder(QDialog):
         self.target_node = target_node
         self.target_property = target_property
 
-        self.selected_element: Optional[DesktopElement] = None
-        self.root_element: Optional[DesktopElement] = None
-        self.parent_control: Optional[auto.Control] = None
-        self.selector_strategies: List[SelectorStrategy] = []
-        self.selected_strategy: Optional[SelectorStrategy] = None
-        self.validator: Optional[SelectorValidator] = None
+        self.selected_element: DesktopElement | None = None
+        self.root_element: DesktopElement | None = None
+        self.parent_control: auto.Control | None = None
+        self.selector_strategies: list[SelectorStrategy] = []
+        self.selected_strategy: SelectorStrategy | None = None
+        self.validator: SelectorValidator | None = None
 
         self.picker_overlay = None
 
@@ -649,7 +650,7 @@ class DesktopSelectorBuilder(QDialog):
         # Close dialog
         self.accept()
 
-    def get_selected_selector(self) -> Optional[Dict[str, Any]]:
+    def get_selected_selector(self) -> dict[str, Any] | None:
         """Get the selected selector dictionary"""
         if self.selected_strategy:
             return self.selected_strategy.to_dict()

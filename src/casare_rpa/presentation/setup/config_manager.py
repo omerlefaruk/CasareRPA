@@ -37,8 +37,8 @@ class RobotConfig:
     """Configuration for robot agent."""
 
     name: str = ""
-    capabilities: List[str] = field(default_factory=lambda: ["browser", "desktop"])
-    tags: List[str] = field(default_factory=list)
+    capabilities: list[str] = field(default_factory=lambda: ["browser", "desktop"])
+    tags: list[str] = field(default_factory=list)
     max_concurrent_jobs: int = 2
     environment: str = "production"
 
@@ -67,7 +67,7 @@ class ClientConfig:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     first_run_complete: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary for serialization."""
         return {
             "orchestrator": {
@@ -94,7 +94,7 @@ class ClientConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ClientConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "ClientConfig":
         """Create configuration from dictionary."""
         config = cls()
 
@@ -147,8 +147,8 @@ class ClientConfigManager:
 
     def __init__(
         self,
-        config_dir: Optional[Path] = None,
-        config_file: Optional[str] = None,
+        config_dir: Path | None = None,
+        config_file: str | None = None,
     ) -> None:
         """
         Initialize configuration manager.
@@ -279,7 +279,7 @@ class ClientConfigManager:
 
         return config
 
-    def validate_url(self, url: str) -> Optional[str]:
+    def validate_url(self, url: str) -> str | None:
         """
         Validate orchestrator URL.
 
@@ -306,7 +306,7 @@ class ClientConfigManager:
 
         return None
 
-    def validate_api_key(self, api_key: str) -> Optional[str]:
+    def validate_api_key(self, api_key: str) -> str | None:
         """
         Validate API key format.
 
@@ -327,7 +327,7 @@ class ClientConfigManager:
 
         return None
 
-    def validate_robot_name(self, name: str) -> Optional[str]:
+    def validate_robot_name(self, name: str) -> str | None:
         """
         Validate robot name.
 
@@ -354,7 +354,7 @@ class ClientConfigManager:
     async def test_connection(
         self,
         url: str,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> tuple[bool, str]:
         """
         Test connection to orchestrator.
@@ -390,7 +390,7 @@ class ClientConfigManager:
                     await ws.ping()
                     return True, "Connection successful"
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return False, "Connection timed out"
         except ConnectionRefusedError:
             return False, "Connection refused - check URL"

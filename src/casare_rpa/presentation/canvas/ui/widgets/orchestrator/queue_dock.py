@@ -7,22 +7,21 @@ Provides tabs for Queues, Transactions, and Statistics.
 
 from typing import Optional
 
+from loguru import logger
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QTabWidget,
-    QSizePolicy,
-    QLabel,
-    QHBoxLayout,
     QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QSize
 
-from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.application.services import QueueService
+from casare_rpa.presentation.canvas.ui.theme import Theme
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.queues_tab import QueuesTab
 from casare_rpa.presentation.canvas.ui.widgets.orchestrator.transactions_tab import (
     TransactionsTab,
@@ -35,11 +34,11 @@ class StatisticsTab(QWidget):
     def __init__(
         self,
         queue_service: QueueService,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._queue_service = queue_service
-        self._current_queue_id: Optional[str] = None
+        self._current_queue_id: str | None = None
         self._setup_ui()
         self._apply_styles()
 
@@ -89,7 +88,7 @@ class StatisticsTab(QWidget):
 
         layout.addStretch()
 
-    def _create_stat_card(self, title: str, value: str, color: Optional[str] = None) -> QFrame:
+    def _create_stat_card(self, title: str, value: str, color: str | None = None) -> QFrame:
         """Create a statistics card widget."""
         c = Theme.get_colors()
 
@@ -197,8 +196,8 @@ class QueueManagementDock(QDockWidget):
 
     def __init__(
         self,
-        queue_service: Optional[QueueService] = None,
-        parent: Optional[QWidget] = None,
+        queue_service: QueueService | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the queue management dock.
@@ -211,7 +210,7 @@ class QueueManagementDock(QDockWidget):
         self.setObjectName("QueueManagementDock")
 
         self._queue_service = queue_service or QueueService()
-        self._current_queue_id: Optional[str] = None
+        self._current_queue_id: str | None = None
 
         self._setup_dock()
         self._setup_ui()

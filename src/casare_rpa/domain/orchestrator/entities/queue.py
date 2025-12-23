@@ -10,7 +10,7 @@ Provides UiPath-style transaction queue entities:
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from casare_rpa.utils.datetime_helpers import parse_datetime
 
@@ -39,7 +39,7 @@ class Queue:
     id: str
     name: str
     description: str = ""
-    schema: Dict[str, Any] = field(default_factory=dict)
+    schema: dict[str, Any] = field(default_factory=dict)
     max_retries: int = 3
     retry_delay_seconds: int = 60
     auto_retry: bool = True
@@ -49,7 +49,7 @@ class Queue:
     in_progress_count: int = 0
     completed_count: int = 0
     failed_count: int = 0
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
     created_by: str = ""
 
     def __post_init__(self):
@@ -72,7 +72,7 @@ class Queue:
         return (self.completed_count / total) * 100
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Queue":
+    def from_dict(cls, data: dict[str, Any]) -> "Queue":
         """Create Queue from dictionary."""
         return cls(
             id=data["id"],
@@ -92,7 +92,7 @@ class Queue:
             created_by=data.get("created_by", ""),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Queue to dictionary."""
         return {
             "id": self.id,
@@ -125,22 +125,22 @@ class QueueItem:
     id: str
     queue_id: str
     reference: str = ""
-    data: Dict[str, Any] = field(default_factory=dict)
-    output: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
+    output: dict[str, Any] = field(default_factory=dict)
     status: QueueItemStatus = QueueItemStatus.NEW
     priority: int = 1
     retries: int = 0
-    robot_id: Optional[str] = None
+    robot_id: str | None = None
     robot_name: str = ""
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    deadline: Optional[datetime] = None
-    postpone_until: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    deadline: datetime | None = None
+    postpone_until: datetime | None = None
     error_message: str = ""
     error_type: str = ""
     processing_exception_type: str = ""
     duration_ms: int = 0
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
     def __post_init__(self):
         """Validate domain invariants."""
@@ -183,7 +183,7 @@ class QueueItem:
         return f"{hours:.1f}h"
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "QueueItem":
+    def from_dict(cls, data: dict[str, Any]) -> "QueueItem":
         """Create QueueItem from dictionary."""
         status = data.get("status")
         if isinstance(status, str):
@@ -215,7 +215,7 @@ class QueueItem:
             created_at=parse_datetime(data.get("created_at")),
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert QueueItem to dictionary."""
         return {
             "id": self.id,

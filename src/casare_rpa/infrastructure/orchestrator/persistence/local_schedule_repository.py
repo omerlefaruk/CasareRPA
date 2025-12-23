@@ -15,7 +15,7 @@ class LocalScheduleRepository(ScheduleRepository):
     def __init__(self, storage: LocalStorageRepository):
         self._storage = storage
 
-    async def get_by_id(self, schedule_id: str) -> Optional[Schedule]:
+    async def get_by_id(self, schedule_id: str) -> Schedule | None:
         """Get schedule by ID."""
         schedules = self._storage.get_schedules()
         for s in schedules:
@@ -23,12 +23,12 @@ class LocalScheduleRepository(ScheduleRepository):
                 return Schedule.from_dict(s)
         return None
 
-    async def get_all(self) -> List[Schedule]:
+    async def get_all(self) -> list[Schedule]:
         """Get all schedules."""
         schedules = self._storage.get_schedules()
         return [Schedule.from_dict(s) for s in schedules]
 
-    async def get_enabled(self) -> List[Schedule]:
+    async def get_enabled(self) -> list[Schedule]:
         """Get all enabled schedules."""
         schedules = self._storage.get_schedules()
         return [Schedule.from_dict(s) for s in schedules if s.get("enabled", True)]

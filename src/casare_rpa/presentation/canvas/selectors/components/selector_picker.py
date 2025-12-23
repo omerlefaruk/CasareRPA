@@ -8,10 +8,10 @@ Handles all element picking logic across different modes:
 - Image/template matching
 """
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
@@ -46,16 +46,16 @@ class SelectorPicker(QObject):
     picking_started = Signal(str)
     picking_stopped = Signal()
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
 
-        self._tabs: Dict[str, BaseSelectorTab] = {}
-        self._browser_page: Optional["Page"] = None
+        self._tabs: dict[str, BaseSelectorTab] = {}
+        self._browser_page: Page | None = None
         self._current_mode: str = "browser"
         self._is_picking: bool = False
         self._picking_anchor: bool = False
-        self._current_result: Optional[SelectorResult] = None
-        self._strategies: List[SelectorStrategy] = []
+        self._current_result: SelectorResult | None = None
+        self._strategies: list[SelectorStrategy] = []
 
     def register_tab(self, mode: str, tab: BaseSelectorTab) -> None:
         """
@@ -101,12 +101,12 @@ class SelectorPicker(QObject):
         return self._is_picking
 
     @property
-    def strategies(self) -> List[SelectorStrategy]:
+    def strategies(self) -> list[SelectorStrategy]:
         """Get last generated strategies."""
         return self._strategies
 
     @property
-    def current_result(self) -> Optional[SelectorResult]:
+    def current_result(self) -> SelectorResult | None:
         """Get current selector result."""
         return self._current_result
 
@@ -114,7 +114,7 @@ class SelectorPicker(QObject):
         """Check if browser page is available."""
         return self._browser_page is not None
 
-    async def start_picking(self, mode: Optional[str] = None) -> bool:
+    async def start_picking(self, mode: str | None = None) -> bool:
         """
         Start element picking for specified mode.
 
@@ -199,7 +199,7 @@ class SelectorPicker(QObject):
                 return False
         return False
 
-    async def auto_detect_anchor(self, target_selector: str) -> Optional[Dict[str, Any]]:
+    async def auto_detect_anchor(self, target_selector: str) -> dict[str, Any] | None:
         """
         Auto-detect the best anchor for a target element.
 
@@ -232,14 +232,14 @@ class SelectorPicker(QObject):
             self.status_changed.emit(f"Error: {e}")
             return None
 
-    def get_current_selector_from_tab(self) -> Optional[SelectorResult]:
+    def get_current_selector_from_tab(self) -> SelectorResult | None:
         """Get current selector from active tab."""
         tab = self._tabs.get(self._current_mode)
         if tab:
             return tab.get_current_selector()
         return None
 
-    def _on_tab_strategies_generated(self, strategies: List[SelectorStrategy]) -> None:
+    def _on_tab_strategies_generated(self, strategies: list[SelectorStrategy]) -> None:
         """Handle strategies generated from a tab."""
         logger.info(f"Picker received {len(strategies)} strategies")
 

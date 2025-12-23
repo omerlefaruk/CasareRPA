@@ -15,16 +15,14 @@ Handles:
 - Dependency analysis
 """
 
+import logging
 from collections import deque
 from typing import Any, Dict, List, Optional, Set
-
-import logging
 
 logger = logging.getLogger(__name__)
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.value_objects.types import NodeId
-
 
 # Pre-computed set of control flow node types (module-level constant for O(1) lookup)
 CONTROL_FLOW_TYPES = frozenset(
@@ -68,13 +66,13 @@ class ExecutionOrchestrator:
             workflow: Workflow schema with nodes and connections
         """
         self.workflow = workflow
-        self._execution_graph: Optional[Dict[NodeId, List[NodeId]]] = None
+        self._execution_graph: dict[NodeId, list[NodeId]] | None = None
 
         # PERFORMANCE: Build connection index maps for O(1) lookups
         # Instead of O(n) scans through all connections for every node execution
-        self._outgoing_connections: Dict[NodeId, List] = {}
-        self._incoming_connections: Dict[NodeId, List] = {}
-        self._port_connections: Dict[tuple, List] = {}  # (node_id, port_name) -> connections
+        self._outgoing_connections: dict[NodeId, list] = {}
+        self._incoming_connections: dict[NodeId, list] = {}
+        self._port_connections: dict[tuple, list] = {}  # (node_id, port_name) -> connections
         self._build_connection_indexes()
 
     def _build_connection_indexes(self) -> None:
@@ -104,7 +102,7 @@ class ExecutionOrchestrator:
                 self._port_connections[port_key] = []
             self._port_connections[port_key].append(conn)
 
-    def find_start_node(self) -> Optional[NodeId]:
+    def find_start_node(self) -> NodeId | None:
         """
         Find the workflow entry point (StartNode or TriggerNode).
 
@@ -141,7 +139,7 @@ class ExecutionOrchestrator:
         logger.warning("No StartNode or TriggerNode found in workflow")
         return None
 
-    def find_all_start_nodes(self) -> List[NodeId]:
+    def find_all_start_nodes(self) -> list[NodeId]:
         """
         Find all StartNodes in workflow for parallel execution.
 
@@ -151,7 +149,7 @@ class ExecutionOrchestrator:
         Returns:
             List of all StartNode IDs in the workflow
         """
-        start_nodes: List[NodeId] = []
+        start_nodes: list[NodeId] = []
 
         for node_id, node_data in self.workflow.nodes.items():
             # Handle both dict (serialized) and node instance formats
@@ -166,7 +164,7 @@ class ExecutionOrchestrator:
         logger.debug(f"Found {len(start_nodes)} StartNodes in workflow")
         return start_nodes
 
-    def find_trigger_node(self) -> Optional[NodeId]:
+    def find_trigger_node(self) -> NodeId | None:
         """
         Find the trigger node in workflow (if any).
 
@@ -199,8 +197,8 @@ class ExecutionOrchestrator:
         return node_type.endswith("TriggerNode")
 
     def get_next_nodes(
-        self, current_node_id: NodeId, execution_result: Optional[Dict[str, Any]] = None
-    ) -> List[NodeId]:
+        self, current_node_id: NodeId, execution_result: dict[str, Any] | None = None
+    ) -> list[NodeId]:
         """
         Determine next nodes to execute based on connections and result.
 
@@ -218,7 +216,7 @@ class ExecutionOrchestrator:
         Returns:
             List of next node IDs to execute
         """
-        next_nodes: List[NodeId] = []
+        next_nodes: list[NodeId] = []
 
         # Check for dynamic routing (control flow nodes return next_nodes)
         if execution_result and "next_nodes" in execution_result:
@@ -268,7 +266,7 @@ class ExecutionOrchestrator:
 
         return next_nodes
 
-    def _get_connections_from_port(self, node_id: NodeId, port_name: str) -> List:
+    def _get_connections_from_port(self, node_id: NodeId, port_name: str) -> list:
         """
         Get all connections originating from a specific port.
 
@@ -284,8 +282,8 @@ class ExecutionOrchestrator:
         return self._port_connections.get((node_id, port_name), [])
 
     def calculate_execution_path(
-        self, start_node_id: NodeId, target_node_id: Optional[NodeId] = None
-    ) -> Set[NodeId]:
+        self, start_node_id: NodeId, target_node_id: NodeId | None = None
+    ) -> set[NodeId]:
         """
         Calculate the execution path from start to target (or all nodes).
 
@@ -304,7 +302,7 @@ class ExecutionOrchestrator:
             return self._calculate_subgraph(start_node_id, target_node_id)
 
         # Calculate full reachable graph (using pre-built index)
-        reachable: Set[NodeId] = set()
+        reachable: set[NodeId] = set()
         queue: deque[NodeId] = deque([start_node_id])
         reachable.add(start_node_id)
 
@@ -321,7 +319,7 @@ class ExecutionOrchestrator:
         logger.info(f"Calculated execution path: {len(reachable)} nodes reachable")
         return reachable
 
-    def _calculate_subgraph(self, start_node_id: NodeId, target_node_id: NodeId) -> Set[NodeId]:
+    def _calculate_subgraph(self, start_node_id: NodeId, target_node_id: NodeId) -> set[NodeId]:
         """
         Calculate subgraph of nodes required to reach target from start.
 
@@ -341,9 +339,9 @@ class ExecutionOrchestrator:
             return set()
 
         # Build reverse graph for backtracking (using pre-built index)
-        predecessors: Dict[NodeId, Set[NodeId]] = {}
+        predecessors: dict[NodeId, set[NodeId]] = {}
         queue: deque[NodeId] = deque([start_node_id])
-        visited: Set[NodeId] = {start_node_id}
+        visited: set[NodeId] = {start_node_id}
 
         # BFS to build predecessor map (O(1) lookup per node)
         while queue:
@@ -362,7 +360,7 @@ class ExecutionOrchestrator:
                     queue.append(target)
 
         # Backtrace from target to start to find all nodes on paths
-        subgraph: Set[NodeId] = {target_node_id}
+        subgraph: set[NodeId] = {target_node_id}
         backtrack_queue: deque[NodeId] = deque([target_node_id])
 
         while backtrack_queue:
@@ -395,7 +393,7 @@ class ExecutionOrchestrator:
         if start_node_id == target_node_id:
             return True
 
-        visited: Set[NodeId] = {start_node_id}
+        visited: set[NodeId] = {start_node_id}
         queue: deque[NodeId] = deque([start_node_id])
 
         while queue:
@@ -414,7 +412,7 @@ class ExecutionOrchestrator:
 
         return False
 
-    def should_stop_on_error(self, error: Exception, settings: Dict[str, Any]) -> bool:
+    def should_stop_on_error(self, error: Exception, settings: dict[str, Any]) -> bool:
         """
         Decide if error should halt execution.
 
@@ -440,7 +438,7 @@ class ExecutionOrchestrator:
         # For now, stop on all errors unless continue_on_error is set
         return True
 
-    def handle_control_flow(self, node_id: NodeId, result: Dict[str, Any]) -> Optional[str]:
+    def handle_control_flow(self, node_id: NodeId, result: dict[str, Any]) -> str | None:
         """
         Process control flow signals (break/continue/return).
 
@@ -459,7 +457,7 @@ class ExecutionOrchestrator:
 
         return None
 
-    def build_dependency_graph(self) -> Dict[NodeId, Set[NodeId]]:
+    def build_dependency_graph(self) -> dict[NodeId, set[NodeId]]:
         """
         Build execution dependency graph.
 
@@ -472,7 +470,7 @@ class ExecutionOrchestrator:
         if self._execution_graph is not None:
             return self._execution_graph
 
-        dependencies: Dict[NodeId, Set[NodeId]] = {}
+        dependencies: dict[NodeId, set[NodeId]] = {}
 
         # Initialize all nodes with empty dependencies
         for node_id in self.workflow.nodes:
@@ -491,7 +489,7 @@ class ExecutionOrchestrator:
 
         return dependencies
 
-    def validate_execution_order(self) -> tuple[bool, List[str]]:
+    def validate_execution_order(self) -> tuple[bool, list[str]]:
         """
         Ensure no circular dependencies in workflow.
 
@@ -500,13 +498,13 @@ class ExecutionOrchestrator:
         Returns:
             Tuple of (is_valid, list of error messages)
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         # Build dependency graph
         dependencies = self.build_dependency_graph()
 
         # Try topological sort
-        in_degree: Dict[NodeId, int] = {
+        in_degree: dict[NodeId, int] = {
             node_id: len(deps) for node_id, deps in dependencies.items()
         }
 
@@ -538,7 +536,7 @@ class ExecutionOrchestrator:
         logger.debug("Workflow execution order validated: no circular dependencies")
         return True, []
 
-    def find_try_body_nodes(self, try_node_id: NodeId) -> Set[NodeId]:
+    def find_try_body_nodes(self, try_node_id: NodeId) -> set[NodeId]:
         """
         Find all nodes reachable from a try node's try_body output.
 
@@ -550,7 +548,7 @@ class ExecutionOrchestrator:
         Returns:
             Set of node IDs in try body
         """
-        body_nodes: Set[NodeId] = set()
+        body_nodes: set[NodeId] = set()
         queue: deque[NodeId] = deque()
 
         # Find nodes connected to try_body port (O(1) lookup)
@@ -616,7 +614,7 @@ class ExecutionOrchestrator:
         node_type = self.get_node_type(node_id)
         return node_type in CONTROL_FLOW_TYPES
 
-    def find_loop_body_nodes(self, loop_start_id: NodeId, loop_end_id: NodeId) -> Set[NodeId]:
+    def find_loop_body_nodes(self, loop_start_id: NodeId, loop_end_id: NodeId) -> set[NodeId]:
         """
         Find all nodes in a loop body between start and end nodes.
 
@@ -630,7 +628,7 @@ class ExecutionOrchestrator:
         Returns:
             Set of node IDs that are inside the loop body
         """
-        body_nodes: Set[NodeId] = set()
+        body_nodes: set[NodeId] = set()
 
         # BFS from loop start's body port to find all reachable nodes
         # until we hit the loop end
@@ -666,7 +664,7 @@ class ExecutionOrchestrator:
         )
         return body_nodes
 
-    def get_all_nodes(self) -> List[NodeId]:
+    def get_all_nodes(self) -> list[NodeId]:
         """
         Get all node IDs in the workflow.
 

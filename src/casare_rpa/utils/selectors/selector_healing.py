@@ -9,8 +9,8 @@ selectors based on element attributes, position, and similarity.
 import hashlib
 import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -33,7 +33,7 @@ class ElementFingerprint:
     id_attr: str = ""
     """Element's id attribute."""
 
-    class_list: List[str] = field(default_factory=list)
+    class_list: list[str] = field(default_factory=list)
     """List of CSS classes."""
 
     name_attr: str = ""
@@ -66,7 +66,7 @@ class ElementFingerprint:
     sibling_index: int = 0
     """Index among siblings."""
 
-    position: Tuple[int, int] = (0, 0)
+    position: tuple[int, int] = (0, 0)
     """Approximate position (x, y)."""
 
     @property
@@ -85,7 +85,7 @@ class ElementFingerprint:
         }
         return hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "tag_name": self.tag_name,
@@ -106,7 +106,7 @@ class ElementFingerprint:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ElementFingerprint":
+    def from_dict(cls, data: dict[str, Any]) -> "ElementFingerprint":
         """Create from dictionary."""
         return cls(
             tag_name=data.get("tag_name", ""),
@@ -146,7 +146,7 @@ class HealingResult:
     strategy_used: str
     """Name of the healing strategy that worked."""
 
-    alternatives: List[Tuple[str, float]] = field(default_factory=list)
+    alternatives: list[tuple[str, float]] = field(default_factory=list)
     """List of alternative selectors with confidence scores."""
 
 
@@ -172,7 +172,7 @@ class SelectorHealer:
             new_element = await page.query_selector(result.healed_selector)
     """
 
-    def __init__(self, storage_path: Optional[Path] = None, min_confidence: float = 0.6):
+    def __init__(self, storage_path: Path | None = None, min_confidence: float = 0.6):
         """
         Initialize selector healer.
 
@@ -182,8 +182,8 @@ class SelectorHealer:
         """
         self.storage_path = storage_path
         self.min_confidence = min_confidence
-        self._fingerprints: Dict[str, ElementFingerprint] = {}
-        self._healing_history: List[HealingResult] = []
+        self._fingerprints: dict[str, ElementFingerprint] = {}
+        self._healing_history: list[HealingResult] = []
 
         if storage_path and storage_path.exists():
             self._load_fingerprints()
@@ -202,7 +202,7 @@ class SelectorHealer:
         if self.storage_path:
             self._save_fingerprints()
 
-    def get_fingerprint(self, selector: str) -> Optional[ElementFingerprint]:
+    def get_fingerprint(self, selector: str) -> ElementFingerprint | None:
         """Get stored fingerprint for a selector."""
         return self._fingerprints.get(selector)
 
@@ -210,7 +210,7 @@ class SelectorHealer:
         self,
         page: Any,  # Playwright Page
         selector: str,
-    ) -> Optional[ElementFingerprint]:
+    ) -> ElementFingerprint | None:
         """
         Capture fingerprint of an element on a page.
 
@@ -285,7 +285,7 @@ class SelectorHealer:
         self,
         page: Any,  # Playwright Page
         selector: str,
-        fingerprint: Optional[ElementFingerprint] = None,
+        fingerprint: ElementFingerprint | None = None,
     ) -> HealingResult:
         """
         Attempt to heal a broken selector.
@@ -315,7 +315,7 @@ class SelectorHealer:
         alternatives = self._generate_alternatives(fp)
 
         # Test each alternative
-        scored_alternatives: List[Tuple[str, float]] = []
+        scored_alternatives: list[tuple[str, float]] = []
 
         for alt_selector, base_score in alternatives:
             try:
@@ -362,7 +362,7 @@ class SelectorHealer:
         self._healing_history.append(result)
         return result
 
-    def _generate_alternatives(self, fp: ElementFingerprint) -> List[Tuple[str, float]]:
+    def _generate_alternatives(self, fp: ElementFingerprint) -> list[tuple[str, float]]:
         """
         Generate alternative selectors from fingerprint.
 
@@ -536,7 +536,7 @@ class SelectorHealer:
             return
 
         try:
-            with open(self.storage_path, "r", encoding="utf-8") as f:
+            with open(self.storage_path, encoding="utf-8") as f:
                 data = json.load(f)
                 for selector, fp_data in data.items():
                     self._fingerprints[selector] = ElementFingerprint.from_dict(fp_data)
@@ -558,11 +558,11 @@ class SelectorHealer:
             logger.warning(f"Failed to save fingerprints: {e}")
 
     @property
-    def healing_history(self) -> List[HealingResult]:
+    def healing_history(self) -> list[HealingResult]:
         """Get healing attempt history."""
         return self._healing_history.copy()
 
-    def get_healing_stats(self) -> Dict[str, Any]:
+    def get_healing_stats(self) -> dict[str, Any]:
         """Get statistics about healing attempts."""
         total = len(self._healing_history)
         successful = sum(1 for r in self._healing_history if r.success)
@@ -575,9 +575,9 @@ class SelectorHealer:
             "strategies_used": self._count_strategies(),
         }
 
-    def _count_strategies(self) -> Dict[str, int]:
+    def _count_strategies(self) -> dict[str, int]:
         """Count healing strategies used."""
-        counts: Dict[str, int] = {}
+        counts: dict[str, int] = {}
         for result in self._healing_history:
             if result.success:
                 strategy = result.strategy_used
@@ -586,10 +586,10 @@ class SelectorHealer:
 
 
 # Global healer instance
-_global_healer: Optional[SelectorHealer] = None
+_global_healer: SelectorHealer | None = None
 
 
-def get_selector_healer(storage_path: Optional[Path] = None) -> SelectorHealer:
+def get_selector_healer(storage_path: Path | None = None) -> SelectorHealer:
     """Get or create global selector healer instance."""
     global _global_healer
     if _global_healer is None:

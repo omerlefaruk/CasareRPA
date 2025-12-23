@@ -17,8 +17,8 @@ from loguru import logger
 
 from casare_rpa.presentation.canvas.events import (
     Event,
-    EventType,
     EventHandler,
+    EventType,
     event_handler,
 )
 
@@ -72,9 +72,9 @@ class ExampleWorkflowController(EventHandler):
         super().__init__()
 
         # State
-        self._current_file: Optional[Path] = None
+        self._current_file: Path | None = None
         self._is_modified = False
-        self._workflow_name: Optional[str] = None
+        self._workflow_name: str | None = None
 
         # Auto-subscribe to decorated event handlers
         self._auto_subscribe_decorated_handlers()
@@ -155,7 +155,7 @@ class ExampleWorkflowController(EventHandler):
 
         logger.info(f"Workflow opened: {file_path}")
 
-    async def save_workflow(self, file_path: Optional[Path] = None) -> None:
+    async def save_workflow(self, file_path: Path | None = None) -> None:
         """
         Save workflow to file.
 
@@ -320,7 +320,7 @@ class ExampleWorkflowController(EventHandler):
     # =========================================================================
 
     @property
-    def current_file(self) -> Optional[Path]:
+    def current_file(self) -> Path | None:
         """Get current workflow file path."""
         return self._current_file
 
@@ -330,7 +330,7 @@ class ExampleWorkflowController(EventHandler):
         return self._is_modified
 
     @property
-    def workflow_name(self) -> Optional[str]:
+    def workflow_name(self) -> str | None:
         """Get current workflow name."""
         return self._workflow_name
 

@@ -6,13 +6,13 @@ Enforces structural and security constraints for persisted workflows.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List
+from collections.abc import Iterable
+from typing import Any, Dict, List
 
 from casare_rpa.domain.errors.exceptions import (
     WorkflowValidationError as BaseWorkflowValidationError,
 )
 from casare_rpa.domain.validation.validators import validate_workflow
-
 
 MAX_NODES = 1000
 MAX_CONNECTIONS = 5000
@@ -92,7 +92,7 @@ def _validate_config_value(value: Any, path: str, depth: int = 0) -> Any:
         ]
 
     if isinstance(value, dict):
-        validated: Dict[str, Any] = {}
+        validated: dict[str, Any] = {}
         for k, v in value.items():
             key = _validate_string(k, f"{path}.key", MAX_NODE_ID_LENGTH)
             validated[key] = _validate_config_value(v, f"{path}.{key}", depth + 1)
@@ -103,7 +103,7 @@ def _validate_config_value(value: Any, path: str, depth: int = 0) -> Any:
     )
 
 
-def validate_workflow_json(workflow_data: Dict[str, Any]) -> None:
+def validate_workflow_json(workflow_data: dict[str, Any]) -> None:
     """
     Validate workflow JSON structure and security constraints.
 
@@ -170,7 +170,7 @@ def validate_workflow_json(workflow_data: Dict[str, Any]) -> None:
 
     validation_result = validate_workflow(workflow_data)
     if not validation_result.is_valid:
-        errors: List[str] = [f"{issue.code}: {issue.message}" for issue in validation_result.errors]
+        errors: list[str] = [f"{issue.code}: {issue.message}" for issue in validation_result.errors]
         raise WorkflowValidationError("Workflow semantic validation failed", errors)
 
     workflow_data["__validated__"] = True

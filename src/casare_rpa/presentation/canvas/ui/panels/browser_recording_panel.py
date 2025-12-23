@@ -6,31 +6,30 @@ to workflow nodes. Integrates with the BrowserRecorder to capture
 user interactions in real-time.
 """
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-
-from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
-    QLabel,
-    QGroupBox,
-    QMessageBox,
-    QSplitter,
-    QTextEdit,
-)
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QFont
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QFont
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QSplitter,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.infrastructure.browser.browser_recorder import (
-        BrowserRecorder,
         BrowserRecordedAction,
+        BrowserRecorder,
     )
 
 
@@ -56,16 +55,16 @@ class BrowserRecordingPanel(QDockWidget):
     recording_stopped = Signal(list)  # List[BrowserRecordedAction]
     convert_to_workflow = Signal(list)  # List[Dict] - node configs
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the browser recording panel."""
         super().__init__("Browser Recording", parent)
         self.setObjectName("BrowserRecordingDock")
 
         # State
-        self._recorder: Optional["BrowserRecorder"] = None
+        self._recorder: BrowserRecorder | None = None
         self._is_recording = False
         self._recording_duration = 0
-        self._actions: List["BrowserRecordedAction"] = []
+        self._actions: list[BrowserRecordedAction] = []
 
         # Timer for duration display
         self._duration_timer = QTimer(self)
@@ -574,7 +573,7 @@ class BrowserRecordingPanel(QDockWidget):
         self._clear_btn.setEnabled(not self._is_recording and has_actions)
         self._convert_btn.setEnabled(not self._is_recording and has_actions)
 
-    def get_actions(self) -> List["BrowserRecordedAction"]:
+    def get_actions(self) -> list["BrowserRecordedAction"]:
         """
         Get all recorded actions.
 
@@ -583,7 +582,7 @@ class BrowserRecordingPanel(QDockWidget):
         """
         return self._actions.copy()
 
-    def get_node_configs(self) -> List[Dict[str, Any]]:
+    def get_node_configs(self) -> list[dict[str, Any]]:
         """
         Get recorded actions as node configurations.
 

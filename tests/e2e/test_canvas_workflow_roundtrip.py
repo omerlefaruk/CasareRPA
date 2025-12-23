@@ -1,6 +1,7 @@
 import os
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 if os.getenv("CASARE_QT_HEADLESS") == "1":
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -26,9 +27,9 @@ def test_canvas_serialize_deserialize_roundtrip(qapp) -> None:
         WorkflowSerializer,
     )
     from casare_rpa.presentation.canvas.visual_nodes import (
-        VisualStartNode,
         VisualEndNode,
         VisualSetVariableNode,
+        VisualStartNode,
     )
 
     def create_node(graph: NodeGraph, cls, node_id: str, pos) -> object:

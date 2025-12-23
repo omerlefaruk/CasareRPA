@@ -40,19 +40,20 @@ Usage:
             print(f"Node added: {event.data['node_id']}")
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 from functools import wraps
+from typing import Optional
 
 from loguru import logger
 
 from casare_rpa.presentation.canvas.events.event import Event, EventFilter
-from casare_rpa.presentation.canvas.events.event_types import EventType
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
+from casare_rpa.presentation.canvas.events.event_types import EventType
 
 
 def event_handler(
-    event_type: Optional[EventType] = None,
-    event_filter: Optional[EventFilter] = None,
+    event_type: EventType | None = None,
+    event_filter: EventFilter | None = None,
 ) -> Callable:
     """
     Decorator for marking methods as event handlers.
@@ -153,7 +154,7 @@ class EventHandler:
                 logger.info(f"Node removed: {event.data['node_id']}")
     """
 
-    def __init__(self, event_bus: Optional[EventBus] = None):
+    def __init__(self, event_bus: EventBus | None = None):
         """
         Initialize event handler.
 

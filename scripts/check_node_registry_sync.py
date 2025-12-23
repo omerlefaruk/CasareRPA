@@ -2,6 +2,7 @@
 """
 Verify that newly added nodes are registered in registry_data.py and have visual nodes.
 """
+
 import os
 import re
 import sys
@@ -15,7 +16,7 @@ def get_node_classes(node_dir: str) -> set[str]:
         for file in files:
             if file.endswith(".py") and file != "__init__.py":
                 path = os.path.join(root, file)
-                with open(path, "r") as f:
+                with open(path) as f:
                     content = f.read()
                     # Find @node decorated classes
                     matches = re.findall(r"@node\([^)]*\)\s*class\s+(\w+)\(", content)
@@ -26,7 +27,7 @@ def get_node_classes(node_dir: str) -> set[str]:
 def get_registered_nodes(registry_file: str) -> set[str]:
     """Extract all registered nodes from registry_data.py"""
     registered = set()
-    with open(registry_file, "r", encoding="utf-8") as f:
+    with open(registry_file, encoding="utf-8") as f:
         content = f.read()
         # Find NODE_TYPE_MAP entries - match actual node class names
         matches = re.findall(r'"(\w+Node)"\s*:\s*', content)
@@ -41,7 +42,7 @@ def get_visual_nodes(visual_dir: str) -> set[str]:
         for file in files:
             if file.endswith(".py") and file != "__init__.py":
                 path = os.path.join(root, file)
-                with open(path, "r") as f:
+                with open(path) as f:
                     content = f.read()
                     matches = re.findall(r"class\s+(\w+)\(.*Node.*\):", content)
                     visual.update(matches)
@@ -73,9 +74,7 @@ def main():
     # Check nodes without visual nodes
     missing_visual = nodes - visual
     if missing_visual:
-        errors.append(
-            f"Nodes without visual counterparts: {', '.join(sorted(missing_visual))}"
-        )
+        errors.append(f"Nodes without visual counterparts: {', '.join(sorted(missing_visual))}")
 
     if errors:
         for error in errors:

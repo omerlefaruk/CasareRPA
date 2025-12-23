@@ -8,11 +8,11 @@ to reduce its size and improve maintainability:
 - ControllerRegistrar: Controller instantiation and signal wiring
 """
 
-from casare_rpa.presentation.canvas.initializers.ui_component_initializer import (
-    UIComponentInitializer,
-)
 from casare_rpa.presentation.canvas.initializers.controller_registrar import (
     ControllerRegistrar,
+)
+from casare_rpa.presentation.canvas.initializers.ui_component_initializer import (
+    UIComponentInitializer,
 )
 
 __all__ = [

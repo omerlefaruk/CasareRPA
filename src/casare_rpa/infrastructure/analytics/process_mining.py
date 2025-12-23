@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
 
-
 # =============================================================================
 # Data Models
 # =============================================================================
@@ -60,11 +59,11 @@ class Activity:
     timestamp: datetime
     duration_ms: int
     status: ActivityStatus
-    inputs: Dict[str, Any] = field(default_factory=dict)
-    outputs: Dict[str, Any] = field(default_factory=dict)
-    error_message: Optional[str] = None
+    inputs: dict[str, Any] = field(default_factory=dict)
+    outputs: dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "node_id": self.node_id,
@@ -78,7 +77,7 @@ class Activity:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Activity:
+    def from_dict(cls, data: dict[str, Any]) -> Activity:
         """Create from dictionary."""
         return cls(
             node_id=data["node_id"],
@@ -99,11 +98,11 @@ class ExecutionTrace:
     case_id: str
     workflow_id: str
     workflow_name: str
-    activities: List[Activity]
+    activities: list[Activity]
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     status: str = "running"
-    robot_id: Optional[str] = None
+    robot_id: str | None = None
 
     @property
     def variant(self) -> str:
@@ -119,7 +118,7 @@ class ExecutionTrace:
         return sum(a.duration_ms for a in self.activities)
 
     @property
-    def activity_sequence(self) -> List[str]:
+    def activity_sequence(self) -> list[str]:
         """Get ordered list of node IDs."""
         return [a.node_id for a in self.activities]
 
@@ -131,7 +130,7 @@ class ExecutionTrace:
         completed = sum(1 for a in self.activities if a.status == ActivityStatus.COMPLETED)
         return completed / len(self.activities)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "case_id": self.case_id,
@@ -163,15 +162,15 @@ class ProcessModel:
     """Discovered process model from execution logs."""
 
     workflow_id: str
-    nodes: Set[str] = field(default_factory=set)
-    node_types: Dict[str, str] = field(default_factory=dict)
-    edges: Dict[str, Dict[str, DirectFollowsEdge]] = field(default_factory=dict)
-    variants: Dict[str, int] = field(default_factory=dict)
-    variant_paths: Dict[str, List[str]] = field(default_factory=dict)
-    entry_nodes: Set[str] = field(default_factory=set)
-    exit_nodes: Set[str] = field(default_factory=set)
-    loop_nodes: Set[str] = field(default_factory=set)
-    parallel_pairs: List[Tuple[str, str]] = field(default_factory=list)
+    nodes: set[str] = field(default_factory=set)
+    node_types: dict[str, str] = field(default_factory=dict)
+    edges: dict[str, dict[str, DirectFollowsEdge]] = field(default_factory=dict)
+    variants: dict[str, int] = field(default_factory=dict)
+    variant_paths: dict[str, list[str]] = field(default_factory=dict)
+    entry_nodes: set[str] = field(default_factory=set)
+    exit_nodes: set[str] = field(default_factory=set)
+    loop_nodes: set[str] = field(default_factory=set)
+    parallel_pairs: list[tuple[str, str]] = field(default_factory=list)
     trace_count: int = 0
 
     def get_edge_frequency(self, source: str, target: str) -> int:
@@ -180,7 +179,7 @@ class ProcessModel:
             return self.edges[source][target].frequency
         return 0
 
-    def get_most_common_path(self) -> List[str]:
+    def get_most_common_path(self) -> list[str]:
         """Get the most frequently executed path.
 
         Returns:
@@ -200,7 +199,7 @@ class ProcessModel:
         # Fallback: reconstruct path from edges using frequency-based traversal
         return self._reconstruct_path_from_edges()
 
-    def _reconstruct_path_from_edges(self) -> List[str]:
+    def _reconstruct_path_from_edges(self) -> list[str]:
         """Reconstruct most likely path by following highest-frequency edges.
 
         Returns:
@@ -238,9 +237,9 @@ class ProcessModel:
 
         return path
 
-    def _select_best_entry_node(self) -> Optional[str]:
+    def _select_best_entry_node(self) -> str | None:
         """Select entry node with highest total outgoing frequency."""
-        best_entry: Optional[str] = None
+        best_entry: str | None = None
         best_freq = -1
 
         for entry in self.entry_nodes:
@@ -251,7 +250,7 @@ class ProcessModel:
 
         return best_entry
 
-    def _select_next_node(self, current: str, visited: Set[str]) -> Optional[str]:
+    def _select_next_node(self, current: str, visited: set[str]) -> str | None:
         """Select next node with highest frequency, preferring unvisited nodes.
 
         Args:
@@ -279,7 +278,7 @@ class ProcessModel:
 
         return None
 
-    def get_variant_path(self, variant_hash: str) -> List[str]:
+    def get_variant_path(self, variant_hash: str) -> list[str]:
         """Get the actual path for a specific variant hash.
 
         Args:
@@ -290,19 +289,19 @@ class ProcessModel:
         """
         return self.variant_paths.get(variant_hash, [])
 
-    def get_all_variant_paths(self) -> Dict[str, Tuple[List[str], int]]:
+    def get_all_variant_paths(self) -> dict[str, tuple[list[str], int]]:
         """Get all variants with their paths and counts.
 
         Returns:
             Dictionary mapping variant hash to (path, count) tuples.
         """
-        result: Dict[str, Tuple[List[str], int]] = {}
+        result: dict[str, tuple[list[str], int]] = {}
         for variant_hash, count in self.variants.items():
             path = self.variant_paths.get(variant_hash, [])
             result[variant_hash] = (path, count)
         return result
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         edges_dict = {}
         for source, targets in self.edges.items():
@@ -357,8 +356,8 @@ class Deviation:
 
     deviation_type: DeviationType
     location: str
-    expected: Optional[str] = None
-    actual: Optional[str] = None
+    expected: str | None = None
+    actual: str | None = None
     severity: str = "medium"
     description: str = ""
 
@@ -371,12 +370,12 @@ class ConformanceReport:
     workflow_id: str
     fitness_score: float  # 0.0 - 1.0, how well trace fits model
     precision_score: float  # 0.0 - 1.0, how much of model was used
-    deviations: List[Deviation] = field(default_factory=list)
-    missing_activities: List[str] = field(default_factory=list)
-    unexpected_activities: List[str] = field(default_factory=list)
+    deviations: list[Deviation] = field(default_factory=list)
+    missing_activities: list[str] = field(default_factory=list)
+    unexpected_activities: list[str] = field(default_factory=list)
     is_conformant: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "trace_id": self.trace_id,
@@ -408,11 +407,11 @@ class ProcessInsight:
     title: str
     description: str
     impact: str  # high, medium, low
-    affected_nodes: List[str] = field(default_factory=list)
+    affected_nodes: list[str] = field(default_factory=list)
     recommendation: str = ""
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "category": self.category.value,
@@ -456,13 +455,13 @@ class ProcessEventLog:
             enable_persistence: Enable database persistence for traces.
             retention_days: Days to retain traces in database.
         """
-        self._traces: Dict[str, ExecutionTrace] = {}
-        self._workflow_traces: Dict[str, List[str]] = defaultdict(list)
+        self._traces: dict[str, ExecutionTrace] = {}
+        self._workflow_traces: dict[str, list[str]] = defaultdict(list)
         self._max_traces = max_traces
         self._enable_persistence = enable_persistence
         self._retention_days = retention_days
-        self._repository: Optional[Any] = None
-        self._pending_archive: List[ExecutionTrace] = []
+        self._repository: Any | None = None
+        self._pending_archive: list[ExecutionTrace] = []
         self._archive_batch_size = 50
         logger.debug(
             f"ProcessEventLog initialized (max_traces={max_traces}, "
@@ -548,11 +547,11 @@ class ProcessEventLog:
             logger.error(f"Failed to flush trace archive: {e}")
             return 0
 
-    def get_trace(self, case_id: str) -> Optional[ExecutionTrace]:
+    def get_trace(self, case_id: str) -> ExecutionTrace | None:
         """Get trace by case ID from memory."""
         return self._traces.get(case_id)
 
-    async def get_trace_async(self, case_id: str) -> Optional[ExecutionTrace]:
+    async def get_trace_async(self, case_id: str) -> ExecutionTrace | None:
         """
         Get trace by case ID, checking database if not in memory.
 
@@ -579,9 +578,9 @@ class ProcessEventLog:
     def get_traces_for_workflow(
         self,
         workflow_id: str,
-        limit: Optional[int] = None,
-        status: Optional[str] = None,
-    ) -> List[ExecutionTrace]:
+        limit: int | None = None,
+        status: str | None = None,
+    ) -> list[ExecutionTrace]:
         """Get traces for a workflow from memory."""
         case_ids = self._workflow_traces.get(workflow_id, [])
         traces = [self._traces[cid] for cid in case_ids if cid in self._traces]
@@ -597,10 +596,10 @@ class ProcessEventLog:
     async def get_traces_for_workflow_async(
         self,
         workflow_id: str,
-        limit: Optional[int] = None,
-        status: Optional[str] = None,
+        limit: int | None = None,
+        status: str | None = None,
         include_archived: bool = True,
-    ) -> List[ExecutionTrace]:
+    ) -> list[ExecutionTrace]:
         """
         Get traces for a workflow, optionally including archived.
 
@@ -647,8 +646,8 @@ class ProcessEventLog:
         self,
         start_time: datetime,
         end_time: datetime,
-        workflow_id: Optional[str] = None,
-    ) -> List[ExecutionTrace]:
+        workflow_id: str | None = None,
+    ) -> list[ExecutionTrace]:
         """Get traces within time range from memory."""
         traces = []
         for trace in self._traces.values():
@@ -661,9 +660,9 @@ class ProcessEventLog:
         self,
         start_time: datetime,
         end_time: datetime,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
         include_archived: bool = True,
-    ) -> List[ExecutionTrace]:
+    ) -> list[ExecutionTrace]:
         """
         Get traces within time range, optionally including archived.
 
@@ -697,11 +696,11 @@ class ProcessEventLog:
             logger.error(f"Failed to get archived traces in timerange: {e}")
             return memory_traces
 
-    def get_all_workflows(self) -> List[str]:
+    def get_all_workflows(self) -> list[str]:
         """Get list of all workflow IDs with traces in memory."""
         return list(self._workflow_traces.keys())
 
-    async def get_all_workflows_async(self) -> List[str]:
+    async def get_all_workflows_async(self) -> list[str]:
         """
         Get list of all workflow IDs including archived.
 
@@ -719,7 +718,7 @@ class ProcessEventLog:
 
         return list(memory_workflows)
 
-    def get_trace_count(self, workflow_id: Optional[str] = None) -> int:
+    def get_trace_count(self, workflow_id: str | None = None) -> int:
         """Get count of traces in memory."""
         if workflow_id:
             return len(self._workflow_traces.get(workflow_id, []))
@@ -727,7 +726,7 @@ class ProcessEventLog:
 
     async def get_trace_count_async(
         self,
-        workflow_id: Optional[str] = None,
+        workflow_id: str | None = None,
         include_archived: bool = True,
     ) -> int:
         """
@@ -752,7 +751,7 @@ class ProcessEventLog:
             logger.error(f"Failed to get archived trace count: {e}")
             return memory_count
 
-    def clear(self, workflow_id: Optional[str] = None) -> None:
+    def clear(self, workflow_id: str | None = None) -> None:
         """Clear traces from memory."""
         if workflow_id:
             case_ids = self._workflow_traces.pop(workflow_id, [])
@@ -762,7 +761,7 @@ class ProcessEventLog:
             self._traces.clear()
             self._workflow_traces.clear()
 
-    async def cleanup_archived(self) -> Dict[str, Any]:
+    async def cleanup_archived(self) -> dict[str, Any]:
         """
         Cleanup old archived traces based on retention policy.
 
@@ -799,12 +798,12 @@ class ProcessDiscovery:
 
     def __init__(self) -> None:
         """Initialize process discovery."""
-        self._edge_durations: Dict[str, Dict[str, List[int]]] = defaultdict(
+        self._edge_durations: dict[str, dict[str, list[int]]] = defaultdict(
             lambda: defaultdict(list)
         )
-        self._edge_errors: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._edge_errors: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
-    def discover(self, traces: List[ExecutionTrace]) -> ProcessModel:
+    def discover(self, traces: list[ExecutionTrace]) -> ProcessModel:
         """Discover process model from traces.
 
         Uses Direct-Follows Graph (DFG) algorithm with enhancements.
@@ -860,7 +859,7 @@ class ProcessDiscovery:
             model.variant_paths[variant] = trace.activity_sequence
 
         # Process activities
-        prev_activity: Optional[Activity] = None
+        prev_activity: Activity | None = None
         for i, activity in enumerate(activities):
             node_id = activity.node_id
             model.nodes.add(node_id)
@@ -906,9 +905,9 @@ class ProcessDiscovery:
                 if edge.frequency > 0:
                     edge.error_rate = errors / edge.frequency
 
-    def _detect_loops(self, model: ProcessModel) -> Set[str]:
+    def _detect_loops(self, model: ProcessModel) -> set[str]:
         """Detect nodes that are part of loops."""
-        loop_nodes: Set[str] = set()
+        loop_nodes: set[str] = set()
 
         # Simple loop detection: node appears in edges to itself
         # or in a cycle of length 2
@@ -926,8 +925,8 @@ class ProcessDiscovery:
         return loop_nodes
 
     def _detect_parallelism(
-        self, traces: List[ExecutionTrace], model: ProcessModel
-    ) -> List[Tuple[str, str]]:
+        self, traces: list[ExecutionTrace], model: ProcessModel
+    ) -> list[tuple[str, str]]:
         """Detect potentially parallel activities.
 
         Two activities are potentially parallel if:
@@ -935,7 +934,7 @@ class ProcessDiscovery:
         2. They have similar execution times
         3. No direct dependency between them
         """
-        parallel_pairs: List[Tuple[str, str]] = []
+        parallel_pairs: list[tuple[str, str]] = []
 
         # Find nodes with multiple successors (potential parallel split)
         for source, targets in model.edges.items():
@@ -953,13 +952,13 @@ class ProcessDiscovery:
 
         return parallel_pairs
 
-    def discover_variants(self, traces: List[ExecutionTrace]) -> Dict[str, List[ExecutionTrace]]:
+    def discover_variants(self, traces: list[ExecutionTrace]) -> dict[str, list[ExecutionTrace]]:
         """Group traces by their execution variant.
 
         Returns:
             Dictionary mapping variant hash to list of traces.
         """
-        variants: Dict[str, List[ExecutionTrace]] = defaultdict(list)
+        variants: dict[str, list[ExecutionTrace]] = defaultdict(list)
         for trace in traces:
             variants[trace.variant].append(trace)
         return dict(variants)
@@ -1011,7 +1010,7 @@ class ConformanceChecker:
 
         # Check edge conformance
         deviations = []
-        prev_activity: Optional[Activity] = None
+        prev_activity: Activity | None = None
 
         for activity in trace.activities:
             node_id = activity.node_id
@@ -1069,9 +1068,9 @@ class ConformanceChecker:
 
     def batch_check(
         self,
-        traces: List[ExecutionTrace],
+        traces: list[ExecutionTrace],
         model: ProcessModel,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Check conformance for multiple traces.
 
         Returns:
@@ -1084,7 +1083,7 @@ class ConformanceChecker:
         avg_precision = sum(r.precision_score for r in reports) / len(reports) if reports else 0.0
 
         # Aggregate deviations
-        deviation_counts: Dict[str, int] = defaultdict(int)
+        deviation_counts: dict[str, int] = defaultdict(int)
         for report in reports:
             for deviation in report.deviations:
                 deviation_counts[deviation.deviation_type.value] += 1
@@ -1116,8 +1115,8 @@ class ProcessEnhancer:
     def analyze(
         self,
         model: ProcessModel,
-        traces: List[ExecutionTrace],
-    ) -> List[ProcessInsight]:
+        traces: list[ExecutionTrace],
+    ) -> list[ProcessInsight]:
         """Analyze process and generate optimization insights.
 
         Args:
@@ -1127,7 +1126,7 @@ class ProcessEnhancer:
         Returns:
             List of actionable insights.
         """
-        insights: List[ProcessInsight] = []
+        insights: list[ProcessInsight] = []
 
         # Analyze slow paths
         insights.extend(self._find_slow_paths(model, traces))
@@ -1151,10 +1150,10 @@ class ProcessEnhancer:
     def _find_slow_paths(
         self,
         model: ProcessModel,
-        traces: List[ExecutionTrace],
-    ) -> List[ProcessInsight]:
+        traces: list[ExecutionTrace],
+    ) -> list[ProcessInsight]:
         """Find slow execution paths."""
-        insights: List[ProcessInsight] = []
+        insights: list[ProcessInsight] = []
 
         # Find slow edges
         for source, targets in model.edges.items():
@@ -1182,7 +1181,7 @@ class ProcessEnhancer:
                     )
 
         # Find slow nodes overall
-        node_durations: Dict[str, List[int]] = defaultdict(list)
+        node_durations: dict[str, list[int]] = defaultdict(list)
         for trace in traces:
             for activity in trace.activities:
                 node_durations[activity.node_id].append(activity.duration_ms)
@@ -1218,9 +1217,9 @@ class ProcessEnhancer:
     def _find_parallelization_opportunities(
         self,
         model: ProcessModel,
-    ) -> List[ProcessInsight]:
+    ) -> list[ProcessInsight]:
         """Find opportunities for parallel execution."""
-        insights: List[ProcessInsight] = []
+        insights: list[ProcessInsight] = []
 
         for node1, node2 in model.parallel_pairs:
             # Check if both nodes have significant duration
@@ -1264,14 +1263,14 @@ class ProcessEnhancer:
     def _find_error_patterns(
         self,
         model: ProcessModel,
-        traces: List[ExecutionTrace],
-    ) -> List[ProcessInsight]:
+        traces: list[ExecutionTrace],
+    ) -> list[ProcessInsight]:
         """Find error-prone paths and patterns."""
-        insights: List[ProcessInsight] = []
+        insights: list[ProcessInsight] = []
 
         # Node error rates
-        node_errors: Dict[str, int] = defaultdict(int)
-        node_executions: Dict[str, int] = defaultdict(int)
+        node_errors: dict[str, int] = defaultdict(int)
+        node_executions: dict[str, int] = defaultdict(int)
 
         for trace in traces:
             for activity in trace.activities:
@@ -1337,10 +1336,10 @@ class ProcessEnhancer:
     def _find_simplification_opportunities(
         self,
         model: ProcessModel,
-        traces: List[ExecutionTrace],
-    ) -> List[ProcessInsight]:
+        traces: list[ExecutionTrace],
+    ) -> list[ProcessInsight]:
         """Find opportunities to simplify process."""
-        insights: List[ProcessInsight] = []
+        insights: list[ProcessInsight] = []
 
         # Too many variants suggest overly complex process
         variant_count = len(model.variants)
@@ -1371,7 +1370,7 @@ class ProcessEnhancer:
             )
 
         # Nodes that are rarely executed
-        node_counts: Dict[str, int] = defaultdict(int)
+        node_counts: dict[str, int] = defaultdict(int)
         for trace in traces:
             for activity in trace.activities:
                 node_counts[activity.node_id] += 1
@@ -1422,7 +1421,7 @@ class ProcessMiner:
         self.discovery = ProcessDiscovery()
         self.conformance = ConformanceChecker()
         self.enhancer = ProcessEnhancer()
-        self._models: Dict[str, ProcessModel] = {}
+        self._models: dict[str, ProcessModel] = {}
         logger.info("ProcessMiner initialized")
 
     def record_trace(self, trace: ExecutionTrace) -> None:
@@ -1438,10 +1437,10 @@ class ProcessMiner:
         node_type: str,
         duration_ms: int,
         status: ActivityStatus,
-        robot_id: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
-        outputs: Optional[Dict[str, Any]] = None,
-        error_message: Optional[str] = None,
+        robot_id: str | None = None,
+        inputs: dict[str, Any] | None = None,
+        outputs: dict[str, Any] | None = None,
+        error_message: str | None = None,
     ) -> None:
         """Record single activity to existing or new trace."""
         trace = self.event_log.get_trace(case_id)
@@ -1480,7 +1479,7 @@ class ProcessMiner:
         self,
         workflow_id: str,
         min_traces: int = 10,
-    ) -> Optional[ProcessModel]:
+    ) -> ProcessModel | None:
         """Discover process model for workflow.
 
         Args:
@@ -1505,8 +1504,8 @@ class ProcessMiner:
     def check_conformance(
         self,
         trace: ExecutionTrace,
-        workflow_id: Optional[str] = None,
-    ) -> Optional[ConformanceReport]:
+        workflow_id: str | None = None,
+    ) -> ConformanceReport | None:
         """Check trace conformance against discovered model."""
         wf_id = workflow_id or trace.workflow_id
         model = self._models.get(wf_id)
@@ -1520,7 +1519,7 @@ class ProcessMiner:
     def get_insights(
         self,
         workflow_id: str,
-    ) -> List[ProcessInsight]:
+    ) -> list[ProcessInsight]:
         """Get optimization insights for workflow."""
         model = self._models.get(workflow_id)
         if model is None:
@@ -1535,7 +1534,7 @@ class ProcessMiner:
     def get_variants(
         self,
         workflow_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get variant analysis for workflow."""
         traces = self.event_log.get_traces_for_workflow(workflow_id)
         if not traces:
@@ -1569,7 +1568,7 @@ class ProcessMiner:
             "variants": variants,
         }
 
-    def get_process_summary(self, workflow_id: str) -> Dict[str, Any]:
+    def get_process_summary(self, workflow_id: str) -> dict[str, Any]:
         """Get comprehensive process summary."""
         traces = self.event_log.get_traces_for_workflow(workflow_id)
         model = self._models.get(workflow_id)
@@ -1616,7 +1615,7 @@ class ProcessMiner:
 # Singleton Instance
 # =============================================================================
 
-_process_miner: Optional[ProcessMiner] = None
+_process_miner: ProcessMiner | None = None
 
 
 def get_process_miner() -> ProcessMiner:

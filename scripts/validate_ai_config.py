@@ -1,23 +1,23 @@
+import datetime
+import json
 import os
 import re
-import json
-import datetime
-from pathlib import Path
-from typing import Dict, Any, List
 import sys
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Add src to sys.path to import gemini_config
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from casare_rpa.infrastructure.ai.gemini_config import (
+    AgentCapability,
     GeminiConfig,
     GeminiParams,
-    AgentCapability,
     SkillDefinition,
 )
 
 
-def parse_markdown_table(content: str, table_header: str) -> List[Dict[str, str]]:
+def parse_markdown_table(content: str, table_header: str) -> list[dict[str, str]]:
     """Simple parser for markdown tables."""
     lines = content.split("\n")
     start_index = -1
@@ -38,7 +38,7 @@ def parse_markdown_table(content: str, table_header: str) -> List[Dict[str, str]
     return items
 
 
-def parse_markdown_list(content: str, header: str) -> List[str]:
+def parse_markdown_list(content: str, header: str) -> list[str]:
     """Simple parser for markdown lists."""
     lines = content.split("\n")
     start_index = -1
@@ -112,13 +112,7 @@ def load_config():
             schema_match = re.search(schema_pattern, gemini_md, re.DOTALL)
             schema_def = json.loads(schema_match.group(1)) if schema_match else {}
 
-<<<<<<< HEAD
-            skills.append(
-                SkillDefinition(name=name, description=desc, schema_def=schema_def)
-            )
-=======
             skills.append(SkillDefinition(name=name, description=desc, schema_def=schema_def))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     # 4. Cross-validate with AGENTS.md
     agents_skills = parse_markdown_list(agents_md, "## Skills Reference")

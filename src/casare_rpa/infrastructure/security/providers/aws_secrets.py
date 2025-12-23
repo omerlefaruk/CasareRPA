@@ -11,25 +11,25 @@ Supports:
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultProvider,
-    VaultConfig,
-    SecretValue,
-    SecretMetadata,
     CredentialType,
-    SecretNotFoundError,
-    VaultConnectionError,
-    VaultAuthenticationError,
     SecretAccessDeniedError,
+    SecretMetadata,
+    SecretNotFoundError,
+    SecretValue,
+    VaultAuthenticationError,
+    VaultConfig,
+    VaultConnectionError,
+    VaultProvider,
 )
 
 # Lazy load boto3
-_BOTO3_AVAILABLE: Optional[bool] = None
+_BOTO3_AVAILABLE: bool | None = None
 _boto3 = None
 _ClientError = None
 
@@ -96,7 +96,7 @@ class AWSSecretsManagerProvider(VaultProvider):
         """Connect to AWS Secrets Manager."""
         try:
             # Build session options
-            session_kwargs: Dict[str, Any] = {}
+            session_kwargs: dict[str, Any] = {}
 
             if self._config.aws_region:
                 session_kwargs["region_name"] = self._config.aws_region
@@ -108,7 +108,7 @@ class AWSSecretsManagerProvider(VaultProvider):
             self._session = _boto3.Session(**session_kwargs)
 
             # Build client options
-            client_kwargs: Dict[str, Any] = {}
+            client_kwargs: dict[str, Any] = {}
 
             if self._config.aws_region:
                 client_kwargs["region_name"] = self._config.aws_region
@@ -183,7 +183,7 @@ class AWSSecretsManagerProvider(VaultProvider):
             raise VaultConnectionError("Not connected to AWS Secrets Manager")
         return self._client
 
-    async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
+    async def get_secret(self, path: str, version: int | None = None) -> SecretValue:
         """
         Get secret from AWS Secrets Manager.
 
@@ -198,7 +198,7 @@ class AWSSecretsManagerProvider(VaultProvider):
 
         try:
             # Build request
-            request: Dict[str, Any] = {"SecretId": path}
+            request: dict[str, Any] = {"SecretId": path}
 
             if version:
                 # In AWS, version can be a stage (AWSCURRENT, AWSPREVIOUS) or version ID
@@ -234,8 +234,8 @@ class AWSSecretsManagerProvider(VaultProvider):
             metadata = SecretMetadata(
                 path=path,
                 version=1,
-                created_at=describe_response.get("CreatedDate", datetime.now(timezone.utc)),
-                updated_at=describe_response.get("LastChangedDate", datetime.now(timezone.utc)),
+                created_at=describe_response.get("CreatedDate", datetime.now(UTC)),
+                updated_at=describe_response.get("LastChangedDate", datetime.now(UTC)),
                 credential_type=credential_type,
                 custom_metadata={
                     "arn": response.get("ARN"),
@@ -264,9 +264,9 @@ class AWSSecretsManagerProvider(VaultProvider):
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in AWS Secrets Manager."""
         client = self._ensure_connected()
@@ -354,7 +354,7 @@ class AWSSecretsManagerProvider(VaultProvider):
             logger.error(f"Failed to delete secret {path}: {e}")
             raise
 
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """List secrets in AWS Secrets Manager."""
         client = self._ensure_connected()
 
@@ -441,8 +441,8 @@ class AWSSecretsManagerProvider(VaultProvider):
             raise
 
     def _generate_rotated_values(
-        self, current_data: Dict[str, Any], cred_type: CredentialType
-    ) -> Dict[str, Any]:
+        self, current_data: dict[str, Any], cred_type: CredentialType
+    ) -> dict[str, Any]:
         """Generate new secret values based on type."""
         import secrets as secrets_module
 
@@ -472,7 +472,7 @@ class AWSSecretsManagerProvider(VaultProvider):
         alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
         return "".join(secrets_module.choice(alphabet) for _ in range(length))
 
-    def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:
+    def _infer_credential_type(self, data: dict[str, Any]) -> CredentialType:
         """Infer credential type from data keys."""
         keys = set(data.keys())
 
@@ -557,7 +557,7 @@ class AWSSecretsManagerProvider(VaultProvider):
             logger.error(f"Failed to force delete secret {path}: {e}")
             raise
 
-    async def get_rotation_status(self, path: str) -> Dict[str, Any]:
+    async def get_rotation_status(self, path: str) -> dict[str, Any]:
         """
         Get rotation status for a secret.
 

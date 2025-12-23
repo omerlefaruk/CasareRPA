@@ -3,10 +3,9 @@ CasareRPA - Domain Entity: Execution State
 Manages runtime state and variables during workflow execution (pure domain logic).
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-
 import logging
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,7 @@ class ExecutionState:
         self,
         workflow_name: str = "Untitled",
         mode: ExecutionMode = ExecutionMode.NORMAL,
-        initial_variables: Optional[Dict[str, Any]] = None,
+        initial_variables: dict[str, Any] | None = None,
         project_context: Optional["ProjectContext"] = None,
     ) -> None:
         """
@@ -48,25 +47,25 @@ class ExecutionState:
         self.workflow_name = workflow_name
         self.mode = mode
         self.started_at = datetime.now()
-        self.completed_at: Optional[datetime] = None
+        self.completed_at: datetime | None = None
 
         # Project context for credential resolution
         self._project_context = project_context
 
         # Variable storage - build hierarchy from project context + initial variables
-        self.variables: Dict[str, Any] = self._build_variable_hierarchy(initial_variables)
+        self.variables: dict[str, Any] = self._build_variable_hierarchy(initial_variables)
         if self.variables:
             logger.info(
                 f"Initialized with {len(self.variables)} variables: {list(self.variables.keys())}"
             )
 
         # Execution flow tracking
-        self.current_node_id: Optional[NodeId] = None
-        self.execution_path: List[NodeId] = []  # Track execution order
-        self.errors: List[tuple[NodeId, str]] = []  # Track errors
+        self.current_node_id: NodeId | None = None
+        self.execution_path: list[NodeId] = []  # Track execution order
+        self.errors: list[tuple[NodeId, str]] = []  # Track errors
         self.stopped: bool = False
 
-    def _build_variable_hierarchy(self, runtime_vars: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _build_variable_hierarchy(self, runtime_vars: dict[str, Any] | None) -> dict[str, Any]:
         """
         Build variables dict with proper scoping hierarchy.
 
@@ -82,7 +81,7 @@ class ExecutionState:
         Returns:
             Merged dictionary of variable name -> value
         """
-        merged: Dict[str, Any] = {}
+        merged: dict[str, Any] = {}
 
         if self._project_context:
             # Add global variables (lowest priority)
@@ -171,7 +170,7 @@ class ExecutionState:
         self.variables.clear()
         logger.debug("All variables cleared")
 
-    def resolve_credential_path(self, alias: str) -> Optional[str]:
+    def resolve_credential_path(self, alias: str) -> str | None:
         """
         Resolve a credential alias to its Vault path.
 
@@ -222,7 +221,7 @@ class ExecutionState:
         self.execution_path.append(node_id)
         logger.debug(f"Executing node: {node_id}")
 
-    def get_execution_path(self) -> List[NodeId]:
+    def get_execution_path(self) -> list[NodeId]:
         """
         Get the execution path (list of executed node IDs).
 
@@ -242,7 +241,7 @@ class ExecutionState:
         self.errors.append((node_id, error_message))
         logger.error(f"Node {node_id} error: {error_message}")
 
-    def get_errors(self) -> List[tuple[NodeId, str]]:
+    def get_errors(self) -> list[tuple[NodeId, str]]:
         """
         Get all recorded errors.
 
@@ -271,7 +270,7 @@ class ExecutionState:
         duration = (self.completed_at - self.started_at).total_seconds()
         logger.info(f"Workflow completed in {duration:.2f} seconds")
 
-    def get_execution_summary(self) -> Dict[str, Any]:
+    def get_execution_summary(self) -> dict[str, Any]:
         """
         Get a summary of the execution.
 

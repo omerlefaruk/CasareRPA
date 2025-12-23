@@ -4,11 +4,11 @@ Defines message types and serialization for orchestrator-robot communication.
 """
 
 import json
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timezone
 import uuid
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class MessageType(Enum):
@@ -54,9 +54,9 @@ class Message:
 
     type: MessageType
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    payload: Dict[str, Any] = field(default_factory=dict)
-    correlation_id: Optional[str] = None  # For request-response pairing
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    payload: dict[str, Any] = field(default_factory=dict)
+    correlation_id: str | None = None  # For request-response pairing
 
     def to_json(self) -> str:
         """Serialize message to JSON."""
@@ -77,7 +77,7 @@ class Message:
         return cls(
             type=MessageType(data["type"]),
             id=data.get("id", str(uuid.uuid4())),
-            timestamp=data.get("timestamp", datetime.now(timezone.utc).isoformat()),
+            timestamp=data.get("timestamp", datetime.now(UTC).isoformat()),
             payload=data.get("payload", {}),
             correlation_id=data.get("correlation_id"),
         )
@@ -95,8 +95,8 @@ class MessageBuilder:
         robot_name: str,
         environment: str = "default",
         max_concurrent_jobs: int = 1,
-        tags: Optional[List[str]] = None,
-        capabilities: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        capabilities: dict[str, Any] | None = None,
     ) -> Message:
         """Build robot registration message."""
         return Message(
@@ -116,8 +116,8 @@ class MessageBuilder:
         robot_id: str,
         success: bool,
         message: str = "",
-        config: Optional[Dict[str, Any]] = None,
-        correlation_id: Optional[str] = None,
+        config: dict[str, Any] | None = None,
+        correlation_id: str | None = None,
     ) -> Message:
         """Build registration acknowledgment."""
         return Message(
@@ -139,7 +139,7 @@ class MessageBuilder:
         cpu_percent: float = 0.0,
         memory_percent: float = 0.0,
         disk_percent: float = 0.0,
-        active_job_ids: Optional[List[str]] = None,
+        active_job_ids: list[str] | None = None,
     ) -> Message:
         """Build heartbeat message."""
         return Message(
@@ -156,7 +156,7 @@ class MessageBuilder:
         )
 
     @staticmethod
-    def heartbeat_ack(robot_id: str, correlation_id: Optional[str] = None) -> Message:
+    def heartbeat_ack(robot_id: str, correlation_id: str | None = None) -> Message:
         """Build heartbeat acknowledgment."""
         return Message(
             type=MessageType.HEARTBEAT_ACK,
@@ -172,7 +172,7 @@ class MessageBuilder:
         workflow_json: str,
         priority: int = 1,
         timeout_seconds: int = 3600,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: dict[str, Any] | None = None,
     ) -> Message:
         """Build job assignment message."""
         return Message(
@@ -189,7 +189,7 @@ class MessageBuilder:
         )
 
     @staticmethod
-    def job_accept(job_id: str, robot_id: str, correlation_id: Optional[str] = None) -> Message:
+    def job_accept(job_id: str, robot_id: str, correlation_id: str | None = None) -> Message:
         """Build job acceptance message."""
         return Message(
             type=MessageType.JOB_ACCEPT,
@@ -202,7 +202,7 @@ class MessageBuilder:
 
     @staticmethod
     def job_reject(
-        job_id: str, robot_id: str, reason: str, correlation_id: Optional[str] = None
+        job_id: str, robot_id: str, reason: str, correlation_id: str | None = None
     ) -> Message:
         """Build job rejection message."""
         return Message(
@@ -239,7 +239,7 @@ class MessageBuilder:
     def job_complete(
         job_id: str,
         robot_id: str,
-        result: Optional[Dict[str, Any]] = None,
+        result: dict[str, Any] | None = None,
         duration_ms: int = 0,
     ) -> Message:
         """Build job completion message."""
@@ -287,7 +287,7 @@ class MessageBuilder:
         )
 
     @staticmethod
-    def job_cancelled(job_id: str, robot_id: str, correlation_id: Optional[str] = None) -> Message:
+    def job_cancelled(job_id: str, robot_id: str, correlation_id: str | None = None) -> Message:
         """Build job cancelled confirmation."""
         return Message(
             type=MessageType.JOB_CANCELLED,
@@ -308,10 +308,10 @@ class MessageBuilder:
         robot_id: str,
         status: str,
         current_jobs: int,
-        active_job_ids: List[str],
+        active_job_ids: list[str],
         uptime_seconds: int,
-        system_info: Optional[Dict[str, Any]] = None,
-        correlation_id: Optional[str] = None,
+        system_info: dict[str, Any] | None = None,
+        correlation_id: str | None = None,
     ) -> Message:
         """Build status response message."""
         return Message(
@@ -334,7 +334,7 @@ class MessageBuilder:
         level: str,
         message: str,
         node_id: str = "",
-        extra: Optional[Dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ) -> Message:
         """Build log entry message."""
         return Message(
@@ -350,7 +350,7 @@ class MessageBuilder:
         )
 
     @staticmethod
-    def log_batch(job_id: str, robot_id: str, entries: List[Dict[str, Any]]) -> Message:
+    def log_batch(job_id: str, robot_id: str, entries: list[dict[str, Any]]) -> Message:
         """Build batch log message."""
         return Message(
             type=MessageType.LOG_BATCH,
@@ -365,8 +365,8 @@ class MessageBuilder:
     def error(
         error_code: str,
         error_message: str,
-        details: Optional[Dict[str, Any]] = None,
-        correlation_id: Optional[str] = None,
+        details: dict[str, Any] | None = None,
+        correlation_id: str | None = None,
     ) -> Message:
         """Build error message."""
         return Message(

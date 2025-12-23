@@ -6,11 +6,11 @@ Provides model filtering by provider based on stored credentials.
 """
 
 import asyncio
-import time
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -24,16 +24,16 @@ class ModelInfo:
     id: str
     name: str
     provider: str
-    context_length: Optional[int] = None
-    created: Optional[int] = None
-    description: Optional[str] = None
+    context_length: int | None = None
+    created: int | None = None
+    description: str | None = None
 
 
 @dataclass
 class ModelCache:
     """Cache for provider models."""
 
-    models: List[ModelInfo] = field(default_factory=list)
+    models: list[ModelInfo] = field(default_factory=list)
     last_updated: float = 0
     ttl: float = 3600  # 1 hour cache
 
@@ -54,7 +54,7 @@ PROVIDER_ID_MAP = {
 }
 
 # Default fallback models when API is unavailable
-DEFAULT_MODELS: Dict[str, List[str]] = {
+DEFAULT_MODELS: dict[str, list[str]] = {
     "openai": [
         "gpt-4o",
         "gpt-4o-mini",
@@ -156,14 +156,14 @@ class LLMModelProvider:
         if self._initialized:
             return
 
-        self._cache: Dict[str, ModelCache] = {}
+        self._cache: dict[str, ModelCache] = {}
         self._executor = ThreadPoolExecutor(max_workers=3)
         self._initialized = True
         logger.debug("LLMModelProvider initialized")
 
     def get_models_for_provider(
-        self, provider: str, api_key: Optional[str] = None, use_cache: bool = True
-    ) -> List[str]:
+        self, provider: str, api_key: str | None = None, use_cache: bool = True
+    ) -> list[str]:
         """
         Get available models for a provider.
 
@@ -199,7 +199,7 @@ class LLMModelProvider:
         # Return defaults
         return DEFAULT_MODELS.get(provider, [])
 
-    def get_models_for_credential(self, credential_name: str) -> List[str]:
+    def get_models_for_credential(self, credential_name: str) -> list[str]:
         """
         Get models filtered by credential's provider.
 
@@ -220,14 +220,14 @@ class LLMModelProvider:
 
         return self.get_models_for_provider(provider, api_key)
 
-    def get_all_models(self) -> List[str]:
+    def get_all_models(self) -> list[str]:
         """Get all available models from all providers."""
         all_models = []
         for provider_models in DEFAULT_MODELS.values():
             all_models.extend(provider_models)
         return all_models
 
-    def get_provider_for_credential(self, credential_name: str) -> Optional[str]:
+    def get_provider_for_credential(self, credential_name: str) -> str | None:
         """Get the provider associated with a credential."""
         if credential_name == "Auto-detect from model":
             return None
@@ -235,9 +235,7 @@ class LLMModelProvider:
         provider, _ = self._get_provider_from_credential(credential_name)
         return provider
 
-    def _get_provider_from_credential(
-        self, credential_name: str
-    ) -> Tuple[Optional[str], Optional[str]]:
+    def _get_provider_from_credential(self, credential_name: str) -> tuple[str | None, str | None]:
         """Get provider and API key from credential store."""
         try:
             from casare_rpa.infrastructure.security.credential_store import (
@@ -260,7 +258,7 @@ class LLMModelProvider:
 
         return None, None
 
-    def _fetch_models(self, provider: str, api_key: str) -> List[str]:
+    def _fetch_models(self, provider: str, api_key: str) -> list[str]:
         """Fetch live models from provider API using UnifiedHttpClient."""
         fetch_configs = {
             "openai": {
@@ -315,10 +313,10 @@ class LLMModelProvider:
             logger.warning(f"API request failed for {provider}: {e}")
             return DEFAULT_MODELS.get(provider, [])
 
-    def _fetch_models_async(self, config: Dict[str, Any]) -> List[str]:
+    def _fetch_models_async(self, config: dict[str, Any]) -> list[str]:
         """Execute async HTTP request in sync context."""
 
-        async def _do_fetch() -> List[str]:
+        async def _do_fetch() -> list[str]:
             client_config = UnifiedHttpClientConfig(
                 default_timeout=10.0,
                 max_retries=2,
@@ -347,7 +345,7 @@ class LLMModelProvider:
             # No event loop - create a new one
             return asyncio.run(_do_fetch())
 
-    def _parse_openai_models(self, data: Dict[str, Any]) -> List[str]:
+    def _parse_openai_models(self, data: dict[str, Any]) -> list[str]:
         """Parse OpenAI-style models response."""
         models = []
         for model in data.get("data", []):
@@ -357,7 +355,7 @@ class LLMModelProvider:
                 models.append(model_id)
         return sorted(models, reverse=True)[:20]  # Latest first, limit to 20
 
-    def _parse_google_models(self, data: Dict[str, Any]) -> List[str]:
+    def _parse_google_models(self, data: dict[str, Any]) -> list[str]:
         """Parse Google AI models response."""
         models = []
         for model in data.get("models", []):
@@ -370,7 +368,7 @@ class LLMModelProvider:
                     models.append(model_id)
         return sorted(models, reverse=True)[:15]
 
-    def _parse_cohere_models(self, data: Dict[str, Any]) -> List[str]:
+    def _parse_cohere_models(self, data: dict[str, Any]) -> list[str]:
         """Parse Cohere models response."""
         models = []
         for model in data.get("models", []):
@@ -379,7 +377,7 @@ class LLMModelProvider:
                 models.append(model_id)
         return models[:15]
 
-    def _parse_together_models(self, data: Dict[str, Any]) -> List[str]:
+    def _parse_together_models(self, data: dict[str, Any]) -> list[str]:
         """Parse Together AI models response."""
         models = []
         for model in data:
@@ -389,7 +387,7 @@ class LLMModelProvider:
                 models.append(model_id)
         return models[:20]
 
-    def refresh_cache(self, provider: Optional[str] = None) -> None:
+    def refresh_cache(self, provider: str | None = None) -> None:
         """
         Refresh the model cache.
 
@@ -411,16 +409,16 @@ def get_model_provider() -> LLMModelProvider:
 
 
 # Convenience functions for visual nodes
-def get_models_for_credential(credential_name: str) -> List[str]:
+def get_models_for_credential(credential_name: str) -> list[str]:
     """Get models filtered by credential's provider."""
     return get_model_provider().get_models_for_credential(credential_name)
 
 
-def get_all_models() -> List[str]:
+def get_all_models() -> list[str]:
     """Get all available models."""
     return get_model_provider().get_all_models()
 
 
-def get_provider_for_credential(credential_name: str) -> Optional[str]:
+def get_provider_for_credential(credential_name: str) -> str | None:
     """Get the provider for a credential."""
     return get_model_provider().get_provider_for_credential(credential_name)

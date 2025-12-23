@@ -16,13 +16,11 @@ Performance:
 - Uses bounding box approximation (not pixel-perfect)
 """
 
-from typing import Optional, List, Tuple, Set
 from dataclasses import dataclass
-
-from PySide6.QtCore import QPointF, QRectF
+from typing import List, Optional, Set, Tuple
 
 from loguru import logger
-
+from PySide6.QtCore import QPointF, QRectF
 
 # ============================================================================
 # ROUTING CONFIGURATION
@@ -170,18 +168,18 @@ class SmartRouter:
 
     def __init__(self):
         """Initialize smart router."""
-        self._obstacles: List[ObstacleRect] = []
-        self._source_node_id: Optional[str] = None
-        self._target_node_id: Optional[str] = None
+        self._obstacles: list[ObstacleRect] = []
+        self._source_node_id: str | None = None
+        self._target_node_id: str | None = None
 
         # Cache for path calculations
-        self._cache_key: Optional[int] = None
+        self._cache_key: int | None = None
         self._cached_obstacles_hash: int = 0
 
     def update_obstacles(
         self,
-        node_bounds: List[Tuple[str, QRectF]],
-        exclude_node_ids: Optional[Set[str]] = None,
+        node_bounds: list[tuple[str, QRectF]],
+        exclude_node_ids: set[str] | None = None,
     ) -> None:
         """
         Update the obstacle list from node bounding boxes.
@@ -205,8 +203,8 @@ class SmartRouter:
 
     def set_endpoints(
         self,
-        source_node_id: Optional[str] = None,
-        target_node_id: Optional[str] = None,
+        source_node_id: str | None = None,
+        target_node_id: str | None = None,
     ) -> None:
         """
         Set the source and target node IDs.
@@ -224,7 +222,7 @@ class SmartRouter:
         self,
         source: QPointF,
         target: QPointF,
-    ) -> Tuple[QPointF, QPointF, QPointF, QPointF]:
+    ) -> tuple[QPointF, QPointF, QPointF, QPointF]:
         """
         Calculate bezier control points with obstacle avoidance.
 
@@ -256,7 +254,7 @@ class SmartRouter:
         self,
         source: QPointF,
         target: QPointF,
-    ) -> Tuple[QPointF, QPointF]:
+    ) -> tuple[QPointF, QPointF]:
         """
         Calculate initial bezier control points.
 
@@ -368,7 +366,7 @@ class SmartRouter:
         target: QPointF,
         initial_ctrl1: QPointF,
         initial_ctrl2: QPointF,
-    ) -> Tuple[QPointF, QPointF]:
+    ) -> tuple[QPointF, QPointF]:
         """
         Adjust control points to avoid obstacles.
 
@@ -427,7 +425,7 @@ class SmartRouter:
         self,
         source: QPointF,
         target: QPointF,
-    ) -> List[ObstacleRect]:
+    ) -> list[ObstacleRect]:
         """
         Find obstacles that lie between source and target.
 
@@ -461,7 +459,7 @@ class SmartRouter:
 # SINGLETON ROUTER MANAGER
 # ============================================================================
 
-_router_instance: Optional[SmartRouter] = None
+_router_instance: SmartRouter | None = None
 
 
 def get_smart_router() -> SmartRouter:
@@ -541,7 +539,7 @@ class SmartRoutingManager:
             self._dirty = False
 
             # Collect node bounding boxes
-            node_bounds: List[Tuple[str, QRectF]] = []
+            node_bounds: list[tuple[str, QRectF]] = []
             for node in nodes:
                 if hasattr(node, "view") and node.view:
                     try:
@@ -561,9 +559,9 @@ class SmartRoutingManager:
         self,
         source: QPointF,
         target: QPointF,
-        source_node_id: Optional[str] = None,
-        target_node_id: Optional[str] = None,
-    ) -> Tuple[QPointF, QPointF, QPointF, QPointF]:
+        source_node_id: str | None = None,
+        target_node_id: str | None = None,
+    ) -> tuple[QPointF, QPointF, QPointF, QPointF]:
         """
         Calculate routed bezier path from source to target.
 
@@ -599,7 +597,7 @@ class SmartRoutingManager:
         self,
         source: QPointF,
         target: QPointF,
-    ) -> Tuple[QPointF, QPointF, QPointF, QPointF]:
+    ) -> tuple[QPointF, QPointF, QPointF, QPointF]:
         """
         Calculate standard bezier path without obstacle avoidance.
 
@@ -620,10 +618,10 @@ class SmartRoutingManager:
 
 
 # Module-level manager instance (set by NodeGraphWidget)
-_routing_manager: Optional[SmartRoutingManager] = None
+_routing_manager: SmartRoutingManager | None = None
 
 
-def get_routing_manager() -> Optional[SmartRoutingManager]:
+def get_routing_manager() -> SmartRoutingManager | None:
     """Get the current routing manager, if set."""
     return _routing_manager
 

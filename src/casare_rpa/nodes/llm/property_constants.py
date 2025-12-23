@@ -24,7 +24,6 @@ Usage:
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-
 # =============================================================================
 # Model Selection Properties
 # =============================================================================

@@ -9,19 +9,18 @@ Reduced from 3,112 lines to ~400 lines by extracting components.
 
 from __future__ import annotations  # PEP 563: Deferred evaluation of annotations
 
-import sys
 import asyncio
+import sys
 
 # Apply QFont fix FIRST - before any Qt widget imports that might create fonts
 from casare_rpa.presentation.canvas.graph.patches import apply_early_patches
 
 apply_early_patches()
 
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt, qInstallMessageHandler, QtMsgType
-from qasync import QEventLoop
 from loguru import logger
-
+from PySide6.QtCore import Qt, QtMsgType, qInstallMessageHandler
+from PySide6.QtWidgets import QApplication
+from qasync import QEventLoop
 
 # =============================================================================
 # QT MESSAGE HANDLER - Filter unsupported CSS warnings
@@ -70,15 +69,15 @@ def _qt_message_handler(msg_type: QtMsgType, context, message: str) -> None:
         logger.critical(f"[Qt] {message}")
 
 
-from casare_rpa.config import setup_logging, APP_NAME
+from casare_rpa.config import APP_NAME, setup_logging
 from casare_rpa.nodes.file.file_security import (
-    validate_path_security,
     PathSecurityError,
+    validate_path_security,
 )
 from casare_rpa.presentation.canvas.main_window import MainWindow
 from casare_rpa.presentation.canvas.telemetry import (
-    StartupTimer,
     IMPORT_START,
+    StartupTimer,
     log_canvas_event,
 )
 
@@ -94,12 +93,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.controllers import (
-        WorkflowController,
+        AutosaveController,
         ExecutionController,
         NodeController,
-        SelectorController,
         PreferencesController,
-        AutosaveController,
+        SelectorController,
+        WorkflowController,
     )
 
 # NOTE: ensure_playwright_ready is imported lazily in ensure_playwright_on_demand()
@@ -110,10 +109,10 @@ if TYPE_CHECKING:
 # =============================================================================
 # Used by browser nodes to access the app for deferred Playwright check
 
-_app_instance: "CasareRPAApp | None" = None
+_app_instance: CasareRPAApp | None = None
 
 
-def get_app_instance() -> "CasareRPAApp | None":
+def get_app_instance() -> CasareRPAApp | None:
     """
     Get the running app instance.
 
@@ -273,9 +272,9 @@ class CasareRPAApp:
         self._main_window.set_central_widget(self._node_graph)
 
         # Create workflow serializer and deserializer
-        from .serialization.workflow_serializer import WorkflowSerializer
-        from .serialization.workflow_deserializer import WorkflowDeserializer
         from .execution.canvas_workflow_runner import CanvasWorkflowRunner
+        from .serialization.workflow_deserializer import WorkflowDeserializer
+        from .serialization.workflow_serializer import WorkflowSerializer
 
         self._serializer = WorkflowSerializer(
             self._node_graph.graph,  # NodeGraphQt NodeGraph instance
@@ -325,12 +324,12 @@ class CasareRPAApp:
 
         # C3 PERFORMANCE: Lazy import controllers (deferred from module level)
         from casare_rpa.presentation.canvas.controllers import (
-            WorkflowController,
+            AutosaveController,
             ExecutionController,
             NodeController,
-            SelectorController,
             PreferencesController,
-            AutosaveController,
+            SelectorController,
+            WorkflowController,
         )
 
         # Phase 1: Node registry (essential nodes only for fast startup)
@@ -581,6 +580,7 @@ class CasareRPAApp:
     def _on_paste_nodes(self) -> None:
         """Paste nodes and regenerate IDs to avoid duplicates."""
         import json
+
         from PySide6.QtWidgets import QApplication
 
         graph = self._node_graph.graph
@@ -733,8 +733,9 @@ class CasareRPAApp:
         Args:
             file_path: Path to save workflow to
         """
-        import orjson
         from pathlib import Path
+
+        import orjson
         from PySide6.QtWidgets import QMessageBox
 
         try:
@@ -840,8 +841,9 @@ class CasareRPAApp:
             project_path: Path to project folder
             scenario_path: Path to scenario JSON file
         """
-        import orjson
         from pathlib import Path
+
+        import orjson
         from PySide6.QtWidgets import QMessageBox
 
         try:
@@ -907,9 +909,10 @@ class CasareRPAApp:
         """
         Handle save as scenario - save workflow JSON with scenario name metadata.
         """
-        import orjson
         from pathlib import Path
-        from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
+
+        import orjson
+        from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
         try:
             # Get scenario name from user

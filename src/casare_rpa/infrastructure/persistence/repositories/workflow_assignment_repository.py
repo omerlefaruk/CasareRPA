@@ -24,7 +24,7 @@ class WorkflowAssignmentRepository:
     Maps between RobotAssignment value object and workflow_robot_assignments table.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -52,7 +52,7 @@ class WorkflowAssignmentRepository:
         pool = await self._get_pool()
         await pool.release(conn)
 
-    def _row_to_assignment(self, row: Dict[str, Any]) -> RobotAssignment:
+    def _row_to_assignment(self, row: dict[str, Any]) -> RobotAssignment:
         """
         Convert database row to RobotAssignment value object.
 
@@ -76,7 +76,7 @@ class WorkflowAssignmentRepository:
             notes=row.get("notes"),
         )
 
-    def _assignment_to_params(self, assignment: RobotAssignment) -> Dict[str, Any]:
+    def _assignment_to_params(self, assignment: RobotAssignment) -> dict[str, Any]:
         """
         Convert RobotAssignment to database parameters.
 
@@ -156,7 +156,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_workflow(self, workflow_id: str) -> List[RobotAssignment]:
+    async def get_by_workflow(self, workflow_id: str) -> list[RobotAssignment]:
         """
         Get all assignments for a workflow.
 
@@ -183,7 +183,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_default_for_workflow(self, workflow_id: str) -> Optional[RobotAssignment]:
+    async def get_default_for_workflow(self, workflow_id: str) -> RobotAssignment | None:
         """
         Get the default assignment for a workflow.
 
@@ -212,7 +212,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_robot(self, robot_id: str) -> List[RobotAssignment]:
+    async def get_by_robot(self, robot_id: str) -> list[RobotAssignment]:
         """
         Get all workflow assignments for a robot.
 
@@ -239,7 +239,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_assignment(self, workflow_id: str, robot_id: str) -> Optional[RobotAssignment]:
+    async def get_assignment(self, workflow_id: str, robot_id: str) -> RobotAssignment | None:
         """
         Get a specific workflow-robot assignment.
 
@@ -401,7 +401,7 @@ class WorkflowAssignmentRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_workflows_for_robot(self, robot_id: str) -> List[str]:
+    async def get_workflows_for_robot(self, robot_id: str) -> list[str]:
         """
         Get workflow IDs assigned to a robot.
 

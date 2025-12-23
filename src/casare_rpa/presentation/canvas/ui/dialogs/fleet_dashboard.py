@@ -8,12 +8,14 @@ and real-time updates via WebSocketBridge.
 
 from __future__ import annotations
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from loguru import logger
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -23,22 +25,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
-
-from PySide6.QtWidgets import QDialog
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
-    RobotsTabWidget,
-    JobsTabWidget,
-    SchedulesTabWidget,
-    QueuesTabWidget,
     AnalyticsTabWidget,
     ApiKeysTabWidget,
+    JobsTabWidget,
+    QueuesTabWidget,
+    RobotsTabWidget,
+    SchedulesTabWidget,
 )
 from casare_rpa.presentation.canvas.ui.widgets.tenant_selector import (
     TenantSelectorWidget,
 )
 from casare_rpa.presentation.canvas.ui.widgets.toast import ToastNotification
-from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -97,7 +96,7 @@ class FleetDashboardDialog(QDialog):
     tenant_changed = Signal(object)  # str or None
     refresh_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the Fleet Dashboard dialog.
 
@@ -111,9 +110,9 @@ class FleetDashboardDialog(QDialog):
         self.resize(1400, 900)
         self.setModal(False)
 
-        self._current_tenant_id: Optional[str] = None
+        self._current_tenant_id: str | None = None
         self._is_super_admin = False
-        self._robots: List[Dict[str, Any]] = []
+        self._robots: list[dict[str, Any]] = []
 
         self._setup_ui()
         self._connect_signals()
@@ -191,8 +190,8 @@ class FleetDashboardDialog(QDialog):
 
         self._nav_group = QButtonGroup(self)
         self._nav_group.setExclusive(True)
-        self._nav_buttons: Dict[int, QToolButton] = {}
-        self._nav_icon_cache: Dict[Tuple[str, bool], QIcon] = {}
+        self._nav_buttons: dict[int, QToolButton] = {}
+        self._nav_icon_cache: dict[tuple[str, bool], QIcon] = {}
 
         nav_items = [
             ("Robots", "robot"),
@@ -457,40 +456,40 @@ class FleetDashboardDialog(QDialog):
         self._tenant_selector.set_super_admin(is_super_admin)
         self._update_tenant_selector_visibility()
 
-    def update_tenants(self, tenants: List[Dict[str, Any]]) -> None:
+    def update_tenants(self, tenants: list[dict[str, Any]]) -> None:
         self._tenant_selector.update_tenants(tenants)
         self._update_tenant_selector_visibility(tenant_count=len(tenants))
 
-    def _update_tenant_selector_visibility(self, tenant_count: Optional[int] = None) -> None:
+    def _update_tenant_selector_visibility(self, tenant_count: int | None = None) -> None:
         if tenant_count is None:
             tenant_count = 0
         visible = bool(self._is_super_admin and tenant_count > 1)
         self._tenant_selector.setVisible(visible)
 
-    def update_robots(self, robots: List["Robot"]) -> None:
+    def update_robots(self, robots: list[Robot]) -> None:
         if hasattr(self._robots_tab, "update_robots"):
             self._robots_tab.update_robots(robots)
 
-    def update_jobs(self, jobs: List[Dict[str, Any]]) -> None:
+    def update_jobs(self, jobs: list[dict[str, Any]]) -> None:
         self._jobs_tab.update_jobs(jobs)
 
-    def update_schedules(self, schedules: List[Dict[str, Any]]) -> None:
+    def update_schedules(self, schedules: list[dict[str, Any]]) -> None:
         self._schedules_tab.update_schedules(schedules)
 
-    def update_queues(self, queues: List[Dict[str, Any]]) -> None:
+    def update_queues(self, queues: list[dict[str, Any]]) -> None:
         if hasattr(self._queues_tab, "update_queues"):
             self._queues_tab.update_queues(queues)
 
-    def update_analytics(self, analytics: Dict[str, Any]) -> None:
+    def update_analytics(self, analytics: dict[str, Any]) -> None:
         self._analytics_tab.update_analytics(analytics)
 
-    def update_api_keys_robots(self, robots: List[Dict[str, Any]]) -> None:
+    def update_api_keys_robots(self, robots: list[dict[str, Any]]) -> None:
         self._api_keys_tab.update_robots(robots)
 
-    def update_api_keys(self, api_keys: List[Dict[str, Any]]) -> None:
+    def update_api_keys(self, api_keys: list[dict[str, Any]]) -> None:
         self._api_keys_tab.update_api_keys(api_keys)
 
-    def _on_tenant_changed(self, tenant_id: Optional[str]) -> None:
+    def _on_tenant_changed(self, tenant_id: str | None) -> None:
         """Handle tenant selection change."""
         self._current_tenant_id = tenant_id
         self.tenant_changed.emit(tenant_id)

@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 
 # Lazy import aiofiles - fallback to asyncio.to_thread if unavailable
-_aiofiles_available: Optional[bool] = None
+_aiofiles_available: bool | None = None
 
 
 def _check_aiofiles() -> bool:
@@ -46,7 +46,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def read_text(
-        path: Union[str, Path],
+        path: str | Path,
         encoding: str = "utf-8",
         errors: str = "strict",
     ) -> str:
@@ -70,14 +70,14 @@ class AsyncFileOperations:
         if _check_aiofiles():
             import aiofiles
 
-            async with aiofiles.open(path, "r", encoding=encoding, errors=errors) as f:
+            async with aiofiles.open(path, encoding=encoding, errors=errors) as f:
                 return await f.read()
         else:
             return await asyncio.to_thread(_sync_read_text, path, encoding, errors)
 
     @staticmethod
     async def write_text(
-        path: Union[str, Path],
+        path: str | Path,
         content: str,
         encoding: str = "utf-8",
         errors: str = "strict",
@@ -111,7 +111,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def append_text(
-        path: Union[str, Path],
+        path: str | Path,
         content: str,
         encoding: str = "utf-8",
         errors: str = "strict",
@@ -144,7 +144,7 @@ class AsyncFileOperations:
             return await asyncio.to_thread(_sync_append_text, path, content, encoding, errors)
 
     @staticmethod
-    async def read_binary(path: Union[str, Path]) -> bytes:
+    async def read_binary(path: str | Path) -> bytes:
         """
         Read binary content from a file asynchronously.
 
@@ -166,7 +166,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def write_binary(
-        path: Union[str, Path],
+        path: str | Path,
         content: bytes,
         create_dirs: bool = True,
     ) -> int:
@@ -196,7 +196,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def read_json(
-        path: Union[str, Path],
+        path: str | Path,
         encoding: str = "utf-8",
     ) -> Any:
         """
@@ -220,7 +220,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def write_json(
-        path: Union[str, Path],
+        path: str | Path,
         data: Any,
         encoding: str = "utf-8",
         indent: int = 2,
@@ -251,7 +251,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def read_csv(
-        path: Union[str, Path],
+        path: str | Path,
         encoding: str = "utf-8",
         delimiter: str = ",",
         has_header: bool = True,
@@ -259,7 +259,7 @@ class AsyncFileOperations:
         max_rows: int = 0,
         quotechar: str = '"',
         strict: bool = False,
-    ) -> tuple[List[Union[Dict[str, str], List[str]]], List[str]]:
+    ) -> tuple[list[dict[str, str] | list[str]], list[str]]:
         """
         Read and parse a CSV file asynchronously.
 
@@ -294,9 +294,9 @@ class AsyncFileOperations:
 
     @staticmethod
     async def write_csv(
-        path: Union[str, Path],
-        data: List[Union[Dict[str, Any], List[Any]]],
-        headers: Optional[List[str]] = None,
+        path: str | Path,
+        data: list[dict[str, Any] | list[Any]],
+        headers: list[str] | None = None,
         encoding: str = "utf-8",
         delimiter: str = ",",
         write_header: bool = True,
@@ -330,7 +330,7 @@ class AsyncFileOperations:
 
 def _sync_read_text(path: Path, encoding: str, errors: str) -> str:
     """Synchronous text file read."""
-    with open(path, "r", encoding=encoding, errors=errors) as f:
+    with open(path, encoding=encoding, errors=errors) as f:
         return f.read()
 
 
@@ -366,10 +366,10 @@ def _parse_csv(
     max_rows: int,
     quotechar: str,
     strict: bool,
-) -> tuple[List[Union[Dict[str, str], List[str]]], List[str]]:
+) -> tuple[list[dict[str, str] | list[str]], list[str]]:
     """Parse CSV content (CPU-bound, run in thread pool)."""
-    data: List[Union[Dict[str, str], List[str]]] = []
-    headers: List[str] = []
+    data: list[dict[str, str] | list[str]] = []
+    headers: list[str] = []
 
     string_io = StringIO(content)
 
@@ -409,8 +409,8 @@ def _parse_csv(
 
 
 def _format_csv(
-    data: List[Union[Dict[str, Any], List[Any]]],
-    headers: Optional[List[str]],
+    data: list[dict[str, Any] | list[Any]],
+    headers: list[str] | None,
     delimiter: str,
     write_header: bool,
 ) -> str:

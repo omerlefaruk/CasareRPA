@@ -9,25 +9,25 @@ Supports:
 - Soft-delete recovery
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultProvider,
-    VaultConfig,
-    SecretValue,
-    SecretMetadata,
     CredentialType,
-    SecretNotFoundError,
-    VaultConnectionError,
-    VaultAuthenticationError,
     SecretAccessDeniedError,
+    SecretMetadata,
+    SecretNotFoundError,
+    SecretValue,
+    VaultAuthenticationError,
+    VaultConfig,
+    VaultConnectionError,
+    VaultProvider,
 )
 
 # Lazy load Azure SDK
-_AZURE_AVAILABLE: Optional[bool] = None
+_AZURE_AVAILABLE: bool | None = None
 _SecretClient = None
 _DefaultAzureCredential = None
 _ClientSecretCredential = None
@@ -46,13 +46,13 @@ def _check_azure_available() -> bool:
         return _AZURE_AVAILABLE
 
     try:
-        from azure.keyvault.secrets import SecretClient
+        from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
         from azure.identity import (
-            DefaultAzureCredential,
             ClientSecretCredential,
+            DefaultAzureCredential,
             ManagedIdentityCredential,
         )
-        from azure.core.exceptions import ResourceNotFoundError, HttpResponseError
+        from azure.keyvault.secrets import SecretClient
 
         _SecretClient = SecretClient
         _DefaultAzureCredential = DefaultAzureCredential
@@ -104,7 +104,7 @@ class AzureKeyVaultProvider(VaultProvider):
             )
 
         self._config = config
-        self._client: Optional["_SecretClient"] = None
+        self._client: _SecretClient | None = None
         self._credential = None
 
     async def connect(self) -> None:
@@ -200,7 +200,7 @@ class AzureKeyVaultProvider(VaultProvider):
             raise VaultConnectionError("Not connected to Azure Key Vault")
         return self._client
 
-    async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
+    async def get_secret(self, path: str, version: int | None = None) -> SecretValue:
         """
         Get secret from Azure Key Vault.
 
@@ -228,8 +228,8 @@ class AzureKeyVaultProvider(VaultProvider):
             metadata = SecretMetadata(
                 path=path,
                 version=1,  # Azure versions are strings, use 1 for compatibility
-                created_at=secret.properties.created_on or datetime.now(timezone.utc),
-                updated_at=secret.properties.updated_on or datetime.now(timezone.utc),
+                created_at=secret.properties.created_on or datetime.now(UTC),
+                updated_at=secret.properties.updated_on or datetime.now(UTC),
                 expires_at=secret.properties.expires_on,
                 credential_type=credential_type,
                 custom_metadata={
@@ -256,9 +256,9 @@ class AzureKeyVaultProvider(VaultProvider):
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in Azure Key Vault."""
         client = self._ensure_connected()
@@ -290,8 +290,8 @@ class AzureKeyVaultProvider(VaultProvider):
             return SecretMetadata(
                 path=path,
                 version=1,
-                created_at=secret.properties.created_on or datetime.now(timezone.utc),
-                updated_at=secret.properties.updated_on or datetime.now(timezone.utc),
+                created_at=secret.properties.created_on or datetime.now(UTC),
+                updated_at=secret.properties.updated_on or datetime.now(UTC),
                 credential_type=credential_type,
                 custom_metadata={
                     "azure_version": secret.properties.version,
@@ -332,7 +332,7 @@ class AzureKeyVaultProvider(VaultProvider):
             logger.error(f"Failed to delete secret {path}: {e}")
             raise
 
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """List secrets in Azure Key Vault."""
         client = self._ensure_connected()
 
@@ -379,8 +379,8 @@ class AzureKeyVaultProvider(VaultProvider):
         )
 
     def _generate_rotated_values(
-        self, current_data: Dict[str, Any], cred_type: CredentialType
-    ) -> Dict[str, Any]:
+        self, current_data: dict[str, Any], cred_type: CredentialType
+    ) -> dict[str, Any]:
         """Generate new secret values based on type."""
         import secrets as secrets_module
 
@@ -470,8 +470,8 @@ class AzureKeyVaultProvider(VaultProvider):
             return SecretMetadata(
                 path=path,
                 version=1,
-                created_at=recovered.properties.created_on or datetime.now(timezone.utc),
-                updated_at=recovered.properties.updated_on or datetime.now(timezone.utc),
+                created_at=recovered.properties.created_on or datetime.now(UTC),
+                updated_at=recovered.properties.updated_on or datetime.now(UTC),
                 credential_type=self._infer_credential_type(
                     recovered.properties.content_type or ""
                 ),

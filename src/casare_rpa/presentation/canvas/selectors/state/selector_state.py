@@ -7,9 +7,10 @@ enabling reactive UI updates and clean separation of concerns.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QObject, Signal
 
@@ -81,13 +82,13 @@ class ElementSelectorState:
     element_html: str = ""
     element_tag: str = ""
     element_id: str = ""
-    element_classes: List[str] = field(default_factory=list)
+    element_classes: list[str] = field(default_factory=list)
     element_text: str = ""
-    element_properties: Dict[str, Any] = field(default_factory=dict)
-    element_rect: Optional[Dict[str, float]] = None
+    element_properties: dict[str, Any] = field(default_factory=dict)
+    element_rect: dict[str, float] | None = None
 
     # Selector building
-    attribute_rows: List[AttributeRow] = field(default_factory=list)
+    attribute_rows: list[AttributeRow] = field(default_factory=list)
     generated_selector: str = ""
     selector_type: str = "css"
     match_count: int = 0
@@ -115,7 +116,7 @@ class ElementSelectorState:
     cv_accuracy: float = 0.8
 
     image_enabled: bool = False
-    image_template: Optional[bytes] = None
+    image_template: bytes | None = None
     image_accuracy: float = 0.8
 
     # Healing context capture
@@ -124,7 +125,7 @@ class ElementSelectorState:
     capture_cv_template: bool = False
 
     # History
-    recent_selectors: List[str] = field(default_factory=list)
+    recent_selectors: list[str] = field(default_factory=list)
 
     def has_element(self) -> bool:
         """Check if an element is currently selected."""
@@ -134,11 +135,11 @@ class ElementSelectorState:
         """Check if an anchor is configured."""
         return self.anchor_enabled and bool(self.anchor_selector)
 
-    def get_enabled_attributes(self) -> List[AttributeRow]:
+    def get_enabled_attributes(self) -> list[AttributeRow]:
         """Get list of enabled attribute rows."""
         return [row for row in self.attribute_rows if row.enabled]
 
-    def get_best_selector(self) -> Optional[str]:
+    def get_best_selector(self) -> str | None:
         """Get the highest-scoring enabled selector."""
         enabled = self.get_enabled_attributes()
         if not enabled:
@@ -148,7 +149,7 @@ class ElementSelectorState:
         best = max(enabled, key=lambda r: r.score)
         return best.value
 
-    def to_healing_context(self) -> Dict[str, Any]:
+    def to_healing_context(self) -> dict[str, Any]:
         """Build healing context dict from current state."""
         context = {}
 
@@ -225,10 +226,10 @@ class StateManager(QObject):
     anchor_changed = Signal()
     advanced_changed = Signal()
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._state = ElementSelectorState()
-        self._observers: List[Callable[[ElementSelectorState], None]] = []
+        self._observers: list[Callable[[ElementSelectorState], None]] = []
 
     @property
     def state(self) -> ElementSelectorState:
@@ -254,10 +255,10 @@ class StateManager(QObject):
         html: str = "",
         tag: str = "",
         element_id: str = "",
-        classes: Optional[List[str]] = None,
+        classes: list[str] | None = None,
         text: str = "",
-        properties: Optional[Dict[str, Any]] = None,
-        rect: Optional[Dict[str, float]] = None,
+        properties: dict[str, Any] | None = None,
+        rect: dict[str, float] | None = None,
     ) -> None:
         """Set current element data."""
         self._state.element_html = html
@@ -271,7 +272,7 @@ class StateManager(QObject):
         self.element_changed.emit()
         self.state_changed.emit()
 
-    def set_attributes(self, rows: List[AttributeRow]) -> None:
+    def set_attributes(self, rows: list[AttributeRow]) -> None:
         """Set attribute rows."""
         self._state.attribute_rows = rows
         self.attributes_changed.emit(rows)

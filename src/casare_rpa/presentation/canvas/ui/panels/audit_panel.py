@@ -14,46 +14,44 @@ Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import QDateTime, Qt, Signal, Slot
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
     QAbstractItemView,
     QComboBox,
-    QLabel,
-    QStackedWidget,
     QDateTimeEdit,
-    QMenu,
     QDialog,
-    QFormLayout,
-    QTextEdit,
     QDialogButtonBox,
-    QMessageBox,
+    QDockWidget,
     QFileDialog,
+    QFormLayout,
     QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QMessageBox,
     QProgressBar,
+    QStackedWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QDateTime, Slot
-from PySide6.QtGui import QColor, QBrush
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
-    ToolbarButton,
     StatusBadge,
+    ToolbarButton,
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
-
 
 # Event type display names
 EVENT_TYPE_DISPLAY = {
@@ -81,8 +79,8 @@ class EventDetailsDialog(QDialog):
 
     def __init__(
         self,
-        event_data: Dict[str, Any],
-        parent: Optional[QWidget] = None,
+        event_data: dict[str, Any],
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the dialog.
@@ -100,7 +98,7 @@ class EventDetailsDialog(QDialog):
         self._setup_ui(event_data)
         self._apply_styles()
 
-    def _setup_ui(self, event: Dict[str, Any]) -> None:
+    def _setup_ui(self, event: dict[str, Any]) -> None:
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
         layout.setSpacing(12)
@@ -280,7 +278,7 @@ class AuditPanel(QDockWidget):
     refresh_requested = Signal()
     export_requested = Signal(str, str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the audit panel.
 
@@ -290,10 +288,10 @@ class AuditPanel(QDockWidget):
         super().__init__("Security Audit", parent)
         self.setObjectName("AuditDock")
 
-        self._events: List[Dict[str, Any]] = []
-        self._statistics: Dict[str, Any] = {}
+        self._events: list[dict[str, Any]] = []
+        self._statistics: dict[str, Any] = {}
         self._is_loading = False
-        self._context_event: Optional[Dict[str, Any]] = None  # Context menu target
+        self._context_event: dict[str, Any] | None = None  # Context menu target
 
         self._setup_dock()
         self._setup_ui()
@@ -570,7 +568,7 @@ class AuditPanel(QDockWidget):
             }}
         """)
 
-    def set_events(self, events: List[Dict[str, Any]]) -> None:
+    def set_events(self, events: list[dict[str, Any]]) -> None:
         """
         Set the audit events to display.
 
@@ -582,7 +580,7 @@ class AuditPanel(QDockWidget):
         self._update_statistics()
         self._update_display()
 
-    def set_statistics(self, stats: Dict[str, Any]) -> None:
+    def set_statistics(self, stats: dict[str, Any]) -> None:
         """
         Set the statistics summary.
 
@@ -671,7 +669,7 @@ class AuditPanel(QDockWidget):
         # Update count
         self._count_label.setText(f"{len(filtered_events)} events")
 
-    def _apply_filters(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_filters(self, events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Apply current filters to events."""
         filtered = events
 
@@ -691,16 +689,14 @@ class AuditPanel(QDockWidget):
         start_dt = self._start_date.dateTime().toPython()
         end_dt = self._end_date.dateTime().toPython()
 
-        def in_range(event: Dict[str, Any]) -> bool:
+        def in_range(event: dict[str, Any]) -> bool:
             ts = event.get("timestamp")
             if isinstance(ts, datetime):
                 # Make timezone-aware if needed
                 if ts.tzinfo is None:
-                    ts = ts.replace(tzinfo=timezone.utc)
-                start_aware = (
-                    start_dt.replace(tzinfo=timezone.utc) if start_dt.tzinfo is None else start_dt
-                )
-                end_aware = end_dt.replace(tzinfo=timezone.utc) if end_dt.tzinfo is None else end_dt
+                    ts = ts.replace(tzinfo=UTC)
+                start_aware = start_dt.replace(tzinfo=UTC) if start_dt.tzinfo is None else start_dt
+                end_aware = end_dt.replace(tzinfo=UTC) if end_dt.tzinfo is None else end_dt
                 return start_aware <= ts <= end_aware
             return True
 
@@ -882,7 +878,7 @@ class AuditPanel(QDockWidget):
         if event_data:
             self._show_event_details(event_data)
 
-    def _show_event_details(self, event_data: Dict[str, Any]) -> None:
+    def _show_event_details(self, event_data: dict[str, Any]) -> None:
         """Show event details dialog."""
         dialog = EventDetailsDialog(event_data, self)
         dialog.exec()
@@ -893,7 +889,7 @@ class AuditPanel(QDockWidget):
 
         QApplication.clipboard().setText(text)
 
-    def get_filter_state(self) -> Dict[str, Any]:
+    def get_filter_state(self) -> dict[str, Any]:
         """
         Get current filter state.
 

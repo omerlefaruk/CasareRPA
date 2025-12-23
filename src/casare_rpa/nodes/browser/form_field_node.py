@@ -102,7 +102,7 @@ class FormFieldNode(BrowserBaseNode):
         self.add_output_port("fields_out", DataType.LIST)
         self.add_output_port("field", DataType.OBJECT)
 
-    async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any]:
         """
         Accumulate field definition without executing.
 

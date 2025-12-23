@@ -1,8 +1,8 @@
-import os
-import sys
 import importlib
 import inspect
-from typing import List, Type, Dict, Any
+import os
+import sys
+from typing import Any, Dict, List, Type
 
 # Ensure src is in python path
 sys.path.insert(0, os.path.abspath("src"))
@@ -89,6 +89,7 @@ def audit_nodes():
     # Report issues
     if not issues:
         print("\nNo issues found! All required ports map to schema properties.")
+        return 0
     else:
         print(f"\nFound {len(issues)} potential issues (Required Port missing from Schema):")
 
@@ -104,7 +105,8 @@ def audit_nodes():
             print(f"\nFile: {f}")
             for d in details:
                 print(f"  - {d}")
+        return 1
 
 
 if __name__ == "__main__":
-    audit_nodes()
+    sys.exit(audit_nodes())

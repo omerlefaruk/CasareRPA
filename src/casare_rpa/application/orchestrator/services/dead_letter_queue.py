@@ -10,11 +10,12 @@ or encountered unrecoverable errors. The DLQ allows:
 """
 
 import threading
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
 import uuid
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -57,19 +58,19 @@ class DeadLetterItem:
     job_id: str
     workflow_id: str
     workflow_name: str
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
     reason: DeadLetterReason = DeadLetterReason.MAX_RETRIES_EXCEEDED
     final_error: str = ""
     retry_count: int = 0
-    added_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    original_created_at: Optional[datetime] = None
-    robot_id: Optional[str] = None
-    robot_name: Optional[str] = None
-    retried_at: Optional[datetime] = None
-    retried_job_id: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    added_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    original_created_at: datetime | None = None
+    robot_id: str | None = None
+    robot_name: str | None = None
+    retried_at: datetime | None = None
+    retried_job_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -92,7 +93,7 @@ class DeadLetterItem:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "DeadLetterItem":
+    def from_dict(cls, data: dict[str, Any]) -> "DeadLetterItem":
         """Create from dictionary."""
         reason_str = data.get("reason", "max_retries_exceeded")
         try:
@@ -100,7 +101,7 @@ class DeadLetterItem:
         except ValueError:
             reason = DeadLetterReason.MAX_RETRIES_EXCEEDED
 
-        def parse_dt(val: Any) -> Optional[datetime]:
+        def parse_dt(val: Any) -> datetime | None:
             if val is None:
                 return None
             if isinstance(val, datetime):
@@ -121,7 +122,7 @@ class DeadLetterItem:
             reason=reason,
             final_error=data.get("final_error", ""),
             retry_count=data.get("retry_count", 0),
-            added_at=parse_dt(data.get("added_at")) or datetime.now(timezone.utc),
+            added_at=parse_dt(data.get("added_at")) or datetime.now(UTC),
             original_created_at=parse_dt(data.get("original_created_at")),
             robot_id=data.get("robot_id"),
             robot_name=data.get("robot_name"),
@@ -138,10 +139,10 @@ class DeadLetterItem:
     @property
     def age_hours(self) -> float:
         """Get age of this item in hours."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         added = self.added_at
         if added.tzinfo is None:
-            added = added.replace(tzinfo=timezone.utc)
+            added = added.replace(tzinfo=UTC)
         delta = now - added
         return delta.total_seconds() / 3600
 
@@ -163,8 +164,8 @@ class DeadLetterQueue:
         self,
         max_size: int = 10000,
         retention_days: int = 30,
-        on_item_added: Optional[Callable[["DeadLetterItem"], None]] = None,
-        on_item_retried: Optional[Callable[["DeadLetterItem", str], None]] = None,
+        on_item_added: Callable[["DeadLetterItem"], None] | None = None,
+        on_item_retried: Callable[["DeadLetterItem", str], None] | None = None,
     ) -> None:
         """
         Initialize dead letter queue.
@@ -175,8 +176,8 @@ class DeadLetterQueue:
             on_item_added: Callback when item added
             on_item_retried: Callback when item retried (item, new_job_id)
         """
-        self._items: Dict[str, DeadLetterItem] = {}
-        self._insertion_order: List[str] = []
+        self._items: dict[str, DeadLetterItem] = {}
+        self._insertion_order: list[str] = []
         self._max_size = max_size
         self._retention_days = retention_days
         self._on_item_added = on_item_added
@@ -195,11 +196,11 @@ class DeadLetterQueue:
         reason: DeadLetterReason,
         final_error: str,
         retry_count: int,
-        parameters: Optional[Dict] = None,
-        robot_id: Optional[str] = None,
-        robot_name: Optional[str] = None,
-        original_created_at: Optional[datetime] = None,
-        metadata: Optional[Dict] = None,
+        parameters: dict | None = None,
+        robot_id: str | None = None,
+        robot_name: str | None = None,
+        original_created_at: datetime | None = None,
+        metadata: dict | None = None,
     ) -> DeadLetterItem:
         """
         Add a failed job to the dead letter queue.
@@ -263,8 +264,8 @@ class DeadLetterQueue:
     async def retry(
         self,
         item_id: str,
-        job_submitter: Optional[Callable] = None,
-    ) -> Optional[str]:
+        job_submitter: Callable | None = None,
+    ) -> str | None:
         """
         Retry a dead letter item by creating a new job.
 
@@ -303,7 +304,7 @@ class DeadLetterQueue:
 
         if new_job_id:
             with self._lock:
-                item.retried_at = datetime.now(timezone.utc)
+                item.retried_at = datetime.now(UTC)
                 item.retried_job_id = new_job_id
 
             logger.info(f"DLQ: Retried item {item_id[:8]} as job {new_job_id[:8]}")
@@ -319,11 +320,11 @@ class DeadLetterQueue:
 
     async def bulk_retry(
         self,
-        item_ids: Optional[List[str]] = None,
-        workflow_id: Optional[str] = None,
-        reason: Optional[DeadLetterReason] = None,
-        job_submitter: Optional[Callable] = None,
-    ) -> Dict[str, Optional[str]]:
+        item_ids: list[str] | None = None,
+        workflow_id: str | None = None,
+        reason: DeadLetterReason | None = None,
+        job_submitter: Callable | None = None,
+    ) -> dict[str, str | None]:
         """
         Retry multiple items.
 
@@ -387,7 +388,7 @@ class DeadLetterQueue:
 
     async def purge(
         self,
-        older_than_days: Optional[int] = None,
+        older_than_days: int | None = None,
         include_retried: bool = True,
     ) -> int:
         """
@@ -403,7 +404,7 @@ class DeadLetterQueue:
         if older_than_days is None:
             older_than_days = self._retention_days
 
-        cutoff = datetime.now(timezone.utc) - timedelta(days=older_than_days)
+        cutoff = datetime.now(UTC) - timedelta(days=older_than_days)
         purged = 0
 
         with self._lock:
@@ -411,7 +412,7 @@ class DeadLetterQueue:
             for item_id, item in self._items.items():
                 added = item.added_at
                 if added.tzinfo is None:
-                    added = added.replace(tzinfo=timezone.utc)
+                    added = added.replace(tzinfo=UTC)
 
                 if added < cutoff:
                     if include_retried or not item.is_retried:
@@ -428,12 +429,12 @@ class DeadLetterQueue:
 
         return purged
 
-    def get(self, item_id: str) -> Optional[DeadLetterItem]:
+    def get(self, item_id: str) -> DeadLetterItem | None:
         """Get item by ID."""
         with self._lock:
             return self._items.get(item_id)
 
-    def get_by_job_id(self, job_id: str) -> Optional[DeadLetterItem]:
+    def get_by_job_id(self, job_id: str) -> DeadLetterItem | None:
         """Get item by original job ID."""
         with self._lock:
             for item in self._items.values():
@@ -443,12 +444,12 @@ class DeadLetterQueue:
 
     def list(
         self,
-        workflow_id: Optional[str] = None,
-        reason: Optional[DeadLetterReason] = None,
+        workflow_id: str | None = None,
+        reason: DeadLetterReason | None = None,
         include_retried: bool = True,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[DeadLetterItem]:
+    ) -> list[DeadLetterItem]:
         """
         List DLQ items with optional filtering.
 
@@ -478,7 +479,7 @@ class DeadLetterQueue:
 
             return result[offset : offset + limit]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get DLQ statistics."""
         with self._lock:
             total = len(self._items)

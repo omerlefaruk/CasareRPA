@@ -41,6 +41,7 @@ def mock_context() -> MagicMock:
 def _create_node_data(node_id: str, node_type: str, config: Dict = None) -> Dict:
     """Create a node data dictionary."""
     return {
+        "node_id": node_id,
         "node_type": node_type,
         "config": config or {},
         "position": {"x": 100, "y": 100},
@@ -107,13 +108,7 @@ def _generate_workflow_data(
     for i in range(node_count - 1):
         source_id = f"node_{i:04d}"
         target_id = f"node_{i + 1:04d}"
-<<<<<<< HEAD
-        connections.append(
-            _create_connection_data(source_id, "exec_out", target_id, "exec_in")
-        )
-=======
         connections.append(_create_connection_data(source_id, "exec_out", target_id, "exec_in"))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
     return {
         "metadata": {
@@ -161,6 +156,7 @@ def minimal_workflow_data() -> Dict[str, Any]:
         },
         "nodes": {
             "start": {
+                "node_id": "start",
                 "node_type": "StartNode",
                 "config": {},
             },
@@ -182,14 +178,17 @@ def workflow_with_aliases() -> Dict[str, Any]:
         },
         "nodes": {
             "start": {
+                "node_id": "start",
                 "node_type": "StartNode",
                 "config": {},
             },
             "read_file": {
+                "node_id": "read_file",
                 "node_type": "ReadFileNode",  # Alias for FileSystemSuperNode
                 "config": {"file_path": "test.txt"},
             },
             "write_file": {
+                "node_id": "write_file",
                 "node_type": "WriteFileNode",  # Alias for FileSystemSuperNode
                 "config": {"file_path": "output.txt", "content": "data"},
             },

@@ -11,15 +11,16 @@ Usage:
 import traceback
 from typing import Optional
 
-from PySide6.QtCore import QObject, Signal, Qt, QPointF
-from PySide6.QtGui import QPainterPathStroker
-from NodeGraphQt import NodeGraph
-
 from loguru import logger
+from NodeGraphQt import NodeGraph
+from PySide6.QtCore import QObject, QPointF, Qt, Signal
+from PySide6.QtGui import QPainterPathStroker
 
 # Import layout constants from reroute_node_item for consistent positioning
 from casare_rpa.presentation.canvas.graph.reroute_node_item import (
     _NODE_CENTER_X as REROUTE_CENTER_X,
+)
+from casare_rpa.presentation.canvas.graph.reroute_node_item import (
     _NODE_CENTER_Y as REROUTE_CENTER_Y,
 )
 
@@ -38,7 +39,7 @@ class RerouteInsertManager(QObject):
     # Signal emitted when a reroute node is successfully inserted
     reroute_inserted = Signal(object, object, object)  # reroute_node, source_node, target_node
 
-    def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph: NodeGraph, parent: QObject | None = None) -> None:
         """
         Initialize the reroute insert manager.
 
@@ -107,7 +108,7 @@ class RerouteInsertManager(QObject):
 
         return False
 
-    def _find_pipe_at_position(self, scene_pos: QPointF) -> Optional[object]:
+    def _find_pipe_at_position(self, scene_pos: QPointF) -> object | None:
         """
         Find a pipe at the given scene position.
 
@@ -303,7 +304,7 @@ class RerouteInsertManager(QObject):
             logger.error(f"Error inserting reroute at pipe: {e}")
             logger.error(traceback.format_exc())
 
-    def _create_reroute_node(self, position: QPointF, is_exec: bool) -> Optional[object]:
+    def _create_reroute_node(self, position: QPointF, is_exec: bool) -> object | None:
         """
         Create a reroute node at the specified position.
 

@@ -12,12 +12,11 @@ Converts a selection of nodes into a reusable subflow:
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
-
-from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QMessageBox
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 from loguru import logger
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QMessageBox
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -38,9 +37,9 @@ class ExternalConnection:
 class AnalyzedConnections:
     """Result of analyzing connections for selected nodes."""
 
-    internal_connections: List[Dict[str, Any]]  # Connections between selected nodes
-    external_inputs: List[ExternalConnection]  # External -> internal (become subflow inputs)
-    external_outputs: List[ExternalConnection]  # Internal -> external (become subflow outputs)
+    internal_connections: list[dict[str, Any]]  # Connections between selected nodes
+    external_inputs: list[ExternalConnection]  # External -> internal (become subflow inputs)
+    external_outputs: list[ExternalConnection]  # Internal -> external (become subflow outputs)
 
 
 class CreateSubflowAction(QObject):
@@ -52,7 +51,7 @@ class CreateSubflowAction(QObject):
         subflow_node = action.execute(selected_nodes)
     """
 
-    def __init__(self, graph_widget, parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph_widget, parent: QObject | None = None) -> None:
         """
         Initialize the action.
 
@@ -62,9 +61,9 @@ class CreateSubflowAction(QObject):
         """
         super().__init__(parent)
         self._graph_widget = graph_widget
-        self._graph: "NodeGraph" = graph_widget.graph
+        self._graph: NodeGraph = graph_widget.graph
 
-    def execute(self, selected_nodes: List) -> Optional[Any]:
+    def execute(self, selected_nodes: list) -> Any | None:
         """
         Execute the create subflow action.
 
@@ -135,7 +134,7 @@ class CreateSubflowAction(QObject):
             )
             return None
 
-    def _analyze_connections(self, selected_nodes: List) -> AnalyzedConnections:
+    def _analyze_connections(self, selected_nodes: list) -> AnalyzedConnections:
         """
         Analyze connections to categorize as internal or external.
 
@@ -230,7 +229,7 @@ class CreateSubflowAction(QObject):
                         )
 
         # Deduplicate internal connections (they get added from both ends)
-        seen_connections: Set[Tuple[str, str, str, str]] = set()
+        seen_connections: set[tuple[str, str, str, str]] = set()
         unique_internal = []
         for conn in internal_connections:
             key = (
@@ -265,7 +264,7 @@ class CreateSubflowAction(QObject):
         if base_dir.exists():
             for subflow_file in base_dir.glob("*.json"):
                 try:
-                    with open(subflow_file, "r", encoding="utf-8") as f:
+                    with open(subflow_file, encoding="utf-8") as f:
                         data = json.load(f)
                         if "name" in data:
                             existing_names.add(data["name"])
@@ -291,7 +290,7 @@ class CreateSubflowAction(QObject):
     def _create_subflow(
         self,
         name: str,
-        selected_nodes: List,
+        selected_nodes: list,
         analysis: AnalyzedConnections,
     ):
         """
@@ -323,7 +322,7 @@ class CreateSubflowAction(QObject):
         )
 
         # Add input ports from external inputs (skip exec ports)
-        input_names_used: Set[str] = set()
+        input_names_used: set[str] = set()
         for ext_input in analysis.external_inputs:
             # Detect port type
             is_exec, data_type = self._detect_port_type(
@@ -357,7 +356,7 @@ class CreateSubflowAction(QObject):
             )
 
         # Add output ports from external outputs (skip exec ports)
-        output_names_used: Set[str] = set()
+        output_names_used: set[str] = set()
         for ext_output in analysis.external_outputs:
             # Detect port type
             is_exec, data_type = self._detect_port_type(
@@ -423,7 +422,7 @@ class CreateSubflowAction(QObject):
         self,
         node_id: str,
         port_name: str,
-        selected_nodes: List,
+        selected_nodes: list,
         is_input: bool,
     ):
         """
@@ -483,7 +482,7 @@ class CreateSubflowAction(QObject):
 
         return (False, DataType.ANY)
 
-    def _get_selection_center(self, selected_nodes: List) -> Tuple[float, float]:
+    def _get_selection_center(self, selected_nodes: list) -> tuple[float, float]:
         """
         Calculate the center position of selected nodes.
 
@@ -514,7 +513,7 @@ class CreateSubflowAction(QObject):
 
         return (center_x, center_y)
 
-    def _get_selection_bounds(self, selected_nodes: List) -> Dict[str, float]:
+    def _get_selection_bounds(self, selected_nodes: list) -> dict[str, float]:
         """
         Get bounding box of selected nodes.
 
@@ -562,7 +561,7 @@ class CreateSubflowAction(QObject):
         base_dir.mkdir(parents=True, exist_ok=True)
         return str(base_dir / f"{subflow_id}.json")
 
-    def _remove_selected_nodes(self, selected_nodes: List) -> None:
+    def _remove_selected_nodes(self, selected_nodes: list) -> None:
         """
         Remove selected nodes from the graph.
 
@@ -579,7 +578,7 @@ class CreateSubflowAction(QObject):
     def _create_subflow_node(
         self,
         subflow,
-        position: Tuple[float, float],
+        position: tuple[float, float],
         subflow_path: str,
     ):
         """
@@ -700,7 +699,7 @@ class CreateSubflowAction(QObject):
         except Exception as e:
             logger.error(f"Failed to reconnect external connections: {e}")
 
-    def can_create_subflow(self, selected_nodes: List) -> bool:
+    def can_create_subflow(self, selected_nodes: list) -> bool:
         """
         Check if a subflow can be created from the selection.
 

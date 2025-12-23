@@ -10,7 +10,7 @@ Provides:
 import asyncio
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

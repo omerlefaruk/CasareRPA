@@ -10,27 +10,27 @@ All implementations are in domain.entities.project - this is just a convenience 
 from casare_rpa.domain.entities.project import (
     # Constants
     PROJECT_SCHEMA_VERSION,
-    generate_project_id,
-    generate_scenario_id,
-    # Enums
-    VariableScope,
-    VariableType,
-    # Variable classes
-    VariablesFile,
     # Credential classes
     CredentialBinding,
     CredentialBindingsFile,
-    # Settings classes
-    ProjectSettings,
-    ScenarioExecutionSettings,
     # Main entities
     Project,
-    Scenario,
     # Index classes
     ProjectIndexEntry,
+    # Settings classes
+    ProjectSettings,
     ProjectsIndex,
+    Scenario,
+    ScenarioExecutionSettings,
+    # Enums
+    VariableScope,
+    # Variable classes
+    VariablesFile,
+    VariableType,
+    generate_project_id,
+    generate_scenario_id,
 )
-from casare_rpa.domain.entities.variable import Variable, ProjectVariable
+from casare_rpa.domain.entities.variable import ProjectVariable, Variable
 
 __all__ = [
     # Constants

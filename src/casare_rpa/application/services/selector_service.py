@@ -113,7 +113,7 @@ class SelectorService:
         return selector
 
     @staticmethod
-    def validate(selector: str) -> Tuple[bool, str]:
+    def validate(selector: str) -> tuple[bool, str]:
         """Validate selector format (balanced brackets, non-empty, etc)."""
         if not selector:
             return False, "Selector cannot be empty"
@@ -129,7 +129,7 @@ class SelectorService:
         return True, ""
 
     @staticmethod
-    def parse_xml_selector(xml_selector: str) -> Tuple[str, str]:
+    def parse_xml_selector(xml_selector: str) -> tuple[str, str]:
         """
         Parse UiPath-style XML selector and convert to XPath.
 
@@ -230,7 +230,7 @@ class SelectorService:
         return final_xpath, "xpath"
 
     @staticmethod
-    def _parse_single_xml_element(element_str: str) -> Tuple[str, Dict[str, str]]:
+    def _parse_single_xml_element(element_str: str) -> tuple[str, dict[str, str]]:
         """Parse a single XML element like <webctrl tag='INPUT' id='foo' />."""
         element_str = element_str.strip()
         if not element_str.startswith("<"):
@@ -255,7 +255,7 @@ class SelectorService:
         return tag, attrs
 
     @staticmethod
-    def _build_xpath_for_element(tag: str, attrs: Dict[str, str]) -> str:
+    def _build_xpath_for_element(tag: str, attrs: dict[str, str]) -> str:
         """Build XPath predicate for a webctrl element."""
         if "selector" in attrs:
             embedded = attrs["selector"].strip()
@@ -313,7 +313,7 @@ class SelectorService:
     # =========================================================================
 
     @classmethod
-    def generate_browser_fingerprint(cls, element_data: Dict[str, Any]) -> ElementFingerprint:
+    def generate_browser_fingerprint(cls, element_data: dict[str, Any]) -> ElementFingerprint:
         """Generate multiple selector strategies from browser element data."""
         fingerprint = ElementFingerprint(
             target=SelectorTarget.BROWSER,
@@ -388,7 +388,7 @@ class SelectorService:
         return fingerprint
 
     @classmethod
-    def generate_desktop_fingerprint(cls, element_data: Dict[str, Any]) -> ElementFingerprint:
+    def generate_desktop_fingerprint(cls, element_data: dict[str, Any]) -> ElementFingerprint:
         """Generate multiple selector strategies from desktop element data (UIA)."""
         fingerprint = ElementFingerprint(
             target=SelectorTarget.DESKTOP,
@@ -458,7 +458,7 @@ class SelectorService:
 
     @staticmethod
     def _score_browser_selector(
-        selector_type: SelectorType, selector_value: str, element_data: Dict
+        selector_type: SelectorType, selector_value: str, element_data: dict
     ) -> float:
         """Score a browser selector based on uniqueness and stability."""
         base_score = SelectorService.BROWSER_SCORES.get(selector_type, 50)

@@ -5,25 +5,24 @@ Displays fleet statistics and charts using Qt widgets.
 Supports real-time queue metrics updates via WebSocketBridge.
 """
 
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QGroupBox,
-    QFrame,
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal, QTimer, Qt
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
 
 from casare_rpa.presentation.canvas.theme import THEME
-
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.services.websocket_bridge import (
@@ -43,7 +42,7 @@ class StatCard(QFrame):
         value: str = "-",
         subtitle: str = "",
         color: QColor = QColor(THEME.status_success),
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._key = key
@@ -109,15 +108,15 @@ class BarChart(QWidget):
     def __init__(
         self,
         title: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._title = title
-        self._data: List[tuple] = []
+        self._data: list[tuple] = []
         self._max_value = 100
         self.setMinimumHeight(150)
 
-    def set_data(self, data: List[tuple], max_value: Optional[float] = None) -> None:
+    def set_data(self, data: list[tuple], max_value: float | None = None) -> None:
         """Set chart data as list of (label, value, color) tuples."""
         self._data = data
         if max_value:
@@ -173,14 +172,14 @@ class PieChart(QWidget):
     def __init__(
         self,
         title: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._title = title
-        self._data: List[tuple] = []
+        self._data: list[tuple] = []
         self.setMinimumSize(200, 200)
 
-    def set_data(self, data: List[tuple]) -> None:
+    def set_data(self, data: list[tuple]) -> None:
         """Set chart data as list of (label, value, color) tuples."""
         self._data = data
         self.update()
@@ -254,9 +253,9 @@ class AnalyticsTabWidget(QWidget):
     refresh_requested = Signal()
     drilldown_requested = Signal(str, object)  # (target, payload)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._analytics: Dict[str, Any] = {}
+        self._analytics: dict[str, Any] = {}
         self._setup_ui()
         self._apply_styles()
 
@@ -440,7 +439,7 @@ class AnalyticsTabWidget(QWidget):
             """
         )
 
-    def update_analytics(self, analytics: Dict[str, Any]) -> None:
+    def update_analytics(self, analytics: dict[str, Any]) -> None:
         """Update all analytics widgets with new data."""
         self._analytics = analytics
 

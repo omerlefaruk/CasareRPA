@@ -9,21 +9,21 @@ Supports:
 - Namespace support for Vault Enterprise
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultProvider,
-    VaultConfig,
-    SecretValue,
-    SecretMetadata,
     CredentialType,
-    SecretNotFoundError,
-    VaultConnectionError,
-    VaultAuthenticationError,
     SecretAccessDeniedError,
+    SecretMetadata,
+    SecretNotFoundError,
+    SecretValue,
+    VaultAuthenticationError,
+    VaultConfig,
+    VaultConnectionError,
+    VaultProvider,
 )
 
 # Optional hvac import
@@ -31,8 +31,14 @@ try:
     import hvac
     from hvac.exceptions import (
         Forbidden as HvacForbidden,
+    )
+    from hvac.exceptions import (
         InvalidPath as HvacInvalidPath,
+    )
+    from hvac.exceptions import (
         InvalidRequest as HvacInvalidRequest,
+    )
+    from hvac.exceptions import (
         Unauthorized as HvacUnauthorized,
     )
 
@@ -70,7 +76,7 @@ class HashiCorpVaultProvider(VaultProvider):
             )
 
         self._config = config
-        self._client: Optional["hvac.Client"] = None
+        self._client: hvac.Client | None = None
 
     async def connect(self) -> None:
         """Connect to HashiCorp Vault."""
@@ -82,7 +88,7 @@ class HashiCorpVaultProvider(VaultProvider):
 
         try:
             # Build client options
-            client_kwargs: Dict[str, Any] = {
+            client_kwargs: dict[str, Any] = {
                 "url": self._config.hashicorp_url,
                 "token": self._config.hashicorp_token.get_secret_value(),
                 "verify": self._config.tls_verify,
@@ -136,7 +142,7 @@ class HashiCorpVaultProvider(VaultProvider):
             raise VaultConnectionError("Not connected to HashiCorp Vault")
         return self._client
 
-    async def get_secret(self, path: str, version: Optional[int] = None) -> SecretValue:
+    async def get_secret(self, path: str, version: int | None = None) -> SecretValue:
         """
         Get secret from HashiCorp Vault.
 
@@ -199,9 +205,9 @@ class HashiCorpVaultProvider(VaultProvider):
     async def put_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         credential_type: CredentialType = CredentialType.CUSTOM,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in HashiCorp Vault."""
         client = self._ensure_connected()
@@ -281,7 +287,7 @@ class HashiCorpVaultProvider(VaultProvider):
             logger.error(f"Failed to delete secret {path}: {e}")
             raise
 
-    async def list_secrets(self, path_prefix: str) -> List[str]:
+    async def list_secrets(self, path_prefix: str) -> list[str]:
         """List secrets under a path prefix."""
         client = self._ensure_connected()
 
@@ -310,9 +316,7 @@ class HashiCorpVaultProvider(VaultProvider):
             logger.error(f"Failed to list secrets at {path_prefix}: {e}")
             raise
 
-    async def get_dynamic_secret(
-        self, path: str, role: str, ttl: Optional[int] = None
-    ) -> SecretValue:
+    async def get_dynamic_secret(self, path: str, role: str, ttl: int | None = None) -> SecretValue:
         """
         Get dynamically generated credentials.
 
@@ -349,7 +353,7 @@ class HashiCorpVaultProvider(VaultProvider):
             # Calculate expiration
             expires_at = None
             if lease_duration > 0:
-                expires_at = datetime.now(timezone.utc) + timedelta(seconds=lease_duration)
+                expires_at = datetime.now(UTC) + timedelta(seconds=lease_duration)
 
             metadata = SecretMetadata(
                 path=read_path,
@@ -373,7 +377,7 @@ class HashiCorpVaultProvider(VaultProvider):
             logger.error(f"Failed to get dynamic secret {path}/{role}: {e}")
             raise
 
-    async def renew_lease(self, lease_id: str, increment: Optional[int] = None) -> int:
+    async def renew_lease(self, lease_id: str, increment: int | None = None) -> int:
         """
         Renew a secret lease.
 
@@ -444,17 +448,17 @@ class HashiCorpVaultProvider(VaultProvider):
             logger.error(f"Failed to rotate secret {path}: {e}")
             raise
 
-    def _parse_vault_time(self, time_str: Optional[str]) -> datetime:
+    def _parse_vault_time(self, time_str: str | None) -> datetime:
         """Parse Vault timestamp format."""
         if not time_str:
-            return datetime.now(timezone.utc)
+            return datetime.now(UTC)
         try:
             # Vault uses RFC3339 format
             return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
-            return datetime.now(timezone.utc)
+            return datetime.now(UTC)
 
-    def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:
+    def _infer_credential_type(self, data: dict[str, Any]) -> CredentialType:
         """Infer credential type from data keys."""
         keys = set(data.keys())
 

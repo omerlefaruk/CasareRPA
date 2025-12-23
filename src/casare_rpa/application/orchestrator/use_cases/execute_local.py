@@ -30,8 +30,8 @@ class ExecutionResult:
         self,
         success: bool,
         workflow_name: str,
-        variables: Dict[str, Any],
-        error: Optional[str] = None,
+        variables: dict[str, Any],
+        error: str | None = None,
         executed_nodes: int = 0,
         total_nodes: int = 0,
         duration_ms: int = 0,
@@ -66,7 +66,7 @@ class ExecutionResult:
             return 100.0 if self.success else 0.0
         return (self.executed_nodes / self.total_nodes) * 100
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary.
 
         Returns:
@@ -107,7 +107,7 @@ class ExecuteLocalUseCase:
 
     def __init__(
         self,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
     ) -> None:
         """Initialize local execution use case.
 
@@ -118,9 +118,9 @@ class ExecuteLocalUseCase:
 
     async def execute(
         self,
-        workflow_data: Dict[str, Any],
-        variables: Optional[Dict[str, Any]] = None,
-        run_to_node_id: Optional[str] = None,
+        workflow_data: dict[str, Any],
+        variables: dict[str, Any] | None = None,
+        run_to_node_id: str | None = None,
         single_node: bool = False,
         continue_on_error: bool = False,
         node_timeout: float = 120.0,
@@ -184,7 +184,7 @@ class ExecuteLocalUseCase:
             success = await use_case.execute()
 
             # Extract final variables from context
-            final_variables: Dict[str, Any] = {}
+            final_variables: dict[str, Any] = {}
             if use_case.context:
                 final_variables = dict(use_case.context.variables)
 
@@ -217,8 +217,8 @@ class ExecuteLocalUseCase:
     async def execute_from_json(
         self,
         workflow_json: str,
-        variables: Optional[Dict[str, Any]] = None,
-        run_to_node_id: Optional[str] = None,
+        variables: dict[str, Any] | None = None,
+        run_to_node_id: str | None = None,
     ) -> ExecutionResult:
         """Execute a workflow from JSON string.
 
@@ -254,7 +254,7 @@ class ExecuteLocalUseCase:
             run_to_node_id=run_to_node_id,
         )
 
-    def _parse_workflow(self, workflow_data: Dict[str, Any]) -> WorkflowSchema:
+    def _parse_workflow(self, workflow_data: dict[str, Any]) -> WorkflowSchema:
         """Parse workflow data into WorkflowSchema.
 
         Args:

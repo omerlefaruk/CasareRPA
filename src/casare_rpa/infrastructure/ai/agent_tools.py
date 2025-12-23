@@ -7,8 +7,9 @@ Tools map to actual node types for execution.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -24,8 +25,8 @@ class ParameterSpec:
     type: str  # "string", "number", "boolean", "object", "array"
     description: str
     required: bool = True
-    default: Optional[Any] = None
-    enum: Optional[List[str]] = None
+    default: Any | None = None
+    enum: list[str] | None = None
 
 
 @dataclass
@@ -40,19 +41,19 @@ class AgentTool:
 
     name: str
     description: str
-    parameters: List[ParameterSpec] = field(default_factory=list)
-    node_type: Optional[str] = None  # Maps to CasareRPA node class name
-    callable: Optional[Callable] = None  # Direct Python callable
+    parameters: list[ParameterSpec] = field(default_factory=list)
+    node_type: str | None = None  # Maps to CasareRPA node class name
+    callable: Callable | None = None  # Direct Python callable
     category: str = "general"
     requires_confirmation: bool = False
 
-    def to_function_schema(self) -> Dict[str, Any]:
+    def to_function_schema(self) -> dict[str, Any]:
         """Convert to OpenAI function calling schema format."""
         properties = {}
         required = []
 
         for param in self.parameters:
-            prop: Dict[str, Any] = {
+            prop: dict[str, Any] = {
                 "type": param.type,
                 "description": param.description,
             }
@@ -102,8 +103,8 @@ class AgentToolRegistry:
     """
 
     def __init__(self) -> None:
-        self._tools: Dict[str, AgentTool] = {}
-        self._categories: Dict[str, List[str]] = {}
+        self._tools: dict[str, AgentTool] = {}
+        self._categories: dict[str, list[str]] = {}
 
     def register(self, tool: AgentTool) -> None:
         """Register a tool."""
@@ -128,25 +129,25 @@ class AgentToolRegistry:
             return True
         return False
 
-    def get(self, name: str) -> Optional[AgentTool]:
+    def get(self, name: str) -> AgentTool | None:
         """Get a tool by name."""
         return self._tools.get(name)
 
-    def list_tools(self, category: Optional[str] = None) -> List[AgentTool]:
+    def list_tools(self, category: str | None = None) -> list[AgentTool]:
         """List all tools, optionally filtered by category."""
         if category:
             names = self._categories.get(category, [])
             return [self._tools[n] for n in names if n in self._tools]
         return list(self._tools.values())
 
-    def list_categories(self) -> List[str]:
+    def list_categories(self) -> list[str]:
         """List all tool categories."""
         return list(self._categories.keys())
 
     def get_function_schemas(
         self,
-        tool_names: Optional[List[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        tool_names: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
         """Get OpenAI function schemas for specified tools."""
         tools = []
         names = tool_names or list(self._tools.keys())
@@ -160,7 +161,7 @@ class AgentToolRegistry:
 
     def get_prompt_descriptions(
         self,
-        tool_names: Optional[List[str]] = None,
+        tool_names: list[str] | None = None,
     ) -> str:
         """Get human-readable descriptions for prompts."""
         descriptions = []
@@ -176,9 +177,9 @@ class AgentToolRegistry:
     async def execute_tool(
         self,
         name: str,
-        parameters: Dict[str, Any],
-        context: Optional[ExecutionContext] = None,
-    ) -> Dict[str, Any]:
+        parameters: dict[str, Any],
+        context: ExecutionContext | None = None,
+    ) -> dict[str, Any]:
         """
         Execute a tool by name with given parameters.
 
@@ -219,9 +220,9 @@ class AgentToolRegistry:
     async def _execute_node_tool(
         self,
         tool: AgentTool,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         context: ExecutionContext,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a node-based tool."""
         try:
             from casare_rpa.nodes import _lazy_import
@@ -245,7 +246,7 @@ class AgentToolRegistry:
 
 
 # Default tool registry singleton
-_default_registry: Optional[AgentToolRegistry] = None
+_default_registry: AgentToolRegistry | None = None
 
 
 def get_default_tool_registry() -> AgentToolRegistry:
@@ -376,7 +377,7 @@ def _register_builtin_tools(registry: AgentToolRegistry) -> None:
     )
 
     # Calculate Tool (built-in)
-    async def calculate(expression: str, **kwargs: Any) -> Dict[str, Any]:
+    async def calculate(expression: str, **kwargs: Any) -> dict[str, Any]:
         """Safely evaluate a mathematical expression."""
         try:
             # Only allow safe operations
@@ -413,7 +414,7 @@ def _register_builtin_tools(registry: AgentToolRegistry) -> None:
     )
 
     # JSON Parse Tool (built-in)
-    async def parse_json(json_string: str, **kwargs: Any) -> Dict[str, Any]:
+    async def parse_json(json_string: str, **kwargs: Any) -> dict[str, Any]:
         """Parse a JSON string."""
         import json
 
@@ -440,7 +441,7 @@ def _register_builtin_tools(registry: AgentToolRegistry) -> None:
     )
 
     # Think Tool (for chain-of-thought)
-    async def think(thought: str, **kwargs: Any) -> Dict[str, Any]:
+    async def think(thought: str, **kwargs: Any) -> dict[str, Any]:
         """Record a thought or reasoning step."""
         return {"success": True, "thought": thought}
 
@@ -461,7 +462,7 @@ def _register_builtin_tools(registry: AgentToolRegistry) -> None:
     )
 
     # Finish Tool (to signal completion)
-    async def finish(result: Any, summary: str = "", **kwargs: Any) -> Dict[str, Any]:
+    async def finish(result: Any, summary: str = "", **kwargs: Any) -> dict[str, Any]:
         """Signal that the task is complete."""
         return {
             "success": True,

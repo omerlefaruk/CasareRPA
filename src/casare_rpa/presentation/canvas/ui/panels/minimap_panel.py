@@ -7,11 +7,10 @@ Extracted from canvas/graph/minimap.py for reusability.
 
 from typing import Optional
 
-from PySide6.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout
-from PySide6.QtCore import Qt, QRectF, QPointF, QTimer, Signal
-from PySide6.QtGui import QPainter, QPen, QBrush, QColor
-
 from loguru import logger
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
 
 class MinimapChangeTracker:
@@ -100,7 +99,7 @@ class MinimapView(QGraphicsView):
 
     viewport_clicked = Signal(QPointF)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize minimap view.
 
@@ -173,7 +172,7 @@ class MinimapPanel(QWidget):
 
     viewport_clicked = Signal(QPointF)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize minimap panel.
 

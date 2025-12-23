@@ -6,7 +6,7 @@ Provides a generic webhook interface for chat platforms (Discord, Telegram, etc.
 """
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -67,7 +67,7 @@ class ChatTrigger(BaseTrigger):
         return True
 
     async def process_message(
-        self, raw_payload: Dict[str, Any], platform: Optional[str] = None
+        self, raw_payload: dict[str, Any], platform: str | None = None
     ) -> bool:
         """
         Process a chat message.
@@ -102,7 +102,7 @@ class ChatTrigger(BaseTrigger):
             "sender_name": message_data.get("sender_name", ""),
             "channel_id": message_data.get("channel_id", ""),
             "channel_name": message_data.get("channel_name", ""),
-            "timestamp": message_data.get("timestamp", datetime.now(timezone.utc).isoformat()),
+            "timestamp": message_data.get("timestamp", datetime.now(UTC).isoformat()),
             "platform": platform,
             "is_mention": message_data.get("is_mention", False),
             "raw_payload": raw_payload,
@@ -116,8 +116,8 @@ class ChatTrigger(BaseTrigger):
         return await self.emit(payload, metadata)
 
     def _extract_message_data(
-        self, payload: Dict[str, Any], platform: str
-    ) -> Optional[Dict[str, Any]]:
+        self, payload: dict[str, Any], platform: str
+    ) -> dict[str, Any] | None:
         """Extract standardized message data from platform-specific payload."""
 
         if platform == "discord":
@@ -144,12 +144,12 @@ class ChatTrigger(BaseTrigger):
                 "sender_name": payload.get("sender_name", payload.get("username", "")),
                 "channel_id": payload.get("channel_id", payload.get("room_id", "")),
                 "channel_name": payload.get("channel_name", payload.get("room_name", "")),
-                "timestamp": payload.get("timestamp", datetime.now(timezone.utc).isoformat()),
+                "timestamp": payload.get("timestamp", datetime.now(UTC).isoformat()),
                 "is_bot": payload.get("is_bot", False),
                 "is_mention": payload.get("is_mention", False),
             }
 
-    def _should_process_message(self, message_data: Dict[str, Any]) -> bool:
+    def _should_process_message(self, message_data: dict[str, Any]) -> bool:
         """Check if message should be processed based on filters."""
         config = self.config.config
 
@@ -186,7 +186,7 @@ class ChatTrigger(BaseTrigger):
 
         return True
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate chat trigger configuration."""
         config = self.config.config
 
@@ -206,7 +206,7 @@ class ChatTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for chat trigger configuration."""
         return {
             "type": "object",

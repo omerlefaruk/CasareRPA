@@ -10,18 +10,19 @@ Provides nodes for iteration:
 
 import re
 from typing import Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
-    NodeStatus,
     ExecutionResult,
+    NodeStatus,
 )
-from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.utils.security.safe_eval import is_safe_expression, safe_eval
 
 
 @properties(
@@ -98,7 +99,7 @@ class ForLoopStartNode(BaseNode):
     # @requires: none
     # @ports: exec_in, items, end -> body, completed, current_item, current_index, current_key
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize For Loop Start node."""
         super().__init__(node_id, config)
         self.name = "For Loop Start"
@@ -281,7 +282,7 @@ class ForLoopEndNode(BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize For Loop End node."""
         super().__init__(node_id, config)
         self.name = "For Loop End"
@@ -373,7 +374,7 @@ class WhileLoopStartNode(BaseNode):
     # @requires: none
     # @ports: exec_in, condition -> body, completed, current_iteration
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize While Loop Start node."""
         super().__init__(node_id, config)
         self.name = "While Loop Start"
@@ -505,7 +506,7 @@ class WhileLoopEndNode(BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize While Loop End node."""
         super().__init__(node_id, config)
         self.name = "While Loop End"
@@ -570,7 +571,7 @@ class BreakNode(BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Break node."""
         super().__init__(node_id, config)
         self.name = "Break"
@@ -656,7 +657,7 @@ class ContinueNode(BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Continue node."""
         super().__init__(node_id, config)
         self.name = "Continue"

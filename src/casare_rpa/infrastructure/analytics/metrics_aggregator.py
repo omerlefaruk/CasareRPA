@@ -21,7 +21,7 @@ This module serves as a facade, delegating to:
 from __future__ import annotations
 
 import statistics
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from threading import Lock
 from typing import Any, Dict, List, Optional
 
@@ -67,10 +67,10 @@ class MetricsAggregator:
     Thread-safe singleton pattern for global access.
     """
 
-    _instance: Optional["MetricsAggregator"] = None
+    _instance: MetricsAggregator | None = None
     _lock: Lock = Lock()
 
-    def __new__(cls) -> "MetricsAggregator":
+    def __new__(cls) -> MetricsAggregator:
         """Thread-safe singleton."""
         if cls._instance is None:
             with cls._lock:
@@ -80,7 +80,7 @@ class MetricsAggregator:
         return cls._instance
 
     @classmethod
-    def get_instance(cls) -> "MetricsAggregator":
+    def get_instance(cls) -> MetricsAggregator:
         """Get singleton instance."""
         return cls()
 
@@ -96,7 +96,7 @@ class MetricsAggregator:
         self._sla_calc = SLAComplianceCalculator()
         self._bottleneck_calc = BottleneckAnalysisCalculator()
         self._version_calc = VersionComparisonCalculator()
-        self._sla_configs: Dict[str, Dict[str, float]] = {}
+        self._sla_configs: dict[str, dict[str, float]] = {}
 
         self._initialized = True
         logger.info("MetricsAggregator initialized")
@@ -139,9 +139,9 @@ class MetricsAggregator:
         duration_ms: float,
         queue_wait_ms: float,
         started_at: datetime,
-        completed_at: Optional[datetime] = None,
-        error_type: Optional[str] = None,
-        error_message: Optional[str] = None,
+        completed_at: datetime | None = None,
+        error_type: str | None = None,
+        error_message: str | None = None,
         nodes_executed: int = 0,
         healing_attempts: int = 0,
         healing_successes: int = 0,
@@ -157,7 +157,7 @@ class MetricsAggregator:
             duration_ms=duration_ms,
             queue_wait_ms=queue_wait_ms,
             started_at=started_at,
-            completed_at=completed_at or datetime.now(timezone.utc),
+            completed_at=completed_at or datetime.now(UTC),
             error_type=error_type,
             error_message=error_message,
             nodes_executed=nodes_executed,
@@ -184,11 +184,11 @@ class MetricsAggregator:
 
     def get_execution_summary(
         self,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> dict[str, Any]:
         """Get execution summary for a time period."""
-        end_time = end_time or datetime.now(timezone.utc)
+        end_time = end_time or datetime.now(UTC)
         start_time = start_time or (end_time - timedelta(hours=24))
 
         records = self._storage.job_records.get_by_time_range(start_time, end_time)
@@ -231,10 +231,10 @@ class MetricsAggregator:
 
     def get_workflow_metrics(
         self,
-        workflow_id: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> List[WorkflowMetrics]:
+        workflow_id: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> list[WorkflowMetrics]:
         """Get metrics for workflows."""
         if workflow_id:
             data = self._storage.workflow_metrics.get(workflow_id)
@@ -251,7 +251,7 @@ class MetricsAggregator:
             result.append(WorkflowMetrics.from_cache(data, durations, hourly))
         return result
 
-    def get_robot_metrics(self, robot_id: Optional[str] = None) -> List[RobotPerformanceMetrics]:
+    def get_robot_metrics(self, robot_id: str | None = None) -> list[RobotPerformanceMetrics]:
         """Get metrics for robots."""
         if robot_id:
             data = self._storage.robot_metrics.get(robot_id)
@@ -265,8 +265,8 @@ class MetricsAggregator:
     def get_duration_statistics(
         self,
         workflow_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> ExecutionDistribution:
         """Get execution duration statistics for a workflow."""
         if start_time or end_time:
@@ -276,9 +276,7 @@ class MetricsAggregator:
             durations = self._storage.workflow_metrics.get_durations(workflow_id)
         return ExecutionDistribution.from_durations(durations)
 
-    def get_error_analysis(
-        self, workflow_id: Optional[str] = None, top_n: int = 10
-    ) -> Dict[str, Any]:
+    def get_error_analysis(self, workflow_id: str | None = None, top_n: int = 10) -> dict[str, Any]:
         """Get error analysis and breakdown."""
         top_errors = self._storage.error_tracking.get_top_errors(top_n, workflow_id)
         counts = (
@@ -292,13 +290,13 @@ class MetricsAggregator:
             "top_errors": top_errors,
         }
 
-    def get_healing_metrics(self, workflow_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_healing_metrics(self, workflow_id: str | None = None) -> dict[str, Any]:
         """Get self-healing metrics and success rates."""
         data = self._storage.healing_metrics.get_by_workflow(workflow_id)
         tier_data = self._storage.healing_metrics.get_by_tier()
         return {**data, "tier_breakdown": tier_data}
 
-    def get_queue_metrics(self, hours: int = 24) -> Dict[str, Any]:
+    def get_queue_metrics(self, hours: int = 24) -> dict[str, Any]:
         """Get queue depth and throughput metrics."""
         stats = self._storage.queue_depth.get_statistics(hours)
         history = self._storage.queue_depth.get_history(hours, limit=100)
@@ -310,7 +308,7 @@ class MetricsAggregator:
         metric: str = "executions",
         period: AggregationPeriod = AggregationPeriod.HOUR,
         limit: int = 24,
-    ) -> List[TimeSeriesDataPoint]:
+    ) -> list[TimeSeriesDataPoint]:
         """Get time series data for a workflow."""
         return self._storage.workflow_metrics.get_hourly_data(workflow_id, limit)
 
@@ -343,8 +341,8 @@ class MetricsAggregator:
     def check_sla_compliance(
         self,
         workflow_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> SLACompliance:
         """Check SLA compliance for a workflow."""
         data = self._storage.workflow_metrics.get(workflow_id)
@@ -396,11 +394,11 @@ class MetricsAggregator:
     def generate_report(
         self,
         period: AggregationPeriod = AggregationPeriod.DAY,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> AnalyticsReport:
         """Generate comprehensive analytics report."""
-        end_time = end_time or datetime.now(timezone.utc)
+        end_time = end_time or datetime.now(UTC)
         period_deltas = {
             AggregationPeriod.HOUR: timedelta(hours=1),
             AggregationPeriod.DAY: timedelta(days=1),
@@ -416,7 +414,7 @@ class MetricsAggregator:
         robots = self.get_robot_metrics()
 
         return AnalyticsReport(
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             period_start=start_time,
             period_end=end_time,
             period=period,
@@ -445,11 +443,11 @@ class MetricsAggregator:
 
     def export_csv(
         self,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> str:
         """Export job execution data as CSV."""
-        end_time = end_time or datetime.now(timezone.utc)
+        end_time = end_time or datetime.now(UTC)
         start_time = start_time or (end_time - timedelta(days=7))
         records = self._storage.job_records.get_by_time_range(start_time, end_time)
 

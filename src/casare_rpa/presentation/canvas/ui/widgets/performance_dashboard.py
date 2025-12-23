@@ -12,28 +12,27 @@ Displays real-time performance metrics including:
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QLabel,
-    QGroupBox,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QTabWidget,
-    QWidget,
-    QProgressBar,
-    QFrame,
-    QComboBox,
-    QCheckBox,
-)
+from loguru import logger
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
-
-from loguru import logger
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 from casare_rpa.utils.performance.performance_metrics import get_metrics
@@ -47,7 +46,7 @@ class MetricCard(QFrame):
         title: str,
         value: str = "0",
         subtitle: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
@@ -87,7 +86,7 @@ class MetricCard(QFrame):
 class HistogramWidget(QWidget):
     """Widget displaying a histogram with percentile bars."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -96,8 +95,8 @@ class HistogramWidget(QWidget):
         self.percentile_layout = QGridLayout()
         layout.addLayout(self.percentile_layout)
 
-        self._bars: Dict[str, QProgressBar] = {}
-        self._labels: Dict[str, QLabel] = {}
+        self._bars: dict[str, QProgressBar] = {}
+        self._labels: dict[str, QLabel] = {}
 
         # Create percentile bars
         percentiles = [("p50", "Median"), ("p90", "p90"), ("p99", "p99")]
@@ -122,7 +121,7 @@ class HistogramWidget(QWidget):
             self._bars[key] = bar
             self._labels[key] = value_lbl
 
-    def update_data(self, histogram_data: Dict[str, Any]) -> None:
+    def update_data(self, histogram_data: dict[str, Any]) -> None:
         """Update the histogram display."""
         if not histogram_data:
             return
@@ -145,7 +144,7 @@ class HistogramWidget(QWidget):
 class SystemMetricsPanel(QGroupBox):
     """Panel displaying system resource metrics."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("System Resources", parent)
         layout = QGridLayout(self)
 
@@ -181,7 +180,7 @@ class SystemMetricsPanel(QGroupBox):
         self.memory_bar.setFormat("Memory: %p%")
         layout.addWidget(self.memory_bar, 1, 2, 1, 2)
 
-    def update_metrics(self, system_data: Dict[str, Any]) -> None:
+    def update_metrics(self, system_data: dict[str, Any]) -> None:
         """Update system metrics display."""
         if not system_data:
             return
@@ -218,7 +217,7 @@ class SystemMetricsPanel(QGroupBox):
 class NodeMetricsPanel(QGroupBox):
     """Panel displaying node execution metrics."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("Node Execution", parent)
         layout = QVBoxLayout(self)
 
@@ -252,7 +251,7 @@ class NodeMetricsPanel(QGroupBox):
         self.node_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         layout.addWidget(self.node_table)
 
-    def update_metrics(self, node_data: Dict[str, Any]) -> None:
+    def update_metrics(self, node_data: dict[str, Any]) -> None:
         """Update node metrics display."""
         if not node_data:
             return
@@ -310,7 +309,7 @@ class NodeMetricsPanel(QGroupBox):
 class WorkflowMetricsPanel(QGroupBox):
     """Panel displaying workflow execution metrics."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("Workflow Execution", parent)
         layout = QVBoxLayout(self)
 
@@ -352,7 +351,7 @@ class WorkflowMetricsPanel(QGroupBox):
         timing_layout.addLayout(stats_layout)
         layout.addWidget(timing_group)
 
-    def update_metrics(self, workflow_data: Dict[str, Any]) -> None:
+    def update_metrics(self, workflow_data: dict[str, Any]) -> None:
         """Update workflow metrics display."""
         if not workflow_data:
             return
@@ -397,7 +396,7 @@ class WorkflowMetricsPanel(QGroupBox):
 class PoolMetricsPanel(QGroupBox):
     """Panel displaying connection pool metrics."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("Connection Pools", parent)
         layout = QVBoxLayout(self)
 
@@ -411,7 +410,7 @@ class PoolMetricsPanel(QGroupBox):
         self.pool_table.setAlternatingRowColors(True)
         layout.addWidget(self.pool_table)
 
-    def update_metrics(self, pool_data: Dict[str, Dict[str, Any]]) -> None:
+    def update_metrics(self, pool_data: dict[str, dict[str, Any]]) -> None:
         """Update pool metrics display."""
         if not pool_data:
             self.pool_table.setRowCount(0)
@@ -445,7 +444,7 @@ class PoolMetricsPanel(QGroupBox):
 class CountersGaugesPanel(QGroupBox):
     """Panel displaying raw counters and gauges."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("Counters & Gauges", parent)
         layout = QHBoxLayout(self)
 
@@ -473,7 +472,7 @@ class CountersGaugesPanel(QGroupBox):
         gauges_layout.addWidget(self.gauges_table)
         layout.addWidget(gauges_group)
 
-    def update_metrics(self, counters: Dict[str, int], gauges: Dict[str, float]) -> None:
+    def update_metrics(self, counters: dict[str, int], gauges: dict[str, float]) -> None:
         """Update counters and gauges display."""
         # Update counters
         self.counters_table.setRowCount(len(counters))
@@ -495,15 +494,15 @@ class PerformanceDashboardDialog(QDialog):
     Displays comprehensive performance metrics with live updates.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Performance Dashboard")
         self.setMinimumSize(900, 700)
         self.resize(1000, 800)
 
         self._metrics = get_metrics()
-        self._pool_callbacks: List[Any] = []
-        self._refresh_timer: Optional[QTimer] = None
+        self._pool_callbacks: list[Any] = []
+        self._refresh_timer: QTimer | None = None
 
         self._setup_ui()
         self._connect_signals()
@@ -665,9 +664,9 @@ class PerformanceDashboardDialog(QDialog):
             logger.error(f"Error refreshing metrics: {e}")
             self.status_label.setText(f"Error: {str(e)}")
 
-    def _collect_pool_metrics(self) -> Dict[str, Dict[str, Any]]:
+    def _collect_pool_metrics(self) -> dict[str, dict[str, Any]]:
         """Collect metrics from all registered pool sources."""
-        pool_data: Dict[str, Dict[str, Any]] = {}
+        pool_data: dict[str, dict[str, Any]] = {}
 
         # Try to get browser pool stats
         try:
@@ -732,7 +731,7 @@ class PerformanceDashboardDialog(QDialog):
         super().closeEvent(event)
 
 
-def show_performance_dashboard(parent: Optional[QWidget] = None) -> None:
+def show_performance_dashboard(parent: QWidget | None = None) -> None:
     """Show the performance dashboard dialog."""
     dialog = PerformanceDashboardDialog(parent)
     dialog.exec()

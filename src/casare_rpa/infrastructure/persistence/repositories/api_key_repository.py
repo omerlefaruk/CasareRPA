@@ -21,7 +21,7 @@ class ApiKeyRepository:
     Maps between RobotApiKey domain model and PostgreSQL robot_api_keys table.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -49,7 +49,7 @@ class ApiKeyRepository:
         pool = await self._get_pool()
         await pool.release(conn)
 
-    def _row_to_api_key(self, row: Dict[str, Any]) -> RobotApiKey:
+    def _row_to_api_key(self, row: dict[str, Any]) -> RobotApiKey:
         """
         Convert database row to RobotApiKey.
 
@@ -80,10 +80,10 @@ class ApiKeyRepository:
         self,
         robot_id: str,
         api_key_hash: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        expires_at: Optional[datetime] = None,
-        created_by: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        expires_at: datetime | None = None,
+        created_by: str | None = None,
     ) -> RobotApiKey:
         """
         Save a new API key.
@@ -124,7 +124,7 @@ class ApiKeyRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_id(self, key_id: str) -> Optional[RobotApiKey]:
+    async def get_by_id(self, key_id: str) -> RobotApiKey | None:
         """
         Get API key by ID.
 
@@ -149,7 +149,7 @@ class ApiKeyRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_hash(self, api_key_hash: str) -> Optional[RobotApiKey]:
+    async def get_by_hash(self, api_key_hash: str) -> RobotApiKey | None:
         """
         Get API key by hash.
 
@@ -174,7 +174,7 @@ class ApiKeyRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_valid_by_hash(self, api_key_hash: str) -> Optional[RobotApiKey]:
+    async def get_valid_by_hash(self, api_key_hash: str) -> RobotApiKey | None:
         """
         Get API key by hash if valid (not revoked, not expired).
 
@@ -208,7 +208,7 @@ class ApiKeyRepository:
         self,
         robot_id: str,
         include_revoked: bool = False,
-    ) -> List[RobotApiKey]:
+    ) -> list[RobotApiKey]:
         """
         List all API keys for a robot.
 
@@ -251,7 +251,7 @@ class ApiKeyRepository:
         include_revoked: bool = False,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[RobotApiKey]:
+    ) -> list[RobotApiKey]:
         """
         List all API keys.
 
@@ -296,7 +296,7 @@ class ApiKeyRepository:
     async def update_last_used(
         self,
         api_key_hash: str,
-        client_ip: Optional[str] = None,
+        client_ip: str | None = None,
     ) -> None:
         """
         Update last_used_at timestamp for a key.
@@ -327,8 +327,8 @@ class ApiKeyRepository:
     async def revoke(
         self,
         key_id: str,
-        revoked_by: Optional[str] = None,
-        reason: Optional[str] = None,
+        revoked_by: str | None = None,
+        reason: str | None = None,
     ) -> bool:
         """
         Revoke an API key.
@@ -369,8 +369,8 @@ class ApiKeyRepository:
     async def revoke_all_for_robot(
         self,
         robot_id: str,
-        revoked_by: Optional[str] = None,
-        reason: Optional[str] = None,
+        revoked_by: str | None = None,
+        reason: str | None = None,
     ) -> int:
         """
         Revoke all API keys for a robot.
@@ -497,7 +497,7 @@ class ApiKeyRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_robot_id_by_hash(self, api_key_hash: str) -> Optional[str]:
+    async def get_robot_id_by_hash(self, api_key_hash: str) -> str | None:
         """
         Get robot ID associated with an API key hash.
 

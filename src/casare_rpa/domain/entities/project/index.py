@@ -23,9 +23,9 @@ class ProjectIndexEntry:
     id: str
     name: str
     path: str
-    last_opened: Optional[datetime] = None
+    last_opened: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -35,7 +35,7 @@ class ProjectIndexEntry:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ProjectIndexEntry":
+    def from_dict(cls, data: dict[str, Any]) -> "ProjectIndexEntry":
         """Create from dictionary."""
         last_opened = None
         if data.get("last_opened"):
@@ -58,11 +58,11 @@ class ProjectsIndex:
     Stored in CONFIG_DIR/projects_index.json
     """
 
-    projects: List[ProjectIndexEntry] = field(default_factory=list)
+    projects: list[ProjectIndexEntry] = field(default_factory=list)
     recent_limit: int = 10
     schema_version: str = PROJECT_SCHEMA_VERSION
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
@@ -71,7 +71,7 @@ class ProjectsIndex:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ProjectsIndex":
+    def from_dict(cls, data: dict[str, Any]) -> "ProjectsIndex":
         """Create from dictionary."""
         projects = [ProjectIndexEntry.from_dict(p) for p in data.get("projects", [])]
         return cls(
@@ -116,7 +116,7 @@ class ProjectsIndex:
         self.projects = [p for p in self.projects if p.id != project_id]
         return len(self.projects) < original_len
 
-    def get_project(self, project_id: str) -> Optional[ProjectIndexEntry]:
+    def get_project(self, project_id: str) -> ProjectIndexEntry | None:
         """
         Get a project entry by ID.
 
@@ -131,7 +131,7 @@ class ProjectsIndex:
                 return p
         return None
 
-    def get_recent_projects(self, limit: Optional[int] = None) -> List[ProjectIndexEntry]:
+    def get_recent_projects(self, limit: int | None = None) -> list[ProjectIndexEntry]:
         """
         Get recently opened projects.
 

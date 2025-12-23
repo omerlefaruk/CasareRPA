@@ -15,15 +15,14 @@ from loguru import logger
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
+    COMPARISON_PROP,
+    POLL_INTERVAL_PROP,
+    SELECTOR_PROP,
     TIMEOUT_LONG_PROP,
     TIMEOUT_PROP,
     WAIT_STATE_PROP,
-    POLL_INTERVAL_PROP,
-    COMPARISON_PROP,
-    SELECTOR_PROP,
 )
 
 
@@ -60,8 +59,8 @@ class WaitForElementNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Wait For Element",
     ):
         super().__init__(node_id, config, name)
@@ -74,7 +73,7 @@ class WaitForElementNode(DesktopNodeBase):
         self.add_output_port("element", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute wait for element."""
         selector = self.get_input_value("selector")
         timeout = self.get_parameter("timeout", context)
@@ -164,8 +163,8 @@ class WaitForWindowNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Wait For Window",
     ):
         super().__init__(node_id, config, name)
@@ -180,7 +179,7 @@ class WaitForWindowNode(DesktopNodeBase):
         self.add_output_port("window", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute wait for window."""
         title = self.resolve_variable(context, self.get_input_value("title"))
         title_regex = self.resolve_variable(context, self.get_input_value("title_regex"))
@@ -248,14 +247,14 @@ class VerifyElementExistsNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Verify Element Exists",
     ):
         super().__init__(node_id, config, name)
         self.node_type = "VerifyElementExistsNode"
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """Override default timeout to 0.0 for immediate check."""
         return {"timeout": 0.0}
 
@@ -266,7 +265,7 @@ class VerifyElementExistsNode(DesktopNodeBase):
         self.add_output_port("exists", DataType.BOOLEAN)
         self.add_output_port("element", DataType.ANY)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute element exists check."""
         selector = self.get_input_value("selector")
         timeout = self.get_parameter("timeout", context)
@@ -345,8 +344,8 @@ class VerifyElementPropertyNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Verify Element Property",
     ):
         super().__init__(node_id, config, name)
@@ -360,7 +359,7 @@ class VerifyElementPropertyNode(DesktopNodeBase):
         self.add_output_port("result", DataType.BOOLEAN)
         self.add_output_port("actual_value", DataType.ANY)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute property verification."""
         element = self.get_input_value("element")
         property_name = self.get_input_value("property_name")

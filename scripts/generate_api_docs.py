@@ -29,8 +29,8 @@ class ParameterInfo:
     """Information about a function parameter."""
 
     name: str
-    type_hint: Optional[str]
-    default: Optional[str]
+    type_hint: str | None
+    default: str | None
     is_required: bool
 
 
@@ -39,10 +39,10 @@ class MethodInfo:
     """Information about a method or function."""
 
     name: str
-    parameters: List[ParameterInfo]
-    return_type: Optional[str]
-    docstring: Optional[str]
-    decorators: List[str]
+    parameters: list[ParameterInfo]
+    return_type: str | None
+    docstring: str | None
+    decorators: list[str]
     is_async: bool
     is_property: bool
     is_classmethod: bool
@@ -59,11 +59,11 @@ class ClassInfo:
     module: str
     file_path: str
     line_number: int
-    bases: List[str]
-    docstring: Optional[str]
-    decorators: List[str]
-    methods: List[MethodInfo] = field(default_factory=list)
-    class_attributes: Dict[str, str] = field(default_factory=dict)
+    bases: list[str]
+    docstring: str | None
+    decorators: list[str]
+    methods: list[MethodInfo] = field(default_factory=list)
+    class_attributes: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -72,10 +72,10 @@ class ModuleInfo:
 
     name: str
     file_path: str
-    docstring: Optional[str]
-    classes: List[ClassInfo] = field(default_factory=list)
-    functions: List[MethodInfo] = field(default_factory=list)
-    constants: Dict[str, str] = field(default_factory=dict)
+    docstring: str | None
+    classes: list[ClassInfo] = field(default_factory=list)
+    functions: list[MethodInfo] = field(default_factory=list)
+    constants: dict[str, str] = field(default_factory=dict)
 
 
 class ModuleAnalyzer(ast.NodeVisitor):
@@ -87,7 +87,7 @@ class ModuleAnalyzer(ast.NodeVisitor):
             file_path=file_path,
             docstring=None,
         )
-        self.current_class: Optional[ClassInfo] = None
+        self.current_class: ClassInfo | None = None
 
     def visit_Module(self, node: ast.Module) -> None:
         self.module.docstring = ast.get_docstring(node)
@@ -187,7 +187,7 @@ class ModuleAnalyzer(ast.NodeVisitor):
 
     def _extract_parameters(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> List[ParameterInfo]:
+    ) -> list[ParameterInfo]:
         """Extract parameter information from function definition."""
         params = []
         args = node.args
@@ -277,7 +277,7 @@ class ModuleAnalyzer(ast.NodeVisitor):
         return "Any"
 
 
-def analyze_file(file_path: Path, base_path: Path) -> Optional[ModuleInfo]:
+def analyze_file(file_path: Path, base_path: Path) -> ModuleInfo | None:
     """Analyze a single Python file."""
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -464,7 +464,7 @@ def generate_module_markdown(module: ModuleInfo) -> str:
     return "\n".join(lines)
 
 
-def generate_layer_index(layer: str, modules: List[ModuleInfo]) -> str:
+def generate_layer_index(layer: str, modules: list[ModuleInfo]) -> str:
     """Generate index page for a layer."""
     lines = []
 
@@ -505,7 +505,7 @@ def generate_layer_index(layer: str, modules: List[ModuleInfo]) -> str:
     return "\n".join(lines)
 
 
-def generate_main_index(layers: Dict[str, List[ModuleInfo]]) -> str:
+def generate_main_index(layers: dict[str, list[ModuleInfo]]) -> str:
     """Generate main API index."""
     lines = []
     lines.append("# API Reference\n")
@@ -576,7 +576,7 @@ def main():
     """Main entry point."""
     print("Scanning source files...")
 
-    layers: Dict[str, List[ModuleInfo]] = defaultdict(list)
+    layers: dict[str, list[ModuleInfo]] = defaultdict(list)
 
     # Define layer paths
     layer_paths = {

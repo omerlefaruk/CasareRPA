@@ -10,7 +10,7 @@ from casare_rpa.infrastructure.tunnel.agent_tunnel import (
     TunnelConfig,
     TunnelState,
 )
-from casare_rpa.infrastructure.tunnel.mtls import MTLSConfig, CertificateManager
+from casare_rpa.infrastructure.tunnel.mtls import CertificateManager, MTLSConfig
 
 __all__ = [
     "AgentTunnel",

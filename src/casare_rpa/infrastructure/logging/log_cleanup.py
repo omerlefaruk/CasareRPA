@@ -7,7 +7,7 @@ bulk cleanup.
 """
 
 import asyncio
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -38,7 +38,7 @@ class LogCleanupJob:
 
     def __init__(
         self,
-        log_repository: Optional[LogRepository] = None,
+        log_repository: LogRepository | None = None,
         retention_days: int = DEFAULT_LOG_RETENTION_DAYS,
         run_hour: int = 2,  # Run at 2 AM
         ensure_partitions_months: int = 2,
@@ -58,11 +58,11 @@ class LogCleanupJob:
         self._ensure_partitions_months = ensure_partitions_months
 
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
         # Statistics
-        self._last_run: Optional[datetime] = None
-        self._last_result: Optional[Dict[str, Any]] = None
+        self._last_run: datetime | None = None
+        self._last_result: dict[str, Any] | None = None
         self._total_runs = 0
         self._total_partitions_dropped = 0
 
@@ -97,14 +97,14 @@ class LogCleanupJob:
             f"Total partitions dropped: {self._total_partitions_dropped}"
         )
 
-    async def run_cleanup(self) -> Dict[str, Any]:
+    async def run_cleanup(self) -> dict[str, Any]:
         """
         Run cleanup manually.
 
         Returns:
             Dictionary with cleanup results.
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         result = {
             "start_time": start_time.isoformat(),
             "retention_days": self._retention_days,
@@ -130,7 +130,7 @@ class LogCleanupJob:
             self._last_result = result
             self._total_runs += 1
 
-            duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+            duration = (datetime.now(UTC) - start_time).total_seconds()
             result["duration_seconds"] = duration
 
             logger.info(
@@ -150,7 +150,7 @@ class LogCleanupJob:
         while self._running:
             try:
                 # Calculate time until next run
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 next_run = now.replace(
                     hour=self._run_hour,
                     minute=0,
@@ -186,7 +186,7 @@ class LogCleanupJob:
                 # Wait a bit before retrying
                 await asyncio.sleep(60)
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """
         Get job status and statistics.
 
@@ -223,7 +223,7 @@ class LogCleanupJob:
 
 
 # Singleton instance
-_log_cleanup_job: Optional[LogCleanupJob] = None
+_log_cleanup_job: LogCleanupJob | None = None
 
 
 def get_log_cleanup_job() -> LogCleanupJob:

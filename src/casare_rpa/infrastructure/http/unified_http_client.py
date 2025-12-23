@@ -23,38 +23,37 @@ try:
 except ImportError:
     AIOHTTP_AVAILABLE = False
 
-from casare_rpa.utils.pooling.http_session_pool import HttpSessionPool
-from casare_rpa.utils.resilience.retry import (
-    RetryConfig,
-    classify_error,
-)
-from casare_rpa.utils.resilience.rate_limiter import (
-    SlidingWindowRateLimiter,
-    RateLimitExceeded,
-)
+from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
+from casare_rpa.infrastructure.cache.manager import CacheConfig, TieredCacheManager
 from casare_rpa.robot.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitBreakerOpenError,
     CircuitBreakerRegistry,
 )
-from casare_rpa.infrastructure.cache.manager import TieredCacheManager, CacheConfig
-from casare_rpa.infrastructure.cache.keys import CacheKeyGenerator
-
+from casare_rpa.utils.pooling.http_session_pool import HttpSessionPool
+from casare_rpa.utils.resilience.rate_limiter import (
+    RateLimitExceeded,
+    SlidingWindowRateLimiter,
+)
+from casare_rpa.utils.resilience.retry import (
+    RetryConfig,
+    classify_error,
+)
 
 # HTTP status codes that trigger retry
-RETRY_STATUS_CODES: Set[int] = {429, 500, 502, 503, 504}
+RETRY_STATUS_CODES: set[int] = {429, 500, 502, 503, 504}
 
 # SSRF Protection Configuration
-ALLOWED_URL_SCHEMES: Set[str] = {"http", "https"}
-BLOCKED_HOSTS: Set[str] = {
+ALLOWED_URL_SCHEMES: set[str] = {"http", "https"}
+BLOCKED_HOSTS: set[str] = {
     "localhost",
     "127.0.0.1",
     "0.0.0.0",
     "[::1]",
     "::1",
 }
-BLOCKED_IP_RANGES: List[ipaddress.IPv4Network | ipaddress.IPv6Network] = [
+BLOCKED_IP_RANGES: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = [
     ipaddress.ip_network("127.0.0.0/8"),  # Loopback
     ipaddress.ip_network("10.0.0.0/8"),  # Private Class A
     ipaddress.ip_network("172.16.0.0/12"),  # Private Class B
@@ -99,17 +98,17 @@ class UnifiedHttpClientConfig:
 
     # Headers
     user_agent: str = "CasareRPA/1.0"
-    default_headers: Dict[str, str] = field(default_factory=dict)
+    default_headers: dict[str, str] = field(default_factory=dict)
 
     # SSRF Protection
     enable_ssrf_protection: bool = True
     allow_private_ips: bool = False  # Set True to allow internal network requests
-    additional_blocked_hosts: Optional[List[str]] = None
+    additional_blocked_hosts: list[str] | None = None
 
     # Caching settings
     cache_enabled: bool = False
     cache_ttl: int = 300  # 5 minutes
-    cache_methods: Set[str] = field(default_factory=lambda: {"GET"})
+    cache_methods: set[str] = field(default_factory=lambda: {"GET"})
 
 
 @dataclass
@@ -131,7 +130,7 @@ class RequestStats:
             return 0.0
         return (self.successful_requests / self.total_requests) * 100
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "total_requests": self.total_requests,
@@ -159,7 +158,7 @@ class CachingResponseWrapper:
         self._cache = cache
         self._key = key
         self._ttl = ttl
-        self._body: Optional[bytes] = None
+        self._body: bytes | None = None
 
     @property
     def status(self):
@@ -190,7 +189,7 @@ class CachingResponseWrapper:
 
         return orjson.loads(data)
 
-    async def text(self, encoding: Optional[str] = None) -> str:
+    async def text(self, encoding: str | None = None) -> str:
         data = await self.read()
         return data.decode(encoding or "utf-8")
 
@@ -207,7 +206,7 @@ class CachingResponseWrapper:
 class CachedResponse:
     """A mock response object that mimics aiohttp.ClientResponse for cached data."""
 
-    def __init__(self, status: int, body: bytes, headers: Dict[str, str]):
+    def __init__(self, status: int, body: bytes, headers: dict[str, str]):
         self.status = status
         self._body = body
         self.headers = headers
@@ -217,7 +216,7 @@ class CachedResponse:
 
         return orjson.loads(self._body)
 
-    async def text(self, encoding: Optional[str] = None) -> str:
+    async def text(self, encoding: str | None = None) -> str:
         return self._body.decode(encoding or "utf-8")
 
     async def read(self) -> bytes:
@@ -260,8 +259,8 @@ class UnifiedHttpClient:
 
     def __init__(
         self,
-        config: Optional[UnifiedHttpClientConfig] = None,
-        cache_manager: Optional[TieredCacheManager] = None,
+        config: UnifiedHttpClientConfig | None = None,
+        cache_manager: TieredCacheManager | None = None,
     ) -> None:
         """
         Initialize UnifiedHttpClient.
@@ -277,8 +276,8 @@ class UnifiedHttpClient:
             )
 
         self._config = config or UnifiedHttpClientConfig()
-        self._pool: Optional[HttpSessionPool] = None
-        self._rate_limiters: Dict[str, SlidingWindowRateLimiter] = {}
+        self._pool: HttpSessionPool | None = None
+        self._rate_limiters: dict[str, SlidingWindowRateLimiter] = {}
         self._circuit_registry = CircuitBreakerRegistry()
         self._stats = RequestStats()
         self._started = False
@@ -438,7 +437,7 @@ class UnifiedHttpClient:
         self,
         method: str,
         url: str,
-        headers: Optional[Dict[str, str]],
+        headers: dict[str, str] | None,
         json: Any,
         data: Any,
     ) -> str:
@@ -454,12 +453,12 @@ class UnifiedHttpClient:
         method: str,
         url: str,
         *,
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
         json: Any = None,
         data: Any = None,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
         retry_count: int = 3,
-        rate_limit_key: Optional[str] = None,
+        rate_limit_key: str | None = None,
         skip_rate_limit: bool = False,
         skip_circuit_breaker: bool = False,
     ) -> "aiohttp.ClientResponse":
@@ -521,7 +520,7 @@ class UnifiedHttpClient:
         circuit = self._get_circuit_breaker(base_url) if not skip_circuit_breaker else None
 
         # Build request kwargs
-        request_kwargs: Dict[str, Any] = {}
+        request_kwargs: dict[str, Any] = {}
         if headers:
             request_kwargs["headers"] = headers
         if json is not None:
@@ -533,7 +532,7 @@ class UnifiedHttpClient:
 
         # Retry configuration
         retry_config = self._build_retry_config(retry_count)
-        last_exception: Optional[Exception] = None
+        last_exception: Exception | None = None
 
         for attempt in range(1, retry_count + 1):
             try:
@@ -637,21 +636,21 @@ class UnifiedHttpClient:
         """Make an OPTIONS request."""
         return await self.request("OPTIONS", url, **kwargs)
 
-    def get_pool_stats(self) -> Dict[str, Any]:
+    def get_pool_stats(self) -> dict[str, Any]:
         """Get session pool statistics."""
         if self._pool:
             return self._pool.get_stats()
         return {}
 
-    def get_rate_limiter_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_rate_limiter_stats(self) -> dict[str, dict[str, Any]]:
         """Get rate limiter statistics for all domains."""
         return {domain: limiter.stats.to_dict() for domain, limiter in self._rate_limiters.items()}
 
-    def get_circuit_breaker_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_circuit_breaker_status(self) -> dict[str, dict[str, Any]]:
         """Get circuit breaker status for all base URLs."""
         return self._circuit_registry.get_all_status()
 
-    def get_all_stats(self) -> Dict[str, Any]:
+    def get_all_stats(self) -> dict[str, Any]:
         """Get all statistics combined."""
         return {
             "requests": self._stats.to_dict(),
@@ -671,12 +670,12 @@ class UnifiedHttpClient:
 
 
 # Singleton instance for shared usage
-_default_client: Optional[UnifiedHttpClient] = None
+_default_client: UnifiedHttpClient | None = None
 _default_client_lock = asyncio.Lock()
 
 
 async def get_unified_http_client(
-    config: Optional[UnifiedHttpClientConfig] = None,
+    config: UnifiedHttpClientConfig | None = None,
 ) -> UnifiedHttpClient:
     """
     Get the default shared UnifiedHttpClient instance.

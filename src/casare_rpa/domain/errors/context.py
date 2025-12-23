@@ -9,14 +9,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from casare_rpa.domain.value_objects.types import ErrorCode, NodeId
-
 from casare_rpa.domain.errors.types import (
     ErrorCategory,
     ErrorClassification,
     ErrorSeverity,
     RecoveryAction,
 )
+from casare_rpa.domain.value_objects.types import ErrorCode, NodeId
 
 
 @dataclass
@@ -43,7 +42,7 @@ class ErrorContext:
     timestamp: datetime = field(default_factory=datetime.now)
     """When the error occurred."""
 
-    error_code: Optional[ErrorCode] = None
+    error_code: ErrorCode | None = None
     """Standardized error code (if classified)."""
 
     classification: ErrorClassification = ErrorClassification.UNKNOWN
@@ -70,16 +69,16 @@ class ErrorContext:
     execution_time_ms: float = 0.0
     """How long the operation ran before failing."""
 
-    node_config: Dict[str, Any] = field(default_factory=dict)
+    node_config: dict[str, Any] = field(default_factory=dict)
     """Node configuration at time of error."""
 
-    variables: Dict[str, Any] = field(default_factory=dict)
+    variables: dict[str, Any] = field(default_factory=dict)
     """Execution context variables (sanitized)."""
 
-    additional_data: Dict[str, Any] = field(default_factory=dict)
+    additional_data: dict[str, Any] = field(default_factory=dict)
     """Extra context data (page URL, element selector, etc.)."""
 
-    screenshot_path: Optional[str] = None
+    screenshot_path: str | None = None
     """Path to error screenshot (if captured)."""
 
     def __post_init__(self) -> None:
@@ -91,7 +90,7 @@ class ErrorContext:
         if self.error_code is None:
             self.error_code = ErrorCode.from_exception(self.exception)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize error context to dictionary.
 
@@ -153,16 +152,16 @@ class RecoveryDecision:
     fallback_value: Any = None
     """Value to use (if action is FALLBACK)."""
 
-    compensate_nodes: List[NodeId] = field(default_factory=list)
+    compensate_nodes: list[NodeId] = field(default_factory=list)
     """Nodes to run for compensation (if action is COMPENSATE)."""
 
     escalation_message: str = ""
     """Message for human escalation (if action is ESCALATE)."""
 
-    continue_from_node: Optional[NodeId] = None
+    continue_from_node: NodeId | None = None
     """Node to resume from (if action is SKIP)."""
 
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     """Additional decision metadata."""
 
     def __repr__(self) -> str:

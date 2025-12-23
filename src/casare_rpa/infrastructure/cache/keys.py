@@ -1,6 +1,7 @@
 import hashlib
-import orjson
 from typing import Any, Optional
+
+import orjson
 from loguru import logger
 
 
@@ -12,7 +13,7 @@ class CacheKeyGenerator:
 
     @staticmethod
     def generate(
-        namespace: str, data: Any, tenant_id: Optional[str] = None, version: str = "v1"
+        namespace: str, data: Any, tenant_id: str | None = None, version: str = "v1"
     ) -> str:
         """
         Generates a stable cache key.

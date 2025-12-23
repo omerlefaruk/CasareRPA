@@ -6,8 +6,9 @@ All controllers follow the same pattern for consistency and lifecycle management
 
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Optional
-from PySide6.QtCore import QObject
+
 from loguru import logger
+from PySide6.QtCore import QObject
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -41,7 +42,7 @@ class BaseController(QObject, metaclass=QABCMeta):
         3. cleanup: Release resources, disconnect signals
     """
 
-    def __init__(self, main_window: "MainWindow", parent: Optional[QObject] = None):
+    def __init__(self, main_window: "MainWindow", parent: QObject | None = None):
         """
         Initialize base controller.
 

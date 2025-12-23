@@ -24,7 +24,7 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -72,10 +72,10 @@ class ElementLocation:
     processing_time_ms: float = 0.0
     """Time taken for inference."""
 
-    error_message: Optional[str] = None
+    error_message: str | None = None
     """Error message if finding failed."""
 
-    alternatives: List[Dict[str, Any]] = field(default_factory=list)
+    alternatives: list[dict[str, Any]] = field(default_factory=list)
     """Alternative locations if multiple matches found."""
 
     @property
@@ -88,7 +88,7 @@ class ElementLocation:
         """Center Y coordinate for clicking."""
         return self.y + self.height // 2
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "found": self.found,
@@ -177,7 +177,7 @@ class VisionElementFinder:
 
     def __init__(
         self,
-        llm_manager: Optional[LLMResourceManager] = None,
+        llm_manager: LLMResourceManager | None = None,
         default_model: str = DEFAULT_MODEL,
         confidence_threshold: float = 0.6,
         timeout_ms: float = 10000.0,
@@ -201,7 +201,7 @@ class VisionElementFinder:
             f"(model={default_model}, confidence_threshold={confidence_threshold})"
         )
 
-    def _get_llm_manager(self) -> "LLMResourceManager":
+    def _get_llm_manager(self) -> LLMResourceManager:
         """Get or create LLM resource manager."""
         if self._llm_manager is None:
             from casare_rpa.infrastructure.resources.llm_resource_manager import (
@@ -215,8 +215,8 @@ class VisionElementFinder:
         self,
         screenshot: bytes,
         description: str,
-        model: Optional[str] = None,
-        context_hint: Optional[str] = None,
+        model: str | None = None,
+        context_hint: str | None = None,
     ) -> ElementLocation:
         """
         Find a UI element by natural language description.
@@ -328,7 +328,7 @@ class VisionElementFinder:
                 processing_time_ms=processing_time,
             )
 
-    def _parse_vision_response(self, content: str) -> Dict[str, Any]:
+    def _parse_vision_response(self, content: str) -> dict[str, Any]:
         """
         Parse JSON response from vision model.
 
@@ -371,9 +371,9 @@ class VisionElementFinder:
     async def find_elements_batch(
         self,
         screenshot: bytes,
-        descriptions: List[str],
-        model: Optional[str] = None,
-    ) -> List[ElementLocation]:
+        descriptions: list[str],
+        model: str | None = None,
+    ) -> list[ElementLocation]:
         """
         Find multiple elements in a single vision call.
 
@@ -466,8 +466,8 @@ Return ONLY the JSON array, nothing else."""
     def _parse_batch_response(
         self,
         content: str,
-        descriptions: List[str],
-    ) -> List[ElementLocation]:
+        descriptions: list[str],
+    ) -> list[ElementLocation]:
         """Parse batch vision response."""
         content = content.strip()
 
@@ -488,7 +488,7 @@ Return ONLY the JSON array, nothing else."""
         data = json.loads(content)
 
         # Map results to descriptions by index
-        results: List[ElementLocation] = []
+        results: list[ElementLocation] = []
         for i, desc in enumerate(descriptions):
             # Find matching result
             item = next((r for r in data if r.get("index") == i + 1), None)
@@ -520,7 +520,7 @@ Return ONLY the JSON array, nothing else."""
         screenshot: bytes,
         description: str,
         expected_location: ElementLocation,
-        model: Optional[str] = None,
+        model: str | None = None,
         tolerance: int = 50,
     ) -> bool:
         """

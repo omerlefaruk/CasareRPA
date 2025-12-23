@@ -11,13 +11,12 @@ References:
 
 from collections import defaultdict
 from functools import partial
-from typing import Dict, Set, Tuple, Optional, List
-
-from PySide6.QtCore import QRectF, QObject, Signal
+from typing import Dict, List, Optional, Set, Tuple
 
 from loguru import logger
-from casare_rpa.presentation.canvas.telemetry import log_canvas_event
+from PySide6.QtCore import QObject, QRectF, Signal
 
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 # ============================================================================
 # SPATIAL HASH
@@ -41,9 +40,9 @@ class SpatialHash:
         """
         self._cell_size = cell_size
         # Map from cell coordinates to set of node IDs in that cell
-        self._cells: Dict[Tuple[int, int], Set[str]] = defaultdict(set)
+        self._cells: dict[tuple[int, int], set[str]] = defaultdict(set)
         # Map from node ID to the cells it occupies
-        self._node_cells: Dict[str, Set[Tuple[int, int]]] = {}
+        self._node_cells: dict[str, set[tuple[int, int]]] = {}
 
     def clear(self) -> None:
         """Clear all nodes from the spatial hash."""
@@ -88,7 +87,7 @@ class SpatialHash:
 
         del self._node_cells[node_id]
 
-    def query(self, rect: QRectF) -> Set[str]:
+    def query(self, rect: QRectF) -> set[str]:
         """
         Query for all nodes that may intersect with the given rectangle.
 
@@ -104,7 +103,7 @@ class SpatialHash:
             result.update(self._cells.get(cell, set()))
         return result
 
-    def _get_cells_for_rect(self, rect: QRectF) -> Set[Tuple[int, int]]:
+    def _get_cells_for_rect(self, rect: QRectF) -> set[tuple[int, int]]:
         """
         Calculate which cells a rectangle overlaps.
 
@@ -167,7 +166,7 @@ class ViewportCullingManager(QObject):
     # Signal emitted when visibility changes
     visibility_changed = Signal(set, set)  # (visible_ids, hidden_ids)
 
-    def __init__(self, cell_size: int = 500, margin: int = 1000, parent: Optional[QObject] = None):
+    def __init__(self, cell_size: int = 500, margin: int = 1000, parent: QObject | None = None):
         """
         Initialize the viewport culling manager.
 
@@ -182,15 +181,15 @@ class ViewportCullingManager(QObject):
         self._margin = margin
 
         # Track visibility state
-        self._visible_nodes: Set[str] = set()
-        self._all_nodes: Set[str] = set()
+        self._visible_nodes: set[str] = set()
+        self._all_nodes: set[str] = set()
 
         # Track node items for show/hide
-        self._node_items: Dict[str, object] = {}
+        self._node_items: dict[str, object] = {}
 
         # Track pipes (connections) for culling
         # Maps pipe_id -> (source_node_id, target_node_id, pipe_item)
-        self._pipes: Dict[str, Tuple[str, str, object]] = {}
+        self._pipes: dict[str, tuple[str, str, object]] = {}
 
         # Culling enabled flag
         self._enabled = True
@@ -290,7 +289,7 @@ class ViewportCullingManager(QObject):
         self._pipes.pop(pipe_id, None)
         self._stats["total_pipes"] = len(self._pipes)
 
-    def update_viewport(self, viewport_rect: QRectF) -> Tuple[Set[str], Set[str]]:
+    def update_viewport(self, viewport_rect: QRectF) -> tuple[set[str], set[str]]:
         """
         Update visibility based on the current viewport.
 
@@ -348,7 +347,7 @@ class ViewportCullingManager(QObject):
 
         return newly_visible, newly_hidden
 
-    def _apply_visibility_changes(self, show_ids: Set[str], hide_ids: Set[str]) -> None:
+    def _apply_visibility_changes(self, show_ids: set[str], hide_ids: set[str]) -> None:
         """
         Apply visibility changes to node items.
 
@@ -435,11 +434,11 @@ class ViewportCullingManager(QObject):
                     item.setVisible(True)
         self._visible_nodes = self._all_nodes.copy()
 
-    def get_visible_nodes(self) -> Set[str]:
+    def get_visible_nodes(self) -> set[str]:
         """Get the set of currently visible node IDs."""
         return self._visible_nodes.copy()
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get culling statistics."""
         return self._stats.copy()
 
@@ -508,7 +507,7 @@ def _on_node_created(culler: ViewportCullingManager, node) -> None:
         logger.debug(f"Error registering new node for culling: {e}")
 
 
-def _on_nodes_deleted(culler: ViewportCullingManager, node_ids: List[str]) -> None:
+def _on_nodes_deleted(culler: ViewportCullingManager, node_ids: list[str]) -> None:
     """Handle node deletion event."""
     try:
         for node_id in node_ids:

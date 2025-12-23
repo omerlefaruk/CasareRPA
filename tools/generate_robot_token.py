@@ -10,9 +10,9 @@ Usage:
     python tools/generate_robot_token.py robot-002 robot-003 robot-004
 """
 
-import sys
-import secrets
 import hashlib
+import secrets
+import sys
 
 
 def generate_robot_token(robot_id: str) -> tuple[str, str]:

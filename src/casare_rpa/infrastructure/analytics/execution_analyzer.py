@@ -7,11 +7,11 @@ for workflow optimization.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from collections import defaultdict
 
 from loguru import logger
 
@@ -44,10 +44,10 @@ class ExecutionInsight:
     title: str
     description: str
     significance: float  # 0.0-1.0
-    data: Dict[str, Any] = field(default_factory=dict)
-    recommended_action: Optional[str] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    recommended_action: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "type": self.insight_type.value,
@@ -69,7 +69,7 @@ class DurationTrend:
     change_percent: float
     confidence: float  # 0.0-1.0 based on sample size
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "direction": self.direction.value,
@@ -90,7 +90,7 @@ class SuccessRateTrend:
     change_percent: float
     confidence: float
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "direction": self.direction.value,
@@ -105,13 +105,13 @@ class SuccessRateTrend:
 class TimeDistribution:
     """Distribution of executions over time."""
 
-    hourly: Dict[int, int] = field(default_factory=dict)  # hour -> count
-    daily: Dict[str, int] = field(default_factory=dict)  # day name -> count
+    hourly: dict[int, int] = field(default_factory=dict)  # hour -> count
+    daily: dict[str, int] = field(default_factory=dict)  # day name -> count
     peak_hour: int = 0
     peak_day: str = ""
-    off_peak_hours: List[int] = field(default_factory=list)
+    off_peak_hours: list[int] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "hourly": self.hourly,
@@ -134,8 +134,8 @@ class ExecutionAnalysisResult:
     duration_trend: DurationTrend
     success_rate_trend: SuccessRateTrend
     time_distribution: TimeDistribution
-    insights: List[ExecutionInsight] = field(default_factory=list)
-    error_breakdown: Dict[str, int] = field(default_factory=dict)
+    insights: list[ExecutionInsight] = field(default_factory=list)
+    error_breakdown: dict[str, int] = field(default_factory=dict)
 
     @property
     def success_rate(self) -> float:
@@ -149,7 +149,7 @@ class ExecutionAnalysisResult:
         """Calculate overall failure rate."""
         return 1.0 - self.success_rate
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -195,7 +195,7 @@ class ExecutionAnalyzer:
     def analyze(
         self,
         workflow_id: str,
-        executions: List[Dict[str, Any]],
+        executions: list[dict[str, Any]],
         analysis_period_hours: int = 168,  # 1 week default
     ) -> ExecutionAnalysisResult:
         """
@@ -284,8 +284,8 @@ class ExecutionAnalyzer:
 
     def _calculate_duration_trend(
         self,
-        current: List[Dict[str, Any]],
-        previous: List[Dict[str, Any]],
+        current: list[dict[str, Any]],
+        previous: list[dict[str, Any]],
     ) -> DurationTrend:
         """Calculate duration trend between periods."""
         current_durations = [e.get("duration_ms", 0) for e in current if e.get("duration_ms")]
@@ -323,8 +323,8 @@ class ExecutionAnalyzer:
 
     def _calculate_success_rate_trend(
         self,
-        current: List[Dict[str, Any]],
-        previous: List[Dict[str, Any]],
+        current: list[dict[str, Any]],
+        previous: list[dict[str, Any]],
     ) -> SuccessRateTrend:
         """Calculate success rate trend between periods."""
         current_successes = sum(1 for e in current if e.get("status") == "success")
@@ -358,10 +358,10 @@ class ExecutionAnalyzer:
             confidence=confidence,
         )
 
-    def _calculate_time_distribution(self, executions: List[Dict[str, Any]]) -> TimeDistribution:
+    def _calculate_time_distribution(self, executions: list[dict[str, Any]]) -> TimeDistribution:
         """Calculate execution time distribution."""
-        hourly: Dict[int, int] = defaultdict(int)
-        daily: Dict[str, int] = defaultdict(int)
+        hourly: dict[int, int] = defaultdict(int)
+        daily: dict[str, int] = defaultdict(int)
 
         for execution in executions:
             timestamp = execution.get("timestamp")
@@ -389,9 +389,9 @@ class ExecutionAnalyzer:
             off_peak_hours=sorted(off_peak),
         )
 
-    def _calculate_error_breakdown(self, executions: List[Dict[str, Any]]) -> Dict[str, int]:
+    def _calculate_error_breakdown(self, executions: list[dict[str, Any]]) -> dict[str, int]:
         """Calculate error type breakdown."""
-        errors: Dict[str, int] = defaultdict(int)
+        errors: dict[str, int] = defaultdict(int)
 
         for execution in executions:
             if execution.get("status") == "failed":
@@ -402,11 +402,11 @@ class ExecutionAnalyzer:
 
     def _generate_insights(
         self,
-        executions: List[Dict[str, Any]],
+        executions: list[dict[str, Any]],
         duration_trend: DurationTrend,
         success_rate_trend: SuccessRateTrend,
         time_distribution: TimeDistribution,
-    ) -> List[ExecutionInsight]:
+    ) -> list[ExecutionInsight]:
         """Generate actionable insights from analysis."""
         insights = []
 
@@ -491,7 +491,7 @@ class ExecutionAnalyzer:
 
         return insights[:10]  # Return top 10 insights
 
-    def _detect_streaks(self, executions: List[Dict[str, Any]]) -> Optional[ExecutionInsight]:
+    def _detect_streaks(self, executions: list[dict[str, Any]]) -> ExecutionInsight | None:
         """Detect success or failure streaks."""
         if not executions:
             return None

@@ -16,6 +16,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass
+from datetime import UTC
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -35,7 +36,7 @@ class APIKeyEntry:
     key_name: str  # e.g., "default", "production"
     encrypted_key: str  # Base64 encoded encrypted key
     created_at: str
-    last_used: Optional[str] = None
+    last_used: str | None = None
 
 
 class APIKeyStore:
@@ -72,7 +73,7 @@ class APIKeyStore:
         "openrouter": "OPENROUTER_API_KEY",
     }
 
-    def __init__(self, store_path: Optional[Path] = None) -> None:
+    def __init__(self, store_path: Path | None = None) -> None:
         """
         Initialize the API key store.
 
@@ -81,9 +82,9 @@ class APIKeyStore:
                        Defaults to user's app data directory.
         """
         self._store_path = store_path or self._get_default_store_path()
-        self._fernet: Optional[Fernet] = None
-        self._cache: Dict[str, str] = {}  # provider -> decrypted key
-        self._entries: Dict[str, APIKeyEntry] = {}
+        self._fernet: Fernet | None = None
+        self._cache: dict[str, str] = {}  # provider -> decrypted key
+        self._entries: dict[str, APIKeyEntry] = {}
         self._initialized = False
 
     def _get_default_store_path(self) -> Path:
@@ -295,7 +296,7 @@ class APIKeyStore:
             provider=provider,
             key_name=key_name,
             encrypted_key=base64.b64encode(encrypted).decode("ascii"),
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
         # Clear cache
@@ -304,7 +305,7 @@ class APIKeyStore:
         self._save_store()
         logger.info(f"Stored API key for provider: {provider}")
 
-    def get_key(self, provider: str, check_env: bool = True) -> Optional[str]:
+    def get_key(self, provider: str, check_env: bool = True) -> str | None:
         """
         Retrieve an API key.
 
@@ -331,7 +332,7 @@ class APIKeyStore:
                 # Update last used
                 from datetime import datetime, timezone
 
-                entry.last_used = datetime.now(timezone.utc).isoformat()
+                entry.last_used = datetime.now(UTC).isoformat()
                 self._save_store()
 
                 # Cache the decrypted key
@@ -373,7 +374,7 @@ class APIKeyStore:
 
         return False
 
-    def list_providers(self) -> List[str]:
+    def list_providers(self) -> list[str]:
         """Get list of providers with stored keys."""
         self._ensure_initialized()
         return list(self._entries.keys())
@@ -396,7 +397,7 @@ class APIKeyStore:
         """Clear the in-memory key cache."""
         self._cache.clear()
 
-    def get_key_info(self, provider: str) -> Optional[Dict]:
+    def get_key_info(self, provider: str) -> dict | None:
         """Get metadata about a stored key (without the key itself)."""
         self._ensure_initialized()
 
@@ -423,7 +424,7 @@ class APIKeyStore:
 
 
 # Global instance for convenience
-_default_store: Optional[APIKeyStore] = None
+_default_store: APIKeyStore | None = None
 
 
 def get_api_key_store() -> APIKeyStore:
@@ -434,7 +435,7 @@ def get_api_key_store() -> APIKeyStore:
     return _default_store
 
 
-def get_api_key(provider: str) -> Optional[str]:
+def get_api_key(provider: str) -> str | None:
     """Convenience function to get an API key."""
     return get_api_key_store().get_key(provider)
 

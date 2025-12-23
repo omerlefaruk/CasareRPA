@@ -9,28 +9,28 @@ from typing import Tuple
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
-)
-from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.utils.resilience import retry_operation
-from casare_rpa.utils.config import (
-    DEFAULT_BROWSER,
-    HEADLESS_MODE,
-    BROWSER_ARGS,
-    PLAYWRIGHT_IGNORE_ARGS,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.browser.playwright_manager import (
     get_playwright_singleton,
 )
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.utils.config import (
+    BROWSER_ARGS,
+    DEFAULT_BROWSER,
+    HEADLESS_MODE,
+    PLAYWRIGHT_IGNORE_ARGS,
+)
+from casare_rpa.utils.resilience import retry_operation
 
 
-def _get_browser_profile_path(profile_mode: str, custom_path: str = "") -> Tuple[str, str]:
+def _get_browser_profile_path(profile_mode: str, custom_path: str = "") -> tuple[str, str]:
     """
     Resolve browser profile path and profile directory based on profile mode.
 
@@ -574,11 +574,13 @@ class LaunchBrowserNode(BaseNode):
                 window_wait = self.get_parameter("window_wait", 100)
                 if not headless and window_wait >= 0:
                     try:
-                        import uiautomation as auto
-                        from casare_rpa.desktop.element import DesktopElement
                         from concurrent.futures import (
                             ThreadPoolExecutor,
                         )
+
+                        import uiautomation as auto
+
+                        from casare_rpa.desktop.element import DesktopElement
 
                         # Wait for window to fully initialize
                         if window_wait > 0:
@@ -631,7 +633,7 @@ class LaunchBrowserNode(BaseNode):
                                     # "normal" state - no action needed (default)
                                 else:
                                     logger.debug("Browser window not found within timeout")
-                            except asyncio.TimeoutError:
+                            except TimeoutError:
                                 logger.debug("Browser window search timed out (2s) - skipping")
 
                     except Exception as e:
@@ -641,7 +643,7 @@ class LaunchBrowserNode(BaseNode):
 
                 # Emit BROWSER_PAGE_READY event for UI to enable picker/recorder
                 try:
-                    from casare_rpa.domain.events import get_event_bus, BrowserPageReady
+                    from casare_rpa.domain.events import BrowserPageReady, get_event_bus
 
                     event_bus = get_event_bus()
                     logger.info(f"Publishing BrowserPageReady (bus={id(event_bus)})")
@@ -686,7 +688,7 @@ class LaunchBrowserNode(BaseNode):
         logger.error(f"Failed to launch browser after {attempts} attempts: {last_error}")
         return {"success": False, "error": str(last_error), "next_nodes": []}
 
-    def _validate_config(self) -> Tuple[bool, str]:
+    def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         browser_type = self.get_parameter("browser_type", "")
         if browser_type not in ["chromium", "firefox", "webkit"]:
@@ -812,6 +814,6 @@ class CloseBrowserNode(BaseNode):
             logger.error(f"Failed to close browser: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> Tuple[bool, str]:
+    def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""

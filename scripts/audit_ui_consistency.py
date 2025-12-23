@@ -26,7 +26,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Set, Tuple
 
-
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -109,12 +108,12 @@ class Violation:
 class RawWidgetVisitor(ast.NodeVisitor):
     """AST visitor that detects raw QLineEdit/QTextEdit instantiation in node classes."""
 
-    def __init__(self, source_lines: List[str]) -> None:
+    def __init__(self, source_lines: list[str]) -> None:
         self.source_lines = source_lines
-        self.violations: List[Tuple[int, str, str, str]] = []
+        self.violations: list[tuple[int, str, str, str]] = []
         self.current_class: str = ""
         self.in_node_class: bool = False
-        self.class_bases: Set[str] = set()
+        self.class_bases: set[str] = set()
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Track class definitions and check if it's a node class."""
@@ -178,7 +177,7 @@ class RawWidgetVisitor(ast.NodeVisitor):
 # =============================================================================
 
 
-def scan_file(file_path: Path) -> List[Violation]:
+def scan_file(file_path: Path) -> list[Violation]:
     """
     Scan a single Python file for raw widget violations.
 
@@ -217,7 +216,7 @@ def scan_file(file_path: Path) -> List[Violation]:
     return violations
 
 
-def scan_directory(directory: Path, verbose: bool = False) -> List[Violation]:
+def scan_directory(directory: Path, verbose: bool = False) -> list[Violation]:
     """
     Scan a directory recursively for raw widget violations.
 
@@ -317,7 +316,7 @@ def main() -> int:
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
 
-    all_violations: List[Violation] = []
+    all_violations: list[Violation] = []
 
     for rel_dir in SCAN_DIRECTORIES:
         directory = project_root / rel_dir
@@ -348,7 +347,7 @@ def main() -> int:
     print()
 
     # Group violations by file
-    by_file: dict[Path, List[Violation]] = {}
+    by_file: dict[Path, list[Violation]] = {}
     for v in all_violations:
         if v.file_path not in by_file:
             by_file[v.file_path] = []

@@ -56,7 +56,7 @@ class JsonSyntaxHighlighter(QSyntaxHighlighter):
         highlighter = JsonSyntaxHighlighter(editor.document())
     """
 
-    def __init__(self, document: Optional[QTextDocument] = None) -> None:
+    def __init__(self, document: QTextDocument | None = None) -> None:
         """
         Initialize the JSON syntax highlighter.
 

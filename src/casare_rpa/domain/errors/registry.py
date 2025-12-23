@@ -4,18 +4,16 @@ CasareRPA - Error Handler Registry.
 Registry for error handlers with global singleton access.
 """
 
-from typing import Any, Callable, Dict, List, Optional
-
 import logging
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
-
-from casare_rpa.domain.value_objects.types import NodeId
 
 from casare_rpa.domain.errors.context import ErrorContext, RecoveryDecision
 from casare_rpa.domain.errors.handlers import ErrorHandler, NodeErrorHandler
 from casare_rpa.domain.errors.types import ErrorCategory
-
+from casare_rpa.domain.value_objects.types import NodeId
 
 # Type alias for custom handler functions
 CustomErrorHandlerFunc = Callable[[ErrorContext], RecoveryDecision]
@@ -38,11 +36,11 @@ class ErrorHandlerRegistry:
 
     def __init__(self) -> None:
         """Initialize error handler registry."""
-        self._node_handlers: Dict[str, List[ErrorHandler]] = {}
-        self._category_handlers: Dict[ErrorCategory, List[ErrorHandler]] = {}
-        self._global_handlers: List[ErrorHandler] = []
-        self._custom_handlers: Dict[str, CustomErrorHandlerFunc] = {}
-        self._error_history: List[ErrorContext] = []
+        self._node_handlers: dict[str, list[ErrorHandler]] = {}
+        self._category_handlers: dict[ErrorCategory, list[ErrorHandler]] = {}
+        self._global_handlers: list[ErrorHandler] = []
+        self._custom_handlers: dict[str, CustomErrorHandlerFunc] = {}
+        self._error_history: list[ErrorContext] = []
         self._max_history = 1000
 
         # Register default handler as fallback
@@ -123,9 +121,9 @@ class ErrorHandlerRegistry:
         retry_count: int = 0,
         max_retries: int = 3,
         execution_time_ms: float = 0.0,
-        node_config: Optional[Dict[str, Any]] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        additional_data: Optional[Dict[str, Any]] = None,
+        node_config: dict[str, Any] | None = None,
+        variables: dict[str, Any] | None = None,
+        additional_data: dict[str, Any] | None = None,
     ) -> tuple[ErrorContext, RecoveryDecision]:
         """
         Handle an error and get recovery decision.
@@ -217,7 +215,7 @@ class ErrorHandlerRegistry:
         # Fallback to default
         return self._default_handler
 
-    def _sanitize_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_config(self, config: dict[str, Any]) -> dict[str, Any]:
         """
         Sanitize node config for storage (remove sensitive data).
 
@@ -237,7 +235,7 @@ class ErrorHandlerRegistry:
                 sanitized[key] = value
         return sanitized
 
-    def _sanitize_variables(self, variables: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_variables(self, variables: dict[str, Any]) -> dict[str, Any]:
         """
         Sanitize variables for storage (remove sensitive data, truncate large values).
 
@@ -274,10 +272,10 @@ class ErrorHandlerRegistry:
 
     def get_error_history(
         self,
-        node_id: Optional[NodeId] = None,
-        category: Optional[ErrorCategory] = None,
+        node_id: NodeId | None = None,
+        category: ErrorCategory | None = None,
         limit: int = 100,
-    ) -> List[ErrorContext]:
+    ) -> list[ErrorContext]:
         """
         Get error history with optional filtering.
 
@@ -298,7 +296,7 @@ class ErrorHandlerRegistry:
 
         return history[:limit]
 
-    def get_error_summary(self) -> Dict[str, Any]:
+    def get_error_summary(self) -> dict[str, Any]:
         """
         Get summary of error history.
 
@@ -313,9 +311,9 @@ class ErrorHandlerRegistry:
                 "by_node_type": {},
             }
 
-        by_category: Dict[str, int] = {}
-        by_classification: Dict[str, int] = {}
-        by_node_type: Dict[str, int] = {}
+        by_category: dict[str, int] = {}
+        by_classification: dict[str, int] = {}
+        by_node_type: dict[str, int] = {}
 
         for ctx in self._error_history:
             cat = ctx.category.name

@@ -9,18 +9,20 @@ Handles browser and desktop element selection via UnifiedSelectorDialog:
 - Healing context capture
 """
 
-from typing import Optional, TYPE_CHECKING, Any
-from PySide6.QtCore import Signal
-from loguru import logger
+from typing import TYPE_CHECKING, Any, Optional
 
-from .base_controller import BaseController
-from ..events.event_bus import EventBus
+from loguru import logger
+from PySide6.QtCore import Signal
+
 from ..events.event import Event
+from ..events.event_bus import EventBus
 from ..events.event_types import EventType
+from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
     from playwright.async_api import Page
+
+    from ..main_window import MainWindow
 
 
 class SelectorController(BaseController):
@@ -46,7 +48,7 @@ class SelectorController(BaseController):
         super().__init__(main_window)
         self._selector_integration = None
         self._event_bus = EventBus()
-        self._browser_page: Optional["Page"] = None
+        self._browser_page: Page | None = None
         self._unified_dialog = None
 
     def initialize(self) -> None:
@@ -81,7 +83,7 @@ class SelectorController(BaseController):
 
     def show_unified_selector_dialog(
         self,
-        target_node: Optional[Any] = None,
+        target_node: Any | None = None,
         target_property: str = "selector",
         initial_mode: str = "browser",
     ) -> None:
@@ -165,7 +167,7 @@ class SelectorController(BaseController):
         self._event_bus.publish(event)
 
     async def start_picker(
-        self, target_node: Optional[Any] = None, target_property: str = "selector"
+        self, target_node: Any | None = None, target_property: str = "selector"
     ) -> None:
         """
         Start element picker mode (legacy API - opens unified dialog).

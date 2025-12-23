@@ -9,22 +9,22 @@ This module provides nodes for executing scripts:
 """
 
 import asyncio
+import os
 import subprocess
 import sys
 import tempfile
-import os
-from typing import Any, Dict
 from pathlib import Path
+from typing import Any, Dict
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -139,7 +139,7 @@ class RunPythonScriptNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _run_inline(self, code: str, variables: Dict[str, Any]) -> tuple[Any, str, str]:
+    def _run_inline(self, code: str, variables: dict[str, Any]) -> tuple[Any, str, str]:
         """Execute Python code inline."""
         import io
         from contextlib import redirect_stdout
@@ -165,7 +165,7 @@ class RunPythonScriptNode(BaseNode):
         return result, output, error
 
     async def _run_isolated(
-        self, code: str, variables: Dict[str, Any], timeout: int
+        self, code: str, variables: dict[str, Any], timeout: int
     ) -> tuple[Any, str, str]:
         """Execute Python code in isolated subprocess."""
         import json

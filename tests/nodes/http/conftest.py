@@ -9,8 +9,8 @@ import pytest
 
 from casare_rpa.domain.value_objects.types import ExecutionMode
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.http.http_base import HTTP_CLIENT_RESOURCE_KEY
 from casare_rpa.infrastructure.http.unified_http_client import UnifiedHttpClient
+from casare_rpa.nodes.http.http_base import HTTP_CLIENT_RESOURCE_KEY
 
 
 @pytest.fixture

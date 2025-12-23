@@ -55,7 +55,7 @@ class PooledSession:
     """An HTTP session managed by the pool."""
 
     session: Any  # aiohttp.ClientSession
-    base_url: Optional[str]
+    base_url: str | None
     created_at: float = field(default_factory=time.time)
     last_used: float = field(default_factory=time.time)
     request_count: int = 0
@@ -115,7 +115,7 @@ class HttpSessionPool:
         connect_timeout: float = 10.0,
         enable_compression: bool = True,
         user_agent: str = "CasareRPA/1.0",
-        default_headers: Optional[Dict[str, str]] = None,
+        default_headers: dict[str, str] | None = None,
     ) -> None:
         """
         Initialize the HTTP session pool.
@@ -147,9 +147,9 @@ class HttpSessionPool:
         self._default_headers = default_headers or {}
 
         # Pool state
-        self._available: Deque[PooledSession] = deque()
-        self._in_use: Set[PooledSession] = set()
-        self._host_sessions: Dict[str, Deque[PooledSession]] = {}
+        self._available: deque[PooledSession] = deque()
+        self._in_use: set[PooledSession] = set()
+        self._host_sessions: dict[str, deque[PooledSession]] = {}
         self._lock = asyncio.Lock()
         self._closed = False
 
@@ -182,8 +182,8 @@ class HttpSessionPool:
 
     async def _create_session(
         self,
-        base_url: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        base_url: str | None = None,
+        headers: dict[str, str] | None = None,
     ) -> PooledSession:
         """Create a new HTTP session."""
         connector = aiohttp.TCPConnector(
@@ -221,8 +221,8 @@ class HttpSessionPool:
 
     async def acquire(
         self,
-        url: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        url: str | None = None,
+        headers: dict[str, str] | None = None,
         timeout: float = 30.0,
     ) -> Any:
         """
@@ -298,11 +298,11 @@ class HttpSessionPool:
                     self._available_event.wait(),
                     timeout=min(remaining, 0.5),  # Cap individual wait to 0.5s
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Continue loop to recheck pool state
                 pass
 
-    async def release(self, session: Any, url: Optional[str] = None) -> None:
+    async def release(self, session: Any, url: str | None = None) -> None:
         """
         Release a session back to the pool.
 
@@ -429,7 +429,7 @@ class HttpSessionPool:
         cleaned = 0
         async with self._lock:
             # Clean available sessions
-            new_available: Deque[PooledSession] = deque()
+            new_available: deque[PooledSession] = deque()
             while self._available:
                 pooled = self._available.popleft()
                 if pooled.is_idle(self._idle_timeout):
@@ -441,7 +441,7 @@ class HttpSessionPool:
 
             # Clean host-specific sessions
             for host in list(self._host_sessions.keys()):
-                new_queue: Deque[PooledSession] = deque()
+                new_queue: deque[PooledSession] = deque()
                 while self._host_sessions[host]:
                     pooled = self._host_sessions[host].popleft()
                     if pooled.is_idle(self._idle_timeout):
@@ -486,7 +486,7 @@ class HttpSessionPool:
 
         logger.info("HTTP session pool closed")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         return {
             "available": self.available_count,
@@ -521,7 +521,7 @@ class HttpSessionManager:
     """
 
     _instance: Optional["HttpSessionManager"] = None
-    _instance_lock: Optional[asyncio.Lock] = None
+    _instance_lock: asyncio.Lock | None = None
 
     @classmethod
     def _get_instance_lock(cls) -> asyncio.Lock:
@@ -531,8 +531,8 @@ class HttpSessionManager:
         return cls._instance_lock
 
     def __init__(self) -> None:
-        self._default_pool: Optional[HttpSessionPool] = None
-        self._host_pools: Dict[str, HttpSessionPool] = {}
+        self._default_pool: HttpSessionPool | None = None
+        self._host_pools: dict[str, HttpSessionPool] = {}
         self._pool_lock = asyncio.Lock()
 
     @classmethod
@@ -546,7 +546,7 @@ class HttpSessionManager:
 
     async def get_pool(
         self,
-        host: Optional[str] = None,
+        host: str | None = None,
         **config: Any,
     ) -> HttpSessionPool:
         """
@@ -608,7 +608,7 @@ class HttpSessionManager:
             cls._instance = None
         cls._instance_lock = None
 
-    def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_stats(self) -> dict[str, dict[str, Any]]:
         """Get statistics for all pools."""
         stats = {}
         if self._default_pool:

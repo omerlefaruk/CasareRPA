@@ -15,107 +15,119 @@ Architecture:
 """
 
 # Metrics Aggregator (facade)
-from casare_rpa.infrastructure.analytics.metrics_aggregator import (
-    MetricsAggregator,
-    get_metrics_aggregator,
-)
-
-# Metric Models (public API data classes)
-from casare_rpa.infrastructure.analytics.metric_models import (
-    ExecutionDistribution,
-    WorkflowMetrics,
-    RobotPerformanceMetrics,
-    AnalyticsReport,
-    BottleneckAnalysis,
-    EfficiencyScore,
-    CostAnalysis,
-    SLACompliance,
-    ComparativeAnalysis,
-)
-
 # Aggregation Strategies
 from casare_rpa.infrastructure.analytics.aggregation_strategies import (
     AggregationPeriod,
-    TimeSeriesDataPoint,
     AggregationStrategy,
-    TimeBasedAggregationStrategy,
-    StatisticalAggregationStrategy,
-    DimensionalAggregationStrategy,
-    RollingWindowAggregationStrategy,
     AggregationStrategyFactory,
-    StatisticalResult,
+    DimensionalAggregationStrategy,
     DimensionalBucket,
+    RollingWindowAggregationStrategy,
     RollingWindowResult,
-)
-
-# Metric Calculators
-from casare_rpa.infrastructure.analytics.metric_calculators import (
-    EfficiencyScoreCalculator,
-    EfficiencyScoreResult,
-    CostAnalysisCalculator,
-    CostAnalysisResult,
-    SLAComplianceCalculator,
-    SLAComplianceResult,
-    BottleneckAnalysisCalculator,
-    BottleneckAnalysisResult,
-    VersionComparisonCalculator,
-    VersionComparisonResult,
-)
-
-# Metric Storage
-from casare_rpa.infrastructure.analytics.metric_storage import (
-    JobRecord,
-    WorkflowMetricsData,
-    RobotMetricsData,
-    MetricStorage,
-    InMemoryJobRecordStorage,
-    WorkflowMetricsCache,
-    RobotMetricsCache,
-    ErrorTrackingStorage,
-    HealingMetricsStorage,
-    QueueDepthStorage,
-    MetricsStorageManager,
+    StatisticalAggregationStrategy,
+    StatisticalResult,
+    TimeBasedAggregationStrategy,
+    TimeSeriesDataPoint,
 )
 
 # Bottleneck Detector
 from casare_rpa.infrastructure.analytics.bottleneck_detector import (
     BottleneckDetector,
     BottleneckInfo,
-    DetailedBottleneckAnalysis,
     BottleneckType,
-    Severity,
+    DetailedBottleneckAnalysis,
     NodeExecutionStats,
+    Severity,
 )
 
 # Execution Analyzer
 from casare_rpa.infrastructure.analytics.execution_analyzer import (
-    ExecutionAnalyzer,
+    DurationTrend,
     ExecutionAnalysisResult,
+    ExecutionAnalyzer,
     ExecutionInsight,
     InsightType,
-    DurationTrend,
     SuccessRateTrend,
     TimeDistribution,
     TrendDirection,
 )
 
+# Metric Calculators
+from casare_rpa.infrastructure.analytics.metric_calculators import (
+    BottleneckAnalysisCalculator,
+    BottleneckAnalysisResult,
+    CostAnalysisCalculator,
+    CostAnalysisResult,
+    EfficiencyScoreCalculator,
+    EfficiencyScoreResult,
+    SLAComplianceCalculator,
+    SLAComplianceResult,
+    VersionComparisonCalculator,
+    VersionComparisonResult,
+)
+
+# Metric Models (public API data classes)
+from casare_rpa.infrastructure.analytics.metric_models import (
+    AnalyticsReport,
+    BottleneckAnalysis,
+    ComparativeAnalysis,
+    CostAnalysis,
+    EfficiencyScore,
+    ExecutionDistribution,
+    RobotPerformanceMetrics,
+    SLACompliance,
+    WorkflowMetrics,
+)
+
+# Metric Storage
+from casare_rpa.infrastructure.analytics.metric_storage import (
+    ErrorTrackingStorage,
+    HealingMetricsStorage,
+    InMemoryJobRecordStorage,
+    JobRecord,
+    MetricsStorageManager,
+    MetricStorage,
+    QueueDepthStorage,
+    RobotMetricsCache,
+    RobotMetricsData,
+    WorkflowMetricsCache,
+    WorkflowMetricsData,
+)
+from casare_rpa.infrastructure.analytics.metrics_aggregator import (
+    MetricsAggregator,
+    get_metrics_aggregator,
+)
+
+# PM4Py Integration (lazy loaded)
+from casare_rpa.infrastructure.analytics.pm4py_integration import (
+    AlignmentResult,
+    BPMNResult,
+    ConformanceMethod,
+    ConformanceSummary,
+    DiscoveryAlgorithm,
+    PetriNetResult,
+    PM4PyIntegration,
+    TokenReplayResult,
+    get_pm4py_integration,
+)
+
 # Process Mining
 from casare_rpa.infrastructure.analytics.process_mining import (
-    ProcessMiner,
-    ProcessEventLog,
-    ProcessDiscovery,
-    ConformanceChecker,
-    ProcessEnhancer,
-    ProcessModel,
-    ExecutionTrace,
     Activity,
     ActivityStatus,
+    ConformanceChecker,
     ConformanceReport,
-    ProcessInsight,
-    InsightCategory,
     Deviation,
     DeviationType,
     DirectFollowsEdge,
+    ExecutionTrace,
+    InsightCategory,
+    ProcessDiscovery,
+    ProcessEnhancer,
+    ProcessEventLog,
+    ProcessInsight,
+    ProcessMiner,
+    ProcessModel,
     get_process_miner,
 )
 
@@ -123,19 +135,6 @@ from casare_rpa.infrastructure.analytics.process_mining import (
 from casare_rpa.infrastructure.analytics.xes_exporter import (
     XESExporter,
     XESImporter,
-)
-
-# PM4Py Integration (lazy loaded)
-from casare_rpa.infrastructure.analytics.pm4py_integration import (
-    PM4PyIntegration,
-    DiscoveryAlgorithm,
-    ConformanceMethod,
-    PetriNetResult,
-    BPMNResult,
-    AlignmentResult,
-    TokenReplayResult,
-    ConformanceSummary,
-    get_pm4py_integration,
 )
 
 __all__ = [

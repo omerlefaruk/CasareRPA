@@ -1,14 +1,15 @@
 import asyncio
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 from fastembed import TextEmbedding
+
+from casare_rpa.infrastructure.ai.vector_store import get_vector_store
 
 
 async def test_search():
@@ -30,13 +31,7 @@ async def test_search():
     )
 
     for i, res in enumerate(results):
-<<<<<<< HEAD
-        print(
-            f"\nResult {i+1}: {res.metadata.get('path')} - {res.metadata.get('name')}"
-        )
-=======
         print(f"\nResult {i+1}: {res.metadata.get('path')} - {res.metadata.get('name')}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         print(f"Score: {res.score:.3f}")
         print(f"Content: {res.content[:200]}...")
 

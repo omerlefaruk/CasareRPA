@@ -15,9 +15,9 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_editor_factory.py -v
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 
 # =============================================================================
 # EditorFactory.create() Tests
@@ -30,9 +30,9 @@ class TestEditorFactoryCreate:
     def test_create_python_editor(self, qapp) -> None:
         """Test creating CODE_PYTHON editor returns CodeExpressionEditor."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
+            CodeExpressionEditor,
             EditorFactory,
             EditorType,
-            CodeExpressionEditor,
         )
 
         editor = EditorFactory.create(EditorType.CODE_PYTHON)
@@ -43,9 +43,9 @@ class TestEditorFactoryCreate:
     def test_create_javascript_editor(self, qapp) -> None:
         """Test creating CODE_JAVASCRIPT editor returns CodeExpressionEditor."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
+            CodeExpressionEditor,
             EditorFactory,
             EditorType,
-            CodeExpressionEditor,
         )
 
         editor = EditorFactory.create(EditorType.CODE_JAVASCRIPT)
@@ -56,9 +56,9 @@ class TestEditorFactoryCreate:
     def test_create_cmd_editor(self, qapp) -> None:
         """Test creating CODE_CMD editor returns CodeExpressionEditor."""
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
+            CodeExpressionEditor,
             EditorFactory,
             EditorType,
-            CodeExpressionEditor,
         )
 
         editor = EditorFactory.create(EditorType.CODE_CMD)
@@ -110,6 +110,7 @@ class TestEditorFactoryCreate:
     def test_create_with_parent(self, qapp) -> None:
         """Test creating editor with parent widget."""
         from PySide6.QtWidgets import QWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             EditorFactory,
             EditorType,

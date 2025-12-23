@@ -17,10 +17,10 @@ from typing import Optional
 
 from PySide6.QtGui import (
     QColor,
+    QFont,
     QSyntaxHighlighter,
     QTextCharFormat,
     QTextDocument,
-    QFont,
 )
 
 
@@ -55,7 +55,7 @@ class MarkdownHighlighter(QSyntaxHighlighter):
     COLOR_BLOCKQUOTE = "#6A9955"  # Green
     COLOR_HR = "#808080"  # Gray
 
-    def __init__(self, document: Optional[QTextDocument] = None) -> None:
+    def __init__(self, document: QTextDocument | None = None) -> None:
         """
         Initialize the Markdown syntax highlighter.
 

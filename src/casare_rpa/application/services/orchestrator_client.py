@@ -9,6 +9,7 @@ Architecture: Presentation → Application (this) → Infrastructure (UnifiedHtt
 
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol
+
 from loguru import logger
 
 from casare_rpa.infrastructure.http import (
@@ -22,17 +23,17 @@ class WorkflowSubmissionResult:
     """Result of workflow submission to Orchestrator."""
 
     success: bool
-    workflow_id: Optional[str] = None
-    job_id: Optional[str] = None
-    schedule_id: Optional[str] = None
+    workflow_id: str | None = None
+    job_id: str | None = None
+    schedule_id: str | None = None
     message: str = ""
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class HttpClient(Protocol):
     """Protocol for HTTP client abstraction (for testing)."""
 
-    async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
+    async def post(self, url: str, json: dict[str, Any]) -> tuple[int, dict[str, Any], str]:
         """
         POST request to URL with JSON payload.
 
@@ -66,7 +67,7 @@ class UnifiedHttpClientAdapter:
         )
         self._client = UnifiedHttpClient(config)
 
-    async def post(self, url: str, json: Dict[str, Any]) -> tuple[int, Dict[str, Any], str]:
+    async def post(self, url: str, json: dict[str, Any]) -> tuple[int, dict[str, Any], str]:
         """POST request with JSON payload."""
         try:
             response = await self._client.post(url, json=json)
@@ -107,7 +108,7 @@ class OrchestratorClient:
     def __init__(
         self,
         orchestrator_url: str = "http://localhost:8000",
-        http_client: Optional[HttpClient] = None,
+        http_client: HttpClient | None = None,
     ) -> None:
         """
         Initialize Orchestrator client.
@@ -122,12 +123,12 @@ class OrchestratorClient:
     async def submit_workflow(
         self,
         workflow_name: str,
-        workflow_json: Dict[str, Any],
+        workflow_json: dict[str, Any],
         execution_mode: str = "lan",
         trigger_type: str = "manual",
         priority: int = 10,
-        metadata: Optional[Dict[str, Any]] = None,
-        schedule_cron: Optional[str] = None,
+        metadata: dict[str, Any] | None = None,
+        schedule_cron: str | None = None,
     ) -> WorkflowSubmissionResult:
         """
         Submit a workflow to the Orchestrator for execution.

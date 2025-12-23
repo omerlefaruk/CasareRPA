@@ -14,57 +14,57 @@ INTERNAL - Avoid direct import:
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.entities.resource_node import ResourceNode
-from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
+from casare_rpa.domain.entities.execution_state import ExecutionContext, ExecutionState
 from casare_rpa.domain.entities.node_connection import NodeConnection
-from casare_rpa.domain.entities.variable import (
-    Variable,
-    VariableDefinition,
-    ProjectVariable,
-)
-from casare_rpa.domain.entities.workflow import WorkflowSchema
-from casare_rpa.domain.entities.execution_state import ExecutionState, ExecutionContext
-from casare_rpa.domain.entities.tenant import Tenant, TenantId, TenantSettings
-from casare_rpa.domain.entities.subflow import (
-    Subflow,
-    SubflowPort,
-    SubflowParameter,
-    SubflowMetadata,
-    SUBFLOW_SCHEMA_VERSION,
-    MAX_NESTING_DEPTH,
-    SUBFLOWS_DIRECTORY,
-    generate_subflow_id,
-)
-from casare_rpa.domain.entities.trigger_config import (
-    TriggerConfig,
-    TriggerConfigProtocol,
-)
-from casare_rpa.domain.entities.user import User, UserStatus
 
 # WorkflowSchedule removed - use Schedule Trigger node instead
 from casare_rpa.domain.entities.project import (
     # Constants
     PROJECT_SCHEMA_VERSION,
-    generate_project_id,
-    generate_scenario_id,
-    # Enums
-    VariableScope,
-    VariableType,
-    # Variable classes
-    VariablesFile,
     # Credential classes
     CredentialBinding,
     CredentialBindingsFile,
-    # Settings classes
-    ProjectSettings,
-    ScenarioExecutionSettings,
     # Main entities
     Project,
-    Scenario,
     # Index classes
     ProjectIndexEntry,
+    # Settings classes
+    ProjectSettings,
     ProjectsIndex,
+    Scenario,
+    ScenarioExecutionSettings,
+    # Enums
+    VariableScope,
+    # Variable classes
+    VariablesFile,
+    VariableType,
+    generate_project_id,
+    generate_scenario_id,
 )
+from casare_rpa.domain.entities.resource_node import ResourceNode
+from casare_rpa.domain.entities.subflow import (
+    MAX_NESTING_DEPTH,
+    SUBFLOW_SCHEMA_VERSION,
+    SUBFLOWS_DIRECTORY,
+    Subflow,
+    SubflowMetadata,
+    SubflowParameter,
+    SubflowPort,
+    generate_subflow_id,
+)
+from casare_rpa.domain.entities.tenant import Tenant, TenantId, TenantSettings
+from casare_rpa.domain.entities.trigger_config import (
+    TriggerConfig,
+    TriggerConfigProtocol,
+)
+from casare_rpa.domain.entities.user import User, UserStatus
+from casare_rpa.domain.entities.variable import (
+    ProjectVariable,
+    Variable,
+    VariableDefinition,
+)
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
 
 __all__ = [
     "BaseNode",

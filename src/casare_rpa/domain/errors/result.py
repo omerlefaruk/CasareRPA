@@ -30,15 +30,16 @@ Design Pattern: Railway-Oriented Programming
 """
 
 from __future__ import annotations
+
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     NoReturn,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
 
 if TYPE_CHECKING:
@@ -118,7 +119,7 @@ class Ok(Generic[T]):
         """
         return self.value
 
-    def map(self, fn: Callable[[T], U]) -> "Result[U, E]":
+    def map(self, fn: Callable[[T], U]) -> Result[U, E]:
         """
         Transform the success value.
 
@@ -136,7 +137,7 @@ class Ok(Generic[T]):
         """
         return Ok(fn(self.value))
 
-    def map_err(self, fn: Callable[[Any], Any]) -> "Result[T, E]":
+    def map_err(self, fn: Callable[[Any], Any]) -> Result[T, E]:
         """
         Transform the error (no-op for Ok).
 
@@ -148,7 +149,7 @@ class Ok(Generic[T]):
         """
         return self
 
-    def and_then(self, fn: Callable[[T], "Result[U, E]"]) -> "Result[U, E]":
+    def and_then(self, fn: Callable[[T], Result[U, E]]) -> Result[U, E]:
         """
         Chain computations that may fail.
 
@@ -166,7 +167,7 @@ class Ok(Generic[T]):
         """
         return fn(self.value)
 
-    def or_else(self, fn: Callable[[Any], "Result[T, E]"]) -> "Result[T, E]":
+    def or_else(self, fn: Callable[[Any], Result[T, E]]) -> Result[T, E]:
         """
         Provide fallback on error (no-op for Ok).
 
@@ -249,7 +250,7 @@ class Err(Generic[E]):
         """
         return fn(self.error)
 
-    def map(self, fn: Callable[[Any], Any]) -> "Result[T, E]":
+    def map(self, fn: Callable[[Any], Any]) -> Result[T, E]:
         """
         Transform success value (no-op for Err).
 
@@ -261,7 +262,7 @@ class Err(Generic[E]):
         """
         return self  # type: ignore
 
-    def map_err(self, fn: Callable[[E], "F"]) -> "Result[T, F]":
+    def map_err(self, fn: Callable[[E], F]) -> Result[T, F]:
         """
         Transform the error.
 
@@ -279,7 +280,7 @@ class Err(Generic[E]):
         """
         return Err(fn(self.error))
 
-    def and_then(self, fn: Callable[[Any], "Result[U, E]"]) -> "Result[U, E]":
+    def and_then(self, fn: Callable[[Any], Result[U, E]]) -> Result[U, E]:
         """
         Chain computations (no-op for Err).
 
@@ -291,7 +292,7 @@ class Err(Generic[E]):
         """
         return self  # type: ignore
 
-    def or_else(self, fn: Callable[[E], "Result[T, F]"]) -> "Result[T, F]":
+    def or_else(self, fn: Callable[[E], Result[T, F]]) -> Result[T, F]:
         """
         Provide fallback on error.
 

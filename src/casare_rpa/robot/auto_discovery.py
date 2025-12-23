@@ -7,6 +7,7 @@ Implements zero-config robot startup with automatic orchestrator discovery.
 import asyncio
 import os
 from typing import Optional
+
 from loguru import logger
 
 from casare_rpa.infrastructure.services import get_service_registry
@@ -17,9 +18,9 @@ class RobotAutoDiscovery:
 
     def __init__(self):
         self._registry = get_service_registry()
-        self._discovered_url: Optional[str] = None
+        self._discovered_url: str | None = None
 
-    async def discover_orchestrator(self) -> Optional[str]:
+    async def discover_orchestrator(self) -> str | None:
         """
         Find orchestrator URL using cascading discovery.
 
@@ -59,7 +60,7 @@ class RobotAutoDiscovery:
         logger.warning("No orchestrator found via auto-discovery")
         return None
 
-    def _get_orchestrator_from_env(self) -> Optional[str]:
+    def _get_orchestrator_from_env(self) -> str | None:
         """Get orchestrator URL from environment variables."""
         candidates = [
             "CASARE_ORCHESTRATOR_URL",
@@ -96,7 +97,7 @@ class RobotAutoDiscovery:
                     else:
                         logger.debug(f"Orchestrator at {url} returned {resp.status}")
                         return False
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug(f"Timeout checking orchestrator at {url}")
             return False
         except Exception as e:
@@ -105,7 +106,7 @@ class RobotAutoDiscovery:
 
     async def wait_for_orchestrator(
         self, timeout: int = 60, check_interval: float = 2.0
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Wait for orchestrator to become available.
 
@@ -138,7 +139,7 @@ class RobotAutoDiscovery:
 
             await asyncio.sleep(check_interval)
 
-    def get_discovered_url(self) -> Optional[str]:
+    def get_discovered_url(self) -> str | None:
         """Get the last discovered orchestrator URL."""
         return self._discovered_url
 

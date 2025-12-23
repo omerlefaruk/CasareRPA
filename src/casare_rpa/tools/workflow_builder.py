@@ -13,17 +13,17 @@ Capabilities:
 
 import json
 import uuid
-from typing import Dict, Any, List, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 from loguru import logger
 
+from casare_rpa.domain.schemas.workflow_ai import WorkflowAISchema
 from casare_rpa.domain.validation.validators import (
-    validate_workflow,
     has_circular_dependency,
+    validate_workflow,
 )
 from casare_rpa.nodes.registry_data import NODE_REGISTRY
-from casare_rpa.domain.schemas.workflow_ai import WorkflowAISchema
 
 
 class WorkflowBuilder:
@@ -48,7 +48,7 @@ class WorkflowBuilder:
     def load(self, file_path: str) -> None:
         """Load workflow from file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
                 # Ensure all required sections exist
                 self.workflow_data = data
@@ -103,8 +103,8 @@ class WorkflowBuilder:
     def add_node(
         self,
         node_type: str,
-        config: Dict[str, Any] = None,
-        position: Tuple[float, float] = (0, 0),
+        config: dict[str, Any] = None,
+        position: tuple[float, float] = (0, 0),
         node_id: str = None,
     ) -> str:
         """
@@ -197,7 +197,7 @@ class WorkflowBuilder:
         # Internal storage handles the string; json.dump in save() handles the escaping
         self.workflow_data["nodes"][node_id]["config"]["script"] = script_content
 
-    def merge_partial(self, partial_data: Dict[str, Any]) -> None:
+    def merge_partial(self, partial_data: dict[str, Any]) -> None:
         """
         Legacy merge logic. Prefer apply_actions for complex edits.
         """
@@ -206,7 +206,7 @@ class WorkflowBuilder:
         if "nodes" in partial_data or "connections" in partial_data:
             self._legacy_merge(partial_data)
 
-    def apply_actions(self, actions: List[Dict[str, Any]]) -> None:
+    def apply_actions(self, actions: list[dict[str, Any]]) -> None:
         """
         Execute a sequence of graph manipulation actions.
 
@@ -261,7 +261,7 @@ class WorkflowBuilder:
                     )
                 ]
 
-    def _legacy_merge(self, data: Dict[str, Any]) -> None:
+    def _legacy_merge(self, data: dict[str, Any]) -> None:
         """Legacy merge logic for nodes/connections keys."""
         new_nodes = data.get("nodes", {})
         for nid, nbot in new_nodes.items():
@@ -278,7 +278,7 @@ class WorkflowBuilder:
                 conn["target_port"],
             )
 
-    def wrap_in_retry_loop(self, target_nodes: List[str], max_retries: int = 3) -> None:
+    def wrap_in_retry_loop(self, target_nodes: list[str], max_retries: int = 3) -> None:
         """
         Wrap a sequence of nodes in a WhileLoop retry structure.
 

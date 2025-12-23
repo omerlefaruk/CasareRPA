@@ -15,8 +15,9 @@ import asyncio
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -36,9 +37,7 @@ from casare_rpa.nodes.browser.property_constants import (
     BROWSER_TIMEOUT,
     BROWSER_WAIT_UNTIL,
 )
-from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 from casare_rpa.utils import safe_int
-
 
 # =============================================================================
 # WaitNode - Simple time-based wait (not browser-specific)

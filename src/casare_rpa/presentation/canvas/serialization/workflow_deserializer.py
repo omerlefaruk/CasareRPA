@@ -5,18 +5,20 @@ Loads workflow JSON and recreates visual nodes in NodeGraphQt graph.
 This is the inverse of WorkflowSerializer.
 """
 
-from typing import Dict, List, Any, Optional, TYPE_CHECKING
-from pathlib import Path
 import time
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
 import orjson
 from loguru import logger
+
 from casare_rpa.domain.validation import (
     WorkflowValidationError,
     validate_workflow_json,
 )
 from casare_rpa.nodes.file.file_security import (
-    validate_path_security_readonly,
     PathSecurityError,
+    validate_path_security_readonly,
 )
 from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
@@ -25,7 +27,7 @@ if TYPE_CHECKING:
 
 
 # A4: Module-level cache for node type map (persists across deserializer instances)
-_NODE_TYPE_MAP_CACHE: Optional[Dict[str, str]] = None
+_NODE_TYPE_MAP_CACHE: dict[str, str] | None = None
 
 
 class WorkflowDeserializer:
@@ -53,9 +55,9 @@ class WorkflowDeserializer:
         # Map from node type names to registered NodeGraphQt node identifiers
         # This maps CasareRPA node types to their visual counterparts
         # Built lazily on first use (after nodes are registered)
-        self._node_type_map: Optional[Dict[str, str]] = None
+        self._node_type_map: dict[str, str] | None = None
 
-    def _get_node_type_map(self) -> Dict[str, str]:
+    def _get_node_type_map(self) -> dict[str, str]:
         """
         Get node type map, building it lazily on first use.
 
@@ -81,7 +83,7 @@ class WorkflowDeserializer:
         _NODE_TYPE_MAP_CACHE = self._node_type_map.copy()
         return self._node_type_map
 
-    def _build_node_type_map(self) -> Dict[str, str]:
+    def _build_node_type_map(self) -> dict[str, str]:
         """
         Build mapping from CasareRPA node types to NodeGraphQt identifiers.
 
@@ -148,7 +150,7 @@ class WorkflowDeserializer:
             logger.exception(f"Failed to load workflow: {e}")
             return False
 
-    def deserialize(self, workflow_data: Dict) -> bool:
+    def deserialize(self, workflow_data: dict) -> bool:
         """
         Deserialize workflow dict into visual graph.
 
@@ -222,7 +224,7 @@ class WorkflowDeserializer:
             )
             return False
 
-    def _create_node(self, node_id: str, node_data: Dict) -> Optional[Any]:
+    def _create_node(self, node_id: str, node_data: dict) -> Any | None:
         """
         Create a single visual node from data.
 
@@ -296,7 +298,7 @@ class WorkflowDeserializer:
             logger.error(f"Failed to create node {node_id} ({node_type}): {e}")
             return None
 
-    def _find_node_identifier(self, node_type: str) -> Optional[str]:
+    def _find_node_identifier(self, node_type: str) -> str | None:
         """
         Find NodeGraphQt identifier for a node type by searching.
 
@@ -328,7 +330,7 @@ class WorkflowDeserializer:
 
         return None
 
-    def _apply_config(self, visual_node, config: Dict) -> None:
+    def _apply_config(self, visual_node, config: dict) -> None:
         """
         Apply config values to visual node properties.
 
@@ -422,7 +424,7 @@ class WorkflowDeserializer:
         except Exception:
             return False
 
-    def _create_connections(self, connections: List[Dict], node_map: Dict) -> int:
+    def _create_connections(self, connections: list[dict], node_map: dict) -> int:
         """
         Create connections between nodes.
 
@@ -477,7 +479,7 @@ class WorkflowDeserializer:
         logger.info(f"Created {created}/{len(connections)} connections")
         return created
 
-    def _restore_variables(self, variables: Dict) -> None:
+    def _restore_variables(self, variables: dict) -> None:
         """
         Restore workflow variables to the variables panel.
 
@@ -496,7 +498,7 @@ class WorkflowDeserializer:
         except Exception as e:
             logger.debug(f"Could not restore variables: {e}")
 
-    def _restore_frames(self, frames: List[Dict], node_map: Dict) -> None:
+    def _restore_frames(self, frames: list[dict], node_map: dict) -> None:
         """
         Restore visual frames/groups.
 

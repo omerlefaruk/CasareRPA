@@ -5,26 +5,25 @@ Dockable panel showing detailed information about a selected robot.
 Displays real-time metrics, current job status, recent job history, and logs.
 """
 
-from typing import Optional, List, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
-    QPushButton,
     QProgressBar,
+    QPushButton,
+    QSplitter,
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
-    QHeaderView,
-    QSplitter,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QBrush, QColor, QFont
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
@@ -56,13 +55,13 @@ class RobotDetailPanel(QDockWidget):
     restart_requested = Signal(str)
     logs_refresh_requested = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize Robot Detail Panel."""
         super().__init__("Robot Details", parent)
         self.setObjectName("RobotDetailDock")
 
-        self._current_robot: Optional["Robot"] = None
-        self._current_robot_id: Optional[str] = None
+        self._current_robot: Robot | None = None
+        self._current_robot_id: str | None = None
 
         self._setup_dock()
         self._setup_ui()
@@ -483,7 +482,7 @@ class RobotDetailPanel(QDockWidget):
         self._job_status_label.setText("")
 
     @Slot(list)
-    def update_job_history(self, jobs: List[Dict]) -> None:
+    def update_job_history(self, jobs: list[dict]) -> None:
         """
         Update recent jobs table.
 
@@ -518,7 +517,7 @@ class RobotDetailPanel(QDockWidget):
         return QBrush(QColor(r, g, b))
 
     @Slot(list)
-    def update_logs(self, logs: List[Dict]) -> None:
+    def update_logs(self, logs: list[dict]) -> None:
         """
         Update logs viewer.
 
@@ -587,6 +586,6 @@ class RobotDetailPanel(QDockWidget):
     # ==================== Properties ====================
 
     @property
-    def current_robot_id(self) -> Optional[str]:
+    def current_robot_id(self) -> str | None:
         """Get current robot ID."""
         return self._current_robot_id

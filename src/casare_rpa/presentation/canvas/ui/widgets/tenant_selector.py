@@ -5,18 +5,17 @@ Provides a dropdown for admin users to switch between tenants.
 Super admins can select "All Tenants" to view all robots.
 """
 
-from typing import Optional, List, Dict, Any
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QComboBox,
-    QLabel,
-    QPushButton,
-)
-from PySide6.QtCore import Signal
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -44,7 +43,7 @@ class TenantSelectorWidget(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         show_all_option: bool = True,
         label_text: str = "Tenant:",
     ) -> None:
@@ -57,10 +56,10 @@ class TenantSelectorWidget(QWidget):
             label_text: Label text before dropdown.
         """
         super().__init__(parent)
-        self._tenants: List[Dict[str, Any]] = []
+        self._tenants: list[dict[str, Any]] = []
         self._show_all_option = show_all_option
         self._label_text = label_text
-        self._current_tenant_id: Optional[str] = None
+        self._current_tenant_id: str | None = None
         self._is_super_admin = False
         self._setup_ui()
         self._apply_styles()
@@ -158,7 +157,7 @@ class TenantSelectorWidget(QWidget):
         """
         self._refresh_btn.setVisible(show)
 
-    def update_tenants(self, tenants: List[Dict[str, Any]]) -> None:
+    def update_tenants(self, tenants: list[dict[str, Any]]) -> None:
         """
         Update the list of available tenants.
 
@@ -224,7 +223,7 @@ class TenantSelectorWidget(QWidget):
         """Handle refresh button click."""
         self.refresh_requested.emit()
 
-    def get_current_tenant_id(self) -> Optional[str]:
+    def get_current_tenant_id(self) -> str | None:
         """
         Get currently selected tenant ID.
 
@@ -244,7 +243,7 @@ class TenantSelectorWidget(QWidget):
             return ""
         return self._combo.currentText()
 
-    def set_current_tenant(self, tenant_id: Optional[str]) -> None:
+    def set_current_tenant(self, tenant_id: str | None) -> None:
         """
         Set current tenant selection programmatically.
 
@@ -291,7 +290,7 @@ class TenantFilterWidget(TenantSelectorWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         show_all_option: bool = True,
     ) -> None:
         super().__init__(

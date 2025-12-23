@@ -6,7 +6,6 @@ Constants and ID generators for project entities.
 
 import uuid
 
-
 PROJECT_SCHEMA_VERSION: str = "2.0.0"
 
 

@@ -9,10 +9,9 @@ Thread-safe implementation with automatic invalidation on variable changes.
 
 import re
 import threading
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
-from collections import OrderedDict
-
 
 # Pattern to extract variable names from templates (matches domain pattern)
 VARIABLE_PATTERN = re.compile(
@@ -25,8 +24,8 @@ class CacheEntry:
     """Represents a cached resolution result."""
 
     result: Any
-    var_refs: List[str]  # Variable names referenced by this template
-    var_versions: Dict[str, int]  # Version snapshot when cached
+    var_refs: list[str]  # Variable names referenced by this template
+    var_versions: dict[str, int]  # Version snapshot when cached
 
 
 @dataclass
@@ -44,7 +43,7 @@ class CacheStats:
         total = self.hits + self.misses
         return self.hits / total if total > 0 else 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for reporting."""
         return {
             "hits": self.hits,
@@ -88,19 +87,19 @@ class VariableResolutionCache:
 
         # Pattern cache: template string -> list of variable names
         # This never expires as patterns are deterministic
-        self._pattern_cache: Dict[str, List[str]] = {}
+        self._pattern_cache: dict[str, list[str]] = {}
 
         # Result cache: template string -> CacheEntry
         # Uses OrderedDict for LRU eviction
         self._result_cache: OrderedDict[str, CacheEntry] = OrderedDict()
 
         # Variable versions: var_name -> version (increments on change)
-        self._var_versions: Dict[str, int] = {}
+        self._var_versions: dict[str, int] = {}
 
         # Statistics
         self._stats = CacheStats()
 
-    def extract_variable_refs(self, template: str) -> List[str]:
+    def extract_variable_refs(self, template: str) -> list[str]:
         """
         Extract and cache variable references from a template.
 
@@ -121,8 +120,8 @@ class VariableResolutionCache:
     def get_cached(
         self,
         template: str,
-        variables: Dict[str, Any],
-    ) -> Tuple[bool, Any]:
+        variables: dict[str, Any],
+    ) -> tuple[bool, Any]:
         """
         Get cached resolution result if valid.
 
@@ -179,7 +178,7 @@ class VariableResolutionCache:
     def cache_result(
         self,
         template: str,
-        variables: Dict[str, Any],
+        variables: dict[str, Any],
         result: Any,
     ) -> None:
         """
@@ -224,7 +223,7 @@ class VariableResolutionCache:
         with self._lock:
             self._var_versions[var_name] = self._var_versions.get(var_name, 0) + 1
 
-    def notify_variables_changed(self, var_names: Set[str]) -> None:
+    def notify_variables_changed(self, var_names: set[str]) -> None:
         """
         Notify the cache that multiple variables have changed.
 
@@ -288,8 +287,8 @@ class CachedVariableResolver:
 
     def __init__(
         self,
-        variables: Dict[str, Any],
-        cache: Optional[VariableResolutionCache] = None,
+        variables: dict[str, Any],
+        cache: VariableResolutionCache | None = None,
     ) -> None:
         """
         Initialize resolver with cache.

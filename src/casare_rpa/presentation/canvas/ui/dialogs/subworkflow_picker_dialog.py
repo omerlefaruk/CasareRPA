@@ -9,31 +9,31 @@ Features:
 - Recent subworkflows section
 """
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
-    QVBoxLayout,
+    QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QSplitter,
     QPushButton,
-    QComboBox,
-    QFrame,
-    QGroupBox,
+    QSplitter,
+    QVBoxLayout,
     QWidget,
 )
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
     COLORS,
 )
-
 
 DIALOG_STYLE = f"""
 QDialog {{
@@ -142,7 +142,7 @@ QPushButton[type="primary"]:hover {{
 class SubworkflowListItem(QListWidgetItem):
     """Custom list item for subworkflow display."""
 
-    def __init__(self, subflow_data: Dict[str, Any]) -> None:
+    def __init__(self, subflow_data: dict[str, Any]) -> None:
         super().__init__()
         self.subflow_data = subflow_data
         self.id = subflow_data.get("id", "")
@@ -161,7 +161,7 @@ class SubworkflowListItem(QListWidgetItem):
 class PortPreviewWidget(QWidget):
     """Widget showing port preview for a subworkflow."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._setup_ui()
 
@@ -184,7 +184,7 @@ class PortPreviewWidget(QWidget):
 
         layout.addStretch()
 
-    def set_ports(self, inputs: List[Dict], outputs: List[Dict]) -> None:
+    def set_ports(self, inputs: list[dict], outputs: list[dict]) -> None:
         """Update port preview."""
         # Clear existing
         self._clear_layout(self._inputs_layout)
@@ -237,9 +237,9 @@ class SubworkflowPickerDialog(QDialog):
 
     def __init__(
         self,
-        subflows: Optional[List[Dict]] = None,
-        loader: Optional[Callable[[], List[Dict]]] = None,
-        parent: Optional[QWidget] = None,
+        subflows: list[dict] | None = None,
+        loader: Callable[[], list[dict]] | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize dialog.
@@ -252,8 +252,8 @@ class SubworkflowPickerDialog(QDialog):
         super().__init__(parent)
         self._subflows = subflows or []
         self._loader = loader
-        self._selected_subflow: Optional[Dict] = None
-        self._categories: List[str] = []
+        self._selected_subflow: dict | None = None
+        self._categories: list[str] = []
 
         self._setup_ui()
         self._connect_signals()
@@ -374,7 +374,7 @@ class SubworkflowPickerDialog(QDialog):
 
         self._populate_list()
 
-    def _scan_subflows(self) -> List[Dict]:
+    def _scan_subflows(self) -> list[dict]:
         """Scan filesystem for subflow files."""
         subflows = []
 
@@ -492,16 +492,16 @@ class SubworkflowPickerDialog(QDialog):
         if self._selected_subflow:
             self.accept()
 
-    def get_selected_subflow(self) -> Optional[Dict]:
+    def get_selected_subflow(self) -> dict | None:
         """Get the selected subflow data."""
         return self._selected_subflow
 
 
 def show_subworkflow_picker(
-    subflows: Optional[List[Dict]] = None,
-    loader: Optional[Callable[[], List[Dict]]] = None,
-    parent: Optional[QWidget] = None,
-) -> Optional[Dict]:
+    subflows: list[dict] | None = None,
+    loader: Callable[[], list[dict]] | None = None,
+    parent: QWidget | None = None,
+) -> dict | None:
     """
     Show subworkflow picker dialog.
 

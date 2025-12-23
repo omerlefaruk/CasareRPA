@@ -14,9 +14,8 @@ Usage:
 
 from typing import Optional
 
-from PySide6.QtWidgets import QWidget
-
 from loguru import logger
+from PySide6.QtWidgets import QWidget
 
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.base_editor import (
     BaseExpressionEditor,
@@ -34,7 +33,7 @@ class EditorFactory:
     @staticmethod
     def create(
         editor_type: EditorType,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> BaseExpressionEditor:
         """
         Create an editor for the given type.
@@ -113,9 +112,9 @@ class EditorFactory:
     @staticmethod
     def create_for_property_type(
         property_type: str,
-        node_type: Optional[str] = None,
-        property_name: Optional[str] = None,
-        parent: Optional[QWidget] = None,
+        node_type: str | None = None,
+        property_name: str | None = None,
+        parent: QWidget | None = None,
     ) -> BaseExpressionEditor:
         """
         Create an editor based on property type and optional overrides.

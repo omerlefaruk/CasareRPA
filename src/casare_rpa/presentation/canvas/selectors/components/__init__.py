@@ -8,17 +8,17 @@ Extracted components from UnifiedSelectorDialog for separation of concerns:
 - SelectorHistoryManager: History management and persistence
 """
 
+from casare_rpa.presentation.canvas.selectors.components.selector_history_manager import (
+    SelectorHistoryManager,
+)
 from casare_rpa.presentation.canvas.selectors.components.selector_picker import (
     SelectorPicker,
-)
-from casare_rpa.presentation.canvas.selectors.components.selector_validator import (
-    SelectorValidator,
 )
 from casare_rpa.presentation.canvas.selectors.components.selector_preview import (
     SelectorPreview,
 )
-from casare_rpa.presentation.canvas.selectors.components.selector_history_manager import (
-    SelectorHistoryManager,
+from casare_rpa.presentation.canvas.selectors.components.selector_validator import (
+    SelectorValidator,
 )
 
 __all__ = [

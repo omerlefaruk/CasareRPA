@@ -45,7 +45,6 @@ from casare_rpa.domain.errors.types import (
     RecoveryAction,
 )
 
-
 __all__ = [
     # Enums
     "ErrorCategory",

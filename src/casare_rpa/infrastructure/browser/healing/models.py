@@ -112,7 +112,7 @@ class BoundingRect:
         return (dx**2 + dy**2) ** 0.5
 
     @classmethod
-    def from_dict(cls, data: Dict[str, float]) -> BoundingRect:
+    def from_dict(cls, data: dict[str, float]) -> BoundingRect:
         """Create from dictionary."""
         return cls(
             x=data.get("x", 0.0),
@@ -121,7 +121,7 @@ class BoundingRect:
             height=data.get("height", 0.0),
         )
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """Convert to dictionary."""
         return {
             "x": self.x,
@@ -155,7 +155,7 @@ class AnchorElement:
     stability_score: float
     """Score indicating how stable this anchor is (0.0-1.0)."""
 
-    attributes: Dict[str, str] = field(default_factory=dict)
+    attributes: dict[str, str] = field(default_factory=dict)
     """Key attributes (id, data-testid, aria-label, etc.)."""
 
     is_landmark: bool = False
@@ -166,7 +166,7 @@ class AnchorElement:
         """Check if this anchor is considered stable."""
         return self.stability_score >= 0.7
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "selector": self.selector,
@@ -179,7 +179,7 @@ class AnchorElement:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> AnchorElement:
+    def from_dict(cls, data: dict[str, Any]) -> AnchorElement:
         """Create from dictionary."""
         return cls(
             selector=data.get("selector", ""),
@@ -201,7 +201,7 @@ class SpatialContext:
     the target when its primary selector fails.
     """
 
-    anchor_relations: List[Tuple[AnchorElement, SpatialRelation, float]]
+    anchor_relations: list[tuple[AnchorElement, SpatialRelation, float]]
     """List of (anchor, relation, distance) tuples."""
 
     dom_path: str
@@ -210,10 +210,10 @@ class SpatialContext:
     visual_quadrant: str
     """Screen quadrant: 'top-left', 'top-right', 'bottom-left', 'bottom-right'."""
 
-    container_selector: Optional[str] = None
+    container_selector: str | None = None
     """Selector for the containing section/form/article."""
 
-    def get_best_anchor(self) -> Optional[Tuple[AnchorElement, SpatialRelation, float]]:
+    def get_best_anchor(self) -> tuple[AnchorElement, SpatialRelation, float] | None:
         """
         Get the most reliable anchor relationship.
 
@@ -229,7 +229,7 @@ class SpatialContext:
         )
         return sorted_relations[0]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "anchor_relations": [
@@ -246,7 +246,7 @@ class SpatialContext:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> SpatialContext:
+    def from_dict(cls, data: dict[str, Any]) -> SpatialContext:
         """Create from dictionary."""
         relations = []
         for rel_data in data.get("anchor_relations", []):
@@ -283,22 +283,22 @@ class AnchorHealingResult:
     confidence: float
     """Confidence score (0.0 to 1.0)."""
 
-    anchor_used: Optional[AnchorElement] = None
+    anchor_used: AnchorElement | None = None
     """The anchor element used for healing."""
 
-    relation_used: Optional[SpatialRelation] = None
+    relation_used: SpatialRelation | None = None
     """The spatial relation used."""
 
     strategy: str = "anchor"
     """Healing strategy identifier."""
 
-    candidates: List[Tuple[str, float]] = field(default_factory=list)
+    candidates: list[tuple[str, float]] = field(default_factory=list)
     """Alternative selectors with confidence scores."""
 
     healing_time_ms: float = 0.0
     """Time taken for healing in milliseconds."""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "success": self.success,

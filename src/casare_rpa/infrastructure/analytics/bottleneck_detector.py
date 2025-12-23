@@ -49,9 +49,9 @@ class BottleneckInfo:
     impact_ms: float  # Estimated time impact
     frequency: float  # How often this occurs (0.0-1.0)
     recommendation: str
-    evidence: Dict[str, Any] = field(default_factory=dict)
+    evidence: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "type": self.bottleneck_type.value,
@@ -79,7 +79,7 @@ class NodeExecutionStats:
     min_duration_ms: float
     max_duration_ms: float
     p95_duration_ms: float
-    error_types: Dict[str, int] = field(default_factory=dict)
+    error_types: dict[str, int] = field(default_factory=dict)
 
     @property
     def success_rate(self) -> float:
@@ -102,12 +102,12 @@ class DetailedBottleneckAnalysis:
     analysis_time: datetime
     time_range_hours: int
     total_executions: int
-    bottlenecks: List[BottleneckInfo] = field(default_factory=list)
-    node_stats: List[NodeExecutionStats] = field(default_factory=list)
+    bottlenecks: list[BottleneckInfo] = field(default_factory=list)
+    node_stats: list[NodeExecutionStats] = field(default_factory=list)
     optimization_score: float = 0.0  # 0-100
     potential_savings_ms: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "workflow_id": self.workflow_id,
@@ -132,7 +132,7 @@ class DetailedBottleneckAnalysis:
             "severity_breakdown": self._severity_breakdown(),
         }
 
-    def _severity_breakdown(self) -> Dict[str, int]:
+    def _severity_breakdown(self) -> dict[str, int]:
         """Count bottlenecks by severity."""
         breakdown = {"critical": 0, "high": 0, "medium": 0, "low": 0}
         for b in self.bottlenecks:
@@ -166,7 +166,7 @@ class BottleneckDetector:
     def analyze(
         self,
         workflow_id: str,
-        execution_data: List[Dict[str, Any]],
+        execution_data: list[dict[str, Any]],
         time_range_hours: int = 24,
     ) -> DetailedBottleneckAnalysis:
         """
@@ -222,10 +222,10 @@ class BottleneckDetector:
         )
 
     def _calculate_node_stats(
-        self, execution_data: List[Dict[str, Any]]
-    ) -> List[NodeExecutionStats]:
+        self, execution_data: list[dict[str, Any]]
+    ) -> list[NodeExecutionStats]:
         """Calculate per-node execution statistics."""
-        node_data: Dict[str, Dict[str, Any]] = {}
+        node_data: dict[str, dict[str, Any]] = {}
 
         for execution in execution_data:
             node_timings = execution.get("node_timings", {})
@@ -283,7 +283,7 @@ class BottleneckDetector:
 
         return stats
 
-    def _detect_slow_nodes(self, node_stats: List[NodeExecutionStats]) -> List[BottleneckInfo]:
+    def _detect_slow_nodes(self, node_stats: list[NodeExecutionStats]) -> list[BottleneckInfo]:
         """Detect slow node bottlenecks."""
         bottlenecks = []
 
@@ -334,7 +334,7 @@ class BottleneckDetector:
 
         return bottlenecks
 
-    def _detect_failing_nodes(self, node_stats: List[NodeExecutionStats]) -> List[BottleneckInfo]:
+    def _detect_failing_nodes(self, node_stats: list[NodeExecutionStats]) -> list[BottleneckInfo]:
         """Detect nodes with high failure rates."""
         bottlenecks = []
 
@@ -373,9 +373,9 @@ class BottleneckDetector:
 
     def _detect_patterns(
         self,
-        execution_data: List[Dict[str, Any]],
-        node_stats: List[NodeExecutionStats],
-    ) -> List[BottleneckInfo]:
+        execution_data: list[dict[str, Any]],
+        node_stats: list[NodeExecutionStats],
+    ) -> list[BottleneckInfo]:
         """Detect execution pattern bottlenecks."""
         bottlenecks = []
 
@@ -423,8 +423,8 @@ class BottleneckDetector:
 
     def _calculate_optimization_score(
         self,
-        node_stats: List[NodeExecutionStats],
-        bottlenecks: List[BottleneckInfo],
+        node_stats: list[NodeExecutionStats],
+        bottlenecks: list[BottleneckInfo],
     ) -> float:
         """Calculate workflow optimization score (0-100)."""
         if not node_stats:

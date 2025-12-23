@@ -10,7 +10,7 @@ from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
 
 # PERFORMANCE: Incremental validation cache
 # Stores validation results for unchanged nodes to avoid re-validation
-_validation_cache: Dict[str, Tuple[str, "ValidationResult"]] = {}  # node_id -> (hash, result)
+_validation_cache: dict[str, tuple[str, "ValidationResult"]] = {}  # node_id -> (hash, result)
 
 from casare_rpa.domain.validation.rules import (
     find_entry_points_and_reachable,
@@ -23,13 +23,12 @@ from casare_rpa.domain.validation.schemas import (
 )
 from casare_rpa.domain.validation.types import ValidationResult
 
-
 # ============================================================================
 # Public Validation Functions
 # ============================================================================
 
 
-def validate_workflow(data: Dict[str, Any]) -> ValidationResult:
+def validate_workflow(data: dict[str, Any]) -> ValidationResult:
     """
     Validate a complete workflow data structure.
 
@@ -65,7 +64,7 @@ def validate_workflow(data: Dict[str, Any]) -> ValidationResult:
     return result
 
 
-def validate_node(node_id: str, node_data: Dict[str, Any]) -> ValidationResult:
+def validate_node(node_id: str, node_data: dict[str, Any]) -> ValidationResult:
     """
     Validate a single node's data structure.
 
@@ -82,8 +81,8 @@ def validate_node(node_id: str, node_data: Dict[str, Any]) -> ValidationResult:
 
 
 def validate_connections(
-    connections: List[Dict[str, str]],
-    node_ids: Set[str],
+    connections: list[dict[str, str]],
+    node_ids: set[str],
 ) -> ValidationResult:
     """
     Validate workflow connections.
@@ -100,7 +99,7 @@ def validate_connections(
     return result
 
 
-def quick_validate(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+def quick_validate(data: dict[str, Any]) -> tuple[bool, list[str]]:
     """
     Quick validation returning simple tuple for backward compatibility.
 
@@ -116,8 +115,8 @@ def quick_validate(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
 
 
 def validate_incremental(
-    data: Dict[str, Any],
-    changed_node_ids: Optional[Set[str]] = None,
+    data: dict[str, Any],
+    changed_node_ids: set[str] | None = None,
 ) -> ValidationResult:
     """
     Incrementally validate a workflow, only re-validating changed nodes.
@@ -134,6 +133,7 @@ def validate_incremental(
         ValidationResult with all issues found
     """
     import hashlib
+
     import orjson
 
     result = ValidationResult()
@@ -214,7 +214,7 @@ def clear_validation_cache() -> None:
 # ============================================================================
 
 
-def _validate_structure(data: Dict[str, Any], result: ValidationResult) -> None:
+def _validate_structure(data: dict[str, Any], result: ValidationResult) -> None:
     """Validate top-level workflow structure."""
 
     # Must be a dictionary
@@ -260,7 +260,7 @@ def _validate_structure(data: Dict[str, Any], result: ValidationResult) -> None:
         )
 
 
-def _validate_metadata(metadata: Dict[str, Any], result: ValidationResult) -> None:
+def _validate_metadata(metadata: dict[str, Any], result: ValidationResult) -> None:
     """Validate workflow metadata."""
 
     # Check schema version compatibility
@@ -292,7 +292,7 @@ def _validate_metadata(metadata: Dict[str, Any], result: ValidationResult) -> No
 
 def _validate_node(
     node_id: str,
-    node_data: Dict[str, Any],
+    node_data: dict[str, Any],
     result: ValidationResult,
 ) -> None:
     """Validate a single node."""
@@ -355,13 +355,13 @@ def _validate_node(
 
 
 def _validate_connections(
-    connections: List[Dict[str, str]],
-    node_ids: Set[str],
+    connections: list[dict[str, str]],
+    node_ids: set[str],
     result: ValidationResult,
 ) -> None:
     """Validate all connections."""
 
-    seen_connections: Set[Tuple[str, str, str, str]] = set()
+    seen_connections: set[tuple[str, str, str, str]] = set()
 
     for idx, conn in enumerate(connections):
         location = f"connection:{idx}"
@@ -419,7 +419,7 @@ def _validate_connections(
 
 
 def _validate_workflow_semantics(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     result: ValidationResult,
 ) -> None:
     """Validate workflow-level semantics."""
@@ -474,7 +474,7 @@ def _validate_workflow_semantics(
 
 
 def _check_duplicate_node_ids(
-    nodes: Dict[str, Dict[str, Any]],
+    nodes: dict[str, dict[str, Any]],
     result: ValidationResult,
 ) -> None:
     """
@@ -488,7 +488,7 @@ def _check_duplicate_node_ids(
         result: ValidationResult to add issues to
     """
     # Build mapping of node_id -> list of graph_ids that have it
-    node_id_to_graph_ids: Dict[str, List[str]] = {}
+    node_id_to_graph_ids: dict[str, list[str]] = {}
 
     for graph_id, node_data in nodes.items():
         node_id = node_data.get("node_id", "")

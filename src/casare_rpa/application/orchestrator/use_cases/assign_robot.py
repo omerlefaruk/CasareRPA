@@ -12,20 +12,20 @@ from typing import List, Optional, Set
 from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities.robot import RobotCapability
-from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
-    RobotAssignment,
+from casare_rpa.domain.orchestrator.errors import (
+    InvalidAssignmentError,
+    RobotNotFoundError,
 )
 from casare_rpa.domain.orchestrator.value_objects.node_robot_override import (
     NodeRobotOverride,
 )
-from casare_rpa.domain.orchestrator.errors import (
-    RobotNotFoundError,
-    InvalidAssignmentError,
+from casare_rpa.domain.orchestrator.value_objects.robot_assignment import (
+    RobotAssignment,
 )
 from casare_rpa.infrastructure.persistence.repositories import (
+    NodeOverrideRepository,
     RobotRepository,
     WorkflowAssignmentRepository,
-    NodeOverrideRepository,
 )
 
 
@@ -65,7 +65,7 @@ class AssignRobotUseCase:
         robot_id: str,
         is_default: bool = True,
         priority: int = 0,
-        notes: Optional[str] = None,
+        notes: str | None = None,
         created_by: str = "",
     ) -> RobotAssignment:
         """Assign a robot as the default for a workflow.
@@ -122,9 +122,9 @@ class AssignRobotUseCase:
         self,
         workflow_id: str,
         node_id: str,
-        robot_id: Optional[str] = None,
-        required_capabilities: Optional[List[str]] = None,
-        reason: Optional[str] = None,
+        robot_id: str | None = None,
+        required_capabilities: list[str] | None = None,
+        reason: str | None = None,
         created_by: str = "",
     ) -> NodeRobotOverride:
         """Create a node-level robot override.
@@ -168,7 +168,7 @@ class AssignRobotUseCase:
                 raise RobotNotFoundError(f"Robot {robot_id} not found")
 
         # Parse capabilities
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         if required_capabilities:
             for cap_str in required_capabilities:
                 try:
@@ -286,7 +286,7 @@ class AssignRobotUseCase:
     async def get_workflow_assignments(
         self,
         workflow_id: str,
-    ) -> List[RobotAssignment]:
+    ) -> list[RobotAssignment]:
         """Get all robot assignments for a workflow.
 
         Args:
@@ -300,7 +300,7 @@ class AssignRobotUseCase:
     async def get_node_overrides(
         self,
         workflow_id: str,
-    ) -> List[NodeRobotOverride]:
+    ) -> list[NodeRobotOverride]:
         """Get all node overrides for a workflow.
 
         Args:
@@ -314,7 +314,7 @@ class AssignRobotUseCase:
     async def get_active_node_overrides(
         self,
         workflow_id: str,
-    ) -> List[NodeRobotOverride]:
+    ) -> list[NodeRobotOverride]:
         """Get only active node overrides for a workflow.
 
         Args:

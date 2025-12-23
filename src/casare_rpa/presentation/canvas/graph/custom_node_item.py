@@ -15,29 +15,32 @@ References:
 """
 
 import math
-from typing import Callable, Dict, Set, Optional
-from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
-from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QPixmap, QFont
+from collections.abc import Callable
+from typing import Dict, Optional, Set
+
+from NodeGraphQt.constants import PortTypeEnum
+from NodeGraphQt.qgraphics.node_base import ITEM_CACHE_MODE, NodeItem
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsOpacityEffect,
     QGraphicsTextItem,
 )
-from NodeGraphQt.qgraphics.node_base import NodeItem, ITEM_CACHE_MODE
-from NodeGraphQt.constants import PortTypeEnum
+
+from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
 
 # Import GPU optimization managers (lazy import to avoid circular deps)
 # These are imported at module level for performance - no function call overhead
-from casare_rpa.presentation.canvas.graph.lod_manager import get_lod_manager, LODLevel
-from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
+from casare_rpa.presentation.canvas.graph.lod_manager import LODLevel, get_lod_manager
 
 # Import unified theme system for all colors
 from casare_rpa.presentation.canvas.ui.theme import (
-    Theme,
-    NODE_DISABLED_OPACITY,
     NODE_DISABLED_BG_ALPHA,
-    NODE_DISABLED_WASH_ALPHA,
     NODE_DISABLED_BORDER_WIDTH,
+    NODE_DISABLED_OPACITY,
+    NODE_DISABLED_WASH_ALPHA,
+    Theme,
 )
 
 # ============================================================================
@@ -149,12 +152,12 @@ _init_legacy_text_colors()
 # PERFORMANCE: Module-level cached theme colors for CasareNodeItem
 # Avoids Theme method calls on every node instantiation
 # ============================================================================
-_CACHED_NORMAL_BORDER: Optional[QColor] = None
-_CACHED_SELECTED_BORDER: Optional[QColor] = None
-_CACHED_RUNNING_BORDER: Optional[QColor] = None
-_CACHED_NODE_BG: Optional[QColor] = None
-_CACHED_ROBOT_OVERRIDE: Optional[QColor] = None
-_CACHED_CAPABILITY_OVERRIDE: Optional[QColor] = None
+_CACHED_NORMAL_BORDER: QColor | None = None
+_CACHED_SELECTED_BORDER: QColor | None = None
+_CACHED_RUNNING_BORDER: QColor | None = None
+_CACHED_NODE_BG: QColor | None = None
+_CACHED_ROBOT_OVERRIDE: QColor | None = None
+_CACHED_CAPABILITY_OVERRIDE: QColor | None = None
 
 
 def _init_node_item_theme_colors() -> None:
@@ -326,7 +329,7 @@ def _init_collapse_btn_colors():
 
 
 # Pre-cached fonts
-_TITLE_FONT: Optional[QFont] = None
+_TITLE_FONT: QFont | None = None
 
 
 def _get_title_font() -> QFont:
@@ -375,8 +378,8 @@ class AnimationCoordinator:
     def __init__(self):
         """Initialize the animation coordinator."""
         # Separate sets for different animation types
-        self._running_nodes: Set["CasareNodeItem"] = set()
-        self._selected_nodes: Set["CasareNodeItem"] = set()
+        self._running_nodes: set[CasareNodeItem] = set()
+        self._selected_nodes: set[CasareNodeItem] = set()
         self._timer = QTimer()
         self._timer.timeout.connect(self._tick)
         self._offset = 0
@@ -500,7 +503,7 @@ class CasareNodeItem(NodeItem):
     """
 
     # Class-level font cache for execution time (single instance for all nodes)
-    _time_font: Optional[QFont] = None
+    _time_font: QFont | None = None
 
     @classmethod
     def get_time_font(cls) -> QFont:
@@ -521,7 +524,7 @@ class CasareNodeItem(NodeItem):
         self._is_running = False
         self._is_completed = False
         self._has_error = False
-        self._execution_time_ms: Optional[float] = None
+        self._execution_time_ms: float | None = None
         self._animation_offset = 0
 
         # New status states for Phase 1 UI overhaul
@@ -565,17 +568,17 @@ class CasareNodeItem(NodeItem):
 
         # Category for header coloring (set via set_category method)
         self._category: str = ""
-        self._cached_header_color: Optional[QColor] = None
+        self._cached_header_color: QColor | None = None
 
         # Cached opacity effects for disabled state (prevents leak from creating new effects)
-        self._opacity_effects: Dict[str, QGraphicsOpacityEffect] = {}
+        self._opacity_effects: dict[str, QGraphicsOpacityEffect] = {}
 
         # Collapse state
         self._is_collapsed = False
-        self._collapse_button_rect: Optional[QRectF] = None
+        self._collapse_button_rect: QRectF | None = None
 
         # PERFORMANCE: Callback for position updates (used by viewport culling)
-        self._on_position_changed: Optional[callable] = None
+        self._on_position_changed: Callable | None = None
 
         # Hide parent's text item to avoid double title
         if hasattr(self, "_text_item") and self._text_item:
@@ -1396,8 +1399,8 @@ class CasareNodeItem(NodeItem):
 
     def mousePressEvent(self, event):
         """Handle mouse press events, including collapse button clicks and middle-click."""
-        from PySide6.QtCore import Qt
         from loguru import logger
+        from PySide6.QtCore import Qt
 
         # Middle-click: Record press position for click detection
         # Only show popup on release if it was a click (not a drag/pan)
@@ -1540,7 +1543,7 @@ class CasareNodeItem(NodeItem):
                     pass  # Don't let callback errors break node movement
         return super().itemChange(change, value)
 
-    def set_position_callback(self, callback: callable) -> None:
+    def set_position_callback(self, callback: Callable) -> None:
         """Set callback for position change notifications (used by viewport culling)."""
         self._on_position_changed = callback
 
@@ -1696,7 +1699,7 @@ class CasareNodeItem(NodeItem):
         """
         return self._has_warning
 
-    def set_execution_time(self, time_seconds: Optional[float]):
+    def set_execution_time(self, time_seconds: float | None):
         """
         Set execution time to display.
 
@@ -1807,7 +1810,7 @@ class CasareNodeItem(NodeItem):
         self._override_is_capability_based = is_capability_based
         self.update()
 
-    def get_robot_override_tooltip(self) -> Optional[str]:
+    def get_robot_override_tooltip(self) -> str | None:
         """Get tooltip text for robot override indicator.
 
         Returns:
@@ -1907,7 +1910,7 @@ class CasareNodeItem(NodeItem):
         """No-op - animations removed."""
         pass
 
-    def animate_deletion(self, on_complete: Optional[Callable] = None) -> None:
+    def animate_deletion(self, on_complete: Callable | None = None) -> None:
         """No-op - animations removed. Calls callback immediately."""
         if on_complete:
             on_complete()

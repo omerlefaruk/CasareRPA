@@ -8,13 +8,14 @@ Includes WebSocket endpoint for real-time metrics streaming.
 import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, Optional, List, Set
+from typing import Any, Dict, List, Optional, Set
+
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
-    Query,
     Path,
+    Query,
     Request,
     WebSocket,
     WebSocketDisconnect,
@@ -24,6 +25,13 @@ from loguru import logger
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from casare_rpa.infrastructure.observability.metrics import (
+    MetricsSnapshot,
+    get_metrics_exporter,
+)
+from casare_rpa.infrastructure.observability.metrics import (
+    get_metrics_collector as get_rpa_metrics_collector,
+)
 from casare_rpa.infrastructure.orchestrator.api.dependencies import (
     get_metrics_collector,
 )
@@ -37,18 +45,12 @@ from casare_rpa.infrastructure.orchestrator.api.models import (
     RobotMetrics,
     RobotSummary,
 )
-from casare_rpa.infrastructure.observability.metrics import (
-    get_metrics_exporter,
-    MetricsSnapshot,
-    get_metrics_collector as get_rpa_metrics_collector,
-)
-
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 # WebSocket connection manager for metrics streaming
-_metrics_ws_connections: Set[WebSocket] = set()
+_metrics_ws_connections: set[WebSocket] = set()
 
 
 @router.get("/metrics/fleet", response_model=FleetMetrics)
@@ -78,11 +80,11 @@ async def get_fleet_metrics(
         raise HTTPException(status_code=500, detail="Failed to fetch fleet metrics")
 
 
-@router.get("/metrics/robots", response_model=List[RobotSummary])
+@router.get("/metrics/robots", response_model=list[RobotSummary])
 @limiter.limit("100/minute")
 async def get_robots(
     request: Request,
-    status: Optional[str] = Query(None, description="Filter by status: idle, busy, offline"),
+    status: str | None = Query(None, description="Filter by status: idle, busy, offline"),
     collector=Depends(get_metrics_collector),
 ):
     """
@@ -145,16 +147,16 @@ async def get_robot_details(
         raise HTTPException(status_code=500, detail="Failed to fetch robot details")
 
 
-@router.get("/metrics/jobs", response_model=List[JobSummary])
+@router.get("/metrics/jobs", response_model=list[JobSummary])
 @limiter.limit("50/minute")
 async def get_jobs(
     request: Request,
     limit: int = Query(50, ge=1, le=500, description="Number of jobs to return"),
-    status: Optional[str] = Query(
+    status: str | None = Query(
         None, description="Filter by status: pending, claimed, completed, failed"
     ),
-    workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
-    robot_id: Optional[str] = Query(None, description="Filter by robot ID"),
+    workflow_id: str | None = Query(None, description="Filter by workflow ID"),
+    robot_id: str | None = Query(None, description="Filter by robot ID"),
 ):
     """
     Get job execution history with filtering and pagination.
@@ -275,10 +277,10 @@ async def get_analytics(
 async def get_activity(
     request: Request,
     limit: int = Query(default=50, ge=1, le=200, description="Number of events to return"),
-    since: Optional[datetime] = Query(
+    since: datetime | None = Query(
         default=None, description="Only return events after this timestamp"
     ),
-    event_type: Optional[str] = Query(
+    event_type: str | None = Query(
         default=None,
         description="Filter by event type: job_started, job_completed, job_failed, robot_online, robot_offline, schedule_triggered",
     ),
@@ -449,7 +451,7 @@ async def metrics_websocket_stream(
         )
 
 
-async def broadcast_metrics_to_websockets(data: Dict[str, Any]) -> None:
+async def broadcast_metrics_to_websockets(data: dict[str, Any]) -> None:
     """
     Broadcast metrics data to all connected WebSocket clients.
 

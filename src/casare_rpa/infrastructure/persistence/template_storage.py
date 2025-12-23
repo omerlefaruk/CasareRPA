@@ -17,10 +17,11 @@ Result Pattern:
             error = result.error  # FileSystemError with context
 """
 
-import orjson
-from loguru import logger
 from pathlib import Path
 from typing import List, Optional
+
+import orjson
+from loguru import logger
 
 from casare_rpa.domain.entities.project.template import (
     ProjectTemplate,
@@ -28,11 +29,11 @@ from casare_rpa.domain.entities.project.template import (
     TemplatesFile,
 )
 from casare_rpa.domain.errors import (
-    Result,
-    Ok,
     Err,
-    FileSystemError,
     ErrorContext,
+    FileSystemError,
+    Ok,
+    Result,
 )
 from casare_rpa.resources import TEMPLATES_DIR
 
@@ -45,7 +46,7 @@ class TemplateStorage:
     """
 
     @staticmethod
-    def load_builtin_templates() -> List[ProjectTemplate]:
+    def load_builtin_templates() -> list[ProjectTemplate]:
         """
         Load all built-in templates from resources/templates directory.
 
@@ -70,7 +71,7 @@ class TemplateStorage:
         return templates
 
     @staticmethod
-    def load_builtin_templates_safe() -> Result[List[ProjectTemplate], FileSystemError]:
+    def load_builtin_templates_safe() -> Result[list[ProjectTemplate], FileSystemError]:
         """
         Load all built-in templates with explicit error handling.
 
@@ -113,7 +114,7 @@ class TemplateStorage:
         return Ok(templates)
 
     @staticmethod
-    def load_template(template_id: str) -> Optional[ProjectTemplate]:
+    def load_template(template_id: str) -> ProjectTemplate | None:
         """
         Load a specific template by ID.
 
@@ -192,7 +193,7 @@ class TemplateStorage:
         )
 
     @staticmethod
-    def get_templates_by_category(category: TemplateCategory) -> List[ProjectTemplate]:
+    def get_templates_by_category(category: TemplateCategory) -> list[ProjectTemplate]:
         """
         Get all templates in a specific category.
 
@@ -262,7 +263,7 @@ class TemplateStorage:
             )
 
     @staticmethod
-    def load_user_templates(templates_dir: Path) -> List[ProjectTemplate]:
+    def load_user_templates(templates_dir: Path) -> list[ProjectTemplate]:
         """
         Load user-created templates from a directory.
 
@@ -291,7 +292,7 @@ class TemplateStorage:
     @staticmethod
     def load_user_templates_safe(
         templates_dir: Path,
-    ) -> Result[List[ProjectTemplate], FileSystemError]:
+    ) -> Result[list[ProjectTemplate], FileSystemError]:
         """
         Load user-created templates with explicit error handling.
 
@@ -398,8 +399,8 @@ class TemplateStorage:
 
     @staticmethod
     def get_all_templates(
-        user_templates_dir: Optional[Path] = None,
-    ) -> List[ProjectTemplate]:
+        user_templates_dir: Path | None = None,
+    ) -> list[ProjectTemplate]:
         """
         Get all templates (built-in + user).
 

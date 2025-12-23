@@ -18,6 +18,7 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
+
     from casare_rpa.presentation.canvas.graph.selection_manager import SelectionManager
 
 
@@ -39,7 +40,7 @@ class NodeSelectionHandler:
         self._graph = graph
         self._selection = selection_manager
 
-    def get_selected_nodes(self) -> List:
+    def get_selected_nodes(self) -> list:
         """
         Get the currently selected nodes.
 

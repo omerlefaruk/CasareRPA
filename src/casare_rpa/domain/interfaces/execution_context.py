@@ -20,7 +20,7 @@ Usage:
             self.context = context
 """
 
-from typing import Any, Dict, List, Optional, Protocol, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Protocol
 
 if TYPE_CHECKING:
     from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
@@ -57,12 +57,12 @@ class IExecutionContext(Protocol):
         ...
 
     @property
-    def variables(self) -> Dict[str, Any]:
+    def variables(self) -> dict[str, Any]:
         """Get variables dict (direct access for backward compatibility)."""
         ...
 
     @property
-    def resources(self) -> Dict[str, Any]:
+    def resources(self) -> dict[str, Any]:
         """Get resources dictionary for storing/retrieving resources."""
         ...
 
@@ -72,7 +72,7 @@ class IExecutionContext(Protocol):
         ...
 
     @property
-    def project_context(self) -> Optional[Any]:
+    def project_context(self) -> Any | None:
         """Get the project context (if any)."""
         ...
 
@@ -82,7 +82,7 @@ class IExecutionContext(Protocol):
         ...
 
     @property
-    def execution_path(self) -> List["NodeId"]:
+    def execution_path(self) -> list["NodeId"]:
         """Get execution path (list of executed node IDs)."""
         ...
 
@@ -162,7 +162,7 @@ class IExecutionContext(Protocol):
         """Mark the execution as completed."""
         ...
 
-    def get_execution_summary(self) -> Dict[str, Any]:
+    def get_execution_summary(self) -> dict[str, Any]:
         """
         Get a summary of the execution.
 
@@ -175,7 +175,7 @@ class IExecutionContext(Protocol):
     # BROWSER MANAGEMENT (Optional - for browser workflows)
     # ========================================================================
 
-    def get_active_page(self) -> Optional[Any]:
+    def get_active_page(self) -> Any | None:
         """Get the currently active page (Playwright Page object)."""
         ...
 
@@ -189,7 +189,7 @@ class IExecutionContext(Protocol):
         """
         ...
 
-    def get_page(self, name: str = "default") -> Optional[Any]:
+    def get_page(self, name: str = "default") -> Any | None:
         """Get a page by name."""
         ...
 
@@ -236,7 +236,7 @@ class IExecutionContext(Protocol):
         """
         ...
 
-    def merge_branch_results(self, branch_name: str, branch_variables: Dict[str, Any]) -> None:
+    def merge_branch_results(self, branch_name: str, branch_variables: dict[str, Any]) -> None:
         """
         Merge variables from a completed branch back to main context.
 

@@ -9,17 +9,16 @@ JWT auth is for browser/dashboard users.
 Robot auth is for automated robots connecting over internet.
 """
 
-import os
 import hashlib
-from datetime import datetime, timedelta, timezone
+import os
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
-from fastapi import Depends, HTTPException, status, Header
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, Header, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from loguru import logger
 from pydantic import BaseModel
-
 
 # =============================================================================
 # JWT CONFIGURATION
@@ -56,9 +55,9 @@ class TokenPayload(BaseModel):
 
     sub: str  # user_id
     roles: list[str] = []
-    tenant_id: Optional[str] = None
-    exp: Optional[datetime] = None
-    iat: Optional[datetime] = None
+    tenant_id: str | None = None
+    exp: datetime | None = None
+    iat: datetime | None = None
     type: str = "access"  # access or refresh
 
 
@@ -67,7 +66,7 @@ class AuthenticatedUser(BaseModel):
 
     user_id: str
     roles: list[str]
-    tenant_id: Optional[str] = None
+    tenant_id: str | None = None
     dev_mode: bool = False
 
     @property
@@ -84,7 +83,7 @@ class AuthenticatedUser(BaseModel):
 security = HTTPBearer(auto_error=False)
 
 
-def _get_admin_api_key() -> Optional[str]:
+def _get_admin_api_key() -> str | None:
     """Return configured admin API key for non-JWT clients (e.g., Canvas).
 
     This intentionally supports the existing API_SECRET-based deployments.
@@ -94,7 +93,7 @@ def _get_admin_api_key() -> Optional[str]:
     return key.strip() if key else None
 
 
-def _try_admin_api_key(token: str) -> Optional[AuthenticatedUser]:
+def _try_admin_api_key(token: str) -> AuthenticatedUser | None:
     admin_key = _get_admin_api_key()
     if not admin_key:
         return None
@@ -123,7 +122,7 @@ def _try_admin_api_key(token: str) -> Optional[AuthenticatedUser]:
     return None
 
 
-def validate_admin_secret(secret: Optional[str]) -> bool:
+def validate_admin_secret(secret: str | None) -> bool:
     """
     Validate admin API secret (legacy query param mode).
     Used primarily for diagnostic WebSocket connections.
@@ -141,8 +140,8 @@ def validate_admin_secret(secret: Optional[str]) -> bool:
 def create_access_token(
     user_id: str,
     roles: list[str],
-    tenant_id: Optional[str] = None,
-    expires_delta: Optional[timedelta] = None,
+    tenant_id: str | None = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Create a JWT access token.
@@ -159,7 +158,7 @@ def create_access_token(
     if expires_delta is None:
         expires_delta = timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + expires_delta
 
     payload = {
@@ -176,8 +175,8 @@ def create_access_token(
 
 def create_refresh_token(
     user_id: str,
-    tenant_id: Optional[str] = None,
-    expires_delta: Optional[timedelta] = None,
+    tenant_id: str | None = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Create a JWT refresh token.
@@ -193,7 +192,7 @@ def create_refresh_token(
     if expires_delta is None:
         expires_delta = timedelta(days=JWT_REFRESH_TOKEN_EXPIRE_DAYS)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expire = now + expires_delta
 
     payload = {
@@ -226,8 +225,8 @@ def decode_token(token: str) -> TokenPayload:
 
 
 async def verify_token(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    x_api_key: str | None = Header(None, alias="X-Api-Key"),
 ) -> AuthenticatedUser:
     """
     Verify JWT token and return authenticated user.
@@ -365,8 +364,8 @@ require_viewer = require_role("viewer")
 
 # Optional authentication dependency (doesn't fail if no token)
 async def optional_auth(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-) -> Optional[AuthenticatedUser]:
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> AuthenticatedUser | None:
     """
     Optional authentication - returns None if no token provided.
 
@@ -408,8 +407,8 @@ class RobotAuthenticator:
         """
         self._use_database = use_database
         self._db_pool = db_pool
-        self._db_robot_api_keys_cols: Optional[set[str]] = None
-        self._db_robot_api_keys_hash_col: Optional[str] = None
+        self._db_robot_api_keys_cols: set[str] | None = None
+        self._db_robot_api_keys_hash_col: str | None = None
         self._token_hashes = {} if use_database else self._load_token_hashes()
         self._auth_enabled = os.getenv("ROBOT_AUTH_ENABLED", "false").lower() in (
             "true",
@@ -448,7 +447,7 @@ class RobotAuthenticator:
         logger.info(f"Loaded {len(token_map)} robot authentication tokens from env")
         return token_map
 
-    def verify_token(self, token: str) -> Optional[str]:
+    def verify_token(self, token: str) -> str | None:
         """
         Verify robot API token and return robot ID if valid.
 
@@ -465,9 +464,7 @@ class RobotAuthenticator:
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         return self._token_hashes.get(token_hash)
 
-    async def verify_token_async(
-        self, token: str, client_ip: Optional[str] = None
-    ) -> Optional[str]:
+    async def verify_token_async(self, token: str, client_ip: str | None = None) -> str | None:
         """
         Verify robot API token asynchronously against database.
 
@@ -581,7 +578,7 @@ class RobotAuthenticator:
 
 
 # Global authenticator instance
-_robot_authenticator: Optional[RobotAuthenticator] = None
+_robot_authenticator: RobotAuthenticator | None = None
 
 
 def get_robot_authenticator() -> RobotAuthenticator:
@@ -658,8 +655,8 @@ async def verify_robot_token(x_api_key: str = Header(..., alias="X-Api-Key")) ->
 
 
 async def optional_robot_token(
-    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
-) -> Optional[str]:
+    x_api_key: str | None = Header(None, alias="X-Api-Key"),
+) -> str | None:
     """
     Optional robot authentication dependency for endpoints that support both
     authenticated and anonymous access.
@@ -688,7 +685,7 @@ async def optional_robot_token(
 
 def get_tenant_id(
     user: AuthenticatedUser = Depends(get_current_user),
-) -> Optional[str]:
+) -> str | None:
     """
     Get the tenant ID for the current authenticated user.
 
@@ -793,8 +790,8 @@ def require_same_tenant(resource_tenant_id: str):
 
 
 async def get_current_user_or_robot(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    x_api_key: str | None = Header(None, alias="X-Api-Key"),
 ) -> AuthenticatedUser:
     """
     Combined authentication dependency that accepts either:

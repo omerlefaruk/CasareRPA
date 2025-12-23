@@ -29,8 +29,9 @@ import asyncio
 import json
 import os
 import sys
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -70,7 +71,7 @@ def pytest_configure(config: pytest.Config) -> None:
         config.addinivalue_line("markers", marker)
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item]) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Automatically mark tests based on their location."""
     for item in items:
         # Auto-mark based on path
@@ -108,7 +109,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 
 @pytest.fixture
-def execution_context() -> "ExecutionContext":
+def execution_context() -> ExecutionContext:
     """
     Create a REAL ExecutionContext for node testing.
 
@@ -135,7 +136,7 @@ def execution_context() -> "ExecutionContext":
 
 
 @pytest.fixture
-def execution_context_with_vars() -> "ExecutionContext":
+def execution_context_with_vars() -> ExecutionContext:
     """
     Create ExecutionContext with pre-populated variables.
 
@@ -602,7 +603,7 @@ def temp_workflow_file(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def base_node_config() -> Dict[str, Any]:
+def base_node_config() -> dict[str, Any]:
     """Default configuration for node instantiation."""
     return {
         "id": "test-node-id",
@@ -612,7 +613,7 @@ def base_node_config() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_workflow_data() -> Dict[str, Any]:
+def sample_workflow_data() -> dict[str, Any]:
     """Sample workflow data for testing."""
     return {
         "metadata": {
@@ -646,7 +647,7 @@ class SignalCapture:
     """
 
     def __init__(self):
-        self.signals: List[tuple] = []
+        self.signals: list[tuple] = []
 
     def slot(self, *args: Any) -> None:
         """Slot to capture signal emissions."""
@@ -704,7 +705,7 @@ def create_test_node(node_class: type, node_id: str = "test-node", **config: Any
     return node_class(node_id, config=config if config else None)
 
 
-def assert_node_success(result: Dict[str, Any], message: str = "") -> None:
+def assert_node_success(result: dict[str, Any], message: str = "") -> None:
     """
     Assert that a node execution result indicates success.
 
@@ -717,7 +718,7 @@ def assert_node_success(result: Dict[str, Any], message: str = "") -> None:
     ), f"Node execution failed: {result.get('error', 'Unknown error')}. {message}"
 
 
-def assert_node_failure(result: Dict[str, Any], expected_error: Optional[str] = None) -> None:
+def assert_node_failure(result: dict[str, Any], expected_error: str | None = None) -> None:
     """
     Assert that a node execution result indicates failure.
 
@@ -734,9 +735,9 @@ def assert_node_failure(result: Dict[str, Any], expected_error: Optional[str] = 
 
 def create_mock_response(
     status_code: int = 200,
-    json_data: Optional[Dict] = None,
+    json_data: dict | None = None,
     text: str = "",
-    headers: Optional[Dict] = None,
+    headers: dict | None = None,
 ) -> MagicMock:
     """
     Create a mock HTTP response with specified values.
@@ -767,7 +768,7 @@ def create_mock_response(
 def generate_workflow_data(
     node_count: int,
     name: str = "TestWorkflow",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Generate workflow data with specified number of nodes.
 

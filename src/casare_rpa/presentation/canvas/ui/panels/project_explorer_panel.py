@@ -6,39 +6,37 @@ Supports folder creation, renaming, deletion, color customization,
 and drag-drop project organization.
 """
 
+from functools import partial
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QBrush, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QColorDialog,
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
+    QInputDialog,
+    QMenu,
+    QMessageBox,
+    QStackedWidget,
     QTreeWidget,
     QTreeWidgetItem,
-    QMenu,
-    QInputDialog,
-    QColorDialog,
-    QStackedWidget,
-    QAbstractItemView,
-    QMessageBox,
+    QVBoxLayout,
+    QWidget,
 )
-from functools import partial
 
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QBrush, QIcon, QPixmap, QPainter
-
-from loguru import logger
-
+from casare_rpa.domain.entities.project.folder import (
+    ProjectFolder,
+)
+from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
     ToolbarButton,
     get_panel_toolbar_stylesheet,
 )
-from casare_rpa.domain.entities.project.folder import (
-    ProjectFolder,
-)
-from casare_rpa.infrastructure.persistence.folder_storage import FolderStorage
 
 
 class ProjectExplorerPanel(QDockWidget):
@@ -79,7 +77,7 @@ class ProjectExplorerPanel(QDockWidget):
     ROLE_ITEM_TYPE = Qt.ItemDataRole.UserRole + 1
     ROLE_FOLDER_COLOR = Qt.ItemDataRole.UserRole + 2
 
-    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
+    def __init__(self, parent: QWidget | None = None, embedded: bool = False) -> None:
         """
         Initialize the project explorer panel.
 
@@ -94,12 +92,12 @@ class ProjectExplorerPanel(QDockWidget):
             super().__init__("Project Explorer", parent)
             self.setObjectName("ProjectExplorerDock")
 
-        self._projects: Dict[str, Dict[str, Any]] = {}  # project_id -> project_data
-        self._folder_items: Dict[str, QTreeWidgetItem] = {}  # folder_id -> tree_item
-        self._project_items: Dict[str, QTreeWidgetItem] = {}  # project_id -> tree_item
-        self._context_item_id: Optional[str] = None  # Context menu target item ID
-        self._context_item_type: Optional[int] = None  # Context menu target item type
-        self._move_project_id: Optional[str] = None  # Project being moved
+        self._projects: dict[str, dict[str, Any]] = {}  # project_id -> project_data
+        self._folder_items: dict[str, QTreeWidgetItem] = {}  # folder_id -> tree_item
+        self._project_items: dict[str, QTreeWidgetItem] = {}  # project_id -> tree_item
+        self._context_item_id: str | None = None  # Context menu target item ID
+        self._context_item_type: int | None = None  # Context menu target item type
+        self._move_project_id: str | None = None  # Project being moved
 
         if not embedded:
             self._setup_dock()
@@ -681,7 +679,7 @@ class ProjectExplorerPanel(QDockWidget):
                 logger.error(f"Failed to delete folder: {e}")
                 self._show_error("Failed to delete folder", str(e))
 
-    def _move_project_to_folder(self, project_id: str, folder_id: Optional[str]) -> None:
+    def _move_project_to_folder(self, project_id: str, folder_id: str | None) -> None:
         """Move a project to a folder."""
         try:
             FolderStorage.move_project_to_folder(project_id, folder_id)
@@ -744,7 +742,7 @@ class ProjectExplorerPanel(QDockWidget):
         except Exception as e:
             logger.error(f"Failed to refresh folder tree: {e}")
 
-    def _build_tree(self, nodes: List[Dict], parent_item: Optional[QTreeWidgetItem]) -> None:
+    def _build_tree(self, nodes: list[dict], parent_item: QTreeWidgetItem | None) -> None:
         """
         Recursively build tree from folder structure.
 
@@ -775,7 +773,7 @@ class ProjectExplorerPanel(QDockWidget):
             # Restore expand state
             folder_item.setExpanded(folder.is_expanded)
 
-    def set_projects(self, projects: Dict[str, Dict[str, Any]]) -> None:
+    def set_projects(self, projects: dict[str, dict[str, Any]]) -> None:
         """
         Set the projects data for display.
 
@@ -785,7 +783,7 @@ class ProjectExplorerPanel(QDockWidget):
         self._projects = projects
         self.refresh()
 
-    def add_project(self, project_id: str, name: str, folder_id: Optional[str] = None) -> None:
+    def add_project(self, project_id: str, name: str, folder_id: str | None = None) -> None:
         """
         Add a project to the tree.
 
@@ -840,7 +838,7 @@ class ProjectExplorerPanel(QDockWidget):
                 parent = parent.parent()
             self._tree.scrollToItem(item)
 
-    def get_selected_folder_id(self) -> Optional[str]:
+    def get_selected_folder_id(self) -> str | None:
         """
         Get the currently selected folder ID.
 
@@ -854,7 +852,7 @@ class ProjectExplorerPanel(QDockWidget):
                 return selected.data(0, self.ROLE_ITEM_ID)
         return None
 
-    def get_selected_project_id(self) -> Optional[str]:
+    def get_selected_project_id(self) -> str | None:
         """
         Get the currently selected project ID.
 

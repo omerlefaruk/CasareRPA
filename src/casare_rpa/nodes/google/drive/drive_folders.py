@@ -23,7 +23,6 @@ from casare_rpa.infrastructure.resources.google_drive_client import (
 )
 from casare_rpa.nodes.google.google_base import DriveBaseNode
 
-
 # ============================================================================
 # Reusable Property Definitions
 # ============================================================================

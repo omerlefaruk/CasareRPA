@@ -7,8 +7,9 @@ Monitors connection health and triggers reconnection on failures.
 
 import asyncio
 import platform
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from loguru import logger
 
@@ -42,8 +43,8 @@ class HeartbeatService:
     def __init__(
         self,
         interval: int = 30,
-        on_heartbeat: Optional[Callable[[Dict[str, Any]], None]] = None,
-        on_failure: Optional[Callable[[Exception], None]] = None,
+        on_heartbeat: Callable[[dict[str, Any]], None] | None = None,
+        on_failure: Callable[[Exception], None] | None = None,
     ):
         """
         Initialize heartbeat service.
@@ -58,15 +59,15 @@ class HeartbeatService:
         self.on_failure = on_failure
 
         self._running = False
-        self._task: Optional[asyncio.Task] = None
-        self._last_heartbeat: Optional[datetime] = None
+        self._task: asyncio.Task | None = None
+        self._last_heartbeat: datetime | None = None
         self._consecutive_failures = 0
         self._total_heartbeats = 0
 
         # Cached system info (doesn't change)
         self._system_info = self._get_system_info()
 
-    def _get_system_info(self) -> Dict[str, Any]:
+    def _get_system_info(self) -> dict[str, Any]:
         """Get static system information."""
         info = {
             "platform": platform.system(),
@@ -87,7 +88,7 @@ class HeartbeatService:
 
         return info
 
-    def get_system_metrics(self) -> Dict[str, Any]:
+    def get_system_metrics(self) -> dict[str, Any]:
         """
         Get current system metrics.
 
@@ -95,8 +96,8 @@ class HeartbeatService:
             Dictionary with CPU, memory, disk usage percentages.
             Returns empty metrics if psutil is not available.
         """
-        metrics: Dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+        metrics: dict[str, Any] = {
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         if not HAS_PSUTIL:
@@ -141,8 +142,8 @@ class HeartbeatService:
 
             # System uptime
             try:
-                boot_time = datetime.fromtimestamp(psutil.boot_time(), tz=timezone.utc)
-                uptime_seconds = (datetime.now(timezone.utc) - boot_time).total_seconds()
+                boot_time = datetime.fromtimestamp(psutil.boot_time(), tz=UTC)
+                uptime_seconds = (datetime.now(UTC) - boot_time).total_seconds()
                 metrics["uptime_hours"] = round(uptime_seconds / 3600, 2)
             except Exception:
                 pass
@@ -235,7 +236,7 @@ class HeartbeatService:
             return
 
         heartbeat_data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "metrics": self.get_system_metrics(),
             "health": self.get_health_status(),
             "system_info": self._system_info,
@@ -248,7 +249,7 @@ class HeartbeatService:
             if asyncio.iscoroutine(result):
                 await result
 
-            self._last_heartbeat = datetime.now(timezone.utc)
+            self._last_heartbeat = datetime.now(UTC)
             self._consecutive_failures = 0
             self._total_heartbeats += 1
 
@@ -267,7 +268,7 @@ class HeartbeatService:
         return self._running
 
     @property
-    def last_heartbeat(self) -> Optional[datetime]:
+    def last_heartbeat(self) -> datetime | None:
         """Get timestamp of last successful heartbeat."""
         return self._last_heartbeat
 
@@ -281,7 +282,7 @@ class HeartbeatService:
         """Get count of consecutive heartbeat failures."""
         return self._consecutive_failures
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get heartbeat service status."""
         return {
             "running": self._running,

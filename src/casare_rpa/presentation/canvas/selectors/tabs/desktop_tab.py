@@ -8,6 +8,8 @@ Generates AutomationId, Name, ControlType, Path selectors.
 import json
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,
@@ -19,8 +21,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Qt
-from loguru import logger
 
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
@@ -40,7 +40,7 @@ class DesktopSelectorTab(BaseSelectorTab):
     - Selector uniqueness validation
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._selected_element = None
         self._parent_control = None
@@ -195,11 +195,11 @@ class DesktopSelectorTab(BaseSelectorTab):
             self._picker_overlay = None
         self.pick_btn.setEnabled(True)
 
-    def get_current_selector(self) -> Optional[SelectorResult]:
+    def get_current_selector(self) -> SelectorResult | None:
         """Get current selector result."""
         return self._current_result
 
-    def get_strategies(self) -> List[SelectorStrategy]:
+    def get_strategies(self) -> list[SelectorStrategy]:
         """Get generated strategies."""
         return self._strategies
 
@@ -283,8 +283,8 @@ class DesktopSelectorTab(BaseSelectorTab):
             return
 
         from casare_rpa.presentation.canvas.selectors.selector_strategy import (
-            generate_selectors,
             filter_best_selectors,
+            generate_selectors,
             validate_selector_uniqueness,
         )
 
@@ -318,7 +318,7 @@ class DesktopSelectorTab(BaseSelectorTab):
 
         logger.info(f"Generated {len(self._strategies)} desktop selectors")
 
-    def _get_element_properties(self) -> Dict[str, Any]:
+    def _get_element_properties(self) -> dict[str, Any]:
         """Get all element properties as dict."""
         if not self._selected_element:
             return {}
@@ -337,7 +337,7 @@ class DesktopSelectorTab(BaseSelectorTab):
 
         return props
 
-    def _get_hierarchy(self) -> List[Dict[str, str]]:
+    def _get_hierarchy(self) -> list[dict[str, str]]:
         """Get parent hierarchy."""
         if not self._selected_element:
             return []
@@ -364,7 +364,7 @@ class DesktopSelectorTab(BaseSelectorTab):
 
         return hierarchy
 
-    async def test_selector(self, selector: str, selector_type: str) -> Dict[str, Any]:
+    async def test_selector(self, selector: str, selector_type: str) -> dict[str, Any]:
         """Test selector against desktop."""
         if not self._parent_control:
             return {"success": False, "error": "No desktop root"}
@@ -376,9 +376,9 @@ class DesktopSelectorTab(BaseSelectorTab):
             else:
                 selector_dict = {"strategy": selector_type, "value": selector}
 
-            from casare_rpa.desktop.selector import find_elements
-
             import time
+
+            from casare_rpa.desktop.selector import find_elements
 
             start = time.perf_counter()
             elements = find_elements(self._parent_control, selector_dict, max_depth=10)

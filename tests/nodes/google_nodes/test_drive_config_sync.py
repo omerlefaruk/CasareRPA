@@ -9,8 +9,9 @@ This test verifies that:
 Run with: pytest tests/nodes/google/test_drive_config_sync.py -v -s
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestDriveConfigSync:

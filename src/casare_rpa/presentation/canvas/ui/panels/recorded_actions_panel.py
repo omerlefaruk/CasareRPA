@@ -7,6 +7,7 @@ before converting them to workflow nodes.
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
@@ -25,8 +26,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -56,12 +55,12 @@ class RecordedActionsPanel(QDockWidget):
     convert_requested = Signal()
     clear_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the recorded actions panel."""
         super().__init__("Recorded Actions", parent)
         self.setObjectName("RecordedActionsDock")
 
-        self._actions: List[Dict[str, Any]] = []
+        self._actions: list[dict[str, Any]] = []
 
         self._setup_dock()
         self._setup_ui()
@@ -298,7 +297,7 @@ class RecordedActionsPanel(QDockWidget):
             self._show_action_details(self._actions[index])
             self.action_selected.emit(index)
 
-    def _show_action_details(self, action: Dict[str, Any]) -> None:
+    def _show_action_details(self, action: dict[str, Any]) -> None:
         """Display action details in the details panel."""
         details = []
 
@@ -452,7 +451,7 @@ class RecordedActionsPanel(QDockWidget):
 
         self._preview_text.setText("\n".join(preview_lines))
 
-    def add_action(self, action: Dict[str, Any]) -> None:
+    def add_action(self, action: dict[str, Any]) -> None:
         """
         Add a recorded action to the list.
 
@@ -489,7 +488,7 @@ class RecordedActionsPanel(QDockWidget):
         self._update_button_states()
         self._update_preview()
 
-    def set_actions(self, actions: List[Dict[str, Any]]) -> None:
+    def set_actions(self, actions: list[dict[str, Any]]) -> None:
         """
         Set all recorded actions.
 
@@ -500,7 +499,7 @@ class RecordedActionsPanel(QDockWidget):
         for action in actions:
             self.add_action(action)
 
-    def get_actions(self) -> List[Dict[str, Any]]:
+    def get_actions(self) -> list[dict[str, Any]]:
         """
         Get all recorded actions.
 

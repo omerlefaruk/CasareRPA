@@ -17,10 +17,11 @@ Result Pattern:
             error = result.error  # FileSystemError with context
 """
 
-import orjson
-from loguru import logger
 from pathlib import Path
 from typing import Dict, List, Optional
+
+import orjson
+from loguru import logger
 
 from casare_rpa.domain.entities.project.folder import (
     FolderColor,
@@ -28,11 +29,11 @@ from casare_rpa.domain.entities.project.folder import (
     ProjectFolder,
 )
 from casare_rpa.domain.errors import (
-    Result,
-    Ok,
     Err,
-    FileSystemError,
     ErrorContext,
+    FileSystemError,
+    Ok,
+    Result,
 )
 
 
@@ -49,7 +50,7 @@ class FolderStorage:
         return Path.home() / ".casare_rpa" / "config" / "folders.json"
 
     @staticmethod
-    def save_folders(folders_file: FoldersFile, file_path: Optional[Path] = None) -> None:
+    def save_folders(folders_file: FoldersFile, file_path: Path | None = None) -> None:
         """
         Save folders to file.
 
@@ -65,7 +66,7 @@ class FolderStorage:
 
     @staticmethod
     def save_folders_safe(
-        folders_file: FoldersFile, file_path: Optional[Path] = None
+        folders_file: FoldersFile, file_path: Path | None = None
     ) -> Result[None, FileSystemError]:
         """
         Save folders to file with explicit error handling.
@@ -102,7 +103,7 @@ class FolderStorage:
             )
 
     @staticmethod
-    def load_folders(file_path: Optional[Path] = None) -> FoldersFile:
+    def load_folders(file_path: Path | None = None) -> FoldersFile:
         """
         Load folders from file.
 
@@ -127,7 +128,7 @@ class FolderStorage:
 
     @staticmethod
     def load_folders_safe(
-        file_path: Optional[Path] = None,
+        file_path: Path | None = None,
     ) -> Result[FoldersFile, FileSystemError]:
         """
         Load folders from file with explicit error handling.
@@ -181,9 +182,9 @@ class FolderStorage:
     @staticmethod
     def create_folder(
         name: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
         color: str = FolderColor.BLUE.value,
-        file_path: Optional[Path] = None,
+        file_path: Path | None = None,
     ) -> ProjectFolder:
         """
         Create a new folder.
@@ -213,9 +214,9 @@ class FolderStorage:
     @staticmethod
     def create_folder_safe(
         name: str,
-        parent_id: Optional[str] = None,
+        parent_id: str | None = None,
         color: str = FolderColor.BLUE.value,
-        file_path: Optional[Path] = None,
+        file_path: Path | None = None,
     ) -> Result[ProjectFolder, FileSystemError]:
         """
         Create a new folder with explicit error handling.
@@ -265,7 +266,7 @@ class FolderStorage:
         return Ok(folder)
 
     @staticmethod
-    def delete_folder(folder_id: str, file_path: Optional[Path] = None) -> bool:
+    def delete_folder(folder_id: str, file_path: Path | None = None) -> bool:
         """
         Delete a folder and move its projects to parent (or root).
 
@@ -303,7 +304,7 @@ class FolderStorage:
 
     @staticmethod
     def delete_folder_safe(
-        folder_id: str, file_path: Optional[Path] = None
+        folder_id: str, file_path: Path | None = None
     ) -> Result[bool, FileSystemError]:
         """
         Delete a folder with explicit error handling.
@@ -350,7 +351,7 @@ class FolderStorage:
         return Ok(True)
 
     @staticmethod
-    def rename_folder(folder_id: str, new_name: str, file_path: Optional[Path] = None) -> bool:
+    def rename_folder(folder_id: str, new_name: str, file_path: Path | None = None) -> bool:
         """
         Rename a folder.
 
@@ -377,8 +378,8 @@ class FolderStorage:
     @staticmethod
     def move_project_to_folder(
         project_id: str,
-        target_folder_id: Optional[str],
-        file_path: Optional[Path] = None,
+        target_folder_id: str | None,
+        file_path: Path | None = None,
     ) -> bool:
         """
         Move a project to a folder.
@@ -407,7 +408,7 @@ class FolderStorage:
         return True
 
     @staticmethod
-    def get_folder_tree(file_path: Optional[Path] = None) -> List[Dict]:
+    def get_folder_tree(file_path: Path | None = None) -> list[dict]:
         """
         Get folder hierarchy as nested tree structure.
 
@@ -419,7 +420,7 @@ class FolderStorage:
         """
         folders_file = FolderStorage.load_folders(file_path)
 
-        def build_tree(parent_id: Optional[str]) -> List[Dict]:
+        def build_tree(parent_id: str | None) -> list[dict]:
             children = []
             for folder in folders_file.folders.values():
                 if folder.parent_id == parent_id and not folder.is_archived:
@@ -437,8 +438,8 @@ class FolderStorage:
 
     @staticmethod
     def get_folder_by_project(
-        project_id: str, file_path: Optional[Path] = None
-    ) -> Optional[ProjectFolder]:
+        project_id: str, file_path: Path | None = None
+    ) -> ProjectFolder | None:
         """
         Get the folder containing a project.
 
@@ -458,7 +459,7 @@ class FolderStorage:
         return None
 
     @staticmethod
-    def set_folder_color(folder_id: str, color: str, file_path: Optional[Path] = None) -> bool:
+    def set_folder_color(folder_id: str, color: str, file_path: Path | None = None) -> bool:
         """
         Set folder color.
 
@@ -483,7 +484,7 @@ class FolderStorage:
         return True
 
     @staticmethod
-    def reorder_folders(folder_ids: List[str], file_path: Optional[Path] = None) -> bool:
+    def reorder_folders(folder_ids: list[str], file_path: Path | None = None) -> bool:
         """
         Reorder folders by setting sort_order.
 

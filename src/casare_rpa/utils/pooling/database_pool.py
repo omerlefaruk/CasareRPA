@@ -19,7 +19,6 @@ from typing import Any, Deque, Dict, Optional, Set, Union
 
 from loguru import logger
 
-
 # Try to import optional database drivers
 try:
     import asyncpg
@@ -129,7 +128,7 @@ class DatabaseConnectionPool:
 
     def __init__(
         self,
-        db_type: Union[DatabaseType, str],
+        db_type: DatabaseType | str,
         min_size: int = 1,
         max_size: int = 10,
         max_connection_age: float = 300.0,  # 5 minutes
@@ -179,14 +178,14 @@ class DatabaseConnectionPool:
         self._extra_options = extra_options
 
         # Pool state
-        self._available: Deque[PooledConnection] = deque()
-        self._in_use: Set[PooledConnection] = set()
+        self._available: deque[PooledConnection] = deque()
+        self._in_use: set[PooledConnection] = set()
         self._lock = asyncio.Lock()
         self._initialized = False
         self._closed = False
 
         # Native pool for PostgreSQL (asyncpg has built-in pooling)
-        self._pg_pool: Optional[Any] = None
+        self._pg_pool: Any | None = None
 
         # Statistics
         self._stats = PoolStatistics()
@@ -518,7 +517,7 @@ class DatabaseConnectionPool:
 
         logger.info("Database connection pool closed")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         return {
             "db_type": self._db_type.value,
@@ -559,7 +558,7 @@ class DatabasePoolManager:
     _lock = asyncio.Lock()
 
     def __init__(self) -> None:
-        self._pools: Dict[str, DatabaseConnectionPool] = {}
+        self._pools: dict[str, DatabaseConnectionPool] = {}
         self._pool_lock = asyncio.Lock()
 
     @classmethod
@@ -574,7 +573,7 @@ class DatabasePoolManager:
     async def get_pool(
         self,
         name: str,
-        db_type: Union[DatabaseType, str],
+        db_type: DatabaseType | str,
         **config: Any,
     ) -> DatabaseConnectionPool:
         """
@@ -616,7 +615,7 @@ class DatabasePoolManager:
             await cls._instance.close_all()
             cls._instance = None
 
-    def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_stats(self) -> dict[str, dict[str, Any]]:
         """Get statistics for all pools."""
         return {name: pool.get_stats() for name, pool in self._pools.items()}
 

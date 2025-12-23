@@ -8,8 +8,8 @@ that have NO exec_in port (they START workflows) and output trigger payload data
 from abc import abstractmethod
 from typing import Any, Dict, Optional
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
     NodeConfig,
@@ -53,14 +53,14 @@ class BaseTriggerNode(BaseNode):
     trigger_icon: str = "trigger"
     trigger_category: str = "triggers"
 
-    def __init__(self, node_id: NodeId, config: Optional[NodeConfig] = None) -> None:
+    def __init__(self, node_id: NodeId, config: NodeConfig | None = None) -> None:
         """Initialize trigger node."""
         super().__init__(node_id, config)
         self.category = "triggers"
 
         # Trigger state
         self._is_listening: bool = False
-        self._trigger_instance: Optional[BaseTrigger] = None
+        self._trigger_instance: BaseTrigger | None = None
 
     def _define_ports(self) -> None:
         """
@@ -101,7 +101,7 @@ class BaseTriggerNode(BaseNode):
         pass
 
     @abstractmethod
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """
         Get trigger-specific configuration from node properties.
 
@@ -134,7 +134,7 @@ class BaseTriggerNode(BaseNode):
             },
         }
 
-    def populate_from_trigger_event(self, payload: Dict[str, Any]) -> None:
+    def populate_from_trigger_event(self, payload: dict[str, Any]) -> None:
         """
         Populate output ports from trigger event payload.
 
@@ -153,7 +153,7 @@ class BaseTriggerNode(BaseNode):
         self,
         workflow_id: str,
         scenario_id: str = "",
-        trigger_id: Optional[str] = None,
+        trigger_id: str | None = None,
     ) -> BaseTriggerConfig:
         """
         Create a BaseTriggerConfig from this node's configuration.
@@ -183,8 +183,8 @@ class BaseTriggerNode(BaseNode):
         self,
         workflow_id: str,
         scenario_id: str = "",
-        event_callback: Optional[Any] = None,
-    ) -> Optional[BaseTrigger]:
+        event_callback: Any | None = None,
+    ) -> BaseTrigger | None:
         """
         Create a BaseTrigger instance for background listening.
 
@@ -215,6 +215,6 @@ class BaseTriggerNode(BaseNode):
         """Set the listening state."""
         self._is_listening = listening
 
-    def get_trigger_instance(self) -> Optional[BaseTrigger]:
+    def get_trigger_instance(self) -> BaseTrigger | None:
         """Get the trigger instance if created."""
         return self._trigger_instance

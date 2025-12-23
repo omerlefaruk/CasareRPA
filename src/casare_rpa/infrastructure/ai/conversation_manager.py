@@ -70,16 +70,16 @@ class ConversationMessage:
     content: str
     timestamp: float = field(default_factory=time.time)
     message_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for LLM API."""
         return {
             "role": self.role.value,
             "content": self.content,
         }
 
-    def to_full_dict(self) -> Dict[str, Any]:
+    def to_full_dict(self) -> dict[str, Any]:
         """Serialize with all fields for persistence."""
         return {
             "role": self.role.value,
@@ -90,7 +90,7 @@ class ConversationMessage:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ConversationMessage":
+    def from_dict(cls, data: dict[str, Any]) -> ConversationMessage:
         """Create from dictionary."""
         return cls(
             role=MessageRole(data["role"]),
@@ -109,12 +109,12 @@ class WorkflowSnapshot:
     Used for undo/redo functionality.
     """
 
-    workflow: Dict[str, Any]
+    workflow: dict[str, Any]
     timestamp: float = field(default_factory=time.time)
     description: str = ""
     message_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "workflow": self.workflow,
@@ -134,13 +134,13 @@ class ConversationContext:
     """
 
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    messages: List[ConversationMessage] = field(default_factory=list)
-    current_workflow: Optional[Dict[str, Any]] = None
-    workflow_history: List[WorkflowSnapshot] = field(default_factory=list)
-    redo_stack: List[WorkflowSnapshot] = field(default_factory=list)
+    messages: list[ConversationMessage] = field(default_factory=list)
+    current_workflow: dict[str, Any] | None = None
+    workflow_history: list[WorkflowSnapshot] = field(default_factory=list)
+    redo_stack: list[WorkflowSnapshot] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
-    last_intent: Optional[UserIntent] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    last_intent: UserIntent | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def message_count(self) -> int:
@@ -162,14 +162,14 @@ class ConversationContext:
         """Check if redo is available."""
         return len(self.redo_stack) > 0
 
-    def get_last_user_message(self) -> Optional[str]:
+    def get_last_user_message(self) -> str | None:
         """Get the most recent user message content."""
         for msg in reversed(self.messages):
             if msg.role == MessageRole.USER:
                 return msg.content
         return None
 
-    def get_last_assistant_message(self) -> Optional[str]:
+    def get_last_assistant_message(self) -> str | None:
         """Get the most recent assistant message content."""
         for msg in reversed(self.messages):
             if msg.role == MessageRole.ASSISTANT:
@@ -233,7 +233,7 @@ class ConversationManager:
         return self._context.session_id
 
     @property
-    def current_workflow(self) -> Optional[Dict[str, Any]]:
+    def current_workflow(self) -> dict[str, Any] | None:
         """Get current workflow state."""
         return self._context.current_workflow
 
@@ -245,7 +245,7 @@ class ConversationManager:
     def add_user_message(
         self,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ConversationMessage:
         """
         Add a user message to the conversation.
@@ -269,7 +269,7 @@ class ConversationManager:
     def add_assistant_message(
         self,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ConversationMessage:
         """
         Add an assistant message to the conversation.
@@ -293,7 +293,7 @@ class ConversationManager:
     def add_system_message(
         self,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ConversationMessage:
         """
         Add a system message to the conversation.
@@ -344,7 +344,7 @@ class ConversationManager:
 
     def set_workflow(
         self,
-        workflow: Dict[str, Any],
+        workflow: dict[str, Any],
         description: str = "",
         create_snapshot: bool = True,
     ) -> None:
@@ -385,7 +385,7 @@ class ConversationManager:
                 -self._max_workflow_history :
             ]
 
-    def undo_workflow(self) -> Optional[Dict[str, Any]]:
+    def undo_workflow(self) -> dict[str, Any] | None:
         """
         Undo the last workflow change.
 
@@ -411,7 +411,7 @@ class ConversationManager:
         logger.info(f"Workflow undone: {snapshot.description}")
         return snapshot.workflow
 
-    def redo_workflow(self) -> Optional[Dict[str, Any]]:
+    def redo_workflow(self) -> dict[str, Any] | None:
         """
         Redo a previously undone workflow change.
 
@@ -437,7 +437,7 @@ class ConversationManager:
         self,
         include_workflow: bool = True,
         max_workflow_chars: int = 3000,
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Build message list for LLM API.
 
@@ -536,7 +536,7 @@ class ConversationManager:
         self._context = ConversationContext()
         logger.info(f"New session started: {self._context.session_id}")
 
-    def get_conversation_summary(self) -> Dict[str, Any]:
+    def get_conversation_summary(self) -> dict[str, Any]:
         """
         Get summary of current conversation state.
 
@@ -560,11 +560,11 @@ class ConversationManager:
         """Set the detected intent for the last user message."""
         self._context.last_intent = intent
 
-    def get_last_intent(self) -> Optional[UserIntent]:
+    def get_last_intent(self) -> UserIntent | None:
         """Get the last detected intent."""
         return self._context.last_intent
 
-    def export_context(self) -> Dict[str, Any]:
+    def export_context(self) -> dict[str, Any]:
         """
         Export full conversation context for persistence.
 
@@ -581,7 +581,7 @@ class ConversationManager:
             "metadata": self._context.metadata,
         }
 
-    def import_context(self, data: Dict[str, Any]) -> None:
+    def import_context(self, data: dict[str, Any]) -> None:
         """
         Import conversation context from saved data.
 

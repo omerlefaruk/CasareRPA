@@ -8,35 +8,34 @@ Provides queue definition management:
 - Queue settings (max retries, auto-retry)
 """
 
-from typing import Optional, Dict, Any
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QLabel,
-    QDialog,
-    QFormLayout,
-    QLineEdit,
-    QTextEdit,
-    QSpinBox,
-    QCheckBox,
-    QDialogButtonBox,
-    QMessageBox,
-    QMenu,
-)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
+from typing import Any, Dict, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
-from casare_rpa.domain.orchestrator.entities import Queue
 from casare_rpa.application.services import QueueService
+from casare_rpa.domain.orchestrator.entities import Queue
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class QueueEditDialog(QDialog):
@@ -44,8 +43,8 @@ class QueueEditDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
-        queue: Optional[Queue] = None,
+        parent: QWidget | None = None,
+        queue: Queue | None = None,
     ) -> None:
         super().__init__(parent)
         self._queue = queue
@@ -172,7 +171,7 @@ class QueueEditDialog(QDialog):
 
         self.accept()
 
-    def get_queue_data(self) -> Dict[str, Any]:
+    def get_queue_data(self) -> dict[str, Any]:
         """Get queue data from form."""
         import json
 
@@ -210,7 +209,7 @@ class QueuesTab(QWidget):
     def __init__(
         self,
         queue_service: QueueService,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._queue_service = queue_service
@@ -341,7 +340,7 @@ class QueuesTab(QWidget):
         item.setData(Qt.ItemDataRole.UserRole, value)
         return item
 
-    def _get_selected_queue_id(self) -> Optional[str]:
+    def _get_selected_queue_id(self) -> str | None:
         """Get the selected queue ID."""
         selected = self._table.selectedItems()
         if not selected:

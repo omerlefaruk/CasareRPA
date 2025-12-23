@@ -32,7 +32,7 @@ class PortTypeInfo:
 
     data_type: DataType
     display_name: str
-    color: Tuple[int, int, int, int]  # RGBA
+    color: tuple[int, int, int, int]  # RGBA
     shape: str  # circle, diamond, square, hexagon, triangle, hollow_circle
     description: str = ""
 
@@ -73,7 +73,7 @@ class TypeCompatibilityRule(Protocol):
         """
         ...
 
-    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> str | None:
         """
         Get human-readable reason why types are incompatible.
 
@@ -100,11 +100,11 @@ class PortTypeRegistryProtocol(Protocol):
         """Get metadata for a data type."""
         ...
 
-    def get_type_color(self, data_type: DataType) -> Tuple[int, int, int, int]:
+    def get_type_color(self, data_type: DataType) -> tuple[int, int, int, int]:
         """Get the RGBA color for a data type."""
         ...
 
-    def get_exec_color(self) -> Tuple[int, int, int, int]:
+    def get_exec_color(self) -> tuple[int, int, int, int]:
         """Get the color for execution ports."""
         ...
 
@@ -116,11 +116,11 @@ class PortTypeRegistryProtocol(Protocol):
         """Check if source type can connect to target type."""
         ...
 
-    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> str | None:
         """Get reason why types are incompatible."""
         ...
 
-    def get_compatible_types(self, source: DataType) -> Set[DataType]:
+    def get_compatible_types(self, source: DataType) -> set[DataType]:
         """Get all types that are compatible with the source type."""
         ...
 
@@ -142,7 +142,7 @@ class DefaultCompatibilityRule:
     """
 
     # Types that INTEGER can implicitly convert to
-    INTEGER_COMPATIBLE: Set[DataType] = {
+    INTEGER_COMPATIBLE: set[DataType] = {
         DataType.INTEGER,
         DataType.FLOAT,
         DataType.STRING,
@@ -150,27 +150,27 @@ class DefaultCompatibilityRule:
     }
 
     # Types that FLOAT can implicitly convert to
-    FLOAT_COMPATIBLE: Set[DataType] = {
+    FLOAT_COMPATIBLE: set[DataType] = {
         DataType.FLOAT,
         DataType.STRING,
         DataType.ANY,
     }
 
     # Types that BOOLEAN can implicitly convert to
-    BOOLEAN_COMPATIBLE: Set[DataType] = {
+    BOOLEAN_COMPATIBLE: set[DataType] = {
         DataType.BOOLEAN,
         DataType.STRING,
         DataType.ANY,
     }
 
     # Types that STRING can implicitly convert to
-    STRING_COMPATIBLE: Set[DataType] = {
+    STRING_COMPATIBLE: set[DataType] = {
         DataType.STRING,
         DataType.ANY,
     }
 
     # Strict types (require exact match or ANY)
-    STRICT_TYPES: Set[DataType] = {
+    STRICT_TYPES: set[DataType] = {
         DataType.PAGE,
         DataType.BROWSER,
         DataType.ELEMENT,
@@ -219,7 +219,7 @@ class DefaultCompatibilityRule:
         # Default: incompatible
         return False
 
-    def get_incompatibility_reason(self, source: DataType, target: DataType) -> Optional[str]:
+    def get_incompatibility_reason(self, source: DataType, target: DataType) -> str | None:
         """
         Get human-readable reason why types are incompatible.
 

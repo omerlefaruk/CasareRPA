@@ -27,7 +27,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 # Context variable for correlation ID (thread/async-safe)
-_correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
+_correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 # Header names
 CORRELATION_ID_HEADER = "X-Correlation-ID"
@@ -39,7 +39,7 @@ def generate_correlation_id() -> str:
     return f"corr_{uuid.uuid4().hex[:16]}"
 
 
-def get_correlation_id(request: Optional[Request] = None) -> Optional[str]:
+def get_correlation_id(request: Request | None = None) -> str | None:
     """
     Get the current correlation ID.
 
@@ -131,7 +131,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def inject_correlation_header(headers: dict, correlation_id: Optional[str] = None) -> dict:
+def inject_correlation_header(headers: dict, correlation_id: str | None = None) -> dict:
     """
     Inject correlation ID into outgoing request headers.
 

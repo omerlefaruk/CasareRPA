@@ -6,8 +6,9 @@ Uses NodeMetadata from @node decorator to configure retry behavior.
 """
 
 import asyncio
+from collections.abc import Callable, Coroutine
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, Coroutine, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 
@@ -55,11 +56,11 @@ class RetryHandler:
         Returns:
             NodeResult from successful execution or final failure.
         """
-        from casare_rpa.domain.value_objects.types import NodeResult
         from casare_rpa.domain.value_objects.execution_metadata import ExecutionMetadata
+        from casare_rpa.domain.value_objects.types import NodeResult
 
         # Get metadata from node (if @node decorator was used)
-        metadata: Optional["NodeMetadata"] = getattr(node, "__node_meta__", None)
+        metadata: NodeMetadata | None = getattr(node, "__node_meta__", None)
         max_attempts = (metadata.retries + 1) if metadata and metadata.retries > 0 else 1
 
         last_error: str = ""
@@ -142,7 +143,7 @@ class RetryHandler:
 
 
 # Module-level singleton
-_retry_handler: Optional[RetryHandler] = None
+_retry_handler: RetryHandler | None = None
 
 
 def get_retry_handler() -> RetryHandler:

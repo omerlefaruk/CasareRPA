@@ -4,10 +4,10 @@ Domain Trigger Configuration Entity.
 Defines the interface for trigger configurations without implementation details.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Protocol
 import uuid
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, Optional, Protocol
 
 from casare_rpa.domain.value_objects.trigger_types import TriggerType
 
@@ -24,14 +24,14 @@ class TriggerConfigProtocol(Protocol):
     priority: int
     cooldown_seconds: int
     description: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         ...
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TriggerConfigProtocol":
+    def from_dict(cls, data: dict[str, Any]) -> "TriggerConfigProtocol":
         """Create from dictionary."""
         ...
 
@@ -54,22 +54,22 @@ class TriggerConfig:
     priority: int = 1  # TriggerPriority.NORMAL
     cooldown_seconds: int = 0
     description: str = ""
-    config: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
 
     # Tracking
-    created_at: Optional[datetime] = None
-    last_triggered: Optional[datetime] = None
+    created_at: datetime | None = None
+    last_triggered: datetime | None = None
     trigger_count: int = 0
     success_count: int = 0
     error_count: int = 0
 
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.now(timezone.utc)
+            self.created_at = datetime.now(UTC)
         if not self.id:
             self.id = f"trig_{uuid.uuid4().hex[:8]}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -90,7 +90,7 @@ class TriggerConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TriggerConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "TriggerConfig":
         """Create from dictionary."""
         created_at = data.get("created_at")
         if isinstance(created_at, str):

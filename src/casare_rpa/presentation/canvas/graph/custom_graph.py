@@ -9,15 +9,16 @@ Overrides internal methods of NodeGraphQt.NodeGraph to provide:
 
 import json
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional, Any, Iterable, Union
+from typing import Any, Optional, Union
 
-from PySide6.QtCore import QMimeData, QPoint, QUrl
-from NodeGraphQt import NodeGraph
 from loguru import logger
+from NodeGraphQt import NodeGraph
+from PySide6.QtCore import QMimeData, QPoint, QUrl
 
-from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 from casare_rpa.nodes.file.super_node import FileSystemAction
+from casare_rpa.presentation.canvas.telemetry import log_canvas_event
 
 MAX_SESSION_FILE_BYTES = 5 * 1024 * 1024
 
@@ -29,12 +30,12 @@ class CasareNodeGraph(NodeGraph):
     Modernizes monkey-patches previously applied to NodeGraph class.
     """
 
-    def __init__(self, parent: Optional[Any] = None) -> None:
+    def __init__(self, parent: Any | None = None) -> None:
         """Initialize the custom node graph."""
         super().__init__(parent)
 
     def _on_node_data_dropped(
-        self, data: Union[dict, list, QUrl, QMimeData], pos: Union[list, QPoint]
+        self, data: dict | list | QUrl | QMimeData, pos: list | QPoint
     ) -> None:
         """
         Handle data dropped onto the graph.
@@ -104,7 +105,7 @@ class CasareNodeGraph(NodeGraph):
             drop_pos = self._offset_drop_pos(pos, i)
             self._handle_file_drop(local_path, drop_pos)
 
-    def _offset_drop_pos(self, pos: Union[list, QPoint], index: int) -> list:
+    def _offset_drop_pos(self, pos: list | QPoint, index: int) -> list:
         """Normalize and offset the drop position for batch drops."""
         if isinstance(pos, QPoint):
             base_pos = [pos.x(), pos.y()]
@@ -195,8 +196,8 @@ class CasareNodeGraph(NodeGraph):
     def create_node(
         self,
         node_type: str,
-        name: Optional[str] = None,
-        pos: Optional[list] = None,
+        name: str | None = None,
+        pos: list | None = None,
         **kwargs,
     ) -> Any:
         """

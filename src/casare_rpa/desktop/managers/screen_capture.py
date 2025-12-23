@@ -30,9 +30,9 @@ class ScreenCapture:
     async def capture_screenshot(
         self,
         file_path: str = None,
-        region: Dict[str, int] = None,
+        region: dict[str, int] = None,
         format: str = "PNG",
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Capture a screenshot of the screen or a specific region.
 
@@ -45,7 +45,7 @@ class ScreenCapture:
             PIL Image object if successful, None otherwise
         """
 
-        def _capture() -> Optional[Any]:
+        def _capture() -> Any | None:
             try:
                 from PIL import ImageGrab
 
@@ -82,7 +82,7 @@ class ScreenCapture:
         file_path: str = None,
         padding: int = 0,
         format: str = "PNG",
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Capture an image of a specific desktop element.
 
@@ -96,7 +96,7 @@ class ScreenCapture:
             PIL Image object if successful, None otherwise
         """
 
-        def _capture_element() -> Optional[Any]:
+        def _capture_element() -> Any | None:
             try:
                 from PIL import ImageGrab
 
@@ -135,11 +135,11 @@ class ScreenCapture:
         self,
         image: Any = None,
         image_path: str = None,
-        region: Dict[str, int] = None,
+        region: dict[str, int] = None,
         language: str = "eng",
         config: str = "",
         engine: str = "auto",
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Extract text from an image using OCR.
 
@@ -159,10 +159,10 @@ class ScreenCapture:
             Extracted text string if successful, None otherwise
         """
 
-        def _extract_text() -> Optional[str]:
+        def _extract_text() -> str | None:
             try:
-                from PIL import Image
                 import numpy as np
+                from PIL import Image
 
                 img = image
                 if img is None and image_path:
@@ -191,7 +191,7 @@ class ScreenCapture:
                     height = region.get("height", img.height)
                     img = img.crop((x, y, x + width, y + height))
 
-                def try_rapidocr() -> Optional[str]:
+                def try_rapidocr() -> str | None:
                     try:
                         from rapidocr_onnxruntime import RapidOCR
 
@@ -215,7 +215,7 @@ class ScreenCapture:
                         logger.warning(f"RapidOCR failed: {e}")
                         return None
 
-                def try_tesseract() -> Optional[str]:
+                def try_tesseract() -> str | None:
                     try:
                         import pytesseract
 
@@ -230,10 +230,11 @@ class ScreenCapture:
                         logger.warning(f"Tesseract OCR failed: {e}")
                         return None
 
-                def try_winocr() -> Optional[str]:
+                def try_winocr() -> str | None:
                     try:
-                        import winocr
                         import asyncio as aio
+
+                        import winocr
 
                         async def do_ocr():
                             result = await winocr.recognize_pil(img, lang=language)
@@ -314,7 +315,7 @@ class ScreenCapture:
         image2_path: str = None,
         method: str = "ssim",
         threshold: float = 0.9,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Compare two images and return similarity metrics.
 
@@ -330,10 +331,10 @@ class ScreenCapture:
             Dict with similarity score, is_match, and method used
         """
 
-        def _compare() -> Dict[str, Any]:
+        def _compare() -> dict[str, Any]:
             try:
-                from PIL import Image
                 import numpy as np
+                from PIL import Image
 
                 img1 = image1
                 img2 = image2
@@ -429,9 +430,9 @@ class ScreenCapture:
         self,
         template: Any = None,
         template_path: str = None,
-        region: Dict[str, int] = None,
+        region: dict[str, int] = None,
         threshold: float = 0.8,
-    ) -> Optional[Dict[str, int]]:
+    ) -> dict[str, int] | None:
         """
         Find a template image on screen using template matching.
 
@@ -445,10 +446,10 @@ class ScreenCapture:
             Dict with x, y, width, height if found, None otherwise
         """
 
-        def _find_template() -> Optional[Dict[str, int]]:
+        def _find_template() -> dict[str, int] | None:
             try:
-                from PIL import Image, ImageGrab
                 import numpy as np
+                from PIL import Image, ImageGrab
 
                 tmpl = template
                 if tmpl is None and template_path:
@@ -472,6 +473,7 @@ class ScreenCapture:
 
                 try:
                     import cv2
+
                     from casare_rpa.utils.gpu import gpu_accelerated_template_match
 
                     screen_gray = cv2.cvtColor(np.array(screen), cv2.COLOR_RGB2GRAY)

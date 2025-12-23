@@ -5,12 +5,12 @@ This module contains the mapping of node class names to their module paths.
 Used for lazy loading nodes in the nodes package.
 """
 
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple, Union
 
 # Registry Key: Node Class Name
 # Registry Value: Module path string OR (module path, class name alias)
 # Module paths are relative to casare_rpa.nodes package
-NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
+NODE_REGISTRY: dict[str, str | tuple[str, str]] = {
     # Basic nodes
     "StartNode": "basic_nodes",
     "EndNode": "basic_nodes",
@@ -40,6 +40,13 @@ NODE_REGISTRY: Dict[str, Union[str, Tuple[str, str]]] = {
     "TableScraperNode": "browser.table_scraper_node",
     # Browser evaluate node
     "BrowserEvaluateNode": "browser.evaluate_node",
+    # Browser aliases for compatibility
+    "BrowserLaunchNode": ("browser.lifecycle", "LaunchBrowserNode"),
+    "BrowserNavigateNode": ("browser.navigation", "GoToURLNode"),
+    "BrowserWaitNode": ("wait_nodes", "WaitNode"),
+    "BrowserGetTextNode": ("data_nodes", "ExtractTextNode"),
+    "BrowserScreenshotNode": ("data_nodes", "ScreenshotNode"),
+    "BrowserCloseNode": ("browser.lifecycle", "CloseBrowserNode"),
     # CAPTCHA nodes
     "DetectCaptchaNode": "browser.captcha",
     "SolveCaptchaNode": "browser.captcha",

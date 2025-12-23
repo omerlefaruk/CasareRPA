@@ -8,13 +8,13 @@ Provides nodes for automating Microsoft Office applications:
 """
 
 from typing import Any, Dict
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-
 
 # Try to import win32com for Office automation
 try:
@@ -91,7 +91,7 @@ class ExcelOpenNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Excel Open",
     ):
         default_config = {
@@ -113,7 +113,7 @@ class ExcelOpenNode(BaseNode):
         self.add_output_port("app", DataType.ANY, "Excel application")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Excel open operation"""
         if not HAS_WIN32COM:
             raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
@@ -218,7 +218,7 @@ class ExcelReadCellNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Excel Read Cell",
     ):
         default_config = {"sheet": 1}
@@ -236,7 +236,7 @@ class ExcelReadCellNode(BaseNode):
         self.add_output_port("value", DataType.ANY, "Cell value")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Excel read cell operation"""
         workbook = self.get_input_value("workbook")
         sheet = self.get_input_value("sheet") or self.get_parameter("sheet", 1)
@@ -329,7 +329,7 @@ class ExcelWriteCellNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Excel Write Cell",
     ):
         default_config = {"sheet": 1}
@@ -347,7 +347,7 @@ class ExcelWriteCellNode(BaseNode):
         self.add_input_port("value", DataType.ANY, "Value to write")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Excel write cell operation"""
         workbook = self.get_input_value("workbook")
         sheet = self.get_input_value("sheet") or self.get_parameter("sheet", 1)
@@ -434,7 +434,7 @@ class ExcelGetRangeNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Excel Get Range",
     ):
         default_config = {"sheet": 1, "range": ""}
@@ -454,7 +454,7 @@ class ExcelGetRangeNode(BaseNode):
         self.add_output_port("columns", DataType.INTEGER, "Number of columns")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Excel get range operation"""
         workbook = self.get_input_value("workbook")
         sheet = self.get_input_value("sheet") or self.get_parameter("sheet", 1)
@@ -551,7 +551,7 @@ class ExcelCloseNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Excel Close",
     ):
         default_config = {"save": True, "quit_app": True}
@@ -567,7 +567,7 @@ class ExcelCloseNode(BaseNode):
         self.add_input_port("app", DataType.ANY, "Excel application", required=False)
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Excel close operation"""
         workbook = self.get_input_value("workbook")
         app = self.get_input_value("app")
@@ -649,7 +649,7 @@ class WordOpenNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Word Open",
     ):
         default_config = {"visible": False, "create_if_missing": False}
@@ -666,7 +666,7 @@ class WordOpenNode(BaseNode):
         self.add_output_port("app", DataType.ANY, "Word application")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Word open operation"""
         if not HAS_WIN32COM:
             raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
@@ -738,7 +738,7 @@ class WordGetTextNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Word Get Text",
     ):
         super().__init__(node_id, config or {})
@@ -752,7 +752,7 @@ class WordGetTextNode(BaseNode):
         self.add_output_port("word_count", DataType.INTEGER, "Word count")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Word get text operation"""
         document = self.get_input_value("document")
 
@@ -841,7 +841,7 @@ class WordReplaceTextNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Word Replace Text",
     ):
         default_config = {"match_case": False, "replace_all": True}
@@ -859,7 +859,7 @@ class WordReplaceTextNode(BaseNode):
         self.add_output_port("replacements", DataType.INTEGER, "Number of replacements")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Word replace text operation"""
         document = self.get_input_value("document")
         find_text = self.get_input_value("find_text")
@@ -960,7 +960,7 @@ class WordCloseNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Word Close",
     ):
         default_config = {"save": True, "quit_app": True}
@@ -976,7 +976,7 @@ class WordCloseNode(BaseNode):
         self.add_input_port("app", DataType.ANY, "Word application")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Word close operation"""
         document = self.get_input_value("document")
         app = self.get_input_value("app")
@@ -1088,7 +1088,7 @@ class OutlookSendEmailNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Outlook Send Email",
     ):
         default_config = {"html_body": False}
@@ -1108,7 +1108,7 @@ class OutlookSendEmailNode(BaseNode):
         self.add_input_port("attachments", DataType.ANY, "Attachment paths")
         self.add_output_port("success", DataType.BOOLEAN, "Email sent")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Outlook send email operation"""
         if not HAS_WIN32COM:
             raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
@@ -1210,7 +1210,7 @@ class OutlookReadEmailsNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Outlook Read Emails",
     ):
         default_config = {"folder": "Inbox", "count": 10, "unread_only": False}
@@ -1226,7 +1226,7 @@ class OutlookReadEmailsNode(BaseNode):
         self.add_output_port("count", DataType.INTEGER, "Number of emails")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Outlook read emails operation"""
         if not HAS_WIN32COM:
             raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
@@ -1315,7 +1315,7 @@ class OutlookGetInboxCountNode(BaseNode):
     def __init__(
         self,
         node_id: str = None,
-        config: Dict[str, Any] = None,
+        config: dict[str, Any] = None,
         name: str = "Outlook Get Inbox Count",
     ):
         default_config = {}
@@ -1331,7 +1331,7 @@ class OutlookGetInboxCountNode(BaseNode):
         self.add_output_port("unread_count", DataType.INTEGER, "Unread emails")
         self.add_output_port("success", DataType.BOOLEAN, "Operation succeeded")
 
-    async def execute(self, context) -> Dict[str, Any]:
+    async def execute(self, context) -> dict[str, Any]:
         """Execute Outlook get inbox count operation"""
         if not HAS_WIN32COM:
             raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")

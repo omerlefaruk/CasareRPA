@@ -13,11 +13,11 @@ from __future__ import annotations
 import statistics
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
-
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -41,9 +41,9 @@ class TimeSeriesDataPoint:
     timestamp: datetime
     value: float
     count: int = 1
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -57,7 +57,7 @@ class AggregationStrategy(ABC, Generic[T, V]):
     """Base class for aggregation strategies."""
 
     @abstractmethod
-    def aggregate(self, data: List[T]) -> V:
+    def aggregate(self, data: list[T]) -> V:
         """Aggregate data according to strategy."""
         pass
 
@@ -67,7 +67,7 @@ class AggregationStrategy(ABC, Generic[T, V]):
         pass
 
 
-class TimeBasedAggregationStrategy(AggregationStrategy[Dict[str, Any], List[TimeSeriesDataPoint]]):
+class TimeBasedAggregationStrategy(AggregationStrategy[dict[str, Any], list[TimeSeriesDataPoint]]):
     """
     Aggregates metrics over time periods.
 
@@ -104,7 +104,7 @@ class TimeBasedAggregationStrategy(AggregationStrategy[Dict[str, Any], List[Time
         self.value_field = value_field
         self.timestamp_field = timestamp_field
         self.max_buckets = max_buckets
-        self._buckets: Dict[datetime, List[float]] = defaultdict(list)
+        self._buckets: dict[datetime, list[float]] = defaultdict(list)
 
     def _truncate_to_period(self, dt: datetime) -> datetime:
         """Truncate datetime to period boundary."""
@@ -124,7 +124,7 @@ class TimeBasedAggregationStrategy(AggregationStrategy[Dict[str, Any], List[Time
             return dt.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         return dt
 
-    def add_data_point(self, record: Dict[str, Any]) -> None:
+    def add_data_point(self, record: dict[str, Any]) -> None:
         """
         Add a single data point to aggregation.
 
@@ -146,7 +146,7 @@ class TimeBasedAggregationStrategy(AggregationStrategy[Dict[str, Any], List[Time
             for key in sorted_keys[: len(sorted_keys) - self.max_buckets]:
                 del self._buckets[key]
 
-    def aggregate(self, data: List[Dict[str, Any]]) -> List[TimeSeriesDataPoint]:
+    def aggregate(self, data: list[dict[str, Any]]) -> list[TimeSeriesDataPoint]:
         """
         Aggregate data into time series.
 
@@ -163,10 +163,10 @@ class TimeBasedAggregationStrategy(AggregationStrategy[Dict[str, Any], List[Time
 
     def get_time_series(
         self,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 100,
-    ) -> List[TimeSeriesDataPoint]:
+    ) -> list[TimeSeriesDataPoint]:
         """
         Get aggregated time series.
 
@@ -219,7 +219,7 @@ class StatisticalResult:
     p95: float = 0.0
     p99: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "count": self.count,
@@ -251,7 +251,7 @@ class StatisticalAggregationStrategy(AggregationStrategy[float, StatisticalResul
             max_samples: Maximum samples to retain for calculation.
         """
         self.max_samples = max_samples
-        self._values: List[float] = []
+        self._values: list[float] = []
 
     def add_value(self, value: float) -> None:
         """Add a single value."""
@@ -260,7 +260,7 @@ class StatisticalAggregationStrategy(AggregationStrategy[float, StatisticalResul
             self._values = self._values[-self.max_samples :]
 
     @staticmethod
-    def percentile(sorted_data: List[float], p: float) -> float:
+    def percentile(sorted_data: list[float], p: float) -> float:
         """
         Calculate percentile value.
 
@@ -282,7 +282,7 @@ class StatisticalAggregationStrategy(AggregationStrategy[float, StatisticalResul
 
         return sorted_data[f] + d * (sorted_data[c] - sorted_data[f]) if c != f else sorted_data[f]
 
-    def aggregate(self, data: List[float]) -> StatisticalResult:
+    def aggregate(self, data: list[float]) -> StatisticalResult:
         """
         Compute statistics from data.
 
@@ -342,7 +342,7 @@ class DimensionalBucket:
     sum_value: float = 0.0
     min_value: float = float("inf")
     max_value: float = float("-inf")
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def avg_value(self) -> float:
@@ -356,7 +356,7 @@ class DimensionalBucket:
         self.min_value = min(self.min_value, value)
         self.max_value = max(self.max_value, value)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "dimension_key": self.dimension_key,
@@ -370,7 +370,7 @@ class DimensionalBucket:
 
 
 class DimensionalAggregationStrategy(
-    AggregationStrategy[Dict[str, Any], Dict[str, DimensionalBucket]]
+    AggregationStrategy[dict[str, Any], dict[str, DimensionalBucket]]
 ):
     """
     Aggregates metrics by dimension (robot, workflow, node, etc.).
@@ -382,7 +382,7 @@ class DimensionalAggregationStrategy(
         self,
         dimension_field: str,
         value_field: str = "value",
-        name_field: Optional[str] = None,
+        name_field: str | None = None,
     ):
         """
         Initialize dimensional aggregation.
@@ -395,9 +395,9 @@ class DimensionalAggregationStrategy(
         self.dimension_field = dimension_field
         self.value_field = value_field
         self.name_field = name_field
-        self._buckets: Dict[str, DimensionalBucket] = {}
+        self._buckets: dict[str, DimensionalBucket] = {}
 
-    def add_record(self, record: Dict[str, Any]) -> None:
+    def add_record(self, record: dict[str, Any]) -> None:
         """
         Add a record to aggregation.
 
@@ -424,7 +424,7 @@ class DimensionalAggregationStrategy(
 
         self._buckets[dimension_key].add(float(value))
 
-    def aggregate(self, data: List[Dict[str, Any]]) -> Dict[str, DimensionalBucket]:
+    def aggregate(self, data: list[dict[str, Any]]) -> dict[str, DimensionalBucket]:
         """
         Aggregate data by dimension.
 
@@ -439,7 +439,7 @@ class DimensionalAggregationStrategy(
 
         return self._buckets.copy()
 
-    def get_top_dimensions(self, n: int = 10, by: str = "count") -> List[DimensionalBucket]:
+    def get_top_dimensions(self, n: int = 10, by: str = "count") -> list[DimensionalBucket]:
         """
         Get top N dimensions by metric.
 
@@ -487,7 +487,7 @@ class RollingWindowResult:
     trend: str  # "increasing", "decreasing", "stable"
     change_rate: float  # Percentage change over window
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "window_size": self.window_size,
@@ -520,7 +520,7 @@ class RollingWindowAggregationStrategy(AggregationStrategy[float, RollingWindowR
         """
         self.window_size = window_size
         self.trend_threshold = trend_threshold
-        self._values: List[float] = []
+        self._values: list[float] = []
 
     def add_value(self, value: float) -> None:
         """
@@ -533,7 +533,7 @@ class RollingWindowAggregationStrategy(AggregationStrategy[float, RollingWindowR
         if len(self._values) > self.window_size:
             self._values = self._values[-self.window_size :]
 
-    def aggregate(self, data: List[float]) -> RollingWindowResult:
+    def aggregate(self, data: list[float]) -> RollingWindowResult:
         """
         Aggregate values and return window result.
 
@@ -628,7 +628,7 @@ class AggregationStrategyFactory:
     def create_dimensional(
         dimension_field: str,
         value_field: str = "duration_ms",
-        name_field: Optional[str] = None,
+        name_field: str | None = None,
     ) -> DimensionalAggregationStrategy:
         """Create dimensional aggregation strategy."""
         return DimensionalAggregationStrategy(

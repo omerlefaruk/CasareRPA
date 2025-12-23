@@ -13,6 +13,7 @@ Features:
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
+
 from PySide6.QtGui import QColor
 
 
@@ -29,7 +30,7 @@ class CategoryPath:
         -> CategoryPath(parts=["basic"])
     """
 
-    parts: Tuple[str, ...] = field(default_factory=tuple)
+    parts: tuple[str, ...] = field(default_factory=tuple)
 
     @classmethod
     def parse(cls, path: str) -> "CategoryPath":
@@ -92,7 +93,7 @@ class CategoryNode:
 
     name: str
     path: str
-    children: Dict[str, "CategoryNode"] = field(default_factory=dict)
+    children: dict[str, "CategoryNode"] = field(default_factory=dict)
     node_count: int = 0  # Direct nodes in this category
     total_count: int = 0  # Total nodes including all descendants
 
@@ -102,7 +103,7 @@ class CategoryNode:
             self.children[name] = CategoryNode(name=name, path=path)
         return self.children[name]
 
-    def get_all_paths(self) -> List[str]:
+    def get_all_paths(self) -> list[str]:
         """Get all paths in this subtree (including self)."""
         paths = [self.path] if self.path else []
         for child in self.children.values():
@@ -114,7 +115,7 @@ class CategoryNode:
         return self.total_count > 0
 
 
-def build_category_tree(categories: List[str]) -> CategoryNode:
+def build_category_tree(categories: list[str]) -> CategoryNode:
     """
     Build a hierarchical tree structure from flat category paths.
 
@@ -142,7 +143,7 @@ def build_category_tree(categories: List[str]) -> CategoryNode:
     return root
 
 
-def update_category_counts(tree: CategoryNode, category_node_counts: Dict[str, int]) -> None:
+def update_category_counts(tree: CategoryNode, category_node_counts: dict[str, int]) -> None:
     """
     Update node counts in the category tree.
 
@@ -334,7 +335,7 @@ def get_full_display_path(category_path: str, separator: str = " > ") -> str:
 # ROOT_CATEGORY_COLORS is kept for backward compatibility but colors
 # are now sourced from the unified theme system (theme.py).
 
-from casare_rpa.presentation.canvas.ui.theme import Theme, CATEGORY_COLOR_MAP
+from casare_rpa.presentation.canvas.ui.theme import CATEGORY_COLOR_MAP, Theme
 
 
 def _hex_to_rgb_tuple(hex_color: str) -> tuple:
@@ -435,7 +436,7 @@ def normalize_category(category_path: str) -> str:
     return "/".join(parts)
 
 
-def get_all_parent_paths(category_path: str) -> List[str]:
+def get_all_parent_paths(category_path: str) -> list[str]:
     """
     Get all parent paths for a category.
 
@@ -484,7 +485,7 @@ CATEGORY_ORDER = [
 ]
 
 
-def get_category_sort_key(category_path: str) -> Tuple[int, str]:
+def get_category_sort_key(category_path: str) -> tuple[int, str]:
     """
     Get sort key for a category path.
 

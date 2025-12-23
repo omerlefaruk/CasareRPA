@@ -146,7 +146,7 @@ FONTS = FontConstants()
 
 
 # Convenience dictionaries for programmatic access
-SPACING_MAP: Dict[str, int] = {
+SPACING_MAP: dict[str, int] = {
     "xs": SPACING.xs,
     "sm": SPACING.sm,
     "md": SPACING.md,
@@ -156,7 +156,7 @@ SPACING_MAP: Dict[str, int] = {
     "xxxl": SPACING.xxxl,
 }
 
-RADIUS_MAP: Dict[str, int] = {
+RADIUS_MAP: dict[str, int] = {
     "none": RADIUS.none,
     "sm": RADIUS.sm,
     "md": RADIUS.md,
@@ -165,7 +165,7 @@ RADIUS_MAP: Dict[str, int] = {
     "full": RADIUS.full,
 }
 
-FONT_SIZE_MAP: Dict[str, int] = {
+FONT_SIZE_MAP: dict[str, int] = {
     "xs": FONT_SIZES.xs,
     "sm": FONT_SIZES.sm,
     "md": FONT_SIZES.md,

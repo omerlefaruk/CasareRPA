@@ -109,7 +109,7 @@ class Test{node_name}:
 
     def generate_for_node(
         self,
-        node_class: Type,
+        node_class: type,
         write_file: bool = False,
     ) -> str:
         """
@@ -155,7 +155,7 @@ class Test{node_name}:
 
         return test_code
 
-    def _generate_port_assertions(self, node_class: Type) -> str:
+    def _generate_port_assertions(self, node_class: type) -> str:
         """Generate assertions for node ports."""
         lines = []
 
@@ -189,7 +189,7 @@ class Test{node_name}:
 
         return "\n".join(lines) if lines else "        pass  # No ports defined"
 
-    def _generate_input_setup(self, node_class: Type) -> str:
+    def _generate_input_setup(self, node_class: type) -> str:
         """Generate input setup code."""
         lines = []
 
@@ -218,7 +218,7 @@ class Test{node_name}:
 
     def _get_default_value(
         self,
-        data_type: Optional[Any],
+        data_type: Any | None,
         port_name: str,
     ) -> str:
         """Get default value representation for a data type."""
@@ -262,7 +262,7 @@ class Test{node_name}:
 
         return '"test_value"'
 
-    def _generate_additional_tests(self, node_class: Type) -> str:
+    def _generate_additional_tests(self, node_class: type) -> str:
         """Generate additional test cases based on node type."""
         tests = []
         node_name = node_class.__name__
@@ -365,8 +365,8 @@ class Test{node_name}:
 
     def generate_all(
         self,
-        node_registry: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, str]:
+        node_registry: dict[str, str] | None = None,
+    ) -> dict[str, str]:
         """
         Generate tests for all registered nodes.
 

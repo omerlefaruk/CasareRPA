@@ -30,7 +30,7 @@ class Port:
         name: str,
         port_type: PortType,
         data_type: DataType,
-        label: Optional[str] = None,
+        label: str | None = None,
         required: bool = True,
     ) -> None:
         """

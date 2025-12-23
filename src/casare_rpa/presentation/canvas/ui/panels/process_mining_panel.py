@@ -8,32 +8,31 @@ execution logs.
 
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
-    QDockWidget,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QPushButton,
-    QComboBox,
-    QLabel,
-    QHeaderView,
     QAbstractItemView,
-    QTabWidget,
-    QTextEdit,
-    QProgressBar,
-    QGroupBox,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QSpinBox,
+    QComboBox,
+    QDockWidget,
     QDoubleSpinBox,
     QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
-from PySide6.QtGui import QColor, QBrush, QFont
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -50,10 +49,10 @@ class AIEnhanceWorker(QObject):
 
     def __init__(
         self,
-        insights: List[Dict[str, Any]],
+        insights: list[dict[str, Any]],
         model: str,
         provider: str,
-        process_model: Dict[str, Any],
+        process_model: dict[str, Any],
     ) -> None:
         """Initialize worker with insights data."""
         super().__init__()
@@ -91,7 +90,7 @@ class AIEnhanceWorker(QObject):
         except Exception as e:
             self.error.emit(str(e))
 
-    async def _enhance_async(self) -> List[Dict[str, Any]]:
+    async def _enhance_async(self) -> list[dict[str, Any]]:
         """Async AI enhancement logic."""
         manager = self._get_llm_manager()
         if not manager:
@@ -181,7 +180,7 @@ class ProcessMiningPanel(QDockWidget):
     workflow_selected = Signal(str)
     insight_clicked = Signal(dict)
 
-    def __init__(self, parent: Optional[QWidget] = None, embedded: bool = False) -> None:
+    def __init__(self, parent: QWidget | None = None, embedded: bool = False) -> None:
         """Initialize the process mining panel.
 
         Args:
@@ -196,21 +195,21 @@ class ProcessMiningPanel(QDockWidget):
             self.setObjectName("ProcessMiningDock")
 
         self._miner = None
-        self._current_workflow: Optional[str] = None
+        self._current_workflow: str | None = None
         self._current_model = None
-        self._current_insights: List[Dict[str, Any]] = []
+        self._current_insights: list[dict[str, Any]] = []
         self._llm_manager = None
 
         # Pattern recognition and ROI
         self._pattern_recognizer = None
         self._frequent_miner = None
         self._roi_estimator = None
-        self._current_patterns: List[Any] = []
-        self._current_roi_estimates: List[Any] = []
+        self._current_patterns: list[Any] = []
+        self._current_roi_estimates: list[Any] = []
 
         # Thread management for AI enhancement
-        self._ai_thread: Optional[QThread] = None
-        self._ai_worker: Optional[AIEnhanceWorker] = None
+        self._ai_thread: QThread | None = None
+        self._ai_worker: AIEnhanceWorker | None = None
 
         if not embedded:
             self._setup_dock()
@@ -1240,7 +1239,7 @@ class ProcessMiningPanel(QDockWidget):
                 "Insufficient data for process discovery.\n" "Need at least 3 execution traces."
             )
 
-    def _update_model_display(self, model: Dict[str, Any]) -> None:
+    def _update_model_display(self, model: dict[str, Any]) -> None:
         """Update process model display."""
         if not model:
             return
@@ -1340,7 +1339,7 @@ class ProcessMiningPanel(QDockWidget):
             path = variant.get("sample_path", [])
             self._variant_path.setText(" -> ".join(path))
 
-    def _update_insights(self, insights: List[Dict[str, Any]]) -> None:
+    def _update_insights(self, insights: list[dict[str, Any]]) -> None:
         """Update insights tree."""
         self._insights_tree.clear()
 
@@ -1565,9 +1564,9 @@ class ProcessMiningPanel(QDockWidget):
         if self._llm_manager is None:
             try:
                 from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                    LLMResourceManager,
                     LLMConfig,
                     LLMProvider,
+                    LLMResourceManager,
                 )
 
                 self._llm_manager = LLMResourceManager()
@@ -1626,7 +1625,7 @@ class ProcessMiningPanel(QDockWidget):
         # Start
         self._ai_thread.start()
 
-    def _on_ai_enhance_finished(self, enhanced_insights: List[Dict[str, Any]]) -> None:
+    def _on_ai_enhance_finished(self, enhanced_insights: list[dict[str, Any]]) -> None:
         """Handle AI enhancement completion."""
         self._enhance_progress.hide()
         self._enhance_btn.setEnabled(True)
@@ -1680,8 +1679,8 @@ class ProcessMiningPanel(QDockWidget):
         if self._roi_estimator is None:
             try:
                 from casare_rpa.infrastructure.analytics.roi_estimator import (
-                    ROIEstimator,
                     ROIConfig,
+                    ROIEstimator,
                 )
 
                 config = ROIConfig(hourly_labor_cost=self._hourly_cost_spin.value())
@@ -1749,7 +1748,7 @@ class ProcessMiningPanel(QDockWidget):
             self._pattern_progress.hide()
             self._analyze_patterns_btn.setEnabled(True)
 
-    def _update_patterns_table(self, patterns: List[Any]) -> None:
+    def _update_patterns_table(self, patterns: list[Any]) -> None:
         """Update patterns table with discovered patterns."""
         self._patterns_table.setRowCount(0)
 
@@ -1876,8 +1875,8 @@ class ProcessMiningPanel(QDockWidget):
         # Update ROI estimator with current hourly cost
         try:
             from casare_rpa.infrastructure.analytics.roi_estimator import (
-                ROIEstimator,
                 ROIConfig,
+                ROIEstimator,
             )
 
             config = ROIConfig(hourly_labor_cost=self._hourly_cost_spin.value())
@@ -1915,7 +1914,7 @@ class ProcessMiningPanel(QDockWidget):
                 f"Failed to calculate ROI:\n\n{str(e)}",
             )
 
-    def _update_candidates_table(self, estimates: List[Any]) -> None:
+    def _update_candidates_table(self, estimates: list[Any]) -> None:
         """Update candidates table with ROI estimates."""
         self._candidates_table.setRowCount(0)
 
@@ -1976,7 +1975,7 @@ class ProcessMiningPanel(QDockWidget):
             rec_item.setToolTip(rec_text)
             self._candidates_table.setItem(row, 6, rec_item)
 
-    def _update_roi_summary(self, estimates: List[Any]) -> None:
+    def _update_roi_summary(self, estimates: list[Any]) -> None:
         """Update ROI summary statistics."""
         if not estimates:
             self._total_savings_label.setText("$0")

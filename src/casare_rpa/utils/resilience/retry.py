@@ -8,9 +8,11 @@ timeout handling, and error classification for robust node execution.
 import asyncio
 import functools
 import random
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Generic, Optional, Set, Type, TypeVar
+from typing import Any, Generic, Optional, Set, Type, TypeVar
+
 from loguru import logger
 
 
@@ -23,7 +25,7 @@ class ErrorCategory(Enum):
 
 
 # Common transient exceptions that should be retried
-TRANSIENT_EXCEPTIONS: Set[Type[Exception]] = {
+TRANSIENT_EXCEPTIONS: set[type[Exception]] = {
     asyncio.TimeoutError,
     ConnectionError,
     ConnectionResetError,
@@ -97,9 +99,9 @@ class RetryResult(Generic[T]):
     """
 
     success: bool
-    value: Optional[T]
+    value: T | None
     attempts: int
-    last_error: Optional[Exception] = None
+    last_error: Exception | None = None
 
     @property
     def failed(self) -> bool:
@@ -117,8 +119,8 @@ class RetryConfig:
         max_delay: float = 30.0,
         backoff_multiplier: float = 2.0,
         jitter: bool = True,
-        retry_on: Optional[Set[Type[Exception]]] = None,
-        retry_if: Optional[Callable[[Exception], bool]] = None,
+        retry_on: set[type[Exception]] | None = None,
+        retry_if: Callable[[Exception], bool] | None = None,
     ):
         """
         Initialize retry configuration.
@@ -203,7 +205,7 @@ DEFAULT_RETRY_CONFIG = RetryConfig(
 async def retry_async(
     func: Callable[..., Any],
     *args: Any,
-    config: Optional[RetryConfig] = None,
+    config: RetryConfig | None = None,
     **kwargs: Any,
 ) -> Any:
     """
@@ -222,7 +224,7 @@ async def retry_async(
         The last exception if all retries fail
     """
     config = config or DEFAULT_RETRY_CONFIG
-    last_exception: Optional[Exception] = None
+    last_exception: Exception | None = None
 
     for attempt in range(1, config.max_attempts + 1):
         try:
@@ -251,7 +253,7 @@ async def retry_async(
     raise RuntimeError("Retry logic error: no result or exception")
 
 
-def with_retry(config: Optional[RetryConfig] = None):
+def with_retry(config: RetryConfig | None = None):
     """
     Decorator to add retry logic to an async function.
 
@@ -275,7 +277,7 @@ def with_retry(config: Optional[RetryConfig] = None):
 async def with_timeout(
     coro: Any,
     timeout: float,
-    cleanup: Optional[Callable[[], Any]] = None,
+    cleanup: Callable[[], Any] | None = None,
 ) -> Any:
     """
     Execute a coroutine with timeout protection.
@@ -293,7 +295,7 @@ async def with_timeout(
     """
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning(f"Operation timed out after {timeout}s")
         if cleanup:
             try:
@@ -310,8 +312,8 @@ async def retry_with_timeout(
     func: Callable[..., Any],
     *args: Any,
     timeout: float = 30.0,
-    retry_config: Optional[RetryConfig] = None,
-    cleanup: Optional[Callable[[], Any]] = None,
+    retry_config: RetryConfig | None = None,
+    cleanup: Callable[[], Any] | None = None,
     **kwargs: Any,
 ) -> Any:
     """
@@ -332,7 +334,7 @@ async def retry_with_timeout(
         The last exception if all retries fail
     """
     retry_config = retry_config or DEFAULT_RETRY_CONFIG
-    last_exception: Optional[Exception] = None
+    last_exception: Exception | None = None
 
     for attempt in range(1, retry_config.max_attempts + 1):
         try:
@@ -410,7 +412,7 @@ async def retry_operation(
     delay_seconds: float = 1.0,
     backoff: float = 1.0,
     operation_name: str = "operation",
-    on_retry: Optional[Callable[[int, Exception], None]] = None,
+    on_retry: Callable[[int, Exception], None] | None = None,
 ) -> RetryResult[T]:
     """Execute an async operation with retry logic, returning a result object.
 
@@ -445,7 +447,7 @@ async def retry_operation(
             raise result.last_error
     """
     current_delay = delay_seconds
-    last_exception: Optional[Exception] = None
+    last_exception: Exception | None = None
 
     for attempt in range(1, max_attempts + 1):
         try:

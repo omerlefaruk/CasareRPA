@@ -1,10 +1,11 @@
-import typer
-import sys
-import subprocess
-import shutil
 import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
+
+import typer
 
 # Import robot CLI if available
 try:
@@ -89,6 +90,7 @@ app.add_typer(cache_app, name="cache")
 def cache_clear():
     """Clear all cache tiers (Memory and Disk)."""
     import asyncio
+
     from casare_rpa.infrastructure.cache.manager import TieredCacheManager
 
     async def _clear():
@@ -102,7 +104,7 @@ def cache_clear():
 @tunnel_app.command("start")
 def tunnel_start(
     port: int = typer.Option(8000, "--port", "-p", help="Port to expose"),
-    hostname: Optional[str] = typer.Option(
+    hostname: str | None = typer.Option(
         None, "--hostname", "-n", help="Custom hostname (if configured)"
     ),
 ):

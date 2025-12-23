@@ -11,20 +11,21 @@ Security:
 - Tokens are validated against JWT or robot API keys
 """
 
-from typing import Optional, Set
-from datetime import datetime
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from loguru import logger
 import asyncio
+from datetime import datetime
+from typing import Optional, Set
+
 import orjson
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from loguru import logger
 
 from casare_rpa.infrastructure.events import MonitoringEvent
 from casare_rpa.infrastructure.observability.metrics import get_metrics_collector
 from casare_rpa.infrastructure.orchestrator.api.auth import (
+    JWT_DEV_MODE,
+    _get_admin_api_key,
     decode_token,
     get_robot_authenticator,
-    _get_admin_api_key,
-    JWT_DEV_MODE,
 )
 from casare_rpa.infrastructure.orchestrator.api.models import (
     LiveJobUpdate,
@@ -38,8 +39,8 @@ WS_SEND_TIMEOUT = 1.0
 
 async def verify_websocket_token(
     websocket: WebSocket,
-    token: Optional[str] = None,
-) -> Optional[str]:
+    token: str | None = None,
+) -> str | None:
     """
     Verify WebSocket authentication token.
 
@@ -106,7 +107,7 @@ class ConnectionManager:
     """Manages WebSocket connections and broadcasts."""
 
     def __init__(self):
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
         """Accept new WebSocket connection."""
@@ -134,7 +135,7 @@ class ConnectionManager:
                     connection.send_text(orjson.dumps(message).decode()),
                     timeout=WS_SEND_TIMEOUT,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning("Client send timeout, disconnecting")
                 disconnected.add(connection)
             except Exception as e:
@@ -155,7 +156,7 @@ queue_metrics_manager = ConnectionManager()
 @router.websocket("/live-jobs")
 async def websocket_live_jobs(
     websocket: WebSocket,
-    token: Optional[str] = Query(None, alias="token"),
+    token: str | None = Query(None, alias="token"),
 ):
     """
     WebSocket endpoint for real-time job status updates.
@@ -201,7 +202,7 @@ async def websocket_live_jobs(
 @router.websocket("/robot-status")
 async def websocket_robot_status(
     websocket: WebSocket,
-    token: Optional[str] = Query(None, alias="token"),
+    token: str | None = Query(None, alias="token"),
 ):
     """
     WebSocket endpoint for robot heartbeat stream.
@@ -246,7 +247,7 @@ async def websocket_robot_status(
 @router.websocket("/queue-metrics")
 async def websocket_queue_metrics(
     websocket: WebSocket,
-    token: Optional[str] = Query(None, alias="token"),
+    token: str | None = Query(None, alias="token"),
 ):
     """
     WebSocket endpoint for queue depth updates.

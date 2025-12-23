@@ -28,7 +28,7 @@ Usage:
 import asyncio
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
@@ -38,7 +38,6 @@ from loguru import logger
 
 from casare_rpa.domain.entities.user import User, UserStatus
 from casare_rpa.infrastructure.security.rbac import SystemRole
-
 
 # =============================================================================
 # CONSTANTS
@@ -58,7 +57,7 @@ EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 class UserManagerError(Exception):
     """Base exception for user manager operations."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
         self.details = details or {}
         super().__init__(message)
@@ -95,7 +94,7 @@ class InvalidEmailError(UserManagerError):
 class AccountLockedError(UserManagerError):
     """Raised when account is locked."""
 
-    def __init__(self, user_id: UUID, locked_until: Optional[datetime] = None) -> None:
+    def __init__(self, user_id: UUID, locked_until: datetime | None = None) -> None:
         msg = f"Account is locked: {user_id}"
         if locked_until:
             msg += f" until {locked_until.isoformat()}"
@@ -124,8 +123,8 @@ class AuthenticationResult:
     """Result of authentication attempt."""
 
     status: AuthResult
-    user: Optional[User] = None
-    message: Optional[str] = None
+    user: User | None = None
+    message: str | None = None
     requires_mfa: bool = False
 
     @property
@@ -194,7 +193,7 @@ class UserManager:
     def __init__(
         self,
         db_client: Any,
-        password_policy: Optional[PasswordPolicy] = None,
+        password_policy: PasswordPolicy | None = None,
         max_login_attempts: int = 5,
         lockout_minutes: int = 30,
     ) -> None:
@@ -219,9 +218,9 @@ class UserManager:
         email: str,
         password: str,
         role: SystemRole = SystemRole.DEVELOPER,
-        display_name: Optional[str] = None,
-        tenant_id: Optional[UUID] = None,
-        created_by: Optional[UUID] = None,
+        display_name: str | None = None,
+        tenant_id: UUID | None = None,
+        created_by: UUID | None = None,
     ) -> User:
         """
         Create a new user account.
@@ -262,7 +261,7 @@ class UserManager:
 
         # Create user
         user_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         user = User(
             id=user_id,
@@ -362,11 +361,11 @@ class UserManager:
             user=user,
         )
 
-    async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    async def get_user_by_id(self, user_id: UUID) -> User | None:
         """Get user by ID."""
         return await self._get_user_by_id(user_id)
 
-    async def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> User | None:
         """Get user by email."""
         return await self._get_user_by_email(email.strip().lower())
 
@@ -471,7 +470,7 @@ class UserManager:
             raise UserNotFoundError(str(user_id))
 
         user.status = UserStatus.INACTIVE
-        user.updated_at = datetime.now(timezone.utc)
+        user.updated_at = datetime.now(UTC)
         await self._update_user(user)
         logger.info(f"User deactivated: {user_id}")
         return True
@@ -521,11 +520,11 @@ class UserManager:
 
     async def list_users(
         self,
-        tenant_id: Optional[UUID] = None,
+        tenant_id: UUID | None = None,
         include_inactive: bool = False,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[User]:
+    ) -> list[User]:
         """
         List users with optional filtering.
 
@@ -661,7 +660,7 @@ class UserManager:
         else:
             raise UserManagerError("Unsupported database client type")
 
-    async def _get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    async def _get_user_by_id(self, user_id: UUID) -> User | None:
         """Get user by ID from database."""
         if hasattr(self._client, "table"):
             response = (
@@ -683,7 +682,7 @@ class UserManager:
 
         raise UserManagerError("Unsupported database client type")
 
-    async def _get_user_by_email(self, email: str) -> Optional[User]:
+    async def _get_user_by_email(self, email: str) -> User | None:
         """Get user by email from database."""
         if hasattr(self._client, "table"):
             response = self._client.table(self._table_name).select("*").eq("email", email).execute()
@@ -705,11 +704,11 @@ class UserManager:
 
     async def _list_users(
         self,
-        tenant_id: Optional[UUID],
+        tenant_id: UUID | None,
         include_inactive: bool,
         limit: int,
         offset: int,
-    ) -> List[User]:
+    ) -> list[User]:
         """List users from database."""
         if hasattr(self._client, "table"):
             query = self._client.table(self._table_name).select("*")
@@ -752,7 +751,7 @@ class UserManager:
 
         raise UserManagerError("Unsupported database client type")
 
-    def _row_to_user(self, row: Dict[str, Any]) -> User:
+    def _row_to_user(self, row: dict[str, Any]) -> User:
         """Convert a database row to User entity."""
         return User(
             id=UUID(str(row["id"])),
@@ -769,11 +768,11 @@ class UserManager:
             locked_until=self._parse_datetime(row.get("locked_until")),
             last_login=self._parse_datetime(row.get("last_login")),
             last_password_change=self._parse_datetime(row.get("last_password_change")),
-            created_at=self._parse_datetime(row.get("created_at")) or datetime.now(timezone.utc),
-            updated_at=self._parse_datetime(row.get("updated_at")) or datetime.now(timezone.utc),
+            created_at=self._parse_datetime(row.get("created_at")) or datetime.now(UTC),
+            updated_at=self._parse_datetime(row.get("updated_at")) or datetime.now(UTC),
         )
 
-    def _parse_datetime(self, value: Any) -> Optional[datetime]:
+    def _parse_datetime(self, value: Any) -> datetime | None:
         """Parse datetime from various formats."""
         if value is None:
             return None

@@ -6,8 +6,8 @@ This is a domain service that manages variable and credential scoping
 across global, project, and scenario levels.
 """
 
-from typing import Any, Dict, Optional
 import logging
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +35,11 @@ class ProjectContext:
     def __init__(
         self,
         project: Project,
-        scenario: Optional[Scenario] = None,
-        project_variables: Optional[VariablesFile] = None,
-        project_credentials: Optional[CredentialBindingsFile] = None,
-        global_variables: Optional[VariablesFile] = None,
-        global_credentials: Optional[CredentialBindingsFile] = None,
+        scenario: Scenario | None = None,
+        project_variables: VariablesFile | None = None,
+        project_credentials: CredentialBindingsFile | None = None,
+        global_variables: VariablesFile | None = None,
+        global_credentials: CredentialBindingsFile | None = None,
     ) -> None:
         """
         Initialize project context.
@@ -84,17 +84,17 @@ class ProjectContext:
         return self._project.name
 
     @property
-    def scenario(self) -> Optional[Scenario]:
+    def scenario(self) -> Scenario | None:
         """Get the scenario (if any)."""
         return self._scenario
 
     @property
-    def scenario_id(self) -> Optional[str]:
+    def scenario_id(self) -> str | None:
         """Get the scenario ID (if any)."""
         return self._scenario.id if self._scenario else None
 
     @property
-    def scenario_name(self) -> Optional[str]:
+    def scenario_name(self) -> str | None:
         """Get the scenario name (if any)."""
         return self._scenario.name if self._scenario else None
 
@@ -102,7 +102,7 @@ class ProjectContext:
     # Variable Access
     # =========================================================================
 
-    def get_global_variables(self) -> Dict[str, Any]:
+    def get_global_variables(self) -> dict[str, Any]:
         """
         Get global variable default values.
 
@@ -113,7 +113,7 @@ class ProjectContext:
             return {}
         return self._global_variables.get_default_values()
 
-    def get_project_variables(self) -> Dict[str, Any]:
+    def get_project_variables(self) -> dict[str, Any]:
         """
         Get project variable default values.
 
@@ -124,7 +124,7 @@ class ProjectContext:
             return {}
         return self._project_variables.get_default_values()
 
-    def get_scenario_variables(self) -> Dict[str, Any]:
+    def get_scenario_variables(self) -> dict[str, Any]:
         """
         Get scenario variable values.
 
@@ -135,7 +135,7 @@ class ProjectContext:
             return {}
         return self._scenario.variable_values.copy()
 
-    def get_merged_variables(self) -> Dict[str, Any]:
+    def get_merged_variables(self) -> dict[str, Any]:
         """
         Get merged variables from all scopes.
 
@@ -195,7 +195,7 @@ class ProjectContext:
     # Credential Access
     # =========================================================================
 
-    def resolve_credential_path(self, alias: str) -> Optional[str]:
+    def resolve_credential_path(self, alias: str) -> str | None:
         """
         Resolve a credential alias to its Vault path.
 
@@ -227,7 +227,7 @@ class ProjectContext:
 
         return None
 
-    def get_all_credential_aliases(self) -> Dict[str, str]:
+    def get_all_credential_aliases(self) -> dict[str, str]:
         """
         Get all available credential aliases with their Vault paths.
 

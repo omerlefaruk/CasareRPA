@@ -15,26 +15,25 @@ import asyncio
 import socket
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, QTimer
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
-    QWizard,
-    QWizardPage,
-    QVBoxLayout,
-    QHBoxLayout,
+    QCheckBox,
+    QComboBox,
     QFormLayout,
+    QFrame,
+    QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
-    QCheckBox,
-    QSpinBox,
-    QComboBox,
-    QGroupBox,
-    QPushButton,
-    QTextEdit,
     QProgressBar,
-    QFrame,
+    QPushButton,
+    QSpinBox,
+    QTextEdit,
+    QVBoxLayout,
+    QWizard,
+    QWizardPage,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.setup.config_manager import (
     ClientConfig,
@@ -65,7 +64,7 @@ class SetupWizard(QWizard):
 
     def __init__(
         self,
-        config_manager: Optional[ClientConfigManager] = None,
+        config_manager: ClientConfigManager | None = None,
         parent=None,
     ) -> None:
         """
@@ -761,7 +760,7 @@ class SummaryPage(QWizardPage):
         self.summary_text.setPlainText("\n".join(lines))
 
 
-def show_setup_wizard_if_needed(parent=None) -> Optional[ClientConfig]:
+def show_setup_wizard_if_needed(parent=None) -> ClientConfig | None:
     """
     Show setup wizard if first-run configuration is needed.
 

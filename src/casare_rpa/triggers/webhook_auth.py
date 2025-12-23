@@ -46,10 +46,10 @@ class WebhookAuthenticator:
     @classmethod
     def verify_request(
         cls,
-        config: Dict[str, Any],
-        headers: Dict[str, str],
+        config: dict[str, Any],
+        headers: dict[str, str],
         body: bytes,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Verify webhook request authentication.
 
@@ -86,7 +86,7 @@ class WebhookAuthenticator:
             return False, f"Unknown auth_type: {auth_type}"
 
     @classmethod
-    def _verify_api_key(cls, secret: str, headers: Dict[str, str]) -> Tuple[bool, Optional[str]]:
+    def _verify_api_key(cls, secret: str, headers: dict[str, str]) -> tuple[bool, str | None]:
         """Verify API key authentication."""
         # Check common API key header locations
         api_key = (
@@ -102,7 +102,7 @@ class WebhookAuthenticator:
         return True, None
 
     @classmethod
-    def _verify_bearer(cls, secret: str, headers: Dict[str, str]) -> Tuple[bool, Optional[str]]:
+    def _verify_bearer(cls, secret: str, headers: dict[str, str]) -> tuple[bool, str | None]:
         """Verify Bearer token authentication."""
         auth_header = headers.get("authorization", "")
 
@@ -121,10 +121,10 @@ class WebhookAuthenticator:
         cls,
         auth_type: str,
         secret: str,
-        headers: Dict[str, str],
+        headers: dict[str, str],
         body: bytes,
-        config: Dict[str, Any],
-    ) -> Tuple[bool, Optional[str]]:
+        config: dict[str, Any],
+    ) -> tuple[bool, str | None]:
         """
         Verify HMAC signature.
 
@@ -195,8 +195,8 @@ class WebhookAuthenticator:
 
     @classmethod
     def _parse_signature(
-        cls, signature_header: str, auth_type: str, config: Dict[str, Any]
-    ) -> Optional[str]:
+        cls, signature_header: str, auth_type: str, config: dict[str, Any]
+    ) -> str | None:
         """
         Parse signature from various header formats.
 
@@ -223,7 +223,7 @@ class WebhookAuthenticator:
         return signature_header
 
     @classmethod
-    def _extract_stripe_timestamp(cls, signature_header: str) -> Optional[str]:
+    def _extract_stripe_timestamp(cls, signature_header: str) -> str | None:
         """Extract timestamp from Stripe signature header."""
         for part in signature_header.split(","):
             if part.strip().startswith("t="):
@@ -264,10 +264,10 @@ class WebhookAuthenticator:
 
 
 def verify_webhook_auth(
-    config: Dict[str, Any],
-    headers: Dict[str, str],
+    config: dict[str, Any],
+    headers: dict[str, str],
     body: bytes,
-) -> Tuple[bool, Optional[str]]:
+) -> tuple[bool, str | None]:
     """
     Convenience function for webhook authentication.
 

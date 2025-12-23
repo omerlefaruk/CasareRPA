@@ -1,8 +1,10 @@
 import asyncio
+
+from loguru import logger
+
 from casare_rpa.domain.events import get_event_bus
 from casare_rpa.domain.events.workflow_events import WorkflowStarted
 from casare_rpa.infrastructure.cache.manager import TieredCacheManager
-from loguru import logger
 
 
 class CacheInvalidator:

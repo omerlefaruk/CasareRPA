@@ -38,93 +38,83 @@ Usage:
     agent = SmartWorkflowAgent(config=PERFORMANCE_OPTIMIZED_CONFIG)
 """
 
-from casare_rpa.infrastructure.ai.registry_dumper import (
-    dump_node_manifest,
-    manifest_to_markdown,
-    manifest_to_compact_markdown,
-    manifest_to_json,
-    get_nodes_by_category,
-    get_cached_manifest,
-    clear_manifest_cache,
-    NodeManifest,
-    NodeManifestEntry,
-    PortManifestEntry,
-)
-
 from casare_rpa.infrastructure.ai.agent import (
-    SmartWorkflowAgent,
-    WorkflowGenerationResult,
     GenerationAttempt,
     HeadlessWorkflowSandbox,
-    generate_smart_workflow,
-    WorkflowGenerationError,
-    LLMCallError,
     JSONParseError,
-    ValidationError,
+    LLMCallError,
     MaxRetriesExceededError,
+    SmartWorkflowAgent,
+    ValidationError,
+    WorkflowGenerationError,
+    WorkflowGenerationResult,
+    generate_smart_workflow,
 )
-
-from casare_rpa.infrastructure.ai.ai_recovery_analyzer import (
-    AIRecoveryAnalyzer,
-    RecoveryRecommendation,
-    RecoveryStrategy,
-    ErrorContext,
+from casare_rpa.infrastructure.ai.agent_executor import (
+    AgentExecutor,
+    AgentResult,
+    AgentStep,
+    StepType,
 )
-
-from casare_rpa.infrastructure.ai.smart_selector_generator import (
-    SmartSelectorGenerator,
-    GeneratedSelector,
-)
-
 from casare_rpa.infrastructure.ai.agent_tools import (
-    ParameterSpec,
     AgentTool,
     AgentToolRegistry,
+    ParameterSpec,
     get_default_tool_registry,
 )
-
-from casare_rpa.infrastructure.ai.agent_executor import (
-    StepType,
-    AgentExecutor,
-    AgentStep,
-    AgentResult,
+from casare_rpa.infrastructure.ai.ai_recovery_analyzer import (
+    AIRecoveryAnalyzer,
+    ErrorContext,
+    RecoveryRecommendation,
+    RecoveryStrategy,
 )
-
 from casare_rpa.infrastructure.ai.embedding_manager import (
-    EmbeddingManager,
-    EmbeddingConfig,
-    EmbeddingResult,
     BatchEmbeddingResult,
+    EmbeddingConfig,
+    EmbeddingManager,
     EmbeddingMetrics,
+    EmbeddingResult,
     get_embedding_manager,
 )
-
-from casare_rpa.infrastructure.ai.vector_store import (
-    VectorStore,
-    Document,
-    SearchResult,
-    VectorStoreMetrics,
-    get_vector_store,
-    get_default_persist_path,
+from casare_rpa.infrastructure.ai.page_analyzer import (
+    FormField,
+    FormInfo,
+    PageAnalyzer,
+    PageContext,
+    analyze_page,
 )
-
+from casare_rpa.infrastructure.ai.playwright_mcp import (
+    MCPToolResult,
+    PlaywrightMCPClient,
+    fetch_page_context,
+)
 from casare_rpa.infrastructure.ai.prompt_template_manager import (
     PromptTemplateManager,
     get_prompt_template_manager,
 )
-
-from casare_rpa.infrastructure.ai.playwright_mcp import (
-    PlaywrightMCPClient,
-    MCPToolResult,
-    fetch_page_context,
+from casare_rpa.infrastructure.ai.registry_dumper import (
+    NodeManifest,
+    NodeManifestEntry,
+    PortManifestEntry,
+    clear_manifest_cache,
+    dump_node_manifest,
+    get_cached_manifest,
+    get_nodes_by_category,
+    manifest_to_compact_markdown,
+    manifest_to_json,
+    manifest_to_markdown,
 )
-
-from casare_rpa.infrastructure.ai.page_analyzer import (
-    PageAnalyzer,
-    PageContext,
-    FormInfo,
-    FormField,
-    analyze_page,
+from casare_rpa.infrastructure.ai.smart_selector_generator import (
+    GeneratedSelector,
+    SmartSelectorGenerator,
+)
+from casare_rpa.infrastructure.ai.vector_store import (
+    Document,
+    SearchResult,
+    VectorStore,
+    VectorStoreMetrics,
+    get_default_persist_path,
+    get_vector_store,
 )
 
 __all__ = [

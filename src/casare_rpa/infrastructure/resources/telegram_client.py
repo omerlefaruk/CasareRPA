@@ -9,6 +9,7 @@ import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
+
 import aiohttp
 from loguru import logger
 
@@ -19,8 +20,8 @@ class TelegramAPIError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[int] = None,
-        description: Optional[str] = None,
+        error_code: int | None = None,
+        description: str | None = None,
     ):
         self.error_code = error_code
         self.description = description
@@ -50,8 +51,8 @@ class TelegramMessage:
     message_id: int
     chat_id: int
     date: int
-    text: Optional[str] = None
-    from_user: Optional[dict] = None
+    text: str | None = None
+    from_user: dict | None = None
     raw: dict = field(default_factory=dict)
 
     @classmethod
@@ -92,7 +93,7 @@ class TelegramClient:
             config: TelegramConfig with bot token and settings
         """
         self.config = config
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self) -> "TelegramClient":
         """Enter async context manager."""
@@ -119,8 +120,8 @@ class TelegramClient:
     async def _request(
         self,
         method: str,
-        data: Optional[dict] = None,
-        files: Optional[dict[str, tuple]] = None,
+        data: dict | None = None,
+        files: dict[str, tuple] | None = None,
     ) -> dict:
         """
         Make a request to the Telegram Bot API.
@@ -196,12 +197,12 @@ class TelegramClient:
 
     async def send_message(
         self,
-        chat_id: Union[int, str],
+        chat_id: int | str,
         text: str,
-        parse_mode: Optional[str] = None,
+        parse_mode: str | None = None,
         disable_notification: bool = False,
-        reply_to_message_id: Optional[int] = None,
-        reply_markup: Optional[dict] = None,
+        reply_to_message_id: int | None = None,
+        reply_markup: dict | None = None,
     ) -> TelegramMessage:
         """
         Send a text message.
@@ -237,12 +238,12 @@ class TelegramClient:
 
     async def send_photo(
         self,
-        chat_id: Union[int, str],
-        photo: Union[str, Path, bytes],
-        caption: Optional[str] = None,
-        parse_mode: Optional[str] = None,
+        chat_id: int | str,
+        photo: str | Path | bytes,
+        caption: str | None = None,
+        parse_mode: str | None = None,
         disable_notification: bool = False,
-        reply_to_message_id: Optional[int] = None,
+        reply_to_message_id: int | None = None,
     ) -> TelegramMessage:
         """
         Send a photo.
@@ -287,13 +288,13 @@ class TelegramClient:
 
     async def send_document(
         self,
-        chat_id: Union[int, str],
-        document: Union[str, Path, bytes],
-        filename: Optional[str] = None,
-        caption: Optional[str] = None,
-        parse_mode: Optional[str] = None,
+        chat_id: int | str,
+        document: str | Path | bytes,
+        filename: str | None = None,
+        caption: str | None = None,
+        parse_mode: str | None = None,
         disable_notification: bool = False,
-        reply_to_message_id: Optional[int] = None,
+        reply_to_message_id: int | None = None,
     ) -> TelegramMessage:
         """
         Send a document/file.
@@ -338,11 +339,11 @@ class TelegramClient:
 
     async def send_location(
         self,
-        chat_id: Union[int, str],
+        chat_id: int | str,
         latitude: float,
         longitude: float,
         disable_notification: bool = False,
-        reply_to_message_id: Optional[int] = None,
+        reply_to_message_id: int | None = None,
     ) -> TelegramMessage:
         """
         Send a location.
@@ -377,7 +378,7 @@ class TelegramClient:
     async def set_webhook(
         self,
         url: str,
-        allowed_updates: Optional[list[str]] = None,
+        allowed_updates: list[str] | None = None,
         drop_pending_updates: bool = False,
     ) -> bool:
         """
@@ -423,10 +424,10 @@ class TelegramClient:
 
     async def get_updates(
         self,
-        offset: Optional[int] = None,
+        offset: int | None = None,
         limit: int = 100,
         timeout: int = 30,
-        allowed_updates: Optional[list[str]] = None,
+        allowed_updates: list[str] | None = None,
     ) -> list[dict]:
         """
         Get updates via long polling.
@@ -463,11 +464,11 @@ class TelegramClient:
 
     async def edit_message_text(
         self,
-        chat_id: Union[int, str],
+        chat_id: int | str,
         message_id: int,
         text: str,
-        parse_mode: Optional[str] = None,
-        reply_markup: Optional[dict] = None,
+        parse_mode: str | None = None,
+        reply_markup: dict | None = None,
     ) -> TelegramMessage:
         """
         Edit a message text.
@@ -499,11 +500,11 @@ class TelegramClient:
 
     async def edit_message_caption(
         self,
-        chat_id: Union[int, str],
+        chat_id: int | str,
         message_id: int,
         caption: str,
-        parse_mode: Optional[str] = None,
-        reply_markup: Optional[dict] = None,
+        parse_mode: str | None = None,
+        reply_markup: dict | None = None,
     ) -> TelegramMessage:
         """
         Edit a message caption.
@@ -535,7 +536,7 @@ class TelegramClient:
 
     async def delete_message(
         self,
-        chat_id: Union[int, str],
+        chat_id: int | str,
         message_id: int,
     ) -> bool:
         """
@@ -561,10 +562,10 @@ class TelegramClient:
 
     async def send_media_group(
         self,
-        chat_id: Union[int, str],
+        chat_id: int | str,
         media: list[dict],
         disable_notification: bool = False,
-        reply_to_message_id: Optional[int] = None,
+        reply_to_message_id: int | None = None,
     ) -> list[TelegramMessage]:
         """
         Send a group of photos or videos as an album.
@@ -599,9 +600,9 @@ class TelegramClient:
     async def answer_callback_query(
         self,
         callback_query_id: str,
-        text: Optional[str] = None,
+        text: str | None = None,
         show_alert: bool = False,
-        url: Optional[str] = None,
+        url: str | None = None,
         cache_time: int = 0,
     ) -> bool:
         """

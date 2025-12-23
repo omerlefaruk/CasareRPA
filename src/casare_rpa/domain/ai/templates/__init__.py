@@ -18,19 +18,19 @@ Available Templates:
 """
 
 from casare_rpa.domain.ai.templates.common_templates import (
-    WorkflowTemplate,
-    TemplateRegistry,
-    get_template,
-    get_template_by_keywords,
-    list_templates,
-    get_template_registry,
+    TEMPLATE_API_CALL,
+    TEMPLATE_DESKTOP_CLICK,
+    TEMPLATE_FILE_DOWNLOAD,
+    TEMPLATE_FORM_FILLING,
     # Template IDs
     TEMPLATE_WEB_LOGIN,
     TEMPLATE_WEB_SCRAPING,
-    TEMPLATE_FORM_FILLING,
-    TEMPLATE_FILE_DOWNLOAD,
-    TEMPLATE_API_CALL,
-    TEMPLATE_DESKTOP_CLICK,
+    TemplateRegistry,
+    WorkflowTemplate,
+    get_template,
+    get_template_by_keywords,
+    get_template_registry,
+    list_templates,
 )
 
 __all__ = [

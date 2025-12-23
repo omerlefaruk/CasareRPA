@@ -3,12 +3,14 @@ Cloud Service Interface
 Handles communication with Supabase.
 """
 
-import os
 import asyncio
-from typing import List, Dict, Any
-from loguru import logger
+import os
+from typing import Any, Dict, List
+
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from loguru import logger
+
+from supabase import Client, create_client
 
 load_dotenv()
 
@@ -35,7 +37,7 @@ class CloudService:
         except Exception as e:
             logger.error(f"Failed to connect to Supabase: {e}")
 
-    async def get_robots(self) -> List[Dict[str, Any]]:
+    async def get_robots(self) -> list[dict[str, Any]]:
         """Fetch list of connected robots."""
         if not self.connected:
             await self.connect()
@@ -56,7 +58,7 @@ class CloudService:
             logger.error(f"Failed to fetch robots: {e}")
             return []
 
-    async def get_jobs(self) -> List[Dict[str, Any]]:
+    async def get_jobs(self) -> list[dict[str, Any]]:
         """Fetch job history."""
         if not self.connected:
             await self.connect()

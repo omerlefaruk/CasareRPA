@@ -4,18 +4,18 @@ Toolbar Widget for Element Selector Dialog.
 Contains Pick/Stop buttons, mode selection, settings, and history dropdown.
 """
 
-from typing import Optional, List
+from typing import List, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QPushButton,
-    QToolButton,
+    QButtonGroup,
     QComboBox,
+    QHBoxLayout,
     QLabel,
     QMenu,
-    QButtonGroup,
+    QPushButton,
+    QToolButton,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import PickingMode
@@ -35,7 +35,7 @@ class ModeButton(QToolButton):
         self,
         icon_text: str,
         tooltip: str,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setText(icon_text)
@@ -90,7 +90,7 @@ class ToolbarWidget(QWidget):
     settings_requested = Signal()
     history_selected = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._is_picking = False
         self._setup_ui()
@@ -346,7 +346,7 @@ class ToolbarWidget(QWidget):
             self._image_btn.setChecked(False)
             self._mode_group.setExclusive(True)
 
-    def _update_history_menu(self, history: List[str]) -> None:
+    def _update_history_menu(self, history: list[str]) -> None:
         """Update history dropdown menu."""
         self._history_menu.clear()
 
@@ -390,7 +390,7 @@ class ToolbarWidget(QWidget):
         self._status_label.setText(message)
         self._status_label.setStyleSheet(f"color: {color}; font-size: 11px; margin-left: 8px;")
 
-    def set_history(self, history: List[str]) -> None:
+    def set_history(self, history: list[str]) -> None:
         """Update history dropdown."""
         self._update_history_menu(history)
 

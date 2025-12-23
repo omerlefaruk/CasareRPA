@@ -4,16 +4,15 @@ CasareRPA - Document Processing Nodes
 Nodes for intelligent document processing using LLM vision models.
 """
 
-from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
 import json
 from abc import abstractmethod
 from typing import Any, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -69,7 +68,7 @@ class DocumentBaseNode(BaseNode):
 
         return manager
 
-    def _get_api_key(self, context: Any) -> Optional[str]:
+    def _get_api_key(self, context: Any) -> str | None:
         """Get API key from context or environment."""
         import os
 

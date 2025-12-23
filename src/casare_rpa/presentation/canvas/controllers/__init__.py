@@ -38,40 +38,26 @@ Usage:
     workflow_controller.initialize()
 """
 
+from casare_rpa.presentation.canvas.controllers.autosave_controller import (
+    AutosaveController,
+)
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
-from casare_rpa.presentation.canvas.controllers.workflow_controller import (
-    WorkflowController,
+from casare_rpa.presentation.canvas.controllers.connection_controller import (
+    ConnectionController,
+)
+from casare_rpa.presentation.canvas.controllers.event_bus_controller import (
+    Event,
+    EventBusController,
+    EventTypes,
 )
 from casare_rpa.presentation.canvas.controllers.execution_controller import (
     ExecutionController,
 )
-from casare_rpa.presentation.canvas.controllers.node_controller import NodeController
-from casare_rpa.presentation.canvas.controllers.connection_controller import (
-    ConnectionController,
-)
-from casare_rpa.presentation.canvas.controllers.panel_controller import PanelController
 from casare_rpa.presentation.canvas.controllers.menu_controller import MenuController
-from casare_rpa.presentation.canvas.controllers.event_bus_controller import (
-    EventBusController,
-    EventTypes,
-    Event,
-)
-from casare_rpa.presentation.canvas.controllers.viewport_controller import (
-    ViewportController,
-)
-
-# TriggerController and SchedulingController removed - use trigger nodes instead
-from casare_rpa.presentation.canvas.controllers.ui_state_controller import (
-    UIStateController,
-)
-from casare_rpa.presentation.canvas.controllers.selector_controller import (
-    SelectorController,
-)
+from casare_rpa.presentation.canvas.controllers.node_controller import NodeController
+from casare_rpa.presentation.canvas.controllers.panel_controller import PanelController
 from casare_rpa.presentation.canvas.controllers.preferences_controller import (
     PreferencesController,
-)
-from casare_rpa.presentation.canvas.controllers.autosave_controller import (
-    AutosaveController,
 )
 from casare_rpa.presentation.canvas.controllers.project_autosave_controller import (
     ProjectAutosaveController,
@@ -79,9 +65,23 @@ from casare_rpa.presentation.canvas.controllers.project_autosave_controller impo
 from casare_rpa.presentation.canvas.controllers.project_controller import (
     ProjectController,
 )
-from casare_rpa.presentation.canvas.controllers.robot_controller import RobotController
 from casare_rpa.presentation.canvas.controllers.recording_controller import (
     RecordingController,
+)
+from casare_rpa.presentation.canvas.controllers.robot_controller import RobotController
+from casare_rpa.presentation.canvas.controllers.selector_controller import (
+    SelectorController,
+)
+
+# TriggerController and SchedulingController removed - use trigger nodes instead
+from casare_rpa.presentation.canvas.controllers.ui_state_controller import (
+    UIStateController,
+)
+from casare_rpa.presentation.canvas.controllers.viewport_controller import (
+    ViewportController,
+)
+from casare_rpa.presentation.canvas.controllers.workflow_controller import (
+    WorkflowController,
 )
 
 __all__ = [

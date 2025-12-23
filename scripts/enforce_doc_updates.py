@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import subprocess
 import sys
-
+from pathlib import Path
 
 DOC_ROOTS = (".agent/", ".brain/", "docs/", "agent-rules/")
 DOC_FILES = {"AGENTS.md", "CLAUDE.md", "GEMINI.md"}

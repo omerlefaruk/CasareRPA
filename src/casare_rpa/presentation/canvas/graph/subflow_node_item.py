@@ -17,28 +17,27 @@ All colors are sourced from the unified theme system (theme.py).
 
 from typing import Optional
 
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
-    QPainter,
-    QPen,
-    QColor,
     QBrush,
-    QPainterPath,
+    QColor,
     QFont,
     QLinearGradient,
+    QPainter,
+    QPainterPath,
+    QPen,
 )
 from PySide6.QtWidgets import QGraphicsItem
 
 from casare_rpa.presentation.canvas.graph.custom_node_item import (
     CasareNodeItem,
     LODLevel,
-    get_lod_manager,
     _high_performance_mode,
+    get_lod_manager,
 )
 
 # Import unified theme system for all colors
 from casare_rpa.presentation.canvas.ui.theme import Theme, _hex_to_qcolor
-
 
 # ============================================================================
 # SUBFLOW NODE VISUAL CONSTANTS - Delegated to unified theme
@@ -54,16 +53,16 @@ _STACK_LAYER_COUNT = 2
 _STACK_OFFSET = 4  # pixels per layer
 
 # Color caches - initialized lazily
-_SUBFLOW_HEADER_COLOR: Optional[QColor] = None
+_SUBFLOW_HEADER_COLOR: QColor | None = None
 _SUBFLOW_HEADER_ALPHA = 153  # 60% opacity
-_BADGE_BG_COLOR: Optional[QColor] = None
-_BADGE_TEXT_COLOR: Optional[QColor] = None
-_EXPAND_BTN_BG: Optional[QColor] = None
-_EXPAND_BTN_SYMBOL: Optional[QColor] = None
-_EXPAND_BTN_HOVER: Optional[QColor] = None
-_CONFIG_BTN_BG: Optional[QColor] = None
-_CONFIG_BTN_HOVER: Optional[QColor] = None
-_STACK_COLORS: Optional[list] = None
+_BADGE_BG_COLOR: QColor | None = None
+_BADGE_TEXT_COLOR: QColor | None = None
+_EXPAND_BTN_BG: QColor | None = None
+_EXPAND_BTN_SYMBOL: QColor | None = None
+_EXPAND_BTN_HOVER: QColor | None = None
+_CONFIG_BTN_BG: QColor | None = None
+_CONFIG_BTN_HOVER: QColor | None = None
+_STACK_COLORS: list | None = None
 
 
 def _get_subflow_header_color() -> QColor:
@@ -180,7 +179,7 @@ class SubflowNodeItem(CasareNodeItem):
     """
 
     # Font for badge text (cached at class level)
-    _badge_font: Optional[QFont] = None
+    _badge_font: QFont | None = None
 
     @classmethod
     def get_badge_font(cls) -> QFont:
@@ -190,7 +189,7 @@ class SubflowNodeItem(CasareNodeItem):
             cls._badge_font.setWeight(QFont.Weight.Medium)
         return cls._badge_font
 
-    def __init__(self, name: str = "subflow", parent: Optional[QGraphicsItem] = None):
+    def __init__(self, name: str = "subflow", parent: QGraphicsItem | None = None):
         """
         Initialize subflow node item.
 
@@ -205,9 +204,9 @@ class SubflowNodeItem(CasareNodeItem):
 
         # Subflow-specific state
         self._node_count: int = 0
-        self._expand_button_rect: Optional[QRectF] = None
+        self._expand_button_rect: QRectF | None = None
         self._expand_btn_hovered: bool = False
-        self._config_button_rect: Optional[QRectF] = None
+        self._config_button_rect: QRectF | None = None
         self._config_btn_hovered: bool = False
 
         # Override cached header color to blue-gray (from theme)
@@ -640,7 +639,7 @@ class SubflowNodeItem(CasareNodeItem):
 
         # Draw 4 spokes
         for angle in [0, 90, 180, 270]:
-            from math import radians, cos, sin
+            from math import cos, radians, sin
 
             rad = radians(angle)
             inner = 2

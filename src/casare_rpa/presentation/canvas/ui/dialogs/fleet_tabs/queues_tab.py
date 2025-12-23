@@ -5,28 +5,27 @@ Transaction queue management with queue list, item browser, and statistics.
 UiPath-style queue interface for managing workflow queue items.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QComboBox,
+    QFrame,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QPushButton,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QLabel,
-    QComboBox,
-    QLineEdit,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QColor
-
-from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.base_tab import BaseTabWidget
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.base_tab import BaseTabWidget
 
 
 class QueuesTabWidget(BaseTabWidget):
@@ -58,11 +57,11 @@ class QueuesTabWidget(BaseTabWidget):
     queue_item_action = Signal(str, list, str)
     items_bulk_action = Signal(str, list, str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the queues tab widget."""
-        self._queues: List[Dict[str, Any]] = []
-        self._queue_items: List[Dict[str, Any]] = []
-        self._selected_queue_id: Optional[str] = None
+        self._queues: list[dict[str, Any]] = []
+        self._queue_items: list[dict[str, Any]] = []
+        self._selected_queue_id: str | None = None
         super().__init__("queues", parent)
 
     def _setup_content(self) -> None:
@@ -204,7 +203,7 @@ class QueuesTabWidget(BaseTabWidget):
         # Connect signals
         self._connect_tab_signals()
 
-    def _create_stat_card(self, title: str, value: str, color: Optional[str] = None) -> QFrame:
+    def _create_stat_card(self, title: str, value: str, color: str | None = None) -> QFrame:
         """Create a statistics card widget."""
         card = QFrame()
         card.setFrameShape(QFrame.Shape.StyledPanel)
@@ -325,7 +324,7 @@ class QueuesTabWidget(BaseTabWidget):
             self.queue_item_action.emit(self._selected_queue_id, item_ids, "delete")
             self.items_bulk_action.emit(self._selected_queue_id, item_ids, "delete")
 
-    def _get_selected_item_ids(self) -> List[str]:
+    def _get_selected_item_ids(self) -> list[str]:
         """Get IDs of selected items."""
         item_ids = []
         for item in self._items_table.selectedItems():
@@ -385,7 +384,7 @@ class QueuesTabWidget(BaseTabWidget):
     # Public API
     # =========================================================================
 
-    def update_queues(self, queues: List[Dict[str, Any]]) -> None:
+    def update_queues(self, queues: list[dict[str, Any]]) -> None:
         """
         Update the queues list.
 
@@ -419,7 +418,7 @@ class QueuesTabWidget(BaseTabWidget):
                 status_item.setForeground(QColor(THEME.text_secondary))
             self._queue_table.setItem(row, 2, status_item)
 
-    def update_queue_items(self, items: List[Dict[str, Any]]) -> None:
+    def update_queue_items(self, items: list[dict[str, Any]]) -> None:
         """
         Update the queue items list.
 
@@ -469,7 +468,7 @@ class QueuesTabWidget(BaseTabWidget):
 
         self._apply_item_filter()
 
-    def update_statistics(self, stats: Dict[str, Any]) -> None:
+    def update_statistics(self, stats: dict[str, Any]) -> None:
         """
         Update queue statistics.
 
@@ -482,7 +481,7 @@ class QueuesTabWidget(BaseTabWidget):
         self._update_card_value(self._completed_card, str(stats.get("completed", 0)))
         self._update_card_value(self._failed_card, str(stats.get("failed", 0)))
 
-    def get_selected_queue_id(self) -> Optional[str]:
+    def get_selected_queue_id(self) -> str | None:
         """Get currently selected queue ID."""
         return self._selected_queue_id
 

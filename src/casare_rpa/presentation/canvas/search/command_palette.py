@@ -4,22 +4,23 @@ Command Palette for CasareRPA.
 A VS Code-style command palette for quick access to all actions via keyboard.
 """
 
-from typing import Optional, List, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QKeyEvent
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QLabel,
+    QVBoxLayout,
     QWidget,
-    QHBoxLayout,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QKeyEvent
-from loguru import logger
 
 
 @dataclass
@@ -29,8 +30,8 @@ class CommandItem:
     name: str
     description: str
     shortcut: str
-    action: Optional[QAction]
-    callback: Optional[Callable]
+    action: QAction | None
+    callback: Callable | None
     category: str = "General"
 
 
@@ -50,7 +51,7 @@ class CommandPalette(QDialog):
 
     command_executed = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the command palette.
 
@@ -59,8 +60,8 @@ class CommandPalette(QDialog):
         """
         super().__init__(parent)
 
-        self._commands: List[CommandItem] = []
-        self._filtered_commands: List[CommandItem] = []
+        self._commands: list[CommandItem] = []
+        self._filtered_commands: list[CommandItem] = []
 
         self._setup_ui()
         self._apply_styles()

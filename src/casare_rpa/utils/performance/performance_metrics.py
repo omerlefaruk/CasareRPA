@@ -16,10 +16,11 @@ import sys
 import threading
 import time
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Deque, Dict, List, Optional
+from typing import Any, Deque, Dict, List, Optional
 
 from loguru import logger
 
@@ -47,7 +48,7 @@ class MetricValue:
     name: str
     value: float
     timestamp: float = field(default_factory=time.time)
-    labels: Dict[str, str] = field(default_factory=dict)
+    labels: dict[str, str] = field(default_factory=dict)
     metric_type: MetricType = MetricType.GAUGE
 
 
@@ -57,7 +58,7 @@ class TimerContext:
 
     metrics: "PerformanceMetrics"
     name: str
-    labels: Dict[str, str]
+    labels: dict[str, str]
     start_time: float = field(default=0.0, init=False)
 
     def __enter__(self) -> "TimerContext":
@@ -83,13 +84,13 @@ class Histogram:
     # Default buckets for timing (milliseconds)
     DEFAULT_BUCKETS = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
 
-    def __init__(self, buckets: Optional[List[float]] = None) -> None:
+    def __init__(self, buckets: list[float] | None = None) -> None:
         self._buckets = buckets or self.DEFAULT_BUCKETS
         self._bucket_counts = [0] * len(self._buckets)
         self._sum = 0.0
         self._count = 0
-        self._min: Optional[float] = None
-        self._max: Optional[float] = None
+        self._min: float | None = None
+        self._max: float | None = None
 
     def observe(self, value: float) -> None:
         """Record an observation."""
@@ -118,11 +119,11 @@ class Histogram:
         return self._sum / self._count if self._count > 0 else 0.0
 
     @property
-    def min(self) -> Optional[float]:
+    def min(self) -> float | None:
         return self._min
 
     @property
-    def max(self) -> Optional[float]:
+    def max(self) -> float | None:
         return self._max
 
     def percentile(self, p: float) -> float:
@@ -140,7 +141,7 @@ class Histogram:
 
         return self._buckets[-1]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "count": self._count,
@@ -151,7 +152,9 @@ class Histogram:
             "p50": self.percentile(50),
             "p90": self.percentile(90),
             "p99": self.percentile(99),
-            "buckets": {f"le_{b}": c for b, c in zip(self._buckets, self._bucket_counts)},
+            "buckets": {
+                f"le_{b}": c for b, c in zip(self._buckets, self._bucket_counts, strict=False)
+            },
         }
 
 
@@ -179,17 +182,17 @@ class PerformanceMetrics:
         self._sample_interval = sample_interval
 
         # Metric storage
-        self._counters: Dict[str, int] = defaultdict(int)
-        self._gauges: Dict[str, float] = {}
-        self._histograms: Dict[str, Histogram] = defaultdict(Histogram)
-        self._timeseries: Dict[str, Deque[MetricValue]] = defaultdict(
+        self._counters: dict[str, int] = defaultdict(int)
+        self._gauges: dict[str, float] = {}
+        self._histograms: dict[str, Histogram] = defaultdict(Histogram)
+        self._timeseries: dict[str, deque[MetricValue]] = defaultdict(
             lambda: deque(maxlen=int(retention_seconds / sample_interval))
         )
 
         # Node execution tracking
-        self._node_timings: Dict[str, Histogram] = defaultdict(Histogram)
-        self._node_counts: Dict[str, int] = defaultdict(int)
-        self._node_errors: Dict[str, int] = defaultdict(int)
+        self._node_timings: dict[str, Histogram] = defaultdict(Histogram)
+        self._node_counts: dict[str, int] = defaultdict(int)
+        self._node_errors: dict[str, int] = defaultdict(int)
 
         # Workflow tracking
         self._workflow_timings: Histogram = Histogram()
@@ -197,17 +200,17 @@ class PerformanceMetrics:
 
         # System metrics
         self._process = psutil.Process() if PSUTIL_AVAILABLE else None
-        self._system_samples: Deque[Dict[str, float]] = deque(maxlen=60)
+        self._system_samples: deque[dict[str, float]] = deque(maxlen=60)
 
         # Callbacks for external metrics
-        self._metric_callbacks: List[Callable[[], Dict[str, Any]]] = []
+        self._metric_callbacks: list[Callable[[], dict[str, Any]]] = []
 
         # Lock for thread safety
         self._metrics_lock = threading.Lock()
 
         # Background task
         self._running = False
-        self._task: Optional[asyncio.Task[None]] = None
+        self._task: asyncio.Task[None] | None = None
 
     @classmethod
     def get_instance(cls) -> "PerformanceMetrics":
@@ -222,7 +225,7 @@ class PerformanceMetrics:
         self,
         name: str,
         value: int = 1,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Increment a counter."""
         key = self._make_key(name, labels)
@@ -233,7 +236,7 @@ class PerformanceMetrics:
         self,
         name: str,
         value: float,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Set a gauge value."""
         key = self._make_key(name, labels)
@@ -245,7 +248,7 @@ class PerformanceMetrics:
         self,
         name: str,
         value: float,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Record a histogram observation."""
         key = self._make_key(name, labels)
@@ -258,7 +261,7 @@ class PerformanceMetrics:
         self,
         name: str,
         duration_ms: float,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Record a timing measurement."""
         self.observe(f"{name}_duration_ms", duration_ms, labels)
@@ -266,7 +269,7 @@ class PerformanceMetrics:
     def time(
         self,
         name: str,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> TimerContext:
         """Create a timer context manager."""
         return TimerContext(
@@ -278,7 +281,7 @@ class PerformanceMetrics:
     def _make_key(
         self,
         name: str,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> str:
         """Create a unique key for metric with labels."""
         if not labels:
@@ -336,9 +339,9 @@ class PerformanceMetrics:
         self.record_timing("workflow_execution", duration_ms)
 
     # System resource monitoring
-    def _sample_system_metrics(self) -> Dict[str, float]:
+    def _sample_system_metrics(self) -> dict[str, float]:
         """Sample current system resource usage."""
-        metrics: Dict[str, float] = {}
+        metrics: dict[str, float] = {}
 
         if self._process and PSUTIL_AVAILABLE:
             try:
@@ -376,14 +379,14 @@ class PerformanceMetrics:
 
     def register_callback(
         self,
-        callback: Callable[[], Dict[str, Any]],
+        callback: Callable[[], dict[str, Any]],
     ) -> None:
         """Register a callback for collecting external metrics."""
         self._metric_callbacks.append(callback)
 
     def unregister_callback(
         self,
-        callback: Callable[[], Dict[str, Any]],
+        callback: Callable[[], dict[str, Any]],
     ) -> None:
         """Unregister a metrics callback."""
         if callback in self._metric_callbacks:
@@ -441,10 +444,10 @@ class PerformanceMetrics:
                 logger.error(f"Error in metrics collection: {e}")
                 await asyncio.sleep(self._sample_interval)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get a summary of all metrics."""
         with self._metrics_lock:
-            summary: Dict[str, Any] = {
+            summary: dict[str, Any] = {
                 "timestamp": datetime.now().isoformat(),
                 "counters": dict(self._counters),
                 "gauges": dict(self._gauges),
@@ -466,7 +469,7 @@ class PerformanceMetrics:
 
             return summary
 
-    def get_node_stats(self, node_type: Optional[str] = None) -> Dict[str, Any]:
+    def get_node_stats(self, node_type: str | None = None) -> dict[str, Any]:
         """Get statistics for node executions."""
         with self._metrics_lock:
             if node_type:
@@ -488,14 +491,14 @@ class PerformanceMetrics:
                     for node_type in self._node_counts
                 }
 
-    def get_system_stats(self) -> Dict[str, Any]:
+    def get_system_stats(self) -> dict[str, Any]:
         """Get system resource statistics."""
         with self._metrics_lock:
             if not self._system_samples:
                 return {}
 
             # Calculate averages over samples
-            metrics_sum: Dict[str, float] = defaultdict(float)
+            metrics_sum: dict[str, float] = defaultdict(float)
             for sample in self._system_samples:
                 for name, value in sample.items():
                     metrics_sum[name] += value
@@ -532,7 +535,7 @@ def get_metrics() -> PerformanceMetrics:
     return PerformanceMetrics.get_instance()
 
 
-def time_operation(name: str, labels: Optional[Dict[str, str]] = None) -> TimerContext:
+def time_operation(name: str, labels: dict[str, str] | None = None) -> TimerContext:
     """Create a timer for an operation."""
     return get_metrics().time(name, labels)
 

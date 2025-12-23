@@ -5,6 +5,7 @@ Verify node port definitions follow Modern Node Standard:
 - Use add_input_port() / add_output_port() for data ports
 - All data ports must have explicit DataType (not ANY unless intentional)
 """
+
 import ast
 import os
 import sys
@@ -30,13 +31,13 @@ class PortDefinitionChecker(ast.NodeVisitor):
         if self.in_define_ports:
             if isinstance(node.func, ast.Attribute):
                 method = node.func.attr
-                
+
                 # Check for legacy add_port calls
                 if method == "add_port":
                     self.errors.append(
                         f"{self.filepath}:{node.lineno} - Use add_exec_input/add_exec_output/add_input_port/add_output_port instead of add_port()"
                     )
-                
+
                 # Check data ports have DataType
                 if method in ("add_input_port", "add_output_port"):
                     if len(node.args) < 2:
@@ -50,20 +51,20 @@ class PortDefinitionChecker(ast.NodeVisitor):
                             self.errors.append(
                                 f"{self.filepath}:{node.lineno} - DataType must be a reference (DataType.STRING), not a string literal"
                             )
-        
+
         self.generic_visit(node)
 
 
 def check_file(filepath: str) -> list[str]:
     """Check port definitions in node files"""
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             tree = ast.parse(f.read())
-        
+
         # Only check files in nodes/
         if "nodes/" not in filepath or "base_node" in filepath:
             return []
-        
+
         checker = PortDefinitionChecker(filepath)
         checker.visit(tree)
         return checker.errors

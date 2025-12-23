@@ -15,9 +15,9 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_expand_button.py -v
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 # =============================================================================
 # ExpandButton Creation Tests
@@ -39,6 +39,7 @@ class TestExpandButtonCreation:
     def test_instantiation_with_parent(self, qapp) -> None:
         """Test ExpandButton with parent widget."""
         from PySide6.QtWidgets import QWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets import (
             ExpandButton,
         )
@@ -150,6 +151,7 @@ class TestExpandButtonAppearance:
     def test_cursor_is_pointer(self, qapp) -> None:
         """Test button has pointing hand cursor."""
         from PySide6.QtCore import Qt
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets import (
             ExpandButton,
         )
@@ -160,6 +162,7 @@ class TestExpandButtonAppearance:
     def test_no_focus_policy(self, qapp) -> None:
         """Test button doesn't take keyboard focus."""
         from PySide6.QtCore import Qt
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets import (
             ExpandButton,
         )
@@ -260,6 +263,7 @@ class TestExpandButtonInheritance:
     def test_inherits_from_qpushbutton(self, qapp) -> None:
         """Test ExpandButton inherits from QPushButton."""
         from PySide6.QtWidgets import QPushButton
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets import (
             ExpandButton,
         )
@@ -418,6 +422,7 @@ class TestExpandButtonEdgeCases:
     def test_signal_after_reparent(self, qapp, signal_capture) -> None:
         """Test signal works after reparenting button."""
         from PySide6.QtWidgets import QWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.widgets import (
             ExpandButton,
         )
@@ -465,13 +470,6 @@ class TestExpandButtonAccessibility:
 
         # Should mention opening editor or keyboard shortcut
         has_description = (
-<<<<<<< HEAD
-            "expression" in tooltip
-            or "editor" in tooltip
-            or "open" in tooltip
-            or "ctrl" in tooltip
-=======
             "expression" in tooltip or "editor" in tooltip or "open" in tooltip or "ctrl" in tooltip
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         )
         assert has_description

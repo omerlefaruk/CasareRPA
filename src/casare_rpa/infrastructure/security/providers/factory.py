@@ -10,10 +10,10 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultProvider,
-    VaultConfig,
     VaultBackend,
+    VaultConfig,
     VaultConnectionError,
+    VaultProvider,
 )
 
 
@@ -37,7 +37,7 @@ def create_vault_provider(
         ImportError: If required dependencies are missing and no fallback
     """
     backend = config.backend
-    last_error: Optional[Exception] = None
+    last_error: Exception | None = None
 
     # Try the configured backend first
     if backend == VaultBackend.HASHICORP:
@@ -160,8 +160,8 @@ def get_available_backends() -> dict[VaultBackend, bool]:
 
     # Check Azure Key Vault
     try:
-        from azure.keyvault.secrets import SecretClient  # noqa: F401
         from azure.identity import DefaultAzureCredential  # noqa: F401
+        from azure.keyvault.secrets import SecretClient  # noqa: F401
 
         available[VaultBackend.AZURE_KEYVAULT] = True
     except ImportError:

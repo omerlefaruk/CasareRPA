@@ -9,15 +9,14 @@ Custom status bar with three sections:
 
 from typing import Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QFrame,
+    QWidget,
 )
-
-from loguru import logger
 
 
 class StatusSection(QLabel):
@@ -29,7 +28,7 @@ class StatusSection(QLabel):
         self,
         initial_text: str = "",
         alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(initial_text, parent)
         self.setAlignment(alignment | Qt.AlignmentFlag.AlignVCenter)
@@ -108,7 +107,7 @@ class UIExplorerStatusBar(QWidget):
     Right section: Mode indicator (Browser/Desktop)
     """
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setFixedHeight(28)
         self._setup_ui()
@@ -182,7 +181,7 @@ class UIExplorerStatusBar(QWidget):
     def set_target_element(
         self,
         element_type: str,
-        element_name: Optional[str] = None,
+        element_name: str | None = None,
     ) -> None:
         """
         Set the target element display.
@@ -310,7 +309,7 @@ class UIExplorerStatusBar(QWidget):
     def set_anchor_element(
         self,
         element_type: str,
-        element_name: Optional[str] = None,
+        element_name: str | None = None,
     ) -> None:
         """
         Set the anchor element display (appends to target).

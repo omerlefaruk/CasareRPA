@@ -14,9 +14,9 @@ import warnings
 from typing import Any, Dict
 
 from casare_rpa.domain.entities.selector import (
-    SelectorType,
-    SelectorStrategy,
     ElementFingerprint,
+    SelectorStrategy,
+    SelectorType,
 )
 
 
@@ -39,11 +39,11 @@ class SmartSelectorGenerator:
 
         self._facade = get_selector_facade()
 
-    def generate_browser_fingerprint(self, element_data: Dict[str, Any]) -> ElementFingerprint:
+    def generate_browser_fingerprint(self, element_data: dict[str, Any]) -> ElementFingerprint:
         """Generate fingerprint from browser element data."""
         return self._facade.generate_browser_fingerprint(element_data)
 
-    def generate_desktop_fingerprint(self, element_data: Dict[str, Any]) -> ElementFingerprint:
+    def generate_desktop_fingerprint(self, element_data: dict[str, Any]) -> ElementFingerprint:
         """Generate fingerprint from desktop element data (UIA)."""
         return self._facade.generate_desktop_fingerprint(element_data)
 

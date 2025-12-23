@@ -21,7 +21,7 @@ class ProjectSettings:
     timeout_seconds: int = 30
     retry_count: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "default_browser": self.default_browser,
@@ -31,7 +31,7 @@ class ProjectSettings:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ProjectSettings":
+    def from_dict(cls, data: dict[str, Any]) -> "ProjectSettings":
         """Create from dictionary."""
         return cls(
             default_browser=data.get("default_browser", "chromium"),
@@ -50,10 +50,10 @@ class ScenarioExecutionSettings:
     """
 
     priority: str = "normal"  # low, normal, high, critical
-    timeout_override: Optional[int] = None
-    environment_override: Optional[str] = None
+    timeout_override: int | None = None
+    environment_override: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "priority": self.priority,
@@ -62,7 +62,7 @@ class ScenarioExecutionSettings:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ScenarioExecutionSettings":
+    def from_dict(cls, data: dict[str, Any]) -> "ScenarioExecutionSettings":
         """Create from dictionary."""
         return cls(
             priority=data.get("priority", "normal"),

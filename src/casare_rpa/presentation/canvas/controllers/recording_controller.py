@@ -7,18 +7,17 @@ and UI components. Generates workflow nodes from recorded actions.
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal
-
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.infrastructure.browser.browser_recorder import (
-        BrowserRecorder,
         BrowserRecordedAction,
+        BrowserRecorder,
     )
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class RecordingController(BaseController):
@@ -47,7 +46,7 @@ class RecordingController(BaseController):
     action_recorded = Signal(dict)  # Single action data
     workflow_generated = Signal(list)  # List of node configurations
 
-    def __init__(self, main_window: "MainWindow", parent: Optional[QObject] = None) -> None:
+    def __init__(self, main_window: "MainWindow", parent: QObject | None = None) -> None:
         """
         Initialize the recording controller.
 
@@ -59,12 +58,12 @@ class RecordingController(BaseController):
 
         self._is_recording = False
         self._is_paused = False
-        self._recording_type: Optional[str] = None
+        self._recording_type: str | None = None
 
-        self._browser_recorder: Optional["BrowserRecorder"] = None
+        self._browser_recorder: BrowserRecorder | None = None
         self._desktop_recorder = None
 
-        self._recorded_actions: List[Any] = []
+        self._recorded_actions: list[Any] = []
 
     def initialize(self) -> None:
         """Initialize controller resources and connections."""
@@ -113,7 +112,7 @@ class RecordingController(BaseController):
         return self._is_paused
 
     @property
-    def recording_type(self) -> Optional[str]:
+    def recording_type(self) -> str | None:
         """Get the current recording type."""
         return self._recording_type
 
@@ -184,7 +183,7 @@ class RecordingController(BaseController):
             self._recording_type = None
             return False
 
-    async def stop_recording(self) -> List[Any]:
+    async def stop_recording(self) -> list[Any]:
         """
         Stop the current recording.
 
@@ -197,7 +196,7 @@ class RecordingController(BaseController):
 
         return await self._stop_recording_internal()
 
-    async def _stop_recording_internal(self) -> List[Any]:
+    async def _stop_recording_internal(self) -> list[Any]:
         """Internal method to stop recording."""
         try:
             if self._recording_type == "browser" and self._browser_recorder:
@@ -270,7 +269,7 @@ class RecordingController(BaseController):
         """Handle browser recording stopped callback."""
         logger.debug("Browser recording stopped callback received")
 
-    def get_recorded_actions(self) -> List[Any]:
+    def get_recorded_actions(self) -> list[Any]:
         """
         Get all recorded actions.
 
@@ -286,7 +285,7 @@ class RecordingController(BaseController):
             self._browser_recorder.clear()
         logger.debug("Recorded actions cleared")
 
-    def generate_workflow_nodes(self) -> List[Dict[str, Any]]:
+    def generate_workflow_nodes(self) -> list[dict[str, Any]]:
         """
         Generate workflow node configurations from recorded actions.
 
@@ -312,7 +311,7 @@ class RecordingController(BaseController):
 
         return node_configs
 
-    def _generate_desktop_nodes(self) -> List[Dict[str, Any]]:
+    def _generate_desktop_nodes(self) -> list[dict[str, Any]]:
         """
         Generate desktop workflow nodes from recorded actions.
 
@@ -326,7 +325,7 @@ class RecordingController(BaseController):
             if action_type is None:
                 continue
 
-            config: Dict[str, Any] = {
+            config: dict[str, Any] = {
                 "node_id": f"recorded_{idx}",
                 "node_type": "",
                 "name": f"Recorded Action {idx + 1}",
@@ -388,7 +387,7 @@ class RecordingController(BaseController):
             return True
         return False
 
-    def get_recording_state(self) -> Dict[str, Any]:
+    def get_recording_state(self) -> dict[str, Any]:
         """
         Get comprehensive recording state.
 

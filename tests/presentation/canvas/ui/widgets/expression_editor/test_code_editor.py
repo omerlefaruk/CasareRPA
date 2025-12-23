@@ -17,9 +17,9 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_code_editor.py -v
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 # =============================================================================
 # CodeExpressionEditor Instantiation Tests
@@ -95,6 +95,7 @@ class TestCodeExpressionEditorInstantiation:
     def test_instantiation_with_parent(self, qapp) -> None:
         """Test instantiation with parent widget."""
         from PySide6.QtWidgets import QWidget
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor import (
             CodeExpressionEditor,
             EditorType,
@@ -359,9 +360,8 @@ class TestCodePlainTextEditTabHandling:
 
     def test_tab_inserts_spaces(self, editor, qapp) -> None:
         """Test pressing Tab inserts 4 spaces."""
-        from PySide6.QtCore import Qt
+        from PySide6.QtCore import QEvent, Qt
         from PySide6.QtGui import QKeyEvent
-        from PySide6.QtCore import QEvent
 
         # Create Tab key event
         event = QKeyEvent(QEvent.Type.KeyPress, Qt.Key.Key_Tab, Qt.KeyboardModifier.NoModifier)

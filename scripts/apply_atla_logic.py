@@ -5,7 +5,7 @@ WORKFLOW_FILE = "Projects/MonthlyMuhasebe/scenarios/ck_bogazici_login_updated.js
 
 
 def apply_changes():
-    with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
+    with open(WORKFLOW_FILE, encoding="utf-8") as f:
         data = json.load(f)
 
     nodes = data.get("nodes", {})

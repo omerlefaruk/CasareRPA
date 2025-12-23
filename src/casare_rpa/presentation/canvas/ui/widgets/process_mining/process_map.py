@@ -8,6 +8,7 @@ Displays activities as nodes, transitions as edges with frequency labels.
 import math
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from loguru import logger
 from PySide6.QtCore import QPointF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
@@ -29,8 +30,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.theme import THEME
 
 
@@ -50,7 +49,7 @@ class ActivityNode(QGraphicsRectItem):
         y: float,
         width: float = 120,
         height: float = 50,
-        parent: Optional[QGraphicsItem] = None,
+        parent: QGraphicsItem | None = None,
     ) -> None:
         """Initialize activity node."""
         super().__init__(x, y, width, height, parent)
@@ -126,7 +125,7 @@ class TransitionEdge(QGraphicsPathItem):
         source_node: ActivityNode,
         target_node: ActivityNode,
         frequency: int,
-        parent: Optional[QGraphicsItem] = None,
+        parent: QGraphicsItem | None = None,
     ) -> None:
         """Initialize transition edge."""
         super().__init__(parent)
@@ -136,8 +135,8 @@ class TransitionEdge(QGraphicsPathItem):
         self.avg_duration_ms = 0.0
         self.error_rate = 0.0
 
-        self._label: Optional[QGraphicsSimpleTextItem] = None
-        self._arrow: Optional[QGraphicsPolygonItem] = None
+        self._label: QGraphicsSimpleTextItem | None = None
+        self._arrow: QGraphicsPolygonItem | None = None
 
         self._setup_appearance()
         self._update_path()
@@ -266,16 +265,16 @@ class ProcessMapWidget(QGraphicsView):
     node_clicked = Signal(str)
     edge_clicked = Signal(str, str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the process map widget."""
         super().__init__(parent)
 
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
 
-        self._nodes: Dict[str, ActivityNode] = {}
-        self._edges: List[TransitionEdge] = []
-        self._model_data: Optional[Dict[str, Any]] = None
+        self._nodes: dict[str, ActivityNode] = {}
+        self._edges: list[TransitionEdge] = []
+        self._model_data: dict[str, Any] | None = None
 
         self._setup_view()
         self._apply_styles()
@@ -302,7 +301,7 @@ class ProcessMapWidget(QGraphicsView):
         """)
         self._scene.setBackgroundBrush(QBrush(QColor(THEME.bg_canvas)))
 
-    def visualize_model(self, model: Dict[str, Any]) -> None:
+    def visualize_model(self, model: dict[str, Any]) -> None:
         """
         Visualize a process model.
 
@@ -375,8 +374,8 @@ class ProcessMapWidget(QGraphicsView):
         )
 
     def _calculate_layout(
-        self, nodes: List[str], edges: Dict[str, Any]
-    ) -> Dict[str, Tuple[float, float]]:
+        self, nodes: list[str], edges: dict[str, Any]
+    ) -> dict[str, tuple[float, float]]:
         """
         Calculate node positions using a simple layered layout.
 
@@ -404,7 +403,7 @@ class ProcessMapWidget(QGraphicsView):
                     in_degree[target] += 1
 
         # Group nodes by layer (BFS-like)
-        layers: List[List[str]] = []
+        layers: list[list[str]] = []
         remaining = set(nodes)
         current_layer = [n for n in nodes if in_degree[n] == 0]
 
@@ -440,7 +439,7 @@ class ProcessMapWidget(QGraphicsView):
 
         return positions
 
-    def highlight_bottlenecks(self, bottleneck_nodes: Set[str]) -> None:
+    def highlight_bottlenecks(self, bottleneck_nodes: set[str]) -> None:
         """
         Highlight bottleneck nodes in the visualization.
 
@@ -450,7 +449,7 @@ class ProcessMapWidget(QGraphicsView):
         for node_id, node_item in self._nodes.items():
             node_item.set_bottleneck(node_id in bottleneck_nodes)
 
-    def highlight_path(self, path: List[str]) -> None:
+    def highlight_path(self, path: list[str]) -> None:
         """
         Highlight a specific execution path.
 
@@ -462,7 +461,7 @@ class ProcessMapWidget(QGraphicsView):
             edge.setPen(QPen(QColor(THEME.accent_secondary), 2))
 
         # Highlight path edges
-        path_set = set(zip(path[:-1], path[1:]))
+        path_set = set(zip(path[:-1], path[1:], strict=False))
         for edge in self._edges:
             key = (edge.source_node.node_id, edge.target_node.node_id)
             if key in path_set:
@@ -497,7 +496,7 @@ class ProcessMapWidget(QGraphicsView):
         """Fit view to show all content."""
         self.fitInView(self._scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
-    def get_model_data(self) -> Optional[Dict[str, Any]]:
+    def get_model_data(self) -> dict[str, Any] | None:
         """Get the current model data."""
         return self._model_data
 

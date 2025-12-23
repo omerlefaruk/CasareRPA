@@ -18,7 +18,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -55,10 +55,10 @@ class Credential:
     description: str = ""
     created_at: str = ""
     updated_at: str = ""
-    last_used: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
+    last_used: str | None = None
+    tags: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "id": self.id,
@@ -74,7 +74,7 @@ class Credential:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Credential":
+    def from_dict(cls, data: dict[str, Any]) -> Credential:
         """Create from dictionary."""
         return cls(
             id=data["id"],
@@ -205,12 +205,12 @@ class CredentialStore:
     SERVICE_NAME = "CasareRPA"
     STORE_FILENAME = "credentials.enc"
 
-    def __init__(self, store_path: Optional[Path] = None) -> None:
+    def __init__(self, store_path: Path | None = None) -> None:
         """Initialize the credential store."""
         self._store_path = store_path or self._get_default_store_path()
-        self._fernet: Optional[Fernet] = None
-        self._credentials: Dict[str, Credential] = {}
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._fernet: Fernet | None = None
+        self._credentials: dict[str, Credential] = {}
+        self._cache: dict[str, dict[str, Any]] = {}
         self._initialized = False
 
     def _get_default_store_path(self) -> Path:
@@ -376,13 +376,13 @@ class CredentialStore:
         self._store_path.write_bytes(encrypted_data)
         logger.debug("Saved credential store")
 
-    def _encrypt_data(self, data: Dict[str, Any]) -> str:
+    def _encrypt_data(self, data: dict[str, Any]) -> str:
         """Encrypt credential data."""
         json_str = json.dumps(data).encode("utf-8")
         encrypted = self._fernet.encrypt(json_str)
         return base64.b64encode(encrypted).decode("ascii")
 
-    def _decrypt_data(self, encrypted_data: str) -> Dict[str, Any]:
+    def _decrypt_data(self, encrypted_data: str) -> dict[str, Any]:
         """Decrypt credential data."""
         encrypted = base64.b64decode(encrypted_data)
         decrypted = self._fernet.decrypt(encrypted)
@@ -403,10 +403,10 @@ class CredentialStore:
         name: str,
         credential_type: CredentialType,
         category: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         description: str = "",
-        tags: Optional[List[str]] = None,
-        credential_id: Optional[str] = None,
+        tags: list[str] | None = None,
+        credential_id: str | None = None,
     ) -> str:
         """
         Save a credential securely.
@@ -425,7 +425,7 @@ class CredentialStore:
         """
         self._ensure_initialized()
 
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         cred_id = credential_id or self._generate_id()
 
         # Check if updating existing
@@ -451,7 +451,7 @@ class CredentialStore:
         logger.info(f"Saved credential: {name} ({category})")
         return cred_id
 
-    def get_credential(self, credential_id: str) -> Optional[Dict[str, Any]]:
+    def get_credential(self, credential_id: str) -> dict[str, Any] | None:
         """
         Retrieve decrypted credential data.
 
@@ -476,7 +476,7 @@ class CredentialStore:
 
             # Update last used timestamp in memory only (don't block with file I/O)
             # The timestamp will be persisted on next explicit save operation
-            credential.last_used = datetime.now(timezone.utc).isoformat()
+            credential.last_used = datetime.now(UTC).isoformat()
             # NOTE: Removed _save_store() call here to prevent blocking the event loop
             # during async workflow execution (e.g., Gmail sends). The last_used
             # timestamp is informational and not critical for functionality.
@@ -489,7 +489,7 @@ class CredentialStore:
             logger.error(f"Failed to decrypt credential {credential_id}: {e}")
             return None
 
-    def get_credential_info(self, credential_id: str) -> Optional[Dict[str, Any]]:
+    def get_credential_info(self, credential_id: str) -> dict[str, Any] | None:
         """Get credential metadata without decrypting."""
         self._ensure_initialized()
 
@@ -524,9 +524,9 @@ class CredentialStore:
 
     def list_credentials(
         self,
-        category: Optional[str] = None,
-        credential_type: Optional[CredentialType] = None,
-    ) -> List[Dict[str, Any]]:
+        category: str | None = None,
+        credential_type: CredentialType | None = None,
+    ) -> list[dict[str, Any]]:
         """List all credentials (metadata only)."""
         self._ensure_initialized()
 
@@ -552,7 +552,7 @@ class CredentialStore:
 
         return sorted(results, key=lambda x: x["name"].lower())
 
-    def get_credentials_for_dropdown(self, category: Optional[str] = None) -> List[tuple[str, str]]:
+    def get_credentials_for_dropdown(self, category: str | None = None) -> list[tuple[str, str]]:
         """Get credentials formatted for dropdown: [(id, display_name), ...]"""
         self._ensure_initialized()
 
@@ -564,7 +564,7 @@ class CredentialStore:
 
         return sorted(results, key=lambda x: x[1].lower())
 
-    def search_credentials(self, query: str) -> List[Dict[str, Any]]:
+    def search_credentials(self, query: str) -> list[dict[str, Any]]:
         """Search credentials by name, description, or tags."""
         self._ensure_initialized()
 
@@ -587,7 +587,7 @@ class CredentialStore:
 
         if credential_id in self._credentials:
             self._credentials[credential_id].name = new_name
-            self._credentials[credential_id].updated_at = datetime.now(timezone.utc).isoformat()
+            self._credentials[credential_id].updated_at = datetime.now(UTC).isoformat()
             self._save_store()
             return True
         return False
@@ -623,7 +623,7 @@ class CredentialStore:
         category: str,
         username: str,
         password: str,
-        extra_fields: Optional[Dict[str, str]] = None,
+        extra_fields: dict[str, str] | None = None,
         description: str = "",
     ) -> str:
         """Save a username/password credential."""
@@ -639,14 +639,14 @@ class CredentialStore:
             description=description,
         )
 
-    def get_api_key(self, credential_id: str) -> Optional[str]:
+    def get_api_key(self, credential_id: str) -> str | None:
         """Get API key from credential."""
         data = self.get_credential(credential_id)
         if data:
             return data.get("api_key")
         return None
 
-    def get_api_key_by_provider(self, provider: str) -> Optional[str]:
+    def get_api_key_by_provider(self, provider: str) -> str | None:
         """Get first API key for a provider."""
         for cred in self._credentials.values():
             if cred.category == "llm":
@@ -669,12 +669,12 @@ class CredentialStore:
         client_secret: str,
         access_token: str,
         refresh_token: str,
-        scopes: List[str],
-        token_expiry: Optional[str] = None,
-        user_email: Optional[str] = None,
-        project_id: Optional[str] = None,
+        scopes: list[str],
+        token_expiry: str | None = None,
+        user_email: str | None = None,
+        project_id: str | None = None,
         description: str = "",
-        credential_id: Optional[str] = None,
+        credential_id: str | None = None,
     ) -> str:
         """
         Save a Google OAuth credential.
@@ -736,7 +736,7 @@ class CredentialStore:
             credential_id=credential_id,
         )
 
-    def list_google_credentials(self) -> List[Dict[str, Any]]:
+    def list_google_credentials(self) -> list[dict[str, Any]]:
         """
         List all Google OAuth credentials.
 
@@ -757,11 +757,11 @@ class CredentialStore:
         token_url: str,
         access_token: str,
         refresh_token: str,
-        scopes: List[str],
-        token_expiry: Optional[str] = None,
-        tenant_id: Optional[str] = None,
+        scopes: list[str],
+        token_expiry: str | None = None,
+        tenant_id: str | None = None,
         description: str = "",
-        credential_id: Optional[str] = None,
+        credential_id: str | None = None,
     ) -> str:
         """
         Save an OpenAI/Azure OAuth credential.
@@ -809,14 +809,14 @@ class CredentialStore:
             credential_id=credential_id,
         )
 
-    def list_openai_credentials(self) -> List[Dict[str, Any]]:
+    def list_openai_credentials(self) -> list[dict[str, Any]]:
         """List all OpenAI OAuth credentials."""
         return self.list_credentials(
             category="openai_oauth",
             credential_type=CredentialType.OPENAI_OAUTH,
         )
 
-    def get_google_credential_for_dropdown(self) -> List[tuple[str, str]]:
+    def get_google_credential_for_dropdown(self) -> list[tuple[str, str]]:
         """
         Get Google credentials formatted for dropdown: [(id, display_name), ...]
 
@@ -841,7 +841,7 @@ class CredentialStore:
 
 
 # Global instance
-_default_store: Optional[CredentialStore] = None
+_default_store: CredentialStore | None = None
 
 
 def get_credential_store() -> CredentialStore:

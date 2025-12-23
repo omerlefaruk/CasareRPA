@@ -15,14 +15,13 @@ Compliant with:
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID, uuid4
 
 from loguru import logger
 from pydantic import BaseModel, Field
-
 
 # =============================================================================
 # ENUMS
@@ -104,16 +103,16 @@ class AuditEntry(BaseModel):
     """A single audit log entry with hash chain."""
 
     id: UUID = Field(default_factory=uuid4)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     action: AuditAction
     actor_id: UUID
     actor_type: str = "user"  # user, robot, system
     resource_type: ResourceType
-    resource_id: Optional[UUID] = None
-    tenant_id: Optional[UUID] = None
-    details: Dict[str, Any] = Field(default_factory=dict)
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    resource_id: UUID | None = None
+    tenant_id: UUID | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+    ip_address: str | None = None
+    user_agent: str | None = None
 
     # Hash chain fields
     entry_hash: bytes = b""
@@ -133,7 +132,7 @@ class MerkleProof(BaseModel):
     entry_id: UUID
     entry_hash: str
     merkle_root: str
-    proof_path: List[Tuple[str, str]]  # (hash, position: 'left' or 'right')
+    proof_path: list[tuple[str, str]]  # (hash, position: 'left' or 'right')
     tree_size: int
     verified: bool = False
 
@@ -145,8 +144,8 @@ class ChainVerificationResult(BaseModel):
     start_id: int
     end_id: int
     entries_verified: int
-    first_invalid_id: Optional[int] = None
-    error_message: Optional[str] = None
+    first_invalid_id: int | None = None
+    error_message: str | None = None
 
 
 # =============================================================================
@@ -177,7 +176,7 @@ class MerkleAuditService:
                      If None, operates in memory-only mode.
         """
         self._db_pool = db_pool
-        self._memory_entries: List[AuditEntry] = []
+        self._memory_entries: list[AuditEntry] = []
         self._last_hash = self.GENESIS_HASH
 
     def compute_entry_hash(self, entry: AuditEntry) -> bytes:
@@ -291,8 +290,8 @@ class MerkleAuditService:
 
     async def verify_chain(
         self,
-        start_id: Optional[int] = None,
-        end_id: Optional[int] = None,
+        start_id: int | None = None,
+        end_id: int | None = None,
     ) -> ChainVerificationResult:
         """
         Verify the integrity of the hash chain.
@@ -363,9 +362,9 @@ class MerkleAuditService:
 
     async def _get_entries_range(
         self,
-        start_id: Optional[int],
-        end_id: Optional[int],
-    ) -> List[AuditEntry]:
+        start_id: int | None,
+        end_id: int | None,
+    ) -> list[AuditEntry]:
         """Get entries in a range for verification."""
         if self._db_pool:
             async with self._db_pool.acquire() as conn:
@@ -413,7 +412,7 @@ class MerkleAuditService:
             previous_hash=bytes(row["previous_hash"]),
         )
 
-    def build_merkle_tree(self, entry_hashes: List[bytes]) -> bytes:
+    def build_merkle_tree(self, entry_hashes: list[bytes]) -> bytes:
         """
         Build a Merkle tree from entry hashes and return the root.
 
@@ -450,8 +449,8 @@ class MerkleAuditService:
 
     async def compute_merkle_root(
         self,
-        start_id: Optional[int] = None,
-        end_id: Optional[int] = None,
+        start_id: int | None = None,
+        end_id: int | None = None,
     ) -> bytes:
         """
         Compute Merkle root for a range of entries.
@@ -470,8 +469,8 @@ class MerkleAuditService:
     def generate_merkle_proof(
         self,
         entry_hash: bytes,
-        all_hashes: List[bytes],
-    ) -> List[Tuple[bytes, str]]:
+        all_hashes: list[bytes],
+    ) -> list[tuple[bytes, str]]:
         """
         Generate Merkle inclusion proof for an entry.
 
@@ -515,7 +514,7 @@ class MerkleAuditService:
         self,
         entry_hash: bytes,
         merkle_root: bytes,
-        proof: List[Tuple[bytes, str]],
+        proof: list[tuple[bytes, str]],
     ) -> bool:
         """
         Verify a Merkle inclusion proof.
@@ -542,10 +541,10 @@ class MerkleAuditService:
 
     async def export_audit_log(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         include_proof: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Export audit log with optional Merkle proofs for compliance.
 
@@ -566,7 +565,7 @@ class MerkleAuditService:
             entries = [e for e in entries if e.timestamp <= end_date]
 
         export_data = {
-            "export_timestamp": datetime.now(timezone.utc).isoformat(),
+            "export_timestamp": datetime.now(UTC).isoformat(),
             "entry_count": len(entries),
             "entries": [
                 {
@@ -602,7 +601,7 @@ class MerkleAuditService:
 
 
 # Global service instance
-_audit_service: Optional[MerkleAuditService] = None
+_audit_service: MerkleAuditService | None = None
 
 
 def get_audit_service(db_pool=None) -> MerkleAuditService:
@@ -617,12 +616,12 @@ async def log_audit_event(
     action: AuditAction,
     actor_id: UUID,
     resource_type: ResourceType,
-    resource_id: Optional[UUID] = None,
-    tenant_id: Optional[UUID] = None,
-    details: Optional[Dict[str, Any]] = None,
+    resource_id: UUID | None = None,
+    tenant_id: UUID | None = None,
+    details: dict[str, Any] | None = None,
     actor_type: str = "user",
-    ip_address: Optional[str] = None,
-    user_agent: Optional[str] = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
 ) -> AuditEntry:
     """
     Convenience function to log an audit event.

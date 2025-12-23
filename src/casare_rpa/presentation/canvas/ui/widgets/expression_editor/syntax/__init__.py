@@ -9,14 +9,6 @@ Contains QSyntaxHighlighter implementations for various languages:
 - YamlHighlighter: YAML syntax
 """
 
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
-    PythonHighlighter,
-    get_python_editor_stylesheet,
-)
-from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
-    MarkdownHighlighter,
-    get_markdown_editor_stylesheet,
-)
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
     JavaScriptHighlighter,
     get_javascript_editor_stylesheet,
@@ -24,6 +16,14 @@ from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascri
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.json_highlighter import (
     JsonHighlighter,
     get_json_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
+    MarkdownHighlighter,
+    get_markdown_editor_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
+    PythonHighlighter,
+    get_python_editor_stylesheet,
 )
 from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.yaml_highlighter import (
     YamlHighlighter,

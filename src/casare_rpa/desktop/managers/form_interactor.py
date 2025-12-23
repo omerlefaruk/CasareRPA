@@ -59,7 +59,7 @@ class FormInteractor:
                 logger.debug(f"Could not expand dropdown: {e}")
             return False
 
-        def _try_selection_pattern(control: auto.Control) -> Union[bool, None]:
+        def _try_selection_pattern(control: auto.Control) -> bool | None:
             """Try selection pattern - returns True if successful, None if not applicable."""
             try:
                 selection_pattern = control.GetSelectionPattern()
@@ -86,7 +86,7 @@ class FormInteractor:
                 logger.debug(f"SelectionPattern failed: {e}")
             return None
 
-        def _try_value_pattern(control: auto.Control) -> Union[bool, None]:
+        def _try_value_pattern(control: auto.Control) -> bool | None:
             """Try value pattern - returns True if successful, None if not applicable."""
             try:
                 value_pattern = control.GetValuePattern()
@@ -98,7 +98,7 @@ class FormInteractor:
                 logger.debug(f"ValuePattern failed: {e}")
             return None
 
-        def _click_and_find_list(control: auto.Control) -> Union[auto.Control, None]:
+        def _click_and_find_list(control: auto.Control) -> auto.Control | None:
             """Click control and find popup list."""
             control.Click()
             list_control = None
@@ -396,7 +396,7 @@ class FormInteractor:
         self,
         element: DesktopElement,
         direction: str = "down",
-        amount: Union[float, str] = 0.5,
+        amount: float | str = 0.5,
     ) -> bool:
         """
         Scroll an element (scrollbar, list, window, etc.).
@@ -420,7 +420,7 @@ class FormInteractor:
 
         direction = direction.lower()
 
-        def _try_scroll_pattern(control: auto.Control) -> Union[bool, None]:
+        def _try_scroll_pattern(control: auto.Control) -> bool | None:
             """Try scroll pattern - returns True if successful, None if not applicable."""
             try:
                 scroll_pattern = control.GetScrollPattern()

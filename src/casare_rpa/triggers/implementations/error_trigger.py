@@ -7,8 +7,9 @@ Useful for error handling, notifications, and retry logic.
 
 import asyncio
 import re
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
@@ -51,12 +52,12 @@ class ErrorTrigger(BaseTrigger):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._event_handler: Optional[Callable] = None
+        self._event_handler: Callable | None = None
 
     async def start(self) -> bool:
         """Start the error trigger."""
         try:
-            from casare_rpa.domain.events import get_event_bus, WorkflowFailed
+            from casare_rpa.domain.events import WorkflowFailed, get_event_bus
 
             event_bus = get_event_bus()
 
@@ -79,7 +80,7 @@ class ErrorTrigger(BaseTrigger):
     async def stop(self) -> bool:
         """Stop the error trigger."""
         try:
-            from casare_rpa.domain.events import get_event_bus, WorkflowFailed
+            from casare_rpa.domain.events import WorkflowFailed, get_event_bus
 
             if self._event_handler:
                 event_bus = get_event_bus()
@@ -142,7 +143,7 @@ class ErrorTrigger(BaseTrigger):
             "failed_node_id": node_id,
             "stack_trace": stack_trace,
             "severity": event_severity,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         metadata = {
@@ -152,7 +153,7 @@ class ErrorTrigger(BaseTrigger):
 
         await self.emit(payload, metadata)
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate error trigger configuration."""
         config = self.config.config
 
@@ -173,7 +174,7 @@ class ErrorTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for error trigger configuration."""
         return {
             "type": "object",

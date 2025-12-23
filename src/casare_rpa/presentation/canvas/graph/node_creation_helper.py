@@ -9,7 +9,7 @@ Handles node creation operations including:
 Follows Single Responsibility Principle - handles node creation assistance only.
 """
 
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from loguru import logger
 from PySide6.QtCore import QObject, QPointF, QRectF
@@ -39,7 +39,7 @@ class NodeCreationHelper(QObject):
     def __init__(
         self,
         graph: "NodeGraph",
-        parent: Optional[QObject] = None,
+        parent: QObject | None = None,
         y_offset: float = DEFAULT_Y_OFFSET,
         x_gap: float = DEFAULT_X_GAP,
     ) -> None:
@@ -83,8 +83,8 @@ class NodeCreationHelper(QObject):
         self._x_gap = value
 
     def create_node_at_position(
-        self, node_type: str, identifier: str, position: Tuple[float, float]
-    ) -> Optional[object]:
+        self, node_type: str, identifier: str, position: tuple[float, float]
+    ) -> object | None:
         """
         Create a node at the specified position from a drag-drop operation.
 
@@ -149,6 +149,7 @@ class NodeCreationHelper(QObject):
         """
         try:
             from NodeGraphQt.constants import PortTypeEnum
+
             from casare_rpa.application.services.port_type_service import (
                 get_port_type_registry,
             )
@@ -235,7 +236,7 @@ class NodeCreationHelper(QObject):
     def _get_node_port_type(self, node, port_name: str):
         """Get port type from a node if available (None for exec, DataType for data)."""
         try:
-            if hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+            if hasattr(node, "get_port_type") and callable(node.get_port_type):
                 return node.get_port_type(port_name)
         except Exception:
             pass
@@ -260,7 +261,7 @@ class NodeCreationHelper(QObject):
             node = None
             if node_item is not None:
                 node = getattr(node_item, "node", None) or getattr(node_item, "_node", None)
-            if node and hasattr(node, "get_port_type") and callable(getattr(node, "get_port_type")):
+            if node and hasattr(node, "get_port_type") and callable(node.get_port_type):
                 return node.get_port_type(port_name)
         except Exception:
             pass
@@ -298,7 +299,7 @@ class NodeCreationHelper(QObject):
             pass
         return -1
 
-    def create_set_variable_for_port(self, source_port_item) -> Optional[object]:
+    def create_set_variable_for_port(self, source_port_item) -> object | None:
         """
         Create a SetVariable node connected to the clicked output port.
 
@@ -403,7 +404,7 @@ class NodeCreationHelper(QObject):
             return node.name()
         return getattr(node, "name", str(node))
 
-    def _get_node_position_and_width(self, node) -> Tuple[QPointF, float]:
+    def _get_node_position_and_width(self, node) -> tuple[QPointF, float]:
         """Get node scene position and width."""
         source_view = getattr(node, "view", None)
         if source_view is not None:

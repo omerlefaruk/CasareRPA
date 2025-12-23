@@ -27,7 +27,7 @@ class RobotRepository:
     Maps between Robot domain entity and PostgreSQL robots table.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -55,7 +55,7 @@ class RobotRepository:
         pool = await self._get_pool()
         await pool.release(conn)
 
-    def _row_to_robot(self, row: Dict[str, Any]) -> Robot:
+    def _row_to_robot(self, row: dict[str, Any]) -> Robot:
         """
         Convert database row to Robot domain entity.
 
@@ -69,7 +69,7 @@ class RobotRepository:
         raw_capabilities = row.get("capabilities", [])
         if isinstance(raw_capabilities, str):
             raw_capabilities = orjson.loads(raw_capabilities)
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         for cap in raw_capabilities:
             try:
                 capabilities.add(RobotCapability(cap))
@@ -120,7 +120,7 @@ class RobotRepository:
             current_job_ids=current_job_ids,
         )
 
-    def _robot_to_params(self, robot: Robot) -> Dict[str, Any]:
+    def _robot_to_params(self, robot: Robot) -> dict[str, Any]:
         """
         Convert Robot entity to database parameters.
 
@@ -210,7 +210,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_id(self, robot_id: str) -> Optional[Robot]:
+    async def get_by_id(self, robot_id: str) -> Robot | None:
         """
         Get robot by ID.
 
@@ -232,7 +232,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_hostname(self, hostname: str) -> Optional[Robot]:
+    async def get_by_hostname(self, hostname: str) -> Robot | None:
         """
         Get robot by hostname.
 
@@ -254,7 +254,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_all(self) -> List[Robot]:
+    async def get_all(self) -> list[Robot]:
         """
         Get all registered robots.
 
@@ -271,7 +271,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_status(self, status: RobotStatus) -> List[Robot]:
+    async def get_by_status(self, status: RobotStatus) -> list[Robot]:
         """
         Get robots by status.
 
@@ -294,7 +294,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_available(self) -> List[Robot]:
+    async def get_available(self) -> list[Robot]:
         """
         Get available robots (online with capacity).
 
@@ -320,7 +320,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_capability(self, capability: RobotCapability) -> List[Robot]:
+    async def get_by_capability(self, capability: RobotCapability) -> list[Robot]:
         """
         Get robots with a specific capability.
 
@@ -347,7 +347,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_capabilities(self, capabilities: Set[RobotCapability]) -> List[Robot]:
+    async def get_by_capabilities(self, capabilities: set[RobotCapability]) -> list[Robot]:
         """
         Get robots with all specified capabilities.
 
@@ -438,7 +438,7 @@ class RobotRepository:
         finally:
             await self._release_connection(conn)
 
-    async def update_metrics(self, robot_id: str, metrics: Dict[str, Any]) -> None:
+    async def update_metrics(self, robot_id: str, metrics: dict[str, Any]) -> None:
         """
         Update robot metrics.
 

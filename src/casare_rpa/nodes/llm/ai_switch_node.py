@@ -89,7 +89,7 @@ class AISwitchNode(LLMBaseNode):
 
     def __init__(self, node_id: str, **kwargs: Any) -> None:
         super().__init__(node_id, name=self.NODE_NAME, **kwargs)
-        self._options: List[str] = []
+        self._options: list[str] = []
         self._define_ports()
 
     def _define_ports(self) -> None:
@@ -114,7 +114,7 @@ class AISwitchNode(LLMBaseNode):
         # Default exec output (fallback)
         self.add_exec_output("exec_default")
 
-    def _update_dynamic_ports(self, options: List[str]) -> None:
+    def _update_dynamic_ports(self, options: list[str]) -> None:
         """Update dynamic exec output ports based on options."""
         # Remove old dynamic ports
         for old_option in self._options:

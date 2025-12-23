@@ -48,13 +48,7 @@ class TestImageConvertNode:
         assert (output_dir / "b.webp").exists()
 
     @pytest.mark.asyncio
-<<<<<<< HEAD
-    async def test_scale_percent_resizes_output(
-        self, execution_context, tmp_path: Path
-    ) -> None:
-=======
     async def test_scale_percent_resizes_output(self, execution_context, tmp_path: Path) -> None:
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
         from PIL import Image
 
         source_file = tmp_path / "big.png"

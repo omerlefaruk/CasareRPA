@@ -13,18 +13,18 @@ Design goals:
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.security.vault_client import (
-    VaultClient,
-    VaultConfig,
-    VaultBackend,
-    SecretValue,
     CredentialType,
     SecretNotFoundError,
+    SecretValue,
+    VaultBackend,
+    VaultClient,
+    VaultConfig,
 )
 
 
@@ -36,7 +36,7 @@ class CredentialLease:
     path: str
     expires_at: datetime
     renewable: bool
-    renewal_task: Optional[asyncio.Task] = None
+    renewal_task: asyncio.Task | None = None
 
 
 @dataclass
@@ -46,14 +46,14 @@ class ResolvedCredential:
     alias: str
     vault_path: str
     credential_type: CredentialType
-    data: Dict[str, Any]
-    username: Optional[str] = None
-    password: Optional[str] = None
-    api_key: Optional[str] = None
-    connection_string: Optional[str] = None
+    data: dict[str, Any]
+    username: str | None = None
+    password: str | None = None
+    api_key: str | None = None
+    connection_string: str | None = None
     is_dynamic: bool = False
-    expires_at: Optional[datetime] = None
-    lease: Optional[CredentialLease] = None
+    expires_at: datetime | None = None
+    lease: CredentialLease | None = None
 
 
 class VaultCredentialProvider:
@@ -87,8 +87,8 @@ class VaultCredentialProvider:
 
     def __init__(
         self,
-        config: Optional[VaultConfig] = None,
-        vault_client: Optional[VaultClient] = None,
+        config: VaultConfig | None = None,
+        vault_client: VaultClient | None = None,
     ) -> None:
         """
         Initialize credential provider.
@@ -106,16 +106,16 @@ class VaultCredentialProvider:
             self._owns_client = True
 
         self._initialized = False
-        self._leases: Dict[str, CredentialLease] = {}
-        self._resolved_cache: Dict[str, ResolvedCredential] = {}
-        self._alias_to_path: Dict[str, str] = {}
-        self._workflow_id: Optional[str] = None
-        self._robot_id: Optional[str] = None
+        self._leases: dict[str, CredentialLease] = {}
+        self._resolved_cache: dict[str, ResolvedCredential] = {}
+        self._alias_to_path: dict[str, str] = {}
+        self._workflow_id: str | None = None
+        self._robot_id: str | None = None
 
         # Lease renewal settings
         self._lease_renewal_threshold = 0.8  # Renew at 80% of TTL
         self._lease_check_interval = 30  # Check leases every 30s
-        self._lease_check_task: Optional[asyncio.Task] = None
+        self._lease_check_task: asyncio.Task | None = None
 
     async def initialize(self) -> None:
         """Initialize the provider and connect to vault."""
@@ -159,8 +159,8 @@ class VaultCredentialProvider:
 
     def set_execution_context(
         self,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
     ) -> None:
         """
         Set execution context for audit logging.
@@ -184,7 +184,7 @@ class VaultCredentialProvider:
         self._alias_to_path[alias] = vault_path
         logger.debug(f"Registered credential alias: {alias} -> {vault_path}")
 
-    def register_bindings(self, bindings: Dict[str, str]) -> None:
+    def register_bindings(self, bindings: dict[str, str]) -> None:
         """
         Register multiple credential bindings.
 
@@ -198,7 +198,7 @@ class VaultCredentialProvider:
         self,
         alias: str,
         required: bool = True,
-    ) -> Optional[ResolvedCredential]:
+    ) -> ResolvedCredential | None:
         """
         Get credential by alias.
 
@@ -228,7 +228,7 @@ class VaultCredentialProvider:
     async def get_credential_by_path(
         self,
         vault_path: str,
-        alias: Optional[str] = None,
+        alias: str | None = None,
     ) -> ResolvedCredential:
         """
         Get credential by direct vault path.
@@ -245,7 +245,7 @@ class VaultCredentialProvider:
         if cache_key in self._resolved_cache:
             cached = self._resolved_cache[cache_key]
             # Check if still valid
-            if not cached.expires_at or cached.expires_at > datetime.now(timezone.utc):
+            if not cached.expires_at or cached.expires_at > datetime.now(UTC):
                 return cached
 
         # Fetch from vault
@@ -263,7 +263,7 @@ class VaultCredentialProvider:
             lease = CredentialLease(
                 lease_id=secret.metadata.lease_id,
                 path=vault_path,
-                expires_at=secret.metadata.expires_at or datetime.now(timezone.utc),
+                expires_at=secret.metadata.expires_at or datetime.now(UTC),
                 renewable=secret.metadata.renewable,
             )
             self._leases[vault_path] = lease
@@ -278,8 +278,8 @@ class VaultCredentialProvider:
         self,
         engine_path: str,
         role: str,
-        alias: Optional[str] = None,
-        ttl: Optional[int] = None,
+        alias: str | None = None,
+        ttl: int | None = None,
     ) -> ResolvedCredential:
         """
         Get dynamically generated credentials.
@@ -308,7 +308,7 @@ class VaultCredentialProvider:
             lease = CredentialLease(
                 lease_id=secret.metadata.lease_id,
                 path=full_path,
-                expires_at=secret.metadata.expires_at or datetime.now(timezone.utc),
+                expires_at=secret.metadata.expires_at or datetime.now(UTC),
                 renewable=secret.metadata.renewable,
             )
             self._leases[full_path] = lease
@@ -356,8 +356,8 @@ class VaultCredentialProvider:
 
     async def _check_leases(self) -> None:
         """Check all leases and renew if needed."""
-        now = datetime.now(timezone.utc)
-        to_remove: List[str] = []
+        now = datetime.now(UTC)
+        to_remove: list[str] = []
 
         for path, lease in self._leases.items():
             if not lease.renewable:
@@ -385,7 +385,7 @@ class VaultCredentialProvider:
         """Renew a credential lease."""
         try:
             new_duration = await self._client.renew_lease(lease.lease_id)
-            lease.expires_at = datetime.now(timezone.utc) + timedelta(seconds=new_duration)
+            lease.expires_at = datetime.now(UTC) + timedelta(seconds=new_duration)
             logger.info(f"Renewed lease for {lease.path} (new TTL: {new_duration}s)")
         except Exception as e:
             logger.error(f"Failed to renew lease for {lease.path}: {e}")
@@ -425,11 +425,11 @@ class VaultCredentialProvider:
 
         return removed
 
-    def get_registered_aliases(self) -> Dict[str, str]:
+    def get_registered_aliases(self) -> dict[str, str]:
         """Get all registered credential aliases and their paths."""
         return self._alias_to_path.copy()
 
-    def get_active_leases(self) -> List[Dict[str, Any]]:
+    def get_active_leases(self) -> list[dict[str, Any]]:
         """Get information about active credential leases."""
         return [
             {
@@ -437,7 +437,7 @@ class VaultCredentialProvider:
                 "lease_id": lease.lease_id,
                 "expires_at": lease.expires_at.isoformat(),
                 "renewable": lease.renewable,
-                "time_remaining": (lease.expires_at - datetime.now(timezone.utc)).total_seconds(),
+                "time_remaining": (lease.expires_at - datetime.now(UTC)).total_seconds(),
             }
             for lease in self._leases.values()
         ]
@@ -459,7 +459,7 @@ class VaultCredentialProvider:
 
 
 def create_credential_resolver(
-    config: Optional[VaultConfig] = None,
+    config: VaultConfig | None = None,
 ) -> VaultCredentialProvider:
     """
     Create a credential resolver with default configuration.
@@ -475,8 +475,8 @@ def create_credential_resolver(
 
 async def resolve_credentials_for_node(
     provider: VaultCredentialProvider,
-    credential_requirements: Dict[str, Dict[str, Any]],
-) -> Dict[str, ResolvedCredential]:
+    credential_requirements: dict[str, dict[str, Any]],
+) -> dict[str, ResolvedCredential]:
     """
     Resolve all credentials required by a node.
 
@@ -491,7 +491,7 @@ async def resolve_credentials_for_node(
     Returns:
         Dict mapping alias to ResolvedCredential
     """
-    results: Dict[str, ResolvedCredential] = {}
+    results: dict[str, ResolvedCredential] = {}
 
     for alias, spec in credential_requirements.items():
         required = spec.get("required", True)

@@ -10,10 +10,11 @@ is also supported but deprecated.
 """
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Optional, Dict, Callable, Any, List
 import json
 import platform
+from collections.abc import Callable
+from datetime import UTC, datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -59,8 +60,8 @@ class RobotClient:
         orchestrator_url: str = "wss://api.casare.net/ws/robot",
         environment: str = "default",
         max_concurrent_jobs: int = 1,
-        tags: Optional[List[str]] = None,
-        auth_token: Optional[str] = None,
+        tags: list[str] | None = None,
+        auth_token: str | None = None,
         heartbeat_interval: int = 30,
         reconnect_interval: int = 5,
         max_reconnect_attempts: int = 0,  # 0 = infinite
@@ -105,41 +106,41 @@ class RobotClient:
         self._current_backoff = self._initial_backoff
 
         # Connection state
-        self._websocket: Optional[ClientConnection] = None
+        self._websocket: ClientConnection | None = None
         self._connected = False
         self._running = False
         self._reconnect_count = 0
-        self._start_time = datetime.now(timezone.utc)
+        self._start_time = datetime.now(UTC)
 
         # Active jobs
-        self._active_jobs: Dict[str, Dict[str, Any]] = {}
+        self._active_jobs: dict[str, dict[str, Any]] = {}
         self._paused = False
 
         # Message handlers
-        self._handlers: Dict[MessageType, Callable] = {}
+        self._handlers: dict[MessageType, Callable] = {}
         self._setup_handlers()
 
         # Event callbacks
-        self._on_job_received: Optional[Callable[[Dict], Any]] = None
-        self._on_job_cancel: Optional[Callable[[str], Any]] = None
-        self._on_connected: Optional[Callable[[], Any]] = None
-        self._on_disconnected: Optional[Callable[[], Any]] = None
+        self._on_job_received: Callable[[dict], Any] | None = None
+        self._on_job_cancel: Callable[[str], Any] | None = None
+        self._on_connected: Callable[[], Any] | None = None
+        self._on_disconnected: Callable[[], Any] | None = None
 
         # Background tasks
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._receive_task: Optional[asyncio.Task] = None
+        self._heartbeat_task: asyncio.Task | None = None
+        self._receive_task: asyncio.Task | None = None
 
         # Pending responses
-        self._pending_responses: Dict[str, asyncio.Future] = {}
+        self._pending_responses: dict[str, asyncio.Future] = {}
 
         logger.info(f"RobotClient '{robot_name}' ({robot_id}) initialized")
 
     def set_callbacks(
         self,
-        on_job_received: Optional[Callable[[Dict], Any]] = None,
-        on_job_cancel: Optional[Callable[[str], Any]] = None,
-        on_connected: Optional[Callable[[], Any]] = None,
-        on_disconnected: Optional[Callable[[], Any]] = None,
+        on_job_received: Callable[[dict], Any] | None = None,
+        on_job_cancel: Callable[[str], Any] | None = None,
+        on_connected: Callable[[], Any] | None = None,
+        on_disconnected: Callable[[], Any] | None = None,
     ):
         """Set event callbacks."""
         self._on_job_received = on_job_received
@@ -307,7 +308,7 @@ class RobotClient:
 
         await self._send(msg)
 
-    def _get_capabilities(self) -> Dict[str, Any]:
+    def _get_capabilities(self) -> dict[str, Any]:
         """Get robot capabilities."""
         caps = {
             "platform": platform.system(),
@@ -482,7 +483,7 @@ class RobotClient:
             "priority": payload.get("priority"),
             "timeout_seconds": payload.get("timeout_seconds"),
             "parameters": payload.get("parameters", {}),
-            "started_at": datetime.now(timezone.utc),
+            "started_at": datetime.now(UTC),
         }
 
         await self._send(
@@ -534,7 +535,7 @@ class RobotClient:
 
     async def _handle_status_request(self, msg: Message):
         """Handle status request."""
-        uptime = (datetime.now(timezone.utc) - self._start_time).total_seconds()
+        uptime = (datetime.now(UTC) - self._start_time).total_seconds()
 
         system_info = {}
         if HAS_PSUTIL:
@@ -608,7 +609,7 @@ class RobotClient:
             )
         )
 
-    async def report_job_complete(self, job_id: str, result: Optional[Dict[str, Any]] = None):
+    async def report_job_complete(self, job_id: str, result: dict[str, Any] | None = None):
         """
         Report job completion to orchestrator.
 
@@ -619,9 +620,7 @@ class RobotClient:
         job_info = self._active_jobs.pop(job_id, None)
         duration_ms = 0
         if job_info:
-            duration_ms = int(
-                (datetime.now(timezone.utc) - job_info["started_at"]).total_seconds() * 1000
-            )
+            duration_ms = int((datetime.now(UTC) - job_info["started_at"]).total_seconds() * 1000)
 
         await self._send(
             MessageBuilder.job_complete(
@@ -673,7 +672,7 @@ class RobotClient:
         level: str,
         message: str,
         node_id: str = "",
-        extra: Optional[Dict[str, Any]] = None,
+        extra: dict[str, Any] | None = None,
     ):
         """
         Send log entry to orchestrator.
@@ -696,7 +695,7 @@ class RobotClient:
             )
         )
 
-    async def send_log_batch(self, job_id: str, entries: List[Dict[str, Any]]):
+    async def send_log_batch(self, job_id: str, entries: list[dict[str, Any]]):
         """
         Send batch of log entries.
 
@@ -736,6 +735,6 @@ class RobotClient:
             and len(self._active_jobs) < self.max_concurrent_jobs
         )
 
-    def get_active_jobs(self) -> List[str]:
+    def get_active_jobs(self) -> list[str]:
         """Get list of active job IDs."""
         return list(self._active_jobs.keys())

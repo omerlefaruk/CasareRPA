@@ -6,40 +6,38 @@ Supports real-time status updates via WebSocketBridge.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional
 
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
+    QCheckBox,
     QComboBox,
-    QLineEdit,
-    QLabel,
-    QMenu,
-    QMessageBox,
     QDialog,
+    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
-    QCheckBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
     QSpinBox,
-    QDialogButtonBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QBrush
 
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     ROBOT_STATUS_COLORS,
     TAB_WIDGET_BASE_STYLE,
 )
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
-
-from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.robot.identity_store import RobotIdentity, RobotIdentityStore
-
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot
@@ -55,7 +53,7 @@ class RobotEditDialog(QDialog):
     def __init__(
         self,
         robot: Optional["Robot"] = None,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._robot = robot
@@ -132,7 +130,7 @@ class RobotEditDialog(QDialog):
 
         QMessageBox.warning(self, "Validation Error", message)
 
-    def get_robot_data(self) -> Dict:
+    def get_robot_data(self) -> dict:
         """Get robot data from form."""
         caps = []
         if self._cap_browser.isChecked():
@@ -182,10 +180,10 @@ class RobotsTabWidget(QWidget):
     robot_metrics_requested = Signal(str)  # robot_id
     robot_run_workflow_requested = Signal(str)  # robot_id
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._robots: List["Robot"] = []
-        self._robot_map: Dict[str, "Robot"] = {}
+        self._robots: list[Robot] = []
+        self._robot_map: dict[str, Robot] = {}
         self._identity_store = RobotIdentityStore()
         self._setup_ui()
         self._apply_styles()
@@ -312,7 +310,7 @@ class RobotsTabWidget(QWidget):
     # Public API
     # =========================================================================
 
-    def update_robots(self, robots: List["Robot"]) -> None:
+    def update_robots(self, robots: list["Robot"]) -> None:
         self._robots = robots
         self._robot_map = {r.id: r for r in robots}
         self._apply_filters()
@@ -345,7 +343,7 @@ class RobotsTabWidget(QWidget):
         elif capability_text == "high memory":
             capability_filter = "high_memory"
 
-        filtered: List["Robot"] = []
+        filtered: list[Robot] = []
         for robot in self._robots:
             if search_text and search_text not in robot.name.lower():
                 continue
@@ -369,7 +367,7 @@ class RobotsTabWidget(QWidget):
             f"{shown} robots" if shown == total else f"{shown}/{total} robots"
         )
 
-    def _populate_table(self, robots: List["Robot"]) -> None:
+    def _populate_table(self, robots: list["Robot"]) -> None:
         self._table.setSortingEnabled(False)
         self._table.setRowCount(0)
 
@@ -404,7 +402,7 @@ class RobotsTabWidget(QWidget):
 
         self._table.setSortingEnabled(True)
 
-    def _get_selected_robot_id(self) -> Optional[str]:
+    def _get_selected_robot_id(self) -> str | None:
         selected = self._table.selectedItems()
         if not selected:
             return None

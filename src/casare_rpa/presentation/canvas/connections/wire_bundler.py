@@ -11,11 +11,13 @@ Features:
 - Click badge to select all bundled connections
 """
 
-from typing import Optional, Dict, List, Set, Tuple
 from collections import defaultdict
+from typing import Dict, List, Optional, Set, Tuple
 
-from PySide6.QtCore import QObject, Signal, QTimer, QRectF, QPointF, Qt
-from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QFont, QFontMetrics
+from loguru import logger
+from NodeGraphQt import NodeGraph
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QFont, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
@@ -23,12 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from NodeGraphQt import NodeGraph
-
-from loguru import logger
-
 from casare_rpa.presentation.canvas.ui.theme import Theme
-
 
 # ============================================================================
 # BUNDLE VISUAL CONSTANTS
@@ -88,7 +85,7 @@ class WireBundler(QObject):
 
     bundles_updated = Signal()
 
-    def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None):
+    def __init__(self, graph: NodeGraph, parent: QObject | None = None):
         """
         Initialize the wire bundler.
 
@@ -102,16 +99,16 @@ class WireBundler(QObject):
         self._enabled = True
 
         # Bundle storage: (source_node_id, target_node_id) -> list of pipe items
-        self._bundles: Dict[Tuple[str, str], List[object]] = defaultdict(list)
+        self._bundles: dict[tuple[str, str], list[object]] = defaultdict(list)
 
         # Track which pipes are hidden (part of a bundle, not the primary)
-        self._hidden_pipes: Set[object] = set()
+        self._hidden_pipes: set[object] = set()
 
         # Track bundled pipe items we've created
-        self._bundle_items: Dict[Tuple[str, str], "BundledPipeItem"] = {}
+        self._bundle_items: dict[tuple[str, str], BundledPipeItem] = {}
 
         # Debounce timer for bundle updates
-        self._update_timer: Optional[QTimer] = None
+        self._update_timer: QTimer | None = None
 
         # Connect to graph signals
         self._setup_signals()
@@ -243,7 +240,7 @@ class WireBundler(QObject):
 
         self.bundles_updated.emit()
 
-    def _get_target_node_id(self, pipe) -> Optional[str]:
+    def _get_target_node_id(self, pipe) -> str | None:
         """
         Get the target node ID from a pipe item.
 
@@ -300,7 +297,7 @@ class WireBundler(QObject):
             except Exception as e:
                 logger.debug(f"Error creating bundle item: {e}")
 
-    def get_bundle_for_pipe(self, pipe) -> Optional[List[object]]:
+    def get_bundle_for_pipe(self, pipe) -> list[object] | None:
         """
         Get the bundle containing this pipe, if any.
 
@@ -374,7 +371,7 @@ class BundledPipeItem(QGraphicsObject):
     to show individual connections with slight offsets.
     """
 
-    def __init__(self, pipes: List[object], bundler: WireBundler, parent: QGraphicsItem = None):
+    def __init__(self, pipes: list[object], bundler: WireBundler, parent: QGraphicsItem = None):
         """
         Initialize the bundled pipe item.
 
@@ -391,8 +388,8 @@ class BundledPipeItem(QGraphicsObject):
         self._hovered = False
 
         # Get source/target node IDs for badge click handling
-        self._source_node_id: Optional[str] = None
-        self._target_node_id: Optional[str] = None
+        self._source_node_id: str | None = None
+        self._target_node_id: str | None = None
         self._extract_node_ids()
 
         # Cache the path from first pipe
@@ -457,7 +454,7 @@ class BundledPipeItem(QGraphicsObject):
         self,
         painter: QPainter,
         option: QStyleOptionGraphicsItem,
-        widget: Optional[QWidget] = None,
+        widget: QWidget | None = None,
     ) -> None:
         """
         Paint the bundled pipe.
@@ -654,10 +651,10 @@ class BundledPipeItem(QGraphicsObject):
 # ============================================================================
 
 
-_wire_bundler_instance: Optional[WireBundler] = None
+_wire_bundler_instance: WireBundler | None = None
 
 
-def get_wire_bundler() -> Optional[WireBundler]:
+def get_wire_bundler() -> WireBundler | None:
     """
     Get the global wire bundler instance.
 
@@ -667,7 +664,7 @@ def get_wire_bundler() -> Optional[WireBundler]:
     return _wire_bundler_instance
 
 
-def set_wire_bundler(bundler: Optional[WireBundler]) -> None:
+def set_wire_bundler(bundler: WireBundler | None) -> None:
     """
     Set the global wire bundler instance.
 

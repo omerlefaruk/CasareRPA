@@ -34,12 +34,12 @@ from casare_rpa.application.dependency_injection.container import DIContainer, L
 from casare_rpa.application.dependency_injection.providers import (
     ConfigProvider,
     EventBusProvider,
-    StorageProvider,
     InfrastructureProvider,
+    StorageProvider,
 )
 from casare_rpa.application.dependency_injection.singleton import (
-    Singleton,
     LazySingleton,
+    Singleton,
     create_singleton_accessor,
 )
 

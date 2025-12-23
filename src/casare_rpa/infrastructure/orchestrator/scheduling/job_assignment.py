@@ -5,12 +5,12 @@ Implements constraint-based robot selection with soft scoring for optimal job as
 Supports capability matching, load balancing, tag affinity, and state preferences.
 """
 
+import threading
+from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Protocol, Tuple
-from collections import defaultdict
-import threading
 
 from loguru import logger
 
@@ -18,7 +18,7 @@ from loguru import logger
 class NoCapableRobotError(Exception):
     """Raised when no robot can execute the requested job."""
 
-    def __init__(self, job_name: str, required_capabilities: Optional[List[str]] = None):
+    def __init__(self, job_name: str, required_capabilities: list[str] | None = None):
         self.job_name = job_name
         self.required_capabilities = required_capabilities or []
         caps_str = ", ".join(self.required_capabilities) if self.required_capabilities else "none"
@@ -57,8 +57,8 @@ class RobotCapability:
 
     capability_type: CapabilityType
     name: str
-    version: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    version: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def matches(self, required: "RobotCapability") -> bool:
         """
@@ -126,9 +126,9 @@ class JobRequirements:
 
     workflow_id: str
     workflow_name: str
-    required_capabilities: List[RobotCapability] = field(default_factory=list)
-    required_tags: List[str] = field(default_factory=list)
-    preferred_tags: List[str] = field(default_factory=list)
+    required_capabilities: list[RobotCapability] = field(default_factory=list)
+    required_tags: list[str] = field(default_factory=list)
+    preferred_tags: list[str] = field(default_factory=list)
     requires_state: bool = False
     min_memory_gb: float = 0.0
     min_cpu_cores: int = 0
@@ -176,7 +176,7 @@ class RobotPresenceProtocol(Protocol):
         ...
 
     @property
-    def tags(self) -> List[str]:
+    def tags(self) -> list[str]:
         """Robot tags."""
         ...
 
@@ -186,7 +186,7 @@ class RobotPresenceProtocol(Protocol):
         ...
 
     @property
-    def capabilities(self) -> Dict[str, Any]:
+    def capabilities(self) -> dict[str, Any]:
         """Robot capabilities dictionary."""
         ...
 
@@ -206,11 +206,11 @@ class RobotInfo:
     disk_percent: float = 0.0
     current_jobs: int = 0
     max_concurrent_jobs: int = 1
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     environment: str = "default"
-    capabilities: Dict[str, Any] = field(default_factory=dict)
+    capabilities: dict[str, Any] = field(default_factory=dict)
     network_zone: str = "default"
-    last_heartbeat: Optional[datetime] = None
+    last_heartbeat: datetime | None = None
 
     @property
     def is_available(self) -> bool:
@@ -233,7 +233,7 @@ class RobotInfo:
                 return True
         return False
 
-    def _parse_capabilities(self) -> List[RobotCapability]:
+    def _parse_capabilities(self) -> list[RobotCapability]:
         """Parse capabilities dict into RobotCapability objects."""
         result = []
         for key, value in self.capabilities.items():
@@ -316,8 +316,8 @@ class AssignmentResult:
     robot_id: str
     robot_name: str
     score: float
-    scores_breakdown: Dict[str, float] = field(default_factory=dict)
-    alternatives: List[Tuple[str, float]] = field(default_factory=list)
+    scores_breakdown: dict[str, float] = field(default_factory=dict)
+    alternatives: list[tuple[str, float]] = field(default_factory=list)
     assignment_time_ms: float = 0.0
 
 
@@ -335,7 +335,7 @@ class StateAffinityTracker:
             state_ttl_seconds: How long state records are considered valid
         """
         self._state_ttl = timedelta(seconds=state_ttl_seconds)
-        self._state_records: Dict[str, Dict[str, datetime]] = defaultdict(dict)
+        self._state_records: dict[str, dict[str, datetime]] = defaultdict(dict)
         self._lock = threading.Lock()
 
     def record_state(self, workflow_id: str, robot_id: str) -> None:
@@ -347,7 +347,7 @@ class StateAffinityTracker:
             robot_id: Robot that executed the workflow
         """
         with self._lock:
-            self._state_records[workflow_id][robot_id] = datetime.now(timezone.utc)
+            self._state_records[workflow_id][robot_id] = datetime.now(UTC)
 
     def has_state(self, workflow_id: str, robot_id: str) -> bool:
         """
@@ -366,9 +366,9 @@ class StateAffinityTracker:
                 return False
 
             state_time = workflow_states[robot_id]
-            return datetime.now(timezone.utc) - state_time < self._state_ttl
+            return datetime.now(UTC) - state_time < self._state_ttl
 
-    def get_robots_with_state(self, workflow_id: str) -> List[str]:
+    def get_robots_with_state(self, workflow_id: str) -> list[str]:
         """
         Get all robots that have valid state for a workflow.
 
@@ -379,7 +379,7 @@ class StateAffinityTracker:
             List of robot IDs with valid state
         """
         with self._lock:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             workflow_states = self._state_records.get(workflow_id, {})
             return [
                 robot_id
@@ -387,7 +387,7 @@ class StateAffinityTracker:
                 if now - state_time < self._state_ttl
             ]
 
-    def clear_state(self, workflow_id: str, robot_id: Optional[str] = None) -> None:
+    def clear_state(self, workflow_id: str, robot_id: str | None = None) -> None:
         """
         Clear state records.
 
@@ -409,7 +409,7 @@ class StateAffinityTracker:
             Number of records removed
         """
         removed = 0
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         with self._lock:
             for workflow_id in list(self._state_records.keys()):
@@ -439,7 +439,7 @@ class JobAssignmentEngine:
 
     def __init__(
         self,
-        weights: Optional[ScoringWeights] = None,
+        weights: ScoringWeights | None = None,
         state_ttl_seconds: int = 3600,
         network_zone: str = "default",
     ):
@@ -477,8 +477,8 @@ class JobAssignmentEngine:
     def assign_job(
         self,
         requirements: JobRequirements,
-        available_robots: List[RobotInfo],
-        orchestrator_zone: Optional[str] = None,
+        available_robots: list[RobotInfo],
+        orchestrator_zone: str | None = None,
     ) -> AssignmentResult:
         """
         Assign a job to the best-fit robot.
@@ -499,7 +499,7 @@ class JobAssignmentEngine:
         Raises:
             NoCapableRobotError: If no robot can execute the job
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         zone = orchestrator_zone or self._network_zone
 
         capable_robots = self._filter_by_hard_constraints(requirements, available_robots)
@@ -522,7 +522,7 @@ class JobAssignmentEngine:
 
         alternatives = [(r.robot_id, score) for r, score, _ in scored_robots[1:5]]
 
-        elapsed = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+        elapsed = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
         logger.info(
             f"Assigned job '{requirements.workflow_name}' to robot '{best_robot.name}' "
@@ -541,8 +541,8 @@ class JobAssignmentEngine:
     def _filter_by_hard_constraints(
         self,
         requirements: JobRequirements,
-        robots: List[RobotInfo],
-    ) -> List[RobotInfo]:
+        robots: list[RobotInfo],
+    ) -> list[RobotInfo]:
         """
         Filter robots by hard constraints.
 
@@ -640,9 +640,9 @@ class JobAssignmentEngine:
     def _score_robots(
         self,
         requirements: JobRequirements,
-        robots: List[RobotInfo],
+        robots: list[RobotInfo],
         orchestrator_zone: str,
-    ) -> List[Tuple[RobotInfo, float, Dict[str, float]]]:
+    ) -> list[tuple[RobotInfo, float, dict[str, float]]]:
         """
         Score robots by soft preferences.
 
@@ -663,7 +663,7 @@ class JobAssignmentEngine:
         scored = []
 
         for robot in robots:
-            breakdown: Dict[str, float] = {}
+            breakdown: dict[str, float] = {}
             score = 100.0
 
             cpu_penalty = self._calculate_cpu_penalty(robot.cpu_percent)
@@ -833,7 +833,7 @@ class JobAssignmentEngine:
     def clear_state_affinity(
         self,
         workflow_id: str,
-        robot_id: Optional[str] = None,
+        robot_id: str | None = None,
     ) -> None:
         """
         Clear state affinity records.
@@ -853,7 +853,7 @@ class JobAssignmentEngine:
         """
         return self._state_tracker.cleanup_expired()
 
-    def get_assignment_stats(self) -> Dict[str, Any]:
+    def get_assignment_stats(self) -> dict[str, Any]:
         """
         Get assignment engine statistics.
 
@@ -881,9 +881,9 @@ class JobAssignmentEngine:
 
 async def assign_job_to_robot(
     job_requirements: JobRequirements,
-    available_robots: List[RobotInfo],
-    engine: Optional[JobAssignmentEngine] = None,
-    weights: Optional[ScoringWeights] = None,
+    available_robots: list[RobotInfo],
+    engine: JobAssignmentEngine | None = None,
+    weights: ScoringWeights | None = None,
 ) -> AssignmentResult:
     """
     Convenience function to assign a job to the best-fit robot.

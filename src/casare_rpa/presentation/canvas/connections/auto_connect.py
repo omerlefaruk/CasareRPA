@@ -8,16 +8,15 @@ to confirm connections or disconnect nodes.
 Now uses ConnectionValidator for type-safe connection checking.
 """
 
-from typing import Optional, Tuple, List
 import math
 import time
-
-from PySide6.QtCore import QObject, Signal, QPointF, Qt
-from PySide6.QtWidgets import QGraphicsLineItem
-from PySide6.QtGui import QPen, QColor
-from NodeGraphQt import NodeGraph, BaseNode
+from typing import List, Optional, Tuple
 
 from loguru import logger
+from NodeGraphQt import BaseNode, NodeGraph
+from PySide6.QtCore import QObject, QPointF, Qt, Signal
+from PySide6.QtGui import QColor, QPen
+from PySide6.QtWidgets import QGraphicsLineItem
 
 # Import connection validator for type checking
 try:
@@ -43,7 +42,7 @@ class AutoConnectManager(QObject):
     )  # from_node, from_port, to_node, to_port
     disconnection_requested = Signal(object)  # node to disconnect
 
-    def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None):
+    def __init__(self, graph: NodeGraph, parent: QObject | None = None):
         """
         Initialize the auto-connect manager.
 
@@ -55,9 +54,9 @@ class AutoConnectManager(QObject):
 
         self._graph = graph
         self._active = True
-        self._dragging_node: Optional[BaseNode] = None
-        self._suggestion_lines: List[QGraphicsLineItem] = []
-        self._suggested_connections: List[Tuple[BaseNode, str, BaseNode, str]] = []
+        self._dragging_node: BaseNode | None = None
+        self._suggestion_lines: list[QGraphicsLineItem] = []
+        self._suggested_connections: list[tuple[BaseNode, str, BaseNode, str]] = []
         self._max_distance = 600.0  # Maximum distance to suggest connections (pixels)
         self._right_button_pressed = False
         self._original_context_policy = None  # Store original context menu policy
@@ -211,7 +210,7 @@ class AutoConnectManager(QObject):
 
         return super().eventFilter(watched, event)
 
-    def _get_node_at_position(self, pos) -> Optional[BaseNode]:
+    def _get_node_at_position(self, pos) -> BaseNode | None:
         """Get the node at the given position."""
         try:
             viewer = self._graph.viewer()
@@ -261,8 +260,8 @@ class AutoConnectManager(QObject):
         self._suggested_connections = suggestions
 
     def _find_closest_connections(
-        self, node: BaseNode, other_nodes: List[BaseNode]
-    ) -> List[Tuple[BaseNode, str, BaseNode, str]]:
+        self, node: BaseNode, other_nodes: list[BaseNode]
+    ) -> list[tuple[BaseNode, str, BaseNode, str]]:
         """
         Find the closest compatible connections for the dragging node.
 
@@ -326,7 +325,7 @@ class AutoConnectManager(QObject):
 
         return suggestions
 
-    def _get_node_center(self, node: BaseNode) -> Optional[QPointF]:
+    def _get_node_center(self, node: BaseNode) -> QPointF | None:
         """Get the center position of a node in scene coordinates."""
         try:
             if hasattr(node, "view") and node.view:
@@ -391,7 +390,7 @@ class AutoConnectManager(QObject):
             logger.debug(f"Port compatibility check failed: {e}")
             return False  # Default to not compatible if we can't determine
 
-    def _draw_suggestion_lines(self, suggestions: List[Tuple[BaseNode, str, BaseNode, str]]):
+    def _draw_suggestion_lines(self, suggestions: list[tuple[BaseNode, str, BaseNode, str]]):
         """Draw faded lines showing suggested connections."""
         logger.debug(f"AutoConnect: Drawing {len(suggestions)} suggestion lines")
         try:
@@ -431,7 +430,7 @@ class AutoConnectManager(QObject):
 
     def _get_port_scene_pos(
         self, node: BaseNode, port_name: str, is_output: bool
-    ) -> Optional[QPointF]:
+    ) -> QPointF | None:
         """Get the scene position of a specific port."""
         try:
             if is_output:

@@ -8,14 +8,14 @@ import hashlib
 import hmac
 import secrets
 import time
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, List, Callable, Set
-from dataclasses import dataclass, field
-from enum import Enum
 from collections import defaultdict, deque
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
-
 
 # ==================== ERROR RECOVERY ====================
 
@@ -38,8 +38,8 @@ class RecoveryAction:
     error_type: str
     strategy: RecoveryStrategy
     success: bool
-    robot_id: Optional[str] = None
-    job_id: Optional[str] = None
+    robot_id: str | None = None
+    job_id: str | None = None
     details: str = ""
 
 
@@ -52,7 +52,7 @@ class RetryPolicy:
     max_delay: float = 60.0
     backoff_multiplier: float = 2.0
     jitter: bool = True
-    retriable_errors: Set[str] = field(
+    retriable_errors: set[str] = field(
         default_factory=lambda: {
             "ConnectionError",
             "TimeoutError",
@@ -88,7 +88,7 @@ class ErrorRecoveryManager:
 
     def __init__(
         self,
-        retry_policy: Optional[RetryPolicy] = None,
+        retry_policy: RetryPolicy | None = None,
         max_history: int = 1000,
     ):
         """
@@ -102,21 +102,21 @@ class ErrorRecoveryManager:
         self._max_history = max_history
 
         # Recovery tracking
-        self._recovery_history: List[RecoveryAction] = []
-        self._active_recoveries: Dict[str, int] = {}  # key -> retry count
+        self._recovery_history: list[RecoveryAction] = []
+        self._active_recoveries: dict[str, int] = {}  # key -> retry count
 
         # Callbacks
-        self._on_recovery_success: Optional[Callable] = None
-        self._on_recovery_failure: Optional[Callable] = None
-        self._on_escalation: Optional[Callable] = None
+        self._on_recovery_success: Callable | None = None
+        self._on_recovery_failure: Callable | None = None
+        self._on_escalation: Callable | None = None
 
         logger.info("ErrorRecoveryManager initialized")
 
     def set_callbacks(
         self,
-        on_success: Optional[Callable] = None,
-        on_failure: Optional[Callable] = None,
-        on_escalation: Optional[Callable] = None,
+        on_success: Callable | None = None,
+        on_failure: Callable | None = None,
+        on_escalation: Callable | None = None,
     ):
         """Set recovery callbacks."""
         self._on_recovery_success = on_success
@@ -204,8 +204,8 @@ class ErrorRecoveryManager:
         job_id: str,
         robot_id: str,
         error: Exception,
-        retry_fn: Optional[Callable] = None,
-        failover_fn: Optional[Callable] = None,
+        retry_fn: Callable | None = None,
+        failover_fn: Callable | None = None,
     ) -> bool:
         """
         Handle job execution error.
@@ -291,10 +291,10 @@ class ErrorRecoveryManager:
     async def handle_robot_crash(
         self,
         robot_id: str,
-        active_jobs: List[str],
-        restart_fn: Optional[Callable] = None,
-        reassign_fn: Optional[Callable[[str], Any]] = None,
-    ) -> Dict[str, bool]:
+        active_jobs: list[str],
+        restart_fn: Callable | None = None,
+        reassign_fn: Callable[[str], Any] | None = None,
+    ) -> dict[str, bool]:
         """
         Handle robot crash.
 
@@ -345,13 +345,13 @@ class ErrorRecoveryManager:
         error_type: str,
         strategy: RecoveryStrategy,
         success: bool,
-        robot_id: Optional[str] = None,
-        job_id: Optional[str] = None,
+        robot_id: str | None = None,
+        job_id: str | None = None,
         details: str = "",
     ):
         """Record a recovery action."""
         action = RecoveryAction(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             error_type=error_type,
             strategy=strategy,
             success=success,
@@ -365,7 +365,7 @@ class ErrorRecoveryManager:
         if len(self._recovery_history) > self._max_history:
             self._recovery_history = self._recovery_history[-self._max_history :]
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get recovery statistics."""
         total = len(self._recovery_history)
         successful = sum(1 for a in self._recovery_history if a.success)
@@ -383,7 +383,7 @@ class ErrorRecoveryManager:
             "active_recoveries": len(self._active_recoveries),
         }
 
-    def get_recent_actions(self, limit: int = 20) -> List[RecoveryAction]:
+    def get_recent_actions(self, limit: int = 20) -> list[RecoveryAction]:
         """Get recent recovery actions."""
         return self._recovery_history[-limit:]
 
@@ -406,7 +406,7 @@ class HealthMetrics:
 
     robot_id: str
     status: HealthStatus = HealthStatus.UNKNOWN
-    last_heartbeat: Optional[datetime] = None
+    last_heartbeat: datetime | None = None
     cpu_percent: float = 0.0
     memory_percent: float = 0.0
     disk_percent: float = 0.0
@@ -419,7 +419,7 @@ class HealthMetrics:
         """Check if robot is healthy."""
         return self.status == HealthStatus.HEALTHY
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "robot_id": self.robot_id,
@@ -462,7 +462,7 @@ class HealthMonitor:
 
     def __init__(
         self,
-        thresholds: Optional[HealthThresholds] = None,
+        thresholds: HealthThresholds | None = None,
         check_interval: float = 30.0,
     ):
         """
@@ -476,24 +476,24 @@ class HealthMonitor:
         self._check_interval = check_interval
 
         # Robot health
-        self._robot_metrics: Dict[str, HealthMetrics] = {}
-        self._error_counts: Dict[str, int] = defaultdict(int)
-        self._request_counts: Dict[str, int] = defaultdict(int)
+        self._robot_metrics: dict[str, HealthMetrics] = {}
+        self._error_counts: dict[str, int] = defaultdict(int)
+        self._request_counts: dict[str, int] = defaultdict(int)
 
         # Monitoring state
         self._running = False
-        self._check_task: Optional[asyncio.Task] = None
+        self._check_task: asyncio.Task | None = None
 
         # Callbacks
-        self._on_health_change: Optional[Callable] = None
-        self._on_robot_unhealthy: Optional[Callable] = None
+        self._on_health_change: Callable | None = None
+        self._on_robot_unhealthy: Callable | None = None
 
         logger.info("HealthMonitor initialized")
 
     def set_callbacks(
         self,
-        on_health_change: Optional[Callable] = None,
-        on_robot_unhealthy: Optional[Callable] = None,
+        on_health_change: Callable | None = None,
+        on_robot_unhealthy: Callable | None = None,
     ):
         """Set health monitoring callbacks."""
         self._on_health_change = on_health_change
@@ -545,7 +545,7 @@ class HealthMonitor:
             metrics = HealthMetrics(robot_id=robot_id)
             self._robot_metrics[robot_id] = metrics
 
-        metrics.last_heartbeat = datetime.now(timezone.utc)
+        metrics.last_heartbeat = datetime.now(UTC)
         metrics.cpu_percent = cpu_percent
         metrics.memory_percent = memory_percent
         metrics.disk_percent = disk_percent
@@ -580,7 +580,7 @@ class HealthMonitor:
             return HealthStatus.UNKNOWN
 
         # Check heartbeat timeout
-        elapsed = (datetime.now(timezone.utc) - metrics.last_heartbeat).total_seconds()
+        elapsed = (datetime.now(UTC) - metrics.last_heartbeat).total_seconds()
         if elapsed > self._thresholds.heartbeat_timeout:
             return HealthStatus.UNHEALTHY
 
@@ -645,7 +645,7 @@ class HealthMonitor:
 
     async def _check_all_robots(self):
         """Check health of all robots."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for robot_id, metrics in self._robot_metrics.items():
             if not metrics.last_heartbeat:
@@ -659,15 +659,15 @@ class HealthMonitor:
                     metrics.status = HealthStatus.UNHEALTHY
                     self._notify_health_change(robot_id, old_status, HealthStatus.UNHEALTHY)
 
-    def get_robot_health(self, robot_id: str) -> Optional[HealthMetrics]:
+    def get_robot_health(self, robot_id: str) -> HealthMetrics | None:
         """Get health metrics for a robot."""
         return self._robot_metrics.get(robot_id)
 
-    def get_all_health(self) -> Dict[str, HealthMetrics]:
+    def get_all_health(self) -> dict[str, HealthMetrics]:
         """Get health metrics for all robots."""
         return dict(self._robot_metrics)
 
-    def get_unhealthy_robots(self) -> List[str]:
+    def get_unhealthy_robots(self) -> list[str]:
         """Get list of unhealthy robot IDs."""
         return [
             robot_id
@@ -675,7 +675,7 @@ class HealthMonitor:
             if metrics.status == HealthStatus.UNHEALTHY
         ]
 
-    def get_overall_health(self) -> Dict[str, Any]:
+    def get_overall_health(self) -> dict[str, Any]:
         """Get overall system health summary."""
         total = len(self._robot_metrics)
         healthy = sum(1 for m in self._robot_metrics.values() if m.status == HealthStatus.HEALTHY)
@@ -728,15 +728,15 @@ class AuthToken:
     token: str
     token_type: TokenType
     robot_id: str
-    expires_at: Optional[datetime] = None
-    scopes: List[str] = field(default_factory=list)
+    expires_at: datetime | None = None
+    scopes: list[str] = field(default_factory=list)
 
     @property
     def is_expired(self) -> bool:
         """Check if token is expired."""
         if not self.expires_at:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
 
 class SecurityManager:
@@ -751,7 +751,7 @@ class SecurityManager:
 
     def __init__(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         token_ttl_hours: int = 24,
         rate_limit_requests: int = 100,
         rate_limit_window: int = 60,
@@ -771,10 +771,10 @@ class SecurityManager:
         self._rate_limit_window = rate_limit_window
 
         # Token storage
-        self._tokens: Dict[str, AuthToken] = {}
+        self._tokens: dict[str, AuthToken] = {}
 
         # Rate limiting - use deque with maxlen to bound memory
-        self._request_counts: Dict[str, deque] = {}
+        self._request_counts: dict[str, deque] = {}
         self._max_tracked_requests = rate_limit_requests * 2  # Allow some headroom
 
         logger.info("SecurityManager initialized")
@@ -782,7 +782,7 @@ class SecurityManager:
     def generate_token(
         self,
         robot_id: str,
-        scopes: Optional[List[str]] = None,
+        scopes: list[str] | None = None,
     ) -> AuthToken:
         """
         Generate an authentication token.
@@ -795,7 +795,7 @@ class SecurityManager:
             Generated token
         """
         token_str = secrets.token_urlsafe(32)
-        expires_at = datetime.now(timezone.utc) + self._token_ttl
+        expires_at = datetime.now(UTC) + self._token_ttl
 
         token = AuthToken(
             token=token_str,
@@ -810,7 +810,7 @@ class SecurityManager:
 
         return token
 
-    def validate_token(self, token_str: str) -> Optional[AuthToken]:
+    def validate_token(self, token_str: str) -> AuthToken | None:
         """
         Validate an authentication token.
 
@@ -971,9 +971,9 @@ class SecurityManager:
 
         return len(stale)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get security statistics."""
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
 
         active_tokens = sum(1 for t in self._tokens.values() if not t.is_expired)
         expired_tokens = sum(1 for t in self._tokens.values() if t.is_expired)

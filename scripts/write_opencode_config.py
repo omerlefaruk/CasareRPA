@@ -15,7 +15,7 @@ def _require_secret(var_name: str) -> str:
     return value
 
 
-def _build_mcp_servers() -> Dict[str, Dict[str, object]]:
+def _build_mcp_servers() -> dict[str, dict[str, object]]:
     return {
         "exa": {
             "type": "local",

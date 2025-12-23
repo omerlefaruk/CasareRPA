@@ -3,7 +3,7 @@ import os
 
 path = r"C:\Users\Rau\.opencode\config.json"
 if os.path.exists(path):
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         config = json.load(f)
 
     # 1. Update existing plugin paths (plural to singular)

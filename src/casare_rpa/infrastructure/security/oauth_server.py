@@ -340,25 +340,25 @@ class OAuthHTTPServer(HTTPServer):
 
     def __init__(
         self,
-        server_address: Tuple[str, int],
+        server_address: tuple[str, int],
         handler_class: type,
         redirect_path: str,
-        expected_state: Optional[str],
+        expected_state: str | None,
     ) -> None:
         super().__init__(server_address, handler_class)
         self.redirect_path = redirect_path
         self.expected_state = expected_state
-        self._result_auth_code: Optional[str] = None
-        self._result_error: Optional[str] = None
+        self._result_auth_code: str | None = None
+        self._result_error: str | None = None
         self._result_event = threading.Event()
 
-    def set_result(self, auth_code: Optional[str], error: Optional[str]) -> None:
+    def set_result(self, auth_code: str | None, error: str | None) -> None:
         """Store the callback result."""
         self._result_auth_code = auth_code
         self._result_error = error
         self._result_event.set()
 
-    def get_result(self) -> Tuple[Optional[str], Optional[str]]:
+    def get_result(self) -> tuple[str | None, str | None]:
         """Get the stored result."""
         return self._result_auth_code, self._result_error
 
@@ -387,10 +387,10 @@ class LocalOAuthServer:
 
     def __init__(self) -> None:
         """Initialize the OAuth server."""
-        self._server: Optional[OAuthHTTPServer] = None
-        self._server_thread: Optional[threading.Thread] = None
-        self._port: Optional[int] = None
-        self._state: Optional[str] = None
+        self._server: OAuthHTTPServer | None = None
+        self._server_thread: threading.Thread | None = None
+        self._port: int | None = None
+        self._state: str | None = None
 
     def _find_available_port(self) -> int:
         """
@@ -429,11 +429,11 @@ class LocalOAuthServer:
         return self._state
 
     @property
-    def state(self) -> Optional[str]:
+    def state(self) -> str | None:
         """Get the current state parameter."""
         return self._state
 
-    def start(self, state: Optional[str] = None) -> int:
+    def start(self, state: str | None = None) -> int:
         """
         Start the OAuth callback server.
 
@@ -500,7 +500,7 @@ class LocalOAuthServer:
         return f"http://127.0.0.1:{self._port}{self.REDIRECT_PATH}"
 
     @property
-    def port(self) -> Optional[int]:
+    def port(self) -> int | None:
         """Get the port number the server is listening on."""
         return self._port
 
@@ -509,9 +509,7 @@ class LocalOAuthServer:
         """Check if the server is running."""
         return self._server is not None and self._server_thread is not None
 
-    async def wait_for_callback(
-        self, timeout: float = 300.0
-    ) -> Tuple[Optional[str], Optional[str]]:
+    async def wait_for_callback(self, timeout: float = 300.0) -> tuple[str | None, str | None]:
         """
         Wait for the OAuth callback to be received.
 
@@ -570,7 +568,7 @@ class LocalOAuthServer:
 
         self._port = None
 
-    def __enter__(self) -> "LocalOAuthServer":
+    def __enter__(self) -> LocalOAuthServer:
         """Context manager entry."""
         self.start()
         return self
@@ -579,7 +577,7 @@ class LocalOAuthServer:
         """Context manager exit."""
         self.stop()
 
-    async def __aenter__(self) -> "LocalOAuthServer":
+    async def __aenter__(self) -> LocalOAuthServer:
         """Async context manager entry."""
         self.start()
         return self
@@ -597,7 +595,7 @@ def build_google_auth_url(
     state: str,
     access_type: str = "offline",
     prompt: str = "consent",
-    login_hint: Optional[str] = None,
+    login_hint: str | None = None,
 ) -> str:
     """
     Build a Google OAuth 2.0 authorization URL.
@@ -658,7 +656,7 @@ async def poll_for_cloud_auth_code(
     state: str,
     timeout: float = 300.0,
     poll_interval: float = 2.0,
-) -> Tuple[Optional[str], Optional[str]]:
+) -> tuple[str | None, str | None]:
     """
     Poll the cloud server for the OAuth authorization code.
 

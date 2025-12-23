@@ -9,12 +9,12 @@ Used for organizing wire routing in complex workflows.
 
 from typing import Optional
 
-from PySide6.QtGui import QPen, QBrush, QColor
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
+from PySide6.QtGui import QBrush, QColor, QPen
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.graph.reroute_node_item import RerouteNodeItem
 from casare_rpa.presentation.canvas.graph.custom_pipe import TYPE_WIRE_COLORS
+from casare_rpa.presentation.canvas.graph.reroute_node_item import RerouteNodeItem
 
 # Port circle radius
 _PORT_RADIUS = 5.0
@@ -67,10 +67,10 @@ class VisualRerouteNode(NodeGraphQtBaseNode):
         # Reference to the underlying CasareRPA node
         from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
 
-        self._casare_node: Optional[CasareBaseNode] = None
+        self._casare_node: CasareBaseNode | None = None
 
         # Port type tracking
-        self._port_types: dict[str, Optional[DataType]] = {}
+        self._port_types: dict[str, DataType | None] = {}
 
         # Configure minimal properties
         self.create_property("node_id", "")
@@ -129,7 +129,7 @@ class VisualRerouteNode(NodeGraphQtBaseNode):
         self._port_types["in"] = DataType.ANY
         self._port_types["out"] = DataType.ANY
 
-    def update_type_from_connection(self, data_type: Optional[DataType]) -> None:
+    def update_type_from_connection(self, data_type: DataType | None) -> None:
         """
         Update the visual type color when a connection is made.
 
@@ -173,7 +173,7 @@ class VisualRerouteNode(NodeGraphQtBaseNode):
         if node:
             self.set_property("node_id", node.node_id)
 
-    def get_port_type(self, port_name: str) -> Optional[DataType]:
+    def get_port_type(self, port_name: str) -> DataType | None:
         """
         Get the DataType for a port.
 

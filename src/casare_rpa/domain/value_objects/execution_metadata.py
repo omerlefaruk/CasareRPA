@@ -34,10 +34,10 @@ class ExecutionMetadata:
     attempt: int = 1
     max_attempts: int = 1
     start_time: datetime = field(default_factory=datetime.now)
-    end_time: Optional[datetime] = None
-    duration_ms: Optional[float] = None
-    parent_node_id: Optional[str] = None
-    branch_name: Optional[str] = None
+    end_time: datetime | None = None
+    duration_ms: float | None = None
+    parent_node_id: str | None = None
+    branch_name: str | None = None
 
     def with_end_time(self) -> "ExecutionMetadata":
         """Create new instance with end time set to now.

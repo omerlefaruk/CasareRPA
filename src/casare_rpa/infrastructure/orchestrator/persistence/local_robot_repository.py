@@ -15,7 +15,7 @@ class LocalRobotRepository(RobotRepository):
     def __init__(self, storage: LocalStorageRepository):
         self._storage = storage
 
-    async def get_by_id(self, robot_id: str) -> Optional[Robot]:
+    async def get_by_id(self, robot_id: str) -> Robot | None:
         """Get robot by ID."""
         robots = self._storage.get_robots()
         for r in robots:
@@ -23,17 +23,17 @@ class LocalRobotRepository(RobotRepository):
                 return Robot.from_dict(r)
         return None
 
-    async def get_all(self) -> List[Robot]:
+    async def get_all(self) -> list[Robot]:
         """Get all robots."""
         robots = self._storage.get_robots()
         return [Robot.from_dict(r) for r in robots]
 
-    async def get_all_online(self) -> List[Robot]:
+    async def get_all_online(self) -> list[Robot]:
         """Get all online robots."""
         robots = self._storage.get_robots()
         return [Robot.from_dict(r) for r in robots if r.get("status") == RobotStatus.ONLINE.value]
 
-    async def get_by_environment(self, environment: str) -> List[Robot]:
+    async def get_by_environment(self, environment: str) -> list[Robot]:
         """Get robots in specific environment."""
         robots = self._storage.get_robots()
         return [Robot.from_dict(r) for r in robots if r.get("environment") == environment]

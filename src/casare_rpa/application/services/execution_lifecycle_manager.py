@@ -11,9 +11,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Set
+
 from loguru import logger
 
-from casare_rpa.domain.events import get_event_bus, WorkflowStopped
+from casare_rpa.domain.events import WorkflowStopped, get_event_bus
 
 
 class ExecutionState(str, Enum):
@@ -49,16 +50,16 @@ class ExecutionSession:
     task: asyncio.Task
     """Async task running the workflow."""
 
-    context: Optional[object] = None  # ExecutionContext
+    context: object | None = None  # ExecutionContext
     """Execution context (set after use_case creates it)."""
 
-    use_case: Optional[object] = None  # ExecuteWorkflowUseCase
+    use_case: object | None = None  # ExecuteWorkflowUseCase
     """Use case instance (set after creation)."""
 
     start_time: datetime = None
     """Execution start time."""
 
-    pause_event: Optional[asyncio.Event] = None
+    pause_event: asyncio.Event | None = None
     """Event for pause/resume coordination."""
 
     def __post_init__(self):
@@ -82,16 +83,16 @@ class ExecutionLifecycleManager:
     def __init__(self):
         """Initialize lifecycle manager."""
         self._state: ExecutionState = ExecutionState.IDLE
-        self._current_session: Optional[ExecutionSession] = None
+        self._current_session: ExecutionSession | None = None
         self._state_lock = asyncio.Lock()
-        self._orphaned_browser_pids: Set[int] = set()
+        self._orphaned_browser_pids: set[int] = set()
         self._current_workflow_runner = None  # Reference to active runner for stop
 
     async def start_workflow(
         self,
         workflow_runner,
         force_cleanup: bool = True,
-        target_node_id: Optional[str] = None,
+        target_node_id: str | None = None,
         single_node: bool = False,
     ) -> bool:
         """
@@ -267,7 +268,7 @@ class ExecutionLifecycleManager:
         workflow_runner,
         session_id: str,
         pause_event: asyncio.Event,
-        target_node_id: Optional[str] = None,
+        target_node_id: str | None = None,
         single_node: bool = False,
     ):
         """
@@ -402,7 +403,7 @@ class ExecutionLifecycleManager:
                 try:
                     timeout = 5.0 if force else 30.0
                     await asyncio.wait_for(self._current_session.task, timeout=timeout)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.error("Workflow stop timed out - forcing cleanup")
                     await self._force_cleanup()
                     task_was_cancelled = True
@@ -447,7 +448,7 @@ class ExecutionLifecycleManager:
                             self._current_session.context.cleanup(), timeout=30.0
                         )
                         logger.info("Context cleanup completed")
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.error("Context cleanup timed out after 30s")
                 except Exception as e:
                     logger.error(f"Context cleanup error: {e}")
@@ -550,7 +551,7 @@ class ExecutionLifecycleManager:
         """
         return self._state in (ExecutionState.RUNNING, ExecutionState.PAUSED)
 
-    def get_session_info(self) -> Optional[dict]:
+    def get_session_info(self) -> dict | None:
         """
         Get current session information.
 

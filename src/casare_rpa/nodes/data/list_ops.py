@@ -7,19 +7,19 @@ for consistent package organization.
 
 from casare_rpa.nodes.list_nodes import (
     CreateListNode,
-    ListGetItemNode,
-    ListLengthNode,
     ListAppendNode,
     ListContainsNode,
-    ListSliceNode,
-    ListJoinNode,
-    ListSortNode,
-    ListReverseNode,
-    ListUniqueNode,
     ListFilterNode,
+    ListFlattenNode,
+    ListGetItemNode,
+    ListJoinNode,
+    ListLengthNode,
     ListMapNode,
     ListReduceNode,
-    ListFlattenNode,
+    ListReverseNode,
+    ListSliceNode,
+    ListSortNode,
+    ListUniqueNode,
 )
 
 __all__ = [

@@ -5,7 +5,7 @@ Provides user lookup and credential validation for production authentication.
 Uses asyncpg with connection pooling and bcrypt for secure password hashing.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -94,7 +94,7 @@ class UserRepository:
             logger.warning(f"Password verification failed: {e}")
             return False
 
-    async def validate_credentials(self, username: str, password: str) -> Optional[Dict[str, Any]]:
+    async def validate_credentials(self, username: str, password: str) -> dict[str, Any] | None:
         """
         Validate user credentials and return user info if valid.
 
@@ -134,7 +134,7 @@ class UserRepository:
                 return None
 
             # Check if account is locked
-            if row["locked_until"] and row["locked_until"] > datetime.now(timezone.utc):
+            if row["locked_until"] and row["locked_until"] > datetime.now(UTC):
                 logger.warning(f"Account locked: {username}")
                 return None
 
@@ -171,7 +171,7 @@ class UserRepository:
         finally:
             await self._release_connection(conn)
 
-    async def _get_user_roles(self, conn, user_id: str) -> Dict[str, Any]:
+    async def _get_user_roles(self, conn, user_id: str) -> dict[str, Any]:
         """
         Get user roles and primary tenant from tenant_members table.
 
@@ -237,7 +237,7 @@ class UserRepository:
             user_id,
         )
 
-    async def get_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+    async def get_by_id(self, user_id: str) -> dict[str, Any] | None:
         """
         Get user by ID.
 
@@ -288,7 +288,7 @@ class UserRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+    async def get_by_email(self, email: str) -> dict[str, Any] | None:
         """
         Get user by email address.
 
@@ -317,9 +317,9 @@ class UserRepository:
         self,
         email: str,
         password: str,
-        username: Optional[str] = None,
-        full_name: Optional[str] = None,
-    ) -> Optional[str]:
+        username: str | None = None,
+        full_name: str | None = None,
+    ) -> str | None:
         """
         Create a new user.
 

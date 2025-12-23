@@ -3,9 +3,9 @@ Google Docs Client Resource.
 (Recreated as a stub to fix import errors)
 """
 
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
-from dataclasses import dataclass
 
 
 class ExportFormat(Enum):
@@ -20,12 +20,12 @@ class ExportFormat(Enum):
 
 @dataclass
 class DocumentStyle:
-    bold: Optional[bool] = None
-    italic: Optional[bool] = None
-    underline: Optional[bool] = None
-    strikethrough: Optional[bool] = None
-    font_size: Optional[int] = None
-    font_family: Optional[str] = None
+    bold: bool | None = None
+    italic: bool | None = None
+    underline: bool | None = None
+    strikethrough: bool | None = None
+    font_size: int | None = None
+    font_family: str | None = None
 
 
 class GoogleDocsClient:
@@ -41,11 +41,11 @@ class GoogleDocsClient:
         raise NotImplementedError("Stub method")
 
     async def export_document(
-        self, document_id: str, export_format: ExportFormat, output_path: Optional[str] = None
+        self, document_id: str, export_format: ExportFormat, output_path: str | None = None
     ) -> Any:
         raise NotImplementedError("Stub method")
 
-    async def create_document(self, title: str, content: Optional[str] = None) -> Any:
+    async def create_document(self, title: str, content: str | None = None) -> Any:
         raise NotImplementedError("Stub method")
 
     async def insert_text(self, document_id: str, text: str, index: int) -> None:
@@ -67,8 +67,8 @@ class GoogleDocsClient:
         document_id: str,
         image_url: str,
         index: int,
-        width: Optional[float] = None,
-        height: Optional[float] = None,
+        width: float | None = None,
+        height: float | None = None,
     ) -> None:
         raise NotImplementedError("Stub method")
 

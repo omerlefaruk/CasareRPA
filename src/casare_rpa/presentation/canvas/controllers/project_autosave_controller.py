@@ -9,26 +9,26 @@ Automatically saves all project data:
 - Environment settings to project/environments/
 """
 
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Dict, Any
-from concurrent.futures import ThreadPoolExecutor
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from PySide6.QtCore import QTimer, Signal, QObject
-from loguru import logger
 import orjson
+from loguru import logger
+from PySide6.QtCore import QObject, QTimer, Signal
 
-from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.domain.entities.project import Project
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 # Background thread pool for I/O
-_project_save_executor: Optional[ThreadPoolExecutor] = None
+_project_save_executor: ThreadPoolExecutor | None = None
 _project_save_lock = threading.Lock()
 
 
@@ -54,12 +54,12 @@ class ProjectAutosaveController(QObject):
     def __init__(self, main_window: "MainWindow"):
         super().__init__(main_window)
         self._main_window = main_window
-        self._current_project: Optional["Project"] = None
-        self._current_project_path: Optional[Path] = None
+        self._current_project: Project | None = None
+        self._current_project_path: Path | None = None
 
         # Timers
-        self._autosave_timer: Optional[QTimer] = None
-        self._debounce_timer: Optional[QTimer] = None
+        self._autosave_timer: QTimer | None = None
+        self._debounce_timer: QTimer | None = None
 
         # State
         self._dirty = False
@@ -171,11 +171,11 @@ class ProjectAutosaveController(QObject):
     # Private Methods
     # =========================================================================
 
-    def _mark_dirty(self, event: Optional[Event] = None) -> None:
+    def _mark_dirty(self, event: Event | None = None) -> None:
         """Mark project as having unsaved changes."""
         self._dirty = True
 
-    def _mark_dirty_debounced(self, event: Optional[Event] = None) -> None:
+    def _mark_dirty_debounced(self, event: Event | None = None) -> None:
         """Mark dirty and schedule debounced save."""
         self._dirty = True
         if self._debounce_timer:
@@ -226,7 +226,7 @@ class ProjectAutosaveController(QObject):
         except Exception as e:
             logger.error(f"Sync project save failed: {e}")
 
-    def _gather_project_data(self) -> Optional[Dict[str, Any]]:
+    def _gather_project_data(self) -> dict[str, Any] | None:
         """
         Gather all project data from UI components.
 
@@ -255,7 +255,7 @@ class ProjectAutosaveController(QObject):
 
         return data
 
-    def _save_project_files(self, data: Dict[str, Any], project_path: Path) -> None:
+    def _save_project_files(self, data: dict[str, Any], project_path: Path) -> None:
         """
         Save all project files (runs in background thread).
 

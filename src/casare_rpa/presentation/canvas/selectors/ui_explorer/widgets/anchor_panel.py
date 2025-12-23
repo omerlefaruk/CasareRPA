@@ -7,20 +7,19 @@ Shows anchor selector, position, and relationship to target element.
 
 from typing import Any, Dict, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QComboBox,
     QTextEdit,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-
-from loguru import logger
 
 
 class AnchorPanel(QWidget):
@@ -41,9 +40,9 @@ class AnchorPanel(QWidget):
     anchor_cleared = Signal()
     position_changed = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._anchor_data: Optional[Dict[str, Any]] = None
+        self._anchor_data: dict[str, Any] | None = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -272,7 +271,7 @@ class AnchorPanel(QWidget):
 
     def set_anchor(
         self,
-        anchor_data: Dict[str, Any],
+        anchor_data: dict[str, Any],
         target_tag: str = "element",
     ) -> None:
         """
@@ -342,7 +341,7 @@ class AnchorPanel(QWidget):
         self._selector_display.clear()
         self._relationship_preview.clear()
 
-    def get_anchor_data(self) -> Optional[Dict[str, Any]]:
+    def get_anchor_data(self) -> dict[str, Any] | None:
         """Get the current anchor data."""
         return self._anchor_data
 

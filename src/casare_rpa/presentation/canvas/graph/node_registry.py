@@ -18,13 +18,15 @@ Node mapping is cached to disk at ~/.casare_rpa/cache/node_mapping_cache.json.
 Cache is invalidated when the visual node registry changes (hash-based).
 """
 
-import json
 import hashlib
-from pathlib import Path
-from typing import Dict, Type, Optional, List, Tuple, Any, TYPE_CHECKING
+import json
 from functools import lru_cache
-from NodeGraphQt import NodeGraph
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from collections.abc import Callable
+
 from loguru import logger
+from NodeGraphQt import NodeGraph
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -76,7 +78,7 @@ def _get_registry_hash() -> str:
     return hashlib.md5(registry_str.encode()).hexdigest()[:12]
 
 
-def _load_mapping_from_cache() -> Optional[Dict[str, str]]:
+def _load_mapping_from_cache() -> dict[str, str] | None:
     """
     Load node mapping from disk cache.
 
@@ -87,7 +89,7 @@ def _load_mapping_from_cache() -> Optional[Dict[str, str]]:
         if not _MAPPING_CACHE_FILE.exists():
             return None
 
-        with open(_MAPPING_CACHE_FILE, "r") as f:
+        with open(_MAPPING_CACHE_FILE) as f:
             cache_data = json.load(f)
 
         # Validate cache version and hash
@@ -109,7 +111,7 @@ def _load_mapping_from_cache() -> Optional[Dict[str, str]]:
         return None
 
 
-def _save_mapping_to_cache(mapping: Dict[Type, Type]) -> None:
+def _save_mapping_to_cache(mapping: dict[type, type]) -> None:
     """
     Save node mapping to disk cache.
 
@@ -139,7 +141,7 @@ def _save_mapping_to_cache(mapping: Dict[Type, Type]) -> None:
         logger.warning(f"Failed to save mapping cache: {e}")
 
 
-def _build_casare_node_mapping_with_cache() -> Dict[Type, Type]:
+def _build_casare_node_mapping_with_cache() -> dict[type, type]:
     """
     Build the casare node mapping with disk caching.
 
@@ -155,8 +157,10 @@ def _build_casare_node_mapping_with_cache() -> Dict[Type, Type]:
     if cached_mapping is not None:
         # Reconstruct the full mapping from cached class names
         from casare_rpa.presentation.canvas.visual_nodes import (
-            _lazy_import as visual_lazy_import,
             _VISUAL_NODE_REGISTRY,
+        )
+        from casare_rpa.presentation.canvas.visual_nodes import (
+            _lazy_import as visual_lazy_import,
         )
 
         mapping = {}
@@ -204,7 +208,7 @@ def _build_casare_node_mapping_with_cache() -> Dict[Type, Type]:
     return mapping
 
 
-def _build_casare_node_mapping() -> Dict[Type, Type]:
+def _build_casare_node_mapping() -> dict[type, type]:
     """
     Dynamically build the mapping from visual node classes to CasareRPA node classes.
 
@@ -284,11 +288,11 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
 
 
 # Lazily built mappings - populated on first access
-_casare_node_mapping: Optional[Dict[Type, Type]] = None
-_node_type_mapping: Optional[Dict[str, tuple]] = None
+_casare_node_mapping: dict[type, type] | None = None
+_node_type_mapping: dict[str, tuple] | None = None
 
 
-def get_casare_node_mapping() -> Dict[Type, Type]:
+def get_casare_node_mapping() -> dict[type, type]:
     """
     Get the mapping from visual node classes to CasareRPA node classes.
 
@@ -311,7 +315,7 @@ def get_casare_node_mapping() -> Dict[Type, Type]:
 # Use these instead of building your own mappings!
 
 
-def _build_node_type_mapping() -> Dict[str, tuple]:
+def _build_node_type_mapping() -> dict[str, tuple]:
     """
     Build unified mapping from node type name to all related classes/identifiers.
 
@@ -344,7 +348,7 @@ def _build_node_type_mapping() -> Dict[str, tuple]:
     return mapping
 
 
-def get_node_type_mapping() -> Dict[str, tuple]:
+def get_node_type_mapping() -> dict[str, tuple]:
     """
     Get the unified mapping from node type names to classes.
 
@@ -367,7 +371,7 @@ def get_node_type_mapping() -> Dict[str, tuple]:
 
 
 @lru_cache(maxsize=256)
-def get_visual_class_for_type(node_type: str) -> Optional[Type]:
+def get_visual_class_for_type(node_type: str) -> type | None:
     """
     Get the visual node class for a node type name.
 
@@ -385,7 +389,7 @@ def get_visual_class_for_type(node_type: str) -> Optional[Type]:
 
 
 @lru_cache(maxsize=256)
-def get_identifier_for_type(node_type: str) -> Optional[str]:
+def get_identifier_for_type(node_type: str) -> str | None:
     """
     Get the graph.create_node() identifier for a node type.
 
@@ -407,7 +411,7 @@ def get_identifier_for_type(node_type: str) -> Optional[str]:
 
 
 @lru_cache(maxsize=256)
-def get_casare_class_for_type(node_type: str) -> Optional[Type]:
+def get_casare_class_for_type(node_type: str) -> type | None:
     """
     Get the CasareRPA node class for a node type name.
 
@@ -424,7 +428,7 @@ def get_casare_class_for_type(node_type: str) -> Optional[Type]:
     return entry[2] if entry else None
 
 
-def get_all_node_types() -> List[str]:
+def get_all_node_types() -> list[str]:
     """
     Get list of all registered node type names.
 
@@ -450,10 +454,10 @@ def is_valid_node_type(node_type: str) -> bool:
 def create_node_from_type(
     graph,
     node_type: str,
-    node_id: Optional[str] = None,
-    config: Optional[dict] = None,
-    position: Optional[tuple] = None,
-) -> Optional[Any]:
+    node_id: str | None = None,
+    config: dict | None = None,
+    position: tuple | None = None,
+) -> Any | None:
     """
     Create a visual node with linked CasareRPA node from node type name.
 
@@ -524,11 +528,11 @@ class NodeRegistry:
 
     def __init__(self) -> None:
         """Initialize node registry."""
-        self._registered_nodes: Dict[str, Type] = {}
+        self._registered_nodes: dict[str, type] = {}
         self._registered_class_names: set = set()  # Track class names to avoid duplicates
-        self._categories: Dict[str, List[Type]] = {}
+        self._categories: dict[str, list[type]] = {}
 
-    def register_node(self, node_class: Type, graph: Optional[NodeGraph] = None) -> None:
+    def register_node(self, node_class: type, graph: NodeGraph | None = None) -> None:
         """
         Register a visual node class.
 
@@ -584,8 +588,8 @@ class NodeRegistry:
         qmenu.clear()
 
         # Add search functionality to the existing QMenu
-        from PySide6.QtWidgets import QWidgetAction, QLineEdit
         from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QLineEdit, QWidgetAction
 
         # Track last created node ID for chaining with Shift+Enter
         qmenu._last_created_node_id = None
@@ -743,8 +747,8 @@ class NodeRegistry:
         # Import category utilities for display names
         try:
             from casare_rpa.presentation.canvas.graph.category_utils import (
-                get_display_name,
                 get_category_sort_key,
+                get_display_name,
             )
 
             use_hierarchy = True
@@ -1014,7 +1018,7 @@ class NodeRegistry:
 
         logger.debug(f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu")
 
-    def get_node_class(self, node_name: str) -> Optional[Type]:
+    def get_node_class(self, node_name: str) -> type | None:
         """
         Get a node class by name.
 
@@ -1026,7 +1030,7 @@ class NodeRegistry:
         """
         return self._registered_nodes.get(node_name)
 
-    def get_nodes_by_category(self, category: str) -> List[Type]:
+    def get_nodes_by_category(self, category: str) -> list[type]:
         """
         Get all nodes in a specific category (exact match only).
 
@@ -1038,7 +1042,7 @@ class NodeRegistry:
         """
         return self._categories.get(category, [])
 
-    def get_all_nodes_in_category(self, category: str) -> List[Type]:
+    def get_all_nodes_in_category(self, category: str) -> list[type]:
         """
         Get all nodes in a category including all subcategories.
 
@@ -1063,7 +1067,7 @@ class NodeRegistry:
 
         return result
 
-    def get_subcategories(self, parent: str) -> List[str]:
+    def get_subcategories(self, parent: str) -> list[str]:
         """
         Get immediate subcategories of a parent category.
 
@@ -1091,7 +1095,7 @@ class NodeRegistry:
 
         return sorted(subcategories)
 
-    def get_root_categories(self) -> List[str]:
+    def get_root_categories(self) -> list[str]:
         """
         Get all root (top-level) categories.
 
@@ -1104,7 +1108,7 @@ class NodeRegistry:
             roots.add(root)
         return sorted(roots)
 
-    def get_categories(self) -> List[str]:
+    def get_categories(self) -> list[str]:
         """
         Get all registered categories.
 
@@ -1113,7 +1117,7 @@ class NodeRegistry:
         """
         return list(self._categories.keys())
 
-    def get_all_nodes(self) -> List[Type]:
+    def get_all_nodes(self) -> list[type]:
         """
         Get all registered node classes.
 
@@ -1137,7 +1141,7 @@ class NodeRegistry:
         Args:
             graph: NodeGraph instance
         """
-        from PySide6.QtWidgets import QWidgetAction, QLineEdit, QMenu
+        from PySide6.QtWidgets import QLineEdit, QMenu, QWidgetAction
 
         graph_menu = graph.get_context_menu("graph")
         qmenu = graph_menu.qmenu
@@ -1291,7 +1295,7 @@ class NodeRegistry:
         self,
         graph: NodeGraph,
         batch_size: int = 40,
-        callback: Optional[callable] = None,
+        callback: Callable | None = None,
     ) -> None:
         """
         Register remaining nodes incrementally in batches.
@@ -1346,8 +1350,9 @@ class NodeRegistry:
         Called by QTimer.singleShot to process nodes in batches,
         yielding to the event loop between batches.
         """
-        from casare_rpa.presentation.canvas.visual_nodes import _lazy_import
         from PySide6.QtCore import QTimer
+
+        from casare_rpa.presentation.canvas.visual_nodes import _lazy_import
 
         # Check if done
         if not hasattr(self, "_pending_registration") or not self._pending_registration:
@@ -1488,8 +1493,8 @@ class NodeRegistry:
         qmenu.clear()
 
         # Re-add search functionality and all nodes
-        from PySide6.QtWidgets import QWidgetAction, QLineEdit
         from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QLineEdit, QWidgetAction
 
         # Restore stored attributes
         qmenu._last_created_node_id = last_created_node_id
@@ -1626,8 +1631,8 @@ class NodeRegistry:
         # Import category utilities
         try:
             from casare_rpa.presentation.canvas.graph.category_utils import (
-                get_display_name,
                 get_category_sort_key,
+                get_display_name,
             )
 
             use_hierarchy = True
@@ -1852,7 +1857,7 @@ class NodeFactory:
         self._node_counter = 0
 
     def create_visual_node(
-        self, graph: NodeGraph, node_class: Type, pos: Optional[Tuple[int, int]] = None
+        self, graph: NodeGraph, node_class: type, pos: tuple[int, int] | None = None
     ) -> Any:
         """
         Create a visual node instance in the graph.
@@ -1880,7 +1885,7 @@ class NodeFactory:
 
         return visual_node
 
-    def create_casare_node(self, visual_node: Any, **kwargs) -> Optional[object]:
+    def create_casare_node(self, visual_node: Any, **kwargs) -> object | None:
         """
         Create a CasareRPA node instance for a visual node.
 
@@ -1917,10 +1922,10 @@ class NodeFactory:
     def create_linked_node(
         self,
         graph: NodeGraph,
-        node_class: Type,
-        pos: Optional[Tuple[int, int]] = None,
+        node_class: type,
+        pos: tuple[int, int] | None = None,
         **kwargs,
-    ) -> Tuple[Any, object]:
+    ) -> tuple[Any, object]:
         """
         Create both visual and CasareRPA nodes and link them.
 
@@ -1991,7 +1996,7 @@ def clear_node_type_caches(clear_disk_cache: bool = False) -> None:
     logger.debug("Node type lookup caches cleared")
 
 
-def get_cache_stats() -> Dict[str, Any]:
+def get_cache_stats() -> dict[str, Any]:
     """
     Get statistics for all node type lookup caches.
 

@@ -17,14 +17,15 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-from loguru import logger
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import QObject, Signal
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
     from casare_rpa.infrastructure.execution import ExecutionContext
+
+    from ..main_window import MainWindow
 
 
 class BreakpointType(Enum):
@@ -55,9 +56,9 @@ class Breakpoint:
     node_id: str
     enabled: bool = True
     breakpoint_type: BreakpointType = BreakpointType.REGULAR
-    condition: Optional[str] = None
+    condition: str | None = None
     hit_count_target: int = 1
-    log_message: Optional[str] = None
+    log_message: str | None = None
     hit_count: int = 0
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -159,8 +160,8 @@ class ExecutionSnapshot:
 
     snapshot_id: str
     node_id: str
-    variables: Dict[str, Any]
-    execution_path: List[str]
+    variables: dict[str, Any]
+    execution_path: list[str]
     timestamp: datetime = field(default_factory=datetime.now)
     description: str = ""
 
@@ -179,7 +180,7 @@ class WatchExpression:
 
     expression: str
     last_value: Any = None
-    last_error: Optional[str] = None
+    last_error: str | None = None
     enabled: bool = True
 
 
@@ -199,7 +200,7 @@ class CallStackFrame:
     node_id: str
     node_name: str
     node_type: str
-    local_variables: Dict[str, Any] = field(default_factory=dict)
+    local_variables: dict[str, Any] = field(default_factory=dict)
     entry_time: datetime = field(default_factory=datetime.now)
 
 
@@ -246,20 +247,20 @@ class DebugController(QObject):
         self.main_window = main_window
 
         self._debug_mode_enabled = False
-        self._breakpoints: Dict[str, Breakpoint] = {}
-        self._watch_expressions: List[WatchExpression] = []
-        self._snapshots: Dict[str, ExecutionSnapshot] = {}
-        self._call_stack: List[CallStackFrame] = []
+        self._breakpoints: dict[str, Breakpoint] = {}
+        self._watch_expressions: list[WatchExpression] = []
+        self._snapshots: dict[str, ExecutionSnapshot] = {}
+        self._call_stack: list[CallStackFrame] = []
 
-        self._step_event: Optional[asyncio.Event] = None
-        self._pause_event: Optional[asyncio.Event] = None
-        self._step_mode: Optional[str] = None
+        self._step_event: asyncio.Event | None = None
+        self._pause_event: asyncio.Event | None = None
+        self._step_mode: str | None = None
         self._step_target_depth: int = 0
-        self._current_context: Optional["ExecutionContext"] = None
-        self._current_node_id: Optional[str] = None
+        self._current_context: ExecutionContext | None = None
+        self._current_node_id: str | None = None
 
-        self._repl_history: List[str] = []
-        self._repl_locals: Dict[str, Any] = {}
+        self._repl_history: list[str] = []
+        self._repl_locals: dict[str, Any] = {}
 
         logger.debug("DebugController initialized")
 
@@ -294,9 +295,9 @@ class DebugController(QObject):
         self,
         node_id: str,
         breakpoint_type: BreakpointType = BreakpointType.REGULAR,
-        condition: Optional[str] = None,
+        condition: str | None = None,
         hit_count_target: int = 1,
-        log_message: Optional[str] = None,
+        log_message: str | None = None,
     ) -> Breakpoint:
         """
         Add a breakpoint to a node.
@@ -374,7 +375,7 @@ class DebugController(QObject):
             return bp.enabled
         return False
 
-    def get_breakpoint(self, node_id: str) -> Optional[Breakpoint]:
+    def get_breakpoint(self, node_id: str) -> Breakpoint | None:
         """
         Get breakpoint for a node.
 
@@ -386,7 +387,7 @@ class DebugController(QObject):
         """
         return self._breakpoints.get(node_id)
 
-    def get_all_breakpoints(self) -> List[Breakpoint]:
+    def get_all_breakpoints(self) -> list[Breakpoint]:
         """
         Get all breakpoints.
 
@@ -584,7 +585,7 @@ class DebugController(QObject):
         self._call_stack.append(frame)
         self.call_stack_updated.emit(list(self._call_stack))
 
-    def pop_call_stack(self) -> Optional[CallStackFrame]:
+    def pop_call_stack(self) -> CallStackFrame | None:
         """
         Pop a frame from the call stack.
 
@@ -597,7 +598,7 @@ class DebugController(QObject):
             return frame
         return None
 
-    def get_call_stack(self) -> List[CallStackFrame]:
+    def get_call_stack(self) -> list[CallStackFrame]:
         """
         Get current call stack.
 
@@ -640,7 +641,7 @@ class DebugController(QObject):
                 return True
         return False
 
-    def get_watches(self) -> List[WatchExpression]:
+    def get_watches(self) -> list[WatchExpression]:
         """
         Get all watch expressions.
 
@@ -673,7 +674,7 @@ class DebugController(QObject):
 
         self.watch_updated.emit(list(self._watch_expressions))
 
-    def evaluate_expression(self, expression: str) -> tuple[Any, Optional[str]]:
+    def evaluate_expression(self, expression: str) -> tuple[Any, str | None]:
         """
         Evaluate an expression in the current debug context.
 
@@ -821,7 +822,7 @@ class DebugController(QObject):
             return True
         return False
 
-    def get_snapshots(self) -> List[ExecutionSnapshot]:
+    def get_snapshots(self) -> list[ExecutionSnapshot]:
         """
         Get all snapshots.
 
@@ -830,7 +831,7 @@ class DebugController(QObject):
         """
         return list(self._snapshots.values())
 
-    def get_repl_history(self) -> List[str]:
+    def get_repl_history(self) -> list[str]:
         """
         Get REPL command history.
 

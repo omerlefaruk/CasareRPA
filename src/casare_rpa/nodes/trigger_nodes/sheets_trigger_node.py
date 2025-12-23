@@ -132,7 +132,7 @@ class SheetsTriggerNode(BaseTriggerNode):
     trigger_icon = "sheets"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Sheets Trigger"
         self.node_type = "SheetsTriggerNode"
@@ -155,7 +155,7 @@ class SheetsTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.SHEETS
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get Sheets-specific configuration."""
         # Parse comma-separated columns
         watch_columns_str = self.get_parameter("watch_columns", "")

@@ -29,7 +29,7 @@ from __future__ import annotations
 import re
 import traceback
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
 
 from loguru import logger
 
@@ -48,8 +48,8 @@ class ValidationIssue:
 
     code: str
     message: str
-    location: Optional[str] = None
-    suggestion: Optional[str] = None
+    location: str | None = None
+    suggestion: str | None = None
     severity: str = "error"  # "error" or "warning"
 
     def __str__(self) -> str:
@@ -62,11 +62,11 @@ class ValidationIssue:
 class ValidationResult:
     """Result of workflow validation."""
 
-    errors: List[ValidationIssue] = field(default_factory=list)
-    warnings: List[ValidationIssue] = field(default_factory=list)
+    errors: list[ValidationIssue] = field(default_factory=list)
+    warnings: list[ValidationIssue] = field(default_factory=list)
     node_count: int = 0
     connection_count: int = 0
-    validated_nodes: Set[str] = field(default_factory=set)
+    validated_nodes: set[str] = field(default_factory=set)
 
     @property
     def is_valid(self) -> bool:
@@ -77,8 +77,8 @@ class ValidationResult:
         self,
         code: str,
         message: str,
-        location: Optional[str] = None,
-        suggestion: Optional[str] = None,
+        location: str | None = None,
+        suggestion: str | None = None,
     ) -> None:
         """Add an error."""
         self.errors.append(ValidationIssue(code, message, location, suggestion, "error"))
@@ -87,13 +87,13 @@ class ValidationResult:
         self,
         code: str,
         message: str,
-        location: Optional[str] = None,
-        suggestion: Optional[str] = None,
+        location: str | None = None,
+        suggestion: str | None = None,
     ) -> None:
         """Add a warning."""
         self.warnings.append(ValidationIssue(code, message, location, suggestion, "warning"))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "is_valid": self.is_valid,
@@ -116,11 +116,11 @@ class ValidationResult:
 CONTROL_FLOW_PORTS = {
     "VisualIfNode": {
         "inputs": ["exec_in", "condition"],
-        "outputs": ["true", "false"],  # NOT true_out/false_out!
+        "outputs": ["true", "false"],
     },
     "VisualTryNode": {
         "inputs": ["exec_in"],
-        "outputs": ["exec_out", "try_body"],  # try_body for the try block
+        "outputs": ["exec_out", "try_body"],
     },
     "VisualCatchNode": {
         "inputs": ["exec_in"],
@@ -154,7 +154,7 @@ CONTROL_FLOW_PORTS = {
     },
     "VisualForkNode": {
         "inputs": ["exec_in"],
-        "outputs": ["branch_1", "branch_2"],  # Default 2 branches
+        "outputs": ["branch_1", "branch_2"],
     },
     "VisualJoinNode": {
         "inputs": ["exec_in"],
@@ -166,7 +166,11 @@ CONTROL_FLOW_PORTS = {
     },
     "VisualSwitchNode": {
         "inputs": ["exec_in", "value"],
-        "outputs": ["default"],  # Cases are dynamic
+        "outputs": ["default"],
+    },
+    "VisualComparisonNode": {
+        "inputs": ["left", "right"],
+        "outputs": ["result"],
     },
     "VisualBreakNode": {
         "inputs": ["exec_in"],
@@ -198,6 +202,14 @@ DATA_OUTPUT_NODES = {
     "LaunchBrowserNode": ["page", "browser"],
     "CloseBrowserNode": [],
     "TooltipNode": [],
+    "ComparisonNode": ["result"],
+    "CreateListNode": ["list"],
+    "ListGetItemNode": ["item"],
+    "JsonParseNode": ["data"],
+    "RandomNumberNode": ["number"],
+    "RandomChoiceNode": ["choice"],
+    "RandomStringNode": ["string"],
+    "RandomUUIDNode": ["uuid"],
 }
 
 # Nodes with additional data inputs
@@ -213,6 +225,14 @@ DATA_INPUT_NODES = {
     "ScreenshotNode": ["page"],  # Can accept page as input
     "TooltipNode": ["message"],  # Message input for dynamic content
     "CloseBrowserNode": ["page"],  # Browser page to close
+    "ComparisonNode": ["a", "b"],
+    "CreateListNode": ["item_1", "item_2", "item_3"],
+    "ListGetItemNode": ["list", "index"],
+    "JsonParseNode": ["json_string"],
+    "RandomNumberNode": ["min", "max"],
+    "RandomChoiceNode": ["items"],
+    "RandomStringNode": ["length", "charset"],
+    "RandomUUIDNode": [],
 }
 
 # =============================================================================
@@ -224,20 +244,7 @@ DATA_INPUT_NODES = {
 # are needed by downstream nodes.
 
 DATA_ONLY_NODES = {
-    # List operations
-    "CreateListNode": {
-        "inputs": ["item_1", "item_2", "item_3"],
-        "outputs": ["list"],
-    },
-    "ListGetItemNode": {
-        "inputs": ["list", "index"],
-        "outputs": ["item"],
-    },
-    # JSON/Dict operations
-    "JsonParseNode": {
-        "inputs": ["json_string"],
-        "outputs": ["data"],
-    },
+    # Pure data nodes (calculated/resolved values, no exec flow)
     "GetPropertyNode": {
         "inputs": ["object", "property_path"],
         "outputs": ["value"],
@@ -268,15 +275,6 @@ DATA_ONLY_NODES = {
         "inputs": ["string_1", "string_2"],
         "outputs": ["result"],
     },
-    "StringFormatNode": {
-        "inputs": ["template", "values"],
-        "outputs": ["result"],
-    },
-    # Comparison operations (pure functions)
-    "ComparisonNode": {
-        "inputs": ["left", "right"],
-        "outputs": ["result"],
-    },
 }
 
 
@@ -298,19 +296,19 @@ class WorkflowValidator:
 
     def __init__(self) -> None:
         """Initialize the validator."""
-        self._visual_node_registry: Optional[Dict[str, Type]] = None
-        self._port_cache: Dict[str, Dict[str, List[str]]] = {}
+        self._visual_node_registry: dict[str, type] | None = None
+        self._port_cache: dict[str, dict[str, list[str]]] = {}
         logger.debug("WorkflowValidator initialized")
 
-    def _load_visual_node_registry(self) -> Dict[str, Type]:
+    def _load_visual_node_registry(self) -> dict[str, type]:
         """Load the visual node registry."""
         if self._visual_node_registry is not None:
             return self._visual_node_registry
 
         try:
             from casare_rpa.presentation.canvas.graph.node_registry import (
-                get_visual_class_for_type,
                 get_all_node_types,
+                get_visual_class_for_type,
             )
 
             # Build registry by fetching visual class for each node type
@@ -332,7 +330,7 @@ class WorkflowValidator:
 
         return self._visual_node_registry
 
-    def _get_node_ports(self, node_type: str) -> Dict[str, List[str]]:
+    def _get_node_ports(self, node_type: str) -> dict[str, list[str]]:
         """
         Get the valid input and output ports for a node type.
 
@@ -402,7 +400,7 @@ class WorkflowValidator:
         self._port_cache[node_type] = ports
         return ports
 
-    def _extract_ports_from_backend_node(self, node_type: str) -> Optional[Dict[str, List[str]]]:
+    def _extract_ports_from_backend_node(self, node_type: str) -> dict[str, list[str]] | None:
         """
         Extract port definitions from backend node class using live instantiation.
 
@@ -417,8 +415,9 @@ class WorkflowValidator:
         """
         try:
             # Import the node class from registry
-            from casare_rpa.nodes.registry_data import NODE_REGISTRY
             import importlib
+
+            from casare_rpa.nodes.registry_data import NODE_REGISTRY
 
             if node_type not in NODE_REGISTRY:
                 return None
@@ -465,7 +464,7 @@ class WorkflowValidator:
             logger.debug(f"Could not extract ports from backend node {node_type}: {e}")
             return None
 
-    def _extract_ports_from_class(self, node_class: Type) -> Dict[str, List[str]]:
+    def _extract_ports_from_class(self, node_class: type) -> dict[str, list[str]]:
         """
         Extract port definitions from node class without instantiating.
 
@@ -527,7 +526,7 @@ class WorkflowValidator:
             logger.debug(f"Could not extract ports from class: {e}")
             return {"inputs": ["exec_in"], "outputs": ["exec_out"]}
 
-    def validate(self, workflow_dict: Dict[str, Any]) -> ValidationResult:
+    def validate(self, workflow_dict: dict[str, Any]) -> ValidationResult:
         """
         Validate a workflow dictionary.
 
@@ -584,7 +583,7 @@ class WorkflowValidator:
 
         return result
 
-    def _validate_structure(self, workflow_dict: Dict[str, Any], result: ValidationResult) -> None:
+    def _validate_structure(self, workflow_dict: dict[str, Any], result: ValidationResult) -> None:
         """Validate basic workflow structure."""
         if not isinstance(workflow_dict, dict):
             result.add_error(
@@ -609,7 +608,7 @@ class WorkflowValidator:
     def _validate_node(
         self,
         node_id: str,
-        node_data: Dict[str, Any],
+        node_data: dict[str, Any],
         result: ValidationResult,
     ) -> None:
         """Validate a single node."""
@@ -645,8 +644,8 @@ class WorkflowValidator:
     def _validate_connection(
         self,
         idx: int,
-        conn: Dict[str, Any],
-        nodes: Dict[str, Any],
+        conn: dict[str, Any],
+        nodes: dict[str, Any],
         result: ValidationResult,
     ) -> None:
         """Validate a single connection."""
@@ -709,8 +708,8 @@ class WorkflowValidator:
 
     def _validate_loop_structures(
         self,
-        nodes: Dict[str, Any],
-        connections: List[Dict[str, Any]],
+        nodes: dict[str, Any],
+        connections: list[dict[str, Any]],
         result: ValidationResult,
     ) -> None:
         """Validate loop structures (ForLoop, WhileLoop)."""
@@ -749,8 +748,8 @@ class WorkflowValidator:
 
     def _validate_try_catch_structures(
         self,
-        nodes: Dict[str, Any],
-        connections: List[Dict[str, Any]],
+        nodes: dict[str, Any],
+        connections: list[dict[str, Any]],
         result: ValidationResult,
     ) -> None:
         """Validate Try/Catch/Finally structures."""
@@ -835,7 +834,7 @@ class WorkflowValidator:
 # =============================================================================
 
 
-def validate_workflow_with_qt(workflow_dict: Dict[str, Any]) -> ValidationResult:
+def validate_workflow_with_qt(workflow_dict: dict[str, Any]) -> ValidationResult:
     """
     Validate a workflow dictionary using Qt visual node definitions.
 
@@ -849,7 +848,7 @@ def validate_workflow_with_qt(workflow_dict: Dict[str, Any]) -> ValidationResult
     return validator.validate(workflow_dict)
 
 
-def get_valid_ports_for_node(node_type: str) -> Dict[str, List[str]]:
+def get_valid_ports_for_node(node_type: str) -> dict[str, list[str]]:
     """
     Get the valid input and output ports for a node type.
 

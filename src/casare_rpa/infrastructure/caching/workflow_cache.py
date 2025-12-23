@@ -41,7 +41,7 @@ class WorkflowCache:
     _INTERNAL_KEYS = {"__validated__"}
 
     @staticmethod
-    def compute_fingerprint(workflow_data: Dict[str, Any]) -> str:
+    def compute_fingerprint(workflow_data: dict[str, Any]) -> str:
         """
         Compute content hash for workflow data.
 
@@ -61,7 +61,7 @@ class WorkflowCache:
         content = orjson.dumps(clean_data, option=orjson.OPT_SORT_KEYS)
         return hashlib.sha256(content).hexdigest()[:16]
 
-    def get(self, fingerprint: str) -> Optional[Any]:
+    def get(self, fingerprint: str) -> Any | None:
         """
         Get cached workflow by fingerprint.
 
@@ -115,7 +115,7 @@ class WorkflowCache:
             self._misses = 0
             logger.debug("Workflow cache cleared")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
@@ -134,7 +134,7 @@ class WorkflowCache:
 
 
 # Global instance (thread-safe singleton)
-_workflow_cache: Optional[WorkflowCache] = None
+_workflow_cache: WorkflowCache | None = None
 _workflow_cache_lock = threading.Lock()
 
 

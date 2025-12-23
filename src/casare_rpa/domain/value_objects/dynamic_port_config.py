@@ -32,7 +32,7 @@ class PortDef:
     required: bool = False
     """Whether this port must be connected for execution."""
 
-    label: Optional[str] = None
+    label: str | None = None
     """Display label (auto-generated from name if None)."""
 
     def __post_init__(self) -> None:
@@ -60,8 +60,8 @@ class ActionPortConfig:
     @classmethod
     def create(
         cls,
-        inputs: Optional[List[PortDef]] = None,
-        outputs: Optional[List[PortDef]] = None,
+        inputs: list[PortDef] | None = None,
+        outputs: list[PortDef] | None = None,
     ) -> "ActionPortConfig":
         """
         Factory method to create ActionPortConfig from lists.
@@ -95,7 +95,7 @@ class DynamicPortSchema:
         ))
     """
 
-    action_configs: Dict[str, ActionPortConfig] = field(default_factory=dict)
+    action_configs: dict[str, ActionPortConfig] = field(default_factory=dict)
     """Mapping of action name to port configuration."""
 
     def register(self, action: str, config: ActionPortConfig) -> None:
@@ -108,7 +108,7 @@ class DynamicPortSchema:
         """
         self.action_configs[action] = config
 
-    def get_config(self, action: str) -> Optional[ActionPortConfig]:
+    def get_config(self, action: str) -> ActionPortConfig | None:
         """
         Get port configuration for an action.
 
@@ -120,7 +120,7 @@ class DynamicPortSchema:
         """
         return self.action_configs.get(action)
 
-    def get_actions(self) -> List[str]:
+    def get_actions(self) -> list[str]:
         """
         Get all registered action names.
 

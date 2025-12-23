@@ -1,10 +1,11 @@
 """Tests for AI Prompts."""
 
 import pytest
+
 from casare_rpa.domain.ai.prompts import (
-    PromptBuilder,
     GENIUS_SYSTEM_PROMPT,
     ROBUSTNESS_INSTRUCTIONS,
+    PromptBuilder,
 )
 
 

@@ -10,15 +10,14 @@ individually deleting connections.
 
 import time
 from collections import deque
-from typing import Optional, Deque
 from dataclasses import dataclass
-
-from PySide6.QtCore import QObject, Signal, Qt, QTimer
-from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QGraphicsDropShadowEffect
-from NodeGraphQt import NodeGraph, BaseNode
+from typing import Deque, Optional
 
 from loguru import logger
+from NodeGraphQt import BaseNode, NodeGraph
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QGraphicsDropShadowEffect
 
 
 @dataclass
@@ -52,7 +51,7 @@ class ShakeToDetachManager(QObject):
     # Emitted when shake is detected (for visual feedback)
     shake_detected = Signal(object)  # node being shaken
 
-    def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None):
+    def __init__(self, graph: NodeGraph, parent: QObject | None = None):
         """
         Initialize shake-to-detach manager.
 
@@ -74,14 +73,14 @@ class ShakeToDetachManager(QObject):
         self._cooldown_ms = 500  # Cooldown after shake to prevent re-trigger
 
         # State tracking
-        self._dragging_node: Optional[BaseNode] = None
-        self._movement_history: Deque[MovementSample] = deque(maxlen=50)
-        self._last_x_direction: Optional[int] = None  # -1 left, +1 right
+        self._dragging_node: BaseNode | None = None
+        self._movement_history: deque[MovementSample] = deque(maxlen=50)
+        self._last_x_direction: int | None = None  # -1 left, +1 right
         self._direction_changes: list[float] = []  # timestamps of direction changes
         self._last_shake_time: float = 0.0
 
         # Visual feedback
-        self._shake_effect: Optional[QGraphicsDropShadowEffect] = None
+        self._shake_effect: QGraphicsDropShadowEffect | None = None
         self._feedback_timer = QTimer(self)
         self._feedback_timer.setSingleShot(True)
         self._feedback_timer.timeout.connect(self._clear_visual_feedback)
@@ -359,10 +358,10 @@ class ShakeToDetachManager(QObject):
 
 
 # Singleton access
-_shake_manager: Optional[ShakeToDetachManager] = None
+_shake_manager: ShakeToDetachManager | None = None
 
 
-def get_shake_manager() -> Optional[ShakeToDetachManager]:
+def get_shake_manager() -> ShakeToDetachManager | None:
     """Get the global shake-to-detach manager instance."""
     return _shake_manager
 

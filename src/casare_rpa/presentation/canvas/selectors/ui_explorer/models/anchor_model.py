@@ -12,9 +12,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal
-
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
 
 
 class AnchorPosition(Enum):
@@ -88,10 +87,10 @@ class AnchorElementData:
     offset_y: int = 0
     """Vertical offset in pixels from anchor to target."""
 
-    attributes: Dict[str, str] = field(default_factory=dict)
+    attributes: dict[str, str] = field(default_factory=dict)
     """Element attributes (id, class, data-testid, etc.)."""
 
-    fingerprint: Optional[Dict[str, Any]] = None
+    fingerprint: dict[str, Any] | None = None
     """Element fingerprint for healing/matching."""
 
     stability_score: float = 0.0
@@ -114,7 +113,7 @@ class AnchorElementData:
         """Check if anchor is considered stable (>= 0.7 score)."""
         return self.stability_score >= 0.7
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "selector": self.selector,
@@ -129,7 +128,7 @@ class AnchorElementData:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AnchorElementData":
+    def from_dict(cls, data: dict[str, Any]) -> AnchorElementData:
         """Create from dictionary."""
         position_str = data.get("position", "near")
         try:
@@ -161,7 +160,7 @@ class AnchorConfiguration:
     strategy: AnchorStrategy
     """The anchor strategy to use."""
 
-    anchors: List[AnchorElementData] = field(default_factory=list)
+    anchors: list[AnchorElementData] = field(default_factory=list)
     """List of anchor elements (may be empty for NONE strategy)."""
 
     auto_detected: bool = False
@@ -176,7 +175,7 @@ class AnchorConfiguration:
         return len(self.anchors) > 0
 
     @property
-    def primary_anchor(self) -> Optional[AnchorElementData]:
+    def primary_anchor(self) -> AnchorElementData | None:
         """Get the primary (first) anchor if available."""
         return self.anchors[0] if self.anchors else None
 
@@ -208,7 +207,7 @@ class AnchorConfiguration:
         total = sum(a.stability_score for a in self.anchors)
         self.confidence = total / len(self.anchors)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "strategy": self.strategy.value,
@@ -218,7 +217,7 @@ class AnchorConfiguration:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AnchorConfiguration":
+    def from_dict(cls, data: dict[str, Any]) -> AnchorConfiguration:
         """Create from dictionary."""
         strategy_str = data.get("strategy", "none")
         try:
@@ -255,7 +254,7 @@ class AnchorModel(QObject):
     anchor_removed = Signal(int)  # index
     strategy_changed = Signal(str)  # strategy value
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         """Initialize the anchor model."""
         super().__init__(parent)
         self._config = AnchorConfiguration(strategy=AnchorStrategy.NONE)
@@ -285,12 +284,12 @@ class AnchorModel(QObject):
         return self._config.has_anchor
 
     @property
-    def anchors(self) -> List[AnchorElementData]:
+    def anchors(self) -> list[AnchorElementData]:
         """Get list of anchor elements."""
         return self._config.anchors
 
     @property
-    def primary_anchor(self) -> Optional[AnchorElementData]:
+    def primary_anchor(self) -> AnchorElementData | None:
         """Get the primary anchor."""
         return self._config.primary_anchor
 
@@ -381,7 +380,7 @@ class AnchorModel(QObject):
         self.changed.emit()
         logger.debug("All anchors cleared")
 
-    def load_from_dict(self, data: Dict[str, Any]) -> None:
+    def load_from_dict(self, data: dict[str, Any]) -> None:
         """
         Load anchor configuration from dictionary.
 
@@ -392,7 +391,7 @@ class AnchorModel(QObject):
         self.changed.emit()
         logger.debug(f"Loaded anchor config with {len(self._config.anchors)} anchors")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary for serialization.
 
@@ -463,7 +462,7 @@ LANDMARK_ROLES = frozenset(
 
 def calculate_anchor_stability(
     tag_name: str,
-    attributes: Dict[str, str],
+    attributes: dict[str, str],
     text_content: str,
 ) -> float:
     """

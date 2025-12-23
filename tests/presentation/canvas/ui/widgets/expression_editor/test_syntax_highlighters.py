@@ -14,9 +14,9 @@ Test Philosophy:
 Run: pytest tests/presentation/canvas/ui/widgets/expression_editor/test_syntax_highlighters.py -v
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call, patch
 
+import pytest
 
 # =============================================================================
 # PythonHighlighter Tests
@@ -29,10 +29,11 @@ class TestPythonHighlighterKeywords:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a Python highlighter with mock document."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return PythonHighlighter(editor.document())
@@ -80,10 +81,11 @@ class TestPythonHighlighterBuiltins:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a Python highlighter."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return PythonHighlighter(editor.document())
@@ -120,10 +122,11 @@ class TestPythonHighlighterFormats:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a Python highlighter."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return PythonHighlighter(editor.document())
@@ -172,10 +175,11 @@ class TestPythonHighlighterHighlightBlock:
     @pytest.fixture
     def highlighter_with_editor(self, qapp):
         """Create a Python highlighter with editor reference kept alive."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = PythonHighlighter(editor.document())
@@ -230,10 +234,11 @@ class TestJavaScriptHighlighterKeywords:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a JavaScript highlighter."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
             JavaScriptHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return JavaScriptHighlighter(editor.document())
@@ -271,10 +276,11 @@ class TestJavaScriptHighlighterBuiltins:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a JavaScript highlighter."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
             JavaScriptHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return JavaScriptHighlighter(editor.document())
@@ -309,10 +315,11 @@ class TestJavaScriptHighlighterFormats:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a JavaScript highlighter."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
             JavaScriptHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return JavaScriptHighlighter(editor.document())
@@ -332,10 +339,11 @@ class TestJavaScriptHighlighterHighlightBlock:
     @pytest.fixture
     def highlighter_with_editor(self, qapp):
         """Create a JavaScript highlighter with editor reference kept alive."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
             JavaScriptHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = JavaScriptHighlighter(editor.document())
@@ -387,10 +395,11 @@ class TestMarkdownHighlighterFormats:
     @pytest.fixture
     def highlighter(self, qapp):
         """Create a Markdown highlighter."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
             MarkdownHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         return MarkdownHighlighter(editor.document())
@@ -438,10 +447,11 @@ class TestMarkdownHighlighterHighlightBlock:
     @pytest.fixture
     def highlighter_with_editor(self, qapp):
         """Create a Markdown highlighter with editor reference kept alive."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
             MarkdownHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = MarkdownHighlighter(editor.document())
@@ -624,40 +634,44 @@ class TestSyntaxColors:
 
     def test_syntax_colors_keyword(self) -> None:
         """Test KEYWORD color is defined."""
+        from PySide6.QtGui import QColor
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             SyntaxColors,
         )
-        from PySide6.QtGui import QColor
 
         assert hasattr(SyntaxColors, "KEYWORD")
         assert isinstance(SyntaxColors.KEYWORD, QColor)
 
     def test_syntax_colors_string(self) -> None:
         """Test STRING color is defined."""
+        from PySide6.QtGui import QColor
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             SyntaxColors,
         )
-        from PySide6.QtGui import QColor
 
         assert hasattr(SyntaxColors, "STRING")
         assert isinstance(SyntaxColors.STRING, QColor)
 
     def test_syntax_colors_comment(self) -> None:
         """Test COMMENT color is defined."""
+        from PySide6.QtGui import QColor
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             SyntaxColors,
         )
-        from PySide6.QtGui import QColor
 
         assert hasattr(SyntaxColors, "COMMENT")
         assert isinstance(SyntaxColors.COMMENT, QColor)
 
     def test_syntax_colors_number(self) -> None:
         """Test NUMBER color is defined."""
+        from PySide6.QtGui import QColor
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             SyntaxColors,
         )
-        from PySide6.QtGui import QColor
 
         assert hasattr(SyntaxColors, "NUMBER")
         assert isinstance(SyntaxColors.NUMBER, QColor)
@@ -673,10 +687,11 @@ class TestHighlighterEdgeCases:
 
     def test_python_very_long_line(self, qapp) -> None:
         """Test Python highlighter with very long line."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = PythonHighlighter(editor.document())
@@ -686,10 +701,11 @@ class TestHighlighterEdgeCases:
 
     def test_javascript_nested_comments(self, qapp) -> None:
         """Test JavaScript with complex comment patterns."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.javascript_highlighter import (
             JavaScriptHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = JavaScriptHighlighter(editor.document())
@@ -699,10 +715,11 @@ class TestHighlighterEdgeCases:
 
     def test_markdown_mixed_formatting(self, qapp) -> None:
         """Test Markdown with mixed formatting."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.markdown_highlighter import (
             MarkdownHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = MarkdownHighlighter(editor.document())
@@ -714,10 +731,11 @@ class TestHighlighterEdgeCases:
 
     def test_python_unicode_identifiers(self, qapp) -> None:
         """Test Python with Unicode identifiers."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = PythonHighlighter(editor.document())
@@ -727,10 +745,11 @@ class TestHighlighterEdgeCases:
 
     def test_highlighter_with_only_whitespace(self, qapp) -> None:
         """Test highlighters with whitespace-only input."""
+        from PySide6.QtWidgets import QPlainTextEdit
+
         from casare_rpa.presentation.canvas.ui.widgets.expression_editor.syntax.python_highlighter import (
             PythonHighlighter,
         )
-        from PySide6.QtWidgets import QPlainTextEdit
 
         editor = QPlainTextEdit()
         highlighter = PythonHighlighter(editor.document())

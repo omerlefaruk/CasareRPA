@@ -15,7 +15,7 @@ to PostgreSQL for production deployments.
 import asyncio
 import hashlib
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -57,7 +57,7 @@ class AuditRepository:
 
     def __init__(
         self,
-        db_path: Optional[str] = None,
+        db_path: str | None = None,
         retention_days: int = DEFAULT_RETENTION_DAYS,
     ) -> None:
         """
@@ -69,9 +69,9 @@ class AuditRepository:
         """
         self._db_path = db_path or self.DEFAULT_DB_PATH
         self._retention_days = retention_days
-        self._connection: Optional[aiosqlite.Connection] = None
+        self._connection: aiosqlite.Connection | None = None
         self._lock = asyncio.Lock()
-        self._last_hash: Optional[str] = None
+        self._last_hash: str | None = None
         self._initialized = False
 
     async def initialize(self) -> None:
@@ -165,7 +165,7 @@ class AuditRepository:
         """)
         await self._connection.commit()
 
-    async def _get_last_hash(self) -> Optional[str]:
+    async def _get_last_hash(self) -> str | None:
         """Get the last hash chain value for continuity."""
         if not self._connection:
             return None
@@ -176,7 +176,7 @@ class AuditRepository:
         row = await cursor.fetchone()
         return row["hash_chain"] if row else None
 
-    def _calculate_hash_chain(self, event: AuditEvent, previous_hash: Optional[str]) -> str:
+    def _calculate_hash_chain(self, event: AuditEvent, previous_hash: str | None) -> str:
         """
         Calculate hash chain value for tamper detection.
 
@@ -247,7 +247,7 @@ class AuditRepository:
             logger.debug(f"Audit event logged: {event.event_id} ({event.event_type.value})")
             return event.event_id
 
-    async def log_events_batch(self, events: List[AuditEvent]) -> int:
+    async def log_events_batch(self, events: list[AuditEvent]) -> int:
         """
         Log multiple audit events in a batch.
 
@@ -307,17 +307,17 @@ class AuditRepository:
 
     async def get_events(
         self,
-        event_type: Optional[str] = None,
-        resource: Optional[str] = None,
-        workflow_id: Optional[str] = None,
-        robot_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        success: Optional[bool] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        event_type: str | None = None,
+        resource: str | None = None,
+        workflow_id: str | None = None,
+        robot_id: str | None = None,
+        user_id: str | None = None,
+        success: bool | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[AuditEvent]:
+    ) -> list[AuditEvent]:
         """
         Query audit events with filtering.
 
@@ -389,7 +389,7 @@ class AuditRepository:
 
         return [self._row_to_event(dict(row)) for row in rows]
 
-    async def get_event_by_id(self, event_id: str) -> Optional[AuditEvent]:
+    async def get_event_by_id(self, event_id: str) -> AuditEvent | None:
         """
         Get a single audit event by ID.
 
@@ -414,9 +414,9 @@ class AuditRepository:
         self,
         group_by: str = "event_type",
         period: str = "day",
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> Dict[str, int]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> dict[str, int]:
         """
         Get aggregate event counts.
 
@@ -471,9 +471,9 @@ class AuditRepository:
 
     async def get_statistics(
         self,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> dict[str, Any]:
         """
         Get comprehensive audit statistics.
 
@@ -531,7 +531,7 @@ class AuditRepository:
             "events_by_type": type_counts,
         }
 
-    async def verify_integrity(self, limit: int = 1000) -> Dict[str, Any]:
+    async def verify_integrity(self, limit: int = 1000) -> dict[str, Any]:
         """
         Verify the integrity of the audit hash chain.
 
@@ -564,8 +564,8 @@ class AuditRepository:
                 "message": "No events to verify",
             }
 
-        previous_hash: Optional[str] = None
-        invalid_id: Optional[str] = None
+        previous_hash: str | None = None
+        invalid_id: str | None = None
 
         for row in rows:
             # Recreate expected hash
@@ -606,8 +606,8 @@ class AuditRepository:
 
     async def cleanup_old_events(
         self,
-        retention_days: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        retention_days: int | None = None,
+    ) -> dict[str, Any]:
         """
         Remove audit events older than retention period.
 
@@ -621,8 +621,8 @@ class AuditRepository:
             await self.initialize()
 
         days = retention_days or self._retention_days
-        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-        start_time = datetime.now(timezone.utc)
+        cutoff = datetime.now(UTC) - timedelta(days=days)
+        start_time = datetime.now(UTC)
 
         try:
             cursor = await self._connection.execute(
@@ -639,7 +639,7 @@ class AuditRepository:
                 )
                 await self._connection.commit()
 
-            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
             # Log cleanup
             await self._connection.execute(
@@ -665,7 +665,7 @@ class AuditRepository:
             }
 
         except Exception as e:
-            duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+            duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
             await self._connection.execute(
                 """
@@ -683,8 +683,8 @@ class AuditRepository:
     async def export_to_json(
         self,
         output_path: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> int:
         """
         Export audit events to JSON file.
@@ -704,7 +704,7 @@ class AuditRepository:
         )
 
         export_data = {
-            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "event_count": len(events),
             "events": [
                 {
@@ -734,8 +734,8 @@ class AuditRepository:
     async def export_to_csv(
         self,
         output_path: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> int:
         """
         Export audit events to CSV file.
@@ -797,7 +797,7 @@ class AuditRepository:
         logger.info(f"Exported {len(events)} audit events to {output_path}")
         return len(events)
 
-    def _row_to_event(self, row: Dict[str, Any]) -> AuditEvent:
+    def _row_to_event(self, row: dict[str, Any]) -> AuditEvent:
         """
         Convert database row to AuditEvent.
 
@@ -812,7 +812,7 @@ class AuditRepository:
         try:
             timestamp = datetime.fromisoformat(timestamp_str)
         except ValueError:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         # Parse metadata
         metadata_str = row.get("metadata", "")
@@ -862,7 +862,7 @@ class AuditRepository:
 
 
 # Global repository instance
-_repository: Optional[AuditRepository] = None
+_repository: AuditRepository | None = None
 
 
 async def get_audit_repository() -> AuditRepository:

@@ -9,18 +9,19 @@ Provides nodes for conditional branching:
 
 import re
 from typing import Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
-    NodeStatus,
     ExecutionResult,
+    NodeStatus,
 )
-from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.utils.security.safe_eval import is_safe_expression, safe_eval
 
 
 @properties(
@@ -46,7 +47,7 @@ class IfNode(BaseNode):
     # @requires: none
     # @ports: exec_in, condition -> true, false
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize If node."""
         super().__init__(node_id, config)
         self.name = "If"
@@ -145,7 +146,7 @@ class SwitchNode(BaseNode):
     # @requires: none
     # @ports: exec_in, value -> default
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Switch node."""
         super().__init__(node_id, config)
         self.name = "Switch"
@@ -246,7 +247,7 @@ class MergeNode(BaseNode):
     # @requires: none
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Merge node."""
         super().__init__(node_id, config)
         self.name = "Merge"

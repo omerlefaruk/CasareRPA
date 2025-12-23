@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import List, Optional
 
 from casare_rpa.domain.entities.project import (
-    Project,
-    Scenario,
-    ProjectsIndex,
-    VariablesFile,
     CredentialBindingsFile,
+    Project,
+    ProjectsIndex,
+    Scenario,
+    VariablesFile,
 )
 
 
@@ -26,7 +26,7 @@ class ProjectRepository(ABC):
     # =========================================================================
 
     @abstractmethod
-    async def get_by_id(self, project_id: str) -> Optional[Project]:
+    async def get_by_id(self, project_id: str) -> Project | None:
         """
         Get project by ID.
 
@@ -39,7 +39,7 @@ class ProjectRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_path(self, path: Path) -> Optional[Project]:
+    async def get_by_path(self, path: Path) -> Project | None:
         """
         Get project by folder path.
 
@@ -52,7 +52,7 @@ class ProjectRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[Project]:
+    async def get_all(self) -> list[Project]:
         """
         Get all registered projects.
 
@@ -103,7 +103,7 @@ class ProjectRepository(ABC):
     # =========================================================================
 
     @abstractmethod
-    async def get_scenario(self, project_id: str, scenario_id: str) -> Optional[Scenario]:
+    async def get_scenario(self, project_id: str, scenario_id: str) -> Scenario | None:
         """
         Get scenario by ID.
 
@@ -117,7 +117,7 @@ class ProjectRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_scenarios(self, project_id: str) -> List[Scenario]:
+    async def get_scenarios(self, project_id: str) -> list[Scenario]:
         """
         Get all scenarios for a project.
 

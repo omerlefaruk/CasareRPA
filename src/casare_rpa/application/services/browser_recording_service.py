@@ -6,7 +6,8 @@ allowing Presentation layer to use it without violating DDD boundaries.
 Presentation -> Application -> Infrastructure (correct flow).
 """
 
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -68,9 +69,9 @@ class BrowserRecordingService:
     def set_recorder_callbacks(
         self,
         recorder: Any,
-        on_action_recorded: Optional[Callable] = None,
-        on_recording_started: Optional[Callable] = None,
-        on_recording_stopped: Optional[Callable] = None,
+        on_action_recorded: Callable | None = None,
+        on_recording_started: Callable | None = None,
+        on_recording_stopped: Callable | None = None,
     ) -> None:
         """
         Set callback functions on a recorder instance.
@@ -100,7 +101,7 @@ class BrowserRecordingService:
         """
         await recorder.start_recording()
 
-    async def stop_recording(self, recorder: Any) -> List[Any]:
+    async def stop_recording(self, recorder: Any) -> list[Any]:
         """
         Stop recording and return captured actions.
 
@@ -126,9 +127,9 @@ class BrowserRecordingService:
 
     def generate_workflow_from_actions(
         self,
-        actions: List[Any],
-        workflow_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        actions: list[Any],
+        workflow_name: str | None = None,
+    ) -> dict[str, Any]:
         """
         Generate workflow JSON from recorded actions.
 
@@ -144,7 +145,7 @@ class BrowserRecordingService:
 
 
 # Singleton instance
-_browser_recording_service: Optional[BrowserRecordingService] = None
+_browser_recording_service: BrowserRecordingService | None = None
 
 
 def get_browser_recording_service() -> BrowserRecordingService:

@@ -7,32 +7,31 @@ Integrates with Vault via `CredentialProviderProtocol`.
 
 from __future__ import annotations
 
-import os
 import logging
+import os
 from typing import Any, Optional, Protocol, Tuple, cast
 
+# Import definitions to re-export them (backward compatibility)
+from casare_rpa.domain.credential_definitions import (
+    API_KEY_PROP,
+    BEARER_TOKEN_PROP,
+    BOT_TOKEN_PROP,
+    CLIENT_ID_PROP,
+    CLIENT_SECRET_PROP,
+    CONNECTION_STRING_PROP,
+    CREDENTIAL_NAME_PROP,
+    IMAP_PORT_PROP,
+    IMAP_SERVER_PROP,
+    OAUTH_TOKEN_PROP,
+    PASSWORD_PROP,
+    SMTP_PORT_PROP,
+    SMTP_SERVER_PROP,
+    USERNAME_PROP,
+)
 from casare_rpa.domain.protocols.credential_protocols import (
     CredentialProviderProtocol,
     ExecutionContextProtocol,
     ResolvedCredentialData,
-)
-
-# Import definitions to re-export them (backward compatibility)
-from casare_rpa.domain.credential_definitions import (
-    CREDENTIAL_NAME_PROP,
-    API_KEY_PROP,
-    OAUTH_TOKEN_PROP,
-    USERNAME_PROP,
-    PASSWORD_PROP,
-    CONNECTION_STRING_PROP,
-    BOT_TOKEN_PROP,
-    CLIENT_ID_PROP,
-    CLIENT_SECRET_PROP,
-    BEARER_TOKEN_PROP,
-    SMTP_SERVER_PROP,
-    SMTP_PORT_PROP,
-    IMAP_SERVER_PROP,
-    IMAP_PORT_PROP,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,12 +50,12 @@ class CredentialAwareMixin:
         self,
         context: ExecutionContextProtocol,
         credential_name_param: str = "credential_name",
-        direct_param: Optional[str] = None,
-        env_var: Optional[str] = None,
-        context_var: Optional[str] = None,
+        direct_param: str | None = None,
+        env_var: str | None = None,
+        context_var: str | None = None,
         credential_field: str = "api_key",
         required: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Resolves credential from Vault > Direct Param > Context > EnvVar.
 
         Args:
@@ -108,9 +107,9 @@ class CredentialAwareMixin:
         credential_name_param: str = "credential_name",
         username_param: str = "username",
         password_param: str = "password",
-        env_prefix: Optional[str] = None,
+        env_prefix: str | None = None,
         required: bool = False,
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Resolves (username, password) tuple from Vault > Params > Env.
 
         Args:
@@ -154,9 +153,9 @@ class CredentialAwareMixin:
         credential_name_param: str = "credential_name",
         client_id_param: str = "client_id",
         client_secret_param: str = "client_secret",
-        env_prefix: Optional[str] = None,
+        env_prefix: str | None = None,
         required: bool = False,
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None]:
         """Resolves (client_id, client_secret) from Vault > Params > Env."""
         cid, secret = None, None
 
@@ -198,7 +197,7 @@ class CredentialAwareMixin:
         context: ExecutionContextProtocol,
         credential_name: str,
         field: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Extracts specific field from vault credential."""
         cred = await self._get_full_credential(context, credential_name)
         if not cred:
@@ -223,7 +222,7 @@ class CredentialAwareMixin:
         self,
         context: ExecutionContextProtocol,
         credential_name: str,
-    ) -> Optional[ResolvedCredentialData]:
+    ) -> ResolvedCredentialData | None:
         """Retrieves full credential object from provider."""
         try:
             provider = await _get_provider(context)
@@ -261,11 +260,11 @@ async def resolve_node_credential(
     context: ExecutionContextProtocol,
     node: Any,
     credential_name_param: str = "credential_name",
-    direct_param: Optional[str] = None,
-    env_var: Optional[str] = None,
+    direct_param: str | None = None,
+    env_var: str | None = None,
     credential_field: str = "api_key",
     required: bool = False,
-) -> Optional[str]:
+) -> str | None:
     """Standalone credential resolution (Functional)."""
     # 1. Vault
     cred_name = node.get_parameter(credential_name_param, "")
@@ -307,7 +306,7 @@ async def resolve_node_credential(
 
 async def _get_provider(
     context: ExecutionContextProtocol,
-) -> Optional[CredentialProviderProtocol]:
+) -> CredentialProviderProtocol | None:
     """Locates CredentialProvider in Context (Attr -> Resource)."""
     if hasattr(context, "_credential_provider"):
         p = getattr(context, "_credential_provider", None)

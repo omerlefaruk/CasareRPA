@@ -20,15 +20,15 @@ import json
 import re
 import time
 import traceback
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
 from casare_rpa.domain.schemas.workflow_ai import (
-    WorkflowAISchema,
-    NodeSchema,
     ConnectionSchema,
+    NodeSchema,
     PositionSchema,
+    WorkflowAISchema,
 )
 from casare_rpa.infrastructure.ai.registry_dumper import (
     dump_node_manifest,
@@ -36,10 +36,10 @@ from casare_rpa.infrastructure.ai.registry_dumper import (
 )
 
 if TYPE_CHECKING:
+    from casare_rpa.domain.ai.config import AgentConfig
     from casare_rpa.infrastructure.resources.llm_resource_manager import (
         LLMResourceManager,
     )
-    from casare_rpa.domain.ai.config import AgentConfig
 
 
 # =============================================================================
@@ -54,14 +54,14 @@ class WorkflowGenerationError(Exception):
         self,
         message: str,
         error_type: str = "GENERATION_ERROR",
-        details: Optional[Dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message)
         self.error_type = error_type
         self.details = details or {}
         self.timestamp = time.time()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize exception to dictionary."""
         return {
             "error_type": self.error_type,
@@ -74,7 +74,7 @@ class WorkflowGenerationError(Exception):
 class LLMCallError(WorkflowGenerationError):
     """Error during LLM API call."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(message, "LLM_CALL_ERROR", details)
 
 
@@ -92,7 +92,7 @@ class JSONParseError(WorkflowGenerationError):
 class SchemaValidationError(WorkflowGenerationError):
     """Error during schema validation."""
 
-    def __init__(self, message: str, validation_errors: List[str]) -> None:
+    def __init__(self, message: str, validation_errors: list[str]) -> None:
         super().__init__(
             message,
             "SCHEMA_VALIDATION_ERROR",
@@ -245,8 +245,8 @@ class GenerateWorkflowUseCase:
 
     def __init__(
         self,
-        llm_manager: Optional[LLMResourceManager] = None,
-        config: Optional[AgentConfig] = None,
+        llm_manager: LLMResourceManager | None = None,
+        config: AgentConfig | None = None,
     ) -> None:
         """
         Initialize the workflow generation use case.
@@ -257,7 +257,7 @@ class GenerateWorkflowUseCase:
         """
         self._llm_manager = llm_manager
         self._config = config
-        self._system_prompt: Optional[str] = None
+        self._system_prompt: str | None = None
 
         logger.debug(
             f"GenerateWorkflowUseCase initialized: " f"config={'custom' if config else 'default'}"
@@ -498,7 +498,7 @@ class GenerateWorkflowUseCase:
             }
 
             # Find first non-start node to connect to
-            first_node_id: Optional[str] = None
+            first_node_id: str | None = None
             for node_id, node in workflow.nodes.items():
                 if node.node_type != "StartNode":
                     first_node_id = node_id
@@ -677,7 +677,7 @@ class GenerateWorkflowUseCase:
         try:
             logger.debug(f"Assigning positions: spacing_x={spacing_x}, spacing_y={spacing_y}")
 
-            new_nodes: Dict[str, NodeSchema] = {}
+            new_nodes: dict[str, NodeSchema] = {}
             x_pos = 0.0
             y_pos = 0.0
 
@@ -727,8 +727,8 @@ class GenerateWorkflowUseCase:
     async def execute(
         self,
         query: str,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
+        model: str | None = None,
+        temperature: float | None = None,
         max_tokens: int = 4000,
     ) -> WorkflowAISchema:
         """
@@ -786,7 +786,7 @@ class GenerateWorkflowUseCase:
                 "PROMPT_ERROR",
             )
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         for attempt in range(max_retries + 1):
             attempt_start = time.time()
@@ -881,9 +881,9 @@ class GenerateWorkflowUseCase:
 async def generate_workflow_from_text(
     query: str,
     model: str = "gpt-4o-mini",
-    llm_manager: Optional[LLMResourceManager] = None,
-    config: Optional[AgentConfig] = None,
-) -> Dict[str, Any]:
+    llm_manager: LLMResourceManager | None = None,
+    config: AgentConfig | None = None,
+) -> dict[str, Any]:
     """
     Simple interface for generating workflow from natural language.
 

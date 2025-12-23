@@ -9,7 +9,7 @@ Handles creation of composite nodes that spawn multiple paired nodes:
 Follows Single Responsibility Principle - handles composite node creation only.
 """
 
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer
@@ -36,7 +36,7 @@ class CompositeNodeCreator(QObject):
     HORIZONTAL_SPACING = 600
     TRY_CATCH_SPACING = 450
 
-    def __init__(self, graph: "NodeGraph", parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph: "NodeGraph", parent: QObject | None = None) -> None:
         """
         Initialize composite node creator.
 
@@ -96,7 +96,7 @@ class CompositeNodeCreator(QObject):
         # Use QTimer to defer the replacement
         QTimer.singleShot(0, replace_composite)
 
-    def create_for_loop_pair(self, x: float, y: float) -> Optional[Tuple]:
+    def create_for_loop_pair(self, x: float, y: float) -> tuple | None:
         """
         Create a For Loop Start + End pair at the given position.
 
@@ -132,7 +132,7 @@ class CompositeNodeCreator(QObject):
             logger.error(f"Failed to create For Loop pair: {e}")
             return None
 
-    def create_while_loop_pair(self, x: float, y: float) -> Optional[Tuple]:
+    def create_while_loop_pair(self, x: float, y: float) -> tuple | None:
         """
         Create a While Loop Start + End pair at the given position.
 
@@ -202,7 +202,7 @@ class CompositeNodeCreator(QObject):
 
         logger.info(f"Created {loop_type} pair: Start={start_id}, End={end_id}")
 
-    def create_try_catch_finally(self, x: float, y: float) -> Optional[Tuple]:
+    def create_try_catch_finally(self, x: float, y: float) -> tuple | None:
         """
         Create a Try/Catch/Finally block with three nodes side-by-side.
 

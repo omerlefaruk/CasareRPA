@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Union
 
 from loguru import logger
 
+from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
@@ -33,10 +34,8 @@ from casare_rpa.nodes.browser.property_constants import (
     BROWSER_SCREENSHOT_PATH,
     BROWSER_TIMEOUT,
 )
-from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 from casare_rpa.utils import safe_int
 from casare_rpa.utils.resilience import retry_operation
-
 
 # JavaScript code for table extraction - kept separate for readability
 TABLE_EXTRACTION_JS = """
@@ -250,7 +249,7 @@ class TableScraperNode(BrowserBaseNode):
 
             logger.info(f"Extracting table data from: {selector}")
 
-            async def perform_extraction() -> Dict[str, Any]:
+            async def perform_extraction() -> dict[str, Any]:
                 """Execute table extraction via JavaScript."""
                 # Wait for table element to be present
                 await page.wait_for_selector(selector, timeout=timeout, state="attached")
@@ -318,11 +317,11 @@ class TableScraperNode(BrowserBaseNode):
 
     def _format_output(
         self,
-        headers: List[str],
-        rows: List[List[str]],
+        headers: list[str],
+        rows: list[list[str]],
         output_format: str,
         include_headers: bool,
-    ) -> Union[List[Dict[str, str]], List[List[str]], str]:
+    ) -> list[dict[str, str]] | list[list[str]] | str:
         """
         Format extracted table data according to requested format.
 
@@ -338,7 +337,7 @@ class TableScraperNode(BrowserBaseNode):
         if output_format == "list_of_dicts":
             # Convert rows to list of dictionaries using headers as keys
             if headers:
-                return [dict(zip(headers, row)) for row in rows]
+                return [dict(zip(headers, row, strict=False)) for row in rows]
             else:
                 # If no headers, use column indices as keys
                 return [{f"col_{i}": cell for i, cell in enumerate(row)} for row in rows]

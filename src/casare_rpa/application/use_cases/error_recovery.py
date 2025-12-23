@@ -17,9 +17,10 @@ Architecture:
 """
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from loguru import logger
 
@@ -30,7 +31,7 @@ from casare_rpa.domain.errors import (
     RecoveryDecision,
     get_error_handler_registry,
 )
-from casare_rpa.domain.events import EventBus, get_event_bus, NodeFailed
+from casare_rpa.domain.events import EventBus, NodeFailed, get_event_bus
 from casare_rpa.domain.value_objects.types import NodeId
 from casare_rpa.infrastructure.execution.recovery_strategies import (
     CircuitBreaker,
@@ -88,10 +89,10 @@ class ErrorAggregation:
     count: int = 1
     """Number of occurrences."""
 
-    node_ids: Set[NodeId] = field(default_factory=set)
+    node_ids: set[NodeId] = field(default_factory=set)
     """Nodes where this error occurred."""
 
-    sample_context: Optional[ErrorContext] = None
+    sample_context: ErrorContext | None = None
     """Sample error context for details."""
 
 
@@ -114,13 +115,13 @@ class RecoveryResult:
     should_abort: bool = False
     """Whether workflow should abort."""
 
-    next_node_id: Optional[NodeId] = None
+    next_node_id: NodeId | None = None
     """Node to continue from (fallback/redirect)."""
 
     retry_delay_ms: int = 0
     """Delay before retry (if retrying)."""
 
-    error_context: Optional[ErrorContext] = None
+    error_context: ErrorContext | None = None
     """Full error context."""
 
     message: str = ""
@@ -146,10 +147,10 @@ class ErrorRecoveryUseCase:
 
     def __init__(
         self,
-        config: Optional[ErrorRecoveryConfig] = None,
-        error_registry: Optional[ErrorHandlerRegistry] = None,
-        strategy_registry: Optional[RecoveryStrategyRegistry] = None,
-        event_bus: Optional[EventBus] = None,
+        config: ErrorRecoveryConfig | None = None,
+        error_registry: ErrorHandlerRegistry | None = None,
+        strategy_registry: RecoveryStrategyRegistry | None = None,
+        event_bus: EventBus | None = None,
     ) -> None:
         """
         Initialize error recovery use case.
@@ -167,9 +168,9 @@ class ErrorRecoveryUseCase:
 
         # Tracking
         self._consecutive_errors = 0
-        self._error_aggregations: Dict[str, ErrorAggregation] = {}
-        self._node_retry_counts: Dict[NodeId, int] = {}
-        self._circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self._error_aggregations: dict[str, ErrorAggregation] = {}
+        self._node_retry_counts: dict[NodeId, int] = {}
+        self._circuit_breakers: dict[str, CircuitBreaker] = {}
 
         logger.debug("Error recovery use case initialized")
 
@@ -179,9 +180,9 @@ class ErrorRecoveryUseCase:
         node_id: NodeId,
         node_type: str,
         execution_context: "ExecutionContext",
-        node_config: Optional[Dict[str, Any]] = None,
+        node_config: dict[str, Any] | None = None,
         execution_time_ms: float = 0.0,
-        additional_data: Optional[Dict[str, Any]] = None,
+        additional_data: dict[str, Any] | None = None,
     ) -> RecoveryResult:
         """
         Handle an error during node execution.
@@ -502,7 +503,7 @@ class ErrorRecoveryUseCase:
             if cb_key in self._circuit_breakers:
                 self._circuit_breakers[cb_key].record_success()
 
-    def get_error_report(self) -> Dict[str, Any]:
+    def get_error_report(self) -> dict[str, Any]:
         """
         Get comprehensive error report.
 
@@ -537,7 +538,7 @@ class ErrorRecoveryUseCase:
             "history_summary": history_summary,
         }
 
-    def get_node_error_history(self, node_id: NodeId, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_node_error_history(self, node_id: NodeId, limit: int = 10) -> list[dict[str, Any]]:
         """
         Get error history for a specific node.
 
@@ -570,7 +571,7 @@ class ErrorRecoveryIntegration:
 
     def __init__(
         self,
-        config: Optional[ErrorRecoveryConfig] = None,
+        config: ErrorRecoveryConfig | None = None,
     ) -> None:
         """
         Initialize integration.
@@ -579,7 +580,7 @@ class ErrorRecoveryIntegration:
             config: Recovery configuration.
         """
         self.use_case = ErrorRecoveryUseCase(config=config)
-        self._execution_context: Optional["ExecutionContext"] = None
+        self._execution_context: ExecutionContext | None = None
 
     def set_execution_context(self, context: "ExecutionContext") -> None:
         """
@@ -595,7 +596,7 @@ class ErrorRecoveryIntegration:
         node_id: NodeId,
         node_type: str,
         execute_func: Callable[..., Any],
-        node_config: Optional[Dict[str, Any]] = None,
+        node_config: dict[str, Any] | None = None,
         max_retries: int = 3,
     ) -> tuple[bool, Any]:
         """
@@ -614,7 +615,7 @@ class ErrorRecoveryIntegration:
         import time
 
         retry_count = 0
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
 
         while retry_count <= max_retries:
             start_time = time.time()
@@ -659,7 +660,7 @@ class ErrorRecoveryIntegration:
     def create_custom_handler(
         self,
         name: str,
-        handler_func: Callable[[ErrorContext], Optional[RecoveryDecision]],
+        handler_func: Callable[[ErrorContext], RecoveryDecision | None],
     ) -> None:
         """
         Register a custom error handler.
@@ -670,7 +671,7 @@ class ErrorRecoveryIntegration:
         """
         self.use_case.error_registry.register_custom_handler(name, handler_func)
 
-    def get_report(self) -> Dict[str, Any]:
+    def get_report(self) -> dict[str, Any]:
         """Get error report."""
         return self.use_case.get_error_report()
 

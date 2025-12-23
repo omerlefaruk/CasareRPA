@@ -8,49 +8,49 @@ Refactored to minimize token footprint and enforce Single Responsibility.
 import asyncio
 from datetime import datetime
 from typing import Any, Dict, Optional, Set
+
 from loguru import logger
 
-from casare_rpa.domain.entities.workflow import WorkflowSchema
-from casare_rpa.domain.events import (
-    EventBus,
-    WorkflowStarted,
-    WorkflowCompleted,
-    WorkflowFailed,
-    WorkflowStopped,
-)
-from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
-from casare_rpa.domain.value_objects.types import NodeId, ExecutionMode
-from casare_rpa.domain.interfaces import IExecutionContext
-from casare_rpa.domain.errors import (
-    Result,
-    Ok,
-    Err,
-    WorkflowExecutionError,
-    NodeExecutionError,
-)
-
-from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.utils.performance.performance_metrics import get_metrics
-from casare_rpa.nodes import get_node_class
+from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
+from casare_rpa.application.use_cases.execution_handlers import ExecutionResultHandler
 
 # Strategies & Helpers
 from casare_rpa.application.use_cases.execution_state_manager import (
     ExecutionSettings,
     ExecutionStateManager,
 )
-from casare_rpa.application.use_cases.node_executor import (
-    NodeExecutorWithTryCatch,
-    NodeExecutor,
-)
-from casare_rpa.application.use_cases.variable_resolver import (
-    VariableResolver,
-    TryCatchErrorHandler,
-)
 from casare_rpa.application.use_cases.execution_strategies_parallel import (
     ParallelExecutionStrategy,
 )
-from casare_rpa.application.use_cases.execution_handlers import ExecutionResultHandler
-from casare_rpa.application.use_cases.execution_engine import WorkflowExecutionEngine
+from casare_rpa.application.use_cases.node_executor import (
+    NodeExecutor,
+    NodeExecutorWithTryCatch,
+)
+from casare_rpa.application.use_cases.variable_resolver import (
+    TryCatchErrorHandler,
+    VariableResolver,
+)
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.domain.errors import (
+    Err,
+    NodeExecutionError,
+    Ok,
+    Result,
+    WorkflowExecutionError,
+)
+from casare_rpa.domain.events import (
+    EventBus,
+    WorkflowCompleted,
+    WorkflowFailed,
+    WorkflowStarted,
+    WorkflowStopped,
+)
+from casare_rpa.domain.interfaces import IExecutionContext
+from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
+from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.nodes import get_node_class
+from casare_rpa.utils.performance.performance_metrics import get_metrics
 
 
 def _create_node_from_dict(node_data: dict) -> Any:
@@ -82,11 +82,11 @@ class ExecuteWorkflowUseCase:
     def __init__(
         self,
         workflow: WorkflowSchema,
-        event_bus: Optional[EventBus] = None,
-        settings: Optional[ExecutionSettings] = None,
-        initial_variables: Optional[Dict[str, Any]] = None,
-        project_context: Optional[Any] = None,
-        pause_event: Optional[asyncio.Event] = None,
+        event_bus: EventBus | None = None,
+        settings: ExecutionSettings | None = None,
+        initial_variables: dict[str, Any] | None = None,
+        project_context: Any | None = None,
+        pause_event: asyncio.Event | None = None,
     ) -> None:
         self.workflow = workflow
         self.settings = settings or ExecutionSettings()
@@ -111,32 +111,32 @@ class ExecuteWorkflowUseCase:
             pause_event=self.pause_event,
         )
 
-        self.context: Optional[IExecutionContext] = None
-        self._node_instances: Dict[str, Any] = {}
+        self.context: IExecutionContext | None = None
+        self._node_instances: dict[str, Any] = {}
 
         # Delegates (Init in execute)
-        self._node_executor: Optional[NodeExecutorWithTryCatch] = None
-        self._variable_resolver: Optional[VariableResolver] = None
-        self._error_handler: Optional[TryCatchErrorHandler] = None
-        self._parallel_strategy: Optional[ParallelExecutionStrategy] = None
-        self._result_handler: Optional[ExecutionResultHandler] = None
-        self._engine: Optional[WorkflowExecutionEngine] = None
+        self._node_executor: NodeExecutorWithTryCatch | None = None
+        self._variable_resolver: VariableResolver | None = None
+        self._error_handler: TryCatchErrorHandler | None = None
+        self._parallel_strategy: ParallelExecutionStrategy | None = None
+        self._result_handler: ExecutionResultHandler | None = None
+        self._engine: WorkflowExecutionEngine | None = None
 
     # --- Backward Compat Properties ---
     @property
-    def executed_nodes(self) -> Set[NodeId]:
+    def executed_nodes(self) -> set[NodeId]:
         return self.state_manager.executed_nodes
 
     @property
-    def current_node_id(self) -> Optional[NodeId]:
+    def current_node_id(self) -> NodeId | None:
         return self.state_manager.current_node_id
 
     @property
-    def start_time(self) -> Optional[datetime]:
+    def start_time(self) -> datetime | None:
         return self.state_manager.start_time
 
     @property
-    def end_time(self) -> Optional[datetime]:
+    def end_time(self) -> datetime | None:
         return self.state_manager.end_time
 
     def stop(self) -> None:

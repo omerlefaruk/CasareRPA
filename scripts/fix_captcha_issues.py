@@ -1,7 +1,8 @@
 """Add CAPTCHA nodes to registry and fix connection."""
 
-import orjson
 from pathlib import Path
+
+import orjson
 
 # Fix registry_data.py
 registry_path = Path("src/casare_rpa/nodes/registry_data.py")

@@ -15,8 +15,9 @@ Test Coverage:
 - Edge cases (malformed, duplicates)
 """
 
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 
 class TestURLDetection:

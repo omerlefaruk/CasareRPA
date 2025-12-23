@@ -76,7 +76,7 @@ class FormTriggerNode(BaseTriggerNode):
     trigger_icon = "form"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Form Trigger"
         self.node_type = "FormTriggerNode"
@@ -91,7 +91,7 @@ class FormTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.FORM
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get form-specific configuration."""
         return {
             "form_title": self.get_parameter("form_title", "Submit Data"),

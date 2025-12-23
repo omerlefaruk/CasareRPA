@@ -5,6 +5,7 @@ Verify Signal/Slot best practices:
 - No lambda functions in .connect()
 - Use functools.partial for captures
 """
+
 import ast
 import os
 import re
@@ -32,26 +33,28 @@ class SignalSlotChecker(ast.NodeVisitor):
                 isinstance(dec, ast.Name) and dec.id in ("Slot", "AsyncSlot")
                 for dec in node.decorator_list
             )
-            
+
             # Check for Qt signal/slot naming convention
             is_slot_method = node.name.startswith("on_")
-            
+
             if is_slot_method and not has_slot and "test" not in self.filepath:
-                if not any(isinstance(d, ast.Name) and d.id == "abstractmethod" 
-                          for d in node.decorator_list):
+                if not any(
+                    isinstance(d, ast.Name) and d.id == "abstractmethod"
+                    for d in node.decorator_list
+                ):
                     self.errors.append(
                         f"{self.filepath}:{node.lineno} - Slot method '{node.name}' missing @Slot decorator"
                     )
-        
+
         self.generic_visit(node)
 
 
 def check_lambdas(filepath: str) -> list[str]:
     """Check for lambda in .connect() calls"""
     errors = []
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
-    
+
     # Find .connect(lambda patterns, but skip comments
     lines = content.split("\n")
     for line_num, line in enumerate(lines, 1):
@@ -61,23 +64,23 @@ def check_lambdas(filepath: str) -> list[str]:
             errors.append(
                 f"{filepath}:{line_num} - Lambda in .connect(). Use functools.partial instead."
             )
-    
+
     return errors
 
 
 def check_file(filepath: str) -> list[str]:
     """Check for signal/slot violations"""
     errors = []
-    
+
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             tree = ast.parse(f.read())
         checker = SignalSlotChecker(filepath)
         checker.visit(tree)
         errors.extend(checker.errors)
     except Exception:
         pass
-    
+
     errors.extend(check_lambdas(filepath))
     return errors
 

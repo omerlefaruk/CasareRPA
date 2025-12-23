@@ -18,9 +18,9 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
-    BROWSER_TIMEOUT,
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
+    BROWSER_TIMEOUT,
 )
 from casare_rpa.utils import safe_int
 from casare_rpa.utils.resilience import retry_operation

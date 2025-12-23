@@ -20,15 +20,14 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-
 
 # =============================================================================
 # FileWatcherNode - Monitor file/folder for changes
@@ -93,7 +92,7 @@ class FileWatcherNode(BaseNode):
         self.add_output_port("triggered", DataType.BOOLEAN)
         self.add_output_port("timed_out", DataType.BOOLEAN)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -130,8 +129,8 @@ class FileWatcherNode(BaseNode):
                 }
 
             try:
-                from watchdog.observers import Observer
                 from watchdog.events import FileSystemEventHandler
+                from watchdog.observers import Observer
             except ImportError:
                 self.status = NodeStatus.ERROR
                 return {
@@ -145,7 +144,7 @@ class FileWatcherNode(BaseNode):
                     },
                 }
 
-            event_result: Dict[str, Any] = {
+            event_result: dict[str, Any] = {
                 "event_type": "",
                 "file_path": "",
                 "triggered": False,
@@ -193,7 +192,7 @@ class FileWatcherNode(BaseNode):
             try:
                 await asyncio.wait_for(event_occurred.wait(), timeout=timeout)
                 timed_out = False
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 timed_out = True
             finally:
                 observer.stop()
@@ -292,7 +291,7 @@ class QRCodeNode(BaseNode):
         self.add_output_port("result", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -361,8 +360,8 @@ class QRCodeNode(BaseNode):
                     }
 
                 try:
-                    from pyzbar import pyzbar
                     from PIL import Image
+                    from pyzbar import pyzbar
                 except ImportError:
                     self.status = NodeStatus.ERROR
                     return {
@@ -441,7 +440,7 @@ class Base64Node(BaseNode):
         self.add_output_port("output", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -531,7 +530,7 @@ class UUIDGeneratorNode(BaseNode):
         self.add_output_port("uuids", DataType.LIST)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -539,7 +538,7 @@ class UUIDGeneratorNode(BaseNode):
             count = int(self.get_parameter("count", 1) or 1)
             count = max(1, min(count, 100))
 
-            uuids: List[str] = []
+            uuids: list[str] = []
             for _ in range(count):
                 if version == "1":
                     new_uuid = str(uuid_module.uuid1())
@@ -623,7 +622,7 @@ class AssertSystemNode(BaseNode):
         self.add_output_port("passed", DataType.BOOLEAN)
         self.add_output_port("message", DataType.STRING)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -787,7 +786,7 @@ class LogToFileNode(BaseNode):
         self.add_output_port("success", DataType.BOOLEAN)
         self.add_output_port("lines_written", DataType.INTEGER)
 
-    async def execute(self, context: ExecutionContext) -> Optional[Dict[str, Any]]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any] | None:
         self.status = NodeStatus.RUNNING
 
         try:
@@ -819,7 +818,7 @@ class LogToFileNode(BaseNode):
                     "outputs": {"success": False, "lines_written": 0},
                 }
 
-            lines: List[str] = []
+            lines: list[str] = []
             for line in message.split("\n"):
                 if add_timestamp:
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

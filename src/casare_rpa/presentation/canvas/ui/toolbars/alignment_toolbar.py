@@ -6,19 +6,18 @@ Provides toolbar buttons for aligning and distributing selected nodes.
 
 from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QIcon, QKeySequence, QPainter, QPixmap, QColor, QPen
+from PySide6.QtGui import QAction, QColor, QIcon, QKeySequence, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QToolBar, QWidget
 
-from loguru import logger
-
-from casare_rpa.presentation.canvas.ui.theme import Theme
-from casare_rpa.presentation.canvas.graph.node_aligner import (
-    get_node_aligner,
-)
 from casare_rpa.presentation.canvas.graph.auto_layout_manager import (
     get_auto_layout_manager,
 )
+from casare_rpa.presentation.canvas.graph.node_aligner import (
+    get_node_aligner,
+)
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
@@ -44,7 +43,7 @@ class AlignmentToolbar(QToolBar):
     def __init__(
         self,
         graph_widget: Optional["NodeGraphWidget"] = None,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize the alignment toolbar.
@@ -189,7 +188,7 @@ class AlignmentToolbar(QToolBar):
         )
 
     def _create_action(
-        self, name: str, text: str, shortcut: Optional[str], tooltip: str, handler
+        self, name: str, text: str, shortcut: str | None, tooltip: str, handler
     ) -> QAction:
         """Create a toolbar action with icon."""
         action = QAction(text, self)

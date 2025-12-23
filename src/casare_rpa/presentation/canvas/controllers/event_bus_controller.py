@@ -8,11 +8,13 @@ Handles event coordination between controllers:
 - Debugging support
 """
 
-from typing import Dict, List, Optional, Any, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from PySide6.QtCore import Signal
+from typing import Any, Dict, List, Optional
+
 from loguru import logger
+from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
@@ -23,7 +25,7 @@ class Event:
 
     type: str
     source: str
-    data: Dict[str, Any] = field(default_factory=dict)
+    data: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -46,8 +48,8 @@ class EventBusController(BaseController):
     def __init__(self, main_window):
         """Initialize event bus controller."""
         super().__init__(main_window)
-        self._subscribers: Dict[str, List[Callable]] = {}
-        self._event_history: List[Event] = []
+        self._subscribers: dict[str, list[Callable]] = {}
+        self._event_history: list[Event] = []
         self._max_history_size = 1000
         self._event_filtering_enabled = False
         self._filtered_event_types: set = set()
@@ -91,7 +93,7 @@ class EventBusController(BaseController):
                 self._subscribers[event_type].remove(callback)
                 logger.debug(f"Unsubscribed from event: {event_type}")
 
-    def dispatch(self, event_type: str, source: str, data: Optional[Dict[str, Any]] = None) -> None:
+    def dispatch(self, event_type: str, source: str, data: dict[str, Any] | None = None) -> None:
         """
         Dispatch an event to all subscribers.
 
@@ -128,7 +130,7 @@ class EventBusController(BaseController):
             except Exception as e:
                 logger.error(f"Error in event callback for {event_type}: {e}")
 
-    def enable_event_filtering(self, event_types: List[str]) -> None:
+    def enable_event_filtering(self, event_types: list[str]) -> None:
         """
         Enable filtering to block specific event types.
 
@@ -145,7 +147,7 @@ class EventBusController(BaseController):
         self._filtered_event_types.clear()
         logger.info("Event filtering disabled")
 
-    def get_event_history(self, count: Optional[int] = None) -> List[Event]:
+    def get_event_history(self, count: int | None = None) -> list[Event]:
         """
         Get recent event history.
 
@@ -164,7 +166,7 @@ class EventBusController(BaseController):
         self._event_history.clear()
         logger.info("Event history cleared")
 
-    def get_subscriber_count(self, event_type: Optional[str] = None) -> int:
+    def get_subscriber_count(self, event_type: str | None = None) -> int:
         """
         Get number of subscribers.
 
@@ -178,7 +180,7 @@ class EventBusController(BaseController):
             return len(self._subscribers.get(event_type, []))
         return sum(len(subs) for subs in self._subscribers.values())
 
-    def get_event_types(self) -> List[str]:
+    def get_event_types(self) -> list[str]:
         """
         Get list of all subscribed event types.
 

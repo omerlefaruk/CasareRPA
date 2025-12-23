@@ -27,7 +27,7 @@ class NodeStarted(DomainEvent):
     node_type: str = ""
     workflow_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -56,9 +56,9 @@ class NodeCompleted(DomainEvent):
     node_type: str = ""
     workflow_id: str = ""
     execution_time_ms: float = 0.0
-    output_data: Optional[Dict[str, Any]] = None
+    output_data: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -89,11 +89,11 @@ class NodeFailed(DomainEvent):
     node_id: str = ""
     node_type: str = ""
     workflow_id: str = ""
-    error_code: Optional[ErrorCode] = None
+    error_code: ErrorCode | None = None
     error_message: str = ""
     is_retryable: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -125,7 +125,7 @@ class NodeSkipped(DomainEvent):
     workflow_id: str = ""
     reason: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -152,10 +152,10 @@ class NodeStatusChanged(DomainEvent):
     """
 
     node_id: str = ""
-    old_status: Optional[NodeStatus] = None
-    new_status: Optional[NodeStatus] = None
+    old_status: NodeStatus | None = None
+    new_status: NodeStatus | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {

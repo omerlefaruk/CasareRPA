@@ -38,13 +38,6 @@ Usage:
     print(f"Success rate: {stats['success_rate']}%")
 """
 
-from casare_rpa.infrastructure.browser.healing.models import (
-    AnchorElement,
-    AnchorHealingResult,
-    BoundingRect,
-    SpatialContext,
-    SpatialRelation,
-)
 from casare_rpa.infrastructure.browser.healing.anchor_healer import (
     AnchorHealer,
 )
@@ -56,6 +49,18 @@ from casare_rpa.infrastructure.browser.healing.cv_healer import (
     OCRMatch,
     TemplateMatch,
 )
+from casare_rpa.infrastructure.browser.healing.healing_chain import (
+    HealingChainResult,
+    SelectorHealingChain,
+    create_healing_chain,
+)
+from casare_rpa.infrastructure.browser.healing.models import (
+    AnchorElement,
+    AnchorHealingResult,
+    BoundingRect,
+    SpatialContext,
+    SpatialRelation,
+)
 from casare_rpa.infrastructure.browser.healing.telemetry import (
     HealingEvent,
     HealingTelemetry,
@@ -64,12 +69,6 @@ from casare_rpa.infrastructure.browser.healing.telemetry import (
     get_healing_telemetry,
     reset_healing_telemetry,
 )
-from casare_rpa.infrastructure.browser.healing.healing_chain import (
-    HealingChainResult,
-    SelectorHealingChain,
-    create_healing_chain,
-)
-
 
 __all__ = [
     # Models

@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
     from ..controllers.robot_controller import RobotController
+    from ..main_window import MainWindow
     from ..ui.dialogs.fleet_dashboard import FleetDashboardDialog
 
 
@@ -35,7 +35,7 @@ class FleetDashboardManager:
             main_window: Parent MainWindow instance
         """
         self._main_window = main_window
-        self._dialog: Optional["FleetDashboardDialog"] = None
+        self._dialog: FleetDashboardDialog | None = None
 
     @staticmethod
     def _normalize_orchestrator_base_url(url: str) -> str:
@@ -135,7 +135,7 @@ class FleetDashboardManager:
                 if hasattr(self._dialog, "show_toast"):
                     self._dialog.show_toast(f"Refresh failed: {e}", level="error")
 
-    async def _get_robot_api_keys(self) -> List[Dict[str, Any]]:
+    async def _get_robot_api_keys(self) -> list[dict[str, Any]]:
         """Get robot API keys from orchestrator API."""
         if not (self._robot_controller and self._robot_controller.is_connected):
             return []
@@ -146,7 +146,7 @@ class FleetDashboardManager:
 
         try:
             keys = await client.list_robot_api_keys(limit=200)
-            result: List[Dict[str, Any]] = []
+            result: list[dict[str, Any]] = []
             for k in keys:
                 result.append(
                     {
@@ -277,7 +277,7 @@ class FleetDashboardManager:
             logger.error(f"Failed to rotate API key: {e}")
             QMessageBox.warning(self._main_window, "Rotate Failed", str(e))
 
-    async def _get_robots(self) -> List[Any]:
+    async def _get_robots(self) -> list[Any]:
         """Get robots from robot controller or local repository."""
         if self._robot_controller:
             # Force refresh from orchestrator to clear any deleted items from cache
@@ -297,7 +297,7 @@ class FleetDashboardManager:
         repo = LocalRobotRepository(storage)
         return await repo.get_all()
 
-    async def _get_jobs(self) -> List[Dict[str, Any]]:
+    async def _get_jobs(self) -> list[dict[str, Any]]:
         """Get jobs from orchestrator API or local storage."""
         try:
             if self._robot_controller and self._robot_controller.is_connected:
@@ -345,7 +345,7 @@ class FleetDashboardManager:
             logger.warning(f"Failed to get jobs: {e}")
             return []
 
-    async def _get_schedules(self) -> List[Dict[str, Any]]:
+    async def _get_schedules(self) -> list[dict[str, Any]]:
         """Get schedules from orchestrator API."""
         try:
             if self._robot_controller and self._robot_controller.is_connected:
@@ -370,7 +370,7 @@ class FleetDashboardManager:
             logger.warning(f"Failed to get schedules: {e}")
         return []
 
-    async def _get_analytics(self, robots: List[Any], jobs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def _get_analytics(self, robots: list[Any], jobs: list[dict[str, Any]]) -> dict[str, Any]:
         """Get analytics from orchestrator API or generate locally."""
         if self._robot_controller and self._robot_controller.is_connected:
             client = self._robot_controller._orchestrator_client
@@ -615,6 +615,7 @@ class FleetDashboardManager:
 
             # 2. Try manual API call if client not available but config exists
             import httpx
+
             from casare_rpa.presentation.setup.config_manager import ClientConfigManager
 
             config_manager = ClientConfigManager()

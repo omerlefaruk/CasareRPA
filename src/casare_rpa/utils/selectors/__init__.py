@@ -21,55 +21,50 @@ Convenience Functions:
 # Unified Facade (Primary API)
 # =============================================================================
 
-from casare_rpa.utils.selectors.selector_facade import (
-    SelectorFacade,
-    SelectorTestResult,
-    HealingResult,
-    get_selector_facade,
-    normalize_selector,
-    validate_selector,
-    test_selector,
-    heal_selector,
-)
-
 # =============================================================================
 # AI-Enhanced Healing
 # =============================================================================
-
 from casare_rpa.utils.selectors.ai_selector_healer import (
-    AISelectorHealer,
-    AIHealingResult,
-    FuzzyMatcher,
-    SemanticMatcher,
-    RegexPatternMatcher,
-    HealingStrategy,
     UI_SYNONYMS,
+    AIHealingResult,
+    AISelectorHealer,
+    FuzzyMatcher,
+    HealingStrategy,
+    RegexPatternMatcher,
+    SemanticMatcher,
 )
 
 # =============================================================================
 # Anchor-Based Location
 # =============================================================================
-
 from casare_rpa.utils.selectors.anchor_locator import (
-    AnchorLocator,
-    AnchorCandidate,
     STABLE_ANCHOR_TAGS,
+    AnchorCandidate,
+    AnchorLocator,
 )
 
 # =============================================================================
 # Element Snapshots (Visual Diff)
 # =============================================================================
-
 from casare_rpa.utils.selectors.element_snapshot import (
-    ElementSnapshot,
     ElementDiff,
+    ElementSnapshot,
     SnapshotManager,
+)
+from casare_rpa.utils.selectors.selector_facade import (
+    HealingResult,
+    SelectorFacade,
+    SelectorTestResult,
+    get_selector_facade,
+    heal_selector,
+    normalize_selector,
+    test_selector,
+    validate_selector,
 )
 
 # =============================================================================
 # Legacy/Backward Compatibility
 # =============================================================================
-
 from casare_rpa.utils.selectors.selector_manager import (
     parse_xml_selector,
 )

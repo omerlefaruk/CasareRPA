@@ -18,26 +18,26 @@ Usage:
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QWidget,
-    QStackedWidget,
-    QGroupBox,
-    QSpacerItem,
     QSizePolicy,
+    QSpacerItem,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
-    DialogSize,
-    DIALOG_DIMENSIONS,
     COLORS,
+    DIALOG_DIMENSIONS,
+    DialogSize,
+    DialogStyles,
 )
 
 
@@ -53,7 +53,7 @@ class MFASetupDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         user_email: str = "",
         totp_manager=None,
     ) -> None:
@@ -68,9 +68,9 @@ class MFASetupDialog(QDialog):
         super().__init__(parent)
         self._user_email = user_email
         self._totp_manager = totp_manager
-        self._secret: Optional[str] = None
-        self._encrypted_secret: Optional[str] = None
-        self._qr_pixmap: Optional[QPixmap] = None
+        self._secret: str | None = None
+        self._encrypted_secret: str | None = None
+        self._qr_pixmap: QPixmap | None = None
 
         self._setup_ui()
         self._connect_signals()
@@ -80,12 +80,12 @@ class MFASetupDialog(QDialog):
             self._generate_secret()
 
     @property
-    def secret(self) -> Optional[str]:
+    def secret(self) -> str | None:
         """Get the raw TOTP secret."""
         return self._secret
 
     @property
-    def encrypted_secret(self) -> Optional[str]:
+    def encrypted_secret(self) -> str | None:
         """Get the encrypted secret for storage."""
         return self._encrypted_secret
 

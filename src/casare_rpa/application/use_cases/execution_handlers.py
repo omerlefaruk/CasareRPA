@@ -4,6 +4,7 @@ Encapsulates routing logic, error recovery, and special result handling.
 """
 
 from typing import Any, Dict, List, Optional
+
 from loguru import logger
 
 from casare_rpa.domain.value_objects.types import NodeId
@@ -29,8 +30,8 @@ class ExecutionResultHandler:
     def handle_execution_failure(
         self,
         node_id: NodeId,
-        result: Optional[Dict[str, Any]],
-        nodes_to_execute: List[NodeId],
+        result: dict[str, Any] | None,
+        nodes_to_execute: list[NodeId],
     ) -> bool:
         """
         Routes execution on failure (Try-Catch or Stop).
@@ -59,7 +60,7 @@ class ExecutionResultHandler:
         self,
         current_node_id: NodeId,
         exec_result: Any,
-        nodes_to_execute: List[NodeId],
+        nodes_to_execute: list[NodeId],
     ) -> bool:
         """
         Handles LoopBack, CatchRouting, and Parallel Forks.
@@ -102,7 +103,7 @@ class ExecutionResultHandler:
 
         return False
 
-    def _handle_loop_back(self, loop_start_id: str, current_node_id: str, queue: List[str]) -> None:
+    def _handle_loop_back(self, loop_start_id: str, current_node_id: str, queue: list[str]) -> None:
         """Clears executed nodes in loop body and the start node itself to allow re-execution."""
         body_nodes = self.orchestrator.find_loop_body_nodes(loop_start_id, current_node_id)
         # MUST clear the loop start node as well, otherwise execute_workflow skips it on next pop

@@ -17,7 +17,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import Enum
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
@@ -407,7 +407,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         self.add_output_port("saved_files", DataType.LIST)
         self.add_output_port("error", DataType.STRING)
 
-    async def execute(self, context: "ExecutionContext") -> ExecutionResult:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Execute the selected email action."""
         self.status = NodeStatus.RUNNING
 
@@ -432,7 +432,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             logger.error(f"Email {action} error: {e}")
             return self._error_result(str(e))
 
-    async def _execute_send(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_send(self, context: ExecutionContext) -> ExecutionResult:
         """Send email via SMTP."""
         smtp_server = self.get_parameter("smtp_server", "smtp.gmail.com")
         smtp_port = self.get_parameter("smtp_port", 587)
@@ -555,7 +555,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_read(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_read(self, context: ExecutionContext) -> ExecutionResult:
         """Read emails from IMAP."""
         imap_server = self.get_parameter("imap_server", "imap.gmail.com")
         imap_port = self.get_parameter("imap_port", 993)
@@ -647,7 +647,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_mark(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_mark(self, context: ExecutionContext) -> ExecutionResult:
         """Mark email with flag."""
         imap_server = self.get_parameter("imap_server", "imap.gmail.com")
         imap_port = self.get_parameter("imap_port", 993)
@@ -711,7 +711,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_delete(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_delete(self, context: ExecutionContext) -> ExecutionResult:
         """Delete email from mailbox."""
         imap_server = self.get_parameter("imap_server", "imap.gmail.com")
         imap_port = self.get_parameter("imap_port", 993)
@@ -766,7 +766,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
         self.status = NodeStatus.SUCCESS
         return {"success": True, "next_nodes": ["exec_out"]}
 
-    async def _execute_move(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_move(self, context: ExecutionContext) -> ExecutionResult:
         """Move email to different folder."""
         imap_server = self.get_parameter("imap_server", "imap.gmail.com")
         imap_port = self.get_parameter("imap_port", 993)
@@ -826,7 +826,7 @@ class EmailSuperNode(CredentialAwareMixin, BaseNode):
             "next_nodes": ["exec_out"],
         }
 
-    async def _execute_save_attachment(self, context: "ExecutionContext") -> ExecutionResult:
+    async def _execute_save_attachment(self, context: ExecutionContext) -> ExecutionResult:
         """Save email attachments to disk."""
         imap_server = self.get_parameter("imap_server", "imap.gmail.com")
         imap_port = self.get_parameter("imap_port", 993)

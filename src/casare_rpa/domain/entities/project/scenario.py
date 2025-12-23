@@ -39,29 +39,29 @@ class Scenario:
     name: str
     project_id: str
     description: str = ""
-    created_at: Optional[datetime] = None
-    modified_at: Optional[datetime] = None
-    tags: List[str] = field(default_factory=list)
+    created_at: datetime | None = None
+    modified_at: datetime | None = None
+    tags: list[str] = field(default_factory=list)
 
     # Embedded workflow (full WorkflowSchema serialized)
-    workflow: Dict[str, Any] = field(default_factory=dict)
+    workflow: dict[str, Any] = field(default_factory=dict)
 
     # Variable values for this scenario (overrides defaults)
-    variable_values: Dict[str, Any] = field(default_factory=dict)
+    variable_values: dict[str, Any] = field(default_factory=dict)
 
     # Credential alias -> vault path mappings for this scenario
-    credential_bindings: Dict[str, str] = field(default_factory=dict)
+    credential_bindings: dict[str, str] = field(default_factory=dict)
 
     # Execution settings
     execution_settings: ScenarioExecutionSettings = field(default_factory=ScenarioExecutionSettings)
 
     # Triggers for this scenario
-    triggers: List[Dict[str, Any]] = field(default_factory=list)
+    triggers: list[dict[str, Any]] = field(default_factory=list)
 
     schema_version: str = PROJECT_SCHEMA_VERSION
 
     # Runtime properties
-    _file_path: Optional[Path] = field(default=None, repr=False)
+    _file_path: Path | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         """Initialize timestamps and validate required fields."""
@@ -86,7 +86,7 @@ class Scenario:
             raise ValueError(f"Scenario name too long: {len(self.name)} chars (max 255)")
 
     @property
-    def file_path(self) -> Optional[Path]:
+    def file_path(self) -> Path | None:
         """Get scenario file path."""
         return self._file_path
 
@@ -95,7 +95,7 @@ class Scenario:
         """Set scenario file path."""
         self._file_path = value
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary for scenario JSON file."""
         return {
             "$schema_version": self.schema_version,
@@ -114,7 +114,7 @@ class Scenario:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Scenario":
+    def from_dict(cls, data: dict[str, Any]) -> "Scenario":
         """Create from dictionary."""
         created_at = None
         if data.get("created_at"):
@@ -147,7 +147,7 @@ class Scenario:
         cls,
         name: str,
         project_id: str,
-        workflow: Optional[Dict[str, Any]] = None,
+        workflow: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> "Scenario":
         """

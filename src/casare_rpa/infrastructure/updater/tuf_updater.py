@@ -14,18 +14,19 @@ import asyncio
 import hashlib
 import json
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 import aiohttp
 from loguru import logger
 
 try:
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa, padding
     from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec, ed25519, padding, rsa
 
     HAS_CRYPTOGRAPHY = True
 except ImportError:
@@ -46,10 +47,10 @@ class UpdateInfo:
     target_name: str
     size_bytes: int
     sha256_hash: str
-    release_notes: Optional[str] = None
-    release_date: Optional[datetime] = None
+    release_notes: str | None = None
+    release_date: datetime | None = None
     is_critical: bool = False
-    min_version: Optional[str] = None  # Minimum version that can update
+    min_version: str | None = None  # Minimum version that can update
 
 
 @dataclass
@@ -78,11 +79,11 @@ class TUFRootConfig:
 
     version: int = 1
     threshold: int = 1  # Minimum signatures required
-    keys: Dict[str, TUFKey] = field(default_factory=dict)
-    expires: Optional[datetime] = None
+    keys: dict[str, TUFKey] = field(default_factory=dict)
+    expires: datetime | None = None
 
     @classmethod
-    def from_root_json(cls, root_data: Dict[str, Any]) -> "TUFRootConfig":
+    def from_root_json(cls, root_data: dict[str, Any]) -> "TUFRootConfig":
         """Parse root configuration from root.json metadata."""
         signed = root_data.get("signed", {})
         keys_data = signed.get("keys", {})
@@ -148,7 +149,7 @@ class TUFUpdater:
         repo_url: str,
         local_cache_dir: Path,
         current_version: str,
-        trusted_root_path: Optional[Path] = None,
+        trusted_root_path: Path | None = None,
         verify_signatures: bool = True,
     ):
         """
@@ -173,10 +174,10 @@ class TUFUpdater:
         self._targets_dir.mkdir(parents=True, exist_ok=True)
 
         # Cached metadata
-        self._timestamp: Optional[Dict[str, Any]] = None
-        self._snapshot: Optional[Dict[str, Any]] = None
-        self._targets: Optional[Dict[str, Any]] = None
-        self._root_config: Optional[TUFRootConfig] = None
+        self._timestamp: dict[str, Any] | None = None
+        self._snapshot: dict[str, Any] | None = None
+        self._targets: dict[str, Any] | None = None
+        self._root_config: TUFRootConfig | None = None
 
         # Load trusted root if provided
         if trusted_root_path and trusted_root_path.exists():
@@ -203,7 +204,7 @@ class TUFUpdater:
             logger.error(f"Failed to load trusted root.json: {e}")
             raise SignatureVerificationError(f"Failed to load trusted root: {e}")
 
-    async def check_for_updates(self) -> Optional[UpdateInfo]:
+    async def check_for_updates(self) -> UpdateInfo | None:
         """
         Check if updates are available.
 
@@ -259,7 +260,7 @@ class TUFUpdater:
     async def download_update(
         self,
         update_info: UpdateInfo,
-        progress_callback: Optional[Callable[[DownloadProgress], None]] = None,
+        progress_callback: Callable[[DownloadProgress], None] | None = None,
     ) -> Path:
         """
         Download an update with verification.
@@ -419,7 +420,7 @@ class TUFUpdater:
         self,
         session: aiohttp.ClientSession,
         filename: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Fetch, verify, and parse metadata file."""
         url = f"{self._repo_url}/metadata/{filename}"
 
@@ -451,7 +452,7 @@ class TUFUpdater:
                     return json.load(f)
             raise
 
-    def _verify_metadata_signatures(self, metadata: Dict[str, Any], filename: str) -> None:
+    def _verify_metadata_signatures(self, metadata: dict[str, Any], filename: str) -> None:
         """
         Verify cryptographic signatures on TUF metadata.
 
@@ -572,7 +573,7 @@ class TUFUpdater:
             logger.debug(f"Signature verification failed: {e}")
             return False
 
-    def _check_metadata_expiration(self, metadata: Dict[str, Any], filename: str) -> None:
+    def _check_metadata_expiration(self, metadata: dict[str, Any], filename: str) -> None:
         """
         Check if metadata has expired.
 
@@ -591,7 +592,7 @@ class TUFUpdater:
 
         try:
             expires = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             if now > expires:
                 raise SignatureVerificationError(f"Metadata {filename} has expired: {expires_str}")
@@ -599,7 +600,7 @@ class TUFUpdater:
         except ValueError as e:
             logger.warning(f"Could not parse expiration date in {filename}: {e}")
 
-    def _find_latest_target(self) -> Optional[tuple]:
+    def _find_latest_target(self) -> tuple | None:
         """Find the latest version target in targets metadata."""
         if not self._targets:
             return None
@@ -630,7 +631,7 @@ class TUFUpdater:
         exe_targets.sort(key=version_key, reverse=True)
         return exe_targets[0]
 
-    def _extract_version(self, filename: str) -> Optional[str]:
+    def _extract_version(self, filename: str) -> str | None:
         """Extract version from filename like 'CasareRPA-3.1.0.exe'."""
         import re
 

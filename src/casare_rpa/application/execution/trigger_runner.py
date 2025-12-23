@@ -38,7 +38,7 @@ class CanvasTriggerRunner:
     with the presentation layer without depending on it directly.
     """
 
-    def __init__(self, event_handler: Optional[TriggerEventHandler] = None) -> None:
+    def __init__(self, event_handler: TriggerEventHandler | None = None) -> None:
         """
         Initialize the trigger runner.
 
@@ -47,9 +47,9 @@ class CanvasTriggerRunner:
                            NullTriggerEventHandler (logs but takes no action).
         """
         self._event_handler = event_handler or NullTriggerEventHandler()
-        self._active_triggers: Dict[str, BaseTrigger] = {}
+        self._active_triggers: dict[str, BaseTrigger] = {}
         self._running = False
-        self._last_trigger_event: Optional[TriggerEvent] = None
+        self._last_trigger_event: TriggerEvent | None = None
 
     @property
     def is_running(self) -> bool:
@@ -71,7 +71,7 @@ class CanvasTriggerRunner:
         self._event_handler = handler
         logger.debug(f"Trigger runner event handler set to {type(handler).__name__}")
 
-    async def start_triggers(self, triggers: List[Dict[str, Any]]) -> int:
+    async def start_triggers(self, triggers: list[dict[str, Any]]) -> int:
         """
         Start all enabled triggers.
 
@@ -203,7 +203,7 @@ class CanvasTriggerRunner:
         except Exception as e:
             logger.error(f"Error updating trigger stats: {e}")
 
-    def get_last_trigger_event(self) -> Optional[TriggerEvent]:
+    def get_last_trigger_event(self) -> TriggerEvent | None:
         """Get the last trigger event (for injecting into workflow variables)."""
         return self._last_trigger_event
 

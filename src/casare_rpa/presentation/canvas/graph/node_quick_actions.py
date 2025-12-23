@@ -5,9 +5,10 @@ Provides a context menu with quick actions when right-clicking on nodes.
 """
 
 from typing import TYPE_CHECKING, Optional
-from PySide6.QtWidgets import QMenu, QApplication, QInputDialog
-from PySide6.QtCore import QObject, Signal, QEvent, Qt, QPointF
+
 from loguru import logger
+from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal
+from PySide6.QtWidgets import QApplication, QInputDialog, QMenu
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -42,7 +43,7 @@ class NodeQuickActions(QObject):
     create_subflow_requested = Signal()  # Create subflow from selection
     toggle_cache_requested = Signal(str)  # Toggle cache on node (node_id)
 
-    def __init__(self, graph: "NodeGraph", parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph: "NodeGraph", parent: QObject | None = None) -> None:
         """
         Initialize the quick actions manager.
 
@@ -221,7 +222,7 @@ class NodeQuickActions(QObject):
         # Show the menu
         menu.exec(pos)
 
-    def _get_selected_node_id(self) -> Optional[str]:
+    def _get_selected_node_id(self) -> str | None:
         """Get the ID of the first selected node."""
         selected = self._graph.selected_nodes()
         if selected:

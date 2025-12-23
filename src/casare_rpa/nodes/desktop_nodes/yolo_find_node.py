@@ -20,11 +20,10 @@ from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
 from casare_rpa.nodes.desktop_nodes.properties import (
-    TIMEOUT_PROP,
     RETRY_COUNT_PROP,
     RETRY_INTERVAL_PROP,
+    TIMEOUT_PROP,
 )
-
 
 # =============================================================================
 # Property Constants
@@ -183,8 +182,8 @@ class YOLOFindElementNode(DesktopNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "YOLO Find Element",
     ):
         super().__init__(node_id, config or {}, name=name)
@@ -231,8 +230,8 @@ class YOLOFindElementNode(DesktopNodeBase):
 
     async def _capture_screenshot(
         self,
-        window_handle: Optional[int] = None,
-        region: Optional[tuple] = None,
+        window_handle: int | None = None,
+        region: tuple | None = None,
     ) -> bytes:
         """
         Capture screenshot of screen or window.
@@ -246,15 +245,17 @@ class YOLOFindElementNode(DesktopNodeBase):
         """
         try:
             import io
-            from PIL import ImageGrab, Image
+
+            from PIL import Image, ImageGrab
 
             if window_handle:
                 # Try to capture specific window
                 try:
+                    from ctypes import windll
+
+                    import win32con
                     import win32gui
                     import win32ui
-                    import win32con
-                    from ctypes import windll
 
                     # Get window rect
                     left, top, right, bottom = win32gui.GetWindowRect(window_handle)
@@ -309,7 +310,7 @@ class YOLOFindElementNode(DesktopNodeBase):
                 "Screenshot capture requires Pillow. " "Install with: pip install Pillow"
             )
 
-    async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any]:
         """Execute YOLO element detection."""
         try:
             # Get parameters
@@ -439,7 +440,7 @@ class YOLOFindElementNode(DesktopNodeBase):
             logger.error(f"[{self.name}] YOLO detection failed: {e}")
             return self.error_result(str(e))
 
-    def success_result(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def success_result(self, data: dict[str, Any]) -> dict[str, Any]:
         """Build success result with output port values."""
         self.status = NodeStatus.SUCCESS
 
@@ -457,7 +458,7 @@ class YOLOFindElementNode(DesktopNodeBase):
             "next_nodes": ["exec_out"],
         }
 
-    def error_result(self, error: str) -> Dict[str, Any]:
+    def error_result(self, error: str) -> dict[str, Any]:
         """Build error result."""
         self.status = NodeStatus.ERROR
         logger.error(f"{self.__class__.__name__} failed: {error}")

@@ -10,7 +10,7 @@ Features:
 - Tenant isolation support
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set
 
 import orjson
@@ -137,7 +137,7 @@ class PgRobotRepository(RobotRepository):
         self._pool = db_pool
         self._heartbeat_timeout = timedelta(seconds=heartbeat_timeout_seconds)
 
-    async def get_by_id(self, robot_id: str) -> Optional[Robot]:
+    async def get_by_id(self, robot_id: str) -> Robot | None:
         """Get robot by ID."""
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(self.SQL_GET_BY_ID, robot_id)
@@ -145,26 +145,26 @@ class PgRobotRepository(RobotRepository):
                 return self._row_to_robot(row)
             return None
 
-    async def get_all(self) -> List[Robot]:
+    async def get_all(self) -> list[Robot]:
         """Get all robots."""
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(self.SQL_GET_ALL)
             return [self._row_to_robot(row) for row in rows]
 
-    async def get_all_online(self) -> List[Robot]:
+    async def get_all_online(self) -> list[Robot]:
         """Get all online robots (based on heartbeat timeout)."""
-        cutoff = datetime.now(timezone.utc) - self._heartbeat_timeout
+        cutoff = datetime.now(UTC) - self._heartbeat_timeout
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(self.SQL_GET_ALL_ONLINE, cutoff)
             return [self._row_to_robot(row) for row in rows]
 
-    async def get_by_environment(self, environment: str) -> List[Robot]:
+    async def get_by_environment(self, environment: str) -> list[Robot]:
         """Get robots in specific environment."""
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(self.SQL_GET_BY_ENVIRONMENT, environment)
             return [self._row_to_robot(row) for row in rows]
 
-    async def get_by_tenant(self, tenant_id: str) -> List[Robot]:
+    async def get_by_tenant(self, tenant_id: str) -> list[Robot]:
         """Get robots belonging to a tenant."""
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(self.SQL_GET_BY_TENANT, tenant_id)
@@ -172,9 +172,9 @@ class PgRobotRepository(RobotRepository):
 
     async def get_available_robots(
         self,
-        required_capabilities: Optional[List[str]] = None,
-        tenant_id: Optional[str] = None,
-    ) -> List[Robot]:
+        required_capabilities: list[str] | None = None,
+        tenant_id: str | None = None,
+    ) -> list[Robot]:
         """Get robots with available capacity matching capabilities.
 
         Args:
@@ -210,7 +210,7 @@ class PgRobotRepository(RobotRepository):
 
     async def save(self, robot: Robot) -> None:
         """Save or update robot (UPSERT)."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Prepare JSON fields
         capabilities_json = orjson.dumps([cap.value for cap in robot.capabilities]).decode()
@@ -247,7 +247,7 @@ class PgRobotRepository(RobotRepository):
 
     async def update_status(self, robot_id: str, status: RobotStatus) -> None:
         """Update robot status."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         async with self._pool.acquire() as conn:
             await conn.execute(self.SQL_UPDATE_STATUS, robot_id, status.value, now)
         logger.debug(f"Updated robot {robot_id} status to {status.value}")
@@ -255,7 +255,7 @@ class PgRobotRepository(RobotRepository):
     async def update_heartbeat(
         self,
         robot_id: str,
-        metrics: Optional[Dict[str, Any]] = None,
+        metrics: dict[str, Any] | None = None,
     ) -> None:
         """Update robot heartbeat timestamp and metrics.
 
@@ -263,7 +263,7 @@ class PgRobotRepository(RobotRepository):
             robot_id: Robot identifier
             metrics: Optional system metrics (cpu_percent, memory_mb, etc.)
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         metrics_json = orjson.dumps(metrics or {}).decode()
 
         async with self._pool.acquire() as conn:
@@ -272,7 +272,7 @@ class PgRobotRepository(RobotRepository):
     async def update_current_jobs(
         self,
         robot_id: str,
-        current_job_ids: List[str],
+        current_job_ids: list[str],
     ) -> None:
         """Update robot's current job IDs.
 
@@ -280,7 +280,7 @@ class PgRobotRepository(RobotRepository):
             robot_id: Robot identifier
             current_job_ids: List of currently assigned job IDs
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         jobs_json = orjson.dumps(current_job_ids).decode()
 
         async with self._pool.acquire() as conn:
@@ -312,7 +312,7 @@ class PgRobotRepository(RobotRepository):
             current = [j for j in robot.current_job_ids if j != job_id]
             await self.update_current_jobs(robot_id, current)
 
-    async def mark_offline(self, robot_id: str) -> List[str]:
+    async def mark_offline(self, robot_id: str) -> list[str]:
         """Mark robot as offline and return orphaned job IDs.
 
         Args:
@@ -322,7 +322,7 @@ class PgRobotRepository(RobotRepository):
             List of job IDs that were assigned to this robot
         """
         robot = await self.get_by_id(robot_id)
-        orphaned_jobs: List[str] = []
+        orphaned_jobs: list[str] = []
 
         if robot:
             orphaned_jobs = list(robot.current_job_ids)
@@ -359,7 +359,7 @@ class PgRobotRepository(RobotRepository):
             metrics_raw = orjson.loads(metrics_raw)
 
         # Convert capability strings to enums
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         for cap in capabilities_raw or []:
             try:
                 capabilities.add(RobotCapability(cap))

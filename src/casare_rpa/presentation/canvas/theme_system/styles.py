@@ -8,7 +8,7 @@ All functions take a CanvasThemeColors instance and return QSS strings.
 from pathlib import Path
 
 from .colors import CanvasThemeColors
-from .constants import FONTS, FONT_SIZES, RADIUS, SIZES, SPACING
+from .constants import FONT_SIZES, FONTS, RADIUS, SIZES, SPACING
 
 # Get assets directory path
 ASSETS_DIR = Path(__file__).parent.parent / "assets"

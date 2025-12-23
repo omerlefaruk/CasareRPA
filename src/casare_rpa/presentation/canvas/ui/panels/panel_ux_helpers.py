@@ -8,19 +8,20 @@ Provides reusable UI components for consistent UX across all panels:
 - Context menu builders
 """
 
-from typing import Optional, Callable, List, Tuple
+from collections.abc import Callable
+from typing import List, Optional, Tuple
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QFrame,
-    QMenu,
-)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCursor
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMenu,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -41,7 +42,7 @@ class EmptyStateWidget(QWidget):
         title: str = "No data",
         description: str = "",
         action_text: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize empty state widget.
@@ -155,7 +156,7 @@ class StatusBadge(QLabel):
         self,
         text: str = "",
         status: str = "info",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize status badge.
@@ -174,7 +175,7 @@ class StatusBadge(QLabel):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setMinimumWidth(60)
 
-    def set_status(self, status: str, text: Optional[str] = None) -> None:
+    def set_status(self, status: str, text: str | None = None) -> None:
         """
         Set badge status and optionally update text.
 
@@ -242,7 +243,7 @@ class ToolbarButton(QPushButton):
         tooltip: str = "",
         primary: bool = False,
         danger: bool = False,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize toolbar button.
@@ -342,8 +343,8 @@ class SectionHeader(QFrame):
     def __init__(
         self,
         title: str,
-        count: Optional[int] = None,
-        parent: Optional[QWidget] = None,
+        count: int | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize section header.
@@ -356,12 +357,12 @@ class SectionHeader(QFrame):
         super().__init__(parent)
 
         self._title_label: QLabel
-        self._count_label: Optional[QLabel] = None
+        self._count_label: QLabel | None = None
 
         self._setup_ui(title, count)
         self._apply_styles()
 
-    def _setup_ui(self, title: str, count: Optional[int]) -> None:
+    def _setup_ui(self, title: str, count: int | None) -> None:
         """Set up the UI."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 6, 8, 6)
@@ -407,8 +408,8 @@ class SectionHeader(QFrame):
 
 
 def create_context_menu(
-    actions: List[Tuple[str, str, Callable]],
-    parent: Optional[QWidget] = None,
+    actions: list[tuple[str, str, Callable]],
+    parent: QWidget | None = None,
 ) -> QMenu:
     """
     Create a styled context menu.

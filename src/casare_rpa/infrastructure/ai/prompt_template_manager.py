@@ -38,7 +38,7 @@ class PromptTemplateManager:
     TEMPLATES_DIR = "prompts"
     TEMPLATE_EXTENSION = ".json"
 
-    def __init__(self, storage_path: Optional[str] = None) -> None:
+    def __init__(self, storage_path: str | None = None) -> None:
         """
         Initialize template manager.
 
@@ -50,7 +50,7 @@ class PromptTemplateManager:
         else:
             self._storage_path = Path.home() / ".casare_rpa" / self.TEMPLATES_DIR
 
-        self._custom_templates: Dict[str, PromptTemplate] = {}
+        self._custom_templates: dict[str, PromptTemplate] = {}
         self._loaded = False
 
     def _ensure_storage_dir(self) -> Path:
@@ -58,7 +58,7 @@ class PromptTemplateManager:
         self._storage_path.mkdir(parents=True, exist_ok=True)
         return self._storage_path
 
-    def _template_to_dict(self, template: PromptTemplate) -> Dict[str, Any]:
+    def _template_to_dict(self, template: PromptTemplate) -> dict[str, Any]:
         """Convert template to serializable dictionary."""
         return {
             "id": template.id,
@@ -91,7 +91,7 @@ class PromptTemplateManager:
             ],
         }
 
-    def _dict_to_template(self, data: Dict[str, Any]) -> PromptTemplate:
+    def _dict_to_template(self, data: dict[str, Any]) -> PromptTemplate:
         """Convert dictionary to PromptTemplate."""
         variables = [
             TemplateVariable(
@@ -137,7 +137,7 @@ class PromptTemplateManager:
 
         for file_path in storage.glob(f"*{self.TEMPLATE_EXTENSION}"):
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     data = json.load(f)
 
                 template = self._dict_to_template(data)
@@ -150,7 +150,7 @@ class PromptTemplateManager:
         self._loaded = True
         logger.debug(f"Loaded {len(self._custom_templates)} custom templates")
 
-    def get_template(self, template_id: str) -> Optional[PromptTemplate]:
+    def get_template(self, template_id: str) -> PromptTemplate | None:
         """
         Get a template by ID.
 
@@ -167,9 +167,9 @@ class PromptTemplateManager:
 
     def list_templates(
         self,
-        category: Optional[TemplateCategory] = None,
+        category: TemplateCategory | None = None,
         include_builtin: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List all available templates.
 
@@ -275,8 +275,8 @@ class PromptTemplateManager:
     def render_template(
         self,
         template_id: str,
-        inputs: Dict[str, Any],
-    ) -> Dict[str, str]:
+        inputs: dict[str, Any],
+    ) -> dict[str, str]:
         """
         Render a template with inputs.
 
@@ -299,8 +299,8 @@ class PromptTemplateManager:
     def validate_inputs(
         self,
         template_id: str,
-        inputs: Dict[str, Any],
-    ) -> List[str]:
+        inputs: dict[str, Any],
+    ) -> list[str]:
         """
         Validate inputs against template requirements.
 
@@ -319,7 +319,7 @@ class PromptTemplateManager:
         category: str,
         system_prompt: str,
         user_prompt_template: str,
-        variables: Optional[List[Dict[str, Any]]] = None,
+        variables: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> PromptTemplate:
         """
@@ -366,7 +366,7 @@ class PromptTemplateManager:
 
         return template
 
-    def export_template(self, template_id: str) -> Optional[str]:
+    def export_template(self, template_id: str) -> str | None:
         """Export a template to JSON string."""
         template = self.get_template(template_id)
         if template is None:
@@ -405,7 +405,7 @@ class PromptTemplateManager:
     def get_template_variables(
         self,
         template_id: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get variable definitions for a template."""
         template = self.get_template(template_id)
         if template is None:
@@ -427,7 +427,7 @@ class PromptTemplateManager:
         self,
         query: str,
         include_builtin: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search templates by name, description, or tags.
 
@@ -475,7 +475,7 @@ class PromptTemplateManager:
 
 
 # Module-level singleton
-_default_manager: Optional[PromptTemplateManager] = None
+_default_manager: PromptTemplateManager | None = None
 
 
 def get_prompt_template_manager() -> PromptTemplateManager:

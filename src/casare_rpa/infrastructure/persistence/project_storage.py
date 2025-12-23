@@ -7,13 +7,19 @@ Manages all file system operations for projects, scenarios, variables, and crede
 """
 
 from pathlib import Path
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+
 import orjson
 from loguru import logger
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.workflow import WorkflowSchema
 
+from casare_rpa.config import (
+    GLOBAL_CREDENTIALS_FILE,
+    GLOBAL_VARIABLES_FILE,
+    PROJECTS_INDEX_FILE,
+)
 from casare_rpa.domain.entities.project import (
     CredentialBindingsFile,
     Project,
@@ -21,12 +27,6 @@ from casare_rpa.domain.entities.project import (
     VariableScope,
     VariablesFile,
 )
-from casare_rpa.config import (
-    PROJECTS_INDEX_FILE,
-    GLOBAL_VARIABLES_FILE,
-    GLOBAL_CREDENTIALS_FILE,
-)
-
 
 # Project marker file name
 PROJECT_MARKER_FILE = ".casare_project"
@@ -396,7 +396,7 @@ class ProjectStorage:
     # =========================================================================
 
     @staticmethod
-    def list_scenario_files(project: Project) -> List[Path]:
+    def list_scenario_files(project: Project) -> list[Path]:
         """
         List all scenario files in a project.
 

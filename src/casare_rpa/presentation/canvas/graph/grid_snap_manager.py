@@ -9,10 +9,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
-from PySide6.QtCore import QPointF, QRectF, Signal, QObject
-from PySide6.QtGui import QColor, QPainter, QPen
-
 from loguru import logger
+from PySide6.QtCore import QObject, QPointF, QRectF, Signal
+from PySide6.QtGui import QColor, QPainter, QPen
 
 from casare_rpa.presentation.canvas.ui.theme import Theme
 
@@ -74,7 +73,7 @@ class GridSnapManager(QObject):
     # Guideline extension beyond node edges
     GUIDELINE_EXTENSION = 30
 
-    def __init__(self, grid_size: int = 50, parent: Optional[QObject] = None) -> None:
+    def __init__(self, grid_size: int = 50, parent: QObject | None = None) -> None:
         """
         Initialize the grid snap manager.
 
@@ -90,10 +89,10 @@ class GridSnapManager(QObject):
         self._snap_to_nodes = True
 
         # Cache for node rectangles during drag operation
-        self._node_rects: Dict[str, QRectF] = {}
+        self._node_rects: dict[str, QRectF] = {}
 
         # Current guidelines to display
-        self._current_guidelines: List[AlignmentGuideline] = []
+        self._current_guidelines: list[AlignmentGuideline] = []
 
         # Guideline colors from theme
         self._guideline_color = self._get_guideline_color()
@@ -187,9 +186,9 @@ class GridSnapManager(QObject):
     def snap_position_with_node_alignment(
         self,
         dragging_rect: QRectF,
-        other_rects: Dict[str, QRectF],
-        exclude_ids: Optional[List[str]] = None,
-    ) -> Tuple[QPointF, List[AlignmentGuideline]]:
+        other_rects: dict[str, QRectF],
+        exclude_ids: list[str] | None = None,
+    ) -> tuple[QPointF, list[AlignmentGuideline]]:
         """
         Snap position considering both grid and other node alignments.
 
@@ -205,10 +204,10 @@ class GridSnapManager(QObject):
             return QPointF(dragging_rect.x(), dragging_rect.y()), []
 
         exclude_ids = exclude_ids or []
-        guidelines: List[AlignmentGuideline] = []
+        guidelines: list[AlignmentGuideline] = []
 
-        snap_x: Optional[float] = None
-        snap_y: Optional[float] = None
+        snap_x: float | None = None
+        snap_y: float | None = None
         snap_x_dist = float("inf")
         snap_y_dist = float("inf")
 
@@ -320,9 +319,9 @@ class GridSnapManager(QObject):
     def get_alignment_guidelines(
         self,
         dragging_rect: QRectF,
-        other_rects: Dict[str, QRectF],
-        exclude_ids: Optional[List[str]] = None,
-    ) -> List[AlignmentGuideline]:
+        other_rects: dict[str, QRectF],
+        exclude_ids: list[str] | None = None,
+    ) -> list[AlignmentGuideline]:
         """
         Get alignment guidelines without snapping.
 
@@ -344,7 +343,7 @@ class GridSnapManager(QObject):
         )
         return guidelines
 
-    def get_current_guidelines(self) -> List[AlignmentGuideline]:
+    def get_current_guidelines(self) -> list[AlignmentGuideline]:
         """Get the current guidelines from the last snap operation."""
         return self._current_guidelines
 
@@ -352,7 +351,7 @@ class GridSnapManager(QObject):
         """Clear current guidelines."""
         self._current_guidelines = []
 
-    def draw_guidelines(self, painter: QPainter, viewport_rect: Optional[QRectF] = None) -> None:
+    def draw_guidelines(self, painter: QPainter, viewport_rect: QRectF | None = None) -> None:
         """
         Draw alignment guidelines on the painter.
 
@@ -398,7 +397,7 @@ class GridSnapManager(QObject):
 
         painter.restore()
 
-    def update_node_rects(self, node_rects: Dict[str, QRectF]) -> None:
+    def update_node_rects(self, node_rects: dict[str, QRectF]) -> None:
         """
         Update the cached node rectangles.
 
@@ -409,13 +408,13 @@ class GridSnapManager(QObject):
         """
         self._node_rects = node_rects.copy()
 
-    def get_node_rects(self) -> Dict[str, QRectF]:
+    def get_node_rects(self) -> dict[str, QRectF]:
         """Get the cached node rectangles."""
         return self._node_rects.copy()
 
 
 # Module-level singleton for global access
-_grid_snap_manager: Optional[GridSnapManager] = None
+_grid_snap_manager: GridSnapManager | None = None
 
 
 def get_grid_snap_manager() -> GridSnapManager:

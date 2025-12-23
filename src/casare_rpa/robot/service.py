@@ -37,10 +37,10 @@ IS_WINDOWS = sys.platform == "win32"
 
 if IS_WINDOWS:
     try:
-        import win32serviceutil
-        import win32service
-        import win32event
         import servicemanager
+        import win32event
+        import win32service
+        import win32serviceutil
 
         PYWIN32_AVAILABLE = True
     except ImportError:
@@ -57,7 +57,6 @@ else:
     servicemanager = None
 
 from loguru import logger
-
 
 # Service configuration
 SERVICE_NAME = "CasareRPARobot"
@@ -145,8 +144,8 @@ if PYWIN32_AVAILABLE:
 
             # Also log to Windows Event Log
             try:
-                import win32evtlogutil
                 import win32evtlog
+                import win32evtlogutil
 
                 def event_log_handler(message):
                     """Log to Windows Event Log."""
@@ -386,7 +385,7 @@ def restart_service() -> bool:
         return False
 
 
-def service_status() -> Optional[str]:
+def service_status() -> str | None:
     """
     Get the Windows service status.
 

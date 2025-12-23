@@ -5,7 +5,7 @@ Handles all node and frame selection operations for the node graph widget.
 Follows Single Responsibility Principle - manages selection state only.
 """
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from loguru import logger
 from PySide6.QtCore import QObject, Signal
@@ -35,7 +35,7 @@ class SelectionManager(QObject):
     frame_selected = Signal(str)  # Emits frame title when selected
     frame_deselected = Signal(str)  # Emits frame title when deselected
 
-    def __init__(self, graph: "NodeGraph", parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph: "NodeGraph", parent: QObject | None = None) -> None:
         """
         Initialize selection manager.
 
@@ -51,7 +51,7 @@ class SelectionManager(QObject):
         """Get the underlying graph."""
         return self._graph
 
-    def get_selected_nodes(self) -> List:
+    def get_selected_nodes(self) -> list:
         """
         Get the currently selected nodes.
 
@@ -60,7 +60,7 @@ class SelectionManager(QObject):
         """
         return self._graph.selected_nodes()
 
-    def get_selected_node_ids(self) -> List[str]:
+    def get_selected_node_ids(self) -> list[str]:
         """
         Get IDs of currently selected nodes.
 
@@ -90,7 +90,7 @@ class SelectionManager(QObject):
         if node:
             node.set_selected(True)
 
-    def select_nodes(self, nodes: List) -> None:
+    def select_nodes(self, nodes: list) -> None:
         """
         Select multiple nodes.
 
@@ -196,7 +196,7 @@ class SelectionManager(QObject):
 
         return deleted_any
 
-    def get_selected_frames(self) -> List:
+    def get_selected_frames(self) -> list:
         """
         Get all selected frames.
 

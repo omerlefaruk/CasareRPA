@@ -21,7 +21,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.gmail_client import GmailClient
 from casare_rpa.nodes.google.google_base import GmailBaseNode
 
-
 # ============================================================================
 # Reusable Property Definitions for Gmail Read Nodes
 # ============================================================================

@@ -84,7 +84,7 @@ class AIRecoveryNode(BaseNode):
     # @requires: litellm
     # @ports: error_message, error_type, error_node, stack_trace, screenshot, execution_history -> strategy, confidence, reasoning, suggested_fix, retry_modifications, alternatives
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize AI Recovery node."""
         super().__init__(node_id, config)
         self.name = "AI Recovery"
@@ -151,7 +151,7 @@ class AIRecoveryNode(BaseNode):
             node_context["workflow_name"] = getattr(context, "workflow_name", "")
 
             # Get screenshot if enabled and available from context
-            screenshot_bytes: Optional[bytes] = None
+            screenshot_bytes: bytes | None = None
             if use_screenshot:
                 if screenshot:
                     screenshot_bytes = screenshot
@@ -225,9 +225,9 @@ class AIRecoveryNode(BaseNode):
         self,
         error_message: str,
         error_type: str,
-        node_context: Dict[str, Any],
-        screenshot: Optional[bytes],
-        execution_history: List[Dict[str, Any]],
+        node_context: dict[str, Any],
+        screenshot: bytes | None,
+        execution_history: list[dict[str, Any]],
         model: str,
     ) -> Any:
         """Perform AI analysis of the error."""

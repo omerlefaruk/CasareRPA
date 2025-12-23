@@ -78,7 +78,7 @@ class ErrorTriggerNode(BaseTriggerNode):
     trigger_icon = "error"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "Error Trigger"
         self.node_type = "ErrorTriggerNode"
@@ -96,7 +96,7 @@ class ErrorTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.ERROR
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get error-specific configuration."""
         error_types_str = self.get_parameter("error_types", "*")
         if error_types_str == "*":

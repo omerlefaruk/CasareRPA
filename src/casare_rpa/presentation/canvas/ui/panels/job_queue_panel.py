@@ -6,26 +6,25 @@ Displays pending, running, completed, and failed jobs with filtering and actions
 """
 
 from functools import partial
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
-    QComboBox,
-    QHeaderView,
-    QAbstractItemView,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QBrush, QColor
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
 
@@ -61,15 +60,15 @@ class JobQueuePanel(QDockWidget):
     priority_changed = Signal(str, int)
     refresh_requested = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize Job Queue Panel."""
         super().__init__("Job Queue", parent)
         self.setObjectName("JobQueueDock")
 
-        self._pending_jobs: List[Dict] = []
-        self._running_jobs: List[Dict] = []
-        self._completed_jobs: List[Dict] = []
-        self._failed_jobs: List[Dict] = []
+        self._pending_jobs: list[dict] = []
+        self._running_jobs: list[dict] = []
+        self._completed_jobs: list[dict] = []
+        self._failed_jobs: list[dict] = []
 
         self._setup_dock()
         self._setup_ui()
@@ -170,7 +169,7 @@ class JobQueuePanel(QDockWidget):
 
         self.setWidget(container)
 
-    def _create_job_table(self, headers: List[str]) -> QTableWidget:
+    def _create_job_table(self, headers: list[str]) -> QTableWidget:
         """Create a job table with given headers."""
         table = QTableWidget()
         table.setColumnCount(len(headers))
@@ -318,28 +317,28 @@ class JobQueuePanel(QDockWidget):
     # ==================== Public Methods ====================
 
     @Slot(list)
-    def update_pending_jobs(self, jobs: List[Dict]) -> None:
+    def update_pending_jobs(self, jobs: list[dict]) -> None:
         """Update pending jobs list."""
         self._pending_jobs = jobs
         self._populate_pending_table()
         self._update_tab_counts()
 
     @Slot(list)
-    def update_running_jobs(self, jobs: List[Dict]) -> None:
+    def update_running_jobs(self, jobs: list[dict]) -> None:
         """Update running jobs list."""
         self._running_jobs = jobs
         self._populate_running_table()
         self._update_tab_counts()
 
     @Slot(list)
-    def update_completed_jobs(self, jobs: List[Dict]) -> None:
+    def update_completed_jobs(self, jobs: list[dict]) -> None:
         """Update completed jobs list."""
         self._completed_jobs = jobs
         self._populate_completed_table()
         self._update_tab_counts()
 
     @Slot(list)
-    def update_failed_jobs(self, jobs: List[Dict]) -> None:
+    def update_failed_jobs(self, jobs: list[dict]) -> None:
         """Update failed/DLQ jobs list."""
         self._failed_jobs = jobs
         self._populate_failed_table()

@@ -37,24 +37,25 @@ Related:
 """
 
 import traceback
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 
-# Interface for type hints (dependency inversion)
-from casare_rpa.domain.interfaces import IExecutionContext, INode
-
 # Result pattern for explicit error handling
 from casare_rpa.domain.errors import (
-    Result,
-    Ok,
     Err,
-    NodeExecutionError,
-    ValidationError,
     ErrorContext,
+    NodeExecutionError,
+    Ok,
+    Result,
+    ValidationError,
 )
+
+# Interface for type hints (dependency inversion)
+from casare_rpa.domain.interfaces import IExecutionContext, INode
 
 
 class VariableResolver:
@@ -122,7 +123,7 @@ class VariableResolver:
         # PERFORMANCE OPTIMIZATION: Pre-build connection index for O(1) lookups
         # Without this, we'd scan all connections (O(n)) for every node execution
         # With 100 nodes and 150 connections, this reduces from O(15000) to O(n) total
-        self._incoming_connections: Dict[str, List[Any]] = {}
+        self._incoming_connections: dict[str, list[Any]] = {}
         self._build_connection_index()
 
     def _build_connection_index(self) -> None:
@@ -140,7 +141,7 @@ class VariableResolver:
                 self._incoming_connections[conn.target_node] = []
             self._incoming_connections[conn.target_node].append(conn)
 
-    def transfer_data(self, connection: Any, context_override: Optional[Any] = None) -> None:
+    def transfer_data(self, connection: Any, context_override: Any | None = None) -> None:
         """
         Transfer data from source port to target port.
 
@@ -187,7 +188,7 @@ class VariableResolver:
                     f"({type(source_node).__name__}) port '{connection.source_port}' has no value"
                 )
 
-    def transfer_inputs_to_node(self, node_id: str, context_override: Optional[Any] = None) -> None:
+    def transfer_inputs_to_node(self, node_id: str, context_override: Any | None = None) -> None:
         """
         Transfer all input data to a node from its connected sources.
 
@@ -206,7 +207,7 @@ class VariableResolver:
         for connection in self._incoming_connections.get(node_id, []):
             self.transfer_data(connection, context_override=context_override)
 
-    def validate_output_ports(self, node: INode, result: Dict[str, Any]) -> bool:
+    def validate_output_ports(self, node: INode, result: dict[str, Any]) -> bool:
         """
         Validate that required output ports have values after execution.
 
@@ -259,7 +260,7 @@ class VariableResolver:
 
         return True
 
-    def _get_data_output_ports(self, output_ports_dict: Dict[str, Any]) -> List[str]:
+    def _get_data_output_ports(self, output_ports_dict: dict[str, Any]) -> list[str]:
         """
         Get list of data output port names (excluding exec ports).
 
@@ -289,7 +290,7 @@ class VariableResolver:
     # RESULT PATTERN - Safe variants for explicit error handling
     # ========================================================================
 
-    def transfer_data_safe(self, connection: Any) -> Result[Tuple[str, Any], NodeExecutionError]:
+    def transfer_data_safe(self, connection: Any) -> Result[tuple[str, Any], NodeExecutionError]:
         """
         Transfer data from source port to target port with explicit error handling.
 
@@ -369,8 +370,8 @@ class VariableResolver:
         return Ok(success_count)
 
     def validate_output_ports_safe(
-        self, node: INode, result: Dict[str, Any]
-    ) -> Result[List[str], ValidationError]:
+        self, node: INode, result: dict[str, Any]
+    ) -> Result[list[str], ValidationError]:
         """
         Validate output ports have values with explicit error handling.
 
@@ -402,7 +403,7 @@ class VariableResolver:
             return Ok([])
 
         # Collect ports with missing values
-        missing_ports: List[str] = []
+        missing_ports: list[str] = []
         for port_name in output_port_names:
             value = node.get_output_value(port_name)
             if value is None:
@@ -482,7 +483,7 @@ class TryCatchErrorHandler:
 
         return False
 
-    def find_catch_node_id(self) -> Optional[str]:
+    def find_catch_node_id(self) -> str | None:
         """
         Find the catch node ID for the most recent active try block.
 
@@ -503,7 +504,7 @@ class TryCatchErrorHandler:
 
         return None
 
-    def capture_from_result(self, result: Optional[Dict[str, Any]], node_id: str) -> bool:
+    def capture_from_result(self, result: dict[str, Any] | None, node_id: str) -> bool:
         """
         Capture error from a failed execution result.
 
@@ -562,7 +563,7 @@ class TryCatchErrorHandler:
 
         return Ok(False)
 
-    def find_catch_node_safe(self) -> Result[Optional[str], NodeExecutionError]:
+    def find_catch_node_safe(self) -> Result[str | None, NodeExecutionError]:
         """
         Find the catch node ID for the most recent active try block.
 

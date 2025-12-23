@@ -10,7 +10,8 @@ Full-featured dialog for managing encrypted credentials:
 
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, QThread, QObject
+from loguru import logger
+from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -29,13 +30,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from loguru import logger
-
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
-    DialogSize,
-    apply_dialog_style,
     COLORS,
+    DialogSize,
+    DialogStyles,
+    apply_dialog_style,
 )
 
 
@@ -271,14 +270,14 @@ class CredentialManagerDialog(QDialog):
 
     credentials_changed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize credential manager dialog."""
         super().__init__(parent)
 
         self._store = None
-        self._current_credential_id: Optional[str] = None
-        self._test_thread: Optional[ApiKeyTestThread] = None
-        self._token_refresh_thread: Optional[TokenRefreshThread] = None
+        self._current_credential_id: str | None = None
+        self._test_thread: ApiKeyTestThread | None = None
+        self._token_refresh_thread: TokenRefreshThread | None = None
 
         self.setWindowTitle("Credential Manager")
         self.setModal(True)

@@ -20,11 +20,10 @@ from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
-    BROWSER_TIMEOUT,
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
+    BROWSER_TIMEOUT,
 )
-
 
 # =============================================================================
 # Property Constants
@@ -134,8 +133,8 @@ class VisualFindElementNode(BrowserBaseNode):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Visual Find Element",
     ):
         super().__init__(node_id, config or {}, name=name)
@@ -174,7 +173,7 @@ class VisualFindElementNode(BrowserBaseNode):
                 ) from e
         return self._vision_finder
 
-    async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any]:
         """Execute visual element finding."""
         try:
             # Get page

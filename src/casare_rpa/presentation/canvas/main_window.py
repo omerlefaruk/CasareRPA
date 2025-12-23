@@ -6,18 +6,23 @@ GUI container for the RPA platform.
 """
 
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QDialog
-    from .ui.panels.bottom_panel_dock import BottomPanelDock
-    from .ui.panels.debug_panel import DebugPanel
-    from .search.command_palette import CommandPalette
-    from .ui.panels.ai_assistant_dock import AIAssistantDock
-    from .controllers.ui_state_controller import UIStateController
+
     from casare_rpa.domain.validation import ValidationResult
 
-from PySide6.QtCore import Qt, Signal, Slot, QTimer
+    from .controllers.ui_state_controller import UIStateController
+    from .search.command_palette import CommandPalette
+    from .ui.panels.ai_assistant_dock import AIAssistantDock
+    from .ui.panels.bottom_panel_dock import BottomPanelDock
+    from .ui.panels.debug_panel import DebugPanel
+
+from collections.abc import Callable
+from datetime import datetime
+from loguru import logger
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -26,27 +31,26 @@ from PySide6.QtWidgets import (
 from ...utils.config import (
     APP_NAME,
     APP_VERSION,
-    GUI_WINDOW_WIDTH,
     GUI_WINDOW_HEIGHT,
+    GUI_WINDOW_WIDTH,
 )
-from .graph.minimap import Minimap
 from .component_factory import ComponentFactory
 from .components import (
     ActionManager,
-    MenuBuilder,
-    ToolbarBuilder,
-    StatusBarManager,
     DockCreator,
     FleetDashboardManager,
+    MenuBuilder,
     QuickNodeManager,
+    StatusBarManager,
+    ToolbarBuilder,
 )
-from .coordinators import SignalCoordinator
-from .managers import PanelManager
-from .initializers import UIComponentInitializer, ControllerRegistrar
-from loguru import logger
 
 # Import controllers for type hints
 from .controllers import SelectorController
+from .coordinators import SignalCoordinator
+from .graph.minimap import Minimap
+from .initializers import ControllerRegistrar, UIComponentInitializer
+from .managers import PanelManager
 
 
 class MainWindow(QMainWindow):
@@ -92,7 +96,7 @@ class MainWindow(QMainWindow):
     trigger_workflow_requested = Signal()
     save_as_scenario_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the main window.
 
@@ -102,23 +106,23 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
 
         # Minimap overlay
-        self._minimap: Optional[Minimap] = None
-        self._central_widget: Optional[QWidget] = None
+        self._minimap: Minimap | None = None
+        self._central_widget: QWidget | None = None
 
         # Validation components
-        self._validation_timer: Optional["QTimer"] = None
+        self._validation_timer: QTimer | None = None
         self._auto_validate: bool = True
-        self._workflow_data_provider: Optional[callable] = None
+        self._workflow_data_provider: Callable | None = None
 
         # Panels and docks
-        self._bottom_panel: Optional["BottomPanelDock"] = None
+        self._bottom_panel: BottomPanelDock | None = None
         self._side_panel = None
-        self._debug_panel: Optional["DebugPanel"] = None
+        self._debug_panel: DebugPanel | None = None
         self._process_mining_panel = None
         self._robot_picker_panel = None
         self._analytics_panel = None
-        self._command_palette: Optional["CommandPalette"] = None
-        self._ai_assistant_panel: Optional["AIAssistantDock"] = None
+        self._command_palette: CommandPalette | None = None
+        self._ai_assistant_panel: AIAssistantDock | None = None
         self._credentials_panel = None
 
         # 3-tier loading state
@@ -128,10 +132,10 @@ class MainWindow(QMainWindow):
         self._auto_connect_enabled: bool = True
 
         # DEFERRED tier dialogs
-        self._preferences_dialog: Optional["QDialog"] = None
-        self._desktop_selector_builder: Optional["QDialog"] = None
-        self._performance_dashboard: Optional["QDialog"] = None
-        self._fleet_dashboard_dialog: Optional["QDialog"] = None
+        self._preferences_dialog: QDialog | None = None
+        self._desktop_selector_builder: QDialog | None = None
+        self._performance_dashboard: QDialog | None = None
+        self._fleet_dashboard_dialog: QDialog | None = None
 
         # Controllers (MVC architecture) - initialized by ControllerRegistrar
         self._workflow_controller = None
@@ -143,7 +147,7 @@ class MainWindow(QMainWindow):
         self._event_bus_controller = None
         self._viewport_controller = None
         self._ui_state_controller = None
-        self._selector_controller: Optional[SelectorController] = None
+        self._selector_controller: SelectorController | None = None
         self._project_controller = None
         self._robot_controller = None
 
@@ -497,7 +501,7 @@ class MainWindow(QMainWindow):
             )
 
     def validate_current_workflow(self, show_panel: bool = True) -> "ValidationResult":
-        from casare_rpa.domain.validation import validate_workflow, ValidationResult
+        from casare_rpa.domain.validation import ValidationResult, validate_workflow
 
         workflow_data = self._get_workflow_data()
 
@@ -530,7 +534,7 @@ class MainWindow(QMainWindow):
 
         return result
 
-    def _get_workflow_data(self) -> Optional[dict]:
+    def _get_workflow_data(self) -> dict | None:
         if self._workflow_data_provider:
             try:
                 return self._workflow_data_provider()
@@ -538,7 +542,7 @@ class MainWindow(QMainWindow):
                 logger.debug(f"Workflow data provider failed: {e}")
         return None
 
-    def set_workflow_data_provider(self, provider: callable) -> None:
+    def set_workflow_data_provider(self, provider: Callable) -> None:
         self._workflow_data_provider = provider
 
     def on_workflow_changed(self) -> None:
@@ -739,11 +743,11 @@ class MainWindow(QMainWindow):
     def is_modified(self) -> bool:
         return self._workflow_controller.is_modified if self._workflow_controller else False
 
-    def set_current_file(self, file_path: Optional[Path]) -> None:
+    def set_current_file(self, file_path: Path | None) -> None:
         if self._workflow_controller:
             self._workflow_controller.set_current_file(file_path)
 
-    def get_current_file(self) -> Optional[Path]:
+    def get_current_file(self) -> Path | None:
         return self._workflow_controller.current_file if self._workflow_controller else None
 
     def _update_actions(self) -> None:
@@ -1124,7 +1128,7 @@ class MainWindow(QMainWindow):
         workflow_controller,
         execution_controller,
         node_controller,
-        selector_controller: Optional[SelectorController] = None,
+        selector_controller: SelectorController | None = None,
     ) -> None:
         """Set externally created controllers (from app.py) via registrar."""
         self._controller_registrar.set_external_controllers(

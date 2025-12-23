@@ -112,7 +112,7 @@ class FormFillerNode(BrowserBaseNode):
         self.add_output_port("fields_filled", DataType.INTEGER)
         self.add_output_port("form_data", DataType.OBJECT)
 
-    async def execute(self, context: ExecutionContext) -> Dict[str, Any]:
+    async def execute(self, context: ExecutionContext) -> dict[str, Any]:
         """
         Execute the form filling operation.
 
@@ -143,7 +143,7 @@ class FormFillerNode(BrowserBaseNode):
         )
         mapping = None
         # Store per-field metadata (clear_first, type) when using fields_array
-        field_metadata: Dict[str, Dict[str, Any]] = {}
+        field_metadata: dict[str, dict[str, Any]] = {}
 
         if fields_array and isinstance(fields_array, list):
             # Convert array format to dict format, preserving per-field metadata
@@ -188,8 +188,8 @@ class FormFillerNode(BrowserBaseNode):
         # Resolve all variable references and normalize selectors upfront
         from casare_rpa.utils.selectors.selector_normalizer import normalize_selector
 
-        resolved_mapping: Dict[str, Any] = {}
-        resolved_metadata: Dict[str, Dict[str, Any]] = {}
+        resolved_mapping: dict[str, Any] = {}
+        resolved_metadata: dict[str, dict[str, Any]] = {}
         skipped_count = 0
         for selector, value in mapping.items():
             # Skip empty selectors - they cause timeouts
@@ -297,10 +297,10 @@ class FormFillerNode(BrowserBaseNode):
     async def _batch_fill_playwright(
         self,
         page: Any,
-        mapping: Dict[str, Any],
-        metadata: Dict[str, Dict[str, Any]],
+        mapping: dict[str, Any],
+        metadata: dict[str, dict[str, Any]],
         timeout: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fast batch fill using Playwright locators with minimal waits.
 
@@ -319,7 +319,7 @@ class FormFillerNode(BrowserBaseNode):
         import asyncio
 
         filled_count = 0
-        filled_data: Dict[str, Any] = {}
+        filled_data: dict[str, Any] = {}
         errors: list = []
 
         # Fast mode uses aggressive timeouts - 500ms per field max
@@ -372,8 +372,8 @@ class FormFillerNode(BrowserBaseNode):
         return {"filled": filled_count, "data": filled_data, "errors": errors}
 
     async def _batch_fill_javascript(
-        self, page: Any, mapping: Dict[str, Any], metadata: Dict[str, Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, page: Any, mapping: dict[str, Any], metadata: dict[str, dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Fill all form fields in a single JavaScript evaluate call.
 
@@ -499,11 +499,11 @@ class FormFillerNode(BrowserBaseNode):
     async def _fill_fields_standard(
         self,
         page: Any,
-        mapping: Dict[str, Any],
-        metadata: Dict[str, Dict[str, Any]],
+        mapping: dict[str, Any],
+        metadata: dict[str, dict[str, Any]],
         wait_between: int,
         timeout: int = 5000,
-    ) -> tuple[int, Dict[str, Any]]:
+    ) -> tuple[int, dict[str, Any]]:
         """
         Fill fields one by one using standard Playwright methods.
 
@@ -520,7 +520,7 @@ class FormFillerNode(BrowserBaseNode):
         import asyncio
 
         filled_count = 0
-        filled_data: Dict[str, Any] = {}
+        filled_data: dict[str, Any] = {}
 
         # Use shorter timeout per field for faster failure - 1 second per field
         field_timeout = min(timeout, 1000)

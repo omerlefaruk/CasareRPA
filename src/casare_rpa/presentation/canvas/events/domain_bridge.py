@@ -20,29 +20,31 @@ Usage:
     bridge.stop()
 """
 
-from typing import Optional
+from typing import Optional, Type
 
 from loguru import logger
 
 from casare_rpa.domain.events import (
     DomainEvent,
-    EventBus as DomainEventBus,
-    get_event_bus as get_domain_event_bus,
-    NodeStarted,
+    LogMessage,
     NodeCompleted,
     NodeFailed,
     NodeSkipped,
-    WorkflowStarted,
+    NodeStarted,
+    VariableSet,
     WorkflowCompleted,
     WorkflowFailed,
     WorkflowPaused,
     WorkflowResumed,
+    WorkflowStarted,
     WorkflowStopped,
-    VariableSet,
-    LogMessage,
 )
-from typing import Type
-
+from casare_rpa.domain.events import (
+    EventBus as DomainEventBus,
+)
+from casare_rpa.domain.events import (
+    get_event_bus as get_domain_event_bus,
+)
 from casare_rpa.presentation.canvas.events.event import Event as PresentationEvent
 from casare_rpa.presentation.canvas.events.event import EventPriority
 from casare_rpa.presentation.canvas.events.event_bus import (
@@ -53,7 +55,7 @@ from casare_rpa.presentation.canvas.events.event_types import (
 )
 
 # Mapping from typed domain event classes to presentation event types
-DOMAIN_TO_PRESENTATION_MAP: dict[Type[DomainEvent], PresentationEventType] = {
+DOMAIN_TO_PRESENTATION_MAP: dict[type[DomainEvent], PresentationEventType] = {
     NodeStarted: PresentationEventType.NODE_EXECUTION_STARTED,
     NodeCompleted: PresentationEventType.NODE_EXECUTION_COMPLETED,
     NodeFailed: PresentationEventType.NODE_EXECUTION_FAILED,
@@ -106,8 +108,8 @@ class DomainEventBridge:
 
     def __init__(
         self,
-        domain_bus: Optional[DomainEventBus] = None,
-        presentation_bus: Optional[PresentationEventBus] = None,
+        domain_bus: DomainEventBus | None = None,
+        presentation_bus: PresentationEventBus | None = None,
     ) -> None:
         """
         Initialize domain event bridge.
@@ -192,7 +194,7 @@ class DomainEventBridge:
         # Publish to presentation bus
         self._presentation_bus.publish(presentation_event)
 
-    def _get_priority(self, event_class: Type[DomainEvent]) -> EventPriority:
+    def _get_priority(self, event_class: type[DomainEvent]) -> EventPriority:
         """
         Determine event priority based on type.
 

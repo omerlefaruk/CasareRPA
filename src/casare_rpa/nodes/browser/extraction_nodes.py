@@ -6,13 +6,13 @@ Handles extracting data (images) and downloading files.
 
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -298,9 +298,9 @@ class DownloadFileNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Download file from URL."""
         import os
-        import urllib.request
         import ssl
-        from urllib.parse import urlparse, unquote
+        import urllib.request
+        from urllib.parse import unquote, urlparse
 
         try:
             url = self.get_parameter("url")

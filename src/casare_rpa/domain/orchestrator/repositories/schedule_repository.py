@@ -10,17 +10,17 @@ class ScheduleRepository(ABC):
     """Repository interface for Schedule aggregate."""
 
     @abstractmethod
-    async def get_by_id(self, schedule_id: str) -> Optional[Schedule]:
+    async def get_by_id(self, schedule_id: str) -> Schedule | None:
         """Get schedule by ID."""
         pass
 
     @abstractmethod
-    async def get_all(self) -> List[Schedule]:
+    async def get_all(self) -> list[Schedule]:
         """Get all schedules."""
         pass
 
     @abstractmethod
-    async def get_enabled(self) -> List[Schedule]:
+    async def get_enabled(self) -> list[Schedule]:
         """Get all enabled schedules."""
         pass
 

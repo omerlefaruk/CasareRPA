@@ -10,31 +10,31 @@ Displays the execution history of a workflow with improved UX:
 - Context menu for copy
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QApplication,
+    QComboBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QSizePolicy,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
-    QHeaderView,
-    QHBoxLayout,
-    QLabel,
-    QComboBox,
-    QStackedWidget,
-    QSizePolicy,
-    QApplication,
-    QMenu,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtGui import QColor, QBrush
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     EmptyStateWidget,
-    ToolbarButton,
     StatusBadge,
+    ToolbarButton,
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
@@ -69,7 +69,7 @@ class HistoryTab(QWidget):
     # PERFORMANCE: Maximum deferred entries before forcing update
     MAX_DEFERRED = 50
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the history tab.
 
@@ -79,11 +79,11 @@ class HistoryTab(QWidget):
         super().__init__(parent)
 
         # Store full history for filtering
-        self._full_history: List[Dict[str, Any]] = []
+        self._full_history: list[dict[str, Any]] = []
         self._current_filter = "All"
 
         # PERFORMANCE: Lazy update support - defer updates when tab not visible
-        self._deferred_entries: List[Dict[str, Any]] = []
+        self._deferred_entries: list[dict[str, Any]] = []
 
         self._setup_ui()
         self._apply_styles()
@@ -264,7 +264,7 @@ class HistoryTab(QWidget):
         # Update statistics
         self._update_statistics()
 
-    def _should_show_entry(self, entry: Dict[str, Any]) -> bool:
+    def _should_show_entry(self, entry: dict[str, Any]) -> bool:
         """
         Check if entry should be shown based on current filter.
 
@@ -282,7 +282,7 @@ class HistoryTab(QWidget):
             return entry.get("status") == "failed"
         return True
 
-    def _add_entry_to_table(self, entry: Dict[str, Any], number: int) -> None:
+    def _add_entry_to_table(self, entry: dict[str, Any], number: int) -> None:
         """
         Add an entry to the table.
 
@@ -472,7 +472,7 @@ class HistoryTab(QWidget):
 
     # ==================== Public API ====================
 
-    def update_history(self, history: List[Dict[str, Any]]) -> None:
+    def update_history(self, history: list[dict[str, Any]]) -> None:
         """
         Update the displayed execution history.
 
@@ -521,7 +521,7 @@ class HistoryTab(QWidget):
         if self._deferred_entries:
             self._flush_deferred_entries()
 
-    def append_entry(self, entry: Dict[str, Any]) -> None:
+    def append_entry(self, entry: dict[str, Any]) -> None:
         """
         Append a single entry to the history.
 

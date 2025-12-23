@@ -11,13 +11,12 @@ References:
 """
 
 from typing import Optional
-from PySide6.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout
-from PySide6.QtCore import Qt, QRectF, QPointF, QTimer, Signal
-from PySide6.QtGui import QPainter, QPen, QBrush, QColor
-from NodeGraphQt import NodeGraph
 
 from loguru import logger
-
+from NodeGraphQt import NodeGraph
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout, QWidget
 
 # ============================================================================
 # CHANGE TRACKER (Event Sourcing Pattern)
@@ -101,7 +100,7 @@ class MinimapView(QGraphicsView):
 
     viewport_clicked = Signal(QPointF)  # Emitted when user clicks on minimap
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         """Initialize minimap view."""
         super().__init__(parent)
 
@@ -212,7 +211,7 @@ class Minimap(QWidget):
     - Reduced timer interval (200ms instead of 100ms)
     """
 
-    def __init__(self, node_graph: NodeGraph, parent: Optional[QWidget] = None):
+    def __init__(self, node_graph: NodeGraph, parent: QWidget | None = None):
         """
         Initialize minimap.
 

@@ -20,11 +20,11 @@ sys.path.insert(0, str(src_path))
 
 async def generate_notepad_workflow():
     """Generate a simple Notepad workflow using AI."""
+    from casare_rpa.domain.ai import SIMPLE_FAST_CONFIG
     from casare_rpa.infrastructure.ai import (
         SmartWorkflowAgent,
         WorkflowGenerationResult,
     )
-    from casare_rpa.domain.ai import SIMPLE_FAST_CONFIG
 
     # Create the agent with simple/fast config for quick generation
     agent = SmartWorkflowAgent(config=SIMPLE_FAST_CONFIG)

@@ -29,13 +29,12 @@ Usage:
 import asyncio
 import secrets
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from loguru import logger
-
 
 # =============================================================================
 # CONSTANTS
@@ -56,7 +55,7 @@ SESSION_ID_BYTES = 32
 class SessionError(Exception):
     """Base exception for session operations."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         self.message = message
         self.details = details or {}
         super().__init__(message)
@@ -109,10 +108,10 @@ class SessionConfig:
 class ClientInfo:
     """Client connection information."""
 
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-    device_id: Optional[str] = None
-    location: Optional[str] = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    device_id: str | None = None
+    location: str | None = None
 
 
 @dataclass
@@ -124,18 +123,18 @@ class Session:
     token_hash: str  # Hashed token for lookup
     status: SessionStatus = SessionStatus.ACTIVE
     client_info: ClientInfo = field(default_factory=ClientInfo)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = None
-    last_activity_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    revoked_at: Optional[datetime] = None
-    revoke_reason: Optional[str] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime | None = None
+    last_activity_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    revoked_at: datetime | None = None
+    revoke_reason: str | None = None
 
     @property
     def is_expired(self) -> bool:
         """Check if session has expired."""
         if self.status != SessionStatus.ACTIVE:
             return True
-        if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
+        if self.expires_at and datetime.now(UTC) > self.expires_at:
             return True
         return False
 
@@ -147,9 +146,9 @@ class Session:
     @property
     def time_since_activity(self) -> timedelta:
         """Get time since last activity."""
-        return datetime.now(timezone.utc) - self.last_activity_at
+        return datetime.now(UTC) - self.last_activity_at
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": self.id,
@@ -178,7 +177,7 @@ class SessionManager:
 
     def __init__(
         self,
-        config: Optional[SessionConfig] = None,
+        config: SessionConfig | None = None,
         db_client: Any = None,
     ) -> None:
         """
@@ -190,16 +189,16 @@ class SessionManager:
         """
         self._config = config or SessionConfig()
         self._client = db_client
-        self._sessions: Dict[str, Session] = {}  # session_id -> Session
-        self._user_sessions: Dict[UUID, List[str]] = {}  # user_id -> [session_ids]
-        self._token_to_session: Dict[str, str] = {}  # token_hash -> session_id
+        self._sessions: dict[str, Session] = {}  # session_id -> Session
+        self._user_sessions: dict[UUID, list[str]] = {}  # user_id -> [session_ids]
+        self._token_to_session: dict[str, str] = {}  # token_hash -> session_id
         self._lock = asyncio.Lock()
 
     async def create_session(
         self,
         user_id: UUID,
         token: str,
-        client_info: Optional[ClientInfo] = None,
+        client_info: ClientInfo | None = None,
     ) -> Session:
         """
         Create a new session for a user.
@@ -235,7 +234,7 @@ class SessionManager:
             # Create new session
             session_id = secrets.token_urlsafe(SESSION_ID_BYTES)
             token_hash = self._hash_token(token)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             expires_at = now + timedelta(minutes=self._config.session_timeout_minutes)
 
             session = Session(
@@ -271,7 +270,7 @@ class SessionManager:
         self,
         token: str,
         update_activity: bool = True,
-    ) -> Optional[Session]:
+    ) -> Session | None:
         """
         Validate a session by its token.
 
@@ -329,7 +328,7 @@ class SessionManager:
         if not session:
             return False
 
-        session.last_activity_at = datetime.now(timezone.utc)
+        session.last_activity_at = datetime.now(UTC)
 
         # Persist update if configured
         if self._client:
@@ -340,7 +339,7 @@ class SessionManager:
     async def invalidate_session(
         self,
         token: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> bool:
         """
         Invalidate a session (logout).
@@ -364,7 +363,7 @@ class SessionManager:
     async def invalidate_all_sessions(
         self,
         user_id: UUID,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> int:
         """
         Invalidate all sessions for a user.
@@ -389,7 +388,7 @@ class SessionManager:
             logger.info(f"Invalidated {count} sessions for user {user_id}")
             return count
 
-    async def get_user_sessions(self, user_id: UUID) -> List[Session]:
+    async def get_user_sessions(self, user_id: UUID) -> list[Session]:
         """
         Get all active sessions for a user.
 
@@ -409,7 +408,7 @@ class SessionManager:
 
         return sessions
 
-    async def get_session_by_id(self, session_id: str) -> Optional[Session]:
+    async def get_session_by_id(self, session_id: str) -> Session | None:
         """Get a session by its ID."""
         return self._sessions.get(session_id)
 
@@ -427,7 +426,7 @@ class SessionManager:
         """
         async with self._lock:
             expired_ids = []
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
             for session_id, session in self._sessions.items():
                 if session.expires_at and now > session.expires_at:
@@ -447,7 +446,7 @@ class SessionManager:
         self,
         old_token: str,
         new_token: str,
-    ) -> Optional[Session]:
+    ) -> Session | None:
         """
         Refresh a session with a new token.
 
@@ -476,8 +475,8 @@ class SessionManager:
 
             # Update session
             session.token_hash = new_hash
-            session.last_activity_at = datetime.now(timezone.utc)
-            session.expires_at = datetime.now(timezone.utc) + timedelta(
+            session.last_activity_at = datetime.now(UTC)
+            session.expires_at = datetime.now(UTC) + timedelta(
                 minutes=self._config.session_timeout_minutes
             )
 
@@ -497,7 +496,7 @@ class SessionManager:
             return False
 
         session.status = SessionStatus.REVOKED
-        session.revoked_at = datetime.now(timezone.utc)
+        session.revoked_at = datetime.now(UTC)
         session.revoke_reason = reason
 
         # Remove from token mapping
@@ -585,7 +584,7 @@ class SessionManager:
         if not self._client:
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         try:
             if hasattr(self._client, "table"):
@@ -607,7 +606,7 @@ class SessionManager:
         if not self._client:
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         try:
             if hasattr(self._client, "table"):

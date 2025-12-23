@@ -177,7 +177,7 @@ class SendEmailNode(CredentialAwareMixin, BaseNode):
     # @requires: email
     # @ports: smtp_server, smtp_port, username, password, from_email, to_email, subject, body, cc, bcc, attachments -> success, message_id
 
-    def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
+    def __init__(self, node_id: str, config: dict | None = None, **kwargs) -> None:
         """Initialize SendEmail node."""
         config = config or kwargs.get("config", {})
         super().__init__(node_id, config)

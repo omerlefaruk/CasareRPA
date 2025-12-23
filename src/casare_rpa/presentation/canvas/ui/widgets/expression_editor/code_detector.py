@@ -35,7 +35,7 @@ class CodeDetector:
         if not text or not text.strip():
             return EditorType.RICH_TEXT
 
-        scores: Dict[EditorType, int] = {
+        scores: dict[EditorType, int] = {
             EditorType.CODE_PYTHON: 0,
             EditorType.CODE_JAVASCRIPT: 0,
             EditorType.CODE_JSON: 0,

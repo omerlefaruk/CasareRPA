@@ -55,4 +55,4 @@ class DashboardMetrics:
     schedules_enabled: int = 0
 
     # Job history for charts
-    job_history: List[JobHistoryEntry] = field(default_factory=list)
+    job_history: list[JobHistoryEntry] = field(default_factory=list)

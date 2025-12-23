@@ -5,10 +5,11 @@ This module provides proper subclasses for NodeGraphQt's NodeComboBox and NodeCh
 integrating our custom styling and z-order fixes without monkey-patching instances.
 """
 
-from typing import Optional, List
-from PySide6.QtWidgets import QComboBox, QCheckBox, QSizePolicy
+from typing import List, Optional
+
+from NodeGraphQt.widgets.node_widgets import NodeCheckBox, NodeComboBox
 from PySide6.QtGui import QFontMetrics
-from NodeGraphQt.widgets.node_widgets import NodeComboBox, NodeCheckBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QSizePolicy
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -21,7 +22,7 @@ class CasareComboBox(NodeComboBox):
     Subclass of NodeComboBox that fixes combo dropdown z-order in QGraphicsProxyWidget.
     """
 
-    def __init__(self, parent=None, name="", label="", items: Optional[List[str]] = None):
+    def __init__(self, parent=None, name="", label="", items: list[str] | None = None):
         super().__init__(parent, name, label, items)
         self._original_z = self.zValue()
 
@@ -61,7 +62,7 @@ class CasareCheckBox(NodeCheckBox):
     Subclass of NodeCheckBox that applies dark blue styling and font size fixes.
     """
 
-    _checkmark_path: Optional[str] = None
+    _checkmark_path: str | None = None
 
     def __init__(self, parent=None, name="", label="", text="", state=False):
         super().__init__(parent, name, label, text, state)

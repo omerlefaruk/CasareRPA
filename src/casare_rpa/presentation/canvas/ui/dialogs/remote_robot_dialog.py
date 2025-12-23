@@ -6,34 +6,32 @@ starting/stopping, and updating configuration.
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any, List, TYPE_CHECKING
-
-from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QHBoxLayout,
-    QTabWidget,
-    QWidget,
-    QFormLayout,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QSpinBox,
-    QComboBox,
-    QCheckBox,
-    QPushButton,
-    QTextEdit,
-    QProgressBar,
-    QMessageBox,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-)
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
-from PySide6.QtWidgets import QDialog
-
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 if TYPE_CHECKING:
     pass
@@ -76,8 +74,8 @@ class RemoteRobotDialog(QDialog):
     def __init__(
         self,
         robot_id: str,
-        robot_data: Optional[Dict[str, Any]] = None,
-        parent: Optional[QWidget] = None,
+        robot_data: dict[str, Any] | None = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._robot_id = robot_id
@@ -575,7 +573,7 @@ class RemoteRobotDialog(QDialog):
         # Update timestamp
         self._last_update_label.setText(f"Last update: {datetime.now().strftime('%H:%M:%S')}")
 
-    def _populate_jobs(self, jobs: List[Dict[str, Any]]) -> None:
+    def _populate_jobs(self, jobs: list[dict[str, Any]]) -> None:
         """Populate jobs table."""
         self._jobs_table.setRowCount(len(jobs))
 
@@ -595,7 +593,7 @@ class RemoteRobotDialog(QDialog):
                 started_str = "-"
             self._jobs_table.setItem(row, 4, QTableWidgetItem(started_str))
 
-    def _populate_metrics(self, metrics: Dict[str, Any]) -> None:
+    def _populate_metrics(self, metrics: dict[str, Any]) -> None:
         """Populate metrics displays."""
         self._metric_cpu.setValue(int(metrics.get("cpu_percent", 0)))
         self._metric_memory.setValue(int(metrics.get("memory_percent", 0)))
@@ -718,7 +716,7 @@ class RemoteRobotDialog(QDialog):
         """Request data refresh."""
         self.refresh_requested.emit()
 
-    def update_robot(self, robot_data: Dict[str, Any]) -> None:
+    def update_robot(self, robot_data: dict[str, Any]) -> None:
         """Update dialog with new robot data."""
         self._robot_data = robot_data
         self._populate_data()

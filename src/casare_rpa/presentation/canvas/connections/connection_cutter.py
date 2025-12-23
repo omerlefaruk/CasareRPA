@@ -5,13 +5,13 @@ Provides Houdini-style connection cutting: hold Y and drag LMB
 to slice through connection lines and disconnect them.
 """
 
-from typing import Optional, List, Tuple
-from PySide6.QtCore import QObject, QPointF, Qt, QLineF, QRectF
-from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItem
-from PySide6.QtGui import QPen, QColor, QPainterPath
-from NodeGraphQt import NodeGraph
+from typing import List, Optional, Tuple
 
 from loguru import logger
+from NodeGraphQt import NodeGraph
+from PySide6.QtCore import QLineF, QObject, QPointF, QRectF, Qt
+from PySide6.QtGui import QColor, QPainterPath, QPen
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
 
 
 class ConnectionCutter(QObject):
@@ -23,7 +23,7 @@ class ConnectionCutter(QObject):
     when the mouse is released.
     """
 
-    def __init__(self, graph: NodeGraph, parent: Optional[QObject] = None):
+    def __init__(self, graph: NodeGraph, parent: QObject | None = None):
         """
         Initialize the connection cutter.
 
@@ -37,9 +37,9 @@ class ConnectionCutter(QObject):
         self._active = True
         self._cutting = False
         self._y_pressed = False
-        self._cut_start: Optional[QPointF] = None
-        self._cut_path: List[QPointF] = []
-        self._path_item: Optional[QGraphicsPathItem] = None
+        self._cut_start: QPointF | None = None
+        self._cut_path: list[QPointF] = []
+        self._path_item: QGraphicsPathItem | None = None
 
         # Setup event filters
         self._setup_event_filters()
@@ -76,7 +76,7 @@ class ConnectionCutter(QObject):
 
         try:
             from PySide6.QtCore import QEvent
-            from PySide6.QtGui import QMouseEvent, QKeyEvent
+            from PySide6.QtGui import QKeyEvent, QMouseEvent
 
             # Track Y key state
             if event.type() == QEvent.Type.KeyPress:
@@ -267,7 +267,7 @@ class ConnectionCutter(QObject):
             logger.debug(f"Cut path has {len(cut_segments)} segments")
 
             # Find all pipe-like items in the scene
-            pipes_to_cut: List[Tuple] = []
+            pipes_to_cut: list[tuple] = []
             pipe_classes_found = set()
 
             for item in scene.items():
@@ -412,7 +412,7 @@ class ConnectionCutter(QObject):
 
         return cut_count
 
-    def _get_port_name(self, port_item) -> Optional[str]:
+    def _get_port_name(self, port_item) -> str | None:
         """Get the name of a port from a port view item."""
         if port_item is None:
             return None
@@ -429,7 +429,7 @@ class ConnectionCutter(QObject):
 
         return None
 
-    def _cut_via_node_iteration(self, cut_segments: List[QLineF]) -> int:
+    def _cut_via_node_iteration(self, cut_segments: list[QLineF]) -> int:
         """
         Alternative method: iterate through all nodes and check their connections.
 
@@ -489,7 +489,7 @@ class ConnectionCutter(QObject):
 
         return cut_count
 
-    def _get_port_position(self, port) -> Optional[QPointF]:
+    def _get_port_position(self, port) -> QPointF | None:
         """Get the scene position of a port."""
         try:
             if hasattr(port, "view") and port.view:
@@ -516,7 +516,7 @@ class ConnectionCutter(QObject):
 
         return None
 
-    def _item_intersects_cut(self, item: QGraphicsItem, cut_segments: List[QLineF]) -> bool:
+    def _item_intersects_cut(self, item: QGraphicsItem, cut_segments: list[QLineF]) -> bool:
         """
         Check if a graphics item intersects with the cut path.
 

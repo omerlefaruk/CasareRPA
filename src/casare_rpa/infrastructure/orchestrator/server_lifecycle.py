@@ -23,18 +23,18 @@ class OrchestratorConfig:
     api_version: str = "1.2.0"
 
     # Database
-    database_url: Optional[str] = None
+    database_url: str | None = None
     db_enabled: bool = True
     db_pool_min_size: int = 2
     db_pool_max_size: int = 10
 
     # Supabase (optional presence sync)
-    supabase_url: Optional[str] = None
-    supabase_key: Optional[str] = None
+    supabase_url: str | None = None
+    supabase_key: str | None = None
 
     # Security
     api_secret: str = ""
-    cors_origins: List[str] = field(default_factory=list)
+    cors_origins: list[str] = field(default_factory=list)
     rate_limit_enabled: bool = True
 
     # Robot Settings
@@ -71,11 +71,11 @@ class OrchestratorConfig:
 class OrchestratorState:
     """Container for orchestrator runtime state."""
 
-    config: Optional[OrchestratorConfig] = None
+    config: OrchestratorConfig | None = None
     startup_time: float = field(default_factory=time.time)
 
     # Core Services
-    robot_manager: Optional[RobotManager] = None
+    robot_manager: RobotManager | None = None
     robot_repository: Any = None
     job_producer: Any = None
     dlq_manager: Any = None
@@ -210,9 +210,9 @@ async def _init_database(config: OrchestratorConfig) -> None:
         _set_state_field("db_pool", db_pool)
 
         # Initialize monitoring data adapter
-        from casare_rpa.infrastructure.observability.metrics import get_metrics_collector
         from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
         from casare_rpa.infrastructure.events import get_monitoring_event_bus
+        from casare_rpa.infrastructure.observability.metrics import get_metrics_collector
 
         metrics_collector = get_metrics_collector()
         metrics_aggregator = MetricsAggregator.get_instance()
@@ -242,8 +242,8 @@ async def _init_robot_repository(db_pool: Any, config: OrchestratorConfig) -> No
     """Initialize robot repository for persistent robot state."""
     try:
         from casare_rpa.infrastructure.orchestrator.persistence import (
-            PgRobotRepository,
             CREATE_ROBOTS_TABLE_SQL,
+            PgRobotRepository,
         )
         from casare_rpa.infrastructure.orchestrator.persistence.pg_robot_api_keys_schema import (
             ensure_robot_api_key_tables,
@@ -360,14 +360,14 @@ async def _init_dlq_manager(config: OrchestratorConfig) -> None:
 async def _init_log_services(db_pool: Any) -> None:
     """Initialize log repository and streaming service."""
     try:
-        from casare_rpa.infrastructure.persistence.repositories.log_repository import (
-            LogRepository,
+        from casare_rpa.infrastructure.logging.log_cleanup import (
+            LogCleanupJob,
         )
         from casare_rpa.infrastructure.logging.log_streaming_service import (
             LogStreamingService,
         )
-        from casare_rpa.infrastructure.logging.log_cleanup import (
-            LogCleanupJob,
+        from casare_rpa.infrastructure.persistence.repositories.log_repository import (
+            LogRepository,
         )
 
         log_repository = LogRepository()
@@ -398,12 +398,12 @@ async def _cleanup_services() -> None:
     # Unsubscribe from events
     if state.event_bus:
         try:
+            from casare_rpa.infrastructure.events import MonitoringEventType
             from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
                 on_job_status_changed,
-                on_robot_heartbeat,
                 on_queue_depth_changed,
+                on_robot_heartbeat,
             )
-            from casare_rpa.infrastructure.events import MonitoringEventType
 
             state.event_bus.unsubscribe(
                 MonitoringEventType.JOB_STATUS_CHANGED, on_job_status_changed
@@ -465,14 +465,8 @@ async def lifespan(app: FastAPI):
     # 2. Inject DB pool into Monitoring Routers
     if state.db_pool:
         try:
-            from casare_rpa.infrastructure.orchestrator.api.routers.workflows import (
-                set_db_pool as set_workflows_db_pool,
-            )
-            from casare_rpa.infrastructure.orchestrator.api.routers.schedules import (
-                set_db_pool as set_schedules_db_pool,
-            )
-            from casare_rpa.infrastructure.orchestrator.api.routers.robots import (
-                set_db_pool as set_robots_db_pool,
+            from casare_rpa.infrastructure.orchestrator.api.auth import (
+                configure_robot_authenticator,
             )
             from casare_rpa.infrastructure.orchestrator.api.routers.jobs import (
                 set_db_pool as set_jobs_db_pool,
@@ -480,8 +474,14 @@ async def lifespan(app: FastAPI):
             from casare_rpa.infrastructure.orchestrator.api.routers.robot_api_keys import (
                 set_db_pool as set_robot_api_keys_db_pool,
             )
-            from casare_rpa.infrastructure.orchestrator.api.auth import (
-                configure_robot_authenticator,
+            from casare_rpa.infrastructure.orchestrator.api.routers.robots import (
+                set_db_pool as set_robots_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.routers.schedules import (
+                set_db_pool as set_schedules_db_pool,
+            )
+            from casare_rpa.infrastructure.orchestrator.api.routers.workflows import (
+                set_db_pool as set_workflows_db_pool,
             )
 
             set_workflows_db_pool(state.db_pool)
@@ -495,10 +495,10 @@ async def lifespan(app: FastAPI):
 
     # 3. Initialize Scheduler
     try:
-        from casare_rpa.infrastructure.orchestrator.scheduling import init_global_scheduler
         from casare_rpa.infrastructure.orchestrator.api.routers.schedules import (
             _execute_scheduled_workflow,
         )
+        from casare_rpa.infrastructure.orchestrator.scheduling import init_global_scheduler
 
         scheduler = await init_global_scheduler(on_schedule_trigger=_execute_scheduled_workflow)
         _set_state_field("global_scheduler", scheduler)
@@ -509,12 +509,12 @@ async def lifespan(app: FastAPI):
     # 4. Subscribe Monitoring Callbacks
     if state.event_bus:
         try:
+            from casare_rpa.infrastructure.events import MonitoringEventType
             from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
                 on_job_status_changed,
-                on_robot_heartbeat,
                 on_queue_depth_changed,
+                on_robot_heartbeat,
             )
-            from casare_rpa.infrastructure.events import MonitoringEventType
 
             state.event_bus.subscribe(MonitoringEventType.JOB_STATUS_CHANGED, on_job_status_changed)
             state.event_bus.subscribe(MonitoringEventType.ROBOT_HEARTBEAT, on_robot_heartbeat)

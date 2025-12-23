@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any, Set
+from typing import Any, Dict, List, Optional, Set
 
 from casare_rpa.utils.datetime_helpers import parse_datetime
 
@@ -43,17 +43,17 @@ class Robot:
     status: RobotStatus = RobotStatus.OFFLINE
     environment: str = "default"
     max_concurrent_jobs: int = 1
-    last_seen: Optional[datetime] = None
-    last_heartbeat: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    tags: List[str] = field(default_factory=list)
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    last_seen: datetime | None = None
+    last_heartbeat: datetime | None = None
+    created_at: datetime | None = None
+    tags: list[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
     # Robot capabilities for workload routing
-    capabilities: Set[RobotCapability] = field(default_factory=set)
+    capabilities: set[RobotCapability] = field(default_factory=set)
     # Workflow assignments - workflows this robot is default for
-    assigned_workflows: List[str] = field(default_factory=list)
+    assigned_workflows: list[str] = field(default_factory=list)
     # Current jobs being executed (job IDs)
-    current_job_ids: List[str] = field(default_factory=list)
+    current_job_ids: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         """Validate domain invariants after initialization."""
@@ -119,7 +119,7 @@ class Robot:
         """
         return capability in self.capabilities
 
-    def has_all_capabilities(self, capabilities: Set[RobotCapability]) -> bool:
+    def has_all_capabilities(self, capabilities: set[RobotCapability]) -> bool:
         """Check if robot has all specified capabilities.
 
         Args:
@@ -210,7 +210,7 @@ class Robot:
         return workflow_id in self.assigned_workflows
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Robot":
+    def from_dict(cls, data: dict[str, Any]) -> "Robot":
         """Create Robot from dictionary.
 
         Args:
@@ -230,7 +230,7 @@ class Robot:
 
         # Convert string capabilities to enum
         raw_capabilities = data.get("capabilities", [])
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         for cap in raw_capabilities:
             if isinstance(cap, str):
                 try:
@@ -262,7 +262,7 @@ class Robot:
             current_job_ids=current_job_ids,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert Robot to dictionary.
 
         Returns:

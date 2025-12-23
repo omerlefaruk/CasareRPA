@@ -7,17 +7,17 @@ Shows the currently selected element with:
 - Element bounding rect visualization
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QFont, QColor, QSyntaxHighlighter, QTextCharFormat
+from PySide6.QtGui import QColor, QFont, QSyntaxHighlighter, QTextCharFormat
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QTextEdit,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.selectors.state.selector_state import (
@@ -86,7 +86,7 @@ class PropertyBadge(QLabel):
         label: str,
         value: str = "",
         color: str = "#3a3a3a",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._label = label
@@ -133,7 +133,7 @@ class ElementPreviewWidget(QWidget):
 
     open_explorer_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._setup_ui()
 
@@ -337,9 +337,9 @@ class ElementPreviewWidget(QWidget):
         html: str = "",
         tag: str = "",
         element_id: str = "",
-        classes: Optional[List[str]] = None,
+        classes: list[str] | None = None,
         text: str = "",
-        properties: Optional[Dict[str, Any]] = None,
+        properties: dict[str, Any] | None = None,
     ) -> None:
         """Directly set element data."""
         # Build a minimal state for update

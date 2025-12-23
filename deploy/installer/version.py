@@ -47,7 +47,7 @@ class VersionInfo(NamedTuple):
         return f"{self.major}.{self.minor}.{self.patch}.{self.build}"
 
     @classmethod
-    def parse(cls, version_str: str) -> "VersionInfo":
+    def parse(cls, version_str: str) -> VersionInfo:
         """Parse version string like '3.0.0' or '3.0.0.1'."""
         parts = version_str.strip().split(".")
         if len(parts) < 3:

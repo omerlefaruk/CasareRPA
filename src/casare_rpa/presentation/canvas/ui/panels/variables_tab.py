@@ -4,13 +4,13 @@ Variables Tab - QWidget wrapper for VariablesPanel.
 Provides tab-compatible interface for bottom panel integration.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from casare_rpa.presentation.canvas.ui.panels.variables_panel import VariablesPanel
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.variables_panel import VariablesPanel
 
 
 class VariablesTab(QWidget):
@@ -23,7 +23,7 @@ class VariablesTab(QWidget):
 
     variables_changed = Signal(dict)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the variables tab."""
         super().__init__(parent)
 
@@ -52,11 +52,11 @@ class VariablesTab(QWidget):
             }}
         """)
 
-    def get_variables(self) -> Dict[str, Dict[str, Any]]:
+    def get_variables(self) -> dict[str, dict[str, Any]]:
         """Get current variables."""
         return self._panel.get_variables()
 
-    def set_variables(self, variables: Dict[str, Dict[str, Any]]) -> None:
+    def set_variables(self, variables: dict[str, dict[str, Any]]) -> None:
         """Set variables."""
         # Clear existing and add new ones
         self._panel.clear_variables()
@@ -72,7 +72,7 @@ class VariablesTab(QWidget):
         """Clear all variables."""
         self._panel.clear_variables()
 
-    def update_runtime_values(self, values: Dict[str, Any]) -> None:
+    def update_runtime_values(self, values: dict[str, Any]) -> None:
         """
         Update variable values during runtime.
 

@@ -1,13 +1,15 @@
 """Resilience patterns and utilities."""
 
+from casare_rpa.utils.resilience.error_handler import GlobalErrorHandler
+from casare_rpa.utils.resilience.rate_limiter import RateLimiter
 from casare_rpa.utils.resilience.retry import (
+    DEFAULT_RETRY_CONFIG,
+    TRANSIENT_EXCEPTIONS,
+    TRANSIENT_PATTERNS,
     ErrorCategory,
     RetryConfig,
     RetryResult,
     RetryStats,
-    DEFAULT_RETRY_CONFIG,
-    TRANSIENT_EXCEPTIONS,
-    TRANSIENT_PATTERNS,
     classify_error,
     retry_async,
     retry_operation,
@@ -15,8 +17,6 @@ from casare_rpa.utils.resilience.retry import (
     with_retry,
     with_timeout,
 )
-from casare_rpa.utils.resilience.rate_limiter import RateLimiter
-from casare_rpa.utils.resilience.error_handler import GlobalErrorHandler
 
 __all__ = [
     # retry.py

@@ -6,19 +6,20 @@ Supports both one-time execution and trigger-based listening.
 """
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from datetime import UTC, datetime, timezone
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
 from loguru import logger
 
 if TYPE_CHECKING:
+    from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
+    from casare_rpa.domain.services.project_context import ProjectContext
+    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.presentation.canvas.serialization.workflow_serializer import (
         WorkflowSerializer,
     )
     from casare_rpa.presentation.events.event_bus import EventBus
-    from casare_rpa.presentation.canvas.main_window import MainWindow
-    from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
     from casare_rpa.triggers.base import BaseTrigger, TriggerEvent
-    from casare_rpa.domain.services.project_context import ProjectContext
 
 
 class CanvasWorkflowRunner:
@@ -54,18 +55,18 @@ class CanvasWorkflowRunner:
         # Execution state
         self._is_running = False
         self._is_paused = False
-        self._current_use_case: Optional["ExecuteWorkflowUseCase"] = None
+        self._current_use_case: ExecuteWorkflowUseCase | None = None
 
         # Trigger listening state
         self._is_listening = False
-        self._active_trigger: Optional["BaseTrigger"] = None
+        self._active_trigger: BaseTrigger | None = None
         self._trigger_run_count = 0
-        self._trigger_node_id: Optional[str] = None
-        self._cached_workflow_data: Optional[Dict] = None
+        self._trigger_node_id: str | None = None
+        self._cached_workflow_data: dict | None = None
 
         logger.debug("CanvasWorkflowRunner initialized")
 
-    def _get_continue_on_error(self, workflow_data: Dict[str, Any]) -> bool:
+    def _get_continue_on_error(self, workflow_data: dict[str, Any]) -> bool:
         """
         Get continue_on_error setting from workflow data or project context.
 
@@ -101,7 +102,7 @@ class CanvasWorkflowRunner:
         # Default: stop on error (continue_on_error = False)
         return False
 
-    def _get_node_timeout(self, workflow_data: Dict[str, Any]) -> float:
+    def _get_node_timeout(self, workflow_data: dict[str, Any]) -> float:
         """
         Get node timeout setting from workflow data or project context.
 
@@ -157,7 +158,7 @@ class CanvasWorkflowRunner:
             return None
 
     async def run_workflow(
-        self, target_node_id: Optional[str] = None, single_node: bool = False
+        self, target_node_id: str | None = None, single_node: bool = False
     ) -> bool:
         """
         Execute the workflow.
@@ -263,7 +264,7 @@ class CanvasWorkflowRunner:
     async def run_workflow_with_pause_support(
         self,
         pause_event: asyncio.Event,
-        target_node_id: Optional[str] = None,
+        target_node_id: str | None = None,
         single_node: bool = False,
     ) -> bool:
         """
@@ -578,7 +579,7 @@ class CanvasWorkflowRunner:
         """Get number of times trigger has fired."""
         return self._trigger_run_count
 
-    def _find_trigger_node(self, workflow_data: Dict) -> Optional[tuple]:
+    def _find_trigger_node(self, workflow_data: dict) -> tuple | None:
         """
         Find trigger node in workflow data.
 
@@ -687,7 +688,7 @@ class CanvasWorkflowRunner:
             return False
 
     async def _create_trigger(
-        self, trigger_node_type: str, trigger_config: Dict, trigger_node_id: str
+        self, trigger_node_type: str, trigger_config: dict, trigger_node_id: str
     ) -> Optional["BaseTrigger"]:
         """
         Create a trigger instance from node configuration.
@@ -766,12 +767,12 @@ class CanvasWorkflowRunner:
 
         try:
             # Load workflow from cached data
-            from casare_rpa.utils.workflow.workflow_loader import (
-                load_workflow_from_dict,
-            )
             from casare_rpa.application.use_cases.execute_workflow import (
                 ExecuteWorkflowUseCase,
                 ExecutionSettings,
+            )
+            from casare_rpa.utils.workflow.workflow_loader import (
+                load_workflow_from_dict,
             )
 
             workflow = load_workflow_from_dict(self._cached_workflow_data)
@@ -789,7 +790,7 @@ class CanvasWorkflowRunner:
             initial_vars.update(payload)
             initial_vars["_trigger_metadata"] = metadata
             initial_vars["_trigger_run_number"] = self._trigger_run_count
-            initial_vars["_trigger_timestamp"] = datetime.now(timezone.utc).isoformat()
+            initial_vars["_trigger_timestamp"] = datetime.now(UTC).isoformat()
 
             # Get execution settings from cached workflow data
             continue_on_error = self._get_continue_on_error(self._cached_workflow_data)

@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from pathlib import Path
+
 from colorama import Fore, Style, init
 
 # Initialize colorama
@@ -11,8 +12,8 @@ init()
 # Add src to python path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
+from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 
 
 async def run_stress_test():
@@ -39,7 +40,7 @@ async def run_stress_test():
         print(f"{Fore.CYAN}{'='*60}{Style.RESET_ALL}")
 
         try:
-            with open(wf_path, "r", encoding="utf-8") as f:
+            with open(wf_path, encoding="utf-8") as f:
                 workflow_data = json.load(f)
 
             # Load into WorkflowSchema

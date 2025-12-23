@@ -14,18 +14,18 @@ its size and improve maintainability:
 """
 
 from casare_rpa.presentation.canvas.components.action_manager import ActionManager
-from casare_rpa.presentation.canvas.components.menu_builder import MenuBuilder
-from casare_rpa.presentation.canvas.components.toolbar_builder import ToolbarBuilder
-from casare_rpa.presentation.canvas.components.status_bar_manager import (
-    StatusBarManager,
-)
 from casare_rpa.presentation.canvas.components.dock_creator import DockCreator
 from casare_rpa.presentation.canvas.components.fleet_dashboard_manager import (
     FleetDashboardManager,
 )
+from casare_rpa.presentation.canvas.components.menu_builder import MenuBuilder
 from casare_rpa.presentation.canvas.components.quick_node_manager import (
     QuickNodeManager,
 )
+from casare_rpa.presentation.canvas.components.status_bar_manager import (
+    StatusBarManager,
+)
+from casare_rpa.presentation.canvas.components.toolbar_builder import ToolbarBuilder
 
 __all__ = [
     "ActionManager",

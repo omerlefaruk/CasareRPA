@@ -12,6 +12,11 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
+from casare_rpa.infrastructure.resources.telegram_client import (
+    TelegramAPIError,
+    TelegramClient,
+    TelegramConfig,
+)
 from casare_rpa.triggers.base import (
     BaseTrigger,
     BaseTriggerConfig,
@@ -19,11 +24,6 @@ from casare_rpa.triggers.base import (
     TriggerType,
 )
 from casare_rpa.triggers.registry import register_trigger
-from casare_rpa.infrastructure.resources.telegram_client import (
-    TelegramClient,
-    TelegramConfig,
-    TelegramAPIError,
-)
 
 
 @register_trigger
@@ -72,8 +72,8 @@ class TelegramTrigger(BaseTrigger):
         event_callback=None,
     ) -> None:
         super().__init__(config, event_callback)
-        self._client: Optional[TelegramClient] = None
-        self._polling_task: Optional[asyncio.Task] = None
+        self._client: TelegramClient | None = None
+        self._polling_task: asyncio.Task | None = None
         self._last_update_id: int = 0
         self._webhook_active: bool = False
 
@@ -91,7 +91,7 @@ class TelegramTrigger(BaseTrigger):
         self._client = TelegramClient(config)
         return self._client
 
-    async def _get_bot_token(self) -> Optional[str]:
+    async def _get_bot_token(self) -> str | None:
         """
         Get bot token using unified credential resolution.
 
@@ -238,7 +238,7 @@ class TelegramTrigger(BaseTrigger):
             logger.error(f"Error stopping Telegram trigger: {e}")
             return False
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate Telegram trigger configuration."""
         config = self.config.config
 
@@ -359,7 +359,7 @@ class TelegramTrigger(BaseTrigger):
 
             await asyncio.sleep(interval)
 
-    async def handle_webhook_update(self, update: Dict[str, Any]) -> bool:
+    async def handle_webhook_update(self, update: dict[str, Any]) -> bool:
         """
         Handle an update received via webhook.
 
@@ -378,7 +378,7 @@ class TelegramTrigger(BaseTrigger):
             logger.error(f"Error processing webhook update: {e}")
             return False
 
-    async def _process_update(self, update: Dict[str, Any]) -> None:
+    async def _process_update(self, update: dict[str, Any]) -> None:
         """Process a Telegram update and emit trigger event if matching."""
         message = update.get("message", {})
         if not message:
@@ -417,7 +417,7 @@ class TelegramTrigger(BaseTrigger):
             },
         )
 
-    def _passes_filters(self, chat_id: Optional[int], user_id: Optional[int], text: str) -> bool:
+    def _passes_filters(self, chat_id: int | None, user_id: int | None, text: str) -> bool:
         """Check if message passes configured filters."""
         config = self.config.config
 
@@ -440,11 +440,11 @@ class TelegramTrigger(BaseTrigger):
 
     def _build_payload(
         self,
-        update: Dict[str, Any],
-        message: Dict[str, Any],
-        user: Dict[str, Any],
+        update: dict[str, Any],
+        message: dict[str, Any],
+        user: dict[str, Any],
         text: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build payload from Telegram message."""
         chat = message.get("chat", {})
 
@@ -475,7 +475,7 @@ class TelegramTrigger(BaseTrigger):
             "raw_update": update,
         }
 
-    def _get_message_type(self, message: Dict[str, Any]) -> str:
+    def _get_message_type(self, message: dict[str, Any]) -> str:
         """Determine message type."""
         if message.get("text"):
             return "text"
@@ -503,7 +503,7 @@ class TelegramTrigger(BaseTrigger):
             return "unknown"
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for Telegram trigger configuration."""
         return {
             "type": "object",

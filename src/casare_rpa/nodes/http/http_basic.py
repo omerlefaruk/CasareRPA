@@ -15,7 +15,6 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.http.http_base import HttpBaseNode
 
-
 # Common property definitions to reduce duplication
 URL_PROPERTY = PropertyDef(
     "url",

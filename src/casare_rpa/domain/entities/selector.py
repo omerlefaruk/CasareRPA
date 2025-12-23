@@ -51,7 +51,7 @@ class SelectorStrategy:
     score: float = 0.0  # 0-100, higher is better
     is_unique: bool = False
     execution_time_ms: float = 0.0
-    last_validated: Optional[float] = None
+    last_validated: float | None = None
     failure_count: int = 0
 
     def __lt__(self, other):
@@ -68,31 +68,31 @@ class ElementFingerprint:
 
     target: SelectorTarget
     tag_name: str  # HTML tag or Desktop ControlType
-    element_id: Optional[str] = None
-    name: Optional[str] = None
-    class_names: List[str] = field(default_factory=list)
-    text_content: Optional[str] = None
-    attributes: Dict[str, str] = field(default_factory=dict)
+    element_id: str | None = None
+    name: str | None = None
+    class_names: list[str] = field(default_factory=list)
+    text_content: str | None = None
+    attributes: dict[str, str] = field(default_factory=dict)
 
     # Multiple selector strategies ranked by reliability
-    selectors: List[SelectorStrategy] = field(default_factory=list)
+    selectors: list[SelectorStrategy] = field(default_factory=list)
 
     # Visual/structural fingerprint
-    rect: Dict[str, float] = field(default_factory=dict)
-    parent_info: Optional[Dict[str, Any]] = None
+    rect: dict[str, float] = field(default_factory=dict)
+    parent_info: dict[str, Any] | None = None
     sibling_count: int = 0
 
     # Screenshot of the element (optional, for validation/debug)
-    screenshot_path: Optional[str] = None
+    screenshot_path: str | None = None
 
-    def get_primary_selector(self) -> Optional[SelectorStrategy]:
+    def get_primary_selector(self) -> SelectorStrategy | None:
         """Get the best selector strategy"""
         if not self.selectors:
             return None
         # Sort by score descending, then by failure count ascending
         return sorted(self.selectors, key=lambda s: (-s.score, s.failure_count))[0]
 
-    def get_fallback_selectors(self) -> List[SelectorStrategy]:
+    def get_fallback_selectors(self) -> list[SelectorStrategy]:
         """Get all selectors except primary, sorted by reliability"""
         if len(self.selectors) <= 1:
             return []
@@ -111,7 +111,7 @@ class ElementFingerprint:
             selector.failure_count += 1
             selector.score = max(0.0, selector.score - 5.0)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert fingerprint to dictionary for serialization"""
         return {
             "target": self.target.value,

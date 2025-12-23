@@ -18,8 +18,8 @@ from loguru import logger
 
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.events import (
-    EventBus,
     DomainEvent,
+    EventBus,
     WorkflowPaused,
     WorkflowResumed,
 )
@@ -34,7 +34,7 @@ class ExecutionSettings:
         self,
         continue_on_error: bool = False,
         node_timeout: float = 120.0,
-        target_node_id: Optional[NodeId] = None,
+        target_node_id: NodeId | None = None,
         single_node: bool = False,
     ) -> None:
         """
@@ -68,9 +68,9 @@ class ExecutionStateManager:
         self,
         workflow: WorkflowSchema,
         orchestrator: ExecutionOrchestrator,
-        event_bus: Optional[EventBus] = None,
-        settings: Optional[ExecutionSettings] = None,
-        pause_event: Optional[asyncio.Event] = None,
+        event_bus: EventBus | None = None,
+        settings: ExecutionSettings | None = None,
+        pause_event: asyncio.Event | None = None,
     ) -> None:
         """
         Initialize execution state manager.
@@ -92,19 +92,19 @@ class ExecutionStateManager:
         self.pause_event.set()  # Initially not paused
 
         # Execution tracking
-        self.executed_nodes: Set[NodeId] = set()
-        self.current_node_id: Optional[NodeId] = None
-        self.start_time: Optional[datetime] = None
-        self.end_time: Optional[datetime] = None
+        self.executed_nodes: set[NodeId] = set()
+        self.current_node_id: NodeId | None = None
+        self.start_time: datetime | None = None
+        self.end_time: datetime | None = None
         self._stop_requested = False
 
         # Run-To-Node support
         self._target_reached = False
-        self._subgraph_nodes: Optional[Set[NodeId]] = None
+        self._subgraph_nodes: set[NodeId] | None = None
 
         # Execution error tracking
         self._execution_failed = False
-        self._execution_error: Optional[str] = None
+        self._execution_error: str | None = None
 
         # Calculate subgraph if target node is specified
         if self.settings.target_node_id:
@@ -168,7 +168,7 @@ class ExecutionStateManager:
         """Mark a node as executed."""
         self.executed_nodes.add(node_id)
 
-    def set_current_node(self, node_id: Optional[NodeId]) -> None:
+    def set_current_node(self, node_id: NodeId | None) -> None:
         """Set the currently executing node."""
         self.current_node_id = node_id
 
@@ -213,7 +213,7 @@ class ExecutionStateManager:
         return self._execution_failed
 
     @property
-    def execution_error(self) -> Optional[str]:
+    def execution_error(self) -> str | None:
         """Get execution error message."""
         return self._execution_error
 
@@ -284,7 +284,7 @@ class ExecutionStateManager:
                 )
             )
 
-    def get_execution_summary(self) -> Dict[str, Any]:
+    def get_execution_summary(self) -> dict[str, Any]:
         """
         Get execution summary.
 

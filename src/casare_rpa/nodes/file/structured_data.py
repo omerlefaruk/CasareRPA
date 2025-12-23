@@ -17,14 +17,12 @@ from pathlib import Path
 
 from loguru import logger
 
-from casare_rpa.utils.async_file_ops import AsyncFileOperations
-
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
     DataType,
     ExecutionResult,
+    NodeStatus,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.file.file_security import (
@@ -32,24 +30,25 @@ from casare_rpa.nodes.file.file_security import (
     validate_path_security,
 )
 from casare_rpa.nodes.file.property_constants import (
-    FILE_PATH_INPUT,
-    FILE_PATH_OUTPUT,
-    FILE_ENCODING,
     CSV_DELIMITER,
     CSV_HAS_HEADER,
-    CSV_WRITE_HEADER,
+    CSV_MAX_ROWS,
     CSV_QUOTECHAR,
     CSV_SKIP_ROWS,
-    CSV_MAX_ROWS,
     CSV_STRICT,
-    JSON_INDENT,
+    CSV_WRITE_HEADER,
+    FILE_ENCODING,
+    FILE_PATH_INPUT,
+    FILE_PATH_OUTPUT,
     JSON_ENSURE_ASCII,
-    ZIP_PATH,
-    ZIP_SOURCE_PATH,
+    JSON_INDENT,
     ZIP_BASE_DIR,
     ZIP_COMPRESSION,
     ZIP_EXTRACT_TO,
+    ZIP_PATH,
+    ZIP_SOURCE_PATH,
 )
+from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 
 def validate_zip_entry(zip_path: str, entry_name: str) -> Path:

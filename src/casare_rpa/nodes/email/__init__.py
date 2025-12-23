@@ -21,6 +21,12 @@ from .email_base import (
     decode_header_value,
     parse_email_message,
 )
+
+# Re-export from email_super_node
+from .email_super_node import (
+    EmailAction,
+    EmailSuperNode,
+)
 from .imap_nodes import (
     DeleteEmailNode,
     MarkEmailNode,
@@ -33,12 +39,6 @@ from .receive_nodes import (
     ReadEmailsNode,
 )
 from .send_nodes import SendEmailNode
-
-# Re-export from email_super_node
-from .email_super_node import (
-    EmailSuperNode,
-    EmailAction,
-)
 
 __all__ = [
     # Send nodes

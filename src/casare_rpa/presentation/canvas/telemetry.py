@@ -15,7 +15,7 @@ from loguru import logger
 IMPORT_START = time.perf_counter()
 
 
-def _log_structured(prefix: str, payload: Dict[str, Any], level: str) -> None:
+def _log_structured(prefix: str, payload: dict[str, Any], level: str) -> None:
     message = f"{prefix} {json.dumps(payload, separators=(',', ':'), default=str)}"
     log_fn = getattr(logger, level, logger.info)
     log_fn(message)
@@ -29,14 +29,14 @@ class StartupTimer:
     mark, enabling phase-by-phase analysis.
     """
 
-    def __init__(self, name: str = "canvas_startup", start_time: Optional[float] = None) -> None:
+    def __init__(self, name: str = "canvas_startup", start_time: float | None = None) -> None:
         self._name = name
         self._start_time = start_time if start_time is not None else time.perf_counter()
         self._last_time = self._start_time
 
-    def mark(self, phase: str, details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def mark(self, phase: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
         now = time.perf_counter()
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "event": self._name,
             "phase": phase,
             "elapsed_ms": round((now - self._start_time) * 1000.0, 2),
@@ -56,7 +56,7 @@ def log_canvas_event(event: str, **fields: Any) -> None:
     Use for low-frequency events like serialize/deserialize, undo/redo,
     connection changes, and culling decisions.
     """
-    payload: Dict[str, Any] = {"event": event, "ts_ms": int(time.time() * 1000)}
+    payload: dict[str, Any] = {"event": event, "ts_ms": int(time.time() * 1000)}
     if fields:
         payload.update(fields)
     _log_structured("CANVAS_EVENT", payload, level="debug")

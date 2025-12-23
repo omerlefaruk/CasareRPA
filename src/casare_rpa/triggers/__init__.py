@@ -6,16 +6,16 @@ file watchers, email triggers, and more.
 """
 
 from casare_rpa.triggers.base import (
-    TriggerType,
-    TriggerStatus,
-    TriggerEvent,
-    BaseTriggerConfig,
     BaseTrigger,
+    BaseTriggerConfig,
+    TriggerEvent,
+    TriggerStatus,
+    TriggerType,
 )
 from casare_rpa.triggers.registry import (
     TriggerRegistry,
-    register_trigger,
     get_trigger_registry,
+    register_trigger,
 )
 
 __all__ = [

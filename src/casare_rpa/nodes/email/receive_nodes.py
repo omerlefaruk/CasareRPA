@@ -131,7 +131,7 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
     # @requires: email
     # @ports: imap_server, imap_port, username, password, folder, limit, search_criteria -> emails, count
 
-    def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
+    def __init__(self, node_id: str, config: dict | None = None, **kwargs) -> None:
         """Initialize ReadEmails node."""
         config = config or kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -311,7 +311,7 @@ class GetEmailContentNode(BaseNode):
     # @requires: email
     # @ports: email -> subject, from, to, date, body_text, body_html, attachments
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize GetEmailContent node."""
         super().__init__(node_id, config)
         self.name = "Get Email Content"
@@ -400,7 +400,7 @@ class FilterEmailsNode(BaseNode):
     # @requires: email
     # @ports: emails, subject_contains, from_contains, has_attachments -> filtered, count
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize FilterEmails node."""
         super().__init__(node_id, config)
         self.name = "Filter Emails"

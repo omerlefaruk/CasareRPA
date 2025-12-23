@@ -24,10 +24,10 @@ class ValidationIssue:
     severity: ValidationSeverity
     code: str
     message: str
-    location: Optional[str] = None  # e.g., "node:abc123", "connection:0"
-    suggestion: Optional[str] = None
+    location: str | None = None  # e.g., "node:abc123", "connection:0"
+    suggestion: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "severity": self.severity.name,
@@ -43,15 +43,15 @@ class ValidationResult:
     """Result of a validation operation."""
 
     is_valid: bool = True
-    issues: List[ValidationIssue] = field(default_factory=list)
+    issues: list[ValidationIssue] = field(default_factory=list)
 
     @property
-    def errors(self) -> List[ValidationIssue]:
+    def errors(self) -> list[ValidationIssue]:
         """Get only error-level issues."""
         return [i for i in self.issues if i.severity == ValidationSeverity.ERROR]
 
     @property
-    def warnings(self) -> List[ValidationIssue]:
+    def warnings(self) -> list[ValidationIssue]:
         """Get only warning-level issues."""
         return [i for i in self.issues if i.severity == ValidationSeverity.WARNING]
 
@@ -69,8 +69,8 @@ class ValidationResult:
         self,
         code: str,
         message: str,
-        location: Optional[str] = None,
-        suggestion: Optional[str] = None,
+        location: str | None = None,
+        suggestion: str | None = None,
     ) -> None:
         """Add an error-level issue."""
         self.issues.append(
@@ -88,8 +88,8 @@ class ValidationResult:
         self,
         code: str,
         message: str,
-        location: Optional[str] = None,
-        suggestion: Optional[str] = None,
+        location: str | None = None,
+        suggestion: str | None = None,
     ) -> None:
         """Add a warning-level issue."""
         self.issues.append(
@@ -106,7 +106,7 @@ class ValidationResult:
         self,
         code: str,
         message: str,
-        location: Optional[str] = None,
+        location: str | None = None,
     ) -> None:
         """Add an info-level issue."""
         self.issues.append(
@@ -124,7 +124,7 @@ class ValidationResult:
         if not other.is_valid:
             self.is_valid = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "is_valid": self.is_valid,

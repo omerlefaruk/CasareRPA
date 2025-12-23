@@ -12,23 +12,22 @@ Features:
 - Click to navigate to node on canvas
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QDockWidget,
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
-    QTreeWidget,
-    QTreeWidgetItem,
     QHeaderView,
     QMenu,
-    QAbstractItemView,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -38,7 +37,7 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
 )
 
 if TYPE_CHECKING:
-    from ...debugger.debug_controller import DebugController, Breakpoint, BreakpointType
+    from ...debugger.debug_controller import Breakpoint, BreakpointType, DebugController
 
 
 class BreakpointsPanel(QDockWidget):
@@ -64,7 +63,7 @@ class BreakpointsPanel(QDockWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         debug_controller: Optional["DebugController"] = None,
     ) -> None:
         """
@@ -76,8 +75,8 @@ class BreakpointsPanel(QDockWidget):
         """
         super().__init__("Breakpoints", parent)
         self._debug_controller = debug_controller
-        self._tree: Optional[QTreeWidget] = None
-        self._empty_state: Optional[EmptyStateWidget] = None
+        self._tree: QTreeWidget | None = None
+        self._empty_state: EmptyStateWidget | None = None
 
         self.setObjectName("BreakpointsPanel")
         self.setAllowedAreas(

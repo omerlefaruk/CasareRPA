@@ -26,7 +26,6 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-
 # Template IDs
 TEMPLATE_WEB_LOGIN = "web_login"
 TEMPLATE_WEB_SCRAPING = "web_scraping"
@@ -54,12 +53,12 @@ class WorkflowTemplate:
     template_id: str
     name: str
     description: str
-    keywords: List[str]
-    workflow: Dict[str, Any]
-    placeholders: Dict[str, str] = field(default_factory=dict)
+    keywords: list[str]
+    workflow: dict[str, Any]
+    placeholders: dict[str, str] = field(default_factory=dict)
     category: str = "general"
 
-    def apply_values(self, values: Dict[str, Any]) -> Dict[str, Any]:
+    def apply_values(self, values: dict[str, Any]) -> dict[str, Any]:
         """
         Apply placeholder values to template.
 
@@ -83,11 +82,11 @@ class WorkflowTemplate:
 
         return json.loads(workflow_str)
 
-    def get_missing_placeholders(self, values: Dict[str, Any]) -> List[str]:
+    def get_missing_placeholders(self, values: dict[str, Any]) -> list[str]:
         """Get list of placeholders not provided in values."""
         return [p for p in self.placeholders.keys() if p not in values]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize template metadata (without full workflow)."""
         return {
             "template_id": self.template_id,
@@ -108,8 +107,8 @@ class TemplateRegistry:
 
     def __init__(self) -> None:
         """Initialize empty registry."""
-        self._templates: Dict[str, WorkflowTemplate] = {}
-        self._keyword_index: Dict[str, List[str]] = {}
+        self._templates: dict[str, WorkflowTemplate] = {}
+        self._keyword_index: dict[str, list[str]] = {}
 
     def register(self, template: WorkflowTemplate) -> None:
         """Register a template."""
@@ -124,14 +123,14 @@ class TemplateRegistry:
 
         logger.debug(f"Template registered: {template.template_id}")
 
-    def get(self, template_id: str) -> Optional[WorkflowTemplate]:
+    def get(self, template_id: str) -> WorkflowTemplate | None:
         """Get template by ID."""
         return self._templates.get(template_id)
 
-    def find_by_keywords(self, text: str) -> List[WorkflowTemplate]:
+    def find_by_keywords(self, text: str) -> list[WorkflowTemplate]:
         """Find templates matching keywords in text."""
         text_lower = text.lower()
-        matches: Dict[str, int] = {}
+        matches: dict[str, int] = {}
 
         for keyword, template_ids in self._keyword_index.items():
             if keyword in text_lower:
@@ -142,15 +141,15 @@ class TemplateRegistry:
         sorted_ids = sorted(matches.keys(), key=lambda x: matches[x], reverse=True)
         return [self._templates[tid] for tid in sorted_ids if tid in self._templates]
 
-    def find_by_category(self, category: str) -> List[WorkflowTemplate]:
+    def find_by_category(self, category: str) -> list[WorkflowTemplate]:
         """Find templates by category."""
         return [t for t in self._templates.values() if t.category == category]
 
-    def list_all(self) -> List[WorkflowTemplate]:
+    def list_all(self) -> list[WorkflowTemplate]:
         """List all templates."""
         return list(self._templates.values())
 
-    def list_ids(self) -> List[str]:
+    def list_ids(self) -> list[str]:
         """List all template IDs."""
         return list(self._templates.keys())
 
@@ -611,7 +610,7 @@ _DESKTOP_CLICK_TEMPLATE = WorkflowTemplate(
 # GLOBAL REGISTRY
 # =============================================================================
 
-_global_registry: Optional[TemplateRegistry] = None
+_global_registry: TemplateRegistry | None = None
 
 
 def get_template_registry() -> TemplateRegistry:
@@ -636,18 +635,18 @@ def get_template_registry() -> TemplateRegistry:
     return _global_registry
 
 
-def get_template(template_id: str) -> Optional[WorkflowTemplate]:
+def get_template(template_id: str) -> WorkflowTemplate | None:
     """Get template by ID."""
     return get_template_registry().get(template_id)
 
 
-def get_template_by_keywords(text: str) -> Optional[WorkflowTemplate]:
+def get_template_by_keywords(text: str) -> WorkflowTemplate | None:
     """Get best matching template for text."""
     matches = get_template_registry().find_by_keywords(text)
     return matches[0] if matches else None
 
 
-def list_templates() -> List[Dict[str, Any]]:
+def list_templates() -> list[dict[str, Any]]:
     """List all available templates (metadata only)."""
     return [t.to_dict() for t in get_template_registry().list_all()]
 

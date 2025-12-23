@@ -32,7 +32,7 @@ class ActionManager:
             main_window: Parent MainWindow instance
         """
         self._main_window = main_window
-        self._actions: Dict[str, QAction] = {}
+        self._actions: dict[str, QAction] = {}
 
     def create_actions(self) -> None:
         """Create all actions for menus and toolbar."""
@@ -536,7 +536,7 @@ class ActionManager:
         self,
         name: str,
         text: str,
-        shortcut: Optional[QKeySequence] = None,
+        shortcut: QKeySequence | None = None,
         status_tip: str = "",
         handler=None,
         enabled: bool = True,
@@ -616,7 +616,7 @@ class ActionManager:
                 sequences = [QKeySequence(s) for s in shortcuts]
                 action.setShortcuts(sequences)
 
-    def get_action(self, name: str) -> Optional[QAction]:
+    def get_action(self, name: str) -> QAction | None:
         """
         Get action by name.
 
@@ -628,7 +628,7 @@ class ActionManager:
         """
         return self._actions.get(name)
 
-    def get_all_actions(self) -> Dict[str, QAction]:
+    def get_all_actions(self) -> dict[str, QAction]:
         """
         Get all registered actions.
 

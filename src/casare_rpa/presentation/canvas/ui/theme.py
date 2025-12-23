@@ -22,7 +22,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict
 
-
 # =============================================================================
 # ASSET PATHS
 # =============================================================================
@@ -211,7 +210,7 @@ class Animations:
 # =============================================================================
 
 
-TYPE_COLORS: Dict[str, str] = {
+TYPE_COLORS: dict[str, str] = {
     "String": "#4ec9b0",  # Teal
     "Integer": "#569cd6",  # Blue
     "Float": "#9cdcfe",  # Light Blue
@@ -222,7 +221,7 @@ TYPE_COLORS: Dict[str, str] = {
     "Any": "#AAAAAA",  # Light gray (WCAG 4.5:1 compliant)
 }
 
-TYPE_BADGES: Dict[str, str] = {
+TYPE_BADGES: dict[str, str] = {
     "String": "T",
     "Integer": "#",
     "Float": ".",
@@ -399,7 +398,7 @@ NODE_DISABLED_BORDER_STYLE: str = "dot"
 
 from PySide6.QtGui import QColor as _QColor
 
-_qcolor_cache: Dict[str, "_QColor"] = {}
+_qcolor_cache: dict[str, "_QColor"] = {}
 
 
 def _hex_to_qcolor(hex_color: str) -> "_QColor":
@@ -439,7 +438,7 @@ def _rgb_to_qcolor(r: int, g: int, b: int, a: int = 255) -> "_QColor":
 # =============================================================================
 # Maps category names to their colors for fast lookup
 
-CATEGORY_COLOR_MAP: Dict[str, str] = {
+CATEGORY_COLOR_MAP: dict[str, str] = {
     "browser": DARK_CANVAS_COLORS.category_browser,
     "navigation": DARK_CANVAS_COLORS.category_navigation,
     "interaction": DARK_CANVAS_COLORS.category_interaction,

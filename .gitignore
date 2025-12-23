@@ -110,16 +110,12 @@ nul
 .gemini/
 gha-creds-*.json
 site/
-<<<<<<< HEAD
 .qdrant/
 .qdrant_new/
-.casare/
-=======
 .casare/
 .chroma/
 .worktrees/
 .claude_settings.json
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 # Note: .agent/ is tracked for Gemini/Antigravity AI rules
 
 # Temp files and debug outputs
@@ -134,10 +130,6 @@ task_*.log
 test_cache_dir/
 test_output_*
 *.tmp
-<<<<<<< HEAD
-=======
-
 # Auto Claude data directory
 .auto-claude/
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 .chroma/

@@ -1,5 +1,6 @@
-import orjson
 from pathlib import Path
+
+import orjson
 
 path = Path("Projects/MonthlyMuhasebe/scenarios/ck_bogazici_login_updated.json")
 data = orjson.loads(path.read_bytes())

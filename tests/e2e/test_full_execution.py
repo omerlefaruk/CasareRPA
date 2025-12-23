@@ -37,13 +37,7 @@ WORKFLOW_PAYLOAD = {
                 "custom": {},
             },
         ],
-<<<<<<< HEAD
-        "connections": [
-            {"out": ["node_start", "exec_out"], "in": ["node_log", "exec_in"]}
-        ],
-=======
         "connections": [{"out": ["node_start", "exec_out"], "in": ["node_log", "exec_in"]}],
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
     },
 }
 
@@ -72,13 +66,7 @@ async def run_e2e_test():
         try:
             # Use X-Api-Key for Admin access
             headers = {"X-Api-Key": API_SECRET}
-<<<<<<< HEAD
-            resp = await client.get(
-                f"{ORCHESTRATOR_URL}/api/v1/metrics/robots", headers=headers
-            )
-=======
             resp = await client.get(f"{ORCHESTRATOR_URL}/api/v1/metrics/robots", headers=headers)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
             if resp.status_code == 200:
                 payload = resp.json()
@@ -159,13 +147,7 @@ async def run_e2e_test():
                 job_id = job_data["id"]
                 print(f"   ✅ Job Submitted: {job_id}")
             else:
-<<<<<<< HEAD
-                print(
-                    f"   ❌ Failed to submit job: {job_resp.status_code} {job_resp.text}"
-                )
-=======
                 print(f"   ❌ Failed to submit job: {job_resp.status_code} {job_resp.text}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 return
 
         except Exception as e:
@@ -177,13 +159,7 @@ async def run_e2e_test():
         start_time = datetime.now()
         while (datetime.now() - start_time).seconds < 60:
             try:
-<<<<<<< HEAD
-                resp = await client.get(
-                    f"{ORCHESTRATOR_URL}/api/v1/jobs/{job_id}", headers=headers
-                )
-=======
                 resp = await client.get(f"{ORCHESTRATOR_URL}/api/v1/jobs/{job_id}", headers=headers)
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                 state = resp.json()["data"]["status"]
                 print(f"   ⏳ Status: {state}")
 
@@ -195,13 +171,7 @@ async def run_e2e_test():
                     return
                 elif state == "failed":
                     data = resp.json()["data"]
-<<<<<<< HEAD
-                    print(
-                        f"\n❌ FAILURE! Job failed: {data.get('error_message', 'Unknown error')}"
-                    )
-=======
                     print(f"\n❌ FAILURE! Job failed: {data.get('error_message', 'Unknown error')}")
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
                     return
 
                 await asyncio.sleep(2)

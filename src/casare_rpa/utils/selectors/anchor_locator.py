@@ -9,7 +9,7 @@ even when the UI structure changes.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -51,8 +51,8 @@ class AnchorCandidate:
     distance: float
     stability_score: float
     position: str
-    rect: Dict[str, float]
-    attributes: Dict[str, str]
+    rect: dict[str, float]
+    attributes: dict[str, str]
 
 
 class AnchorLocator:
@@ -96,9 +96,9 @@ class AnchorLocator:
 
     async def auto_detect_anchor(
         self,
-        page: "Page",
+        page: Page,
         target_selector: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Auto-detect the best anchor for a target element.
 
@@ -154,9 +154,9 @@ class AnchorLocator:
 
     async def _find_anchor_candidates(
         self,
-        page: "Page",
+        page: Page,
         target_selector: str,
-    ) -> List[AnchorCandidate]:
+    ) -> list[AnchorCandidate]:
         """
         Find candidate anchor elements near the target.
 
@@ -327,7 +327,7 @@ class AnchorLocator:
 
         return candidates
 
-    def _build_selector(self, data: Dict[str, Any]) -> Optional[str]:
+    def _build_selector(self, data: dict[str, Any]) -> str | None:
         """
         Build a CSS selector for an anchor element.
 
@@ -360,7 +360,7 @@ class AnchorLocator:
 
         return None
 
-    def _calculate_stability(self, data: Dict[str, Any]) -> float:
+    def _calculate_stability(self, data: dict[str, Any]) -> float:
         """
         Calculate stability score for a potential anchor element.
 
@@ -408,12 +408,12 @@ class AnchorLocator:
 
     async def find_element_with_anchor(
         self,
-        page: "Page",
+        page: Page,
         target_selector: str,
         anchor_selector: str,
         position: str = "left",
         fallback_to_target: bool = True,
-    ) -> Optional["ElementHandle"]:
+    ) -> ElementHandle | None:
         """
         Find element using anchor as reference.
 
@@ -463,11 +463,11 @@ class AnchorLocator:
 
     async def _find_target_near_anchor(
         self,
-        page: "Page",
-        anchor: "ElementHandle",
+        page: Page,
+        anchor: ElementHandle,
         target_selector: str,
         position: str,
-    ) -> Optional["ElementHandle"]:
+    ) -> ElementHandle | None:
         """
         Find target element near anchor based on position.
 
@@ -519,8 +519,8 @@ class AnchorLocator:
 
     def _calculate_position_score(
         self,
-        anchor_box: Dict[str, float],
-        target_box: Dict[str, float],
+        anchor_box: dict[str, float],
+        target_box: dict[str, float],
         expected_position: str,
     ) -> float:
         """
@@ -570,9 +570,9 @@ class AnchorLocator:
 
     async def validate_anchor(
         self,
-        page: "Page",
+        page: Page,
         anchor_selector: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Validate that an anchor selector still matches an element.
 

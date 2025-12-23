@@ -7,10 +7,11 @@ Records user interactions with web pages via Playwright for workflow generation.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -37,7 +38,7 @@ class ElementInfo:
 
     tag_name: str = ""
     id_attr: str = ""
-    class_list: List[str] = field(default_factory=list)
+    class_list: list[str] = field(default_factory=list)
     text_content: str = ""
     name_attr: str = ""
     type_attr: str = ""
@@ -48,7 +49,7 @@ class ElementInfo:
     href: str = ""
     value: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "tag_name": self.tag_name,
@@ -74,13 +75,13 @@ class BrowserRecordedAction:
     timestamp: datetime = field(default_factory=datetime.now)
     url: str = ""
     selector: str = ""
-    value: Optional[str] = None
-    coordinates: Optional[Tuple[int, int]] = None
+    value: str | None = None
+    coordinates: tuple[int, int] | None = None
     element_info: ElementInfo = field(default_factory=ElementInfo)
-    key: Optional[str] = None  # For key press
-    modifiers: List[str] = field(default_factory=list)  # Ctrl, Alt, Shift
+    key: str | None = None  # For key press
+    modifiers: list[str] = field(default_factory=list)  # Ctrl, Alt, Shift
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "action_type": self.action_type.value,
@@ -145,8 +146,8 @@ class BrowserRecorder:
         self._page = None
         self._recording = False
         self._paused = False
-        self._actions: List[BrowserRecordedAction] = []
-        self._callbacks: Dict[str, List[Callable]] = {
+        self._actions: list[BrowserRecordedAction] = []
+        self._callbacks: dict[str, list[Callable]] = {
             "action_recorded": [],
             "recording_started": [],
             "recording_stopped": [],
@@ -169,7 +170,7 @@ class BrowserRecorder:
         return self._paused
 
     @property
-    def actions(self) -> List[BrowserRecordedAction]:
+    def actions(self) -> list[BrowserRecordedAction]:
         """Get recorded actions."""
         return self._actions.copy()
 
@@ -362,7 +363,7 @@ class BrowserRecorder:
         except Exception as e:
             logger.error(f"Failed to inject capture script: {e}")
 
-    async def _handle_js_event(self, event_type: str, data: Dict) -> None:
+    async def _handle_js_event(self, event_type: str, data: dict) -> None:
         """Handle events from JavaScript."""
         if not self._recording or self._paused:
             return
@@ -461,7 +462,7 @@ class BrowserRecorder:
         self._emit("recording_started")
         logger.info("Browser recording started")
 
-    def stop(self) -> List[BrowserRecordedAction]:
+    def stop(self) -> list[BrowserRecordedAction]:
         """
         Stop recording and return actions.
 

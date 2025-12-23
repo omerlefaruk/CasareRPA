@@ -616,7 +616,7 @@ def apply_dialog_style(
 
 
 def show_styled_message(
-    parent: Optional[QWidget],
+    parent: QWidget | None,
     title: str,
     text: str,
     info: str = "",
@@ -643,7 +643,7 @@ def show_styled_message(
 
 
 def show_styled_warning(
-    parent: Optional[QWidget],
+    parent: QWidget | None,
     title: str,
     text: str,
     info: str = "",
@@ -653,7 +653,7 @@ def show_styled_warning(
 
 
 def show_styled_error(
-    parent: Optional[QWidget],
+    parent: QWidget | None,
     title: str,
     text: str,
     info: str = "",
@@ -663,7 +663,7 @@ def show_styled_error(
 
 
 def show_styled_question(
-    parent: Optional[QWidget],
+    parent: QWidget | None,
     title: str,
     text: str,
     buttons: QMessageBox.StandardButton = (

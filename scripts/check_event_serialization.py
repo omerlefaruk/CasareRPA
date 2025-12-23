@@ -4,11 +4,11 @@ Verify that domain events only use serializable data types.
 Block: page, driver, browser, response (complex objects).
 Allow: str, int, float, bool, list, dict, Optional types.
 """
+
 import ast
 import os
 import sys
 from pathlib import Path
-
 
 FORBIDDEN_TYPES = {
     "page",
@@ -33,7 +33,8 @@ class EventFieldChecker(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         # Check if it's a dataclass (domain event)
         is_dataclass = any(
-            isinstance(dec, ast.Name) and dec.id == "dataclass"
+            isinstance(dec, ast.Name)
+            and dec.id == "dataclass"
             or isinstance(dec, ast.Call)
             and isinstance(dec.func, ast.Name)
             and dec.func.id == "dataclass"
@@ -55,11 +56,7 @@ class EventFieldChecker(ast.NodeVisitor):
         if self.in_dataclass:
             forbidden_types = self._extract_forbidden_types(node.annotation)
             if forbidden_types:
-                var_name = (
-                    node.target.id
-                    if isinstance(node.target, ast.Name)
-                    else "unknown"
-                )
+                var_name = node.target.id if isinstance(node.target, ast.Name) else "unknown"
                 self.errors.append(
                     f"{self.filepath}: Event '{self.dataclass_name}' field '{var_name}' "
                     f"contains non-serializable types: {', '.join(sorted(forbidden_types))}"
@@ -79,9 +76,7 @@ class EventFieldChecker(ast.NodeVisitor):
                 result |= self._extract_forbidden_types(annotation.slice)
             return result
         elif isinstance(annotation, ast.Tuple):
-            return set().union(
-                *(self._extract_forbidden_types(el) for el in annotation.elts)
-            )
+            return set().union(*(self._extract_forbidden_types(el) for el in annotation.elts))
         elif isinstance(annotation, ast.Constant):
             return set()
         return set()
@@ -90,7 +85,7 @@ class EventFieldChecker(ast.NodeVisitor):
 def check_file(filepath: str) -> list[str]:
     """Parse Python file and check for forbidden types in events"""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             tree = ast.parse(f.read())
         checker = EventFieldChecker(filepath)
         checker.visit(tree)

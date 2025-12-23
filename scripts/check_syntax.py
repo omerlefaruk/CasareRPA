@@ -1,5 +1,5 @@
-import os
 import ast
+import os
 from pathlib import Path
 
 
@@ -7,7 +7,7 @@ def check_files():
     nodes_dir = Path("src/casare_rpa/nodes")
     for filepath in nodes_dir.rglob("*.py"):
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 content = f.read()
             ast.parse(content)
         except SyntaxError as e:

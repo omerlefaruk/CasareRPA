@@ -8,10 +8,11 @@ Monitors schedule execution compliance with defined SLAs.
 import threading
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -38,11 +39,11 @@ class SLAConfig:
         on_breach: Callback function when SLA is breached
     """
 
-    max_duration_seconds: Optional[int] = None
-    max_start_delay_seconds: Optional[int] = 300
+    max_duration_seconds: int | None = None
+    max_start_delay_seconds: int | None = 300
     success_rate_threshold: float = 95.0
     consecutive_failure_limit: int = 3
-    on_breach: Optional[Callable[[str, str, Any], None]] = None
+    on_breach: Callable[[str, str, Any], None] | None = None
 
 
 @dataclass
@@ -51,13 +52,13 @@ class ExecutionMetrics:
 
     schedule_id: str
     started_at: datetime
-    completed_at: Optional[datetime] = None
-    scheduled_time: Optional[datetime] = None
+    completed_at: datetime | None = None
+    scheduled_time: datetime | None = None
     success: bool = False
     duration_ms: int = 0
     start_delay_ms: int = 0
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -70,12 +71,12 @@ class SLAReport:
     success_rate: float
     success_rate_threshold: float
     average_duration_ms: int
-    max_duration_ms: Optional[int]
+    max_duration_ms: int | None
     consecutive_failures: int
     consecutive_failure_limit: int
     run_count: int
     window_hours: int
-    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class SLAMonitor:
@@ -93,10 +94,10 @@ class SLAMonitor:
         Args:
             metrics_retention_limit: Maximum metrics per schedule
         """
-        self._metrics: Dict[str, List[ExecutionMetrics]] = defaultdict(list)
-        self._active_executions: Dict[str, ExecutionMetrics] = {}
+        self._metrics: dict[str, list[ExecutionMetrics]] = defaultdict(list)
+        self._active_executions: dict[str, ExecutionMetrics] = {}
         self._lock = threading.Lock()
-        self._alert_callbacks: List[Callable[[str, SLAStatus, str], None]] = []
+        self._alert_callbacks: list[Callable[[str, SLAStatus, str], None]] = []
         self._retention_limit = metrics_retention_limit
 
     def add_alert_callback(self, callback: Callable[[str, SLAStatus, str], None]) -> None:
@@ -127,8 +128,8 @@ class SLAMonitor:
     def record_start(
         self,
         schedule_id: str,
-        scheduled_time: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        scheduled_time: datetime | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """
         Record execution start.
@@ -142,7 +143,7 @@ class SLAMonitor:
             Execution tracking ID
         """
         execution_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         start_delay_ms = 0
         if scheduled_time:
@@ -166,9 +167,9 @@ class SLAMonitor:
         self,
         execution_id: str,
         success: bool,
-        sla_config: Optional[SLAConfig] = None,
-        error_message: Optional[str] = None,
-    ) -> Optional[ExecutionMetrics]:
+        sla_config: SLAConfig | None = None,
+        error_message: str | None = None,
+    ) -> ExecutionMetrics | None:
         """
         Record execution completion and check SLA.
 
@@ -186,7 +187,7 @@ class SLAMonitor:
             if not metrics:
                 return None
 
-            metrics.completed_at = datetime.now(timezone.utc)
+            metrics.completed_at = datetime.now(UTC)
             metrics.success = success
             metrics.error_message = error_message
             metrics.duration_ms = int(
@@ -210,8 +211,8 @@ class SLAMonitor:
         self,
         execution_id: str,
         error_message: str,
-        sla_config: Optional[SLAConfig] = None,
-    ) -> Optional[ExecutionMetrics]:
+        sla_config: SLAConfig | None = None,
+    ) -> ExecutionMetrics | None:
         """
         Record execution error.
 
@@ -271,9 +272,9 @@ class SLAMonitor:
     def get_metrics(
         self,
         schedule_id: str,
-        since: Optional[datetime] = None,
+        since: datetime | None = None,
         limit: int = 100,
-    ) -> List[ExecutionMetrics]:
+    ) -> list[ExecutionMetrics]:
         """
         Get execution metrics for a schedule.
 
@@ -291,7 +292,7 @@ class SLAMonitor:
                 metrics = [m for m in metrics if m.started_at >= since]
             return list(reversed(metrics[-limit:]))
 
-    def get_active_executions(self) -> Dict[str, ExecutionMetrics]:
+    def get_active_executions(self) -> dict[str, ExecutionMetrics]:
         """Get currently active executions."""
         with self._lock:
             return dict(self._active_executions)
@@ -311,7 +312,7 @@ class SLAMonitor:
         Returns:
             Success rate percentage (0-100)
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
         metrics = self.get_metrics(schedule_id, since=cutoff)
 
         if not metrics:
@@ -352,7 +353,7 @@ class SLAMonitor:
         Returns:
             Average duration in milliseconds
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
         metrics = self.get_metrics(schedule_id, since=cutoff)
 
         if not metrics:
@@ -378,7 +379,7 @@ class SLAMonitor:
         Returns:
             Percentile duration in milliseconds
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
         metrics = self.get_metrics(schedule_id, since=cutoff)
 
         if not metrics:
@@ -404,7 +405,7 @@ class SLAMonitor:
         Returns:
             Number of executions
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
         metrics = self.get_metrics(schedule_id, since=cutoff)
         return len(metrics)
 
@@ -496,7 +497,7 @@ class SLAMonitor:
             window_hours=window_hours,
         )
 
-    def clear_metrics(self, schedule_id: Optional[str] = None) -> None:
+    def clear_metrics(self, schedule_id: str | None = None) -> None:
         """
         Clear metrics for a schedule or all schedules.
 
@@ -528,7 +529,7 @@ class SLAAggregator:
 
     def get_fleet_success_rate(
         self,
-        schedule_ids: List[str],
+        schedule_ids: list[str],
         window_hours: int = 24,
     ) -> float:
         """
@@ -548,7 +549,7 @@ class SLAAggregator:
         total_count = 0
 
         for schedule_id in schedule_ids:
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+            cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
             metrics = self._monitor.get_metrics(schedule_id, since=cutoff)
             total_count += len(metrics)
             total_success += sum(1 for m in metrics if m.success)
@@ -560,9 +561,9 @@ class SLAAggregator:
 
     def get_fleet_status_summary(
         self,
-        schedule_configs: Dict[str, SLAConfig],
+        schedule_configs: dict[str, SLAConfig],
         window_hours: int = 24,
-    ) -> Dict[SLAStatus, int]:
+    ) -> dict[SLAStatus, int]:
         """
         Get count of schedules by SLA status.
 
@@ -573,7 +574,7 @@ class SLAAggregator:
         Returns:
             Dictionary of status to count
         """
-        summary: Dict[SLAStatus, int] = {status: 0 for status in SLAStatus}
+        summary: dict[SLAStatus, int] = {status: 0 for status in SLAStatus}
 
         for schedule_id, config in schedule_configs.items():
             status = self._monitor.get_sla_status(schedule_id, config, window_hours)
@@ -583,10 +584,10 @@ class SLAAggregator:
 
     def get_worst_performers(
         self,
-        schedule_ids: List[str],
+        schedule_ids: list[str],
         limit: int = 5,
         window_hours: int = 24,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get schedules with lowest success rates.
 
@@ -614,10 +615,10 @@ class SLAAggregator:
 
     def get_slowest_performers(
         self,
-        schedule_ids: List[str],
+        schedule_ids: list[str],
         limit: int = 5,
         window_hours: int = 24,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get schedules with highest average duration.
 

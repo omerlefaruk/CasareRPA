@@ -19,11 +19,11 @@ Usage:
             ]
 """
 
-from typing import Callable, List
+from collections.abc import Callable
+from typing import List
 
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QWidget
-
 
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event_types import EventType
@@ -130,7 +130,7 @@ class LazySubscriptionGroup:
     def __init__(
         self,
         component: QWidget,
-        subscriptions: List[tuple[EventType, Callable]],
+        subscriptions: list[tuple[EventType, Callable]],
     ) -> None:
         """
         Initialize lazy subscription group.
@@ -140,7 +140,7 @@ class LazySubscriptionGroup:
             subscriptions: List of (EventType, handler) tuples
         """
         self.component = component
-        self._subscriptions: List[LazySubscription] = []
+        self._subscriptions: list[LazySubscription] = []
 
         # Only wrap events once - first subscription handles the wrapping
         if subscriptions:

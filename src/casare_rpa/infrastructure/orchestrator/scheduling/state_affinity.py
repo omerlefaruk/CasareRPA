@@ -10,12 +10,13 @@ Supports state tracking per robot and migration for soft affinity.
 """
 
 import asyncio
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from enum import Enum
-from typing import Optional, Dict, List, Any, Callable, Tuple
-from collections import defaultdict
 import threading
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -32,7 +33,7 @@ class StateAffinityLevel(Enum):
 class SessionAffinityError(Exception):
     """Raised when session affinity cannot be satisfied."""
 
-    def __init__(self, message: str, workflow_id: str, required_robot_id: Optional[str] = None):
+    def __init__(self, message: str, workflow_id: str, required_robot_id: str | None = None):
         super().__init__(message)
         self.workflow_id = workflow_id
         self.required_robot_id = required_robot_id
@@ -53,10 +54,10 @@ class RobotState:
     robot_id: str
     workflow_id: str
     state_type: str  # "browser_session", "filesystem", "memory", "desktop_app"
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_accessed: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_accessed: datetime = field(default_factory=lambda: datetime.now(UTC))
+    expires_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
     size_bytes: int = 0
     is_migratable: bool = True  # Can state be transferred to another robot?
 
@@ -65,23 +66,23 @@ class RobotState:
         """Check if state has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
     @property
     def age_seconds(self) -> float:
         """Get age of state in seconds."""
-        return (datetime.now(timezone.utc) - self.created_at).total_seconds()
+        return (datetime.now(UTC) - self.created_at).total_seconds()
 
     @property
     def idle_seconds(self) -> float:
         """Get time since last access in seconds."""
-        return (datetime.now(timezone.utc) - self.last_accessed).total_seconds()
+        return (datetime.now(UTC) - self.last_accessed).total_seconds()
 
     def touch(self) -> None:
         """Update last accessed timestamp."""
-        self.last_accessed = datetime.now(timezone.utc)
+        self.last_accessed = datetime.now(UTC)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "robot_id": self.robot_id,
@@ -108,21 +109,21 @@ class WorkflowSession:
     session_id: str
     workflow_id: str
     robot_id: str
-    chain_id: Optional[str]  # ID linking related workflow executions
-    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_job_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    chain_id: str | None  # ID linking related workflow executions
+    started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_job_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     job_count: int = 0
     timeout_seconds: float = 3600.0  # Session expires after 1 hour of inactivity
 
     @property
     def is_expired(self) -> bool:
         """Check if session has timed out."""
-        idle_time = (datetime.now(timezone.utc) - self.last_job_at).total_seconds()
+        idle_time = (datetime.now(UTC) - self.last_job_at).total_seconds()
         return idle_time > self.timeout_seconds
 
     def record_job(self) -> None:
         """Record that a job was executed in this session."""
-        self.last_job_at = datetime.now(timezone.utc)
+        self.last_job_at = datetime.now(UTC)
         self.job_count += 1
 
 
@@ -130,16 +131,16 @@ class WorkflowSession:
 class StateAffinityDecision:
     """Result of affinity-based robot selection."""
 
-    selected_robot_id: Optional[str]
+    selected_robot_id: str | None
     affinity_level: StateAffinityLevel
     decision_reason: str
     has_state: bool
-    state_robots: List[str]  # Robots that have relevant state
+    state_robots: list[str]  # Robots that have relevant state
     fallback_used: bool
     should_queue: bool  # True if job should be queued instead of assigned
     queue_delay_seconds: float = 0.0
     migration_required: bool = False
-    migration_source_robot: Optional[str] = None
+    migration_source_robot: str | None = None
 
 
 class StateAffinityManager:
@@ -175,25 +176,25 @@ class StateAffinityManager:
         self._cleanup_interval = cleanup_interval_seconds
 
         # State storage: workflow_id -> robot_id -> [RobotState]
-        self._state_registry: Dict[str, Dict[str, List[RobotState]]] = defaultdict(
+        self._state_registry: dict[str, dict[str, list[RobotState]]] = defaultdict(
             lambda: defaultdict(list)
         )
 
         # Session storage: workflow_id -> WorkflowSession
-        self._active_sessions: Dict[str, WorkflowSession] = {}
+        self._active_sessions: dict[str, WorkflowSession] = {}
 
         # Queue attempt tracking: job_id -> attempt_count
-        self._queue_attempts: Dict[str, int] = {}
+        self._queue_attempts: dict[str, int] = {}
 
         # Migration callbacks
-        self._migration_handlers: Dict[str, Callable] = {}
+        self._migration_handlers: dict[str, Callable] = {}
 
         # Thread safety
         self._lock = threading.RLock()
 
         # Background cleanup
         self._running = False
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._cleanup_task: asyncio.Task | None = None
 
         logger.info(
             f"StateAffinityManager initialized: state_ttl={default_state_ttl_seconds}s, "
@@ -229,8 +230,8 @@ class StateAffinityManager:
         robot_id: str,
         workflow_id: str,
         state_type: str,
-        ttl_seconds: Optional[float] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        ttl_seconds: float | None = None,
+        metadata: dict[str, Any] | None = None,
         size_bytes: int = 0,
         is_migratable: bool = True,
     ) -> RobotState:
@@ -250,7 +251,7 @@ class StateAffinityManager:
             Created RobotState instance
         """
         ttl = ttl_seconds if ttl_seconds is not None else self._default_state_ttl
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl) if ttl > 0 else None
+        expires_at = datetime.now(UTC) + timedelta(seconds=ttl) if ttl > 0 else None
 
         state = RobotState(
             robot_id=robot_id,
@@ -274,7 +275,7 @@ class StateAffinityManager:
         self,
         robot_id: str,
         workflow_id: str,
-        state_type: Optional[str] = None,
+        state_type: str | None = None,
     ) -> int:
         """
         Unregister state for a robot/workflow combination.
@@ -336,7 +337,7 @@ class StateAffinityManager:
 
             return any(not s.is_expired for s in self._state_registry[workflow_id][robot_id])
 
-    def get_robots_with_state(self, workflow_id: str) -> List[str]:
+    def get_robots_with_state(self, workflow_id: str) -> list[str]:
         """Get all robots that have valid state for a workflow."""
         with self._lock:
             if workflow_id not in self._state_registry:
@@ -348,7 +349,7 @@ class StateAffinityManager:
                 if any(not s.is_expired for s in states)
             ]
 
-    def get_state_for_robot(self, robot_id: str, workflow_id: str) -> List[RobotState]:
+    def get_state_for_robot(self, robot_id: str, workflow_id: str) -> list[RobotState]:
         """Get all state entries for a robot/workflow combination."""
         with self._lock:
             if workflow_id not in self._state_registry:
@@ -358,7 +359,7 @@ class StateAffinityManager:
                 s for s in self._state_registry[workflow_id].get(robot_id, []) if not s.is_expired
             ]
 
-    def get_all_state_for_workflow(self, workflow_id: str) -> Dict[str, List[RobotState]]:
+    def get_all_state_for_workflow(self, workflow_id: str) -> dict[str, list[RobotState]]:
         """Get all state for a workflow, grouped by robot."""
         with self._lock:
             if workflow_id not in self._state_registry:
@@ -377,8 +378,8 @@ class StateAffinityManager:
         session_id: str,
         workflow_id: str,
         robot_id: str,
-        chain_id: Optional[str] = None,
-        timeout_seconds: Optional[float] = None,
+        chain_id: str | None = None,
+        timeout_seconds: float | None = None,
     ) -> WorkflowSession:
         """
         Create a new workflow session for session affinity.
@@ -410,7 +411,7 @@ class StateAffinityManager:
         )
         return session
 
-    def get_session(self, workflow_id: str) -> Optional[WorkflowSession]:
+    def get_session(self, workflow_id: str) -> WorkflowSession | None:
         """Get active session for a workflow."""
         with self._lock:
             session = self._active_sessions.get(workflow_id)
@@ -434,7 +435,7 @@ class StateAffinityManager:
                 return True
             return False
 
-    def get_session_robot(self, workflow_id: str) -> Optional[str]:
+    def get_session_robot(self, workflow_id: str) -> str | None:
         """Get the robot assigned to a workflow's session."""
         session = self.get_session(workflow_id)
         return session.robot_id if session else None
@@ -452,9 +453,9 @@ class StateAffinityManager:
         self,
         workflow_id: str,
         affinity_level: StateAffinityLevel,
-        available_robots: List[str],
-        job_id: Optional[str] = None,
-        robot_scorer: Optional[Callable[[str], float]] = None,
+        available_robots: list[str],
+        job_id: str | None = None,
+        robot_scorer: Callable[[str], float] | None = None,
     ) -> StateAffinityDecision:
         """
         Select the best robot based on state affinity.
@@ -510,9 +511,9 @@ class StateAffinityManager:
 
     def _select_no_affinity(
         self,
-        available_robots: List[str],
-        robots_with_state: List[str],
-        robot_scorer: Optional[Callable[[str], float]],
+        available_robots: list[str],
+        robots_with_state: list[str],
+        robot_scorer: Callable[[str], float] | None,
     ) -> StateAffinityDecision:
         """Select robot with no affinity requirement."""
         selected = self._score_and_select(available_robots, robot_scorer)
@@ -530,9 +531,9 @@ class StateAffinityManager:
     def _select_soft_affinity(
         self,
         workflow_id: str,
-        available_robots: List[str],
-        robots_with_state: List[str],
-        robot_scorer: Optional[Callable[[str], float]],
+        available_robots: list[str],
+        robots_with_state: list[str],
+        robot_scorer: Callable[[str], float] | None,
     ) -> StateAffinityDecision:
         """
         Select robot with soft affinity.
@@ -585,10 +586,10 @@ class StateAffinityManager:
     def _select_hard_affinity(
         self,
         workflow_id: str,
-        available_robots: List[str],
-        robots_with_state: List[str],
-        job_id: Optional[str],
-        robot_scorer: Optional[Callable[[str], float]],
+        available_robots: list[str],
+        robots_with_state: list[str],
+        job_id: str | None,
+        robot_scorer: Callable[[str], float] | None,
     ) -> StateAffinityDecision:
         """
         Select robot with hard affinity.
@@ -659,9 +660,9 @@ class StateAffinityManager:
     def _select_session_affinity(
         self,
         workflow_id: str,
-        available_robots: List[str],
-        robots_with_state: List[str],
-        robot_scorer: Optional[Callable[[str], float]],
+        available_robots: list[str],
+        robots_with_state: list[str],
+        robot_scorer: Callable[[str], float] | None,
     ) -> StateAffinityDecision:
         """
         Select robot with session affinity.
@@ -710,9 +711,9 @@ class StateAffinityManager:
 
     def _score_and_select(
         self,
-        candidates: List[str],
-        robot_scorer: Optional[Callable[[str], float]],
-    ) -> Optional[str]:
+        candidates: list[str],
+        robot_scorer: Callable[[str], float] | None,
+    ) -> str | None:
         """Score candidates and select the best one."""
         if not candidates:
             return None
@@ -746,8 +747,8 @@ class StateAffinityManager:
         workflow_id: str,
         source_robot: str,
         target_robot: str,
-        state_types: Optional[List[str]] = None,
-    ) -> Tuple[int, int]:
+        state_types: list[str] | None = None,
+    ) -> tuple[int, int]:
         """
         Migrate state from one robot to another.
 
@@ -828,7 +829,7 @@ class StateAffinityManager:
             except Exception as e:
                 logger.error(f"State cleanup error: {e}")
 
-    def _cleanup_expired(self) -> Tuple[int, int]:
+    def _cleanup_expired(self) -> tuple[int, int]:
         """
         Clean up expired state and sessions.
 
@@ -891,7 +892,7 @@ class StateAffinityManager:
 
     # ==================== STATISTICS ====================
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get state affinity statistics."""
         with self._lock:
             total_workflows = len(self._state_registry)
@@ -903,7 +904,7 @@ class StateAffinityManager:
             total_sessions = len(self._active_sessions)
 
             # State by type
-            state_types: Dict[str, int] = defaultdict(int)
+            state_types: dict[str, int] = defaultdict(int)
             for workflow_states in self._state_registry.values():
                 for states in workflow_states.values():
                     for state in states:
@@ -917,7 +918,7 @@ class StateAffinityManager:
                 "pending_queue_attempts": len(self._queue_attempts),
             }
 
-    def get_workflow_state_summary(self, workflow_id: str) -> Dict[str, Any]:
+    def get_workflow_state_summary(self, workflow_id: str) -> dict[str, Any]:
         """Get state summary for a specific workflow."""
         with self._lock:
             if workflow_id not in self._state_registry:

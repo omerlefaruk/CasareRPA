@@ -9,7 +9,7 @@ import asyncio
 import email as email_lib
 import imaplib
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
@@ -55,8 +55,8 @@ class EmailTrigger(BaseTrigger):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._poll_task: Optional[asyncio.Task] = None
-        self._seen_ids: Set[str] = set()
+        self._poll_task: asyncio.Task | None = None
+        self._seen_ids: set[str] = set()
         self._running = False
 
     async def start(self) -> bool:
@@ -133,7 +133,7 @@ class EmailTrigger(BaseTrigger):
             # Wait for next poll
             await asyncio.sleep(poll_interval)
 
-    async def _check_imap(self) -> List[Dict[str, Any]]:
+    async def _check_imap(self) -> list[dict[str, Any]]:
         """Check IMAP mailbox for new emails."""
         config = self.config.config
         server = config.get("server", "")
@@ -188,7 +188,7 @@ class EmailTrigger(BaseTrigger):
         username: str,
         password: str,
         folder: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Synchronous IMAP fetch - runs in thread pool to avoid blocking."""
         new_emails = []
 
@@ -236,13 +236,13 @@ class EmailTrigger(BaseTrigger):
 
         return new_emails
 
-    async def _check_graph(self) -> List[Dict[str, Any]]:
+    async def _check_graph(self) -> list[dict[str, Any]]:
         """Check Microsoft Graph API for new emails."""
         # Placeholder - requires Microsoft Graph SDK
         logger.warning("Microsoft Graph API not yet implemented")
         return []
 
-    async def _check_gmail(self) -> List[Dict[str, Any]]:
+    async def _check_gmail(self) -> list[dict[str, Any]]:
         """Check Gmail API for new emails."""
         # Placeholder - requires Google API client
         logger.warning("Gmail API not yet implemented")
@@ -269,7 +269,7 @@ class EmailTrigger(BaseTrigger):
 
         return body
 
-    def _should_process_email(self, email_data: Dict[str, Any]) -> bool:
+    def _should_process_email(self, email_data: dict[str, Any]) -> bool:
         """Check if email matches filters."""
         config = self.config.config
 
@@ -289,7 +289,7 @@ class EmailTrigger(BaseTrigger):
 
         return True
 
-    async def _process_email(self, email_data: Dict[str, Any]) -> None:
+    async def _process_email(self, email_data: dict[str, Any]) -> None:
         """Process a matching email and emit trigger."""
         payload = {
             "email_id": email_data.get("id", ""),
@@ -297,7 +297,7 @@ class EmailTrigger(BaseTrigger):
             "to_address": email_data.get("to_address", ""),
             "subject": email_data.get("subject", ""),
             "body": email_data.get("body", ""),
-            "received_at": email_data.get("date", datetime.now(timezone.utc).isoformat()),
+            "received_at": email_data.get("date", datetime.now(UTC).isoformat()),
         }
 
         metadata = {
@@ -308,7 +308,7 @@ class EmailTrigger(BaseTrigger):
 
         await self.emit(payload, metadata)
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate email trigger configuration."""
         config = self.config.config
 
@@ -330,7 +330,7 @@ class EmailTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for email trigger configuration."""
         return {
             "type": "object",

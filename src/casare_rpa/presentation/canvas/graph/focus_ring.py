@@ -7,7 +7,7 @@ during keyboard navigation, distinct from the selection highlight.
 
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QPropertyAnimation, Qt, Property, QEasingCurve
+from PySide6.QtCore import Property, QEasingCurve, QPropertyAnimation, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
 )
-
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QGraphicsScene
@@ -41,7 +40,7 @@ class FocusRing(QGraphicsRectItem):
     RING_PADDING = 6
     CORNER_RADIUS = 8
 
-    def __init__(self, parent: Optional[QGraphicsItem] = None) -> None:
+    def __init__(self, parent: QGraphicsItem | None = None) -> None:
         """
         Initialize focus ring.
 
@@ -50,9 +49,9 @@ class FocusRing(QGraphicsRectItem):
         """
         super().__init__(parent)
 
-        self._target_item: Optional[QGraphicsItem] = None
+        self._target_item: QGraphicsItem | None = None
         self._glow_opacity: float = 1.0
-        self._pulse_animation: Optional[QPropertyAnimation] = None
+        self._pulse_animation: QPropertyAnimation | None = None
         self._high_contrast: bool = False
 
         # Setup appearance
@@ -187,7 +186,7 @@ class FocusRing(QGraphicsRectItem):
         self,
         painter: QPainter,
         option: QStyleOptionGraphicsItem,
-        widget: Optional[QWidget] = None,
+        widget: QWidget | None = None,
     ) -> None:
         """
         Paint the focus ring.
@@ -240,8 +239,8 @@ class FocusRingManager:
             scene: Graphics scene to manage focus ring in
         """
         self._scene = scene
-        self._focus_ring: Optional[FocusRing] = None
-        self._current_node_item: Optional[QGraphicsItem] = None
+        self._focus_ring: FocusRing | None = None
+        self._current_node_item: QGraphicsItem | None = None
 
     def show_focus(self, node_item: QGraphicsItem) -> None:
         """
@@ -283,7 +282,7 @@ class FocusRingManager:
             self._focus_ring.set_high_contrast(enabled)
 
     @property
-    def current_node_item(self) -> Optional[QGraphicsItem]:
+    def current_node_item(self) -> QGraphicsItem | None:
         """Get the currently focused node item."""
         return self._current_node_item
 

@@ -17,13 +17,14 @@ from __future__ import annotations
 import atexit
 import sys
 import threading
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
 from casare_rpa.infrastructure.observability.telemetry import (
-    TelemetryProvider,
     OTEL_AVAILABLE,
+    TelemetryProvider,
 )
 
 if OTEL_AVAILABLE:
@@ -44,7 +45,7 @@ class OTelLoguruSink:
 
     def __init__(self) -> None:
         """Initialize the sink."""
-        self._otel_logger: Optional[Any] = None
+        self._otel_logger: Any | None = None
         self._initialized = False
 
     def _ensure_initialized(self) -> bool:
@@ -105,7 +106,7 @@ class OTelLoguruSink:
             severity_number = severity_map.get(level, 9)
 
             # Build attributes from record
-            attributes: Dict[str, Any] = {
+            attributes: dict[str, Any] = {
                 "log.file.name": record["file"].name if record["file"] else "unknown",
                 "log.file.path": str(record["file"].path) if record["file"] else "",
                 "log.line.number": record["line"],
@@ -139,9 +140,10 @@ class OTelLoguruSink:
 
             # Emit log via OTel
             if self._otel_logger:
+                from time import time_ns
+
                 from opentelemetry.sdk._logs import LogRecord
                 from opentelemetry.trace import get_current_span
-                from time import time_ns
 
                 span = get_current_span()
                 span_context = span.get_span_context() if span else None
@@ -234,7 +236,7 @@ class UILoguruSink:
             # Publish LOG_MESSAGE event for WARNING and above (level_value >= 3)
             if level_value >= 3:
                 try:
-                    from casare_rpa.domain.events import get_event_bus, LogMessage
+                    from casare_rpa.domain.events import LogMessage, get_event_bus
 
                     event_bus = get_event_bus()
                     event_bus.publish(
@@ -256,8 +258,8 @@ class UILoguruSink:
 _log_sink_lock = threading.Lock()
 
 # Module-level UI sink instance
-_ui_log_sink: Optional[UILoguruSink] = None
-_ui_sink_handler_id: Optional[int] = None
+_ui_log_sink: UILoguruSink | None = None
+_ui_sink_handler_id: int | None = None
 
 
 def _cleanup_on_exit() -> None:
@@ -326,7 +328,7 @@ def remove_ui_log_callback() -> None:
     logger.debug("UI log callback removed")
 
 
-def get_ui_log_sink() -> Optional[UILoguruSink]:
+def get_ui_log_sink() -> UILoguruSink | None:
     """
     Get the current UI log sink (if any).
 
@@ -354,7 +356,7 @@ def create_trace_context_format() -> str:
     )
 
 
-def trace_context_patcher(record: Dict[str, Any]) -> None:
+def trace_context_patcher(record: dict[str, Any]) -> None:
     """
     Loguru patcher that adds trace context to log records.
 
@@ -386,7 +388,7 @@ def trace_context_patcher(record: Dict[str, Any]) -> None:
 def configure_logging(
     enable_otel_export: bool = True,
     enable_trace_context: bool = True,
-    console_format: Optional[str] = None,
+    console_format: str | None = None,
     log_level: str = "INFO",
 ) -> None:
     """
@@ -497,7 +499,7 @@ class SpanLogger:
         """Log error message."""
         self._log_with_span("ERROR", message, **attributes)
 
-    def exception(self, message: str, exc: Optional[Exception] = None, **attributes: Any) -> None:
+    def exception(self, message: str, exc: Exception | None = None, **attributes: Any) -> None:
         """Log exception with traceback."""
         self._logger.exception(message)
 

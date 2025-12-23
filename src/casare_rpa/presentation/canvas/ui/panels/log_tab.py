@@ -11,27 +11,27 @@ Provides real-time execution log display with improved UX:
 - Color-coded log levels
 """
 
-from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
+from loguru import logger
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QAbstractItemView,
+    QApplication,
+    QComboBox,
+    QFileDialog,
     QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
-    QLabel,
-    QHeaderView,
-    QAbstractItemView,
-    QFileDialog,
-    QStackedWidget,
-    QComboBox,
-    QApplication,
-    QMenu,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QBrush
-from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
@@ -74,7 +74,7 @@ class LogTab(QWidget):
     # PERFORMANCE: Maximum deferred entries before forcing update
     MAX_DEFERRED = 100
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the Log tab.
 
@@ -458,15 +458,15 @@ class LogTab(QWidget):
             event: Typed domain event to log
         """
         from casare_rpa.domain.events import (
-            WorkflowStarted,
-            WorkflowCompleted,
-            WorkflowFailed,
-            WorkflowStopped,
-            WorkflowPaused,
-            WorkflowResumed,
-            NodeStarted,
             NodeCompleted,
             NodeFailed,
+            NodeStarted,
+            WorkflowCompleted,
+            WorkflowFailed,
+            WorkflowPaused,
+            WorkflowResumed,
+            WorkflowStarted,
+            WorkflowStopped,
         )
 
         # Map event classes to log levels
@@ -540,7 +540,7 @@ class LogTab(QWidget):
         if self._deferred_logs:
             self._flush_deferred_logs()
 
-    def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
+    def log_message(self, message: str, level: str = "info", node_id: str | None = None) -> None:
         """
         Log a custom message.
 
@@ -567,7 +567,7 @@ class LogTab(QWidget):
         # Add this entry directly
         self._add_log_entry_to_table(message, level, node_id)
 
-    def _add_log_entry_to_table(self, message: str, level: str, node_id: Optional[str]) -> None:
+    def _add_log_entry_to_table(self, message: str, level: str, node_id: str | None) -> None:
         """Actually add a log entry to the table widget."""
         row = self._table.rowCount()
         self._table.insertRow(row)

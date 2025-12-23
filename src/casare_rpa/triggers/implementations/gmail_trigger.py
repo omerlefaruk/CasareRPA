@@ -7,14 +7,14 @@ Uses Gmail API with OAuth 2.0 authentication.
 
 import base64
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
 from casare_rpa.triggers.base import BaseTriggerConfig, TriggerType
-from casare_rpa.triggers.registry import register_trigger
 from casare_rpa.triggers.implementations.google_trigger_base import GoogleTriggerBase
+from casare_rpa.triggers.registry import register_trigger
 
 
 @register_trigger
@@ -58,8 +58,8 @@ class GmailTrigger(GoogleTriggerBase):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._seen_message_ids: Set[str] = set()
-        self._history_id: Optional[str] = None
+        self._seen_message_ids: set[str] = set()
+        self._history_id: str | None = None
 
     def get_required_scopes(self) -> list[str]:
         """Return required Gmail API scopes."""
@@ -126,8 +126,8 @@ class GmailTrigger(GoogleTriggerBase):
             raise
 
     async def _get_new_messages_by_history(
-        self, client, label_ids: List[str]
-    ) -> List[Dict[str, Any]]:
+        self, client, label_ids: list[str]
+    ) -> list[dict[str, Any]]:
         """Get new messages using Gmail history API for efficient incremental sync."""
         try:
             params = {
@@ -159,8 +159,8 @@ class GmailTrigger(GoogleTriggerBase):
             return []
 
     async def _get_new_messages_by_query(
-        self, client, label_ids: List[str], query: str
-    ) -> List[Dict[str, Any]]:
+        self, client, label_ids: list[str], query: str
+    ) -> list[dict[str, Any]]:
         """Get messages matching query (fallback method)."""
         params = {
             "maxResults": 10,
@@ -173,7 +173,7 @@ class GmailTrigger(GoogleTriggerBase):
 
         return response.get("messages", [])
 
-    async def _get_message_details(self, client, message_id: str) -> Optional[Dict[str, Any]]:
+    async def _get_message_details(self, client, message_id: str) -> dict[str, Any] | None:
         """Fetch full message details including body."""
         try:
             message = await client.get(
@@ -185,7 +185,7 @@ class GmailTrigger(GoogleTriggerBase):
             logger.error(f"Failed to fetch message {message_id}: {e}")
             return None
 
-    def _should_process_message(self, message: Dict[str, Any]) -> bool:
+    def _should_process_message(self, message: dict[str, Any]) -> bool:
         """Check if message matches configured filters."""
         config = self.config.config
         headers = self._extract_headers(message)
@@ -206,7 +206,7 @@ class GmailTrigger(GoogleTriggerBase):
 
         return True
 
-    def _extract_headers(self, message: Dict[str, Any]) -> Dict[str, str]:
+    def _extract_headers(self, message: dict[str, Any]) -> dict[str, str]:
         """Extract headers from Gmail message payload."""
         headers = {}
         payload = message.get("payload", {})
@@ -216,7 +216,7 @@ class GmailTrigger(GoogleTriggerBase):
             headers[name] = value
         return headers
 
-    def _extract_body(self, message: Dict[str, Any]) -> str:
+    def _extract_body(self, message: dict[str, Any]) -> str:
         """Extract email body from Gmail message payload."""
         payload = message.get("payload", {})
         mime_type = payload.get("mimeType", "")
@@ -245,7 +245,7 @@ class GmailTrigger(GoogleTriggerBase):
 
         return plain_body if plain_body else html_body
 
-    def _flatten_parts(self, parts: List[Dict]) -> List[Dict]:
+    def _flatten_parts(self, parts: list[dict]) -> list[dict]:
         """Recursively flatten nested MIME parts."""
         result = []
         for part in parts:
@@ -255,7 +255,7 @@ class GmailTrigger(GoogleTriggerBase):
                 result.extend(self._flatten_parts(nested))
         return result
 
-    def _extract_attachments(self, message: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_attachments(self, message: dict[str, Any]) -> list[dict[str, Any]]:
         """Extract attachment info from Gmail message."""
         attachments = []
         payload = message.get("payload", {})
@@ -276,7 +276,7 @@ class GmailTrigger(GoogleTriggerBase):
 
         return attachments
 
-    async def _process_message(self, message: Dict[str, Any]) -> None:
+    async def _process_message(self, message: dict[str, Any]) -> None:
         """Process a matching email and emit trigger."""
         config = self.config.config
         headers = self._extract_headers(message)
@@ -290,7 +290,7 @@ class GmailTrigger(GoogleTriggerBase):
             "subject": headers.get("subject", ""),
             "body": body,
             "received_at": datetime.fromtimestamp(
-                int(message.get("internalDate", 0)) / 1000, tz=timezone.utc
+                int(message.get("internalDate", 0)) / 1000, tz=UTC
             ).isoformat(),
             "labels": message.get("labelIds", []),
             "snippet": message.get("snippet", ""),
@@ -318,7 +318,7 @@ class GmailTrigger(GoogleTriggerBase):
         except Exception as e:
             logger.warning(f"Failed to mark message {message_id} as read: {e}")
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate Gmail trigger configuration."""
         valid, error = super().validate_config()
         if not valid:
@@ -351,7 +351,7 @@ class GmailTrigger(GoogleTriggerBase):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for Gmail trigger configuration."""
         base_schema = super().get_config_schema()
         base_schema["properties"].update(

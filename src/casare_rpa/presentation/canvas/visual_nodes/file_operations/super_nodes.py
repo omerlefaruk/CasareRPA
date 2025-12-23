@@ -5,13 +5,13 @@ Consolidated visual nodes that replace multiple atomic nodes
 with a single action-driven interface.
 """
 
+from casare_rpa.nodes.file.super_node import (
+    FILE_SYSTEM_PORT_SCHEMA,
+    FileSystemSuperNode,
+)
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.presentation.canvas.visual_nodes.mixins.super_node_mixin import (
     SuperNodeMixin,
-)
-from casare_rpa.nodes.file.super_node import (
-    FileSystemSuperNode,
-    FILE_SYSTEM_PORT_SCHEMA,
 )
 
 

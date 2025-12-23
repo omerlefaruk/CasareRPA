@@ -15,19 +15,18 @@ from typing import Any
 from loguru import logger
 
 from casare_rpa.domain.credentials import (
-    CredentialAwareMixin,
     CREDENTIAL_NAME_PROP,
+    CredentialAwareMixin,
 )
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
 )
-
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 # HTTP Auth specific PropertyDef constants
 HTTP_TOKEN_PROP = PropertyDef(
@@ -714,6 +713,7 @@ class OAuth2CallbackServerNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import asyncio
+
         from aiohttp import web
 
         self.status = NodeStatus.RUNNING

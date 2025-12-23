@@ -9,14 +9,13 @@ Provides the UnifiedHttpClient facade that composes all resilience patterns:
 """
 
 from casare_rpa.infrastructure.http.unified_http_client import (
+    RETRY_STATUS_CODES,
+    RequestStats,
     UnifiedHttpClient,
     UnifiedHttpClientConfig,
-    RequestStats,
-    RETRY_STATUS_CODES,
-    get_unified_http_client,
     close_unified_http_client,
+    get_unified_http_client,
 )
-
 
 __all__ = [
     "UnifiedHttpClient",

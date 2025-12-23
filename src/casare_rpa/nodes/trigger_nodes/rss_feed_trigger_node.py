@@ -12,7 +12,6 @@ from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.trigger_nodes.base_trigger_node import BaseTriggerNode
 from casare_rpa.triggers.base import TriggerType
 
-
 # Add RSS_FEED to TriggerType if not present - this will need to be added to base.py
 # For now, we'll use a placeholder that maps to WEBHOOK or create custom handling
 
@@ -88,7 +87,7 @@ class RSSFeedTriggerNode(BaseTriggerNode):
     trigger_icon = "rss"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "RSS Feed Trigger"
         self.node_type = "RSSFeedTriggerNode"
@@ -106,7 +105,7 @@ class RSSFeedTriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.RSS_FEED
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get RSS-specific configuration."""
         keywords_str = self.get_parameter("filter_keywords", "")
         keywords = [k.strip() for k in keywords_str.split(",") if k.strip()]

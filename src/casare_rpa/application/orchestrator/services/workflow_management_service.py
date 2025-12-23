@@ -3,16 +3,16 @@ Workflow management service.
 Handles workflow CRUD operations and file imports.
 """
 
-import os
 import asyncio
 import json
+import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities import Workflow, WorkflowStatus
 from casare_rpa.domain.orchestrator.repositories import WorkflowRepository
@@ -58,7 +58,7 @@ class WorkflowManagementService:
             self._use_local = True
             return True
 
-    async def get_workflows(self, status: Optional[WorkflowStatus] = None) -> List[Workflow]:
+    async def get_workflows(self, status: WorkflowStatus | None = None) -> list[Workflow]:
         """Get all workflows."""
         if self._use_local:
             if status:
@@ -78,7 +78,7 @@ class WorkflowManagementService:
 
         return [Workflow.from_dict(w) for w in data]
 
-    async def get_workflow(self, workflow_id: str) -> Optional[Workflow]:
+    async def get_workflow(self, workflow_id: str) -> Workflow | None:
         """Get a specific workflow by ID."""
         workflows = await self.get_workflows()
         for w in workflows:
@@ -88,7 +88,7 @@ class WorkflowManagementService:
 
     async def save_workflow(self, workflow: Workflow) -> bool:
         """Save or update a workflow."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         data = {
             "id": workflow.id,
             "name": workflow.name,
@@ -116,10 +116,10 @@ class WorkflowManagementService:
                 logger.error(f"Failed to save workflow: {e}")
                 return False
 
-    async def import_workflow_from_file(self, file_path: Path) -> Optional[Workflow]:
+    async def import_workflow_from_file(self, file_path: Path) -> Workflow | None:
         """Import a workflow from a JSON file."""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 json_content = f.read()
                 workflow_data = json.loads(json_content)
 
@@ -130,7 +130,7 @@ class WorkflowManagementService:
                 json_definition=json_content,
                 version=1,
                 status=WorkflowStatus.DRAFT,
-                created_at=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
             )
 
             if await self.save_workflow(workflow):

@@ -10,7 +10,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -35,14 +35,14 @@ class LLMConfig:
 
     provider: LLMProvider = LLMProvider.OPENROUTER
     model: str = "openrouter/google/gemini-3-flash-preview"
-    api_key: Optional[str] = None
-    api_base: Optional[str] = None
-    api_version: Optional[str] = None  # For Azure
-    organization: Optional[str] = None  # For OpenAI
+    api_key: str | None = None
+    api_base: str | None = None
+    api_version: str | None = None  # For Azure
+    organization: str | None = None  # For OpenAI
     timeout: float = 60.0
     max_retries: int = 3
     retry_delay: float = 1.0
-    credential_id: Optional[str] = None  # Store credential ID for dynamic token refresh
+    credential_id: str | None = None  # Store credential ID for dynamic token refresh
 
 
 @dataclass
@@ -55,7 +55,7 @@ class LLMUsageMetrics:
     total_requests: int = 0
     total_errors: int = 0
     total_cost_usd: float = 0.0
-    last_request_time: Optional[float] = None
+    last_request_time: float | None = None
 
     def add_usage(
         self,
@@ -84,7 +84,7 @@ class ImageContent:
     base64_data: str
     media_type: str = "image/png"  # image/png, image/jpeg, image/gif, image/webp
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to LiteLLM image_url format."""
         return {
             "type": "image_url",
@@ -100,17 +100,17 @@ class ChatMessage:
 
     role: str  # "system", "user", "assistant"
     content: str
-    name: Optional[str] = None
-    images: Optional[List[ImageContent]] = None  # For vision models
+    name: str | None = None
+    images: list[ImageContent] | None = None  # For vision models
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to LiteLLM message format."""
         if self.images:
             # Multi-modal message with text and images
-            content_parts: List[Dict[str, Any]] = [{"type": "text", "text": self.content}]
+            content_parts: list[dict[str, Any]] = [{"type": "text", "text": self.content}]
             for img in self.images:
                 content_parts.append(img.to_dict())
-            msg: Dict[str, Any] = {"role": self.role, "content": content_parts}
+            msg: dict[str, Any] = {"role": self.role, "content": content_parts}
         else:
             # Text-only message
             msg = {"role": self.role, "content": self.content}
@@ -130,7 +130,7 @@ class LLMResponse:
     completion_tokens: int
     total_tokens: int
     finish_reason: str
-    raw_response: Optional[Dict[str, Any]] = None
+    raw_response: dict[str, Any] | None = None
 
 
 @dataclass
@@ -138,8 +138,8 @@ class ConversationHistory:
     """Maintains conversation history for chat sessions."""
 
     conversation_id: str
-    messages: List[ChatMessage] = field(default_factory=list)
-    system_prompt: Optional[str] = None
+    messages: list[ChatMessage] = field(default_factory=list)
+    system_prompt: str | None = None
     created_at: float = field(default_factory=time.time)
     last_updated: float = field(default_factory=time.time)
 
@@ -148,7 +148,7 @@ class ConversationHistory:
         self.messages.append(ChatMessage(role=role, content=content))
         self.last_updated = time.time()
 
-    def get_messages(self) -> List[Dict[str, str]]:
+    def get_messages(self) -> list[dict[str, str]]:
         """Get all messages in LiteLLM format."""
         msgs = []
         if self.system_prompt:
@@ -177,7 +177,7 @@ class LLMResourceManager:
     """
 
     # Cost per 1K tokens (approximate, varies by model)
-    _COST_PER_1K_TOKENS: Dict[str, Dict[str, float]] = {
+    _COST_PER_1K_TOKENS: dict[str, dict[str, float]] = {
         "gpt-4o": {"input": 0.005, "output": 0.015},
         "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
         "gpt-4-turbo": {"input": 0.01, "output": 0.03},
@@ -188,7 +188,7 @@ class LLMResourceManager:
     }
 
     # Model prefix to provider mapping for auto-detection
-    _MODEL_TO_PROVIDER: Dict[str, str] = {
+    _MODEL_TO_PROVIDER: dict[str, str] = {
         "gpt-": "openai",
         "o1-": "openai",
         "claude-": "anthropic",
@@ -206,12 +206,12 @@ class LLMResourceManager:
 
     def __init__(self) -> None:
         """Initialize LLM resource manager."""
-        self._config: Optional[LLMConfig] = None
+        self._config: LLMConfig | None = None
         self._metrics = LLMUsageMetrics()
-        self._conversations: Dict[str, ConversationHistory] = {}
-        self._litellm: Optional[Any] = None
+        self._conversations: dict[str, ConversationHistory] = {}
+        self._litellm: Any | None = None
         self._initialized = False
-        self._api_key_store: Optional[Any] = None
+        self._api_key_store: Any | None = None
 
     def configure(self, config: LLMConfig) -> None:
         """
@@ -281,7 +281,7 @@ class LLMResourceManager:
                     return None
         return self._api_key_store
 
-    async def _resolve_api_key(self, config: Optional[LLMConfig] = None) -> Optional[str]:
+    async def _resolve_api_key(self, config: LLMConfig | None = None) -> str | None:
         """
         Resolve the API key or Access Token to use.
 
@@ -352,7 +352,7 @@ class LLMResourceManager:
         # 3. Static API Key from Store (using provider)
         return self._get_api_key_for_provider(cfg.provider)
 
-    def _get_api_key_for_provider(self, provider: LLMProvider) -> Optional[str]:
+    def _get_api_key_for_provider(self, provider: LLMProvider) -> str | None:
         """Get API key for a provider from the secure store."""
         provider_map = {
             LLMProvider.OPENAI: "openai",
@@ -376,7 +376,7 @@ class LLMResourceManager:
             return store.get_key(provider_name)
         return None
 
-    def _detect_provider_from_model(self, model: str) -> Optional[str]:
+    def _detect_provider_from_model(self, model: str) -> str | None:
         """Detect the provider from model name."""
         model_lower = model.lower()
         for prefix, provider in self._MODEL_TO_PROVIDER.items():
@@ -384,7 +384,7 @@ class LLMResourceManager:
                 return provider
         return None
 
-    def _get_api_key_for_model(self, model: str) -> Optional[str]:
+    def _get_api_key_for_model(self, model: str) -> str | None:
         """Get API key based on model name auto-detection."""
         provider = self._detect_provider_from_model(model)
         if not provider or provider == "ollama":
@@ -399,7 +399,7 @@ class LLMResourceManager:
             return store.get_key(provider)
         return None
 
-    def _get_model_string(self, model: Optional[str] = None) -> str:
+    def _get_model_string(self, model: str | None = None) -> str:
         """Get the full model string for LiteLLM."""
         model_name = model or (self._config.model if self._config else "gpt-4o-mini")
 
@@ -464,8 +464,8 @@ class LLMResourceManager:
     async def completion(
         self,
         prompt: str,
-        model: Optional[str] = None,
-        system_prompt: Optional[str] = None,
+        model: str | None = None,
+        system_prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1000,
         **kwargs: Any,
@@ -545,9 +545,9 @@ class LLMResourceManager:
     async def chat(
         self,
         message: str,
-        conversation_id: Optional[str] = None,
-        model: Optional[str] = None,
-        system_prompt: Optional[str] = None,
+        conversation_id: str | None = None,
+        model: str | None = None,
+        system_prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1000,
         **kwargs: Any,
@@ -645,9 +645,9 @@ class LLMResourceManager:
     async def vision_completion(
         self,
         prompt: str,
-        images: List[ImageContent],
-        model: Optional[str] = None,
-        system_prompt: Optional[str] = None,
+        images: list[ImageContent],
+        model: str | None = None,
+        system_prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 2000,
         **kwargs: Any,
@@ -676,11 +676,11 @@ class LLMResourceManager:
         model_str = self._get_model_string(model)
 
         # Build multi-modal message with images
-        user_content: List[Dict[str, Any]] = [{"type": "text", "text": prompt}]
+        user_content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         for img in images:
             user_content.append(img.to_dict())
 
-        messages: List[Dict[str, Any]] = []
+        messages: list[dict[str, Any]] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_content})
@@ -689,7 +689,7 @@ class LLMResourceManager:
         api_key = await self._resolve_api_key() or self._get_api_key_for_model(model_str)
 
         try:
-            call_kwargs: Dict[str, Any] = {
+            call_kwargs: dict[str, Any] = {
                 "model": model_str,
                 "messages": messages,
                 "temperature": temperature,
@@ -738,11 +738,11 @@ class LLMResourceManager:
     async def extract_structured(
         self,
         text: str,
-        schema: Dict[str, Any],
-        model: Optional[str] = None,
+        schema: dict[str, Any],
+        model: str | None = None,
         temperature: float = 0.0,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extract structured data from text using JSON schema.
 
@@ -795,7 +795,7 @@ Return ONLY the extracted JSON, no other text."""
 
         return json.loads(content)
 
-    def get_conversation(self, conversation_id: str) -> Optional[ConversationHistory]:
+    def get_conversation(self, conversation_id: str) -> ConversationHistory | None:
         """Get a conversation by ID."""
         return self._conversations.get(conversation_id)
 
@@ -819,7 +819,7 @@ Return ONLY the extracted JSON, no other text."""
         return self._metrics
 
     @property
-    def config(self) -> Optional[LLMConfig]:
+    def config(self) -> LLMConfig | None:
         """Get current configuration."""
         return self._config
 

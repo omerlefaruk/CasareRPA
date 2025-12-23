@@ -22,10 +22,11 @@ from __future__ import annotations
 
 import asyncio
 import random
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol
 
 from loguru import logger
 
@@ -84,9 +85,9 @@ class RobotFailureEvent:
 
     robot_id: str
     detected_at: datetime
-    last_heartbeat: Optional[datetime]
+    last_heartbeat: datetime | None
     failure_reason: str
-    active_job_ids: List[str] = field(default_factory=list)
+    active_job_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -106,7 +107,7 @@ class RecoveryResult:
     job_id: str
     action: RecoveryAction
     success: bool
-    error: Optional[str] = None
+    error: str | None = None
     delay_seconds: int = 0
     checkpoint_used: bool = False
 
@@ -121,11 +122,11 @@ class FailedJobInfo:
     workflow_json: str
     priority: int
     environment: str
-    variables: Dict[str, Any]
+    variables: dict[str, Any]
     retry_count: int
     max_retries: int
     created_at: datetime
-    claimed_at: Optional[datetime]
+    claimed_at: datetime | None
 
 
 @dataclass
@@ -157,7 +158,7 @@ class RobotRecoveryConfig:
     heartbeat_timeout_seconds: int = 60
     default_requeue_delay_seconds: int = 10
     max_retries: int = 5
-    retry_delays: List[int] = field(default_factory=lambda: [10, 60, 300, 900, 3600])
+    retry_delays: list[int] = field(default_factory=lambda: [10, 60, 300, 900, 3600])
     enable_checkpoint_recovery: bool = True
     monitor_interval_seconds: float = 30.0
     pool_min_size: int = 2
@@ -167,7 +168,7 @@ class RobotRecoveryConfig:
 class DBOSClientProtocol(Protocol):
     """Protocol for DBOS workflow status API integration."""
 
-    async def get_workflow_status(self, workflow_id: str) -> Optional[Dict[str, Any]]:
+    async def get_workflow_status(self, workflow_id: str) -> dict[str, Any] | None:
         """
         Get the status of a DBOS workflow.
 
@@ -295,9 +296,9 @@ class RobotRecoveryManager:
     def __init__(
         self,
         config: RobotRecoveryConfig,
-        dbos_client: Optional[DBOSClientProtocol] = None,
-        on_failure_detected: Optional[Callable[[RobotFailureEvent], None]] = None,
-        on_recovery_complete: Optional[Callable[[str, List[RecoveryResult]], None]] = None,
+        dbos_client: DBOSClientProtocol | None = None,
+        on_failure_detected: Callable[[RobotFailureEvent], None] | None = None,
+        on_recovery_complete: Callable[[str, list[RecoveryResult]], None] | None = None,
     ) -> None:
         """
         Initialize the robot recovery manager.
@@ -321,10 +322,10 @@ class RobotRecoveryManager:
         self._on_failure_detected = on_failure_detected
         self._on_recovery_complete = on_recovery_complete
 
-        self._pool: Optional[Pool] = None
+        self._pool: Pool | None = None
         self._running = False
-        self._monitor_task: Optional[asyncio.Task] = None
-        self._recovery_history: List[Dict[str, Any]] = []
+        self._monitor_task: asyncio.Task | None = None
+        self._recovery_history: list[dict[str, Any]] = []
         self._max_history = 1000
 
         # Format SQL queries with table names
@@ -361,7 +362,7 @@ class RobotRecoveryManager:
         return self._running
 
     @property
-    def recovery_history(self) -> List[Dict[str, Any]]:
+    def recovery_history(self) -> list[dict[str, Any]]:
         """Get recent recovery history."""
         return list(self._recovery_history)
 
@@ -420,7 +421,7 @@ class RobotRecoveryManager:
 
         logger.info("RobotRecoveryManager stopped")
 
-    async def handle_robot_failure(self, event: RobotFailureEvent) -> List[RecoveryResult]:
+    async def handle_robot_failure(self, event: RobotFailureEvent) -> list[RecoveryResult]:
         """
         Handle a robot failure event.
 
@@ -447,7 +448,7 @@ class RobotRecoveryManager:
             f"reason={event.failure_reason}, detected_at={event.detected_at.isoformat()}"
         )
 
-        results: List[RecoveryResult] = []
+        results: list[RecoveryResult] = []
 
         try:
             # Step 1: Mark robot as failed
@@ -515,7 +516,7 @@ class RobotRecoveryManager:
             logger.error(f"Failed to mark robot {robot_id} as failed: {e}")
             raise
 
-    async def _find_claimed_jobs(self, robot_id: str) -> List[FailedJobInfo]:
+    async def _find_claimed_jobs(self, robot_id: str) -> list[FailedJobInfo]:
         """
         Find all jobs currently claimed by a robot.
 
@@ -658,7 +659,7 @@ class RobotRecoveryManager:
                 error=str(e),
             )
 
-    async def _get_checkpoint_status(self, job_id: str) -> Optional[WorkflowCheckpointStatus]:
+    async def _get_checkpoint_status(self, job_id: str) -> WorkflowCheckpointStatus | None:
         """
         Get DBOS checkpoint status for a job.
 
@@ -887,7 +888,7 @@ class RobotRecoveryManager:
                 # Create failure event
                 event = RobotFailureEvent(
                     robot_id=robot_id,
-                    detected_at=datetime.now(timezone.utc),
+                    detected_at=datetime.now(UTC),
                     last_heartbeat=last_heartbeat,
                     failure_reason=f"Heartbeat timeout (>{self._config.heartbeat_timeout_seconds}s)",
                     active_job_ids=active_job_ids,
@@ -909,11 +910,11 @@ class RobotRecoveryManager:
     def _record_recovery_event(
         self,
         event: RobotFailureEvent,
-        results: List[RecoveryResult],
+        results: list[RecoveryResult],
     ) -> None:
         """Record a recovery event in history."""
         record = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "robot_id": event.robot_id,
             "failure_reason": event.failure_reason,
             "jobs_recovered": len(results),
@@ -931,7 +932,7 @@ class RobotRecoveryManager:
         if len(self._recovery_history) > self._max_history:
             self._recovery_history = self._recovery_history[-self._max_history :]
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get recovery manager statistics.
 
@@ -942,7 +943,7 @@ class RobotRecoveryManager:
         total_jobs = sum(r["jobs_recovered"] for r in self._recovery_history)
         successful_jobs = sum(r["jobs_succeeded"] for r in self._recovery_history)
 
-        action_counts: Dict[str, int] = {}
+        action_counts: dict[str, int] = {}
         for record in self._recovery_history:
             for action, count in record["actions"].items():
                 action_counts[action] = action_counts.get(action, 0) + count
@@ -965,7 +966,7 @@ class RobotRecoveryManager:
 
     async def manually_recover_robot(
         self, robot_id: str, reason: str = "Manual recovery"
-    ) -> List[RecoveryResult]:
+    ) -> list[RecoveryResult]:
         """
         Manually trigger recovery for a specific robot.
 
@@ -980,14 +981,14 @@ class RobotRecoveryManager:
         """
         event = RobotFailureEvent(
             robot_id=robot_id,
-            detected_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(UTC),
             last_heartbeat=None,
             failure_reason=reason,
         )
 
         return await self.handle_robot_failure(event)
 
-    async def __aenter__(self) -> "RobotRecoveryManager":
+    async def __aenter__(self) -> RobotRecoveryManager:
         """Async context manager entry."""
         await self.start()
         return self

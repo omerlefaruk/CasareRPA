@@ -14,8 +14,9 @@ running within an asyncio event loop to avoid blocking.
 
 import asyncio
 from typing import Any, Dict, List, Optional, Union
-from loguru import logger
+
 import uiautomation as auto
+from loguru import logger
 
 from casare_rpa.desktop.element import DesktopElement
 from casare_rpa.desktop.managers.form_interactor import FormInteractor
@@ -82,17 +83,17 @@ class DesktopContext:
 
     def find_window(
         self, title: str, exact: bool = False, timeout: float = 5.0
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """Find a window by its title (sync version)."""
         return _run_async(self._window_manager.find_window(title, exact, timeout))
 
     async def async_find_window(
         self, title: str, exact: bool = False, timeout: float = 5.0
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """Find a window by its title (async version)."""
         return await self._window_manager.find_window(title, exact, timeout)
 
-    def get_all_windows(self, include_invisible: bool = False) -> List[DesktopElement]:
+    def get_all_windows(self, include_invisible: bool = False) -> list[DesktopElement]:
         """Get all top-level windows (sync version)."""
         return _run_async(self._window_manager.get_all_windows(include_invisible))
 
@@ -100,9 +101,9 @@ class DesktopContext:
         self,
         path: str,
         args: str = "",
-        working_dir: Optional[str] = None,
+        working_dir: str | None = None,
         timeout: float = 10.0,
-        window_title: Optional[str] = None,
+        window_title: str | None = None,
     ) -> DesktopElement:
         """Launch an application and return its main window (sync version)."""
         return _run_async(
@@ -113,9 +114,9 @@ class DesktopContext:
         self,
         path: str,
         args: str = "",
-        working_dir: Optional[str] = None,
+        working_dir: str | None = None,
         timeout: float = 10.0,
-        window_title: Optional[str] = None,
+        window_title: str | None = None,
         keep_open: bool = True,
     ) -> DesktopElement:
         """Launch an application and return its main window (async version).
@@ -129,7 +130,7 @@ class DesktopContext:
 
     def close_application(
         self,
-        window_or_pid: Union[DesktopElement, int, str],
+        window_or_pid: DesktopElement | int | str,
         force: bool = False,
         timeout: float = 5.0,
     ) -> bool:
@@ -138,7 +139,7 @@ class DesktopContext:
 
     async def async_close_application(
         self,
-        window_or_pid: Union[DesktopElement, int, str],
+        window_or_pid: DesktopElement | int | str,
         force: bool = False,
         timeout: float = 5.0,
     ) -> bool:
@@ -165,7 +166,7 @@ class DesktopContext:
         """Restore a window to normal state (sync version)."""
         return _run_async(self._window_manager.restore_window(window))
 
-    def get_window_properties(self, window: DesktopElement) -> Dict[str, Any]:
+    def get_window_properties(self, window: DesktopElement) -> dict[str, Any]:
         """Get comprehensive properties of a window (sync version)."""
         return _run_async(self._window_manager.get_window_properties(window))
 
@@ -252,7 +253,7 @@ class DesktopContext:
         self,
         element: DesktopElement,
         direction: str = "down",
-        amount: Union[float, str] = 0.5,
+        amount: float | str = 0.5,
     ) -> bool:
         """Scroll an element (sync version)."""
         return _run_async(self._form_interactor.scroll_element(element, direction, amount))
@@ -264,9 +265,9 @@ class DesktopContext:
     def capture_screenshot(
         self,
         file_path: str = None,
-        region: Dict[str, int] = None,
+        region: dict[str, int] = None,
         format: str = "PNG",
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Capture a screenshot (sync version)."""
         return _run_async(self._screen_capture.capture_screenshot(file_path, region, format))
 
@@ -276,7 +277,7 @@ class DesktopContext:
         file_path: str = None,
         padding: int = 0,
         format: str = "PNG",
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Capture an image of a specific desktop element (sync version)."""
         return _run_async(
             self._screen_capture.capture_element_image(element, file_path, padding, format)
@@ -286,11 +287,11 @@ class DesktopContext:
         self,
         image: Any = None,
         image_path: str = None,
-        region: Dict[str, int] = None,
+        region: dict[str, int] = None,
         language: str = "eng",
         config: str = "",
         engine: str = "auto",
-    ) -> Optional[str]:
+    ) -> str | None:
         """Extract text from an image using OCR (sync version)."""
         return _run_async(
             self._screen_capture.ocr_extract_text(
@@ -306,7 +307,7 @@ class DesktopContext:
         image2_path: str = None,
         method: str = "ssim",
         threshold: float = 0.9,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compare two images and return similarity metrics (sync version)."""
         return _run_async(
             self._screen_capture.compare_images(
@@ -320,12 +321,12 @@ class DesktopContext:
 
     def wait_for_element(
         self,
-        selector: Dict[str, Any],
+        selector: dict[str, Any],
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
         parent: auto.Control = None,
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """Wait for an element to reach a specific state (sync version)."""
         return _run_async(
             self._wait_manager.wait_for_element(selector, timeout, state, poll_interval, parent)
@@ -333,12 +334,12 @@ class DesktopContext:
 
     async def async_wait_for_element(
         self,
-        selector: Dict[str, Any],
+        selector: dict[str, Any],
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
         parent: auto.Control = None,
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """Wait for an element to reach a specific state (async version)."""
         return await self._wait_manager.wait_for_element(
             selector, timeout, state, poll_interval, parent
@@ -352,7 +353,7 @@ class DesktopContext:
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
-    ) -> Optional[auto.Control]:
+    ) -> auto.Control | None:
         """Wait for a window to reach a specific state (sync version)."""
         return _run_async(
             self._wait_manager.wait_for_window(
@@ -368,7 +369,7 @@ class DesktopContext:
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
-    ) -> Optional[auto.Control]:
+    ) -> auto.Control | None:
         """Wait for a window to reach a specific state (async version)."""
         return await self._wait_manager.wait_for_window(
             title, title_regex, class_name, timeout, state, poll_interval
@@ -376,7 +377,7 @@ class DesktopContext:
 
     def element_exists(
         self,
-        selector: Dict[str, Any],
+        selector: dict[str, Any],
         timeout: float = 0.0,
         parent: auto.Control = None,
     ) -> bool:
@@ -403,10 +404,10 @@ class DesktopContext:
 
     def find_element(
         self,
-        selector: Dict[str, Any],
+        selector: dict[str, Any],
         timeout: float = 5.0,
         parent: auto.Control = None,
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """Find an element using selector (sync version)."""
         search_parent = parent if parent else auto.GetRootControl()
         return selector_find_element(search_parent, selector, timeout)

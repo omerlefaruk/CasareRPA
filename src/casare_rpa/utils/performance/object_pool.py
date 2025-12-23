@@ -25,11 +25,11 @@ Usage:
     return_result_dict(result)
 """
 
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar, List
-from weakref import WeakValueDictionary
-from collections import deque
 import threading
-
+from collections import deque
+from collections.abc import Callable
+from typing import Any, Dict, Generic, List, Optional, TypeVar
+from weakref import WeakValueDictionary
 
 T = TypeVar("T")
 
@@ -45,7 +45,7 @@ class ObjectPool(Generic[T]):
     def __init__(
         self,
         factory: Callable[[], T],
-        reset_fn: Optional[Callable[[T], None]] = None,
+        reset_fn: Callable[[T], None] | None = None,
         max_size: int = 100,
     ):
         """
@@ -98,7 +98,7 @@ class ObjectPool(Generic[T]):
                 self._pool.append(obj)
             # Else: discard (let GC handle it)
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get pool statistics."""
         with self._lock:
             return {
@@ -135,7 +135,7 @@ class WeakNodeCache:
         self._hits = 0
         self._misses = 0
 
-    def get(self, node_id: str) -> Optional[Any]:
+    def get(self, node_id: str) -> Any | None:
         """
         Get node from cache.
 
@@ -170,7 +170,7 @@ class WeakNodeCache:
         """Clear the cache."""
         self._cache.clear()
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {
             "size": len(self._cache),
@@ -186,11 +186,11 @@ class WeakNodeCache:
 
 
 # Result dict pool - frequently created for node execution results
-def _create_result_dict() -> Dict[str, Any]:
+def _create_result_dict() -> dict[str, Any]:
     return {"success": False, "data": None, "error": None}
 
 
-def _reset_result_dict(d: Dict[str, Any]) -> None:
+def _reset_result_dict(d: dict[str, Any]) -> None:
     d.clear()
     d["success"] = False
     d["data"] = None
@@ -204,7 +204,7 @@ _result_dict_pool = ObjectPool(
 )
 
 
-def get_result_dict() -> Dict[str, Any]:
+def get_result_dict() -> dict[str, Any]:
     """
     Get a pre-allocated result dictionary.
 
@@ -216,7 +216,7 @@ def get_result_dict() -> Dict[str, Any]:
     return _result_dict_pool.acquire()
 
 
-def return_result_dict(d: Dict[str, Any]) -> None:
+def return_result_dict(d: dict[str, Any]) -> None:
     """
     Return a result dictionary to the pool.
 
@@ -240,11 +240,11 @@ def get_node_cache() -> WeakNodeCache:
 # =============================================================================
 
 
-def _create_list() -> List[Any]:
+def _create_list() -> list[Any]:
     return []
 
 
-def _reset_list(lst: List[Any]) -> None:
+def _reset_list(lst: list[Any]) -> None:
     lst.clear()
 
 
@@ -255,12 +255,12 @@ _list_pool = ObjectPool(
 )
 
 
-def get_list() -> List[Any]:
+def get_list() -> list[Any]:
     """Get a pre-allocated list."""
     return _list_pool.acquire()
 
 
-def return_list(lst: List[Any]) -> None:
+def return_list(lst: list[Any]) -> None:
     """Return a list to the pool."""
     _list_pool.release(lst)
 
@@ -291,7 +291,7 @@ class NodeInstancePool:
         Args:
             max_per_type: Maximum instances to keep per node type
         """
-        self._pools: Dict[str, deque] = {}
+        self._pools: dict[str, deque] = {}
         self._max_per_type = max_per_type
         self._lock = threading.Lock()
 
@@ -305,7 +305,7 @@ class NodeInstancePool:
         node_type: str,
         node_class: type,
         node_id: str,
-        config: Optional[Dict] = None,
+        config: dict | None = None,
     ) -> Any:
         """
         Get or create a node instance.
@@ -359,7 +359,7 @@ class NodeInstancePool:
                 self._clear_node(node)
                 pool.append(node)
 
-    def release_all(self, nodes: Dict[str, Any]) -> None:
+    def release_all(self, nodes: dict[str, Any]) -> None:
         """
         Return multiple nodes to the pool.
 
@@ -369,7 +369,7 @@ class NodeInstancePool:
         for node in nodes.values():
             self.release(node)
 
-    def _reset_node(self, node: Any, node_id: str, config: Optional[Dict]) -> None:
+    def _reset_node(self, node: Any, node_id: str, config: dict | None) -> None:
         """Reset node for reuse with new id and config."""
         node.node_id = node_id
 
@@ -397,7 +397,7 @@ class NodeInstancePool:
         if hasattr(node, "_output_port_values"):
             node._output_port_values.clear()
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get pool statistics."""
         with self._lock:
             pool_sizes = {k: len(v) for k, v in self._pools.items()}
@@ -418,7 +418,7 @@ class NodeInstancePool:
 
 
 # Global node instance pool (thread-safe singleton)
-_node_instance_pool: Optional[NodeInstancePool] = None
+_node_instance_pool: NodeInstancePool | None = None
 _node_instance_pool_lock = threading.Lock()
 
 

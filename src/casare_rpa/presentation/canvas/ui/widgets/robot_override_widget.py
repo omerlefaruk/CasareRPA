@@ -5,27 +5,25 @@ Provides UI for configuring node-level robot overrides within workflows.
 Allows users to target specific robots or required capabilities for individual nodes.
 """
 
-from typing import Optional, Dict, List, Any
+from typing import Any, Dict, List, Optional
 
+from loguru import logger
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QCheckBox,
+    QComboBox,
+    QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QComboBox,
-    QCheckBox,
-    QGroupBox,
     QPushButton,
-    QFrame,
     QSizePolicy,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal
-
-from loguru import logger
 
 from casare_rpa.presentation.canvas.ui.theme import THEME
-
 
 # Available robot capabilities matching RobotCapability enum
 ROBOT_CAPABILITIES = [
@@ -62,7 +60,7 @@ class RobotOverrideWidget(QWidget):
     override_changed = Signal(dict)
     override_cleared = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize robot override widget.
 
@@ -71,7 +69,7 @@ class RobotOverrideWidget(QWidget):
         """
         super().__init__(parent)
 
-        self._available_robots: List[Dict[str, Any]] = []
+        self._available_robots: list[dict[str, Any]] = []
         self._is_enabled = False
 
         self._setup_ui()
@@ -133,7 +131,7 @@ class RobotOverrideWidget(QWidget):
         cap_layout.setContentsMargins(8, 8, 8, 8)
         cap_layout.setSpacing(4)
 
-        self._capability_checks: Dict[str, QCheckBox] = {}
+        self._capability_checks: dict[str, QCheckBox] = {}
         for cap_id, cap_name, cap_tooltip in ROBOT_CAPABILITIES:
             checkbox = QCheckBox(cap_name)
             checkbox.setToolTip(cap_tooltip)
@@ -320,7 +318,7 @@ class RobotOverrideWidget(QWidget):
             self.override_changed.emit(config)
             logger.debug(f"Robot override changed: {config}")
 
-    def set_override(self, override: Optional[Dict[str, Any]]) -> None:
+    def set_override(self, override: dict[str, Any] | None) -> None:
         """
         Load existing override configuration into widget.
 
@@ -383,7 +381,7 @@ class RobotOverrideWidget(QWidget):
 
         logger.debug(f"Override loaded: {override}")
 
-    def get_override(self) -> Optional[Dict[str, Any]]:
+    def get_override(self) -> dict[str, Any] | None:
         """
         Get current override configuration from widget.
 
@@ -399,7 +397,7 @@ class RobotOverrideWidget(QWidget):
 
         is_specific = self._mode_combo.currentIndex() == 0
 
-        config: Dict[str, Any] = {
+        config: dict[str, Any] = {
             "is_active": True,
             "reason": self._reason_edit.text().strip() or None,
         }
@@ -428,7 +426,7 @@ class RobotOverrideWidget(QWidget):
 
         return config
 
-    def set_available_robots(self, robots: List[Dict[str, Any]]) -> None:
+    def set_available_robots(self, robots: list[dict[str, Any]]) -> None:
         """
         Update robot dropdown with available robots.
 

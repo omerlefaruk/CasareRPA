@@ -19,35 +19,33 @@ Security:
 import os
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from casare_rpa.triggers.manager import TriggerManager
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel, Field, field_validator
-from loguru import logger
 import orjson
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from loguru import logger
+from pydantic import BaseModel, Field, field_validator
 
 from casare_rpa.domain.validation import (
     WorkflowValidationError,
     validate_workflow_json,
 )
 from casare_rpa.infrastructure.orchestrator.api.auth import (
-    get_current_user,
     AuthenticatedUser,
+    get_current_user,
 )
-
 from casare_rpa.infrastructure.queue import (
     get_memory_queue,
 )
 
-
 # Database pool (initialized by main.py lifespan)
-_db_pool: Optional[asyncpg.Pool] = None
+_db_pool: asyncpg.Pool | None = None
 
 
 def set_db_pool(pool: asyncpg.Pool) -> None:
@@ -56,7 +54,7 @@ def set_db_pool(pool: asyncpg.Pool) -> None:
     _db_pool = pool
 
 
-def get_db_pool() -> Optional[asyncpg.Pool]:
+def get_db_pool() -> asyncpg.Pool | None:
     """Get the database pool."""
     return _db_pool
 
@@ -127,16 +125,14 @@ class WorkflowSubmissionRequest(BaseModel):
     """Request model for workflow submission."""
 
     workflow_name: str = Field(..., min_length=1, max_length=255)
-    workflow_json: Dict[str, Any] = Field(..., description="Workflow graph definition")
+    workflow_json: dict[str, Any] = Field(..., description="Workflow graph definition")
     trigger_type: str = Field(default="manual", description="manual, scheduled, or webhook")
     execution_mode: str = Field(default="lan", description="lan or internet")
-    schedule_cron: Optional[str] = Field(
-        None, description="Cron expression if trigger_type=scheduled"
-    )
+    schedule_cron: str | None = Field(None, description="Cron expression if trigger_type=scheduled")
     priority: int = Field(
         default=10, ge=0, le=20, description="Job priority (0=highest, 20=lowest)"
     )
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("trigger_type")
     @classmethod
@@ -170,8 +166,8 @@ class WorkflowSubmissionResponse(BaseModel):
     """Response model for workflow submission."""
 
     workflow_id: str
-    job_id: Optional[str] = None
-    schedule_id: Optional[str] = None
+    job_id: str | None = None
+    schedule_id: str | None = None
     status: str
     message: str
     created_at: datetime
@@ -182,9 +178,9 @@ class WorkflowDetailsResponse(BaseModel):
 
     workflow_id: str
     workflow_name: str
-    workflow_json: Dict[str, Any]
+    workflow_json: dict[str, Any]
     version: int
-    description: Optional[str]
+    description: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -223,7 +219,7 @@ def get_workflows_dir() -> Path:
 async def store_workflow_filesystem(
     workflow_id: str,
     workflow_name: str,
-    workflow_json: Dict[str, Any],
+    workflow_json: dict[str, Any],
 ) -> Path:
     """
     Store workflow on filesystem (backup storage).
@@ -244,7 +240,7 @@ async def store_workflow_filesystem(
         "workflow_id": workflow_id,
         "workflow_name": workflow_name,
         "workflow_json": workflow_json,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
     # Save with orjson for performance
@@ -257,8 +253,8 @@ async def store_workflow_filesystem(
 async def store_workflow_database(
     workflow_id: str,
     workflow_name: str,
-    workflow_json: Dict[str, Any],
-    description: Optional[str] = None,
+    workflow_json: dict[str, Any],
+    description: str | None = None,
 ) -> bool:
     """
     Store workflow in PostgreSQL database (primary storage).
@@ -312,10 +308,10 @@ async def store_workflow_database(
 
 async def enqueue_job(
     workflow_id: str,
-    workflow_json: Dict[str, Any],
+    workflow_json: dict[str, Any],
     priority: int,
     execution_mode: str,
-    metadata: Dict[str, Any],
+    metadata: dict[str, Any],
 ) -> str:
     """
     Enqueue job to queue (PostgreSQL jobs table or MemoryQueue fallback).
@@ -505,17 +501,18 @@ async def submit_workflow(
                 )
 
             try:
-                from casare_rpa.infrastructure.orchestrator.scheduling import (
-                    get_global_scheduler,
-                    is_scheduler_initialized,
-                    AdvancedSchedule,
-                    ScheduleType,
-                    ScheduleStatus,
-                )
                 from croniter import croniter
 
+                from casare_rpa.infrastructure.orchestrator.scheduling import (
+                    AdvancedSchedule,
+                    ScheduleStatus,
+                    ScheduleType,
+                    get_global_scheduler,
+                    is_scheduler_initialized,
+                )
+
                 schedule_id = str(uuid.uuid4())
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
 
                 # Validate cron expression
                 try:
@@ -714,7 +711,7 @@ async def submit_workflow(
             schedule_id=schedule_id,
             status="success" if db_stored else "degraded",
             message=status_message,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
 
     except Exception as e:
@@ -872,8 +869,8 @@ async def get_workflow(
                             workflow_json=workflow_json,
                             version=row["version"] or 1,
                             description=row["description"],
-                            created_at=row["created_at"] or datetime.now(timezone.utc),
-                            updated_at=row["updated_at"] or datetime.now(timezone.utc),
+                            created_at=row["created_at"] or datetime.now(UTC),
+                            updated_at=row["updated_at"] or datetime.now(UTC),
                         )
             except Exception as e:
                 logger.warning(
@@ -901,10 +898,10 @@ async def get_workflow(
             description=workflow_data.get("description"),
             created_at=datetime.fromisoformat(workflow_data["created_at"])
             if "created_at" in workflow_data
-            else datetime.now(timezone.utc),
+            else datetime.now(UTC),
             updated_at=datetime.fromisoformat(workflow_data["updated_at"])
             if "updated_at" in workflow_data
-            else datetime.now(timezone.utc),
+            else datetime.now(UTC),
         )
 
     except HTTPException:
@@ -923,7 +920,7 @@ async def get_workflow(
 async def delete_workflow(
     workflow_id: str,
     current_user: AuthenticatedUser = Depends(get_current_user),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Delete workflow.
 

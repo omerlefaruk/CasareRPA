@@ -5,10 +5,9 @@ Provides functionality to resolve {{variable_name}} patterns in strings
 with actual variable values from the execution context.
 """
 
+import logging
 import re
 from typing import Any, Dict
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ def _resolve_system_variable(name: str) -> Any:
     return system_vars.get(name)
 
 
-def _resolve_nested_path(path: str, variables: Dict[str, Any]) -> Any:
+def _resolve_nested_path(path: str, variables: dict[str, Any]) -> Any:
     """
     Resolve a nested path like "node.output" or "data.field[0].name".
 
@@ -128,7 +127,7 @@ def _resolve_nested_path(path: str, variables: Dict[str, Any]) -> Any:
     return current
 
 
-def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
+def resolve_variables(value: Any, variables: dict[str, Any]) -> Any:
     """
     Replace {{variable_name}}, ${variable_name}, or %variable_name% patterns
     with actual values from variables dict.
@@ -217,7 +216,7 @@ def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
     return VARIABLE_PATTERN.sub(replace_match, value)
 
 
-def resolve_any(value: Any, variables: Dict[str, Any]) -> Any:
+def resolve_any(value: Any, variables: dict[str, Any]) -> Any:
     """
     Recursively resolve variables in any data structure (string, list, dict).
 
@@ -237,7 +236,7 @@ def resolve_any(value: Any, variables: Dict[str, Any]) -> Any:
     return value
 
 
-def resolve_dict_variables(data: Dict[str, Any], variables: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_dict_variables(data: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
     """
     Resolve variables in all string values of a dictionary.
 

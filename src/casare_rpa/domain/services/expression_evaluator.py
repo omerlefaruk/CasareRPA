@@ -13,8 +13,9 @@ Security Note:
 import json
 import re
 import threading
-from datetime import datetime, date
-from typing import Any, Callable, Dict, List, Optional, Union
+from collections.abc import Callable
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional, Union
 
 from loguru import logger
 
@@ -22,7 +23,7 @@ from loguru import logger
 class ExpressionError(Exception):
     """Raised when expression evaluation fails."""
 
-    def __init__(self, message: str, expression: Optional[str] = None):
+    def __init__(self, message: str, expression: str | None = None):
         self.expression = expression
         super().__init__(f"{message}" + (f" in expression: {expression}" if expression else ""))
 
@@ -67,9 +68,9 @@ class ExpressionEvaluator:
     def __init__(self) -> None:
         """Initialize the expression evaluator with built-in functions."""
         self._lock = threading.Lock()
-        self._functions: Dict[str, Callable[..., Any]] = self._build_function_registry()
+        self._functions: dict[str, Callable[..., Any]] = self._build_function_registry()
 
-    def _build_function_registry(self) -> Dict[str, Callable[..., Any]]:
+    def _build_function_registry(self) -> dict[str, Callable[..., Any]]:
         """Build the registry of built-in functions."""
         return {
             # String functions
@@ -126,7 +127,7 @@ class ExpressionEvaluator:
         }
 
     @staticmethod
-    def _safe_substring(s: str, start: int, end: Optional[int] = None) -> str:
+    def _safe_substring(s: str, start: int, end: int | None = None) -> str:
         """Safe substring extraction with bounds checking."""
         s = str(s)
         if end is None:
@@ -158,7 +159,7 @@ class ExpressionEvaluator:
             return 0.0
 
     @staticmethod
-    def _format_date(dt: Union[datetime, date, str], fmt: str = "%Y-%m-%d") -> str:
+    def _format_date(dt: datetime | date | str, fmt: str = "%Y-%m-%d") -> str:
         """Format a date/datetime object or ISO string."""
         if isinstance(dt, str):
             try:
@@ -168,7 +169,7 @@ class ExpressionEvaluator:
         return dt.strftime(fmt)
 
     @staticmethod
-    def _add_days(dt: Union[datetime, date, str], days: int) -> Union[datetime, date]:
+    def _add_days(dt: datetime | date | str, days: int) -> datetime | date:
         """Add days to a date/datetime."""
         from datetime import timedelta
 
@@ -177,7 +178,7 @@ class ExpressionEvaluator:
         return dt + timedelta(days=days)
 
     @staticmethod
-    def _parse_date(s: str, fmt: Optional[str] = None) -> datetime:
+    def _parse_date(s: str, fmt: str | None = None) -> datetime:
         """Parse a date string into datetime."""
         if fmt:
             return datetime.strptime(s, fmt)
@@ -193,7 +194,7 @@ class ExpressionEvaluator:
         except json.JSONDecodeError:
             return s
 
-    def evaluate(self, expression: str, variables: Dict[str, Any]) -> Any:
+    def evaluate(self, expression: str, variables: dict[str, Any]) -> Any:
         """
         Evaluate an expression string.
 
@@ -271,7 +272,7 @@ class ExpressionEvaluator:
         }
         return system_vars.get(name)
 
-    def _resolve_variable_path(self, path: str, variables: Dict[str, Any]) -> Any:
+    def _resolve_variable_path(self, path: str, variables: dict[str, Any]) -> Any:
         """
         Resolve a dotted variable path like 'user.name' or 'items[0].value'.
 
@@ -345,7 +346,7 @@ class ExpressionEvaluator:
 
         return value
 
-    def _evaluate_expression(self, expr: str, variables: Dict[str, Any]) -> Any:
+    def _evaluate_expression(self, expr: str, variables: dict[str, Any]) -> Any:
         """
         Evaluate a single expression (without @{} wrapper).
 
@@ -380,7 +381,7 @@ class ExpressionEvaluator:
         # Try to evaluate as literal
         return self._parse_literal(expr)
 
-    def _call_function(self, name: str, args_str: str, variables: Dict[str, Any]) -> Any:
+    def _call_function(self, name: str, args_str: str, variables: dict[str, Any]) -> Any:
         """
         Call a built-in function with parsed arguments.
 
@@ -406,7 +407,7 @@ class ExpressionEvaluator:
         except Exception as e:
             raise ExpressionError(f"Error calling {name}: {e}") from e
 
-    def _parse_arguments(self, args_str: str, variables: Dict[str, Any]) -> List[Any]:
+    def _parse_arguments(self, args_str: str, variables: dict[str, Any]) -> list[Any]:
         """
         Parse function arguments string into list of evaluated values.
 
@@ -426,7 +427,7 @@ class ExpressionEvaluator:
         current = ""
         depth = 0
         in_string = False
-        string_char: Optional[str] = None
+        string_char: str | None = None
         escape_next = False
 
         for char in args_str:
@@ -465,7 +466,7 @@ class ExpressionEvaluator:
 
         return args
 
-    def _evaluate_argument(self, arg: str, variables: Dict[str, Any]) -> Any:
+    def _evaluate_argument(self, arg: str, variables: dict[str, Any]) -> Any:
         """
         Evaluate a single argument value.
 
@@ -600,7 +601,7 @@ class ExpressionEvaluator:
             return False
         return bool(self.LEGACY_VAR_PATTERN.search(value) or self.NEW_EXPR_PATTERN.search(value))
 
-    def list_functions(self) -> List[str]:
+    def list_functions(self) -> list[str]:
         """
         Get list of all available function names.
 
@@ -613,7 +614,7 @@ class ExpressionEvaluator:
 
 # Thread-safe singleton implementation
 _evaluator_lock = threading.Lock()
-_default_evaluator: Optional[ExpressionEvaluator] = None
+_default_evaluator: ExpressionEvaluator | None = None
 
 
 def get_expression_evaluator() -> ExpressionEvaluator:
@@ -634,7 +635,7 @@ def get_expression_evaluator() -> ExpressionEvaluator:
     return _default_evaluator
 
 
-def evaluate_expression(expression: str, variables: Dict[str, Any]) -> Any:
+def evaluate_expression(expression: str, variables: dict[str, Any]) -> Any:
     """
     Convenience function to evaluate an expression using the default evaluator.
 

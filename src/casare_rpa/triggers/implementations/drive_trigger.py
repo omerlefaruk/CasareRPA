@@ -9,14 +9,14 @@ Falls back to polling if push notifications cannot be established.
 """
 
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Set
 
 from loguru import logger
 
 from casare_rpa.triggers.base import BaseTriggerConfig, TriggerType
-from casare_rpa.triggers.registry import register_trigger
 from casare_rpa.triggers.implementations.google_trigger_base import GoogleTriggerBase
+from casare_rpa.triggers.registry import register_trigger
 
 
 @register_trigger
@@ -66,11 +66,11 @@ class DriveTrigger(GoogleTriggerBase):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._start_page_token: Optional[str] = None
-        self._known_file_ids: Set[str] = set()
-        self._channel_id: Optional[str] = None
-        self._channel_resource_id: Optional[str] = None
-        self._channel_expiration: Optional[datetime] = None
+        self._start_page_token: str | None = None
+        self._known_file_ids: set[str] = set()
+        self._channel_id: str | None = None
+        self._channel_resource_id: str | None = None
+        self._channel_expiration: datetime | None = None
         self._use_push: bool = False
 
     def get_required_scopes(self) -> list[str]:
@@ -163,9 +163,7 @@ class DriveTrigger(GoogleTriggerBase):
             self._channel_id = f"casare-drive-{uuid.uuid4().hex[:16]}"
 
             # Calculate expiration (max 24 hours for Drive API)
-            expiration_time = datetime.now(timezone.utc) + timedelta(
-                hours=self.CHANNEL_EXPIRATION_HOURS
-            )
+            expiration_time = datetime.now(UTC) + timedelta(hours=self.CHANNEL_EXPIRATION_HOURS)
             expiration_ms = int(expiration_time.timestamp() * 1000)
 
             file_id = config.get("file_id", "")
@@ -229,7 +227,7 @@ class DriveTrigger(GoogleTriggerBase):
         """Poll Google Drive for changes."""
         # Check if push notification channel needs renewal
         if self._use_push and self._channel_expiration:
-            if datetime.now(timezone.utc) >= (self._channel_expiration - timedelta(hours=1)):
+            if datetime.now(UTC) >= (self._channel_expiration - timedelta(hours=1)):
                 logger.debug("Renewing push notification channel")
                 await self._stop_push_notifications()
                 await self._setup_push_notifications()
@@ -321,7 +319,7 @@ class DriveTrigger(GoogleTriggerBase):
         if new_token:
             self._start_page_token = new_token
 
-    def _determine_change_type(self, file_id: str, removed: bool, file_info: Dict[str, Any]) -> str:
+    def _determine_change_type(self, file_id: str, removed: bool, file_info: dict[str, Any]) -> str:
         """Determine the type of change."""
         if removed or file_info.get("trashed", False):
             return "delete"
@@ -336,7 +334,7 @@ class DriveTrigger(GoogleTriggerBase):
         self,
         change_type: str,
         file_id: str,
-        file_info: Dict[str, Any],
+        file_info: dict[str, Any],
         removed: bool,
     ) -> None:
         """Emit trigger event for a change."""
@@ -372,7 +370,7 @@ class DriveTrigger(GoogleTriggerBase):
         await self.emit(payload, metadata)
         logger.info(f"Drive trigger fired: {change_type} - {file_info.get('name', file_id)}")
 
-    async def handle_push_notification(self, headers: Dict[str, str], body: bytes) -> bool:
+    async def handle_push_notification(self, headers: dict[str, str], body: bytes) -> bool:
         """
         Handle incoming push notification from Google Drive.
 
@@ -418,7 +416,7 @@ class DriveTrigger(GoogleTriggerBase):
         logger.debug(f"Unhandled resource state: {resource_state}")
         return True
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate Google Drive trigger configuration."""
         valid, error = super().validate_config()
         if not valid:
@@ -446,7 +444,7 @@ class DriveTrigger(GoogleTriggerBase):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for Google Drive trigger configuration."""
         base_schema = super().get_config_schema()
         base_schema["properties"].update(

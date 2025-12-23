@@ -21,8 +21,8 @@ class DriveAPIError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[int] = None,
-        reason: Optional[str] = None,
+        error_code: int | None = None,
+        reason: str | None = None,
     ):
         self.error_code = error_code
         self.reason = reason
@@ -125,13 +125,13 @@ class DriveFile:
     id: str
     name: str
     mime_type: str
-    size: Optional[int] = None
-    created_time: Optional[str] = None
-    modified_time: Optional[str] = None
+    size: int | None = None
+    created_time: str | None = None
+    modified_time: str | None = None
     parents: list[str] = field(default_factory=list)
-    web_view_link: Optional[str] = None
-    web_content_link: Optional[str] = None
-    description: Optional[str] = None
+    web_view_link: str | None = None
+    web_content_link: str | None = None
+    description: str | None = None
     starred: bool = False
     trashed: bool = False
     shared: bool = False
@@ -199,7 +199,7 @@ class GoogleDriveClient:
     def __init__(self, config: DriveConfig):
         """Initialize the Google Drive client."""
         self.config = config
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def __aenter__(self) -> "GoogleDriveClient":
         """Enter async context manager."""
@@ -230,10 +230,10 @@ class GoogleDriveClient:
         self,
         method: str,
         url: str,
-        params: Optional[dict] = None,
-        json_data: Optional[dict] = None,
-        data: Optional[bytes] = None,
-        headers: Optional[dict] = None,
+        params: dict | None = None,
+        json_data: dict | None = None,
+        data: bytes | None = None,
+        headers: dict | None = None,
     ) -> dict:
         """Make a request to the Google Drive API."""
         session = await self._ensure_session()
@@ -316,7 +316,7 @@ class GoogleDriveClient:
     async def get_file(
         self,
         file_id: str,
-        fields: Optional[str] = None,
+        fields: str | None = None,
     ) -> DriveFile:
         """
         Get file metadata by ID.
@@ -336,11 +336,11 @@ class GoogleDriveClient:
 
     async def upload_file(
         self,
-        file_path: Union[str, Path],
-        folder_id: Optional[str] = None,
-        name: Optional[str] = None,
-        mime_type: Optional[str] = None,
-        description: Optional[str] = None,
+        file_path: str | Path,
+        folder_id: str | None = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        description: str | None = None,
         resumable: bool = True,
     ) -> DriveFile:
         """
@@ -488,7 +488,7 @@ class GoogleDriveClient:
     async def download_file(
         self,
         file_id: str,
-        destination_path: Union[str, Path],
+        destination_path: str | Path,
     ) -> Path:
         """
         Download a file from Google Drive.
@@ -530,7 +530,7 @@ class GoogleDriveClient:
     async def export_file(
         self,
         file_id: str,
-        destination_path: Union[str, Path],
+        destination_path: str | Path,
         export_mime_type: str,
     ) -> Path:
         """
@@ -568,8 +568,8 @@ class GoogleDriveClient:
     async def copy_file(
         self,
         file_id: str,
-        new_name: Optional[str] = None,
-        folder_id: Optional[str] = None,
+        new_name: str | None = None,
+        folder_id: str | None = None,
     ) -> DriveFile:
         """
         Create a copy of a file.
@@ -678,10 +678,10 @@ class GoogleDriveClient:
     async def update_file(
         self,
         file_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        starred: Optional[bool] = None,
-        trashed: Optional[bool] = None,
+        name: str | None = None,
+        description: str | None = None,
+        starred: bool | None = None,
+        trashed: bool | None = None,
     ) -> DriveFile:
         """
         Update file metadata.
@@ -719,8 +719,8 @@ class GoogleDriveClient:
     async def create_folder(
         self,
         name: str,
-        parent_id: Optional[str] = None,
-        description: Optional[str] = None,
+        parent_id: str | None = None,
+        description: str | None = None,
     ) -> DriveFile:
         """
         Create a new folder.
@@ -751,14 +751,14 @@ class GoogleDriveClient:
 
     async def list_files(
         self,
-        folder_id: Optional[str] = None,
-        query: Optional[str] = None,
-        mime_type: Optional[str] = None,
+        folder_id: str | None = None,
+        query: str | None = None,
+        mime_type: str | None = None,
         page_size: int = 100,
         order_by: str = "name",
         include_trashed: bool = False,
-        page_token: Optional[str] = None,
-    ) -> tuple[list[DriveFile], Optional[str]]:
+        page_token: str | None = None,
+    ) -> tuple[list[DriveFile], str | None]:
         """
         List files in a folder or matching a query.
 
@@ -812,7 +812,7 @@ class GoogleDriveClient:
     async def search_files(
         self,
         query: str,
-        mime_type: Optional[str] = None,
+        mime_type: str | None = None,
         max_results: int = 100,
         include_trashed: bool = False,
     ) -> list[DriveFile]:
@@ -834,7 +834,7 @@ class GoogleDriveClient:
             "modifiedTime > '2024-01-01T00:00:00'"
         """
         all_files: list[DriveFile] = []
-        page_token: Optional[str] = None
+        page_token: str | None = None
 
         while len(all_files) < max_results:
             page_size = min(100, max_results - len(all_files))

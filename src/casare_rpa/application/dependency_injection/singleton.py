@@ -29,10 +29,10 @@ Usage:
 from __future__ import annotations
 
 import threading
-from typing import Callable, Generic, Optional, TypeVar
+from collections.abc import Callable
+from typing import Generic, Optional, TypeVar
 
 from loguru import logger
-
 
 T = TypeVar("T")
 
@@ -62,9 +62,9 @@ class Singleton(Generic[T]):
     def __init__(
         self,
         factory: Callable[[], T],
-        name: Optional[str] = None,
-        on_create: Optional[Callable[[T], None]] = None,
-        on_dispose: Optional[Callable[[T], None]] = None,
+        name: str | None = None,
+        on_create: Callable[[T], None] | None = None,
+        on_dispose: Callable[[T], None] | None = None,
     ) -> None:
         """
         Initialize the singleton holder.
@@ -79,7 +79,7 @@ class Singleton(Generic[T]):
         self._name = name or factory.__name__ if hasattr(factory, "__name__") else "Singleton"
         self._on_create = on_create
         self._on_dispose = on_dispose
-        self._instance: Optional[T] = None
+        self._instance: T | None = None
         self._lock = threading.Lock()
 
     def get(self) -> T:
@@ -106,7 +106,7 @@ class Singleton(Generic[T]):
                     self._on_create(self._instance)
             return self._instance
 
-    def get_optional(self) -> Optional[T]:
+    def get_optional(self) -> T | None:
         """
         Get the singleton instance if it exists.
 
@@ -175,7 +175,7 @@ class LazySingleton(Generic[T]):
     def __init__(
         self,
         factory: Callable[[], T],
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> None:
         """
         Initialize the lazy singleton holder.
@@ -186,7 +186,7 @@ class LazySingleton(Generic[T]):
         """
         self._factory = factory
         self._name = name or "LazySingleton"
-        self._instance: Optional[T] = None
+        self._instance: T | None = None
         self._lock = threading.Lock()
 
     def get(self) -> T:
@@ -210,7 +210,7 @@ class LazySingleton(Generic[T]):
 
 def create_singleton_accessor(
     factory: Callable[[], T],
-    name: Optional[str] = None,
+    name: str | None = None,
 ) -> tuple[Callable[[], T], Callable[[], None]]:
     """
     Create get and reset functions for a singleton.

@@ -2,9 +2,9 @@
 Pytest fixtures for AI infrastructure tests.
 """
 
-import pytest
-from typing import Dict, Any
+from typing import Any, Dict
 
+import pytest
 
 # Mock accessibility snapshot data representing a typical login page
 MOCK_LOGIN_PAGE_SNAPSHOT = """- WebArea "Login Page" [ref=root]:
@@ -101,7 +101,7 @@ def complex_page_snapshot() -> str:
 
 
 @pytest.fixture
-def sample_page_dict() -> Dict[str, Any]:
+def sample_page_dict() -> dict[str, Any]:
     """Return sample page context as dict for MCP mock."""
     return {
         "url": "https://example.com/login",

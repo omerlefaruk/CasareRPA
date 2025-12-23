@@ -11,11 +11,11 @@ Performance Impact:
 """
 
 import threading
-from typing import Dict, Tuple
-from loguru import logger
 
 # Use TYPE_CHECKING to avoid import at module load time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Tuple
+
+from loguru import logger
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QIcon, QPixmap
@@ -33,8 +33,8 @@ class ResourceCache:
     - _pixmap_hits / _pixmap_misses: Track pixmap cache performance
     """
 
-    _icon_cache: Dict[str, "QIcon"] = {}
-    _pixmap_cache: Dict[Tuple[str, int, int], "QPixmap"] = {}
+    _icon_cache: dict[str, "QIcon"] = {}
+    _pixmap_cache: dict[tuple[str, int, int], "QPixmap"] = {}
     _lock = threading.RLock()
 
     # Cache statistics
@@ -96,8 +96,8 @@ class ResourceCache:
             cls._pixmap_misses += 1
 
             # Lazy import to avoid startup cost
-            from PySide6.QtGui import QPixmap
             from PySide6.QtCore import Qt
+            from PySide6.QtGui import QPixmap
 
             pixmap = QPixmap(path)
 
@@ -148,7 +148,7 @@ class ResourceCache:
             logger.debug("ResourceCache cleared")
 
     @classmethod
-    def get_stats(cls) -> Dict[str, int]:
+    def get_stats(cls) -> dict[str, int]:
         """
         Get cache statistics.
 

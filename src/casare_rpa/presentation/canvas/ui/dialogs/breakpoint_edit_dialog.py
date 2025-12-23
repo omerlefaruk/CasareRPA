@@ -12,36 +12,35 @@ Features:
 - Test condition button to validate expression
 """
 
-from typing import Optional, TYPE_CHECKING
-
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QTextEdit,
-    QComboBox,
-    QSpinBox,
-    QPushButton,
-    QDialogButtonBox,
-    QWidget,
-    QStackedWidget,
-    QGroupBox,
-)
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QStackedWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
-    DialogStyles,
     DialogSize,
+    DialogStyles,
     apply_dialog_style,
 )
 
 if TYPE_CHECKING:
     from ...debugger.debug_controller import (
-        DebugController,
         Breakpoint,
+        DebugController,
     )
 
 
@@ -58,7 +57,7 @@ class BreakpointEditDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         breakpoint: Optional["Breakpoint"] = None,
         node_id: str = "",
         debug_controller: Optional["DebugController"] = None,
@@ -374,11 +373,11 @@ class BreakpointEditDialog(QDialog):
 
 
 def show_breakpoint_edit_dialog(
-    parent: Optional[QWidget],
+    parent: QWidget | None,
     node_id: str,
     breakpoint: Optional["Breakpoint"] = None,
     debug_controller: Optional["DebugController"] = None,
-) -> Optional[dict]:
+) -> dict | None:
     """
     Show breakpoint edit dialog and return configuration.
 

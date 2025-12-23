@@ -9,8 +9,8 @@ from typing import Any, Dict, List
 
 from loguru import logger
 
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
 class VisualCallSubworkflowNode(VisualNode):
@@ -33,8 +33,8 @@ class VisualCallSubworkflowNode(VisualNode):
 
         self._selected_subworkflow_id: str = ""
         self._selected_subworkflow_name: str = ""
-        self._dynamic_inputs: List[str] = []
-        self._dynamic_outputs: List[str] = []
+        self._dynamic_inputs: list[str] = []
+        self._dynamic_outputs: list[str] = []
 
         self._apply_styling()
 
@@ -116,7 +116,7 @@ class VisualCallSubworkflowNode(VisualNode):
         except Exception as e:
             logger.error(f"Error selecting subworkflow: {e}")
 
-    def _configure_from_subworkflow_data(self, subflow_data: Dict[str, Any]) -> None:
+    def _configure_from_subworkflow_data(self, subflow_data: dict[str, Any]) -> None:
         """
         Configure node from subworkflow data dict.
 

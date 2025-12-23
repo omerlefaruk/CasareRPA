@@ -27,7 +27,7 @@ class JobRepository:
     Maps between Job domain entity and PostgreSQL jobs table.
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -55,7 +55,7 @@ class JobRepository:
         pool = await self._get_pool()
         await pool.release(conn)
 
-    def _row_to_job(self, row: Dict[str, Any]) -> Job:
+    def _row_to_job(self, row: dict[str, Any]) -> Job:
         """
         Convert database row to Job domain entity.
 
@@ -119,7 +119,7 @@ class JobRepository:
             created_by=row.get("created_by", "") or "",
         )
 
-    def _job_to_params(self, job: Job) -> Dict[str, Any]:
+    def _job_to_params(self, job: Job) -> dict[str, Any]:
         """
         Convert Job entity to database parameters.
 
@@ -230,7 +230,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_id(self, job_id: str) -> Optional[Job]:
+    async def get_by_id(self, job_id: str) -> Job | None:
         """
         Get job by ID.
 
@@ -252,7 +252,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_robot(self, robot_id: str) -> List[Job]:
+    async def get_by_robot(self, robot_id: str) -> list[Job]:
         """
         Get jobs assigned to a robot.
 
@@ -279,7 +279,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_workflow(self, workflow_id: str) -> List[Job]:
+    async def get_by_workflow(self, workflow_id: str) -> list[Job]:
         """
         Get jobs for a workflow.
 
@@ -306,7 +306,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_by_status(self, status: JobStatus) -> List[Job]:
+    async def get_by_status(self, status: JobStatus) -> list[Job]:
         """
         Get jobs by status.
 
@@ -333,7 +333,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_pending(self) -> List[Job]:
+    async def get_pending(self) -> list[Job]:
         """
         Get pending jobs ordered by priority and creation time.
 
@@ -342,7 +342,7 @@ class JobRepository:
         """
         return await self.get_by_status(JobStatus.PENDING)
 
-    async def get_queued(self) -> List[Job]:
+    async def get_queued(self) -> list[Job]:
         """
         Get queued jobs ordered by priority and creation time.
 
@@ -351,7 +351,7 @@ class JobRepository:
         """
         return await self.get_by_status(JobStatus.QUEUED)
 
-    async def get_running(self) -> List[Job]:
+    async def get_running(self) -> list[Job]:
         """
         Get running jobs.
 
@@ -360,7 +360,7 @@ class JobRepository:
         """
         return await self.get_by_status(JobStatus.RUNNING)
 
-    async def get_pending_for_robot(self, robot_id: str) -> List[Job]:
+    async def get_pending_for_robot(self, robot_id: str) -> list[Job]:
         """
         Get pending jobs assigned to a specific robot.
 
@@ -392,8 +392,8 @@ class JobRepository:
         self,
         job_id: str,
         status: JobStatus,
-        result: Optional[Dict[str, Any]] = None,
-        error_message: Optional[str] = None,
+        result: dict[str, Any] | None = None,
+        error_message: str | None = None,
     ) -> None:
         """
         Update job status with optional result/error.
@@ -410,7 +410,7 @@ class JobRepository:
 
             # Build dynamic update
             updates = ["status = $2", "updated_at = NOW()"]
-            params: List[Any] = [job_id, status.value]
+            params: list[Any] = [job_id, status.value]
             param_idx = 3
 
             if status == JobStatus.RUNNING:
@@ -578,7 +578,7 @@ class JobRepository:
         finally:
             await self._release_connection(conn)
 
-    async def claim_next_job(self, robot_id: str) -> Optional[Job]:
+    async def claim_next_job(self, robot_id: str) -> Job | None:
         """
         Atomically claim the next pending job for a robot.
 

@@ -11,10 +11,9 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Optional
 
+from loguru import logger
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QWidget
-
-from loguru import logger
 
 
 class EditorType(Enum):
@@ -60,7 +59,7 @@ class BaseExpressionEditor(QWidget, metaclass=QABCMeta):
 
     value_changed = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the base expression editor.
 
@@ -68,11 +67,11 @@ class BaseExpressionEditor(QWidget, metaclass=QABCMeta):
             parent: Optional parent widget
         """
         super().__init__(parent)
-        self._editor_type: Optional[EditorType] = None
+        self._editor_type: EditorType | None = None
         logger.debug("BaseExpressionEditor initialized")
 
     @property
-    def editor_type(self) -> Optional[EditorType]:
+    def editor_type(self) -> EditorType | None:
         """Get the editor type for this editor."""
         return self._editor_type
 

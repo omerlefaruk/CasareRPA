@@ -40,31 +40,31 @@ class DocumentClassification:
 
     document_type: DocumentType
     confidence: float
-    all_scores: Dict[str, float]
-    raw_response: Optional[str] = None
+    all_scores: dict[str, float]
+    raw_response: str | None = None
 
 
 @dataclass
 class ExtractionResult:
     """Result of document extraction."""
 
-    fields: Dict[str, Any]
+    fields: dict[str, Any]
     confidence: float
-    field_confidences: Dict[str, float] = field(default_factory=dict)
-    raw_response: Optional[str] = None
+    field_confidences: dict[str, float] = field(default_factory=dict)
+    raw_response: str | None = None
     needs_review: bool = False
-    validation_errors: List[str] = field(default_factory=list)
+    validation_errors: list[str] = field(default_factory=list)
 
 
 @dataclass
 class TableExtractionResult:
     """Result of table extraction."""
 
-    tables: List[Dict[str, Any]]
+    tables: list[dict[str, Any]]
     row_count: int
     column_count: int
     confidence: float
-    raw_response: Optional[str] = None
+    raw_response: str | None = None
 
 
 @dataclass
@@ -74,8 +74,8 @@ class ValidationResult:
     is_valid: bool
     needs_review: bool
     confidence_score: float
-    validation_errors: List[str]
-    field_status: Dict[str, str]  # field -> "valid" | "invalid" | "missing"
+    validation_errors: list[str]
+    field_status: dict[str, str]  # field -> "valid" | "invalid" | "missing"
 
 
 class DocumentAIManager:
@@ -108,8 +108,8 @@ class DocumentAIManager:
 
     def __init__(self) -> None:
         """Initialize the document AI manager."""
-        self._llm_manager: Optional[LLMResourceManager] = None
-        self._config: Optional[LLMConfig] = None
+        self._llm_manager: LLMResourceManager | None = None
+        self._config: LLMConfig | None = None
         logger.debug("DocumentAIManager initialized")
 
     def configure(self, config: LLMConfig) -> None:
@@ -127,7 +127,7 @@ class DocumentAIManager:
                 self._llm_manager.configure(self._config)
         return self._llm_manager
 
-    async def _encode_document(self, document: str | bytes) -> Tuple[str, str]:
+    async def _encode_document(self, document: str | bytes) -> tuple[str, str]:
         """
         Encode document for vision API.
 
@@ -167,8 +167,8 @@ class DocumentAIManager:
     async def classify_document(
         self,
         document: str | bytes,
-        categories: Optional[List[str]] = None,
-        model: Optional[str] = None,
+        categories: list[str] | None = None,
+        model: str | None = None,
     ) -> DocumentClassification:
         """
         Classify a document into predefined categories.
@@ -242,8 +242,8 @@ Only return the JSON, no other text."""
     async def extract_invoice(
         self,
         document: str | bytes,
-        custom_fields: Optional[List[str]] = None,
-        model: Optional[str] = None,
+        custom_fields: list[str] | None = None,
+        model: str | None = None,
     ) -> ExtractionResult:
         """
         Extract structured data from an invoice.
@@ -321,9 +321,9 @@ Only return the JSON, no other text."""
     async def extract_form(
         self,
         document: str | bytes,
-        field_schema: Dict[str, str],
+        field_schema: dict[str, str],
         fuzzy_match: bool = True,
-        model: Optional[str] = None,
+        model: str | None = None,
     ) -> ExtractionResult:
         """
         Extract fields from a form document.
@@ -402,8 +402,8 @@ Only return the JSON, no other text."""
     async def extract_table(
         self,
         document: str | bytes,
-        table_hint: Optional[str] = None,
-        model: Optional[str] = None,
+        table_hint: str | None = None,
+        model: str | None = None,
     ) -> TableExtractionResult:
         """
         Extract table data from a document.
@@ -488,10 +488,10 @@ Only return the JSON, no other text."""
 
     def validate_extraction(
         self,
-        extraction: Dict[str, Any],
-        required_fields: List[str],
+        extraction: dict[str, Any],
+        required_fields: list[str],
         confidence_threshold: float = 0.8,
-        validation_rules: Optional[Dict[str, Any]] = None,
+        validation_rules: dict[str, Any] | None = None,
     ) -> ValidationResult:
         """
         Validate extracted data against requirements.

@@ -5,16 +5,16 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from typing import Any, Dict, List
 
 import pytest
-from PySide6.QtCore import QPointF
 from NodeGraphQt.qgraphics.pipe import PipeItem
+from PySide6.QtCore import QPointF
 
 from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
 from casare_rpa.presentation.canvas.graph.node_registry import get_node_registry
-from casare_rpa.presentation.canvas.serialization.workflow_serializer import (
-    WorkflowSerializer,
-)
 from casare_rpa.presentation.canvas.serialization.workflow_deserializer import (
     WorkflowDeserializer,
+)
+from casare_rpa.presentation.canvas.serialization.workflow_serializer import (
+    WorkflowSerializer,
 )
 
 
@@ -23,7 +23,7 @@ class _MainWindowStub:
         self._current_file = None
         self._bottom_panel = None
 
-    def get_preferences(self) -> Dict[str, object]:
+    def get_preferences(self) -> dict[str, object]:
         return {}
 
 

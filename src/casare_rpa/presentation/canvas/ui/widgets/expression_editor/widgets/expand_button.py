@@ -27,7 +27,7 @@ class ExpandButton(QPushButton):
 
     clicked_expand = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
         Initialize the expand button.
 

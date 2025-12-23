@@ -9,14 +9,15 @@ batch transmission for efficiency.
 import asyncio
 import json
 from collections import deque
-from typing import Any, Callable, Deque, Dict, Optional
+from collections.abc import Callable
+from typing import Any, Deque, Dict, Optional
 
 from loguru import logger
 
 from casare_rpa.domain.value_objects.log_entry import (
-    LogLevel,
     MAX_LOG_BATCH_SIZE,
     OFFLINE_BUFFER_SIZE,
+    LogLevel,
 )
 
 
@@ -52,7 +53,7 @@ class RobotLogHandler:
     def __init__(
         self,
         robot_id: str,
-        send_callback: Optional[Callable[[str], Any]] = None,
+        send_callback: Callable[[str], Any] | None = None,
         min_level: LogLevel = LogLevel.DEBUG,
         batch_size: int = 50,
         flush_interval: float = 2.0,
@@ -80,15 +81,15 @@ class RobotLogHandler:
         self._connected = False
 
         # Log buffers
-        self._send_queue: Deque[Dict[str, Any]] = deque(maxlen=self._buffer_size)
-        self._offline_buffer: Deque[Dict[str, Any]] = deque(maxlen=self._buffer_size)
+        self._send_queue: deque[dict[str, Any]] = deque(maxlen=self._buffer_size)
+        self._offline_buffer: deque[dict[str, Any]] = deque(maxlen=self._buffer_size)
 
         # Sequence number for ordering
         self._sequence = 0
 
         # Background task
         self._running = False
-        self._flush_task: Optional[asyncio.Task] = None
+        self._flush_task: asyncio.Task | None = None
 
         # Metrics
         self._logs_captured = 0
@@ -276,7 +277,7 @@ class RobotLogHandler:
                         self._has_logs.wait(),
                         timeout=self._flush_interval,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
                 self._has_logs.clear()
@@ -291,7 +292,7 @@ class RobotLogHandler:
                 logger.error(f"Flush loop error: {e}")
                 await asyncio.sleep(1)
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get handler metrics.
 
@@ -314,7 +315,7 @@ class RobotLogHandler:
 
 def create_robot_log_handler(
     robot_id: str,
-    send_callback: Optional[Callable[[str], Any]] = None,
+    send_callback: Callable[[str], Any] | None = None,
     min_level: str = "DEBUG",
 ) -> tuple:
     """

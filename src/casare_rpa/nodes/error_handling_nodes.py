@@ -6,20 +6,21 @@ retry logic, error throwing, notifications, and recovery strategies
 for robust workflow execution.
 """
 
-from typing import Any, Optional, Dict
-from loguru import logger
 import asyncio
 import json
+from typing import Any, Dict, Optional
 
-from casare_rpa.domain.entities.base_node import BaseNode
+from loguru import logger
+
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
-    NodeStatus,
     ExecutionResult,
+    NodeStatus,
 )
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 @properties()  # No config - paired with catch/finally
@@ -37,7 +38,7 @@ class TryNode(BaseNode):
     # @requires: requests
     # @ports: exec_in -> try_body, success, catch, error_message, error_type
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Try node."""
         super().__init__(node_id, config)
         self.name = "Try"
@@ -154,7 +155,7 @@ class RetryNode(BaseNode):
     # @requires: requests
     # @ports: exec_in -> retry_body, success, failed, attempt, last_error
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Retry node."""
         super().__init__(node_id, config)
         self.name = "Retry"
@@ -259,7 +260,7 @@ class RetrySuccessNode(BaseNode):
     # @requires: requests
     # @ports: none -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize RetrySuccess node."""
         super().__init__(node_id, config)
         self.name = "Retry Success"
@@ -318,7 +319,7 @@ class RetryFailNode(BaseNode):
     # @requires: requests
     # @ports: error_message -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize RetryFail node."""
         super().__init__(node_id, config)
         self.name = "Retry Fail"
@@ -382,7 +383,7 @@ class ThrowErrorNode(BaseNode):
     # @requires: requests
     # @ports: error_message -> none
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize ThrowError node."""
         super().__init__(node_id, config)
         self.name = "Throw Error"
@@ -492,7 +493,7 @@ class WebhookNotifyNode(BaseNode):
     # @requires: requests
     # @ports: webhook_url, message, error_details -> success, response
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize WebhookNotify node."""
         super().__init__(node_id, config)
         self.name = "Webhook Notify"
@@ -583,7 +584,7 @@ class WebhookNotifyNode(BaseNode):
                                     "next_nodes": ["exec_out"],
                                 }
 
-                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                except (TimeoutError, aiohttp.ClientError) as e:
                     if attempt < retry_count:
                         logger.warning(
                             f"Webhook request failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
@@ -610,8 +611,8 @@ class WebhookNotifyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _build_payload(
-        self, format_type: str, message: str, error_details: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, format_type: str, message: str, error_details: dict[str, Any]
+    ) -> dict[str, Any]:
         """Build webhook payload based on configured format."""
         if format_type == "slack":
             return {
@@ -681,7 +682,7 @@ class OnErrorNode(BaseNode):
     # @requires: requests
     # @ports: exec_in -> protected_body, on_error, finally, error_message, error_type, error_node, stack_trace
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize OnError node."""
         super().__init__(node_id, config)
         self.name = "On Error"
@@ -810,7 +811,7 @@ class ErrorRecoveryNode(BaseNode):
     # @requires: requests
     # @ports: exec_in, strategy, max_retries -> exec_out, fallback
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize ErrorRecovery node."""
         super().__init__(node_id, config)
         self.name = "Error Recovery"
@@ -917,7 +918,7 @@ class LogErrorNode(BaseNode):
     # @requires: requests
     # @ports: error_message, error_type, context -> log_entry
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize LogError node."""
         super().__init__(node_id, config)
         self.name = "Log Error"
@@ -1028,7 +1029,7 @@ class AssertNode(BaseNode):
     # @requires: requests
     # @ports: condition, message -> passed
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         """Initialize Assert node."""
         super().__init__(node_id, config)
         self.name = "Assert"

@@ -1,7 +1,41 @@
 """Visual nodes for data operations category."""
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.nodes.data_operation import DataCompareNode
+from casare_rpa.nodes.dict_nodes import (
+    CreateDictNode,
+    DictGetNode,
+    DictHasKeyNode,
+    DictItemsNode,
+    DictKeysNode,
+    DictMergeNode,
+    DictRemoveNode,
+    DictSetNode,
+    DictToJsonNode,
+    DictValuesNode,
+    GetPropertyNode,
+    JsonParseNode,
+)
+from casare_rpa.nodes.list_nodes import (
+    CreateListNode,
+    ListAppendNode,
+    ListContainsNode,
+    ListFilterNode,
+    ListFlattenNode,
+    ListGetItemNode,
+    ListJoinNode,
+    ListLengthNode,
+    ListMapNode,
+    ListReduceNode,
+    ListReverseNode,
+    ListSliceNode,
+    ListSortNode,
+    ListUniqueNode,
+)
+from casare_rpa.nodes.math_nodes import (
+    ComparisonNode,
+    MathOperationNode,
+)
 
 # Import logic nodes (single source of truth: executable node modules)
 from casare_rpa.nodes.string_nodes import (
@@ -10,42 +44,7 @@ from casare_rpa.nodes.string_nodes import (
     RegexMatchNode,
     RegexReplaceNode,
 )
-from casare_rpa.nodes.math_nodes import (
-    MathOperationNode,
-    ComparisonNode,
-)
-from casare_rpa.nodes.list_nodes import (
-    CreateListNode,
-    ListGetItemNode,
-    ListLengthNode,
-    ListAppendNode,
-    ListContainsNode,
-    ListSliceNode,
-    ListJoinNode,
-    ListSortNode,
-    ListReverseNode,
-    ListUniqueNode,
-    ListFilterNode,
-    ListMapNode,
-    ListReduceNode,
-    ListFlattenNode,
-)
-from casare_rpa.nodes.dict_nodes import (
-    JsonParseNode,
-    GetPropertyNode,
-    DictGetNode,
-    DictSetNode,
-    DictRemoveNode,
-    DictMergeNode,
-    DictKeysNode,
-    DictValuesNode,
-    DictHasKeyNode,
-    CreateDictNode,
-    DictToJsonNode,
-    DictItemsNode,
-)
-from casare_rpa.nodes.data_operation import DataCompareNode
-
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # =============================================================================
 # Data Operation Nodes

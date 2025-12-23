@@ -28,9 +28,9 @@ class VariableSet(DomainEvent):
     variable_name: str = ""
     variable_value: Any = None
     workflow_id: str = ""
-    source_node_id: Optional[str] = None
+    source_node_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -60,7 +60,7 @@ class BrowserPageReady(DomainEvent):
     title: str = ""
     browser_type: str = "chromium"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -89,12 +89,12 @@ class LogMessage(DomainEvent):
 
     level: LogLevel = LogLevel.INFO
     message: str = ""
-    source: Optional[str] = None
-    node_id: Optional[str] = None
-    workflow_id: Optional[str] = None
-    extra_data: Optional[Dict[str, Any]] = None
+    source: str | None = None
+    node_id: str | None = None
+    workflow_id: str | None = None
+    extra_data: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -122,9 +122,9 @@ class DebugBreakpointHit(DomainEvent):
 
     node_id: str = ""
     workflow_id: str = ""
-    variables: Optional[Dict[str, Any]] = None
+    variables: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -151,7 +151,7 @@ class ResourceAcquired(DomainEvent):
     resource_id: str = ""
     workflow_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {
@@ -178,7 +178,7 @@ class ResourceReleased(DomainEvent):
     resource_id: str = ""
     workflow_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         result = super().to_dict()
         result.update(
             {

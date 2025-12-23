@@ -4,11 +4,11 @@ CasareRPA - Project Folder Entity
 Folder/category organization for projects.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-import uuid
 
 
 class FolderColor(Enum):
@@ -53,16 +53,16 @@ class ProjectFolder:
 
     id: str
     name: str
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
     description: str = ""
     color: str = FolderColor.BLUE.value
     icon: str = "folder"
-    project_ids: List[str] = field(default_factory=list)
+    project_ids: list[str] = field(default_factory=list)
     is_expanded: bool = True
     is_archived: bool = False
     sort_order: int = 0
-    created_at: Optional[datetime] = None
-    modified_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    modified_at: datetime | None = None
 
     def __post_init__(self) -> None:
         """Initialize timestamps if not provided."""
@@ -117,7 +117,7 @@ class ProjectFolder:
         """Check if project is in this folder."""
         return project_id in self.project_ids
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "id": self.id,
@@ -135,7 +135,7 @@ class ProjectFolder:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ProjectFolder":
+    def from_dict(cls, data: dict[str, Any]) -> "ProjectFolder":
         """Create from dictionary."""
         created_at = None
         if data.get("created_at"):
@@ -192,10 +192,10 @@ class FoldersFile:
     Stores global folder structure for all projects.
     """
 
-    folders: Dict[str, ProjectFolder] = field(default_factory=dict)
+    folders: dict[str, ProjectFolder] = field(default_factory=dict)
     schema_version: str = "2.0.0"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "$schema_version": self.schema_version,
@@ -203,7 +203,7 @@ class FoldersFile:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FoldersFile":
+    def from_dict(cls, data: dict[str, Any]) -> "FoldersFile":
         """Create from dictionary."""
         folders_data = data.get("folders", {})
 
@@ -217,7 +217,7 @@ class FoldersFile:
             schema_version=data.get("$schema_version", "2.0.0"),
         )
 
-    def get_folder(self, folder_id: str) -> Optional[ProjectFolder]:
+    def get_folder(self, folder_id: str) -> ProjectFolder | None:
         """Get folder by ID."""
         return self.folders.get(folder_id)
 
@@ -232,15 +232,15 @@ class FoldersFile:
             return True
         return False
 
-    def get_root_folders(self) -> List[ProjectFolder]:
+    def get_root_folders(self) -> list[ProjectFolder]:
         """Get all root-level folders (no parent)."""
         return [f for f in self.folders.values() if f.is_root and not f.is_archived]
 
-    def get_children(self, parent_id: str) -> List[ProjectFolder]:
+    def get_children(self, parent_id: str) -> list[ProjectFolder]:
         """Get child folders of a parent."""
         return [f for f in self.folders.values() if f.parent_id == parent_id and not f.is_archived]
 
-    def get_folder_path(self, folder_id: str) -> List[str]:
+    def get_folder_path(self, folder_id: str) -> list[str]:
         """
         Get full path from root to folder as list of folder IDs.
 
@@ -262,8 +262,8 @@ class FoldersFile:
     def move_project(
         self,
         project_id: str,
-        from_folder_id: Optional[str],
-        to_folder_id: Optional[str],
+        from_folder_id: str | None,
+        to_folder_id: str | None,
     ) -> bool:
         """
         Move a project between folders.

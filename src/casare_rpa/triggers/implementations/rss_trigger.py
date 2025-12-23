@@ -7,8 +7,8 @@ Polls the feed at configurable intervals and emits events for new entries.
 
 import asyncio
 from collections import deque
-from typing import Any, Dict, List, Optional, Set
 from hashlib import sha256
+from typing import Any, Dict, List, Optional, Set
 
 import aiohttp
 from loguru import logger
@@ -61,10 +61,10 @@ class RSSFeedTrigger(BaseTrigger):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._seen_items: Set[str] = set()
+        self._seen_items: set[str] = set()
         self._seen_items_order: deque = deque(maxlen=self.MAX_SEEN_ITEMS)
-        self._poll_task: Optional[asyncio.Task] = None
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._poll_task: asyncio.Task | None = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def start(self) -> bool:
         """Start monitoring the RSS feed."""
@@ -124,7 +124,7 @@ class RSSFeedTrigger(BaseTrigger):
             logger.error(f"Error stopping RSS trigger: {e}")
             return False
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate RSS trigger configuration."""
         config = self.config.config
 
@@ -192,7 +192,7 @@ class RSSFeedTrigger(BaseTrigger):
         filter_category = self.config.config.get("filter_category", "")
         include_content = self.config.config.get("include_content", False)
 
-        new_items: List[Dict[str, Any]] = []
+        new_items: list[dict[str, Any]] = []
 
         for item in items:
             item_id = self._get_item_id(item)
@@ -238,7 +238,7 @@ class RSSFeedTrigger(BaseTrigger):
                 metadata={"feed_url": self.config.config.get("feed_url")},
             )
 
-    async def _fetch_feed(self) -> List[Dict[str, Any]]:
+    async def _fetch_feed(self) -> list[dict[str, Any]]:
         """Fetch and parse the RSS feed."""
         if not self._session:
             raise RuntimeError("HTTP session not initialized")
@@ -251,9 +251,9 @@ class RSSFeedTrigger(BaseTrigger):
 
         return self._parse_feed(content)
 
-    def _parse_feed(self, content: str) -> List[Dict[str, Any]]:
+    def _parse_feed(self, content: str) -> list[dict[str, Any]]:
         """Parse RSS/Atom feed content (XXE-safe)."""
-        items: List[Dict[str, Any]] = []
+        items: list[dict[str, Any]] = []
 
         try:
             root = ET.fromstring(content)
@@ -272,7 +272,7 @@ class RSSFeedTrigger(BaseTrigger):
 
         return items
 
-    def _parse_rss(self, root) -> List[Dict[str, Any]]:
+    def _parse_rss(self, root) -> list[dict[str, Any]]:
         """Parse RSS 2.0 format."""
         items = []
 
@@ -291,7 +291,7 @@ class RSSFeedTrigger(BaseTrigger):
 
         return items
 
-    def _parse_atom(self, root) -> List[Dict[str, Any]]:
+    def _parse_atom(self, root) -> list[dict[str, Any]]:
         """Parse Atom format."""
         items = []
 
@@ -335,7 +335,7 @@ class RSSFeedTrigger(BaseTrigger):
         author = entry.find("atom:author/atom:name", ns) or entry.find("author/name")
         return author.text if author is not None and author.text else ""
 
-    def _get_item_id(self, item: Dict[str, Any]) -> str:
+    def _get_item_id(self, item: dict[str, Any]) -> str:
         """Get unique identifier for an item."""
         track_by = self.config.config.get("track_by", "id")
 
@@ -350,7 +350,7 @@ class RSSFeedTrigger(BaseTrigger):
         return item.get("guid", "") or item.get("link", "")
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for RSS trigger configuration."""
         return {
             "type": "object",

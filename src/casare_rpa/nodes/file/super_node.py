@@ -35,33 +35,34 @@ import glob as glob_module
 import os
 import shutil
 import zipfile
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Callable, Awaitable
+from typing import TYPE_CHECKING, Dict
 
 from loguru import logger
 from PIL import Image, ImageOps
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
-    DataType,
-    ExecutionResult,
-)
 from casare_rpa.domain.value_objects.dynamic_port_config import (
-    PortDef,
     ActionPortConfig,
     DynamicPortSchema,
+    PortDef,
 )
-from casare_rpa.utils.async_file_ops import AsyncFileOperations
+from casare_rpa.domain.value_objects.types import (
+    DataType,
+    ExecutionResult,
+    NodeStatus,
+)
 from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
     validate_path_security,
     validate_path_security_readonly,
 )
+from casare_rpa.utils.async_file_ops import AsyncFileOperations
 
 if TYPE_CHECKING:
     from casare_rpa.domain.interfaces import IExecutionContext
@@ -632,7 +633,7 @@ class FileSystemSuperNode(BaseNode):
         self._ensure_ports_for_action(action)
 
         # Map actions to handlers
-        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
+        handlers: dict[str, Callable[[IExecutionContext], Awaitable[ExecutionResult]]] = {
             FileSystemAction.READ.value: self._execute_read,
             FileSystemAction.WRITE.value: self._execute_write,
             FileSystemAction.APPEND.value: self._execute_append,
@@ -1613,7 +1614,7 @@ class StructuredDataSuperNode(BaseNode):
         self._ensure_ports_for_action(action)
 
         # Map actions to handlers
-        handlers: Dict[str, Callable[["IExecutionContext"], Awaitable[ExecutionResult]]] = {
+        handlers: dict[str, Callable[[IExecutionContext], Awaitable[ExecutionResult]]] = {
             StructuredDataAction.READ_CSV.value: self._execute_read_csv,
             StructuredDataAction.WRITE_CSV.value: self._execute_write_csv,
             StructuredDataAction.READ_JSON.value: self._execute_read_json,

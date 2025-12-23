@@ -2,11 +2,11 @@
 """
 Block hardcoded secrets, API keys, tokens, passwords.
 """
+
 import os
 import re
 import sys
 from pathlib import Path
-
 
 SECRET_PATTERNS = [
     r'api_key\s*=\s*["\'][^"\']+["\']',
@@ -17,8 +17,8 @@ SECRET_PATTERNS = [
     r'PASSWORD\s*=\s*["\'][^"\']+["\']',
     r'secret\s*=\s*["\'][^"\']+["\']',
     r'SECRET\s*=\s*["\'][^"\']+["\']',
-    r'Authorization:\s*Bearer\s+[a-zA-Z0-9_\-\.]+',
-    r'Authorization:\s*Basic\s+[a-zA-Z0-9_\-\.]+',
+    r"Authorization:\s*Bearer\s+[a-zA-Z0-9_\-\.]+",
+    r"Authorization:\s*Basic\s+[a-zA-Z0-9_\-\.]+",
 ]
 
 # Patterns to ignore (test fixtures, docs)
@@ -34,36 +34,34 @@ IGNORE_PATTERNS = [
 def check_file(filepath: str) -> list[str]:
     """Check for hardcoded secrets"""
     errors = []
-    
+
     # Skip test files and docs
     if "test" in filepath or "docs" in filepath or ".md" in filepath:
         return errors
-    
+
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        with open(filepath, encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
     except Exception:
         return errors
-    
+
     for i, line in enumerate(lines, 1):
         # Skip comments
         if line.strip().startswith("#"):
             continue
-        
+
         # Skip ignore patterns
-        if any(re.search(pattern, line, re.IGNORECASE) 
-               for pattern in IGNORE_PATTERNS):
+        if any(re.search(pattern, line, re.IGNORECASE) for pattern in IGNORE_PATTERNS):
             continue
-        
+
         for secret_pattern in SECRET_PATTERNS:
             if re.search(secret_pattern, line, re.IGNORECASE):
                 errors.append(
                     f"{filepath}:{i} - Hardcoded secret detected. Use environment variables instead.\n  {line.strip()}"
                 )
                 break
-    
-    return errors
 
+    return errors
 
 
 def main():
@@ -72,11 +70,11 @@ def main():
     config_dir = base / "config"
 
     all_errors = []
-    
+
     for search_dir in [src_dir, config_dir]:
         if not search_dir.exists():
             continue
-        
+
         for root, _, files in os.walk(search_dir):
             for file in files:
                 if file.endswith(".py"):

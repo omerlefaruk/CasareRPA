@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Set
 
-from casare_rpa.utils.datetime_helpers import parse_datetime
 from casare_rpa.domain.orchestrator.entities.robot import RobotCapability
+from casare_rpa.utils.datetime_helpers import parse_datetime
 
 
 @dataclass(frozen=True)
@@ -34,9 +34,9 @@ class NodeRobotOverride:
 
     workflow_id: str
     node_id: str
-    robot_id: Optional[str] = None
+    robot_id: str | None = None
     required_capabilities: frozenset = field(default_factory=frozenset)
-    reason: Optional[str] = None
+    reason: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     created_by: str = ""
     is_active: bool = True
@@ -105,7 +105,7 @@ class NodeRobotOverride:
 
         # Parse capabilities
         raw_capabilities = data.get("required_capabilities", [])
-        capabilities: Set[RobotCapability] = set()
+        capabilities: set[RobotCapability] = set()
         for cap in raw_capabilities:
             if isinstance(cap, str):
                 try:

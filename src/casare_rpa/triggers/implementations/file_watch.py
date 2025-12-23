@@ -7,7 +7,7 @@ Uses watchdog library for efficient filesystem monitoring.
 
 import asyncio
 import fnmatch
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -51,10 +51,10 @@ class FileWatchTrigger(BaseTrigger):
         super().__init__(config, event_callback)
         self._observer = None
         self._handler = None
-        self._task: Optional[asyncio.Task] = None
-        self._pending_events: Dict[str, datetime] = {}
-        self._debounce_task: Optional[asyncio.Task] = None
-        self._event_loop: Optional[asyncio.AbstractEventLoop] = None
+        self._task: asyncio.Task | None = None
+        self._pending_events: dict[str, datetime] = {}
+        self._debounce_task: asyncio.Task | None = None
+        self._event_loop: asyncio.AbstractEventLoop | None = None
 
     async def start(self) -> bool:
         """Start the file watch trigger."""
@@ -78,8 +78,8 @@ class FileWatchTrigger(BaseTrigger):
             return False
 
         try:
+            from watchdog.events import FileSystemEvent, FileSystemEventHandler
             from watchdog.observers import Observer
-            from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
             # Store event loop reference for cross-thread communication
             # This avoids calling asyncio.get_event_loop() from watchdog's thread
@@ -164,7 +164,7 @@ class FileWatchTrigger(BaseTrigger):
         debounce_ms = self.config.config.get("debounce_ms", 1000)
 
         # Record the event
-        self._pending_events[file_path] = datetime.now(timezone.utc)
+        self._pending_events[file_path] = datetime.now(UTC)
 
         # Cancel existing debounce task if any
         if self._debounce_task and not self._debounce_task.done():
@@ -202,7 +202,7 @@ class FileWatchTrigger(BaseTrigger):
 
             await self.emit(payload, metadata)
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate file watch configuration."""
         config = self.config.config
 
@@ -268,7 +268,7 @@ class FileWatchTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for file watch configuration."""
         return {
             "type": "object",

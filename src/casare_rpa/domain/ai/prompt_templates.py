@@ -36,8 +36,8 @@ class TemplateVariable:
     description: str
     data_type: str = "string"  # string, number, list, dict, boolean
     required: bool = True
-    default: Optional[Any] = None
-    examples: List[str] = field(default_factory=list)
+    default: Any | None = None
+    examples: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not self.name:
@@ -52,7 +52,7 @@ class FewShotExample:
 
     input_text: str
     expected_output: str
-    explanation: Optional[str] = None
+    explanation: str | None = None
 
     def to_prompt_format(self) -> str:
         """Format example for prompt inclusion."""
@@ -76,12 +76,12 @@ class PromptTemplate:
     category: TemplateCategory
     system_prompt: str
     user_prompt_template: str
-    variables: List[TemplateVariable] = field(default_factory=list)
-    examples: List[FewShotExample] = field(default_factory=list)
-    output_format: Optional[str] = None  # json, text, list, etc.
+    variables: list[TemplateVariable] = field(default_factory=list)
+    examples: list[FewShotExample] = field(default_factory=list)
+    output_format: str | None = None  # json, text, list, etc.
     description: str = ""
     version: str = "1.0"
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -89,14 +89,14 @@ class PromptTemplate:
         if not self.name:
             raise ValueError("Template name cannot be empty")
 
-    def get_variable(self, name: str) -> Optional[TemplateVariable]:
+    def get_variable(self, name: str) -> TemplateVariable | None:
         """Get a variable by name."""
         for var in self.variables:
             if var.name == name:
                 return var
         return None
 
-    def validate_inputs(self, inputs: Dict[str, Any]) -> List[str]:
+    def validate_inputs(self, inputs: dict[str, Any]) -> list[str]:
         """
         Validate provided inputs against template variables.
 
@@ -135,7 +135,7 @@ class PromptTemplate:
             return True  # Unknown type, allow
         return isinstance(value, expected)
 
-    def render(self, inputs: Dict[str, Any]) -> str:
+    def render(self, inputs: dict[str, Any]) -> str:
         """
         Render the user prompt with variable substitution.
 
@@ -175,7 +175,7 @@ class PromptTemplate:
 
         return rendered
 
-    def render_full_prompt(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    def render_full_prompt(self, inputs: dict[str, Any]) -> dict[str, str]:
         """
         Render both system and user prompts.
 
@@ -550,7 +550,7 @@ Return the converted data in {target_format} format.""",
 
 
 # Registry of built-in templates
-BUILTIN_TEMPLATES: Dict[str, PromptTemplate] = {
+BUILTIN_TEMPLATES: dict[str, PromptTemplate] = {
     "extract_entities": EXTRACT_ENTITIES_TEMPLATE,
     "classify_document": CLASSIFY_DOCUMENT_TEMPLATE,
     "summarize_meeting": SUMMARIZE_MEETING_TEMPLATE,
@@ -562,12 +562,12 @@ BUILTIN_TEMPLATES: Dict[str, PromptTemplate] = {
 }
 
 
-def get_builtin_template(template_id: str) -> Optional[PromptTemplate]:
+def get_builtin_template(template_id: str) -> PromptTemplate | None:
     """Get a built-in template by ID."""
     return BUILTIN_TEMPLATES.get(template_id)
 
 
-def list_builtin_templates() -> List[Dict[str, Any]]:
+def list_builtin_templates() -> list[dict[str, Any]]:
     """List all built-in templates with metadata."""
     return [
         {
@@ -582,7 +582,7 @@ def list_builtin_templates() -> List[Dict[str, Any]]:
     ]
 
 
-def list_templates_by_category(category: TemplateCategory) -> List[PromptTemplate]:
+def list_templates_by_category(category: TemplateCategory) -> list[PromptTemplate]:
     """Get all templates in a category."""
     return [t for t in BUILTIN_TEMPLATES.values() if t.category == category]
 

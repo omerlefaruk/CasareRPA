@@ -9,9 +9,11 @@ Tier 2 (NORMAL): showEvent - DebugPanel, BottomPanel (with Variables/Output tabs
 Tier 3 (DEFERRED): Lazy factory - OutputConsole, dialogs
 """
 
-from typing import Callable, Dict, Optional, TypeVar
-from PySide6.QtWidgets import QWidget
+from collections.abc import Callable
+from typing import Dict, Optional, TypeVar
+
 from loguru import logger
+from PySide6.QtWidgets import QWidget
 
 T = TypeVar("T", bound=QWidget)
 
@@ -39,8 +41,8 @@ class ComponentFactory:
         ComponentFactory.clear()
     """
 
-    _instances: Dict[str, QWidget] = {}
-    _creation_times: Dict[str, float] = {}
+    _instances: dict[str, QWidget] = {}
+    _creation_times: dict[str, float] = {}
 
     @classmethod
     def get_or_create(cls, component_name: str, factory: Callable[[], T]) -> T:
@@ -92,7 +94,7 @@ class ComponentFactory:
         return component_name in cls._instances
 
     @classmethod
-    def get(cls, component_name: str) -> Optional[QWidget]:
+    def get(cls, component_name: str) -> QWidget | None:
         """
         Get component from cache without creating.
 
@@ -105,7 +107,7 @@ class ComponentFactory:
         return cls._instances.get(component_name)
 
     @classmethod
-    def remove(cls, component_name: str) -> Optional[QWidget]:
+    def remove(cls, component_name: str) -> QWidget | None:
         """
         Remove component from cache.
 
@@ -131,7 +133,7 @@ class ComponentFactory:
         cls._creation_times.clear()
 
     @classmethod
-    def get_stats(cls) -> Dict[str, float]:
+    def get_stats(cls) -> dict[str, float]:
         """
         Get creation time statistics for cached components.
 

@@ -6,19 +6,20 @@ with lazy loading and custom styling.
 """
 
 from typing import Optional
+
+from loguru import logger
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
     QTreeWidget,
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
-    QWidget,
     QVBoxLayout,
-    QLineEdit,
-    QHBoxLayout,
-    QPushButton,
+    QWidget,
 )
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QColor, QBrush
-from loguru import logger
 
 from casare_rpa.desktop.element import DesktopElement
 
@@ -180,7 +181,7 @@ class ElementTreeWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.root_element: Optional[DesktopElement] = None
+        self.root_element: DesktopElement | None = None
         self._setup_ui()
         self._apply_styles()
 
@@ -356,7 +357,7 @@ class ElementTreeWidget(QWidget):
                 return True
         return False
 
-    def get_selected_element(self) -> Optional[DesktopElement]:
+    def get_selected_element(self) -> DesktopElement | None:
         """Get the currently selected element"""
         selected_items = self.tree.selectedItems()
         if selected_items and isinstance(selected_items[0], ElementTreeItem):

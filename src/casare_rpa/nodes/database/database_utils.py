@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-
 # SQL identifier validation pattern (alphanumeric + underscore, must start with letter/underscore)
 _SQL_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 _MAX_IDENTIFIER_LENGTH = 128
@@ -82,16 +81,15 @@ def validate_sql_identifier(identifier: str, identifier_type: str = "identifier"
     return identifier
 
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import node, properties
+from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
 )
-
+from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.database.sql_nodes import (
     AIOMYSQL_AVAILABLE,
     AIOSQLITE_AVAILABLE,
@@ -159,7 +157,7 @@ class TableExistsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: DatabaseConnection | None = self.get_input_value("connection")
             table_name = self.get_input_value("table_name") or self.get_parameter("table_name", "")
 
             if not connection:
@@ -291,7 +289,7 @@ class GetTableColumnsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: DatabaseConnection | None = self.get_input_value("connection")
             table_name = self.get_input_value("table_name") or self.get_parameter("table_name", "")
 
             if not connection:
@@ -301,7 +299,7 @@ class GetTableColumnsNode(BaseNode):
 
             # Resolve {{variable}} patterns in table_name
 
-            columns: List[Dict[str, Any]] = []
+            columns: list[dict[str, Any]] = []
 
             if connection.db_type == "sqlite":
                 columns = await self._get_sqlite_columns(connection, table_name)
@@ -338,7 +336,7 @@ class GetTableColumnsNode(BaseNode):
 
     async def _get_sqlite_columns(
         self, connection: DatabaseConnection, table_name: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get column info for SQLite table."""
         conn = connection.connection
         # Validate table name to prevent SQL injection (PRAGMA doesn't support parameters)
@@ -368,7 +366,7 @@ class GetTableColumnsNode(BaseNode):
 
     async def _get_postgresql_columns(
         self, connection: DatabaseConnection, table_name: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get column info for PostgreSQL table."""
         conn = connection.connection
         query = """
@@ -395,7 +393,7 @@ class GetTableColumnsNode(BaseNode):
 
     async def _get_mysql_columns(
         self, connection: DatabaseConnection, table_name: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get column info for MySQL table."""
         conn = connection.connection
         # Validate table name to prevent SQL injection (DESCRIBE doesn't support parameters)

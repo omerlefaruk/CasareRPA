@@ -6,8 +6,6 @@ Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
-from casare_rpa.domain.decorators import node, properties
-
 
 from abc import abstractmethod
 from typing import Any, Optional
@@ -15,6 +13,7 @@ from typing import Any, Optional
 from loguru import logger
 
 from casare_rpa.domain.credentials import CredentialAwareMixin
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -23,9 +22,9 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.whatsapp_client import (
+    WhatsAppAPIError,
     WhatsAppClient,
     WhatsAppConfig,
-    WhatsAppAPIError,
 )
 
 
@@ -58,7 +57,7 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
-        self._client: Optional[WhatsAppClient] = None
+        self._client: WhatsAppClient | None = None
 
     def _define_common_input_ports(self) -> None:
         """Define standard WhatsApp input ports."""
@@ -115,7 +114,7 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
         self._client = client
         return client
 
-    async def _get_access_token(self, context: ExecutionContext) -> Optional[str]:
+    async def _get_access_token(self, context: ExecutionContext) -> str | None:
         """
         Get access token using unified credential resolution.
 
@@ -170,7 +169,7 @@ class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
 
         return None
 
-    async def _get_phone_number_id(self, context: ExecutionContext) -> Optional[str]:
+    async def _get_phone_number_id(self, context: ExecutionContext) -> str | None:
         """
         Get phone number ID using unified credential resolution.
 

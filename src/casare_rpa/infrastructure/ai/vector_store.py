@@ -10,7 +10,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -25,8 +25,8 @@ class Document:
 
     id: str
     content: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    embedding: Optional[List[float]] = None  # Pre-computed embedding
+    metadata: dict[str, Any] = field(default_factory=dict)
+    embedding: list[float] | None = None  # Pre-computed embedding
 
 
 @dataclass
@@ -35,7 +35,7 @@ class SearchResult:
 
     id: str
     content: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     score: float  # Similarity score (higher = more similar)
     distance: float  # Distance (lower = more similar)
 
@@ -48,7 +48,7 @@ class VectorStoreMetrics:
     total_searches: int = 0
     total_deletes: int = 0
     total_documents: int = 0
-    last_operation_time: Optional[float] = None
+    last_operation_time: float | None = None
 
     def add_operation(self, operation: str, count: int = 1) -> None:
         """Record an operation."""
@@ -79,8 +79,8 @@ class VectorStore:
 
     def __init__(
         self,
-        persist_path: Optional[str] = None,
-        embedding_function: Optional[Any] = None,
+        persist_path: str | None = None,
+        embedding_function: Any | None = None,
     ) -> None:
         """
         Initialize vector store.
@@ -91,12 +91,12 @@ class VectorStore:
         """
         self._persist_path = persist_path
         self._embedding_function = embedding_function
-        self._client: Optional["chromadb.Client"] = None
-        self._collections: Dict[str, "Collection"] = {}
+        self._client: chromadb.Client | None = None
+        self._collections: dict[str, Collection] = {}
         self._metrics = VectorStoreMetrics()
         self._initialized = False
 
-    def _ensure_initialized(self) -> "chromadb.Client":
+    def _ensure_initialized(self) -> chromadb.Client:
         """Lazy-load ChromaDB client."""
         if self._initialized and self._client is not None:
             return self._client
@@ -139,7 +139,7 @@ class VectorStore:
         self,
         collection_name: str,
         create: bool = True,
-    ) -> "Collection":
+    ) -> Collection:
         """Get or create a collection."""
         if collection_name in self._collections:
             return self._collections[collection_name]
@@ -168,7 +168,7 @@ class VectorStore:
 
     async def add_documents(
         self,
-        documents: List[Document],
+        documents: list[Document],
         collection: str = DEFAULT_COLLECTION,
     ) -> int:
         """
@@ -237,10 +237,10 @@ class VectorStore:
         query: str,
         collection: str = DEFAULT_COLLECTION,
         top_k: int = 5,
-        where: Optional[Dict[str, Any]] = None,
-        where_document: Optional[Dict[str, Any]] = None,
-        query_embedding: Optional[List[float]] = None,
-    ) -> List[SearchResult]:
+        where: dict[str, Any] | None = None,
+        where_document: dict[str, Any] | None = None,
+        query_embedding: list[float] | None = None,
+    ) -> list[SearchResult]:
         """
         Semantic search in a collection.
 
@@ -258,7 +258,7 @@ class VectorStore:
         coll = self._get_collection(collection, create=False)
 
         try:
-            kwargs: Dict[str, Any] = {
+            kwargs: dict[str, Any] = {
                 "n_results": top_k,
                 "include": ["documents", "metadatas", "distances"],
             }
@@ -312,7 +312,7 @@ class VectorStore:
 
     async def delete_documents(
         self,
-        ids: List[str],
+        ids: list[str],
         collection: str = DEFAULT_COLLECTION,
     ) -> int:
         """
@@ -359,7 +359,7 @@ class VectorStore:
         self,
         doc_id: str,
         collection: str = DEFAULT_COLLECTION,
-    ) -> Optional[Document]:
+    ) -> Document | None:
         """Get a document by ID."""
         coll = self._get_collection(collection, create=False)
 
@@ -387,7 +387,7 @@ class VectorStore:
         coll = self._get_collection(collection, create=False)
         return coll.count()
 
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """List all collection names."""
         client = self._ensure_initialized()
         collections = client.list_collections()
@@ -407,7 +407,7 @@ class VectorStore:
         coll = self._get_collection(collection, create=False)
 
         try:
-            kwargs: Dict[str, Any] = {
+            kwargs: dict[str, Any] = {
                 "ids": [document.id],
                 "documents": [document.content],
                 "metadatas": [document.metadata],
@@ -444,7 +444,7 @@ class VectorStore:
         return self._metrics
 
     @property
-    def persist_path(self) -> Optional[str]:
+    def persist_path(self) -> str | None:
         """Get persistence path."""
         return self._persist_path
 
@@ -472,10 +472,10 @@ def get_default_persist_path() -> str:
 
 
 # Module-level singleton
-_default_store: Optional[VectorStore] = None
+_default_store: VectorStore | None = None
 
 
-def get_vector_store(persist_path: Optional[str] = None) -> VectorStore:
+def get_vector_store(persist_path: str | None = None) -> VectorStore:
     """Get or create the default vector store."""
     global _default_store
     if _default_store is None:

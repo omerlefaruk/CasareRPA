@@ -6,7 +6,7 @@ Trigger that fires on application events (Windows, browser, or internal RPA).
 
 import asyncio
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -51,7 +51,7 @@ class AppEventTrigger(BaseTrigger):
 
     def __init__(self, config: BaseTriggerConfig, event_callback=None):
         super().__init__(config, event_callback)
-        self._poll_task: Optional[asyncio.Task] = None
+        self._poll_task: asyncio.Task | None = None
         self._event_subscriptions = []
         self._running = False
 
@@ -164,7 +164,7 @@ class AppEventTrigger(BaseTrigger):
                     payload = {
                         "event_type": "window_focus",
                         "window_title": current_title,
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     }
 
                     metadata = {
@@ -202,14 +202,14 @@ class AppEventTrigger(BaseTrigger):
 
         try:
             from casare_rpa.domain.events import (
-                get_event_bus,
-                WorkflowStarted,
-                WorkflowCompleted,
-                WorkflowFailed,
-                WorkflowStopped,
-                NodeStarted,
                 NodeCompleted,
                 NodeFailed,
+                NodeStarted,
+                WorkflowCompleted,
+                WorkflowFailed,
+                WorkflowStarted,
+                WorkflowStopped,
+                get_event_bus,
             )
 
             event_bus = get_event_bus()
@@ -259,7 +259,7 @@ class AppEventTrigger(BaseTrigger):
         if timestamp:
             timestamp_str = timestamp.isoformat()
         else:
-            timestamp_str = datetime.now(timezone.utc).isoformat()
+            timestamp_str = datetime.now(UTC).isoformat()
 
         payload = {
             "event_type": event_type,
@@ -273,7 +273,7 @@ class AppEventTrigger(BaseTrigger):
 
         await self.emit(payload, metadata)
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate app event trigger configuration."""
         config = self.config.config
 
@@ -285,7 +285,7 @@ class AppEventTrigger(BaseTrigger):
         return True, None
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for app event configuration."""
         return {
             "type": "object",

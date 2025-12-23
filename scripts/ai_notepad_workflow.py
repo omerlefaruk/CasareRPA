@@ -16,11 +16,11 @@ import asyncio
 import json
 from pathlib import Path
 
+from casare_rpa.domain.ai import SIMPLE_FAST_CONFIG
 from casare_rpa.infrastructure.ai.agent import (
     SmartWorkflowAgent,
     generate_smart_workflow,
 )
-from casare_rpa.domain.ai import SIMPLE_FAST_CONFIG
 
 
 async def generate_notepad_workflow_with_agent():

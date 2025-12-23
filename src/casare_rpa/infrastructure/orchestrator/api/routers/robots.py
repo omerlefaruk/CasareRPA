@@ -13,7 +13,6 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
@@ -42,21 +41,21 @@ class RobotRegistration(BaseModel):
     robot_id: str = Field(..., min_length=1, max_length=64)
     name: str = Field(..., min_length=1, max_length=128)
     hostname: str = Field(..., min_length=1, max_length=256)
-    capabilities: List[str] = Field(default_factory=list)
+    capabilities: list[str] = Field(default_factory=list)
     environment: str = Field(default="default", max_length=64)
     max_concurrent_jobs: int = Field(default=1, ge=1, le=100)
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class RobotUpdate(BaseModel):
     """Request model for robot update."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=128)
-    hostname: Optional[str] = Field(None, min_length=1, max_length=256)
-    capabilities: Optional[List[str]] = None
-    environment: Optional[str] = Field(None, max_length=64)
-    max_concurrent_jobs: Optional[int] = Field(None, ge=1, le=100)
-    tags: Optional[List[str]] = None
+    name: str | None = Field(None, min_length=1, max_length=128)
+    hostname: str | None = Field(None, min_length=1, max_length=256)
+    capabilities: list[str] | None = None
+    environment: str | None = Field(None, max_length=64)
+    max_concurrent_jobs: int | None = Field(None, ge=1, le=100)
+    tags: list[str] | None = None
 
 
 class RobotStatusUpdate(BaseModel):
@@ -74,19 +73,19 @@ class RobotResponse(BaseModel):
     status: str
     environment: str
     max_concurrent_jobs: int
-    capabilities: List[str]
-    tags: List[str]
-    current_job_ids: List[str]
-    last_seen: Optional[datetime]
-    last_heartbeat: Optional[datetime]
-    created_at: Optional[datetime]
-    metrics: Dict[str, Any] = Field(default_factory=dict)
+    capabilities: list[str]
+    tags: list[str]
+    current_job_ids: list[str]
+    last_seen: datetime | None
+    last_heartbeat: datetime | None
+    created_at: datetime | None
+    metrics: dict[str, Any] = Field(default_factory=dict)
 
 
 class RobotListResponse(BaseModel):
     """Response model for robot list."""
 
-    robots: List[RobotResponse]
+    robots: list[RobotResponse]
     total: int
 
 
@@ -207,8 +206,8 @@ async def register_robot(
 @limiter.limit("100/minute")
 async def list_robots(
     request: Request,
-    status: Optional[str] = Query(None, description="Filter by status"),
-    environment: Optional[str] = Query(None, description="Filter by environment"),
+    status: str | None = Query(None, description="Filter by status"),
+    environment: str | None = Query(None, description="Filter by environment"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
@@ -341,8 +340,8 @@ async def update_robot(
             updates = ["updated_at = NOW()"]
             params = [robot_id]
             param_idx = 2
-            name_param_pos: Optional[int] = None
-            hostname_param_pos: Optional[int] = None
+            name_param_pos: int | None = None
+            hostname_param_pos: int | None = None
 
             if update.name is not None:
                 updates.append(f"name = ${param_idx}")
@@ -511,7 +510,7 @@ async def delete_robot(
 async def robot_heartbeat(
     request: Request,
     robot_id: str = Path(..., min_length=1, max_length=64),
-    metrics: Optional[Dict[str, Any]] = None,
+    metrics: dict[str, Any] | None = None,
 ):
     """
     Record robot heartbeat.
@@ -602,7 +601,7 @@ async def robot_heartbeat(
 # ==================== HELPERS ====================
 
 
-def _row_to_response(row: Dict[str, Any]) -> RobotResponse:
+def _row_to_response(row: dict[str, Any]) -> RobotResponse:
     """Convert database row to response model."""
     import orjson
 

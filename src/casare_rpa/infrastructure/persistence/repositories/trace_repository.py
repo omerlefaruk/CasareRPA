@@ -10,7 +10,7 @@ Database Schema:
     trace_activities - Individual activities within traces
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 import orjson
@@ -22,7 +22,6 @@ from casare_rpa.infrastructure.analytics.process_mining import (
     ExecutionTrace,
 )
 from casare_rpa.utils.pooling.database_pool import DatabasePoolManager
-
 
 # =============================================================================
 # Constants
@@ -51,7 +50,7 @@ class TraceRepository:
         traces = await repo.get_traces(workflow_id="wf-123")
     """
 
-    def __init__(self, pool_manager: Optional[DatabasePoolManager] = None) -> None:
+    def __init__(self, pool_manager: DatabasePoolManager | None = None) -> None:
         """
         Initialize repository with optional pool manager.
 
@@ -242,7 +241,7 @@ class TraceRepository:
         finally:
             await self._release_connection(conn)
 
-    async def save_traces_batch(self, traces: List[ExecutionTrace]) -> int:
+    async def save_traces_batch(self, traces: list[ExecutionTrace]) -> int:
         """
         Save multiple traces in a batch.
 
@@ -272,7 +271,7 @@ class TraceRepository:
         self,
         case_id: str,
         status: str,
-        end_time: Optional[datetime] = None,
+        end_time: datetime | None = None,
     ) -> bool:
         """
         Update trace status and completion time.
@@ -295,7 +294,7 @@ class TraceRepository:
                 """,
                 case_id,
                 status,
-                end_time or datetime.now(timezone.utc),
+                end_time or datetime.now(UTC),
             )
             updated = result.split()[-1] != "0"
             if updated:
@@ -312,7 +311,7 @@ class TraceRepository:
     # Query Operations
     # =========================================================================
 
-    async def get_trace(self, case_id: str) -> Optional[ExecutionTrace]:
+    async def get_trace(self, case_id: str) -> ExecutionTrace | None:
         """
         Get trace by case ID with all activities.
 
@@ -352,15 +351,15 @@ class TraceRepository:
 
     async def get_traces(
         self,
-        workflow_id: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
-        status: Optional[str] = None,
-        robot_id: Optional[str] = None,
+        workflow_id: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        status: str | None = None,
+        robot_id: str | None = None,
         limit: int = DEFAULT_QUERY_LIMIT,
         offset: int = 0,
         include_activities: bool = True,
-    ) -> List[ExecutionTrace]:
+    ) -> list[ExecutionTrace]:
         """
         Query traces with filters.
 
@@ -450,8 +449,8 @@ class TraceRepository:
         self,
         workflow_id: str,
         limit: int = DEFAULT_QUERY_LIMIT,
-        status: Optional[str] = None,
-    ) -> List[ExecutionTrace]:
+        status: str | None = None,
+    ) -> list[ExecutionTrace]:
         """
         Get traces for a specific workflow.
 
@@ -471,8 +470,8 @@ class TraceRepository:
 
     async def get_trace_count(
         self,
-        workflow_id: Optional[str] = None,
-        status: Optional[str] = None,
+        workflow_id: str | None = None,
+        status: str | None = None,
     ) -> int:
         """
         Get count of traces.
@@ -511,7 +510,7 @@ class TraceRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_workflow_ids(self) -> List[str]:
+    async def get_workflow_ids(self) -> list[str]:
         """
         Get list of all distinct workflow IDs with traces.
 
@@ -531,7 +530,7 @@ class TraceRepository:
         finally:
             await self._release_connection(conn)
 
-    async def get_variant_stats(self, workflow_id: str) -> List[Dict[str, Any]]:
+    async def get_variant_stats(self, workflow_id: str) -> list[dict[str, Any]]:
         """
         Get variant statistics for a workflow.
 
@@ -589,7 +588,7 @@ class TraceRepository:
     async def cleanup_old_traces(
         self,
         retention_days: int = DEFAULT_RETENTION_DAYS,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Remove traces older than retention period.
 
@@ -600,7 +599,7 @@ class TraceRepository:
             Dictionary with cleanup results.
         """
         conn = await self._get_connection()
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 
         try:
             # Get count before deletion
@@ -673,8 +672,8 @@ class TraceRepository:
 
     def _rows_to_trace(
         self,
-        trace_row: Dict[str, Any],
-        activity_rows: List[Dict[str, Any]],
+        trace_row: dict[str, Any],
+        activity_rows: list[dict[str, Any]],
     ) -> ExecutionTrace:
         """
         Convert database rows to ExecutionTrace object.

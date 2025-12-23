@@ -17,7 +17,6 @@ from casare_rpa.domain.entities.project import (
 )
 from casare_rpa.infrastructure.persistence.environment_storage import EnvironmentStorage
 
-
 # =============================================================================
 # Result Types
 # =============================================================================
@@ -28,8 +27,8 @@ class EnvironmentResult:
     """Result of an environment operation."""
 
     success: bool
-    environment: Optional[Environment] = None
-    error: Optional[str] = None
+    environment: Environment | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -37,8 +36,8 @@ class EnvironmentListResult:
     """Result of listing environments."""
 
     success: bool
-    environments: List[Environment] = None
-    error: Optional[str] = None
+    environments: list[Environment] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.environments is None:
@@ -50,8 +49,8 @@ class VariablesResult:
     """Result of resolving variables."""
 
     success: bool
-    variables: Dict[str, Any] = None
-    error: Optional[str] = None
+    variables: dict[str, Any] = None
+    error: str | None = None
 
     def __post_init__(self):
         if self.variables is None:
@@ -76,7 +75,7 @@ class CreateEnvironmentUseCase:
         name: str,
         env_type: EnvironmentType = EnvironmentType.CUSTOM,
         description: str = "",
-        variables: Optional[Dict[str, Any]] = None,
+        variables: dict[str, Any] | None = None,
         is_default: bool = False,
     ) -> EnvironmentResult:
         """
@@ -188,10 +187,10 @@ class UpdateEnvironmentUseCase:
         self,
         project: Project,
         environment_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        variables: Optional[Dict[str, Any]] = None,
-        credential_overrides: Optional[Dict[str, str]] = None,
+        name: str | None = None,
+        description: str | None = None,
+        variables: dict[str, Any] | None = None,
+        credential_overrides: dict[str, str] | None = None,
     ) -> EnvironmentResult:
         """
         Update environment.
@@ -419,7 +418,7 @@ class ResolveEnvironmentVariablesUseCase:
     async def execute(
         self,
         project: Project,
-        environment_id: Optional[str] = None,
+        environment_id: str | None = None,
     ) -> VariablesResult:
         """
         Resolve variables with inheritance chain.

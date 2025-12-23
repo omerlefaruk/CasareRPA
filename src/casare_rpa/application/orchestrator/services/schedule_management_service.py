@@ -3,13 +3,13 @@ Schedule management service.
 Handles schedule CRUD operations and enable/disable toggling.
 """
 
-import os
 import asyncio
-from datetime import datetime, timezone
+import os
+from datetime import UTC, datetime, timezone
 from typing import List, Optional
 
-from loguru import logger
 from dotenv import load_dotenv
+from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities import Schedule
 from casare_rpa.domain.orchestrator.repositories import ScheduleRepository
@@ -55,7 +55,7 @@ class ScheduleManagementService:
             self._use_local = True
             return True
 
-    async def get_schedules(self, enabled_only: bool = False) -> List[Schedule]:
+    async def get_schedules(self, enabled_only: bool = False) -> list[Schedule]:
         """Get all schedules."""
         if self._use_local:
             if enabled_only:
@@ -75,7 +75,7 @@ class ScheduleManagementService:
 
         return [Schedule.from_dict(s) for s in data]
 
-    async def get_schedule(self, schedule_id: str) -> Optional[Schedule]:
+    async def get_schedule(self, schedule_id: str) -> Schedule | None:
         """Get a specific schedule by ID."""
         schedules = await self.get_schedules()
         for s in schedules:
@@ -85,7 +85,7 @@ class ScheduleManagementService:
 
     async def save_schedule(self, schedule: Schedule) -> bool:
         """Save or update a schedule."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         data = {
             "id": schedule.id,
             "name": schedule.name,

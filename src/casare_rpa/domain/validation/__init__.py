@@ -17,43 +17,41 @@ Package Structure:
 """
 
 # Types (enums and dataclasses)
-from casare_rpa.domain.validation.types import (
-    ValidationSeverity,
-    ValidationIssue,
-    ValidationResult,
+# Rules (helper functions for graph analysis)
+from casare_rpa.domain.validation.rules import (
+    find_entry_points_and_reachable,
+    has_circular_dependency,
+    is_exec_input_port,
+    is_exec_port,
+    # Public API
+    parse_connection,
 )
 
 # Schemas (constants and type mappings)
 from casare_rpa.domain.validation.schemas import (
-    NODE_REQUIRED_FIELDS,
     CONNECTION_REQUIRED_FIELDS,
     DATA_TYPE_COMPATIBILITY,
+    NODE_REQUIRED_FIELDS,
     VALID_NODE_TYPES,
     get_valid_node_types,
+)
+from casare_rpa.domain.validation.types import (
+    ValidationIssue,
+    ValidationResult,
+    ValidationSeverity,
 )
 
 # Validators (main validation functions)
 from casare_rpa.domain.validation.validators import (
-    validate_workflow,
-    validate_node,
-    validate_connections,
     quick_validate,
+    validate_connections,
+    validate_node,
+    validate_workflow,
 )
 from casare_rpa.domain.validation.workflow_json import (
     WorkflowValidationError,
     validate_workflow_json,
 )
-
-# Rules (helper functions for graph analysis)
-from casare_rpa.domain.validation.rules import (
-    # Public API
-    parse_connection,
-    is_exec_port,
-    is_exec_input_port,
-    has_circular_dependency,
-    find_entry_points_and_reachable,
-)
-
 
 __all__ = [
     # Types

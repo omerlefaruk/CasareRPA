@@ -12,7 +12,8 @@ Usage:
 """
 
 import threading
-from typing import Any, Callable, Dict, List, Optional, Type
+from collections.abc import Callable
+from typing import Any, Dict, List, Optional, Type
 
 from loguru import logger
 
@@ -40,15 +41,15 @@ class EventBus:
     """
 
     def __init__(self) -> None:
-        self._handlers: Dict[Type[DomainEvent], List[EventHandler]] = {}
-        self._wildcard_handlers: List[EventHandler] = []
-        self._event_history: List[DomainEvent] = []
+        self._handlers: dict[type[DomainEvent], list[EventHandler]] = {}
+        self._wildcard_handlers: list[EventHandler] = []
+        self._event_history: list[DomainEvent] = []
         self._max_history_size = 1000
         self._lock = threading.Lock()
 
     def subscribe(
         self,
-        event_type: Type[DomainEvent],
+        event_type: type[DomainEvent],
         handler: EventHandler,
     ) -> None:
         """Subscribe handler to event type."""
@@ -60,7 +61,7 @@ class EventBus:
 
     def unsubscribe(
         self,
-        event_type: Type[DomainEvent],
+        event_type: type[DomainEvent],
         handler: EventHandler,
     ) -> None:
         """Unsubscribe handler from event type."""
@@ -113,9 +114,9 @@ class EventBus:
 
     def get_history(
         self,
-        event_type: Optional[Type[DomainEvent]] = None,
-        limit: Optional[int] = None,
-    ) -> List[DomainEvent]:
+        event_type: type[DomainEvent] | None = None,
+        limit: int | None = None,
+    ) -> list[DomainEvent]:
         """Get event history (most recent first)."""
         with self._lock:
             history = self._event_history[::-1]
@@ -130,7 +131,7 @@ class EventBus:
         with self._lock:
             self._event_history.clear()
 
-    def clear_handlers(self, event_type: Optional[Type[DomainEvent]] = None) -> None:
+    def clear_handlers(self, event_type: type[DomainEvent] | None = None) -> None:
         """Clear handlers for event type (or all)."""
         with self._lock:
             if event_type:
@@ -138,14 +139,14 @@ class EventBus:
             else:
                 self._handlers.clear()
 
-    def get_handler_count(self, event_type: Type[DomainEvent]) -> int:
+    def get_handler_count(self, event_type: type[DomainEvent]) -> int:
         """Get handler count for event type."""
         with self._lock:
             return len(self._handlers.get(event_type, []))
 
 
 # Singleton
-_event_bus_instance: Optional[EventBus] = None
+_event_bus_instance: EventBus | None = None
 _event_bus_lock = threading.Lock()
 
 
@@ -187,7 +188,7 @@ class EventRecorder:
     """Record events for replay/analysis."""
 
     def __init__(self) -> None:
-        self.recorded_events: List[DomainEvent] = []
+        self.recorded_events: list[DomainEvent] = []
         self.is_recording = False
         self._lock = threading.Lock()
 
@@ -205,16 +206,14 @@ class EventRecorder:
             if self.is_recording:
                 self.recorded_events.append(event)
 
-    def get_recorded_events(
-        self, event_type: Optional[Type[DomainEvent]] = None
-    ) -> List[DomainEvent]:
+    def get_recorded_events(self, event_type: type[DomainEvent] | None = None) -> list[DomainEvent]:
         with self._lock:
             events = self.recorded_events.copy()
         if event_type:
             events = [e for e in events if isinstance(e, event_type)]
         return events
 
-    def export_to_dict(self) -> List[Dict[str, Any]]:
+    def export_to_dict(self) -> list[dict[str, Any]]:
         with self._lock:
             return [e.to_dict() for e in self.recorded_events]
 

@@ -7,7 +7,7 @@ that work on all platforms without external assets.
 For custom icons, use ResourceCache.get_icon(path) from resources.py.
 """
 
-from typing import TYPE_CHECKING, Optional, Dict, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QIcon
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 # PERFORMANCE: Cache for colored icons to avoid recreation on every call
 # Icons are immutable, so caching is safe and effective
-_colored_icon_cache: Dict[Tuple[str, str, int], "QIcon"] = {}
+_colored_icon_cache: dict[tuple[str, str, int], "QIcon"] = {}
 
 
 def _create_colored_icon(shape: str, color: str, size: int = 16) -> "QIcon":
@@ -76,8 +76,9 @@ def _create_colored_icon(shape: str, color: str, size: int = 16) -> "QIcon":
         painter.drawRoundedRect(QRectF(margin, margin, inner_size, inner_size), 3, 3)
     elif shape == "restart":
         # Circular arrow (restart symbol)
-        from PySide6.QtGui import QPainterPath
         import math
+
+        from PySide6.QtGui import QPainterPath
 
         center_x = size / 2
         center_y = size / 2
@@ -131,8 +132,9 @@ def _create_colored_icon(shape: str, color: str, size: int = 16) -> "QIcon":
 
     elif shape == "brain":
         # Brain/AI icon - stylized brain with sparkle
-        from PySide6.QtGui import QPainterPath
         import math
+
+        from PySide6.QtGui import QPainterPath
 
         center_x = size / 2
         center_y = size / 2

@@ -5,12 +5,12 @@ attributes, content, and state. Enables before/after comparison for
 detecting element changes during workflow execution.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
-import time
-import json
 import base64
+import json
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -33,14 +33,14 @@ class ElementSnapshot:
     timestamp: float
 
     # Visual
-    screenshot_b64: Optional[str] = None
-    bounding_rect: Dict[str, int] = field(default_factory=dict)
+    screenshot_b64: str | None = None
+    bounding_rect: dict[str, int] = field(default_factory=dict)
 
     # Identity
     tag: str = ""
-    id: Optional[str] = None
-    classes: List[str] = field(default_factory=list)
-    attributes: Dict[str, str] = field(default_factory=dict)
+    id: str | None = None
+    classes: list[str] = field(default_factory=list)
+    attributes: dict[str, str] = field(default_factory=dict)
 
     # Content
     text_content: str = ""
@@ -50,7 +50,7 @@ class ElementSnapshot:
     is_visible: bool = True
     is_enabled: bool = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert snapshot to dictionary for serialization."""
         return {
             "selector": self.selector,
@@ -68,7 +68,7 @@ class ElementSnapshot:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ElementSnapshot":
+    def from_dict(cls, data: dict[str, Any]) -> "ElementSnapshot":
         """Create snapshot from dictionary.
 
         Args:
@@ -102,19 +102,19 @@ class ElementDiff:
     # Position/size changes
     position_changed: bool = False
     size_changed: bool = False
-    old_position: Optional[Tuple[int, int]] = None
-    new_position: Optional[Tuple[int, int]] = None
-    old_size: Optional[Tuple[int, int]] = None
-    new_size: Optional[Tuple[int, int]] = None
+    old_position: tuple[int, int] | None = None
+    new_position: tuple[int, int] | None = None
+    old_size: tuple[int, int] | None = None
+    new_size: tuple[int, int] | None = None
 
     # Attribute changes
-    attributes_added: Dict[str, str] = field(default_factory=dict)
-    attributes_removed: Dict[str, str] = field(default_factory=dict)
-    attributes_changed: Dict[str, Tuple[str, str]] = field(default_factory=dict)  # name: (old, new)
+    attributes_added: dict[str, str] = field(default_factory=dict)
+    attributes_removed: dict[str, str] = field(default_factory=dict)
+    attributes_changed: dict[str, tuple[str, str]] = field(default_factory=dict)  # name: (old, new)
 
     # Class changes
-    classes_added: List[str] = field(default_factory=list)
-    classes_removed: List[str] = field(default_factory=list)
+    classes_added: list[str] = field(default_factory=list)
+    classes_removed: list[str] = field(default_factory=list)
 
     # Content changes
     text_changed: bool = False
@@ -134,7 +134,7 @@ class ElementDiff:
         if not self.has_changes:
             return "No changes detected"
 
-        parts: List[str] = []
+        parts: list[str] = []
 
         if self.position_changed:
             if self.old_position and self.new_position:
@@ -190,7 +190,7 @@ class ElementDiff:
 
         return "; ".join(parts)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert diff to dictionary for serialization."""
         return {
             "has_changes": self.has_changes,
@@ -306,7 +306,7 @@ class SnapshotManager:
 
             # Get bounding rect
             rect = await el.bounding_box()
-            bounding: Dict[str, int] = {}
+            bounding: dict[str, int] = {}
             if rect:
                 bounding = {
                     "x": int(rect["x"]),
@@ -316,7 +316,7 @@ class SnapshotManager:
                 }
 
             # Capture screenshot
-            screenshot_b64: Optional[str] = None
+            screenshot_b64: str | None = None
             if include_screenshot:
                 try:
                     screenshot_bytes = await el.screenshot()
@@ -357,7 +357,7 @@ class SnapshotManager:
         self,
         before: ElementSnapshot,
         after: ElementSnapshot,
-        ignore_attributes: Optional[List[str]] = None,
+        ignore_attributes: list[str] | None = None,
     ) -> ElementDiff:
         """Compare two snapshots and return differences.
 

@@ -415,13 +415,7 @@ def list_nodes(
 
     for name in sorted(set(registry.keys()) | set(registry_data.keys())):
         node_class = registry.get(name)
-<<<<<<< HEAD
-        module = (
-            node_class.__module__ if node_class else str(registry_data.get(name, ""))
-        )
-=======
         module = node_class.__module__ if node_class else str(registry_data.get(name, ""))
->>>>>>> d1c1cdb090b151b968ad2afaa52ad16e824faf0e
 
         # Determine category
         if "browser" in module:

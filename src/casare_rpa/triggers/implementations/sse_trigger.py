@@ -45,10 +45,10 @@ class SSETrigger(BaseTrigger):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._listen_task: Optional[asyncio.Task] = None
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._listen_task: asyncio.Task | None = None
+        self._session: aiohttp.ClientSession | None = None
         self._reconnect_count: int = 0
-        self._last_event_id: Optional[str] = None
+        self._last_event_id: str | None = None
 
     async def start(self) -> bool:
         """Start listening to the SSE stream."""
@@ -110,7 +110,7 @@ class SSETrigger(BaseTrigger):
             logger.error(f"Error stopping SSE trigger: {e}")
             return False
 
-    def validate_config(self) -> tuple[bool, Optional[str]]:
+    def validate_config(self) -> tuple[bool, str | None]:
         """Validate SSE trigger configuration."""
         config = self.config.config
 
@@ -139,7 +139,7 @@ class SSETrigger(BaseTrigger):
 
         return True, None
 
-    def _build_headers(self) -> Dict[str, str]:
+    def _build_headers(self) -> dict[str, str]:
         """Build HTTP headers for the SSE connection."""
         config = self.config.config
         headers = {
@@ -267,8 +267,8 @@ class SSETrigger(BaseTrigger):
         self,
         event_type: str,
         data: str,
-        event_id: Optional[str],
-        retry: Optional[int],
+        event_id: str | None,
+        retry: int | None,
     ) -> None:
         """Emit a trigger event for an SSE message."""
         # Try to parse JSON data
@@ -296,7 +296,7 @@ class SSETrigger(BaseTrigger):
         )
 
     @classmethod
-    def get_config_schema(cls) -> Dict[str, Any]:
+    def get_config_schema(cls) -> dict[str, Any]:
         """Get JSON schema for SSE trigger configuration."""
         return {
             "type": "object",

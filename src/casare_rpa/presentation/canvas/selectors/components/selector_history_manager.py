@@ -11,9 +11,9 @@ Handles selector history management:
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QComboBox
-from loguru import logger
 
 
 @dataclass
@@ -22,9 +22,9 @@ class HistoryEntry:
 
     selector: str
     selector_type: str
-    element_tag: Optional[str] = None
-    timestamp: Optional[float] = None
-    metadata: Optional[Dict[str, Any]] = None
+    element_tag: str | None = None
+    timestamp: float | None = None
+    metadata: dict[str, Any] | None = None
 
     def display_text(self, max_length: int = 50) -> str:
         """Get display text for dropdown."""
@@ -56,10 +56,10 @@ class SelectorHistoryManager(QObject):
     selector_selected = Signal(str)
     history_saved = Signal()
 
-    def __init__(self, parent: Optional[QObject] = None) -> None:
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self._history: List[HistoryEntry] = []
-        self._combo_box: Optional[QComboBox] = None
+        self._history: list[HistoryEntry] = []
+        self._combo_box: QComboBox | None = None
         self._max_entries: int = 15
 
     def set_combo_box(self, combo_box: QComboBox) -> None:
@@ -76,7 +76,7 @@ class SelectorHistoryManager(QObject):
         """Set maximum number of history entries to display."""
         self._max_entries = max(1, count)
 
-    def load_history(self) -> List[HistoryEntry]:
+    def load_history(self) -> list[HistoryEntry]:
         """
         Load selector history from persistent storage.
 
@@ -115,8 +115,8 @@ class SelectorHistoryManager(QObject):
         self,
         selector: str,
         selector_type: str,
-        element_tag: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        element_tag: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         Save a selector to history.
@@ -148,7 +148,7 @@ class SelectorHistoryManager(QObject):
         except Exception as e:
             logger.warning(f"Failed to save selector to history: {e}")
 
-    def get_selector_at_index(self, index: int) -> Optional[str]:
+    def get_selector_at_index(self, index: int) -> str | None:
         """
         Get selector value at specified history index.
 
@@ -164,7 +164,7 @@ class SelectorHistoryManager(QObject):
             return self._history[actual_index].selector
         return None
 
-    def get_entry_at_index(self, index: int) -> Optional[HistoryEntry]:
+    def get_entry_at_index(self, index: int) -> HistoryEntry | None:
         """
         Get history entry at specified index.
 
@@ -225,7 +225,7 @@ class SelectorHistoryManager(QObject):
             logger.debug(f"Selected selector from history: {selector[:50]}...")
 
     @property
-    def history(self) -> List[HistoryEntry]:
+    def history(self) -> list[HistoryEntry]:
         """Get current history entries."""
         return self._history.copy()
 

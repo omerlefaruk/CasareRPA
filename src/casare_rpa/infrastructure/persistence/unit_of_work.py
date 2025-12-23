@@ -33,7 +33,7 @@ from casare_rpa.domain.interfaces.unit_of_work import AbstractUnitOfWork
 class DomainEventCollector(Protocol):
     """Protocol for aggregates that collect domain events."""
 
-    def collect_events(self) -> List[DomainEvent]:
+    def collect_events(self) -> list[DomainEvent]:
         """Collect and clear pending domain events from the aggregate."""
         ...
 
@@ -59,7 +59,7 @@ class JsonUnitOfWork(AbstractUnitOfWork):
     def __init__(
         self,
         storage_path: Path,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
     ) -> None:
         """
         Initialize the JSON Unit of Work.
@@ -70,8 +70,8 @@ class JsonUnitOfWork(AbstractUnitOfWork):
         """
         self._storage_path = storage_path
         self._event_bus = event_bus
-        self._pending_events: List[DomainEvent] = []
-        self._tracked_aggregates: List[Any] = []
+        self._pending_events: list[DomainEvent] = []
+        self._tracked_aggregates: list[Any] = []
         self._committed = False
 
     @property

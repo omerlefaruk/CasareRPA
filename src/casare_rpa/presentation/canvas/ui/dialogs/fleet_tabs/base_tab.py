@@ -11,21 +11,20 @@ Provides common functionality for all fleet dashboard tabs:
 from abc import abstractmethod
 from typing import Optional
 
+from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
-    QPushButton,
     QLabel,
-)
-from PySide6.QtCore import Signal, QTimer
-
-from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
-    TAB_WIDGET_BASE_STYLE,
-    REFRESH_INTERVALS,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
+    REFRESH_INTERVALS,
+    TAB_WIDGET_BASE_STYLE,
+)
 
 
 class BaseTabWidget(QWidget):
@@ -48,7 +47,7 @@ class BaseTabWidget(QWidget):
     def __init__(
         self,
         tab_name: str,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         """
         Initialize base tab widget.

@@ -8,35 +8,34 @@ Provides queue item (transaction) management:
 - Bulk operations
 """
 
-from typing import Optional, List, Any
 from datetime import datetime
-
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
-    QLabel,
-    QComboBox,
-    QDialog,
-    QFormLayout,
-    QTextEdit,
-    QDialogButtonBox,
-    QMessageBox,
-    QMenu,
-    QLineEdit,
-)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QColor
+from typing import Any, List, Optional
 
 from loguru import logger
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QColor
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
-from casare_rpa.presentation.canvas.ui.theme import Theme
-from casare_rpa.domain.orchestrator.entities import QueueItem, QueueItemStatus
 from casare_rpa.application.services import QueueService
+from casare_rpa.domain.orchestrator.entities import QueueItem, QueueItemStatus
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class ItemDetailsDialog(QDialog):
@@ -45,7 +44,7 @@ class ItemDetailsDialog(QDialog):
     def __init__(
         self,
         item: QueueItem,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._item = item
@@ -184,11 +183,11 @@ class TransactionsTab(QWidget):
     def __init__(
         self,
         queue_service: QueueService,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._queue_service = queue_service
-        self._current_queue_id: Optional[str] = None
+        self._current_queue_id: str | None = None
         self._setup_ui()
         self._apply_styles()
         self._connect_signals()
@@ -406,7 +405,7 @@ class TransactionsTab(QWidget):
 
         return item
 
-    def _create_datetime_item(self, dt: Optional[datetime]) -> QTableWidgetItem:
+    def _create_datetime_item(self, dt: datetime | None) -> QTableWidgetItem:
         """Create a datetime table item."""
         if dt:
             text = dt.strftime("%Y-%m-%d %H:%M")
@@ -414,7 +413,7 @@ class TransactionsTab(QWidget):
             text = "-"
         return QTableWidgetItem(text)
 
-    def _get_selected_item_ids(self) -> List[str]:
+    def _get_selected_item_ids(self) -> list[str]:
         """Get selected item IDs."""
         item_ids = []
         for item in self._table.selectedItems():

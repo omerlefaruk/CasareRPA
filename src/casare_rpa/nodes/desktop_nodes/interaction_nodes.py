@@ -10,11 +10,9 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.decorators import node, properties
-from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
-
 
 # =============================================================================
 # Interaction-specific PropertyDef constants
@@ -161,8 +159,8 @@ class SelectFromDropdownNode(InteractionNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Select From Dropdown",
     ):
         super().__init__(node_id, config, name)
@@ -177,7 +175,7 @@ class SelectFromDropdownNode(InteractionNodeBase):
         self.add_input_port("value", DataType.STRING)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - select from dropdown."""
         element = self.get_element_from_input()
         value = self.get_parameter("value", context)
@@ -234,8 +232,8 @@ class CheckCheckboxNode(InteractionNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Check Checkbox",
     ):
         super().__init__(node_id, config, name)
@@ -249,7 +247,7 @@ class CheckCheckboxNode(InteractionNodeBase):
         self.add_input_port("element", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - check or uncheck checkbox."""
         element = self.get_element_from_input()
         check = self.get_parameter("check", context)
@@ -300,8 +298,8 @@ class SelectRadioButtonNode(InteractionNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Select Radio Button",
     ):
         super().__init__(node_id, config, name)
@@ -315,7 +313,7 @@ class SelectRadioButtonNode(InteractionNodeBase):
         self.add_input_port("element", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - select radio button."""
         element = self.get_element_from_input()
 
@@ -371,8 +369,8 @@ class SelectTabNode(InteractionNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Select Tab",
     ):
         super().__init__(node_id, config, name)
@@ -388,7 +386,7 @@ class SelectTabNode(InteractionNodeBase):
         self.add_input_port("tab_index", DataType.INTEGER)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - select tab."""
         tab_control = self.get_input_value("tab_control")
         tab_name = self.get_parameter("tab_name", context) or None
@@ -450,8 +448,8 @@ class ExpandTreeItemNode(InteractionNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Expand Tree Item",
     ):
         super().__init__(node_id, config, name)
@@ -465,7 +463,7 @@ class ExpandTreeItemNode(InteractionNodeBase):
         self.add_input_port("element", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - expand or collapse tree item."""
         element = self.get_element_from_input()
         expand = self.get_parameter("expand", context)
@@ -522,8 +520,8 @@ class ScrollElementNode(InteractionNodeBase):
 
     def __init__(
         self,
-        node_id: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        node_id: str | None = None,
+        config: dict[str, Any] | None = None,
         name: str = "Scroll Element",
     ):
         super().__init__(node_id, config, name)
@@ -534,7 +532,7 @@ class ScrollElementNode(InteractionNodeBase):
         self.add_input_port("element", DataType.ANY)
         self.add_output_port("success", DataType.BOOLEAN)
 
-    async def execute(self, context: Any) -> Dict[str, Any]:
+    async def execute(self, context: Any) -> dict[str, Any]:
         """Execute the node - scroll element."""
         element = self.get_element_from_input()
         direction = self.get_parameter("direction", context)

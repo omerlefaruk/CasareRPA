@@ -24,7 +24,6 @@ from casare_rpa.infrastructure.orchestrator.api.auth import (
     require_admin,
 )
 
-
 router = APIRouter()
 
 # Module-level database pool reference (asyncpg.Pool)
@@ -79,21 +78,21 @@ def _hash_api_key(raw_key: str) -> str:
 class CreateRobotApiKeyRequest(BaseModel):
     robot_id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=2000)
-    expires_at: Optional[datetime] = None
+    description: str | None = Field(None, max_length=2000)
+    expires_at: datetime | None = None
 
 
 class RobotApiKeyResponse(BaseModel):
     id: str
     robot_id: str
-    robot_name: Optional[str] = None
-    key_name: Optional[str] = None
-    description: Optional[str] = None
+    robot_name: str | None = None
+    key_name: str | None = None
+    description: str | None = None
     status: str
-    created_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
-    last_used_at: Optional[datetime] = None
-    last_used_ip: Optional[str] = None
+    created_at: datetime | None = None
+    expires_at: datetime | None = None
+    last_used_at: datetime | None = None
+    last_used_ip: str | None = None
 
 
 class CreateRobotApiKeyResponse(BaseModel):
@@ -102,12 +101,12 @@ class CreateRobotApiKeyResponse(BaseModel):
 
 
 class RobotApiKeyListResponse(BaseModel):
-    keys: List[RobotApiKeyResponse]
+    keys: list[RobotApiKeyResponse]
     total: int
 
 
 class RevokeRobotApiKeyRequest(BaseModel):
-    reason: Optional[str] = Field(None, max_length=2000)
+    reason: str | None = Field(None, max_length=2000)
 
 
 @router.get(
@@ -117,8 +116,8 @@ class RevokeRobotApiKeyRequest(BaseModel):
 )
 async def list_robot_api_keys(
     request: Request,
-    robot_id: Optional[str] = Query(None, description="Filter by robot ID"),
-    status_filter: Optional[str] = Query(
+    robot_id: str | None = Query(None, description="Filter by robot ID"),
+    status_filter: str | None = Query(
         None, alias="status", description="Filter by status: active|revoked|expired"
     ),
     limit: int = Query(100, ge=1, le=500),
@@ -132,7 +131,7 @@ async def list_robot_api_keys(
     await _ensure_table_exists(pool, "robot_api_keys")
 
     where = ["1=1"]
-    params: List[Any] = []
+    params: list[Any] = []
     idx = 1
 
     if robot_id:
@@ -227,7 +226,7 @@ async def list_robot_api_keys(
                 offset,
             )
 
-        def to_status(row: Dict[str, Any]) -> str:
+        def to_status(row: dict[str, Any]) -> str:
             if row.get("is_revoked"):
                 return "revoked"
             expires = row.get("expires_at")
@@ -300,7 +299,7 @@ async def create_robot_api_key(
 
             insert_cols = ["robot_id"]
             insert_vals = ["$1"]
-            insert_params: List[Any] = [payload.robot_id]
+            insert_params: list[Any] = [payload.robot_id]
             param_idx = 2
 
             # Support both schemas: some deployments use `key_hash`, newer ones use `api_key_hash`.
@@ -371,7 +370,7 @@ async def revoke_robot_api_key(
     key_id: str = Path(..., min_length=1),
     payload: RevokeRobotApiKeyRequest = RevokeRobotApiKeyRequest(),
     user: AuthenticatedUser = Depends(require_admin),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     del request
 
     pool = _require_db_pool()
@@ -471,7 +470,7 @@ async def rotate_robot_api_key(
 
             insert_cols = ["robot_id"]
             insert_vals = ["$1"]
-            insert_params: List[Any] = [str(existing["robot_id"])]
+            insert_params: list[Any] = [str(existing["robot_id"])]
             param_idx = 2
 
             if has_api_key_hash:

@@ -28,11 +28,11 @@ Thread Safety:
     delivery automatically via Qt's queued connection mechanism.
 """
 
-from typing import Any, Callable, Optional, Type
-
-from PySide6.QtCore import QObject, Signal
+from collections.abc import Callable
+from typing import Any, Optional, Type
 
 from loguru import logger
+from PySide6.QtCore import QObject, Signal
 
 
 class QtDomainEventBridge(QObject):
@@ -123,7 +123,7 @@ class QtDomainEventBridge(QObject):
     # Generic signal for all events (event_type_name, event_dict)
     domain_event = Signal(str, dict)
 
-    def __init__(self, event_bus: Any, parent: Optional[QObject] = None) -> None:
+    def __init__(self, event_bus: Any, parent: QObject | None = None) -> None:
         """
         Initialize the Qt domain event bridge.
 
@@ -133,7 +133,7 @@ class QtDomainEventBridge(QObject):
         """
         super().__init__(parent)
         self._event_bus = event_bus
-        self._subscriptions: list[tuple[Type, Callable]] = []
+        self._subscriptions: list[tuple[type, Callable]] = []
         self._running = False
 
         logger.debug("QtDomainEventBridge created")
@@ -212,7 +212,7 @@ class QtDomainEventBridge(QObject):
             logger.error(f"Failed to import domain events: {e}")
             raise
 
-    def _subscribe(self, event_type: Type, handler: Callable) -> None:
+    def _subscribe(self, event_type: type, handler: Callable) -> None:
         """
         Subscribe to a typed event.
 
@@ -463,11 +463,11 @@ class QtDomainEventBridge(QObject):
 
 
 # Singleton instance for convenience
-_bridge_instance: Optional[QtDomainEventBridge] = None
+_bridge_instance: QtDomainEventBridge | None = None
 
 
 def get_qt_domain_event_bridge(
-    event_bus: Optional[Any] = None, parent: Optional[QObject] = None
+    event_bus: Any | None = None, parent: QObject | None = None
 ) -> QtDomainEventBridge:
     """
     Get or create the Qt domain event bridge singleton.

@@ -21,10 +21,11 @@ This module serves as the main orchestrator, delegating to specialized component
 - SelectorHistoryManager: History management
 """
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from loguru import logger
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QFont, QImage, QPixmap, QKeyEvent
+from PySide6.QtGui import QFont, QImage, QKeyEvent, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -45,21 +46,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from loguru import logger
 
+from casare_rpa.presentation.canvas.selectors.components import (
+    SelectorHistoryManager,
+    SelectorPicker,
+    SelectorPreview,
+    SelectorValidator,
+)
+from casare_rpa.presentation.canvas.selectors.components.selector_history_manager import (
+    style_history_combo,
+)
 from casare_rpa.presentation.canvas.selectors.tabs.base_tab import (
     BaseSelectorTab,
     SelectorResult,
     SelectorStrategy,
-)
-from casare_rpa.presentation.canvas.selectors.components import (
-    SelectorPicker,
-    SelectorValidator,
-    SelectorPreview,
-    SelectorHistoryManager,
-)
-from casare_rpa.presentation.canvas.selectors.components.selector_history_manager import (
-    style_history_combo,
 )
 
 if TYPE_CHECKING:
@@ -83,7 +83,7 @@ class CollapsibleSection(QWidget):
     def __init__(
         self,
         title: str,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         expanded: bool = True,
         accent_color: str = "#60a5fa",
     ) -> None:
@@ -213,7 +213,7 @@ class ModeToolButton(QToolButton):
         self,
         icon_text: str,
         tooltip: str,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setText(icon_text)
@@ -262,7 +262,7 @@ class SelectorTypeRow(QWidget):
         self,
         label: str,
         selector_type: str,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         has_accuracy: bool = False,
         has_radio: bool = False,
         accent_color: str = "#60a5fa",
@@ -524,8 +524,8 @@ class UnifiedSelectorDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
-        target_node: Optional[Any] = None,
+        parent: QWidget | None = None,
+        target_node: Any | None = None,
         target_property: str = "selector",
         initial_mode: str = "browser",
     ) -> None:
@@ -542,8 +542,8 @@ class UnifiedSelectorDialog(QDialog):
 
         self._target_node = target_node
         self._target_property = target_property
-        self._browser_page: Optional["Page"] = None
-        self._current_result: Optional[SelectorResult] = None
+        self._browser_page: Page | None = None
+        self._current_result: SelectorResult | None = None
         self._current_mode = initial_mode
         self._ctrl_pressed = False
 
@@ -553,7 +553,7 @@ class UnifiedSelectorDialog(QDialog):
         self._history_manager = SelectorHistoryManager(self)
 
         # Tab references
-        self._tabs: Dict[str, BaseSelectorTab] = {}
+        self._tabs: dict[str, BaseSelectorTab] = {}
 
         self.setWindowTitle("Element Selector")
         self.setMinimumSize(700, 800)
@@ -797,7 +797,7 @@ class UnifiedSelectorDialog(QDialog):
 
         content = section.content_layout()
 
-        self._anchor_data: Optional[Dict[str, Any]] = None
+        self._anchor_data: dict[str, Any] | None = None
 
         # Warning banner
         self._anchor_warning = QWidget()
@@ -1422,10 +1422,10 @@ class UnifiedSelectorDialog(QDialog):
         from casare_rpa.presentation.canvas.selectors.tabs.desktop_tab import (
             DesktopSelectorTab,
         )
-        from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import OCRSelectorTab
         from casare_rpa.presentation.canvas.selectors.tabs.image_match_tab import (
             ImageMatchTab,
         )
+        from casare_rpa.presentation.canvas.selectors.tabs.ocr_tab import OCRSelectorTab
 
         # Browser tab
         self._browser_tab = BrowserSelectorTab(self)
@@ -1548,7 +1548,7 @@ class UnifiedSelectorDialog(QDialog):
         for tab in self._tabs.values():
             tab.set_target_node(node, property_name)
 
-    def get_result(self) -> Optional[SelectorResult]:
+    def get_result(self) -> SelectorResult | None:
         """Get the selected selector result."""
         return self._current_result
 
@@ -1684,7 +1684,7 @@ class UnifiedSelectorDialog(QDialog):
             self._status_label.setStyleSheet("color: #ef4444; font-size: 11px;")
 
     @Slot(list)
-    def _on_strategies_generated(self, strategies: List[SelectorStrategy]) -> None:
+    def _on_strategies_generated(self, strategies: list[SelectorStrategy]) -> None:
         """Handle strategies generated from picker."""
         logger.info(f"Dialog received {len(strategies)} strategies")
 
@@ -1935,7 +1935,7 @@ class UnifiedSelectorDialog(QDialog):
         finally:
             self._reset_anchor_picking_ui()
 
-    def _on_anchor_picked(self, anchor_data: Dict[str, Any]) -> None:
+    def _on_anchor_picked(self, anchor_data: dict[str, Any]) -> None:
         """Handle anchor element picked."""
         self._set_anchor(
             {
@@ -2029,7 +2029,7 @@ class UnifiedSelectorDialog(QDialog):
             self._anchor_data["position"] = position.lower()
             logger.debug(f"Anchor position changed to: {position}")
 
-    def _set_anchor(self, anchor_data: Dict[str, Any]) -> None:
+    def _set_anchor(self, anchor_data: dict[str, Any]) -> None:
         """Set the anchor data and update UI."""
         self._anchor_data = anchor_data
 
@@ -2063,7 +2063,7 @@ class UnifiedSelectorDialog(QDialog):
 
         logger.info(f"Anchor set: {tag} - {text[:30] if text else selector[:30]}")
 
-    def set_anchor_from_element(self, element_data: Dict[str, Any], position: str = "left") -> None:
+    def set_anchor_from_element(self, element_data: dict[str, Any], position: str = "left") -> None:
         """Set anchor from picked element data."""
         from casare_rpa.presentation.canvas.selectors.ui_explorer.models.anchor_model import (
             calculate_anchor_stability,
@@ -2104,7 +2104,7 @@ class UnifiedSelectorDialog(QDialog):
 
         self._set_anchor(anchor_data)
 
-    def get_anchor_data(self) -> Optional[Dict[str, Any]]:
+    def get_anchor_data(self) -> dict[str, Any] | None:
         """Get the configured anchor data."""
         return self._anchor_data
 

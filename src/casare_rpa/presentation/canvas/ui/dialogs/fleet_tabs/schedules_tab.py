@@ -4,26 +4,26 @@ Schedules Tab Widget for Fleet Dashboard.
 Displays workflow schedules with management capabilities.
 """
 
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QPushButton,
+    QCheckBox,
     QComboBox,
-    QLineEdit,
+    QHBoxLayout,
+    QHeaderView,
     QLabel,
+    QLineEdit,
     QMenu,
     QMessageBox,
-    QCheckBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QBrush
 
 from casare_rpa.presentation.canvas.theme import THEME
 
@@ -55,10 +55,10 @@ class SchedulesTabWidget(QWidget):
     schedule_run_now = Signal(str)
     refresh_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._schedules: List[Dict[str, Any]] = []
-        self._schedule_map: Dict[str, Dict[str, Any]] = {}
+        self._schedules: list[dict[str, Any]] = []
+        self._schedule_map: dict[str, dict[str, Any]] = {}
         self._setup_ui()
         self._apply_styles()
 
@@ -210,7 +210,7 @@ class SchedulesTabWidget(QWidget):
             """
         )
 
-    def update_schedules(self, schedules: List[Dict[str, Any]]) -> None:
+    def update_schedules(self, schedules: list[dict[str, Any]]) -> None:
         """Update table with schedule list."""
         self._schedules = schedules
         self._schedule_map = {s.get("id", ""): s for s in schedules}
@@ -313,7 +313,7 @@ class SchedulesTabWidget(QWidget):
 
         self._apply_filters()
 
-    def _get_frequency_display(self, schedule: Dict[str, Any]) -> str:
+    def _get_frequency_display(self, schedule: dict[str, Any]) -> str:
         """Get human-readable frequency string."""
         frequency = schedule.get("frequency", "")
         cron_expr = schedule.get("cron_expression", "")
@@ -470,7 +470,7 @@ class SchedulesTabWidget(QWidget):
 
         self._update_status_label(visible_count)
 
-    def _update_status_label(self, visible: Optional[int] = None) -> None:
+    def _update_status_label(self, visible: int | None = None) -> None:
         """Update status label with schedule counts."""
         total = len(self._schedules)
         enabled = sum(1 for s in self._schedules if s.get("enabled", True))
@@ -549,11 +549,11 @@ class SchedulesTabWidget(QWidget):
         """Add new schedule."""
         self.schedule_edited.emit("")
 
-    def _on_edit_schedule(self, schedule: Dict[str, Any]) -> None:
+    def _on_edit_schedule(self, schedule: dict[str, Any]) -> None:
         """Edit schedule."""
         self.schedule_edited.emit(schedule.get("id", ""))
 
-    def _on_delete_schedule(self, schedule: Dict[str, Any]) -> None:
+    def _on_delete_schedule(self, schedule: dict[str, Any]) -> None:
         """Confirm and delete schedule."""
         schedule_id = schedule.get("id", "")
         name = schedule.get("name", "")
@@ -573,7 +573,7 @@ class SchedulesTabWidget(QWidget):
         box.finished.connect(_handle_result)
         box.open()
 
-    def _on_run_now(self, schedule: Dict[str, Any]) -> None:
+    def _on_run_now(self, schedule: dict[str, Any]) -> None:
         """Run schedule immediately."""
         self.schedule_run_now.emit(schedule.get("id", ""))
 

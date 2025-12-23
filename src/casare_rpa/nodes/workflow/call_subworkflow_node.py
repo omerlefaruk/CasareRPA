@@ -15,13 +15,13 @@ Key Features:
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.entities.subflow import Subflow
-from casare_rpa.domain.decorators import node, properties
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -107,7 +107,7 @@ class CallSubworkflowNode(BaseNode):
     def __init__(
         self,
         node_id: str,
-        config: Optional[Dict] = None,
+        config: dict | None = None,
         **kwargs,
     ) -> None:
         """
@@ -122,9 +122,9 @@ class CallSubworkflowNode(BaseNode):
         self.node_type = "CallSubworkflowNode"
         self.category = "Workflow"
 
-        self._subworkflow: Optional[Subflow] = None
-        self._dynamic_inputs: List[str] = []
-        self._dynamic_outputs: List[str] = []
+        self._subworkflow: Subflow | None = None
+        self._dynamic_inputs: list[str] = []
+        self._dynamic_outputs: list[str] = []
 
     def _define_ports(self) -> None:
         """Define default ports. Dynamic ports added via configure_from_subworkflow."""
@@ -304,7 +304,7 @@ class CallSubworkflowNode(BaseNode):
                     execution_time_ms=execution_time_ms,
                 )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             execution_time_ms = int((time.time() - start_time) * 1000)
             return self._error_result(
                 f"Subworkflow execution timed out after {timeout_seconds}s",
@@ -318,11 +318,11 @@ class CallSubworkflowNode(BaseNode):
     async def _execute_sync(
         self,
         subworkflow: Subflow,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         context: "ExecutionContext",
         timeout_seconds: int,
         call_depth: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute subworkflow synchronously."""
         try:
             from casare_rpa.infrastructure.execution.subworkflow_executor import (
@@ -370,13 +370,13 @@ class CallSubworkflowNode(BaseNode):
     async def _execute_async(
         self,
         subworkflow: Subflow,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         context: "ExecutionContext",
         wait_for_result: bool,
         poll_interval: int,
         timeout_seconds: int,
         call_depth: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute subworkflow asynchronously via job queue."""
         import uuid
 
@@ -444,7 +444,7 @@ class CallSubworkflowNode(BaseNode):
             result["job_id"] = job_id
             return result
 
-    def _collect_inputs(self) -> Dict[str, Any]:
+    def _collect_inputs(self) -> dict[str, Any]:
         """Collect input values from dynamic input ports."""
         inputs = {}
         for port_name in self._dynamic_inputs:
@@ -458,7 +458,7 @@ class CallSubworkflowNode(BaseNode):
                     inputs[port_name] = value
         return inputs
 
-    async def _load_subworkflow(self, subworkflow_id: str) -> Optional[Subflow]:
+    async def _load_subworkflow(self, subworkflow_id: str) -> Subflow | None:
         """Load subworkflow by ID."""
         if self._subworkflow and self._subworkflow.id == subworkflow_id:
             return self._subworkflow
@@ -490,6 +490,8 @@ class CallSubworkflowNode(BaseNode):
         """Create SubflowData for application layer executor."""
         from casare_rpa.application.use_cases.subflow_executor import (
             Subflow as SubflowData,
+        )
+        from casare_rpa.application.use_cases.subflow_executor import (
             SubflowInputDefinition,
             SubflowOutputDefinition,
         )

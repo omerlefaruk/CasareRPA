@@ -30,13 +30,13 @@ class WindowManager:
     def __init__(self) -> None:
         """Initialize window manager."""
         logger.debug("Initializing WindowManager")
-        self._launched_processes: List[int] = []
+        self._launched_processes: list[int] = []
         # PIDs to keep open when cleanup is called
         self._keep_open_processes: set[int] = set()
 
     async def find_window(
         self, title: str, exact: bool = False, timeout: float = 5.0
-    ) -> Optional[DesktopElement]:
+    ) -> DesktopElement | None:
         """
         Find a window by its title.
 
@@ -57,7 +57,7 @@ class WindowManager:
         check_count = 0
         max_quick_checks = 30
 
-        def _search_window() -> Optional[DesktopElement]:
+        def _search_window() -> DesktopElement | None:
             """Blocking window search - runs in thread."""
             with auto.UIAutomationInitializerInThread():
                 try:
@@ -89,7 +89,7 @@ class WindowManager:
         logger.error(error_msg)
         raise ValueError(error_msg)
 
-    async def get_all_windows(self, include_invisible: bool = False) -> List[DesktopElement]:
+    async def get_all_windows(self, include_invisible: bool = False) -> list[DesktopElement]:
         """
         Get all top-level windows.
 
@@ -101,7 +101,7 @@ class WindowManager:
         """
         logger.debug(f"Getting all windows (include_invisible={include_invisible})")
 
-        def _get_windows() -> List[DesktopElement]:
+        def _get_windows() -> list[DesktopElement]:
             with auto.UIAutomationInitializerInThread():
                 windows = []
                 for window in auto.GetRootControl().GetChildren():
@@ -118,9 +118,9 @@ class WindowManager:
         self,
         path: str,
         args: str = "",
-        working_dir: Optional[str] = None,
+        working_dir: str | None = None,
         timeout: float = 10.0,
-        window_title: Optional[str] = None,
+        window_title: str | None = None,
         keep_open: bool = True,
     ) -> DesktopElement:
         """
@@ -182,7 +182,7 @@ class WindowManager:
                     f"after {window_search_timeout}s, searching by process..."
                 )
 
-                def _search_by_pid() -> Optional[DesktopElement]:
+                def _search_by_pid() -> DesktopElement | None:
                     """Search for window by PID - runs in thread."""
                     with auto.UIAutomationInitializerInThread():
                         search_start = time.time()
@@ -230,7 +230,7 @@ class WindowManager:
 
     async def close_application(
         self,
-        window_or_pid: Union[DesktopElement, int, str],
+        window_or_pid: DesktopElement | int | str,
         force: bool = False,
         timeout: float = 5.0,
     ) -> bool:
@@ -255,7 +255,7 @@ class WindowManager:
                 window = window_or_pid
             elif isinstance(window_or_pid, int):
 
-                def _find_by_pid() -> Optional[DesktopElement]:
+                def _find_by_pid() -> DesktopElement | None:
                     with auto.UIAutomationInitializerInThread():
                         all_windows = []
                         for w in auto.GetRootControl().GetChildren():
@@ -483,7 +483,7 @@ class WindowManager:
         logger.info(f"Restored window: {window.get_text()}")
         return result
 
-    async def get_window_properties(self, window: DesktopElement) -> Dict[str, Any]:
+    async def get_window_properties(self, window: DesktopElement) -> dict[str, Any]:
         """
         Get comprehensive properties of a window.
 
@@ -495,7 +495,7 @@ class WindowManager:
         """
         logger.debug("Getting window properties")
 
-        def _get_properties() -> Dict[str, Any]:
+        def _get_properties() -> dict[str, Any]:
             with auto.UIAutomationInitializerInThread():
                 try:
                     import win32con

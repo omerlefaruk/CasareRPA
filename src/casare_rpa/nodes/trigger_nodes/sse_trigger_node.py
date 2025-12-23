@@ -83,7 +83,7 @@ class SSETriggerNode(BaseTriggerNode):
     trigger_icon = "stream"
     trigger_category = "triggers"
 
-    def __init__(self, node_id: str, config: Optional[Dict] = None) -> None:
+    def __init__(self, node_id: str, config: dict | None = None) -> None:
         super().__init__(node_id, config)
         self.name = "SSE Trigger"
         self.node_type = "SSETriggerNode"
@@ -100,7 +100,7 @@ class SSETriggerNode(BaseTriggerNode):
     def get_trigger_type(self) -> TriggerType:
         return TriggerType.SSE
 
-    def get_trigger_config(self) -> Dict[str, Any]:
+    def get_trigger_config(self) -> dict[str, Any]:
         """Get SSE-specific configuration."""
         event_types_str = self.get_parameter("event_types", "")
         event_types = [e.strip() for e in event_types_str.split(",") if e.strip()]

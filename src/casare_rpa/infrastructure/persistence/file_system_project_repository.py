@@ -16,8 +16,8 @@ from casare_rpa.domain.entities.project import (
     Project,
     ProjectsIndex,
     Scenario,
-    VariablesFile,
     VariableScope,
+    VariablesFile,
 )
 from casare_rpa.domain.repositories import ProjectRepository
 from casare_rpa.infrastructure.persistence.project_storage import ProjectStorage
@@ -35,7 +35,7 @@ class FileSystemProjectRepository(ProjectRepository):
         """Initialize repository."""
         self._storage = ProjectStorage
         # Cache project index to avoid repeated file reads
-        self._index_cache: Optional[ProjectsIndex] = None
+        self._index_cache: ProjectsIndex | None = None
 
     def _invalidate_cache(self) -> None:
         """Invalidate the index cache."""
@@ -45,7 +45,7 @@ class FileSystemProjectRepository(ProjectRepository):
     # Project Operations
     # =========================================================================
 
-    async def get_by_id(self, project_id: str) -> Optional[Project]:
+    async def get_by_id(self, project_id: str) -> Project | None:
         """Get project by ID."""
         try:
             index = await self.get_projects_index()
@@ -63,7 +63,7 @@ class FileSystemProjectRepository(ProjectRepository):
             logger.error(f"Failed to get project by ID {project_id}: {e}")
             return None
 
-    async def get_by_path(self, path: Path) -> Optional[Project]:
+    async def get_by_path(self, path: Path) -> Project | None:
         """Get project by folder path."""
         try:
             if not self._storage.is_project_folder(path):
@@ -73,7 +73,7 @@ class FileSystemProjectRepository(ProjectRepository):
             logger.error(f"Failed to get project by path {path}: {e}")
             return None
 
-    async def get_all(self) -> List[Project]:
+    async def get_all(self) -> list[Project]:
         """Get all registered projects."""
         projects = []
         try:
@@ -141,7 +141,7 @@ class FileSystemProjectRepository(ProjectRepository):
     # Scenario Operations
     # =========================================================================
 
-    async def get_scenario(self, project_id: str, scenario_id: str) -> Optional[Scenario]:
+    async def get_scenario(self, project_id: str, scenario_id: str) -> Scenario | None:
         """Get scenario by ID."""
         try:
             project = await self.get_by_id(project_id)
@@ -158,7 +158,7 @@ class FileSystemProjectRepository(ProjectRepository):
             logger.error(f"Failed to get scenario {scenario_id}: {e}")
             return None
 
-    async def get_scenarios(self, project_id: str) -> List[Scenario]:
+    async def get_scenarios(self, project_id: str) -> list[Scenario]:
         """Get all scenarios for a project."""
         scenarios = []
         try:
