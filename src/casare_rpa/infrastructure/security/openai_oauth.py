@@ -228,7 +228,7 @@ class OpenAIOAuthManager:
         if info:
             store.save_credential(
                 name=info["name"],
-                credential_type=CredentialType.OPENAI_OAUTH,
+                credential_type=CredentialType.OPENAI_OAUTH_KIND,
                 category="openai_oauth",
                 data=cred.to_dict(),
                 description=info.get("description", ""),

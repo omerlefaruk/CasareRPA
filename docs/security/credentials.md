@@ -63,8 +63,7 @@ store = get_credential_store()
 
 # Store username/password credential
 credential_id = store.save_credential(
-    name="Production Database",
-    credential_type=CredentialType.USERNAME_PASSWORD,
+    credential_type=CredentialType.USER_PASS_KIND,
     category="database",
     data={
         "username": "app_user",
@@ -77,7 +76,7 @@ credential_id = store.save_credential(
 # Store API key
 api_key_id = store.save_credential(
     name="OpenAI API Key",
-    credential_type=CredentialType.API_KEY,
+    credential_type=CredentialType.API_KEY_KIND,
     category="ai",
     data={
         "api_key": "sk-xxxxxxxxxxxx"
@@ -87,7 +86,7 @@ api_key_id = store.save_credential(
 # Store OAuth2 tokens
 oauth_id = store.save_credential(
     name="Google Workspace",
-    credential_type=CredentialType.GOOGLE_OAUTH,
+    credential_type=CredentialType.GOOGLE_OAUTH_KIND,
     category="google",
     data={
         "client_id": "xxx.apps.googleusercontent.com",
@@ -199,7 +198,7 @@ async with VaultClient(config) as vault:
             "username": "app_user",
             "password": "secure_password"
         },
-        credential_type=CredentialType.USERNAME_PASSWORD,
+        credential_type=CredentialType.USER_PASS_KIND,
         metadata={"environment": "production"}
     )
 
@@ -531,7 +530,7 @@ async def get_credential_with_audit(credential_id: str, user_id: UUID) -> dict:
 # Create scoped credentials
 store.save_credential(
     name="Gmail - Read Only",
-    credential_type=CredentialType.GOOGLE_OAUTH,
+    credential_type=CredentialType.GOOGLE_OAUTH_KIND,
     data={
         "scopes": ["gmail.readonly"]  # Only read access
     }

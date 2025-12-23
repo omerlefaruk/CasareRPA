@@ -1,7 +1,7 @@
 """
 Stdout/Stderr capture for UI display.
 
-Captures print() statements and subprocess output during workflow execution
+Captures terminal output and subprocess output during workflow execution
 and forwards them to the Terminal tab.
 """
 
@@ -222,7 +222,7 @@ def capture_output(
 
     Usage:
         with capture_output(on_stdout, on_stderr):
-            print("This goes to terminal tab")
+            logger.debug("This goes to terminal tab")
             subprocess.run(["cmd"])
 
     Args:

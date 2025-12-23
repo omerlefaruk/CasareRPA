@@ -2,306 +2,33 @@
 Custom Node Widget Wrappers for NodeGraphQt.
 
 This module provides wrapper classes that extend NodeGraphQt's widget classes
-with custom behavior and styling, replacing the monkey-patches in node_graph_widget.py.
+with custom behavior and styling.
 
 Classes:
     CasareComboBox: Fixes combo dropdown z-order issue
     CasareCheckBox: Adds dark blue checkbox styling
-    CasareLivePipe: Fixes draw_index_pointer text_pos bug
-    CasarePipeItem: Fixes draw_path viewer None crash
     NodeFilePathWidget: File path input with browse button
     NodeDirectoryPathWidget: Directory path input with browse button
+
+Font Fixes:
+    Font initialization moved to CasareNodeItem._create_port_text_item()
+    which properly initializes fonts without global patching.
+    Custom CasareQFont class available in casare_font.py for explicit font protection.
+
+Note: Modernized versions of fixes have been moved to proper subclasses:
+    - NodeGraph._on_node_data_dropped -> CasareNodeGraph (custom_graph.py)
+    - NodeItem.paint -> CasareNodeItem.paint (custom_node_item.py)
+    - PortItem.paint -> CasarePortItem.paint (custom_port_item.py)
+    - NodeItem._add_port -> CasareNodeItem._add_port (custom_node_item.py)
+    - Font init -> CasareNodeItem._create_port_text_item() (custom_node_item.py)
+
+Widget init patches removed - CasareComboBox.apply_fix() and CasareCheckBox.apply_styling()
+are called directly in those wrapper classes' __init__ methods.
+No longer using global patching for widgets.
 """
 
-from functools import partial
-from typing import Optional
 
-from loguru import logger
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QColor, QFont, QTransform
-from PySide6.QtWidgets import (
-    QComboBox,
-    QFileDialog,
-    QHBoxLayout,
-    QPushButton,
-    QSizePolicy,
-)
-
-from casare_rpa.presentation.canvas.theme import THEME
-
-# Import variable picker components
-from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
-    VariableAwareLineEdit,
-)
-
-# Raised z-value when combo popup is open
-COMBO_RAISED_Z = 10000
-
-
-class CasareComboBox:
-    """
-    Mixin/wrapper that fixes combo dropdown z-order in QGraphicsProxyWidget.
-
-    When QComboBox is embedded in a QGraphicsProxyWidget, the dropdown popup
-    can get clipped by other widgets in the same node. This fix ensures the
-    popup appears as a top-level window above all graphics items by raising
-    the z-value when the popup is shown.
-
-    Usage:
-        # Apply to a NodeComboBox instance
-        CasareComboBox.apply_fix(node_combo_widget)
-    """
-
-    @staticmethod
-    def apply_fix(node_widget) -> None:
-        """
-        Apply z-order fix to a NodeComboBox widget.
-
-        Args:
-            node_widget: NodeComboBox instance from NodeGraphQt
-        """
-        # Store original z-value for restoration
-        node_widget._original_z = node_widget.zValue()
-
-        # Get the combo widget
-        combo = node_widget.get_custom_widget()
-        if not combo or not isinstance(combo, QComboBox):
-            return
-
-        # Store original methods
-        original_show_popup = combo.showPopup
-        original_hide_popup = combo.hidePopup
-
-        def patched_show_popup():
-            """Raise z-value when popup opens."""
-            node_widget.setZValue(COMBO_RAISED_Z)
-            original_show_popup()
-
-        def patched_hide_popup():
-            """Restore original z-value when popup closes."""
-            try:
-                original_hide_popup()
-                if hasattr(node_widget, "_original_z"):
-                    node_widget.setZValue(node_widget._original_z)
-            except RuntimeError:
-                # Widget already deleted
-                pass
-
-        # Apply patches
-        combo.showPopup = patched_show_popup
-        combo.hidePopup = patched_hide_popup
-
-
-class CasareCheckBox:
-    """
-    Mixin/wrapper that applies dark blue checkbox styling with white checkmark.
-
-    Provides a consistent VSCode-like dark theme styling for checkboxes
-    inside nodes, with proper hover and checked states.
-
-    Usage:
-        # Apply to a NodeCheckBox instance
-        CasareCheckBox.apply_styling(node_checkbox_widget)
-    """
-
-    # Path to checkmark SVG asset
-    _checkmark_path: str | None = None
-
-    @classmethod
-    def _get_checkmark_path(cls) -> str:
-        """Get the checkmark asset path, cached for performance."""
-        if cls._checkmark_path is None:
-            from pathlib import Path
-
-            # Asset is in presentation/canvas/assets directory
-            canvas_dir = Path(__file__).parent.parent
-            asset_path = canvas_dir / "assets" / "checkmark.svg"
-            cls._checkmark_path = asset_path.as_posix()
-        return cls._checkmark_path
-
-    @classmethod
-    def apply_styling(cls, node_widget) -> None:
-        """
-        Apply dark blue styling to a NodeCheckBox widget.
-
-        Args:
-            node_widget: NodeCheckBox instance from NodeGraphQt
-        """
-        checkbox = node_widget.get_custom_widget()
-        if not checkbox:
-            return
-
-        # Fix NodeGraphQt's large font (11pt) - use 8pt to match other widgets
-        from PySide6.QtGui import QFontMetrics
-
-        font = checkbox.font()
-        font.setPointSize(8)
-        checkbox.setFont(font)
-
-        # Fix NodeGraphQt's hardcoded max width (140px) that truncates labels
-        # Remove the constraint and set proper minimum width based on text
-        group_box = node_widget.widget()
-        if group_box:
-            group_box.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
-
-            # NodeGraphQt's widget sizing is based primarily on the embedded widget,
-            # not the group box title. For boolean properties we often set the
-            # *parameter label* as the group box title and leave the checkbox text
-            # empty, which can make the title get clipped.
-            fm = QFontMetrics(font)
-            try:
-                title_text = node_widget.get_label() or ""
-            except Exception:
-                title_text = ""
-
-            checkbox_text = checkbox.text() or ""
-            title_width = fm.horizontalAdvance(title_text) if title_text else 0
-            checkbox_text_width = fm.horizontalAdvance(checkbox_text) if checkbox_text else 0
-
-            # Ensure enough room for either the group box title or the checkbox text.
-            # NodeGraphQt nodes also enforce a practical minimum widget width (~200px)
-            # in our CasareNodeItem sizing logic.
-            indicator_width = 14
-            indicator_spacing = 6
-            horizontal_padding = 18
-            required_width = max(
-                200,
-                title_width + horizontal_padding,
-                indicator_width + indicator_spacing + checkbox_text_width + horizontal_padding,
-            )
-
-            group_box.setMinimumWidth(required_width)
-            group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            checkbox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            checkbox.setMinimumWidth(max(0, required_width - horizontal_padding))
-
-            # Also update the proxy widget sizing so boundingRect aligns with the
-            # sizeHint used for node sizing and widget placement.
-            try:
-                node_widget.setMinimumWidth(required_width)
-                node_widget.resize(required_width, group_box.sizeHint().height())
-            except Exception:
-                pass
-
-            group_box.adjustSize()
-
-        checkmark_path = cls._get_checkmark_path()
-
-        # Dark blue checkbox styling with white checkmark - smaller indicator for 8pt font
-        checkbox_style = f"""
-            QCheckBox {{
-                color: {THEME.text_secondary};
-                spacing: 6px;
-            }}
-            QCheckBox::indicator {{
-                width: 14px;
-                height: 14px;
-                border: 1px solid {THEME.border_light};
-                border-radius: 3px;
-                background-color: {THEME.bg_darkest};
-            }}
-
-            QCheckBox::indicator:unchecked:hover {{
-                border-color: {THEME.accent_primary};
-            }}
-
-            QCheckBox::indicator:checked {{
-                background-color: {THEME.accent_primary};
-                border-color: {THEME.accent_primary};
-                image: url({checkmark_path});
-            }}
-
-            QCheckBox::indicator:checked:hover {{
-                background-color: {THEME.accent_hover};
-                border-color: {THEME.accent_hover};
-            }}
-        """
-
-        # Append to existing stylesheet
-        existing_style = checkbox.styleSheet()
-        checkbox.setStyleSheet(existing_style + checkbox_style)
-
-
-# Note: Modernized versions of CasareNodeDataDropFix, CasareNodeBaseFontFix,
-# CasareNodeItemPaintFix and CasarePortItemShapeFix have been moved to:
-# - CasareNodeGraph (DataDrop)
-# - CasareNodeItem (Paint, AddPort)
-# - CasarePortItem (PortPaint)
-
-
-class CasareViewerFontFix:
-    """
-    Fix for NodeViewer font initialization that can cause QFont -1 warnings.
-
-    When QGraphicsTextItem.font() returns a font without an explicit point size,
-    it may have -1 as the point size. This fix ensures fonts are properly
-    initialized before calling setPointSize().
-
-    Usage:
-        # Apply fix at module load time
-        CasareViewerFontFix.apply_fix()
-    """
-
-    @staticmethod
-    def apply_fix() -> None:
-        """Apply the font fix to NodeViewer._set_viewer_pan_zoom."""
-        try:
-            # Patch QGraphicsTextItem to ensure font() always returns valid font
-            from PySide6.QtWidgets import QGraphicsTextItem
-
-            original_font = QGraphicsTextItem.font
-
-            def safe_font(self):
-                """Return font, ensuring point size is valid (not -1)."""
-                f = original_font(self)
-                if f.pointSize() <= 0:
-                    # Set a reasonable default if point size is invalid
-                    f.setPointSize(9)
-                return f
-
-            QGraphicsTextItem.font = safe_font
-
-        except Exception as e:
-            logger.warning(f"CasareViewerFontFix: Could not apply fix: {e}")
-
-
-class CasareQFontFix:
-    """
-    Fix for QFont.setPointSize being called with invalid values (-1 or 0).
-
-    NodeGraphQt and Qt internally may call setPointSize with -1 when fonts
-    are not properly initialized. This fix patches QFont.setPointSize to
-    silently correct invalid values to a reasonable default.
-
-    Usage:
-        CasareQFontFix.apply_fix()
-    """
-
-    _applied = False
-
-    @staticmethod
-    def apply_fix() -> None:
-        """Patch QFont.setPointSize to guard against invalid values."""
-        if CasareQFontFix._applied:
-            return
-
-        try:
-            original_setPointSize = QFont.setPointSize
-
-            def safe_setPointSize(self, size: int) -> None:
-                """Set point size, correcting invalid values."""
-                if size <= 0:
-                    size = 9  # Default to 9pt for invalid sizes
-                original_setPointSize(self, size)
-
-            QFont.setPointSize = safe_setPointSize
-            CasareQFontFix._applied = True
-
-        except Exception as e:
-            logger.warning(f"CasareQFontFix: Could not apply fix: {e}")
-
-
-def apply_all_node_widget_fixes() -> None:
+def apply_all_fixes() -> None:
     """
     Apply all NodeGraphQt core and widget fixes.
 
@@ -310,13 +37,13 @@ def apply_all_node_widget_fixes() -> None:
     - NodeItem.paint -> CasareNodeItem.paint (modernized)
     - PortItem.paint -> CasarePortItem.paint (modernized)
     - NodeItem._add_port -> CasareNodeItem._add_port (modernized)
+    - Font initialization -> CasareNodeItem._create_port_text_item() (modernized)
 
-    The remaining fixes are global Qt/NodeGraphQt fixes that still require patching.
+    Widget fixes via CasareComboBox and CasareCheckBox classes are applied
+    directly by those wrapper classes. No global patching needed.
+
+    For explicit font protection, use CasareQFont.from_base() when needed.
     """
-    CasareQFontFix.apply_fix()
-    CasareViewerFontFix.apply_fix()
-    _install_widget_init_patches()
-
     # Import and trigger custom items to ensure their patches (if any) are applied
     try:
         from casare_rpa.presentation.canvas.graph.custom_port_item import (
@@ -325,8 +52,10 @@ def apply_all_node_widget_fixes() -> None:
     except ImportError:
         pass
 
+    # Widget init patches removed - wrapper classes handle z-order and styling
+    # CasareComboBox.apply_fix() and CasareCheckBox.apply_styling() are called
+    # directly in those wrapper classes' __init__ methods.
 
-def _install_widget_init_patches() -> None:
     """
     Install patches on NodeComboBox and NodeCheckBox __init__ methods.
 

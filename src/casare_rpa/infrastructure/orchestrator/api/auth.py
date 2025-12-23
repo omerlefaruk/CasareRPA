@@ -110,12 +110,12 @@ def _try_admin_api_key(token: str) -> AuthenticatedUser | None:
     if len(token) > 10:
         masked_token = f"{token[:4]}...{token[-4:]} (len={len(token)})"
     else:
-        masked_token = "invalid"
+        masked_token = "<short_token>"
 
     if len(admin_key) > 10:
         masked_admin = f"{admin_key[:4]}...{admin_key[-4:]} (len={len(admin_key)})"
     else:
-        masked_admin = "invalid"
+        masked_admin = "<short_admin_key>"
 
     logger.warning(f"Admin Key Mismatch: Token='{masked_token}' vs Admin='{masked_admin}'")
     return None

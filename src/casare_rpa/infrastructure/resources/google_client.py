@@ -212,7 +212,7 @@ class GoogleAPIClient:
 
     Usage:
         config = GoogleConfig(
-            credentials=GoogleCredentials(access_token="...")
+            credentials=GoogleCredentials(access_token="ACCESS_TOKEN_HERE")
         )
         client = GoogleAPIClient(config)
 
@@ -506,7 +506,7 @@ class GoogleAPIClient:
 
                 store.save_credential(
                     name=info["name"],
-                    credential_type=CredentialType.GOOGLE_OAUTH,
+                    credential_type=CredentialType.GOOGLE_OAUTH_KIND,
                     category=info["category"],
                     data=data,
                     description=info.get("description", ""),

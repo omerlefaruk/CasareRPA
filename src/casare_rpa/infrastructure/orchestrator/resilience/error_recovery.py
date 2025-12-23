@@ -716,7 +716,7 @@ class HealthMonitor:
 class TokenType(Enum):
     """Token types for authentication."""
 
-    API_KEY = "api_key"
+    API_KEY_TYPE = "api_key"
     JWT = "jwt"
     HMAC = "hmac"
 

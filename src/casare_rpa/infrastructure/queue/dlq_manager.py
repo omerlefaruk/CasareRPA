@@ -251,10 +251,11 @@ class DLQManager:
         # Handle a job failure
         result = await manager.handle_job_failure(failed_job)
 
-        if result.action == RetryAction.RETRY:
-            print(f"Job scheduled for retry in {result.delay_seconds}s")
-        else:
-            print(f"Job moved to DLQ: {result.dlq_entry_id}")
+    if result.status == RetryStatus.RETRYING:
+        logger.info(f"Job scheduled for retry in {result.delay_seconds}s")
+    else:
+        logger.info(f"Job moved to DLQ: {result.dlq_entry_id}")
+
 
         await manager.stop()
     """

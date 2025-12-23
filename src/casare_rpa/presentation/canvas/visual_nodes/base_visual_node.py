@@ -10,13 +10,7 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from casare_rpa.domain.schemas.property_schema import PropertyDef
 
-from NodeGraphQt import BaseNode
-
-
-
-from ..ui.theme import Theme, _hex_to_qcolor
-
- as NodeGraphQtBaseNode
+from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor
 
@@ -28,6 +22,8 @@ from casare_rpa.domain.port_type_system import (
 from casare_rpa.domain.schemas import NodeSchema, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, PortType
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
+
+from ..ui.theme import Theme, _hex_to_qcolor
 
 # VSCode Dark+ color scheme for nodes
 # Node body should be slightly lighter than canvas to be visible

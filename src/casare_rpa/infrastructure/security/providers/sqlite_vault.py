@@ -291,7 +291,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         self,
         path: str,
         data: dict[str, Any],
-        credential_type: CredentialType = CredentialType.CUSTOM,
+        credential_type: CredentialType = CredentialType.CUSTOM_KIND,
         metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in SQLite vault."""
@@ -425,11 +425,9 @@ class EncryptedSQLiteProvider(VaultProvider):
         """Generate new secret values based on type."""
         new_data = current_data.copy()
 
-        if cred_type == CredentialType.USERNAME_PASSWORD:
-            # Generate new password, keep username
-            new_data["password"] = self._generate_password()
-
-        elif cred_type == CredentialType.API_KEY:
+        if cred_type == CredentialType.USER_PASS_KIND:
+            return self._build_username_password_data(secret_data)
+        elif cred_type == CredentialType.API_KEY_KIND:
             # Generate new API key
             for key in ["api_key", "apikey", "key", "token"]:
                 if key in new_data:
@@ -479,7 +477,7 @@ async def create_development_vault(
         await vault.put_secret(
             "my-app/db-creds",
             {"username": "admin", "password": "secret123"},
-            CredentialType.USERNAME_PASSWORD,
+            CredentialType.USER_PASS_KIND,
         )
 
         # Retrieve it

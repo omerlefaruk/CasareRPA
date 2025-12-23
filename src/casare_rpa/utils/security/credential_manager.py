@@ -69,17 +69,12 @@ class CredentialScope(Enum):
 
 
 class CredentialType(Enum):
-    """Type of credential for proper handling."""
+    """Types of credentials."""
 
-    GENERIC = "generic"
-    USERNAME_PASSWORD = "username_password"
-    API_KEY = "api_key"
-    OAUTH2 = "oauth2"
-    CERTIFICATE = "certificate"
-    SSH_KEY = "ssh_key"
-    # Messaging integrations
-    TELEGRAM_BOT = "telegram_bot"
-    WHATSAPP_BUSINESS = "whatsapp_business"
+    API_KEY_KIND = "api_key"
+    USER_PASS_KIND = "username_password"
+    TOKEN_KIND = "token"
+    GENERIC_KIND = "generic"
 
 
 @dataclass
@@ -107,7 +102,7 @@ class Credential:
     """
 
     name: str
-    credential_type: CredentialType = CredentialType.GENERIC
+    credential_type: CredentialType = CredentialType.GENERIC_KIND
     username: str | None = None
     password: str | None = None
     api_key: str | None = None
@@ -373,7 +368,7 @@ class CredentialManager:
         password: str | None = None,
         scope: CredentialScope = CredentialScope.GLOBAL,
         scope_id: str | None = None,
-        credential_type: CredentialType = CredentialType.USERNAME_PASSWORD,
+        credential_type: CredentialType = CredentialType.USER_PASS_KIND,
         api_key: str | None = None,
         metadata: dict[str, Any] | None = None,
         expires_at: datetime | None = None,

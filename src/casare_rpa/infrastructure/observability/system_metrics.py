@@ -67,11 +67,11 @@ class SystemMetricsCollector:
 
         # Get current process metrics
         process = collector.get_process_metrics()
-        print(f"CPU: {process.cpu_percent}%, Memory: {process.memory_rss_mb}MB")
+        logger.debug(f"CPU: {process.cpu_percent}%, Memory: {process.memory_rss_mb}MB")
 
         # Get system-wide metrics
         system = collector.get_system_metrics()
-        print(f"System CPU: {system.cpu_percent}%")
+        logger.debug(f"System CPU: {system.cpu_percent}%")
     """
 
     _instance: SystemMetricsCollector | None = None

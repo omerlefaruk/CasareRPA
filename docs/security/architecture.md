@@ -140,7 +140,7 @@ from casare_rpa.infrastructure.security.credential_store import CredentialStore
 store = CredentialStore(encryption_key=master_key)
 store.save_credential(
     name="api_cred",
-    credential_type=CredentialType.API_KEY,
+    credential_type=CredentialType.API_KEY_KIND,
     data={"api_key": "secret_value"}
 )
 # Data is automatically encrypted before storage

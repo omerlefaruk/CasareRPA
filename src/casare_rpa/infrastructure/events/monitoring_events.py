@@ -72,7 +72,7 @@ class MonitoringEventBus:
         # Subscribe
         bus = get_monitoring_event_bus()
         async def on_job_change(event: MonitoringEvent):
-            print(f"Job {event.payload['job_id']} → {event.payload['new_status']}")
+            logger.info(f"Job {event.payload['job_id']} → {event.payload['new_status']}")
 
         bus.subscribe(MonitoringEventType.JOB_STATUS_CHANGED, on_job_change)
 

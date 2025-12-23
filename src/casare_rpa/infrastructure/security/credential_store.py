@@ -34,13 +34,13 @@ from casare_rpa.config.security_config import get_crypto_security_config
 class CredentialType(Enum):
     """Types of credentials."""
 
-    API_KEY = "api_key"
-    USERNAME_PASSWORD = "username_password"
-    CONNECTION_STRING = "connection_string"
-    OAUTH_TOKEN = "oauth_token"
-    GOOGLE_OAUTH = "google_oauth"
-    OPENAI_OAUTH = "openai_oauth"
-    CUSTOM = "custom"
+    API_KEY_KIND = "api_key"
+    USER_PASS_KIND = "username_password"
+    CONN_STR_KIND = "connection_string"
+    OAUTH_TOKEN_KIND = "oauth_token"
+    GOOGLE_OAUTH_KIND = "google_oauth"
+    OPENAI_OAUTH_KIND = "openai_oauth"
+    CUSTOM_KIND = "custom"
 
 
 @dataclass
@@ -94,7 +94,7 @@ class Credential:
 CREDENTIAL_CATEGORIES = {
     "llm": {
         "name": "LLM Providers",
-        "type": CredentialType.API_KEY,
+        "type": CredentialType.API_KEY_KIND,
         "providers": [
             "openai",
             "anthropic",
@@ -125,31 +125,31 @@ CREDENTIAL_CATEGORIES = {
     },
     "database": {
         "name": "Database",
-        "type": CredentialType.USERNAME_PASSWORD,
+        "type": CredentialType.USER_PASS_KIND,
         "providers": ["postgresql", "mysql", "sqlserver", "oracle", "mongodb", "redis"],
         "fields": ["username", "password", "host", "port", "database"],
     },
     "email": {
         "name": "Email",
-        "type": CredentialType.USERNAME_PASSWORD,
+        "type": CredentialType.USER_PASS_KIND,
         "providers": ["smtp", "imap", "outlook", "gmail"],
         "fields": ["username", "password", "server", "port"],
     },
     "cloud": {
         "name": "Cloud Services",
-        "type": CredentialType.API_KEY,
+        "type": CredentialType.API_KEY_KIND,
         "providers": ["aws", "azure", "gcp", "digitalocean"],
         "fields": ["api_key", "secret_key", "region"],
     },
     "custom": {
         "name": "Custom",
-        "type": CredentialType.CUSTOM,
+        "type": CredentialType.CUSTOM_KIND,
         "providers": [],
         "fields": [],
     },
     "google": {
         "name": "Google Workspace",
-        "type": CredentialType.GOOGLE_OAUTH,
+        "type": CredentialType.GOOGLE_OAUTH_KIND,
         "providers": [
             "google_workspace",
             "gmail",
@@ -170,7 +170,7 @@ CREDENTIAL_CATEGORIES = {
     },
     "openai_oauth": {
         "name": "OpenAI / Azure OAuth",
-        "type": CredentialType.OPENAI_OAUTH,
+        "type": CredentialType.OPENAI_OAUTH_KIND,
         "providers": [
             "openai",
             "azure_openai",
@@ -610,7 +610,7 @@ class CredentialStore:
         """Save an API key credential."""
         return self.save_credential(
             name=name,
-            credential_type=CredentialType.API_KEY,
+            credential_type=CredentialType.API_KEY_KIND,
             category="llm",
             data={"api_key": api_key, "provider": provider},
             description=description,
@@ -633,7 +633,7 @@ class CredentialStore:
 
         return self.save_credential(
             name=name,
-            credential_type=CredentialType.USERNAME_PASSWORD,
+            credential_type=CredentialType.USER_PASS_KIND,
             category=category,
             data=data,
             description=description,

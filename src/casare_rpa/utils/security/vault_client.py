@@ -148,7 +148,7 @@ class VaultClient:
     Uses the KV v2 secrets engine by default.
 
     Example:
-        >>> config = VaultConfig(url="https://vault.company.com", token="dev-token")
+        >>> config = VaultConfig(url="https://vault.company.com", token="VAULT_TOKEN_HERE")
         >>> client = VaultClient(config)
         >>> client.store_secret("myapp/database", {"username": "admin", "password": "secret"})
         >>> creds = client.get_secret("myapp/database")

@@ -91,10 +91,10 @@ async def check_credential_rotation():
     for cred in store.list_credentials():
         age_days = (datetime.now() - cred.updated_at).days
 
-        if cred.credential_type == CredentialType.API_KEY and age_days > 90:
-            alerts.append(f"API Key '{cred.name}' is {age_days} days old")
-        elif cred.credential_type == CredentialType.USERNAME_PASSWORD and age_days > 90:
-            alerts.append(f"Password '{cred.name}' is {age_days} days old")
+if cred.credential_type == CredentialType.API_KEY_KIND and age_days > 90:
+    rotate_key(cred)
+elif cred.credential_type == CredentialType.USER_PASS_KIND and age_days > 90:
+
 
     if alerts:
         await send_security_alert(alerts)
@@ -129,7 +129,7 @@ Create credentials with minimal scope:
 # BAD: Overly permissive
 store.save_credential(
     name="Google Full Access",
-    credential_type=CredentialType.GOOGLE_OAUTH,
+    credential_type=CredentialType.GOOGLE_OAUTH_KIND,
     data={
         "scopes": [
             "https://www.googleapis.com/auth/gmail",  # Full Gmail access
@@ -141,7 +141,7 @@ store.save_credential(
 # GOOD: Minimal scope
 store.save_credential(
     name="Google Gmail Read",
-    credential_type=CredentialType.GOOGLE_OAUTH,
+    credential_type=CredentialType.GOOGLE_OAUTH_KIND,
     data={
         "scopes": [
             "https://www.googleapis.com/auth/gmail.readonly"  # Read-only

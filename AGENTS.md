@@ -10,6 +10,7 @@ The project strictly enforces architectural integrity and code quality via pre-c
 - **Modern Typing**: Use built-in collection types (PEP 585) and union operators (PEP 604).
 - **Theme Consistency**: Presentation layer must use `THEME` constants instead of hardcoded hex colors.
 - **Async Safety**: Avoid blocking I/O in async contexts; use `await asyncio.sleep` and `anyio`.
+- **Quality Fixes 2025**: Ongoing maintenance to resolve pre-commit hook violations including node registry sync, theme colors, and signal/slot best practices.
 - **Signal/Slot**: All slots must be decorated with `@Slot()`; use `functools.partial` for captures.
 
 ## Quick Commands

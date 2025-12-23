@@ -265,7 +265,7 @@ class AWSSecretsManagerProvider(VaultProvider):
         self,
         path: str,
         data: dict[str, Any],
-        credential_type: CredentialType = CredentialType.CUSTOM,
+        credential_type: CredentialType = CredentialType.CUSTOM_KIND,
         metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in AWS Secrets Manager."""
@@ -448,9 +448,9 @@ class AWSSecretsManagerProvider(VaultProvider):
 
         new_data = current_data.copy()
 
-        if cred_type == CredentialType.USERNAME_PASSWORD:
-            new_data["password"] = self._generate_password()
-        elif cred_type == CredentialType.API_KEY:
+        if cred_type == CredentialType.USER_PASS_KIND:
+            return self._build_username_password_data(secret_data)
+        elif cred_type == CredentialType.API_KEY_KIND:
             for key in ["api_key", "apikey", "key", "token", "value"]:
                 if key in new_data:
                     new_data[key] = secrets_module.token_urlsafe(32)
@@ -477,11 +477,11 @@ class AWSSecretsManagerProvider(VaultProvider):
         keys = set(data.keys())
 
         if "username" in keys and "password" in keys:
-            return CredentialType.USERNAME_PASSWORD
+            return CredentialType.USER_PASS_KIND
         if "api_key" in keys or "apikey" in keys:
-            return CredentialType.API_KEY
+            return CredentialType.API_KEY_KIND
         if "access_token" in keys or "refresh_token" in keys:
-            return CredentialType.OAUTH2_TOKEN
+            return CredentialType.OAUTH2_TOKEN_KIND
         if "private_key" in keys or "ssh_key" in keys:
             return CredentialType.SSH_KEY
         if "certificate" in keys or "cert" in keys:
@@ -493,7 +493,7 @@ class AWSSecretsManagerProvider(VaultProvider):
         if "client_id" in keys and "client_secret" in keys:
             return CredentialType.AZURE_CREDENTIALS
 
-        return CredentialType.CUSTOM
+        return CredentialType.CUSTOM_KIND
 
     async def restore_secret(self, path: str) -> SecretMetadata:
         """

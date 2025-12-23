@@ -182,7 +182,7 @@ class GoogleDriveClient:
     - Rate limiting awareness
 
     Usage:
-        config = DriveConfig(access_token="ya29.xxx")
+        >>> config = DriveConfig(access_token="ACCESS_TOKEN_HERE")
         client = GoogleDriveClient(config)
 
         async with client:

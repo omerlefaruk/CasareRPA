@@ -257,7 +257,7 @@ class AzureKeyVaultProvider(VaultProvider):
         self,
         path: str,
         data: dict[str, Any],
-        credential_type: CredentialType = CredentialType.CUSTOM,
+        credential_type: CredentialType = CredentialType.CUSTOM_KIND,
         metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in Azure Key Vault."""
@@ -386,9 +386,9 @@ class AzureKeyVaultProvider(VaultProvider):
 
         new_data = current_data.copy()
 
-        if cred_type == CredentialType.USERNAME_PASSWORD:
-            new_data["password"] = self._generate_password()
-        elif cred_type == CredentialType.API_KEY:
+        if cred_type == CredentialType.USER_PASS_KIND:
+            return self._build_username_password_data(secret_data)
+        elif cred_type == CredentialType.API_KEY_KIND:
             for key in ["api_key", "apikey", "key", "token", "value"]:
                 if key in new_data:
                     new_data[key] = secrets_module.token_urlsafe(32)
@@ -416,11 +416,11 @@ class AzureKeyVaultProvider(VaultProvider):
         content_type_lower = content_type.lower()
 
         if "password" in content_type_lower:
-            return CredentialType.USERNAME_PASSWORD
+            return CredentialType.USER_PASS_KIND
         if "api" in content_type_lower or "key" in content_type_lower:
-            return CredentialType.API_KEY
+            return CredentialType.API_KEY_KIND
         if "oauth" in content_type_lower or "token" in content_type_lower:
-            return CredentialType.OAUTH2_TOKEN
+            return CredentialType.OAUTH2_TOKEN_KIND
         if "ssh" in content_type_lower:
             return CredentialType.SSH_KEY
         if "cert" in content_type_lower:
@@ -432,20 +432,20 @@ class AzureKeyVaultProvider(VaultProvider):
         if "azure" in content_type_lower:
             return CredentialType.AZURE_CREDENTIALS
 
-        return CredentialType.CUSTOM
+        return CredentialType.CUSTOM_KIND
 
     def _credential_type_to_content_type(self, cred_type: CredentialType) -> str:
         """Convert credential type to Azure content type."""
         mapping = {
-            CredentialType.USERNAME_PASSWORD: "application/x-password",
-            CredentialType.API_KEY: "application/x-api-key",
-            CredentialType.OAUTH2_TOKEN: "application/x-oauth-token",
+            CredentialType.USER_PASS_KIND: "application/x-password",
+            CredentialType.API_KEY_KIND: "application/x-api-key",
+            CredentialType.OAUTH2_TOKEN_KIND: "application/x-oauth-token",
             CredentialType.SSH_KEY: "application/x-ssh-key",
             CredentialType.CERTIFICATE: "application/x-pem-file",
             CredentialType.DATABASE_CONNECTION: "application/x-connection-string",
             CredentialType.AWS_CREDENTIALS: "application/x-aws-credentials",
             CredentialType.AZURE_CREDENTIALS: "application/x-azure-credentials",
-            CredentialType.CUSTOM: "text/plain",
+            CredentialType.CUSTOM_KIND: "text/plain",
         }
         return mapping.get(cred_type, "text/plain")
 

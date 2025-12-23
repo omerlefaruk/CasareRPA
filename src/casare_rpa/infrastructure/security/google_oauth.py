@@ -491,7 +491,7 @@ class GoogleOAuthManager:
             if info:
                 store.save_credential(
                     name=info["name"],
-                    credential_type=CredentialType.GOOGLE_OAUTH,
+                    credential_type=CredentialType.GOOGLE_OAUTH_KIND,
                     category=info["category"],
                     data=credential_data.to_dict(),
                     description=info.get("description", ""),

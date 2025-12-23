@@ -43,7 +43,7 @@ class ResourceType(str, Enum):
     USER = "user"
     WORKSPACE = "workspace"
     CREDENTIAL = "credential"
-    API_KEY = "apikey"
+    API_KEY_KIND = "api_key_resource"
     AUDIT = "audit"
     TENANT = "tenant"
     ROLE = "role"
@@ -886,8 +886,8 @@ MFA_REQUIRED_OPERATIONS: list[tuple[ResourceType, ActionType]] = [
     # Workflow deletion
     (ResourceType.WORKFLOW, ActionType.DELETE),
     # API Key management
-    (ResourceType.API_KEY, ActionType.CREATE),
-    (ResourceType.API_KEY, ActionType.REVOKE),
+    (ResourceType.API_KEY_KIND, ActionType.CREATE),
+    (ResourceType.API_KEY_KIND, ActionType.REVOKE),
 ]
 
 
@@ -1269,7 +1269,7 @@ def get_default_permissions() -> list[Permission]:
             name="apikey.create",
             display_name="Create API Keys",
             description="Generate new API keys",
-            resource=ResourceType.API_KEY,
+            resource=ResourceType.API_KEY_KIND,
             action=ActionType.CREATE,
             category="apikeys",
         ),
@@ -1278,7 +1278,7 @@ def get_default_permissions() -> list[Permission]:
             name="apikey.read",
             display_name="View API Keys",
             description="View API key metadata",
-            resource=ResourceType.API_KEY,
+            resource=ResourceType.API_KEY_KIND,
             action=ActionType.READ,
             category="apikeys",
         ),
@@ -1287,7 +1287,7 @@ def get_default_permissions() -> list[Permission]:
             name="apikey.revoke",
             display_name="Revoke API Keys",
             description="Revoke API keys",
-            resource=ResourceType.API_KEY,
+            resource=ResourceType.API_KEY_KIND,
             action=ActionType.REVOKE,
             category="apikeys",
         ),

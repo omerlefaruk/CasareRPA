@@ -218,7 +218,7 @@ class GmailClient:
     - Draft creation
 
     Usage:
-        config = GmailConfig(access_token="ya29.xxx...")
+        >>> config = GmailConfig(access_token="ACCESS_TOKEN_HERE")
         client = GmailClient(config)
 
         async with client:

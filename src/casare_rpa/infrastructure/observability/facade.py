@@ -531,7 +531,7 @@ class Observability:
         """
         Start capturing stdout/stderr to callbacks.
 
-        Used by UI to display print() output in Terminal tab.
+        Used by UI to display terminal output in Terminal tab.
 
         Args:
             stdout_callback: Function called with each stdout line
@@ -556,7 +556,7 @@ class Observability:
 
         Usage:
             with Observability.captured_output(on_stdout, on_stderr):
-                print("Goes to callback")
+                logger.debug("Goes to callback")
         """
         with capture_output(stdout_callback, stderr_callback):
             yield

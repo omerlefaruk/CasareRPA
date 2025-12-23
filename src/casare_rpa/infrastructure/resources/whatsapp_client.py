@@ -119,7 +119,7 @@ class WhatsAppClient:
 
     Usage:
         config = WhatsAppConfig(
-            access_token="EAABx...",
+            access_token="ACCESS_TOKEN_HERE",
             phone_number_id="123456789",
         )
         client = WhatsAppClient(config)

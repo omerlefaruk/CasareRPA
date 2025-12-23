@@ -20,7 +20,7 @@ Usage:
 
     # Verify code during login
     if manager.verify_code(secret, "123456"):
-        print("MFA verified")
+        logger.info("MFA verified")
 """
 
 import base64

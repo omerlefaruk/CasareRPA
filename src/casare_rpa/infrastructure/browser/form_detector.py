@@ -251,9 +251,10 @@ class FormDetector:
         forms = await detector.detect_forms(page)
 
         for form in forms:
-            print(f"Form: {form.selector}")
-            for field in form.fields:
-                print(f"  - {field.name}: {field.field_type} ({field.label})")
+                    logger.info(f"Form: {form.selector}")
+                    for field in form.fields:
+                        logger.info(f"  - {field.name}: {field.field_type} ({field.label})")
+
     """
 
     async def detect_forms(self, page: "Page") -> list[DetectedForm]:

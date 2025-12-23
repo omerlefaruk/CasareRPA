@@ -78,7 +78,7 @@ class TelegramClient:
     - Proper error handling
 
     Usage:
-        config = TelegramConfig(bot_token="123456:ABC-DEF...")
+        >>> config = TelegramConfig(bot_token="BOT_TOKEN_HERE")
         client = TelegramClient(config)
 
         async with client:

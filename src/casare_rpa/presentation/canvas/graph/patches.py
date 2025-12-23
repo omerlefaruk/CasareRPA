@@ -6,69 +6,63 @@ easily solved via subclassing alone.
 """
 
 from loguru import logger
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QGraphicsTextItem
 
 
 class CasareViewerFontFix:
     """
     Fix for NodeViewer font initialization that can cause QFont -1 warnings.
+
+    DEPRECATED: Global patching removed per codebase modernization.
+    Font protection moved to CasareNodeItem._create_port_text_item().
+
+    This function now does nothing (no-op).
     """
 
     @staticmethod
     def apply_fix() -> None:
-        """Patch QGraphicsTextItem.font to ensure it always returns a valid font."""
-        try:
-            original_font = QGraphicsTextItem.font
+        """
+        Patch QGraphicsTextItem.font to ensure it always returns a valid font.
 
-            def safe_font(self):
-                """Return font, ensuring point size is valid (not -1)."""
-                f = original_font(self)
-                if f.pointSize() <= 0:
-                    # Set a reasonable default if point size is invalid
-                    f.setPointSize(9)
-                return f
-
-            QGraphicsTextItem.font = safe_font
-            logger.debug("Applied QGraphicsTextItem.font fix")
-
-        except Exception as e:
-            logger.warning(f"CasareViewerFontFix: Could not apply fix: {e}")
+        DEPRECATED: No longer applies global patch.
+        Font protection handled by CasareNodeItem._create_port_text_item().
+        """
+        logger.debug("CasareViewerFontFix: No-op (global patch removed)")
 
 
 class CasareQFontFix:
     """
     Fix for QFont.setPointSize being called with invalid values (-1 or 0).
+
+    DEPRECATED: Global patching removed per codebase modernization.
+    Font protection moved to CasareQFont class (casare_font.py).
+
+    This function now does nothing (no-op).
     """
 
     _applied = False
 
     @staticmethod
     def apply_fix() -> None:
-        """Patch QFont.setPointSize to guard against invalid values."""
+        """
+        Patch QFont.setPointSize to guard against invalid values.
+
+        DEPRECATED: No longer applies global patch.
+        Font protection handled by CasareQFont class (casare_font.py).
+        Use CasareQFont directly where needed.
+        """
         if CasareQFontFix._applied:
             return
 
-        try:
-            original_setPointSize = QFont.setPointSize
-
-            def safe_setPointSize(self, size: int) -> None:
-                """Set point size, correcting invalid values."""
-                if size <= 0:
-                    size = 9  # Default to 9pt for invalid sizes
-                original_setPointSize(self, size)
-
-            QFont.setPointSize = safe_setPointSize
-            CasareQFontFix._applied = True
-            logger.debug("Applied QFont.setPointSize fix")
-
-        except Exception as e:
-            logger.warning(f"CasareQFontFix: Could not apply fix: {e}")
+        logger.debug("CasareQFontFix: No-op (global patch removed)")
 
 
 def apply_early_patches() -> None:
     """
     Apply patches that must exist before any widgets are created.
+
+    MONKEY PATCH REMOVAL STATUS:
+    - CasareQFontFix: REMOVED (now uses CasareQFont class)
+    - CasareViewerFontFix: REMOVED (now uses CasareNodeItem._create_port_text_item)
     """
     CasareQFontFix.apply_fix()
 
@@ -76,5 +70,8 @@ def apply_early_patches() -> None:
 def apply_graphics_patches() -> None:
     """
     Apply patches related to graphics scene and items.
+
+    MONKEY PATCH REMOVAL STATUS:
+    - CasareViewerFontFix: REMOVED (now uses CasareNodeItem._create_port_text_item)
     """
     CasareViewerFontFix.apply_fix()

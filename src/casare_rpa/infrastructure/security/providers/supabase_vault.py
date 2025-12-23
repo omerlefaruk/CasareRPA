@@ -263,7 +263,7 @@ class SupabaseVaultProvider(VaultProvider):
         self,
         path: str,
         data: dict[str, Any],
-        credential_type: CredentialType = CredentialType.CUSTOM,
+        credential_type: CredentialType = CredentialType.CUSTOM_KIND,
         metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """Store secret in Supabase Vault."""
@@ -443,11 +443,11 @@ class SupabaseVaultProvider(VaultProvider):
 
         new_data = current_data.copy()
 
-        if cred_type == CredentialType.USERNAME_PASSWORD:
+        if cred_type == CredentialType.USER_PASS_KIND:
             # Generate new password, keep username
             new_data["password"] = self._generate_password()
 
-        elif cred_type == CredentialType.API_KEY:
+        elif cred_type == CredentialType.API_KEY_KIND:
             # Generate new API key
             for key in ["api_key", "apikey", "key", "token"]:
                 if key in new_data:
@@ -456,7 +456,7 @@ class SupabaseVaultProvider(VaultProvider):
             else:
                 new_data["api_key"] = secrets_module.token_urlsafe(32)
 
-        elif cred_type == CredentialType.OAUTH2_TOKEN:
+        elif cred_type == CredentialType.OAUTH2_TOKEN_KIND:
             # Can't rotate OAuth tokens automatically
             logger.warning(
                 "OAuth2 tokens cannot be rotated automatically. " "Re-authentication required."
@@ -483,14 +483,14 @@ class SupabaseVaultProvider(VaultProvider):
         keys = set(data.keys())
 
         if "username" in keys and "password" in keys:
-            return CredentialType.USERNAME_PASSWORD
+            return CredentialType.USER_PASS_KIND
         if "api_key" in keys or "apikey" in keys:
-            return CredentialType.API_KEY
+            return CredentialType.API_KEY_KIND
         if "access_token" in keys:
-            return CredentialType.OAUTH2_TOKEN
+            return CredentialType.OAUTH2_TOKEN_KIND
         if "private_key" in keys:
             return CredentialType.SSH_KEY
         if "connection_string" in keys:
             return CredentialType.DATABASE_CONNECTION
 
-        return CredentialType.CUSTOM
+        return CredentialType.CUSTOM_KIND

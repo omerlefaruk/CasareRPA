@@ -90,7 +90,7 @@ class ResourceType(str, Enum):
     USER = "user"
     CREDENTIAL = "credential"
     TENANT = "tenant"
-    API_KEY = "apikey"
+    API_KEY_RESOURCE = "api_key_resource"
     SYSTEM = "system"
 
 

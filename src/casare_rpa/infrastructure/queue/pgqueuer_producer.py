@@ -207,7 +207,7 @@ class PgQueuerProducer:
             workflow_json='{"nodes": [...]}',
             priority=20,
         )
-        print(f"Submitted job {job.job_id}")
+        logger.info(f"Submitted job {job.job_id}")
 
         # Submit batch of jobs
         submissions = [

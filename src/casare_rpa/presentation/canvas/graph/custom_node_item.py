@@ -120,14 +120,12 @@ def _init_legacy_colors():
 # Text colors from theme
 def _get_secondary_text_color() -> QColor:
     cc = Theme.get_canvas_colors()
-    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
 
     return _hex_to_qcolor(cc.node_text_secondary)
 
 
 def _get_port_label_color() -> QColor:
     cc = Theme.get_canvas_colors()
-    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
 
     return _hex_to_qcolor(cc.node_text_port)
 
@@ -301,7 +299,6 @@ def get_category_header_color(category: str) -> QColor:
 def _get_collapse_btn_bg() -> QColor:
     """Get collapse button background from theme."""
     cc = Theme.get_canvas_colors()
-    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
 
     color = _hex_to_qcolor(cc.collapse_btn_bg)
     result = QColor(color)
@@ -312,7 +309,6 @@ def _get_collapse_btn_bg() -> QColor:
 def _get_collapse_btn_symbol() -> QColor:
     """Get collapse button symbol color from theme."""
     cc = Theme.get_canvas_colors()
-    from casare_rpa.presentation.canvas.ui.theme import _hex_to_qcolor
 
     return _hex_to_qcolor(cc.collapse_btn_symbol)
 
@@ -1934,18 +1930,26 @@ class CasareNodeItem(NodeItem):
         """Override selection without animation."""
         super().setSelected(selected)
 
-    def _add_port(self, port):
+    def _create_port_text_item(self, port_name: str, display_name: str) -> QGraphicsTextItem:
         """
-        Custom version of _add_port that fixes font bugs and adds label truncation.
+        Create a QGraphicsTextItem for port labels with proper font initialization.
 
-        Ported from CasareNodeBaseFontFix in node_widgets.py.
+        FIXES: NodeGraphQt font initialization issues by using QFont directly with
+        explicit point size, avoiding the need for global QFont patching.
+
+        Args:
+            port_name: Original port name for tooltip
+            display_name: Displayed name (may be truncated)
+
+        Returns:
+            QGraphicsTextItem with properly initialized font
         """
-        port_name = port.name
-        display_name = port_name
+        text = QGraphicsTextItem(display_name, self)
 
         # Create font with explicit size (Fixes NodeGraphQt -1pt font bug)
         font = QFont()
         font.setPointSize(8)
+        text.setFont(font)
 
         # Use QFontMetrics for accurate text measurement
         from PySide6.QtGui import QFontMetrics

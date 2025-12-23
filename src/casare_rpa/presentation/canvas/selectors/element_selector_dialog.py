@@ -163,7 +163,7 @@ class _ThemeAdapter:
     @property
     def info_light(self) -> str:
         # Derive lighter info color
-        return "#ADD8E6"  # Light blue
+        return Theme.get_colors().info
 
     @property
     def border(self) -> str:
@@ -1068,11 +1068,11 @@ class ElementSelectorDialog(QDialog):
         content.addLayout(fuzzy_opts)
 
         # CV selector row
-        self._cv_row = SelectorRow("Computer Vision", "#8b5cf6", has_accuracy=True)
+        self._cv_row = SelectorRow("Computer Vision", THEME.accent_primary, has_accuracy=True)
         content.addWidget(self._cv_row)
 
         # Image selector row
-        self._image_row = SelectorRow("Image Template", "#06b6d4", has_accuracy=True)
+        self._image_row = SelectorRow("Image Template", THEME.info, has_accuracy=True)
         content.addWidget(self._image_row)
 
         # Image preview area

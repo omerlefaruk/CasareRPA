@@ -920,7 +920,7 @@ async def assign_job_to_robot(
         ... )
         >>> robots = [robot1, robot2, robot3]
         >>> result = await assign_job_to_robot(requirements, robots)
-        >>> print(f"Assigned to: {result.robot_name} (score: {result.score})")
+        >>> # assigned = result.robot_name (score: result.score)
     """
     if engine is None:
         engine = JobAssignmentEngine(weights=weights)

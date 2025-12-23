@@ -920,7 +920,7 @@ class CredentialManagerDialog(QDialog):
 
         from casare_rpa.infrastructure.security.credential_store import CredentialType
 
-        credentials = store.list_credentials(credential_type=CredentialType.USERNAME_PASSWORD)
+        credentials = store.list_credentials(credential_type=CredentialType.USER_PASS_KIND)
         for cred in credentials:
             item = QListWidgetItem(f"{cred['name']} ({cred['category']})")
             item.setData(Qt.ItemDataRole.UserRole, cred["id"])
@@ -1005,15 +1005,14 @@ class CredentialManagerDialog(QDialog):
 
         store = self._get_store()
 
+        from casare_rpa.infrastructure.security.credential_store import CredentialType
+
         try:
             store.save_credential(
                 name=name,
                 credential_type=store._credentials.get(self._current_credential_id).credential_type
                 if self._current_credential_id
-                else __import__(
-                    "casare_rpa.infrastructure.security.credential_store",
-                    fromlist=["CredentialType"],
-                ).CredentialType.API_KEY,
+                else CredentialType.API_KEY_KIND,
                 category="llm",
                 data={"api_key": api_key, "provider": self._current_provider},
                 description=self._api_description.text().strip(),
@@ -1169,7 +1168,7 @@ class CredentialManagerDialog(QDialog):
         try:
             store.save_credential(
                 name=name,
-                credential_type=CredentialType.USERNAME_PASSWORD,
+                credential_type=CredentialType.USER_PASS_KIND,
                 category=self._userpass_category.currentText(),
                 data=data,
                 description=self._userpass_description.text().strip(),

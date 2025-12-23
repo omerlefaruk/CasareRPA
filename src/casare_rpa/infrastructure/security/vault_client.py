@@ -38,15 +38,15 @@ class VaultBackend(str, Enum):
 class CredentialType(str, Enum):
     """Types of credentials supported by the vault."""
 
-    USERNAME_PASSWORD = "username_password"
-    API_KEY = "api_key"
-    OAUTH2_TOKEN = "oauth2_token"
+    USER_PASS_KIND = "username_password"
+    API_KEY_KIND = "api_key"
+    OAUTH2_TOKEN_KIND = "oauth2_token"
     SSH_KEY = "ssh_key"
     CERTIFICATE = "certificate"
     DATABASE_CONNECTION = "database_connection"
     AWS_CREDENTIALS = "aws_credentials"
     AZURE_CREDENTIALS = "azure_credentials"
-    CUSTOM = "custom"
+    CUSTOM_KIND = "custom"
 
 
 class AuditEventType(str, Enum):
@@ -123,7 +123,7 @@ class SecretMetadata(BaseModel):
     expires_at: datetime | None = Field(
         default=None, description="Expiration time for dynamic secrets"
     )
-    credential_type: CredentialType = Field(default=CredentialType.CUSTOM)
+    credential_type: CredentialType = Field(default=CredentialType.CUSTOM_KIND)
     is_dynamic: bool = Field(
         default=False, description="Whether this is a dynamically generated secret"
     )
@@ -478,7 +478,7 @@ class VaultProvider(ABC):
         self,
         path: str,
         data: dict[str, Any],
-        credential_type: CredentialType = CredentialType.CUSTOM,
+        credential_type: CredentialType = CredentialType.CUSTOM_KIND,
         metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """
@@ -1057,7 +1057,7 @@ class VaultClient:
         self,
         path: str,
         data: dict[str, Any],
-        credential_type: CredentialType = CredentialType.CUSTOM,
+        credential_type: CredentialType = CredentialType.CUSTOM_KIND,
         metadata: dict[str, Any] | None = None,
     ) -> SecretMetadata:
         """

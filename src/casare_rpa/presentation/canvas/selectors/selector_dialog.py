@@ -29,6 +29,8 @@ from casare_rpa.utils.selectors.selector_generator import (
     SelectorType,
 )
 
+from ..ui.theme import Theme
+
 
 class SelectorDialog(QDialog):
     """
@@ -444,7 +446,11 @@ class SelectorDialog(QDialog):
 
         # Update score with color
         score_color = (
-            "#4caf50" if strategy.score >= 80 else "#ff9800" if strategy.score >= 60 else "#f44336"
+            Theme.get_colors().status_success
+            if strategy.score >= 80
+            else Theme.get_colors().status_warning
+            if strategy.score >= 60
+            else Theme.get_colors().status_error
         )
         self.score_label.setText(f"{strategy.score:.1f} / 100")
         self.score_label.setStyleSheet(f"color: {score_color};")
@@ -452,10 +458,10 @@ class SelectorDialog(QDialog):
         # Update uniqueness
         if strategy.is_unique:
             self.unique_label.setText("✓ Selector is unique (matches exactly 1 element)")
-            self.unique_label.setStyleSheet("color: #4caf50;")
+            self.unique_label.setStyleSheet(f"color: {Theme.get_colors().status_success};")
         else:
             self.unique_label.setText("⚠ Selector may match multiple elements")
-            self.unique_label.setStyleSheet("color: #ff9800;")
+            self.unique_label.setStyleSheet(f"color: {Theme.get_colors().status_warning};")
 
         # Update performance if available
         if strategy.execution_time_ms > 0:

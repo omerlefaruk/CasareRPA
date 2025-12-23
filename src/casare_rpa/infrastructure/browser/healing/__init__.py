@@ -35,7 +35,8 @@ Usage:
 
     # Get statistics
     stats = chain.get_stats()
-    print(f"Success rate: {stats['success_rate']}%")
+            logger.info(f"Success rate: {stats['success_rate']}%")
+
 """
 
 from casare_rpa.infrastructure.browser.healing.anchor_healer import (

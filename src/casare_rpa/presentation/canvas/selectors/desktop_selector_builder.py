@@ -45,6 +45,7 @@ from casare_rpa.presentation.canvas.selectors.selector_strategy import (
 from casare_rpa.presentation.canvas.selectors.selector_validator import (
     SelectorValidator,
 )
+from casare_rpa.presentation.canvas.ui.theme import Theme
 
 
 class DesktopSelectorBuilder(QDialog):

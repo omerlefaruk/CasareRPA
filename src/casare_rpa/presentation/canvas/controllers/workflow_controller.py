@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
-from PySide6.QtCore import QObject, Signal, Slot, QTimer
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from casare_rpa.application.services import OrchestratorClient
@@ -299,7 +299,6 @@ class WorkflowController(BaseController):
         self.main_window.show_status(f"Opened: {path.name}", 3000)
 
         # Schedule validation after opening (delay to allow graph to fully load)
-        from PySide6.QtCore import QTimer
 
         QTimer.singleShot(500, self._validate_after_open)
 
@@ -346,7 +345,6 @@ class WorkflowController(BaseController):
         self.main_window.show_status(f"Reloaded: {self._current_file.name}", 3000)
 
         # Schedule validation after reloading
-        from PySide6.QtCore import QTimer
 
         QTimer.singleShot(500, self._validate_after_open)
 
