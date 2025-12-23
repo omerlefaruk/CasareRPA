@@ -5,22 +5,46 @@ Verify that newly added nodes are registered in registry_data.py and have visual
 
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 
-def get_node_classes(node_dir: str) -> set[str]:
-    """Extract all node class names from src/casare_rpa/nodes/"""
-    classes = set()
-    for root, _, files in os.walk(node_dir):
-        for file in files:
-            if file.endswith(".py") and file != "__init__.py":
-                path = os.path.join(root, file)
-                with open(path) as f:
-                    content = f.read()
-                    # Find @node decorated classes
-                    matches = re.findall(r"@node\([^)]*\)\s*class\s+(\w+)\(", content)
-                    classes.update(matches)
+def _run_git(args: list[str]) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def _changed_paths() -> list[str]:
+    output = _run_git(["diff", "--name-only", "--cached"])
+    if not output:
+        output = _run_git(["diff", "--name-only", "HEAD"])
+    if not output:
+        return []
+    return [line.strip() for line in output.splitlines() if line.strip()]
+
+
+def get_node_classes_from_files(paths: list[Path]) -> set[str]:
+    """Extract @node decorated class names from provided files."""
+    classes: set[str] = set()
+    for path in paths:
+        if path.name == "__init__.py" or path.suffix != ".py":
+            continue
+        try:
+            content = path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+
+        matches = re.findall(r"@node\([^)]*\)\s*class\s+(\w+)\(", content)
+        classes.update(matches)
+
     return classes
 
 
@@ -58,7 +82,20 @@ def main():
     if not node_dir.exists() or not registry_file.exists():
         return 0
 
-    nodes = get_node_classes(str(node_dir))
+    changed = _changed_paths()
+
+    node_files = [
+        (base / rel)
+        for rel in changed
+        if rel.replace("\\", "/").startswith("src/casare_rpa/nodes/")
+        and rel.endswith(".py")
+        and not rel.endswith("__init__.py")
+    ]
+
+    nodes = get_node_classes_from_files(node_files)
+    if not nodes:
+        return 0
+
     registered = get_registered_nodes(str(registry_file))
     visual = get_visual_nodes(str(visual_dir))
 

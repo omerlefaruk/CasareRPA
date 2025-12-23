@@ -5,6 +5,7 @@ Block hardcoded secrets, API keys, tokens, passwords.
 
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -29,6 +30,27 @@ IGNORE_PATTERNS = [
     r"EXAMPLE",
     r"placeholder",
 ]
+
+
+def _run_git(args: list[str]) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def _changed_paths() -> list[str]:
+    output = _run_git(["diff", "--name-only", "--cached"])
+    if not output:
+        output = _run_git(["diff", "--name-only", "HEAD"])
+    if not output:
+        return []
+    return [line.strip() for line in output.splitlines() if line.strip()]
 
 
 def check_file(filepath: str) -> list[str]:
@@ -64,23 +86,30 @@ def check_file(filepath: str) -> list[str]:
     return errors
 
 
-def main():
+def main() -> int:
     base = Path(__file__).parent.parent
-    src_dir = base / "src"
-    config_dir = base / "config"
 
-    all_errors = []
+    changed = _changed_paths()
+    if not changed:
+        return 0
 
-    for search_dir in [src_dir, config_dir]:
-        if not search_dir.exists():
+    all_errors: list[str] = []
+    for rel_path in changed:
+        if not rel_path.endswith(".py"):
             continue
 
-        for root, _, files in os.walk(search_dir):
-            for file in files:
-                if file.endswith(".py"):
-                    filepath = os.path.join(root, file)
-                    errors = check_file(filepath)
-                    all_errors.extend(errors)
+        abs_path = base / rel_path
+        if not abs_path.exists():
+            continue
+
+        normalized = str(abs_path).replace("\\", "/")
+        if not (
+            normalized.startswith(str(base / "src").replace("\\", "/"))
+            or normalized.startswith(str(base / "config").replace("\\", "/"))
+        ):
+            continue
+
+        all_errors.extend(check_file(str(abs_path)))
 
     if all_errors:
         print("[ERROR] Hardcoded secrets detected (use environment variables):")
