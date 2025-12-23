@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 from NodeGraphQt import NodeGraph
+from casare_rpa.presentation.canvas.graph.custom_graph import CasareNodeGraph
 
 from casare_rpa.presentation.canvas.connections.auto_connect import AutoConnectManager
 from casare_rpa.presentation.canvas.connections.connection_cutter import (
@@ -137,7 +138,7 @@ class NodeGraphWidget(QWidget):
         super().__init__(parent)
 
         # Create node graph
-        self._graph = NodeGraph()
+        self._graph = CasareNodeGraph()
 
         # Optional trace logging for unexpected undo/redo calls.
         if os.environ.get("CASARE_CANVAS_UNDO_TRACE") == "1":

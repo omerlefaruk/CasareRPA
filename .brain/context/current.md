@@ -1,14 +1,20 @@
 # Current Context
 
-**Updated**: 2025-12-22 15:31 UTC | **Branch**: main
+**Updated**: 2025-12-23 01:17 UTC | **Branch**: fix-file-drop-nodes
 
 ## Active Work
-- **Focus**: Orchestrator-first robot job execution (no DB on client)
-- **Status**: IN PROGRESS
-- **Plan**: `.brain/plans/robot-canvas-installers.md` (Phase 1–2)
-- **Area**: `src/casare_rpa/robot/agent.py`, `src/casare_rpa/infrastructure/orchestrator/api/routers/jobs.py`
+- **Focus**: Fix file drop handling (Excel + file read) and add tests
+- **Status**: READY FOR REVIEW
+- **Plan**: `.brain/plans/file-drop-node-handling.md`
+- **Area**: `src/casare_rpa/presentation/canvas/graph/custom_graph.py`, `tests/presentation/canvas`
 
 ## Completed This Session
+### Canvas File Drop Handling
+- Updated CasareNodeGraph file drop handling to support QMimeData and map Excel vs file reads.
+- Fixed CasareNodeGraph.create_node to forward `pos` correctly to NodeGraphQt.
+- Added tests for drag/drop mapping: `tests/presentation/canvas/graph/test_custom_graph_drop.py`.
+- Removed expand_clicked disconnect warnings and reran canvas tests (268 passed).
+
 
 ### Orchestrator-first Robot Job Execution (Foundation)
 
@@ -270,3 +276,15 @@ Phase: Validate
 In progress: rules validation
 Completed: pre-commit run in worktree (agent-validate-2) passed; sync + path hygiene + index checks validated
 Next: review changes
+
+## Phase Report (2025-12-23 01:08 UTC)
+Phase: QA
+In progress: pytest tests/presentation/canvas/graph/test_custom_graph_drop.py
+
+## Phase Report (2025-12-23 01:10 UTC)
+Phase: Docs
+In progress: context/plan/index updates
+
+## Phase Report (2025-12-23 01:17 UTC)
+Phase: QA
+In progress: pytest tests/presentation/canvas/ -v

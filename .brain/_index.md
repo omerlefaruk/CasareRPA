@@ -72,5 +72,5 @@ When updating .brain/ files:
 
 ---
 
-*Last updated: 2025-12-14*
+*Last updated: 2025-12-23*
 *Referenced from: CLAUDE.md, agent-rules/, .claude/rules/*

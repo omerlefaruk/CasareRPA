@@ -46,6 +46,7 @@ Implementation plans, research documents, and optimization strategies.
 |------|--------|-------------|
 | [ui-ux-canvas-improvements.md](ui-ux-canvas-improvements.md) | Active | Canvas UI/UX |
 | [fleet-dashboard-ux.md](fleet-dashboard-ux.md) | Complete | Fleet dashboard UX (sidebar nav, toast, theme alignment) |
+| [file-drop-node-handling.md](file-drop-node-handling.md) | Complete | Canvas file drop handling |
 
 ### Infrastructure & Integration
 | File | Status | Description |
@@ -102,4 +103,4 @@ Implementation plans, research documents, and optimization strategies.
 ---
 
 *Parent: [../_index.md](../_index.md)*
-*Last updated: 2025-12-15*
+*Last updated: 2025-12-23*
