@@ -9,6 +9,10 @@
 - **Area**: `src/casare_rpa/presentation/canvas/graph/custom_graph.py`, `tests/presentation/canvas`
 
 ## Completed This Session
+
+### Canvas RMB Interactions
+- Updated canvas mouse UX: `RMB` on node opens quick actions, `RMB` on empty canvas opens Add Node menu (Tab-style), `RMB` during node drag confirms AutoConnect suggestions.
+
 ### Canvas File Drop Handling
 - Updated CasareNodeGraph file drop handling to support QMimeData and map Excel vs file reads.
 - Fixed CasareNodeGraph.create_node to forward `pos` correctly to NodeGraphQt.

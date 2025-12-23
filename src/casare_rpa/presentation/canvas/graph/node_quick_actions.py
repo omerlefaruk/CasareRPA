@@ -7,8 +7,10 @@ Provides a context menu with quick actions when right-clicking on nodes.
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QPointF, Qt, Signal, Slot
 from PySide6.QtWidgets import QApplication, QInputDialog, QMenu
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from NodeGraphQt import NodeGraph
@@ -67,14 +69,12 @@ class NodeQuickActions(QObject):
         self._auto_connect_manager = manager
 
     def _setup_context_menu(self) -> None:
-        """Setup the node context menu by installing an event filter."""
-        try:
-            viewer = self._graph.viewer()
-            # Install event filter on the viewport to intercept right-clicks
-            viewer.viewport().installEventFilter(self)
-            logger.debug("Node quick actions event filter installed on viewport")
-        except Exception as e:
-            logger.warning(f"Could not setup node context menu: {e}")
+        """Setup node context menu.
+
+        Node context menus are invoked explicitly by `NodeGraphWidget` so we don't
+        install a viewport event filter here (keeps mouse behavior centralized).
+        """
+        return
 
     def _get_node_at_pos(self, pos: QPointF):
         """
@@ -142,6 +142,10 @@ class NodeQuickActions(QObject):
 
         return False  # Let other events pass through (including canvas right-clicks)
 
+    def show_context_menu(self, global_pos) -> None:
+        """Show quick actions for current selection."""
+        self._show_node_context_menu(global_pos)
+
     def _show_node_context_menu(self, pos) -> None:
         """
         Show the node context menu at the given position.
@@ -150,25 +154,27 @@ class NodeQuickActions(QObject):
             pos: Global position for the menu
         """
         menu = QMenu()
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #2b2b2b;
-                border: 1px solid #3d3d3d;
+        menu.setStyleSheet(
+            f"""
+            QMenu {{
+                background-color: {THEME.bg_panel};
+                border: 1px solid {THEME.border};
                 padding: 4px;
-            }
-            QMenu::item {
+            }}
+            QMenu::item {{
                 padding: 6px 20px;
-                color: #e0e0e0;
-            }
-            QMenu::item:selected {
-                background-color: #3a5a7a;
-            }
-            QMenu::separator {
+                color: {THEME.text_primary};
+            }}
+            QMenu::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QMenu::separator {{
                 height: 1px;
-                background: #3d3d3d;
+                background: {THEME.border};
                 margin: 4px 8px;
-            }
-        """)
+            }}
+            """
+        )
 
         # === Execution Actions ===
         run_node_action = menu.addAction("Run This Node (F5)")
@@ -230,36 +236,42 @@ class NodeQuickActions(QObject):
             return node.get_property("node_id") or node.id()
         return None
 
-    def _on_run_node(self) -> None:
+    @Slot(bool)
+    def _on_run_node(self, checked: bool = False) -> None:
         """Handle run node action."""
         node_id = self._get_selected_node_id()
         if node_id:
             logger.debug(f"Quick action: Run node {node_id}")
             self.run_node_requested.emit(node_id)
 
-    def _on_run_to_node(self) -> None:
+    @Slot(bool)
+    def _on_run_to_node(self, checked: bool = False) -> None:
         """Handle run to node action."""
         node_id = self._get_selected_node_id()
         if node_id:
             logger.debug(f"Quick action: Run to node {node_id}")
             self.run_to_node_requested.emit(node_id)
 
-    def _on_copy(self) -> None:
+    @Slot(bool)
+    def _on_copy(self, checked: bool = False) -> None:
         """Handle copy action."""
         logger.debug("Quick action: Copy")
         self.copy_requested.emit()
 
-    def _on_duplicate(self) -> None:
+    @Slot(bool)
+    def _on_duplicate(self, checked: bool = False) -> None:
         """Handle duplicate action."""
         logger.debug("Quick action: Duplicate")
         self.duplicate_requested.emit()
 
-    def _on_delete(self) -> None:
+    @Slot(bool)
+    def _on_delete(self, checked: bool = False) -> None:
         """Handle delete action."""
         logger.debug("Quick action: Delete")
         self.delete_requested.emit()
 
-    def _on_rename(self) -> None:
+    @Slot(bool)
+    def _on_rename(self, checked: bool = False) -> None:
         """Handle rename action."""
         node_id = self._get_selected_node_id()
         if node_id:
@@ -288,7 +300,8 @@ class NodeQuickActions(QObject):
             node.set_name(new_name)
             logger.info(f"Renamed node to: {new_name}")
 
-    def _on_center_view(self) -> None:
+    @Slot(bool)
+    def _on_center_view(self, checked: bool = False) -> None:
         """Handle center view action."""
         node_id = self._get_selected_node_id()
         if node_id:
@@ -297,7 +310,8 @@ class NodeQuickActions(QObject):
             # Center view on selected nodes
             self._graph.fit_to_selection()
 
-    def _on_copy_node_id(self) -> None:
+    @Slot(bool)
+    def _on_copy_node_id(self, checked: bool = False) -> None:
         """Copy the node ID to clipboard."""
         node_id = self._get_selected_node_id()
         if node_id:
@@ -305,7 +319,8 @@ class NodeQuickActions(QObject):
             clipboard.setText(node_id)
             logger.debug(f"Copied node ID to clipboard: {node_id}")
 
-    def _on_create_subflow(self) -> None:
+    @Slot(bool)
+    def _on_create_subflow(self, checked: bool = False) -> None:
         """Handle create subflow action."""
         logger.debug("Quick action: Create Subflow")
         self.create_subflow_requested.emit()
@@ -322,7 +337,8 @@ class NodeQuickActions(QObject):
             return view.is_cache_enabled()
         return False
 
-    def _on_toggle_cache(self) -> None:
+    @Slot(bool)
+    def _on_toggle_cache(self, checked: bool = False) -> None:
         """Handle toggle cache action."""
         node_id = self._get_selected_node_id()
         if node_id:

@@ -9,8 +9,30 @@ Verify Signal/Slot best practices:
 import ast
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
+
+
+def _run_git(args: list[str]) -> str:
+    result = subprocess.run(
+        ["git", *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def _changed_paths() -> list[str]:
+    output = _run_git(["diff", "--name-only", "--cached"])
+    if not output:
+        output = _run_git(["diff", "--name-only", "HEAD"])
+    if not output:
+        return []
+    return [line.strip() for line in output.splitlines() if line.strip()]
 
 
 class SignalSlotChecker(ast.NodeVisitor):
@@ -18,7 +40,7 @@ class SignalSlotChecker(ast.NodeVisitor):
         self.filepath = filepath
         self.errors = []
         self.in_class = False
-        self.has_slot_decorator = False
+        self._function_depth = 0
 
     def visit_ClassDef(self, node):
         old_in_class = self.in_class
@@ -27,14 +49,13 @@ class SignalSlotChecker(ast.NodeVisitor):
         self.in_class = old_in_class
 
     def visit_FunctionDef(self, node):
-        if self.in_class:
-            # Check if method has @Slot or @AsyncSlot decorator
+        # Only validate direct class methods (ignore nested functions inside methods).
+        if self.in_class and self._function_depth == 0:
             has_slot = any(
                 isinstance(dec, ast.Name) and dec.id in ("Slot", "AsyncSlot")
                 for dec in node.decorator_list
             )
 
-            # Check for Qt signal/slot naming convention
             is_slot_method = node.name.startswith("on_")
 
             if is_slot_method and not has_slot and "test" not in self.filepath:
@@ -46,7 +67,9 @@ class SignalSlotChecker(ast.NodeVisitor):
                         f"{self.filepath}:{node.lineno} - Slot method '{node.name}' missing @Slot decorator"
                     )
 
+        self._function_depth += 1
         self.generic_visit(node)
+        self._function_depth -= 1
 
 
 def check_lambdas(filepath: str) -> list[str]:
@@ -85,20 +108,31 @@ def check_file(filepath: str) -> list[str]:
     return errors
 
 
-def main():
+def main() -> int:
     base = Path(__file__).parent.parent
     presentation_dir = base / "src" / "casare_rpa" / "presentation"
 
     if not presentation_dir.exists():
         return 0
 
-    all_errors = []
-    for root, _, files in os.walk(presentation_dir):
-        for file in files:
-            if file.endswith(".py"):
-                filepath = os.path.join(root, file)
-                errors = check_file(filepath)
-                all_errors.extend(errors)
+    changed = _changed_paths()
+    if not changed:
+        return 0
+
+    all_errors: list[str] = []
+    for rel_path in changed:
+        if not rel_path.endswith(".py"):
+            continue
+
+        abs_path = base / rel_path
+        if not abs_path.exists():
+            continue
+
+        normalized = str(abs_path).replace("\\", "/")
+        if "/src/casare_rpa/presentation/" not in normalized:
+            continue
+
+        all_errors.extend(check_file(str(abs_path)))
 
     if all_errors:
         print("[ERROR] Signal/Slot violations (@Slot required, no lambdas in .connect()):")

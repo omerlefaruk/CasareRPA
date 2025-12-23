@@ -238,6 +238,9 @@ class NodeGraphWidget(QWidget):
         # Track mouse press for popup close
         self._popup_close_press_pos = None
 
+        # One-shot suppression after cancelling live connections
+        self._suppress_context_menu_once: bool = False
+
         # Connect create subflow action
         self._quick_actions.create_subflow_requested.connect(self._create_subflow_from_selection)
 
@@ -767,22 +770,76 @@ class NodeGraphWidget(QWidget):
                         return True
 
             if event.button() == Qt.MouseButton.RightButton:
+                # During auto-connect drag, RMB confirms suggested connections.
+                # Let AutoConnectManager consume the event.
+                if getattr(self._auto_connect, "_dragging_node", None) is not None:
+                    return False
+
                 viewer = self._graph.viewer()
                 if hasattr(viewer, "_LIVE_PIPE") and viewer._LIVE_PIPE.isVisible():
                     viewer.end_live_connection()
+                    self._suppress_context_menu_once = True
                     return True
 
-                if hasattr(event, "globalPos"):
-                    global_pos = event.globalPos()
-                else:
-                    global_pos = event.globalPosition().toPoint()
-                scene_pos = viewer.mapToScene(viewer.mapFromGlobal(global_pos))
-
-                context_menu = self._graph.get_context_menu("graph")
-                if context_menu and context_menu.qmenu:
-                    context_menu.qmenu._initial_scene_pos = scene_pos
-
+                # Context menu behavior is handled via QEvent.ContextMenu below.
                 return False
+
+        # Handle context menu (RMB) for:
+        # - node: quick actions
+        # - empty space: add-node search (same as Tab menu)
+        if event.type() == QEvent.Type.ContextMenu:
+            # During auto-connect drag, RMB confirms suggestions; no menus.
+            if getattr(self._auto_connect, "_dragging_node", None) is not None:
+                event.accept()
+                return True
+
+            # If RMB was used to cancel a live connection, suppress menu once.
+            if getattr(self, "_suppress_context_menu_once", False):
+                self._suppress_context_menu_once = False
+                return True
+
+            viewer = self._graph.viewer()
+            if hasattr(event, "globalPos"):
+                global_pos = event.globalPos()
+            else:
+                global_pos = event.globalPosition().toPoint()
+
+            view_pos = viewer.mapFromGlobal(global_pos)
+
+            # If RMB is on a port, do not open menus (avoid breaking wiring).
+            try:
+                scene_pos = viewer.mapToScene(view_pos)
+                item = viewer.scene().itemAt(scene_pos, viewer.transform())
+                if item is not None:
+                    from NodeGraphQt.qgraphics.port import PortItem
+
+                    current = item
+                    while current:
+                        if isinstance(current, PortItem):
+                            return True
+                        current = current.parentItem()
+            except Exception:
+                pass
+
+            node = self._selection_handler.get_node_at_view_pos(view_pos)
+            if node is not None:
+                try:
+                    self._graph.clear_selection()
+                    node.set_selected(True)
+                    self._quick_actions.show_context_menu(global_pos)
+                except Exception as e:
+                    logger.debug(f"Failed to show node context menu: {e}")
+                event.accept()
+                return True
+
+            # Empty canvas: open add-node search menu at cursor.
+            context_menu = self._graph.get_context_menu("graph")
+            if context_menu and context_menu.qmenu:
+                context_menu.qmenu._initial_scene_pos = viewer.mapToScene(view_pos)
+                context_menu.qmenu.exec(global_pos)
+
+            event.accept()
+            return True
 
         # Handle mouse release for Alt+drag cleanup
         if event.type() == QEvent.Type.MouseButtonRelease:
